@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-qgis-contrib"
+description = "PyQgis contrib utilities"
+requires-python = ">= 3.10"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: POSIX",
+]
+dependencies = [
+  'pydantic >= 2.2',
+  'pydantic-settings',
+  'typing-extensions',
+  'tomli >= 1.1.0 ; python_version < "3.11"'
+]
+dynamic = ["version"]
+
+
+[[project.authors]]
+name = "David Marteau"
+email = "dmarteau@3liz.org"
+
+[tool.setuptools.dynamic]
+version = { attr = "py_qgis_contrib.version.__version__" }
+
+[tool.setuptools.packages.find]
+include = [
+    "py_qgis_contrib", 
+    "py_qgis_contrib.*",
+]

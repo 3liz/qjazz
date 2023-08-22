@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-qgis-project-cache"
+description = "Qgis project cache"
+requires-python = ">= 3.10"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX",
+]
+dependencies = [
+    "py-qgis-contrib ~= 1.0.0.dev0",
+]
+dynamic = ["version"]
+
+
+[[project.authors]]
+name = "David Marteau"
+email = "dmarteau@3liz.org"
+
+[tool.setuptools.dynamic]
+version = { attr = "py_qgis_project_cache.version.__version__" }
+
+[tool.setuptools.packages.find]
+include = [
+    "py_qgis_project_cache", 
+    "py_qgis_project_cache.*",
+]

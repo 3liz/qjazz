@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: py-qgis-contrib
+Version: 1.0.0.dev0
+Summary: PyQgis contrib utilities
+Author-email: David Marteau <dmarteau@3liz.org>
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Operating System :: POSIX
+Requires-Python: >=3.10
+License-File: LICENSE

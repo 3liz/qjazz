@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: py-qgis-project-cache
+Version: 1.0.0.dev0
+Summary: Qgis project cache
+Author-email: David Marteau <dmarteau@3liz.org>
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: POSIX
+Requires-Python: >=3.10
+License-File: LICENSE
