@@ -8,7 +8,7 @@
 
 """ File protocol handler
 """
-from typing import Union, Generator
+from typing import Generator
 from itertools import chain
 from pathlib import Path
 
@@ -61,7 +61,7 @@ class FileProtocolHandler(IProtocolHandler):
         """
         return Path(uri.path)
 
-    def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
+    def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """ Override
         """
         if isinstance(url, ProjectMetadata):

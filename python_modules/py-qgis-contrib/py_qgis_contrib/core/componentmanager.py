@@ -43,7 +43,6 @@ def _warn(msg: str):
     print("WARNING:", msg, file=sys.stderr, flush=True)
 
 
-
 def _entry_points(group: str, name: Optional[str] = None) -> List:
     """ Return entry points
     """
@@ -83,7 +82,7 @@ class ComponentManager:
 
         if contractID in self._contractIDs:
             _warn(f"Overriding factory for '{contractID}'")
- 
+
         self._contractIDs[contractID] = FactoryEntry(factory, None)
 
     def register_service(self, contractID: str, service: Any) -> None:

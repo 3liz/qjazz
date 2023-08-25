@@ -6,6 +6,8 @@ from py_qgis_contrib.core import logger  # noqa
 from py_qgis_project_cache import (
     CacheManager,
     CheckoutStatus,
+    ProjectMetadata,
+    CatalogEntry,
 )
 
 
@@ -41,10 +43,13 @@ def test_checkout_project(config):
     cm = CacheManager(config)
 
     url = cm.resolve_path('/france/france_parts.qgs')
-    project1, status = cm.checkout(url)
+
+    md, status = cm.checkout(url)
     assert status == CheckoutStatus.NEW
+    assert isinstance(md, ProjectMetadata)
 
-    project2, status = cm.checkout(url)
+    entry = cm.update(md, status)
+    assert isinstance(entry, CatalogEntry)
+
+    md, status = cm.checkout(url)
     assert status == CheckoutStatus.UNCHANGED
-
-    assert project1 is project2

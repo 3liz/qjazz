@@ -1,4 +1,5 @@
 import pytest  # noqa
+import traceback
 
 from pathlib import Path
 from py_qgis_project_cache import ProjectsConfig
@@ -33,3 +34,11 @@ def pytest_sessionstart(session):
         CacheManager.initialize_handlers()
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    try:
+        from py_qgis_contrib.core import qgis
+        qgis.exit_qgis_application()
+    except Exception:
+        traceback.print_exc()

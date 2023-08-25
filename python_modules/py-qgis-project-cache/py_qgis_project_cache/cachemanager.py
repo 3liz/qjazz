@@ -7,6 +7,37 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """ Cache manager for Qgis Projects
+
+    Usage example
+    ```
+    CacheManager.initialize_handlers()
+
+    cm = CacheManager()
+    # Resolve location
+    url = cm.resolve_path("/my/project")
+
+    # Check status
+    md, status = cm.checkout(url)
+
+    match status:
+        case CheckoutStatus.NEW:
+            print("Project exists and is not loaded")
+        case CheckoutStatus.NEEDUPDATE:
+            print("Project is already loaded and need to be updated")
+        case CheckoutStatus.UNCHANGED:
+            print("Project is loaded and is up to date")
+        case CheckoutStatus.REMOVED:
+            print("Project is loaded but has been removed from storage")
+        case CheckoutStatus.NOTFOUND:
+            print("Project does not exists")
+
+    # Update the catalog according to
+    # the returned status
+    entry = cm.update(md, status)
+
+    myproject = entry.project
+    ```
+
 """
 import traceback
 
@@ -43,13 +74,15 @@ class UnreadableResource(Exception):
 
 class CatalogEntry(NamedTuple):
     md: ProjectMetadata
-    project: Optional[QgsProject] = None
+    project: QgsProject
 
 
 class CheckoutStatus(Enum):
     UNCHANGED = 0
-    UPDATED = 1
-    NEW = 2
+    NEEDUPDATE = 1
+    REMOVED = 2
+    NOTFOUND = 3
+    NEW = 4
 
 
 @componentmanager.register_factory(CACHE_MANAGER_CONTRACTID)
@@ -75,10 +108,20 @@ class CacheManager:
 
     @property
     def conf(self) -> str:
+        """ Return the current configuration
+        """
         return self._local_config or confservice.conf.projects
 
     def resolve_path(self, path: str) -> Url:
-        """ Resolve path
+        """ Resolve path according to location mapping
+
+            `path` is translated to an url corresponding to
+            a potential storage backend (i.e `file`, `postgresql` ...)
+
+            if `allow_direct_path_resolution` configuration is set to true,
+            unresolved path are passed 'as is' and will
+            be directly interpreted by the protocol handler
+            corresponding to the url's scheme.
         """
         path = Path(path)
         # Find matching path
@@ -103,6 +146,8 @@ class CacheManager:
 
     def collect_projects(self) -> Generator[ProjectMetadata, None, None]:
         """ Collect projects metadata from search paths
+
+            Yield found entries
         """
         for url in self.conf.search_paths.values():
             try:
@@ -111,87 +156,103 @@ class CacheManager:
             except Exception:
                 logger.error(traceback.format_exc())
 
-    def checkout(self, url: Url) -> Tuple[CatalogEntry, CheckoutStatus]:
-        """ Checkout a project from a key
+    def checkout(self, url: Url) -> Tuple[Optional[ProjectMetadata | CatalogEntry], CheckoutStatus]:
+        """ Checkout status of project from url
+
+            Returned status:
+            * `NEW`: Project exists but is not loaded
+            * `NEEDUPDATE`: Project is loaded and is out of date
+            * `REMOVED`: Project is loaded but was removed from storage
+            * `UNCHANGED`: Project is loaded and is up to date
+            * `NOTFOUND` : Project does not exist in storage
+
+            Possible return values are:
+            - `(CatalogEntry, CheckoutStatus.NEEDUPDATE)`
+            - `(CatalogEntry, CheckoutStatus.UNCHANGED)`
+            - `(CatalogEntry, CheckoutStatus.REMOVED)`
+            - `(ProjectMetadata, CheckoutStatus.NEW)`
+            - `(None, CheckoutStatus.NOTFOUND)`
         """
         handler = self.get_protocol_handler(url.scheme)
-
-        md = handler.project_metadata(url)
-        e = self._catalog.get(md.uri)
-        if e:
-            if not e.project or md.last_modified > e.md.last_modified:
-                entry = CatalogEntry(md, handler.project(md, self.conf))
-                self._catalog[md.uri] = entry
-                return (entry, CheckoutStatus.UPDATED)
+        try:
+            md = handler.project_metadata(url)
+            e = self._catalog.get(md.uri)
+            if e:
+                if md.last_modified > e.md.last_modified:
+                    retval = (e, CheckoutStatus.NEEDUPDATE)
+                else:
+                    retval = (e, CheckoutStatus.UNCHANGED)
             else:
-                return (e, CheckoutStatus.UNCHANGED)
-        else:
-            # Insert new project
-            entry = CatalogEntry(md, handler.project(md, self.conf))
-            self._catalog[md.uri] = entry
-            return (entry, CheckoutStatus.NEW)
+                retval = (md, CheckoutStatus.NEW)
+        except FileNotFoundError as err:
+            # The argument is the resolved uri
+            e = self._catalog.get(err.args[0])
+            if e:
+                retval = (e, CheckoutStatus.REMOVED)
+            else:
+                retval = (None, CheckoutStatus.NOTFOUND)
+
+        return retval
 
     def peek(self, url: Url) -> Optional[CatalogEntry]:
-        """ Peek an entry in the catalog
+        """ Peek an entry from the the catalog
+
+            Return None if the entry does not exists
         """
         handler = self.get_protocol_handler(url.scheme)
         return self._catalog.get(handler.resolve_uri(url))
 
-    def update(self, url: Url) -> Optional[CatalogEntry]:
-        """ Update specific catalog entry
+    def update(
+        self,
+        md: ProjectMetadata,
+        status: CheckoutStatus,
+        handler: Optional[IProtocolHandler] = None,
+    ) -> Optional[CatalogEntry]:
+        """ Update catalog entry according to status
 
-            Return the updated catalog entry or None
-            if no entry has been updated
+            * `NEW`: (re)load existing project
+            * `NEEDUPDATE`: update loaded project
+            * `REMOVED`: remove loaded project
+            * `UNCHANGED`: do nothing
+            * `NOTFOUND` : do nothing
+
+            If the status is NOTFOUND then return None
+
+            In all other cases the entry *must* exists in
+            the catalog or an exception is raised
         """
-        handler = self.get_protocol_handler(url.scheme)
-
-        e = self._catalog[handler.resolve_uri(url)]
-        md = handler.project_metadata(url)
-        if md.modified_time > e.md.modified_time:
-            if e.project:
+        match status:
+            case CheckoutStatus.NEW:
+                logger.debug("Adding new entry '%s'", md.uri)
+                handler = handler or self.get_protocol_handler(md.scheme)
                 entry = CatalogEntry(md, handler.project(md, self.conf))
-            else:
-                entry = CatalogEntry(md, None)
-            self._catalog[md.uri] = entry
-            return entry
-        else:
-            return None
+                self._catalog[md.uri] = entry
+                return entry
+            case CheckoutStatus.NEEDUPDATE:
+                entry = self._catalog[md.uri]
+                if md.modified_time > entry.md.modified_time:
+                    logger.debug("Updating entry '%s'", md.uri)
+                    handler = handler or self.get_protocol_handler(md.scheme)
+                    entry = CatalogEntry(md, handler.project(md, self.conf))
+                    self._catalog[md.uri] = entry
+                return entry
+            case CheckoutStatus.UNCHANGED:
+                return self._catalog[md.uri]
+            case CheckoutStatus.REMOVED:
+                logger.debug("Removing entry '%s'", md.uri)
+                return self._catalog.pop(md.uri)
 
     def update_catalog(self) -> Generator[CatalogEntry, None, None]:
-        """ Update the whole catalog
+        """ Update all entries in catalog
 
             Yield updated catalog entries
         """
         for e in self._catalog.values():
             handler = self.get_protocol_handler(e.md.scheme)
-            md = handler.project_metadata(e.md)
-            if md.modified_time > e.md.modified_time:
-                if e.project:
-                    entry = CatalogEntry(md, handler.project(md, self.conf))
-                else:
-                    entry = CatalogEntry(md, None)
-                self._catalog[md.uri] = entry
-                yield entry
-
-    def refresh_catalog(self):
-        """ Completely refresh the catalog
-
-            Update all entries and reload outdated projects.
-        """
-        catalog = self._catalog
-        self._catalog = {}
-        for md in self.collect_projects():
-            e = catalog.get(md.uri)
-            if e:
+            try:
+                md = handler.project_metadata(e.md)
                 if md.modified_time > e.md.modified_time:
-                    if e.project:
-                        handler = self.get_protocol_handler(md.scheme)
-                        entry = CatalogEntry(md, handler.project(md, self.conf))
-                    else:
-                        entry = CatalogEntry(md, None)
-                else:
-                    entry = e
-            else:
-                entry = CatalogEntry(md, None)
-
-            self._catalog[md.uri] = entry
+                    yield self.update(md, CheckoutStatus.NEEDUPDATE, handler)
+            except FileNotFoundError:
+                self.update(e.md, CheckoutStatus.REMOVED, handler)
+                yield e

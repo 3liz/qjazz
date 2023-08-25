@@ -28,6 +28,14 @@ def setup_qgis_paths(prefix: str) -> None:
 qgis_application = None
 
 
+def exit_qgis_application():
+    global qgis_application
+    if qgis_application:
+        # print("\nTerminating Qgis application", file=sys.stderr, flush=True)
+        qgis_application.exitQgis()
+        qgis_application = None
+
+
 def setup_qgis_application(
     cleanup: bool = True,
     logprefix: str = 'Qgis:',
@@ -79,10 +87,7 @@ def setup_qgis_application(
 
         @atexit.register
         def exitQgis():
-            global qgis_application
-            if qgis_application:
-                qgis_application.exitQgis()
-                del qgis_application
+            exit_qgis_application()
 
     if settings:
         # Initialize settings

@@ -33,7 +33,7 @@ from pathlib import Path
 from pydantic import create_model, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Optional, Dict, Literal
+from typing_extensions import Optional, Dict
 
 from . import componentmanager
 
