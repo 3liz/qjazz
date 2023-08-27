@@ -3,26 +3,28 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-project-cache"
-description = "Qgis project cache"
+name = "py-qgis-contrib"
+description = "PyQgis contrib utilities"
 requires-python = ">= 3.10"
 classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-contrib==1.0.0.dev0",
+  'pydantic >= 2.2',
+  'pydantic-settings',
+  'typing-extensions',
+  'tomli >= 1.1.0 ; python_version < "3.11"'
 ]
-version = "1.0.0.dev0"
+version = "${PIN_VERSION}"
 
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
 
-
 [tool.setuptools.packages.find]
 include = [
-    "py_qgis_project_cache", 
-    "py_qgis_project_cache.*",
+    "py_qgis_contrib", 
+    "py_qgis_contrib.*",
 ]

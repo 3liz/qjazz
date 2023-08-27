@@ -67,22 +67,18 @@ class IProtocolHandler(ABC):
 
             Must be idempotent
         """
-        ...
 
     @abstractmethod
     def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
         """ Return project metadate
         """
-        ...
 
     @abstractmethod
     def project(self, md: ProjectMetadata, config: ProjectsConfig) -> QgsProject:
         """ Return project associated with metadata
         """
-        ...
 
     @abstractmethod
     def projects(self, uri) -> Generator[ProjectMetadata, None, None]:
         """ List all projects availables from the given uri
         """
-        ...

@@ -1,6 +1,0 @@
-pydantic>=2.2
-pydantic-settings
-typing-extensions
-
-[:python_version < "3.11"]
-tomli>=1.1.0

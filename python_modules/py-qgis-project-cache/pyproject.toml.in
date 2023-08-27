@@ -12,9 +12,9 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-contrib==1.0.0.dev0",
+    "py-qgis-contrib==${PIN_VERSION}",
 ]
-version = "1.0.0.dev0"
+version = "${PIN_VERSION}"
 
 [[project.authors]]
 name = "David Marteau"

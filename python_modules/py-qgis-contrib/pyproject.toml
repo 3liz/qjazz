@@ -17,15 +17,11 @@ dependencies = [
   'typing-extensions',
   'tomli >= 1.1.0 ; python_version < "3.11"'
 ]
-dynamic = ["version"]
-
+version = "1.0.0.dev0"
 
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
-
-[tool.setuptools.dynamic]
-version = { attr = "py_qgis_contrib.version.__version__" }
 
 [tool.setuptools.packages.find]
 include = [

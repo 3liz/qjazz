@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-project-cache"
-description = "Qgis project cache"
+name = "py-qgis-worker"
+description = "Qgis Worker"
 requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -13,6 +13,7 @@ classifiers = [
 ]
 dependencies = [
     "py-qgis-contrib==1.0.0.dev0",
+    "py-qgis-project-cache==1.0.0.dev0",
 ]
 version = "1.0.0.dev0"
 
@@ -20,9 +21,8 @@ version = "1.0.0.dev0"
 name = "David Marteau"
 email = "dmarteau@3liz.org"
 
-
 [tool.setuptools.packages.find]
 include = [
-    "py_qgis_project_cache", 
-    "py_qgis_project_cache.*",
+    "py_qgis_worker", 
+    "py_qgis_worker.*",
 ]
