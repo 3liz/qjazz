@@ -41,16 +41,16 @@
 """
 import traceback
 
-from typing import Tuple, Optional, NamedTuple, Generator
+from typing import Tuple, Optional, Generator
 from pathlib import Path
 from enum import Enum
+from dataclasses import dataclass
 
 from qgis.core import QgsProject
 
 from py_qgis_contrib.core import (
     componentmanager,
     logger,
-    confservice,
 )
 
 # Import default handlers for auto-registration
@@ -72,9 +72,14 @@ class UnreadableResource(Exception):
     pass
 
 
-class CatalogEntry(NamedTuple):
+@dataclass(frozen=True)
+class CatalogEntry:
     md: ProjectMetadata
     project: QgsProject
+
+    # Delegate to ProjectMetadata
+    def __getattr__(self, attr):
+        return self.md.__getattribute__(attr)
 
 
 class CheckoutStatus(Enum):
@@ -102,17 +107,17 @@ class CacheManager:
         # Load protocol handlers
         componentmanager.register_entrypoints('py_qgis_contrib_protocol_handler')
 
-    def __init__(self, config: Optional[ProjectsConfig] = None) -> None:
-        self._local_config = config
+    def __init__(self, config: ProjectsConfig) -> None:
+        self._config = config
         self._catalog = {}
 
     @property
     def conf(self) -> str:
         """ Return the current configuration
         """
-        return self._local_config or confservice.conf.projects
+        return self._config
 
-    def resolve_path(self, path: str) -> Url:
+    def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """ Resolve path according to location mapping
 
             `path` is translated to an url corresponding to
@@ -131,7 +136,7 @@ class CacheManager:
                 url = rooturl._replace(path=str(Path(rooturl.path, path)))
                 return url
 
-        if self.conf.allow_direct_path_resolution:
+        if allow_direct or self.conf.allow_direct_path_resolution:
             # Use direct resolution based on scheme
             return url
         else:
@@ -256,3 +261,13 @@ class CacheManager:
             except FileNotFoundError:
                 self.update(e.md, CheckoutStatus.REMOVED, handler)
                 yield e
+
+    def clear(self) -> None:
+        """ Clear all projects 
+        """
+        self._catalog.clear()
+
+    def iter(self) -> Iterator[CatalogEntry]:
+        """ Iterate over all catalog entry 
+        """
+        return self._catalog.values()

@@ -29,13 +29,14 @@ Source searched for configuration values:
 """
 import os
 
+from time import time
 from pathlib import Path
 from pydantic import create_model, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Optional, Dict
+from typing_extensions import Optional, Dict, Callable
 
-from . import componentmanager
+from .. import componentmanager
 
 # Shortcut
 getenv = os.getenv
@@ -61,7 +62,7 @@ def read_config_file(self, cfgfile: Path) -> Dict:
 
 
 # Base classe for configuration models
-class Config(BaseModel):
+class Config(BaseModel, frozen=True):
     pass
 
 
@@ -78,6 +79,7 @@ class ConfigService:
         self._model = None
         self._conf = None
         self._model_changed = True
+        self._timestamp = 0
 
     def _create_model(self, base) -> BaseSettings:
         if self._model_changed or not self._model:
@@ -94,7 +96,7 @@ class ConfigService:
         """
         env_prefix = env_prefix or 'conf_'
 
-        class BaseConfig(BaseSettings):
+        class BaseConfig(BaseSettings, frozen=True):
             model_config = SettingsConfigDict(
                 env_nested_delimiter='__',
                 env_prefix=env_prefix,
@@ -106,8 +108,13 @@ class ConfigService:
             )
 
         BaseConfig = self._create_model(BaseConfig)
-        self._conf = BaseConfig.model_validate(obj)
+        _conf = BaseConfig.model_validate(obj)
+
+        self._conf = _conf
         self._model_changed = False
+        # Update timestamp so that we can check update in
+        # proxy
+        self._timestamp = time()
 
     def update_config(self):
         """ Update the configuration
@@ -147,3 +154,46 @@ def section(name: str, instance: Optional[ConfigService] = None):
         service.add_section(name, model)
         return model
     return wrapper
+
+
+#
+# Config Proxy
+#
+
+class ConfigProxy:
+    """ Proxy to sub configuration
+
+        Give access to sub-configuration from the confservice.
+        This allows to retrieve configuration changes when reloading
+        the global configuration.
+
+        Some services may be initialised with sub configuration, this allow
+        effective testing without dragging arount all the global configuration managment.
+
+        The proxy mock acces to a sub-configuration as if it was the configuration itself.
+        Because it access the global service under the hood, changes to global configuration
+        are reflected.
+    """
+
+    def __init__(
+            self,
+            configpath: str | Callable[[ConfigService], Config],
+            _confservice: Optional[ConfigService] = None
+    ):
+        self._timestamp = -1
+        self._confservice = _confservice or confservice
+        self._configpath = configpath
+        self.__update()
+
+    def __update(self) -> Config:
+        if confservice._timestamp > self._timestamp:
+            if isinstance(self._configpath, str):
+                self._conf = self._confservice.conf
+                for attr in self._configpath.split('.'):
+                    self._conf = getattr(self._conf, attr)
+            else:
+                self._conf = self._configpath(self._confservice)
+        return self._conf
+
+    def __getattr__(self, name):
+        return getattr(self.__update(), name)

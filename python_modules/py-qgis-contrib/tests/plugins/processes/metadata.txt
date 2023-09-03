@@ -1,0 +1,11 @@
+[general]
+name=Tests
+qgisMinimumVersion=3.20
+;qgisMaximumVersion=
+description=Test plugin
+version=1.0.0
+author=
+email=
+
+hasProcessingProvider=yes
+

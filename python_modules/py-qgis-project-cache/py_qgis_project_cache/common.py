@@ -12,13 +12,13 @@
 import urllib.parse
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing_extensions import (
     NewType,
     Union,
     Generator,
     Optional,
-    NamedTuple,
     Dict
 )
 
@@ -33,7 +33,8 @@ Url = NewType('Url', urllib.parse.SplitResult)
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
 
-class ProjectMetadata(NamedTuple):
+@dataclass(frozen=True)
+class ProjectMetadata:
     uri: str
     name: str
     scheme: str
@@ -41,7 +42,7 @@ class ProjectMetadata(NamedTuple):
     last_modified: int
 
     def _to_json_serializable(self) -> Dict:
-        d = self._asdict()
+        d = asdict(self)
         d.update(
             last_modified=datetime.fromtimestamp(
                 self.last_modified

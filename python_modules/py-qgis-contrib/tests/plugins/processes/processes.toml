@@ -1,0 +1,8 @@
+
+discard = [
+    "unwanted_provider"
+]
+
+[styles]
+'processing_test:ultimate_question' = { OUTPUT = "qml/dummy.qml" }
+

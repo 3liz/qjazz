@@ -3,3 +3,4 @@ ABOUT_CACHE.md
 .ipython
 
 *.egg-info
+/.activate

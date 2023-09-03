@@ -14,6 +14,8 @@ classifiers = [
 dependencies = [
     "py-qgis-contrib==1.0.0.dev0",
     "py-qgis-project-cache==1.0.0.dev0",
+    "click",
+    "grpcio",
 ]
 version = "1.0.0.dev0"
 

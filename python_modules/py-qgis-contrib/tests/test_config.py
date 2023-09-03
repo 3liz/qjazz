@@ -49,3 +49,16 @@ def test_config_udpate():
 
     test = confservice.conf.test
     assert test.foo == 2
+
+
+def test_config_proxy():
+    """ Test configuration proxy
+    """
+    confservice.validate({})
+
+    proxy = config.ConfigProxy('test1.sub', _confservice=confservice)
+    assert proxy.bar == "Hello"
+
+    confservice.validate({'test1': {'sub':  {"bar": "World"}}})
+    # Check that new config is reflected
+    assert proxy.bar == "World"

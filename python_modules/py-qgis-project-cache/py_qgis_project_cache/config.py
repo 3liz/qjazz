@@ -40,7 +40,6 @@ def _qgis_env_flag_validator(name: str) -> Callable[[str, ValidationInfo], str]:
     return validator
 
 
-@config.section("projects")
 class ProjectsConfig(config.Config):
     strict_check: bool = Field(
         default=True,

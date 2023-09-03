@@ -6,11 +6,10 @@
 """
 import os
 import sys
-import logging
 
 from typing import Dict
 
-from . import logger
+from .. import logger
 
 
 def setup_qgis_paths(prefix: str) -> None:
@@ -26,6 +25,11 @@ def setup_qgis_paths(prefix: str) -> None:
 # We need to keep a reference instance of the qgis_application object
 # and not make this object garbage collected
 qgis_application = None
+
+
+def qgis_initialized():
+    global qgis_application
+    return qgis_application is not None
 
 
 def exit_qgis_application():
@@ -99,12 +103,7 @@ def setup_qgis_application(
     # Install logger hook
     install_logger_hook(logprefix, )
 
-    print_qgis_version()
-
-    if logger.isEnabledFor(logger.LogLevel.DEBUG):
-        logger.debug(qgis_application.showSettings())
-
-    logger.info(f"{logprefix} Qgis application configured......")
+    logger.info("Qgis application configured......")
 
     return qgis_application
 
@@ -147,19 +146,12 @@ def init_qgis_application():
     optpath = os.getenv('QGIS_OPTIONS_PATH')
     if optpath:
         # Log qgis settings
-        load_qgis_settings(optpath, logger)
+        load_qgis_settings(optpath)
 
 
-def init_qgis_processing(**kwargs) -> None:
+def init_qgis_processing() -> None:
     """ Initialize processing
     """
-    # We need to fully initialize Qgis
-    #
-    # This is not needed when initializing
-    # A QgsServer instance because the initialization
-    # processs handle things under the hood
-    init_qgis_application(**kwargs)
-
     from processing.core.Processing import Processing
     from qgis.analysis import QgsNativeAlgorithms
     from qgis.core import QgsApplication
@@ -167,10 +159,7 @@ def init_qgis_processing(**kwargs) -> None:
     # Update the network configuration
     # XXX: At the time the settings are read, the networkmanager is already
     # initialized, but with the wrong settings
-    set_proxy_configuration(logger)
-
-    if logger.isEnabledFor(logging.DEBUG):
-        print(qgis_application.showSettings())
+    set_proxy_configuration()
 
     QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
     Processing.initialize()
@@ -187,12 +176,12 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':  # noqa: F821
     # Update the network configuration
     # XXX: At the time the settings are read, the neworkmanager is already
     # initialized, but with the wrong settings
-    set_proxy_configuration(logger)
+    set_proxy_configuration()
 
     return server
 
 
-def load_qgis_settings(optpath, logger):
+def load_qgis_settings(optpath):
     """ Load qgis settings
     """
     from qgis.PyQt.QtCore import QSettings
@@ -245,3 +234,11 @@ def print_qgis_version(verbose: bool = False) -> None:
         init_qgis_application()
         print(qgis_application.showSettings())
         sys.exit(1)
+
+
+def show_qgis_settings() -> str:
+    global qgis_application
+    if qgis_application:
+        return qgis_application.showSettings()
+    else:
+        return ""
