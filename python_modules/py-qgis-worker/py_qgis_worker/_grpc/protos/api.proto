@@ -6,6 +6,7 @@ package api;
 
 service QgisWorker {
     rpc Ping (PingRequest) returns (PingReply) {}
+    rpc ExecuteQgisRequest (QgisRequest) returns (stream QgisResponseChunk)
 }
 
 message PingRequest {
@@ -14,4 +15,10 @@ message PingRequest {
 
 message PingReply {
     string echo = 1;
+}
+
+message QgisResponseChunk {
+    int32 return_code = 1,
+    map<string,string> headers = 2,
+    bytes chunk = 3;
 }

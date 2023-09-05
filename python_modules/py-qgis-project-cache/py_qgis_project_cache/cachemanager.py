@@ -41,7 +41,7 @@
 """
 import traceback
 
-from typing import Tuple, Optional, Generator
+from typing import Tuple, Optional, Iterator
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
@@ -83,11 +83,21 @@ class CatalogEntry:
 
 
 class CheckoutStatus(Enum):
+    """ Returned as checkout result from
+        CacheManager.
+        Gives information about the status
+        of the required resource.
+    """
     UNCHANGED = 0
     NEEDUPDATE = 1
     REMOVED = 2
     NOTFOUND = 3
     NEW = 4
+    # Not returned as cache status by the CacheManager
+    # but may by used to be aware that a resource
+    # has been updated at request time (i.e update from
+    # NEEDUPDATE status)
+    UPDATED = 5
 
 
 @componentmanager.register_factory(CACHE_MANAGER_CONTRACTID)
@@ -149,7 +159,7 @@ class CacheManager:
             f'@3liz.org/cache/protocol-handler;1?scheme={scheme}'
         )
 
-    def collect_projects(self) -> Generator[ProjectMetadata, None, None]:
+    def collect_projects(self) -> Iterator[ProjectMetadata]:
         """ Collect projects metadata from search paths
 
             Yield found entries
@@ -247,7 +257,7 @@ class CacheManager:
                 logger.debug("Removing entry '%s'", md.uri)
                 return self._catalog.pop(md.uri)
 
-    def update_catalog(self) -> Generator[CatalogEntry, None, None]:
+    def update_catalog(self) -> Iterator[CatalogEntry]:
         """ Update all entries in catalog
 
             Yield updated catalog entries
@@ -263,11 +273,18 @@ class CacheManager:
                 yield e
 
     def clear(self) -> None:
-        """ Clear all projects 
+        """ Clear all projects
         """
         self._catalog.clear()
 
     def iter(self) -> Iterator[CatalogEntry]:
-        """ Iterate over all catalog entry 
+        """ Iterate over all catalog entries
         """
         return self._catalog.values()
+
+    @property
+    def size(self) -> int:
+        """ Return the number of entries in
+            the catalog
+        """
+        return len(self._catalog)

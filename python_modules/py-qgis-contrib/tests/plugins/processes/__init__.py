@@ -1,5 +1,5 @@
 from qgis.core import QgsApplication
-from .TestAlgorithmProvider import  TestAlgorithmProvider
+from .TestAlgorithmProvider import TestAlgorithmProvider
 
 
 def classFactory(_iface):

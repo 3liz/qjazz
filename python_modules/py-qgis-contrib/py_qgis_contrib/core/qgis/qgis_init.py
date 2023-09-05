@@ -120,7 +120,7 @@ def install_logger_hook(logprefix: str) -> None:
             logger.warning(arg)
         elif level == Qgis.Critical:
             logger.error(arg)
-        elif os.getenv("QGIS_LOG_DEBUG_VERBOSE", "0") == "1":
+        else:
             # Qgis is somehow very noisy
             # log only if verbose is set
             logger.debug(arg)

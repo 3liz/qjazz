@@ -29,7 +29,6 @@ from typing_extensions import (
     Dict,
     List,
     Any,
-    Tuple,
     Annotated,
     assert_never,
 )
@@ -62,7 +61,6 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
     return paths
 
 
-@config.section("qgis_plugins")
 class QgisPluginConfig(config.Config):
     paths: Annotated[
         List[Path],
@@ -164,14 +162,12 @@ class QgisPluginService:
                     ) from None
 
     @property
-    def providers(self) -> Iterator['QgsProcessingProvider']: # noqa F821
+    def providers(self) -> Iterator['QgsProcessingProvider']:  # noqa F821
         """ Return published providers
         """
         from qgis.core import QgsApplication
         reg = QgsApplication.processingRegistry()
         return (reg.providerById(_id) for _id in self._providers)
-
-
 
 
 def find_plugins(path: str, plugin_type: PluginType) -> Iterator[str]:
@@ -218,7 +214,7 @@ def find_plugins(path: str, plugin_type: PluginType) -> Iterator[str]:
                     if not general.getboolean('hasProcessingProvider'):
                         logger.warning(f"'{plugin}' is not a processing plugin")
                         continue
-                case other:  # noqa
+                case _:
                     continue
 
             min_ver = general.get('qgisMinimumVersion')

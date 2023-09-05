@@ -34,7 +34,7 @@ def test_collect_projects(data, config):
                 assert md.storage == 'file'
                 assert md.name == path.stem
                 assert path.is_relative_to(data)
-            case other:  # noqa F841
+            case _:
                 pytest.fail(reason=f"unexpected scheme: '{md.scheme}'")
 
 

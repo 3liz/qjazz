@@ -1,10 +1,6 @@
 """ Test processing Provider
 """
-
-import traceback
-
-from qgis.core import (QgsApplication,
-                       QgsProcessingProvider)
+from qgis.core import QgsProcessingProvider
 
 from .TestUltimateQuestion import TestUltimateQuestion
 
@@ -22,9 +18,8 @@ class TestAlgorithmProvider(QgsProcessingProvider):
 
     def loadAlgorithms(self):
         algs = (
-             TestUltimateQuestion(),
+            TestUltimateQuestion(),
         )
 
         for a in algs:
             self.addAlgorithm(a)
-

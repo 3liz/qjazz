@@ -5,6 +5,7 @@ from .qgis_init import (  # noqa
     print_qgis_version,
     qgis_initialized,
     show_qgis_settings,
+    exit_qgis_application,
 )
 
 from .qgis_plugins import (  # noqa

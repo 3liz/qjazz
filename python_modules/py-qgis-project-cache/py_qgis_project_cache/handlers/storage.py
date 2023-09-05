@@ -53,6 +53,19 @@ def resolver_for(name: str):
 #
 # Default storage uri resolvers
 #
+# A resolver normalize an input url
+# so that it can be used by the
+# corresponding project's storage
+#
+# Usually, it takes the path
+# of the url as the project's name
+# and set it to the appropriate
+# query argument
+#
+# This is unfortunate that Qgis
+# does not have some canonical
+# form for storage uri
+#
 
 
 @resolver_for('postgresql')

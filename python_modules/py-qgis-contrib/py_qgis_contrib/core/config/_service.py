@@ -34,7 +34,7 @@ from pathlib import Path
 from pydantic import create_model, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Optional, Dict, Callable
+from typing_extensions import Optional, Dict
 
 from .. import componentmanager
 
@@ -177,23 +177,33 @@ class ConfigProxy:
 
     def __init__(
             self,
-            configpath: str | Callable[[ConfigService], Config],
-            _confservice: Optional[ConfigService] = None
+            configpath: str,
+            _confservice: Optional[ConfigService] = None,
+            _default: Optional[Config] = None,
     ):
         self._timestamp = -1
         self._confservice = _confservice or confservice
         self._configpath = configpath
-        self.__update()
+        if _default:
+            self._conf = _default
+        else:
+            self.__update()
 
     def __update(self) -> Config:
-        if confservice._timestamp > self._timestamp:
-            if isinstance(self._configpath, str):
-                self._conf = self._confservice.conf
-                for attr in self._configpath.split('.'):
-                    self._conf = getattr(self._conf, attr)
-            else:
-                self._conf = self._configpath(self._confservice)
+        if self._confservice._timestamp > self._timestamp:
+            self._conf = self._confservice.conf
+            for attr in self._configpath.split('.'):
+                self._conf = getattr(self._conf, attr)
+
         return self._conf
 
     def __getattr__(self, name):
-        return getattr(self.__update(), name)
+        attr = getattr(self.__update(), name)
+        if isinstance(attr, Config):
+            # Wrap Config instance in ConfigProxy
+            attr = ConfigProxy(
+                self._configpath+'.'+name,
+                self._confservice,
+                default=attr,
+            )
+        return attr

@@ -12,7 +12,7 @@ def test_processing_plugin(plugindir):
     """ Test load processing plugins
     """
     config = QgisPluginConfig(
-        paths = [plugindir]    
+        paths=[plugindir]
     )
 
     s = QgisPluginService(config)

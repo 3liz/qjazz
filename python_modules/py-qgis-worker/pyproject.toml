@@ -14,8 +14,6 @@ classifiers = [
 dependencies = [
     "py-qgis-contrib==1.0.0.dev0",
     "py-qgis-project-cache==1.0.0.dev0",
-    "click",
-    "grpcio",
 ]
 version = "1.0.0.dev0"
 
@@ -28,3 +26,11 @@ include = [
     "py_qgis_worker", 
     "py_qgis_worker.*",
 ]
+
+[tool.autopep8]
+max_line = 120
+in-place = true
+recursive = true
+exclude = "*_pb2.py,*_pb2_grpc.py"
+
+
