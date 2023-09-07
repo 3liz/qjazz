@@ -6,19 +6,55 @@ package api;
 
 service QgisWorker {
     rpc Ping (PingRequest) returns (PingReply) {}
-    rpc ExecuteQgisRequest (QgisRequest) returns (stream QgisResponseChunk)
+    rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
+    rpc ExecuteRequest (GenericRequest) returns (stream ResponseChunk) {}
+    rpc PullProject (PullRequest) returns (CacheInfo) {}
 }
+
 
 message PingRequest {
     string echo = 1;
 }
 
+
 message PingReply {
     string echo = 1;
 }
 
-message QgisResponseChunk {
-    int32 return_code = 1,
-    map<string,string> headers = 2,
-    bytes chunk = 3;
+
+message ResponseChunk {
+    bytes chunk = 1;
+}
+
+message OwsRequest {
+    string service = 1;
+    string request = 2;
+    string target = 3;
+    optional string version = 4;
+    optional string url = 5;
+    optional bool direct = 6;
+    optional string options = 7;
+}
+
+message GenericRequest {
+    string url = 1;
+    string method = 2;
+    optional bytes data = 3;
+    optional string target = 4;
+    optional string version = 5;
+    optional bool direct = 6;
+}
+
+message PullRequest {
+    string uri = 1;
+}
+
+message CacheInfo {
+    string uri = 1;
+    string status = 2;
+    optional string name = 3;
+    optional string storage = 4;
+    optional string last_modified = 5;
+    optional string saved_version = 6;
+    map<string,int64> debug_metadata = 7;
 }

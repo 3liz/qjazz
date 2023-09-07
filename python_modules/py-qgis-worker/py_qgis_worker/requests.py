@@ -95,14 +95,13 @@ class Response(QgsServerResponse):
     def __init__(
             self,
             conn: Connection,
-            co_status: CheckoutStatus,
-            last_modified: int,
-            _process: Optional,
+            co_status: Optional[CheckoutStatus] = None,
+            last_modified: Optional[int] = None,
+            _process: Optional = None,
     ):
         super().__init__()
         self._buffer = QBuffer()
         self._buffer.open(QIODevice.ReadWrite)
-        self._numbytes = 0
         self._finish = False
         self._conn = conn
         self._status_code = 200
@@ -150,7 +149,12 @@ class Response(QgsServerResponse):
         self.flush()
 
     def _send_response(self, data: bytes, chunked: bool = False):
-        self._headers['Last-Modified'] = _to_rfc822(self._last_modified)
+        """ Send response
+        """
+        if self._last_modified:
+            self._headers['Last-Modified'] = _to_rfc822(self._last_modified)
+
+        # Return reply in Envelop
         _m.send_reply(
             self._conn,
             _m.RequestReply(

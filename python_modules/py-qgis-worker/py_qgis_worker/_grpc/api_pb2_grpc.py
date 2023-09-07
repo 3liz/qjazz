@@ -19,12 +19,45 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.PingRequest.SerializeToString,
                 response_deserializer=api__pb2.PingReply.FromString,
                 )
+        self.ExecuteOwsRequest = channel.unary_stream(
+                '/api.QgisWorker/ExecuteOwsRequest',
+                request_serializer=api__pb2.OwsRequest.SerializeToString,
+                response_deserializer=api__pb2.ResponseChunk.FromString,
+                )
+        self.ExecuteRequest = channel.unary_stream(
+                '/api.QgisWorker/ExecuteRequest',
+                request_serializer=api__pb2.GenericRequest.SerializeToString,
+                response_deserializer=api__pb2.ResponseChunk.FromString,
+                )
+        self.PullProject = channel.unary_unary(
+                '/api.QgisWorker/PullProject',
+                request_serializer=api__pb2.PullRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
 
 
 class QgisWorkerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteOwsRequest(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteRequest(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PullProject(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -37,6 +70,21 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     servicer.Ping,
                     request_deserializer=api__pb2.PingRequest.FromString,
                     response_serializer=api__pb2.PingReply.SerializeToString,
+            ),
+            'ExecuteOwsRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteOwsRequest,
+                    request_deserializer=api__pb2.OwsRequest.FromString,
+                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
+            ),
+            'ExecuteRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteRequest,
+                    request_deserializer=api__pb2.GenericRequest.FromString,
+                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
+            ),
+            'PullProject': grpc.unary_unary_rpc_method_handler(
+                    servicer.PullProject,
+                    request_deserializer=api__pb2.PullRequest.FromString,
+                    response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -62,5 +110,56 @@ class QgisWorker(object):
         return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/Ping',
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteOwsRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ExecuteOwsRequest',
+            api__pb2.OwsRequest.SerializeToString,
+            api__pb2.ResponseChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ExecuteRequest',
+            api__pb2.GenericRequest.SerializeToString,
+            api__pb2.ResponseChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def PullProject(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/PullProject',
+            api__pb2.PullRequest.SerializeToString,
+            api__pb2.CacheInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

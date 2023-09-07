@@ -41,6 +41,12 @@
 """
 import traceback
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
+from time import time
 from typing import Tuple, Optional, Iterator
 from pathlib import Path
 from enum import Enum
@@ -57,7 +63,7 @@ from py_qgis_contrib.core import (
 from .common import Url, IProtocolHandler
 from .handlers import init_storage_handlers
 from .storage import ProjectMetadata, StrictCheckingFailure
-from .config import ProjectsConfig
+from .config import ProjectsConfig, validate_url
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
@@ -73,9 +79,17 @@ class UnreadableResource(Exception):
 
 
 @dataclass(frozen=True)
+class DebugMetadata:
+    load_memory: int
+    load_time: int
+
+
+@dataclass(frozen=True)
 class CatalogEntry:
     md: ProjectMetadata
     project: QgsProject
+
+    debug_meta: DebugMetadata
 
     # Delegate to ProjectMetadata
     def __getattr__(self, attr):
@@ -120,6 +134,8 @@ class CacheManager:
     def __init__(self, config: ProjectsConfig) -> None:
         self._config = config
         self._catalog = {}
+        # For debug metadata
+        self._process = psutil.Process() if psutil else None
 
     @property
     def conf(self) -> str:
@@ -148,9 +164,9 @@ class CacheManager:
 
         if allow_direct or self.conf.allow_direct_path_resolution:
             # Use direct resolution based on scheme
-            return url
+            return validate_url(str(path))
         else:
-            raise ResourceNotAllowed(path)
+            raise ResourceNotAllowed(str(path))
 
     def get_protocol_handler(self, scheme: str) -> IProtocolHandler:
         """ Find protocol handler for the given scheme
@@ -240,7 +256,7 @@ class CacheManager:
             case CheckoutStatus.NEW:
                 logger.debug("Adding new entry '%s'", md.uri)
                 handler = handler or self.get_protocol_handler(md.scheme)
-                entry = CatalogEntry(md, handler.project(md, self.conf))
+                entry = self._new_catalog_entry(md, handler)
                 self._catalog[md.uri] = entry
                 return entry
             case CheckoutStatus.NEEDUPDATE:
@@ -248,7 +264,7 @@ class CacheManager:
                 if md.modified_time > entry.md.modified_time:
                     logger.debug("Updating entry '%s'", md.uri)
                     handler = handler or self.get_protocol_handler(md.scheme)
-                    entry = CatalogEntry(md, handler.project(md, self.conf))
+                    entry = self._new_catalog_entry(md, handler)
                     self._catalog[md.uri] = entry
                 return entry
             case CheckoutStatus.UNCHANGED:
@@ -256,6 +272,27 @@ class CacheManager:
             case CheckoutStatus.REMOVED:
                 logger.debug("Removing entry '%s'", md.uri)
                 return self._catalog.pop(md.uri)
+
+    def _new_catalog_entry(
+        self,
+        md: ProjectMetadata,
+        handler: IProtocolHandler
+    ) -> CatalogEntry:
+        """ Create a new catalog entry
+        """
+        s_time = time()
+        s_mem = self._process.memory_info().rss if self._process else None
+
+        project = handler.project(md, self.conf)
+
+        return CatalogEntry(
+            md,
+            project,
+            debug_meta=DebugMetadata(
+                load_memory=self._process.memory_info().rss - s_mem if s_mem else None,
+                load_time=int((time() - s_time)*1000.)
+            ),
+        )
 
     def update_catalog(self) -> Iterator[CatalogEntry]:
         """ Update all entries in catalog

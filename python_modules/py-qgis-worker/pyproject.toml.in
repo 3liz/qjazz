@@ -14,6 +14,7 @@ classifiers = [
 dependencies = [
     "py-qgis-contrib==${PIN_VERSION}",
     "py-qgis-project-cache==${PIN_VERSION}",
+    "click",
 ]
 version = "${PIN_VERSION}"
 
@@ -31,9 +32,4 @@ include = [
 max_line = 120
 in-place = true
 recursive = true
-exclude = [
-    "*_pb2.py",
-    "*_pb2_grpc.py",
-]
-
-
+exclude = "*_pb2.py, *_pb2_grpc.py"

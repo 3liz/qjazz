@@ -12,14 +12,12 @@
 import urllib.parse
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
-from datetime import datetime
+from dataclasses import dataclass
 from typing_extensions import (
     NewType,
     Union,
     Generator,
     Optional,
-    Dict
 )
 
 from qgis.core import QgsProject
@@ -40,15 +38,6 @@ class ProjectMetadata:
     scheme: str
     storage: Optional[str]
     last_modified: int
-
-    def _to_json_serializable(self) -> Dict:
-        d = asdict(self)
-        d.update(
-            last_modified=datetime.fromtimestamp(
-                self.last_modified
-            ).astimezone().isoformat()+'Z'
-        )
-        return d
 
 
 def get_cacheservice():

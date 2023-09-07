@@ -25,6 +25,8 @@ RREQ_FORMAT = REQ_LOG_TEMPLATE
 
 
 class LogLevel(Enum):
+    NOTSET = logging.NOTSET
+    TRACE = logging.DEBUG-1
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     REQ = logging.INFO+1
@@ -183,6 +185,10 @@ info = LOGGER.info
 error = LOGGER.error
 critical = LOGGER.critical
 debug = LOGGER.debug
+
+
+def trace(msg, *args, **kwargs):
+    LOGGER.log(LogLevel.TRACE.value, msg, *args, **kwargs)
 
 
 def isEnabledFor(level: LogLevel):

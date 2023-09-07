@@ -4,6 +4,8 @@
 import os
 import traceback
 
+from urllib.parse import urlunsplit
+
 try:
     import psutil
 except ImportError:
@@ -20,6 +22,7 @@ from multiprocessing.connection import Connection
 from qgis.server import (
     QgsServer,
     QgsServerRequest,
+    QgsServerException,
 )
 
 from py_qgis_contrib.core import logger
@@ -37,7 +40,7 @@ from py_qgis_project_cache import (
 
 from . import messages as _m
 from .config import WorkerConfig
-from .requests import Request, Response
+from .requests import Request, Response, _to_qgis_method
 
 Co = CheckoutStatus
 
@@ -99,7 +102,9 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
     _process = psutil.Process() if psutil else None
 
     while True:
+        logger.debug("Waiting for messages")
         msg = conn.recv()
+        logger.debug("Received message: %s", msg.msg_id.name)
         try:
             match msg.msg_id:
                 case _m.MsgType.OWSREQUEST:
@@ -140,9 +145,11 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)
 
+
 #
 # Server Request
 #
+QGIS_MISSING_PROJECT_ERROR_MSG = "No project defined"
 
 
 def handle_ows_request(
@@ -155,17 +162,26 @@ def handle_ows_request(
 ):
     """ Handle OWS request
     """
+    if not msg.target:
+        exception = QgsServerException(QGIS_MISSING_PROJECT_ERROR_MSG, 400)
+        response = Response(conn)
+        response.write(exception)
+        response.finish()
+        return
+
     # Rebuild URL for Qgis server
     url = msg.url + f"?SERVICE={msg.service}&REQUEST={msg.request}"
+    if msg.version:
+        url += f"&VERSION={msg.version}"
     if msg.options:
-        url += '&'
-        url += '&'.join(f"{k}={v}" for k, v in msg.options.items())
+        url += f"&{msg.options}"
 
     _handle_generic_request(
         url,
         msg.target,
         msg.direct,
         None,
+        QgsServerRequest.GetMethod,
         msg.headers,
         conn,
         server,
@@ -183,12 +199,19 @@ def handle_generic_request(
     config: WorkerConfig,
     _process: Optional,
 ):
+    try:
+        method = _to_qgis_method(msg.method)
+    except ValueError:
+        _m.send_reply(conn, "HTTP Method not supported", 405)
+        return
+
     _handle_generic_request(
         msg.url,
         msg.target,
         msg.direct,
         msg.data,
         msg.headers,
+        method,
         conn,
         server,
         cm,
@@ -199,9 +222,10 @@ def handle_generic_request(
 
 def _handle_generic_request(
     url: str,
-    target: str,
+    target: Optional[str],
     allow_direct: str,
     data: Optional[bytes],
+    method: QgsServerRequest.Method,
     headers: Dict[str, str],
     conn: Connection,
     server: QgsServer,
@@ -211,40 +235,39 @@ def _handle_generic_request(
 ):
     """ Handle generic Qgis request
     """
-    co_status, entry = request_project_from_cache(
-        conn,
-        cm,
-        config,
-        target=target,
-        allow_direct=allow_direct,
-    )
-
-    if co_status in (Co.UPDATED, Co.REMOVED):
-        # Cleanup cached files
-        server.serverInterface().removeConfigCacheEntry(
-            entry.project.fileName()
+    if target:
+        co_status, entry = request_project_from_cache(
+            conn,
+            cm,
+            config,
+            target=target,
+            allow_direct=allow_direct,
         )
 
-    if entry and co_status != Co.REMOVED:
+        if co_status in (Co.UPDATED, Co.REMOVED):
+            # Cleanup cached files
+            server.serverInterface().removeConfigCacheEntry(
+                entry.project.fileName()
+            )
+
+        if not entry or co_status == Co.REMOVED:
+            return
+
         project = entry.project
-        request = Request(
-            url,
-            QgsServerRequest.GetMethod,
-            headers,
-            data=data,
-        )
         response = Response(
             conn,
             co_status,
             last_modified=entry.last_modified,
             _process=_process,
         )
-
         # See https://github.com/qgis/QGIS/pull/9773
         server.serverInterface().setConfigFilePath(project.fileName())
-        server.handleRequest(request, response, project=project)
+    else:
+        project = None
+        response = Response(conn, _process=_process)
 
-    return co_status
+    request = Request(url, method, headers, data=data)
+    server.handleRequest(request, response, project=project)
 
 
 def request_project_from_cache(
@@ -258,8 +281,8 @@ def request_project_from_cache(
     """
     try:
         entry = None
-        target = cm.resolve_path(target, allow_direct)
-        md, co_status = cm.checkout(target)
+        url = cm.resolve_path(target, allow_direct)
+        md, co_status = cm.checkout(url)
         match co_status:
             case Co.NEEDUPDATE:
                 if config.reload_outdated_project_on_request:
@@ -276,20 +299,22 @@ def request_project_from_cache(
                             "Cannot add NEW project '%s': Maximum projects reached",
                             target,
                         )
-                        _m.send_reply(conn, None, 403)
+                        _m.send_reply(conn, "Max object reached on server", 403)
                     else:
                         entry = cm.update(md, co_status)
                 else:
-                    logger.error("Request for loading NEW project '%s'", target)
-                    _m.send_reply(conn, None, 403)
+                    logger.error("Request for loading NEW project '%s'", md.uri)
+                    _m.send_reply(conn, target, 403)
             case Co.REMOVED:
                 # Do not serve a removed project
                 # Since layer's data may not exists
                 # anymore
-                _m.send_reply(conn, None, 410)
+                logger.warning("Requested removed project: %s", md.uri)
+                _m.send_reply(conn, target, 410)
                 entry = md
             case Co.NOTFOUND:
-                _m.send_reply(conn, None, 404)
+                logger.error("Requested project not found: %s", urlunsplit(url))
+                _m.send_reply(conn, target, 404)
             case _ as unreachable:
                 assert_never(unreachable)
     except CacheManager.ResourceNotAllowed:
@@ -357,14 +382,17 @@ def pull_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
         case Co.NEW | Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
             e = cm.update(md, status)
             return _m.CacheInfo(
-                url=md.uri,
+                uri=md.uri,
+                status=status,
+                name=md.name,
+                storage=md.storage,
                 last_modified=md.last_modified,
                 saved_version=e.project.lastSaveVersion().text(),
-                status=status,
+                debug_metadata=e.debug_meta.__dict__.copy(),
             )
         case Co.NOTFOUND:
             return _m.CacheInfo(
-                url=md.uri,
+                uri=md.uri,
                 status=status,
             )
         case _ as unreachable:

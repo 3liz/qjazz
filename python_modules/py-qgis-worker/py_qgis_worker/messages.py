@@ -4,6 +4,8 @@
 import asyncio
 import multiprocessing as mp
 
+from multiprocessing.connection import Connection
+
 from enum import Enum, auto
 from typing_extensions import (
     ClassVar,
@@ -67,8 +69,8 @@ class HTTPMethod(Enum):
 class RequestReply:
     status_code: int
     data: bytes
-    checkout_status: CheckoutStatus
     chunked: bool
+    checkout_status: Optional[CheckoutStatus]
     headers: Dict = field(default_factory=dict)
 
 
@@ -87,8 +89,9 @@ class OWSRequest:
     request: str
     target: str
     url: str
+    version: Optional[str] = None
     direct: bool = False
-    options: Dict[str, str] = field(default_factory=dict)
+    options: Optional[str] = None
     headers: Dict = field(default_factory=dict)
 
 
@@ -96,10 +99,10 @@ class OWSRequest:
 class Request:
     msg_id: ClassVar[MsgType] = MsgType.REQUEST
     return_type: ClassVar[Type] = RequestReply
-    data: bytes
-    target: Optional[str]
     url: str
     method: HTTPMethod
+    data: bytes
+    target: Optional[str]
     direct: bool = False
     headers: Dict = field(default_factory=dict)
 
@@ -120,10 +123,13 @@ class Quit:
 
 
 class CacheInfo(BaseModel, frozen=True):
-    url: str
-    last_modified: Optional[int]
-    saved_version: Optional[int]
+    uri: str
     status: CheckoutStatus
+    name: str = ""
+    storage: str = ""
+    last_modified: Optional[float] = None
+    saved_version: Optional[str] = None
+    debug_metadata: Dict[str, int] = {}  # Safe with pydantic
 
 
 # PULL_PROJECT
@@ -178,14 +184,14 @@ class Pipe:
     """ Wrapper for Connection object that allow reading asynchronously
     """
     @classmethod
-    def new(cls) -> Tuple[Self, mp.connection.Connection]:
+    def new(cls) -> Tuple[Self, Connection]:
         parent, child = mp.Pipe(duplex=True)
         return cls(parent), child
 
-    def __init__(self, conn: mp.connection.Connection):
+    def __init__(self, conn: Connection):
         self._conn = conn
         self._data_available = asyncio.Event()
-        asyncio.get_event_loop().add_reader(self._conn.fileno(), self._data_available.set)
+        asyncio.get_running_loop().add_reader(self._conn.fileno(), self._data_available.set)
 
     def write(self, obj):
         self._conn.send(obj)
