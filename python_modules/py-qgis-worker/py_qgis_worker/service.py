@@ -16,7 +16,6 @@ from py_qgis_contrib.core import logger
 
 from . import messages as _m
 
-
 #
 # https://grpc.github.io/grpc/python/
 #
@@ -183,39 +182,138 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             await _abort_on_error(context, 500, str(err))
 
     #
-    # Pull project
+    # Checkout project
     #
-    async def PullProject(
+    async def CheckoutProject(
         self,
-        request: api_pb2.PullRequest,
+        request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
 
         try:
             status, resp = await self._worker.io.send_message(
-                _m.PullProject(uri=request.uri)
+                _m.CheckoutProject(uri=request.uri, pull=request.pull)
             )
 
             if status != 200:
                 await _abort_on_fail(context, status)
 
-            if resp.last_modified:
-                last_modified = _to_iso8601(datetime.fromtimestamp(resp.last_modified))
-            else:
-                last_modified = ""
-
-            return api_pb2.CacheInfo(
-                uri=resp.uri,
-                status=resp.status.name,
-                name=resp.name,
-                storage=resp.storage,
-                last_modified=last_modified,
-                saved_version=resp.saved_version or "",
-                debug_metadata=resp.debug_metadata,
-            )
+            return _new_cache_info(resp)
 
         except ExecError:
             await _abort_on_error(context, status, resp)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
+
+    #
+    # Drop project
+    #
+    async def DropProject(
+        self,
+        request: api_pb2.CheckoutRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.CacheInfo:
+
+        try:
+            status, resp = await self._worker.io.send_message(
+                _m.DropProject(uri=request.uri)
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            return _new_cache_info(resp)
+
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+    #
+    # Cache list
+    #
+    async def ListCache(
+        self,
+        request: api_pb2.ListRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.CacheInfo, None, None]:
+
+        try:
+            try:
+                status_filter = _m.CheckoutStatus[request.status_filter]
+            except KeyError:
+                status_filter = ""
+
+            status, resp = await self._worker.io.send_message(
+                _m.ListCache(status_filter)
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            # resp is the number of elements in cache
+            await context.send_initial_metadata([("x-reply-header-cache-count", str(resp))])
+            if resp > 0:
+                status, item = await self._worker.io.read_message()
+                while status == 206:
+                    yield _new_cache_info(item)
+                    status, item = await self._worker.io.read_message()
+                # Incomplete transmission ?
+                if status != 200:
+                    await _abort_on_fail(context, status)
+
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+    #
+    # Clear cache
+    #
+    async def ClearCache(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.Empty:
+
+        try:
+            status, resp = await self._worker.io.send_message(
+                _m.ClearCache()
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            return api_pb2.Empty()
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+
+#
+#
+# Build a cache info from response
+#
+
+
+def _new_cache_info(resp) -> api_pb2.CacheInfo:
+    if resp.last_modified:
+        last_modified = _to_iso8601(datetime.fromtimestamp(resp.last_modified))
+    else:
+        last_modified = ""
+
+    return api_pb2.CacheInfo(
+        uri=resp.uri,
+        status=resp.status.name,
+        in_cache=resp.in_cache,
+        name=resp.name,
+        storage=resp.storage,
+        last_modified=last_modified,
+        saved_version=resp.saved_version or "",
+        debug_metadata=resp.debug_metadata,
+    )

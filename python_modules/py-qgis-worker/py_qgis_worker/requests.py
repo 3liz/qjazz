@@ -113,14 +113,14 @@ class Response(QgsServerResponse):
         self._last_modified = last_modified
 
         if self._process:
-            self._memory = self._process.memory_info().rss
+            self._memory = self._process.memory_info().vms
 
     def _send_report(self):
         """ Send a request report
             after the last chunk of data
         """
         if self._process:
-            memory = self._process.memory_info().rss - self._memory
+            memory = self._process.memory_info().vms - self._memory
         else:
             memory = None
 

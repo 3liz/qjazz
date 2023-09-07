@@ -83,6 +83,8 @@ def ows_request(
     output: Optional[str],
     url: Optional[str],
 ):
+    """ Send OWS request
+    """
     with connect() as stub:
         stream = stub.ExecuteOwsRequest(
             api_pb2.OwsRequest(
@@ -102,18 +104,59 @@ def ows_request(
             print(chunk, file=fp)
 
 
-@cli_commands.command("pull")
+@cli_commands.command("checkout")
 @click.argument('project', nargs=1)
-@click.option("--headers", "-H", is_flag=True, help="Show headers")
-def pull_project(project: str, headers: bool):
+@click.option('--pull', is_flag=True, help="Load project in cache")
+def pull_project(project: str, pull: bool):
     """ Pull PROJECT in cache
     """
     with connect() as stub:
-        resp = stub.PullProject(
-            api_pb2.PullRequest(uri=project)
+        resp = stub.CheckoutProject(
+            api_pb2.CheckoutRequest(uri=project, pull=pull)
         )
 
         print(MessageToJson(resp))
+
+
+@cli_commands.command("drop")
+@click.argument('project', nargs=1)
+def drop_project(project: str):
+    """ Drop PROJECT from cache
+    """
+    with connect() as stub:
+        resp = stub.DropProject(
+            api_pb2.DropRequest(uri=project)
+        )
+
+        print(MessageToJson(resp))
+
+
+@cli_commands.command("clear")
+def clear_cache():
+    """ Clear cache
+    """
+    with connect() as stub:
+        stub.ClearCache(
+            api_pb2.Empty()
+        )
+
+
+@cli_commands.command("list")
+@click.option("--status", help="Status filter")
+def list_cache(status: str):
+    """ List projects from cache
+    """
+    with connect() as stub:
+        stream = stub.ListCache(
+            api_pb2.ListRequest(status_filter=status)
+        )
+
+        for k, v in stream.initial_metadata():
+            if k == "x-reply-header-cache-count":
+                print("Cache size:", v, file=sys.stderr)
+
+        for item in stream:
+            print(MessageToJson(item))
 
 
 cli_commands()

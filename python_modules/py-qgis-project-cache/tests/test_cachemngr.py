@@ -7,7 +7,7 @@ from py_qgis_project_cache import (
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,
-    CatalogEntry,
+    CacheEntry,
 )
 
 
@@ -48,8 +48,8 @@ def test_checkout_project(config):
     assert status == CheckoutStatus.NEW
     assert isinstance(md, ProjectMetadata)
 
-    entry = cm.update(md, status)
-    assert isinstance(entry, CatalogEntry)
+    entry, _ = cm.update(md, status)
+    assert isinstance(entry, CacheEntry)
 
     md, status = cm.checkout(url)
     assert status == CheckoutStatus.UNCHANGED

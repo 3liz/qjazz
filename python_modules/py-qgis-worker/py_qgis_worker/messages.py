@@ -13,10 +13,10 @@ from typing_extensions import (
     Any,
     Optional,
     Type,
-    List,
     Self,
     Tuple,
     Literal,
+    IO,
     AsyncIterator,
 )
 from dataclasses import dataclass, field
@@ -42,8 +42,8 @@ class MsgType(Enum):
     QUIT = auto()
     REQUEST = auto()
     OWSREQUEST = auto()
-    PULL_PROJECT = auto()
-    UNLOAD_PROJECT = auto()
+    CHECKOUT_PROJECT = auto()
+    DROP_PROJECT = auto()
     CLEAR_CACHE = auto()
     LIST_CACHE = auto()
     PROJECT_INFO = auto()
@@ -125,6 +125,7 @@ class Quit:
 class CacheInfo(BaseModel, frozen=True):
     uri: str
     status: CheckoutStatus
+    in_cache: bool
     name: str = ""
     storage: str = ""
     last_modified: Optional[float] = None
@@ -134,43 +135,40 @@ class CacheInfo(BaseModel, frozen=True):
 
 # PULL_PROJECT
 
+
 @dataclass(frozen=True)
-class PullProject:
-    msg_id: ClassVar[MsgType] = MsgType.PULL_PROJECT
+class CheckoutProject:
+    msg_id: ClassVar[MsgType] = MsgType.CHECKOUT_PROJECT
+    return_type: ClassVar[Type] = CacheInfo
+    uri: str
+    pull: Optional[bool] = False
+
+
+# DROP_PROJECT
+
+@dataclass(frozen=True)
+class DropProject:
+    msg_id: ClassVar[MsgType] = MsgType.DROP_PROJECT
     return_type: ClassVar[Type] = CacheInfo
     uri: str
 
-# UNLOAD_PROJECT
-
-
-@dataclass(frozen=True)
-class UnloadProject:
-    msg_id: ClassVar[MsgType] = MsgType.UNLOAD_PROJECT
-    return_type: ClassVar[Type] = CacheInfo
-    uri: str
 
 # CLEAR_CACHE
-
 
 @dataclass(frozen=True)
 class ClearCache:
     msg_id: ClassVar[MsgType] = MsgType.CLEAR_CACHE
     return_type: ClassVar[Literal[None]] = None
 
-# LIST_CACHE
-
-
-class CacheList(BaseModel, frozen=True):
-    cached: List[CacheInfo]
-
 
 # LIST_CACHE
+
 @dataclass(frozen=True)
 class ListCache:
     msg_id: ClassVar[MsgType] = MsgType.LIST_CACHE
-    return_type: ClassVar[Type] = CacheList
+    return_type: ClassVar[Type] = IO[CacheInfo]
     # Filter by status
-    status: Optional[CheckoutStatus] = None
+    status_filter: Optional[CheckoutStatus] = None
 
 #
 # Asynchronous Pipe connection reader
@@ -209,6 +207,12 @@ class Pipe:
         await self._poll(timeout)
         return self._conn.recv()
 
+    async def read_message(self, timeout: int = DEFAULT_TIMEOUT) -> Any:
+        """ Read an Envelop message
+        """
+        msg = await self.read(timeout)
+        return msg.status, msg.msg
+
     async def read_bytes(self, timeout: int = DEFAULT_TIMEOUT) -> bytes:
         await self._poll(timeout)
         return self._conn.recv_bytes()
@@ -223,5 +227,4 @@ class Pipe:
         self._conn.send(msg)
         response = await self.read(timeout)
         # Response must be an Envelop object
-        assert isinstance(response, Envelop)
         return response.status, response.msg

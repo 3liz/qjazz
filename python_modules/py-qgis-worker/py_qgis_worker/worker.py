@@ -34,7 +34,7 @@ from py_qgis_contrib.core.qgis import (
 )
 from py_qgis_project_cache import (
     CacheManager,
-    CatalogEntry,
+    CacheEntry,
     CheckoutStatus,
 )
 
@@ -52,11 +52,10 @@ def load_default_project(cm: CacheManager):
     if default_project:
         url = cm.resolve_path(default_project, allow_direct=True)
         md, status = cm.checkout(url)
-        match status:
-            case Co.NEW:
-                cm.update(md, status)
-            case _:
-                logger.error("The project %s does not exists", url)
+        if status == Co.NEW:
+            cm.update(md, status)
+        else:
+            logger.error("The project %s does not exists", url)
 
 
 def setup_server(config: WorkerConfig) -> QgsServer:
@@ -90,7 +89,7 @@ def setup_server(config: WorkerConfig) -> QgsServer:
 def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
     """ Run Qgis server and process incoming requests
     """
-    cm = CacheManager(config.projects)
+    cm = CacheManager(config.projects, server)
 
     # Load plugins
     plugin_s = QgisPluginService(config.plugins)
@@ -126,15 +125,21 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
                 case _m.MsgType.QUIT:
                     _m.send_reply(conn, None)
                     break
-                case _m.MsgType.PULL_PROJECT:
-                    _m.send_reply(conn, pull_project(cm, msg.uri))
-                case _m.MsgType.UNLOAD_PROJECT:
-                    _m.send_reply(conn, unload_project(cm, msg.uri))
+                case _m.MsgType.CHECKOUT_PROJECT:
+                    _m.send_reply(
+                        conn,
+                        checkout_project(cm, msg.uri, msg.pull)
+                    )
+                case _m.MsgType.DROP_PROJECT:
+                    _m.send_reply(
+                        conn,
+                        drop_project(cm, msg.uri)
+                    )
                 case _m.MsgType.CLEAR_CACHE:
                     cm.clear()
                     _m.send_reply(conn, None)
                 case _m.MsgType.LIST_CACHE:
-                    _m.send_reply(conn, list_cache(cm, msg.status))
+                    send_cache_list(conn, cm, msg.status_filter)
                 case _m.MsgType.PROJECT_INFO:
                     _m.send_reply(conn, None, 405)
                 case _m.MsgType.LIST_PLUGINS:
@@ -244,12 +249,6 @@ def _handle_generic_request(
             allow_direct=allow_direct,
         )
 
-        if co_status in (Co.UPDATED, Co.REMOVED):
-            # Cleanup cached files
-            server.serverInterface().removeConfigCacheEntry(
-                entry.project.fileName()
-            )
-
         if not entry or co_status == Co.REMOVED:
             return
 
@@ -276,7 +275,7 @@ def request_project_from_cache(
     config: WorkerConfig,
     target: str,
     allow_direct: bool,
-) -> Tuple[CheckoutStatus, Optional[CatalogEntry]]:
+) -> Tuple[CheckoutStatus, Optional[CacheEntry]]:
     """ Handle project retrieval from cache
     """
     try:
@@ -286,22 +285,21 @@ def request_project_from_cache(
         match co_status:
             case Co.NEEDUPDATE:
                 if config.reload_outdated_project_on_request:
-                    entry = cm.update(md, co_status)
-                    co_status = Co.UPDATED
+                    entry, co_status = cm.update(md, co_status)
                 else:
                     entry = md
             case Co.UNCHANGED:
                 entry = md
             case Co.NEW:
                 if config.load_project_on_request:
-                    if config.max_projects <= cm.size:
+                    if config.max_projects <= len(cm):
                         logger.error(
                             "Cannot add NEW project '%s': Maximum projects reached",
                             target,
                         )
                         _m.send_reply(conn, "Max object reached on server", 403)
                     else:
-                        entry = cm.update(md, co_status)
+                        entry, co_status = cm.update(md, co_status)
                 else:
                     logger.error("Request for loading NEW project '%s'", md.uri)
                     _m.send_reply(conn, target, 403)
@@ -327,26 +325,7 @@ def request_project_from_cache(
 #
 
 
-def list_cache(
-    cm: CacheManager,
-    status: Optional[CheckoutStatus]
-) -> _m.ListCache:
-    """ List cached items
-    """
-    co = (cm.checkout(e) for e in cm.iter())
-    if status is not None:
-        co = filter(lambda n: n[1] == status, co)
-    return [
-        _m.CacheInfo(
-            e.md.uri,
-            last_modified=e.md.last_modified,
-            saved_version=e.project.lastSaveVersion().text(),
-            status=status,
-        ) for (e, status) in co
-    ]
-
-
-def unload_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
+def drop_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
     """ Unload a project from cache
     """
     md, status = cm.checkout(
@@ -355,21 +334,42 @@ def unload_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
 
     match status:
         case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-            e = cm.update(md, Co.REMOVED)
+            e, status = cm.update(md, Co.REMOVED)
             return _m.CacheInfo(
-                url=md.uri,
+                uri=md.uri,
+                in_cache=False,
                 last_modified=md.last_modified,
                 saved_version=e.project.lastSaveVersion().text(),
                 status=status,
             )
         case _:
             return _m.CacheInfo(
-                url=md.uri,
+                uri=md.uri,
+                in_cache=False,
                 status=status,
             )
 
 
-def pull_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
+# Helper for returning CacheInfo from
+# cache entry
+def _cache_info_from_entry(e: CacheEntry, status, in_cache=True) -> _m.CacheInfo:
+    return _m.CacheInfo(
+        uri=e.uri,
+        in_cache=in_cache,
+        status=status,
+        name=e.name,
+        storage=e.storage,
+        last_modified=e.last_modified,
+        saved_version=e.project.lastSaveVersion().text(),
+        debug_metadata=e.debug_meta.__dict__.copy(),
+    )
+
+
+def checkout_project(
+    cm: CacheManager,
+    uri: str,
+    pull: bool,
+) -> _m.CacheInfo:
     """ Load a project into cache
 
         Returns the cache info
@@ -378,22 +378,68 @@ def pull_project(cm: CacheManager, uri: str) -> _m.CacheInfo:
         cm.resolve_path(uri, allow_direct=True)
     )
 
-    match status:
-        case Co.NEW | Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-            e = cm.update(md, status)
-            return _m.CacheInfo(
-                uri=md.uri,
-                status=status,
-                name=md.name,
-                storage=md.storage,
-                last_modified=md.last_modified,
-                saved_version=e.project.lastSaveVersion().text(),
-                debug_metadata=e.debug_meta.__dict__.copy(),
-            )
-        case Co.NOTFOUND:
-            return _m.CacheInfo(
-                uri=md.uri,
-                status=status,
-            )
-        case _ as unreachable:
-            assert_never(unreachable)
+    if not pull:
+        match status:
+            case Co.NEW:
+                return _m.CacheInfo(
+                    uri=md.uri,
+                    in_cache=False,
+                    status=status,
+                    storage=md.storage,
+                    last_modified=md.last_modified
+                )
+            case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
+                return _cache_info_from_entry(md, status)
+            case Co.NOTFOUND:
+                return _m.CacheInfo(
+                    uri=md.uri,
+                    in_cache=False,
+                    status=status,
+                )
+            case _ as unreachable:
+                assert_never(unreachable)
+    else:
+        match status:
+            case Co.NEW:
+                e, status = cm.update(md, status)
+                return _cache_info_from_entry(e, status)
+            case Co.NEEDUPDATE | Co.REMOVED:
+                e, status = cm.update(md, status)
+                return _cache_info_from_entry(e, status, status != Co.REMOVED)
+            case Co.UNCHANGED:
+                return _cache_info_from_entry(md, status)
+            case Co.NOTFOUND:
+                return _m.CacheInfo(
+                    uri=md.uri,
+                    in_cache=False,
+                    status=status,
+                )
+            case _ as unreachable:
+                assert_never(unreachable)
+
+
+#
+# Send cache list
+#
+def send_cache_list(
+    conn: Connection,
+    cm: CacheManager,
+    status_filter: Optional[CheckoutStatus],
+):
+    co = cm.checkout_iter()
+    if status_filter:
+        co = filter(lambda n: n[1] == status_filter, co)
+
+    count = len(cm)
+    _m.send_reply(conn, count, 200)
+    if count:
+        try:
+            # Stream CacheInfo
+            for entry, status in co:
+                _m.send_reply(conn, _cache_info_from_entry(entry, status), 206)
+        except Exception:
+            logger.error("Aborting stream")
+            raise
+        else:
+            # EOT
+            _m.send_reply(conn, None)

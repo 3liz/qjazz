@@ -3,6 +3,7 @@ import asyncio  # noqa
 
 from time import time
 from py_qgis_worker import messages
+from py_qgis_worker import messages as _m
 from py_qgis_worker.process import Worker
 
 pytest_plugins = ('pytest_asyncio',)
@@ -101,3 +102,51 @@ async def test_chunked_response(config):
 
     worker.join(5)
     assert not worker.is_alive()
+
+
+async def test_worker_api(config):
+    """ Test worker api
+    """
+    worker = Worker(config)
+    worker.start()
+
+    # Pull
+    status, resp = await worker.io.send_message(
+        _m.CheckoutProject(uri="/france/france_parts", pull=True)
+    )
+    assert status == 200
+    assert resp.status == _m.CheckoutStatus.NEW
+
+    uri = resp.uri
+
+    # Checkout
+    status, resp = await worker.io.send_message(
+        _m.CheckoutProject(uri="/france/france_parts", pull=False)
+    )
+    assert status == 200
+    assert resp.status == _m.CheckoutStatus.UNCHANGED
+
+    # List
+    status, resp = await worker.io.send_message(
+        _m.ListCache()
+    )
+
+    assert status == 200
+    assert resp == 1
+    status, item = await worker.io.read_message()
+    while status == 206:
+        status, item = await worker.io.read_message()
+    assert status == 200
+
+    status, resp = await worker.io.send_message(
+        _m.DropProject(uri)
+    )
+    assert status == 200
+
+    # Empty List
+    status, resp = await worker.io.send_message(
+        _m.ListCache()
+    )
+
+    assert status == 200
+    assert resp == 0

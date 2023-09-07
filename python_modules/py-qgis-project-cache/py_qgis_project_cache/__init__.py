@@ -5,5 +5,5 @@ from .cachemanager import (  # noqa F401
     ProjectsConfig,
     CheckoutStatus,
     ProjectMetadata,
-    CatalogEntry,
+    CacheEntry,
 )

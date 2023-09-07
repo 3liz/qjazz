@@ -102,7 +102,6 @@ class Plugin:
             return metadata
 
 
-@componentmanager.register_factory(QGIS_PLUGIN_SERVICE_CONTRACTID)
 class QgisPluginService:
     """ Manage qgis plugins
     """
@@ -111,6 +110,9 @@ class QgisPluginService:
         self._config = config
         self._plugins = {}
         self._providers: List[str] = []
+
+    def register_as_service(self):
+        componentmanager.register_service(QGIS_PLUGIN_SERVICE_CONTRACTID, self)
 
     def load_plugins(self, plugin_type: PluginType, interface: Optional['QgsServerInterface']):  # noqa F821
         """ Load all plugins found

@@ -29,9 +29,24 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.GenericRequest.SerializeToString,
                 response_deserializer=api__pb2.ResponseChunk.FromString,
                 )
-        self.PullProject = channel.unary_unary(
-                '/api.QgisWorker/PullProject',
-                request_serializer=api__pb2.PullRequest.SerializeToString,
+        self.CheckoutProject = channel.unary_unary(
+                '/api.QgisWorker/CheckoutProject',
+                request_serializer=api__pb2.CheckoutRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.DropProject = channel.unary_unary(
+                '/api.QgisWorker/DropProject',
+                request_serializer=api__pb2.DropRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.ClearCache = channel.unary_unary(
+                '/api.QgisWorker/ClearCache',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                )
+        self.ListCache = channel.unary_stream(
+                '/api.QgisWorker/ListCache',
+                request_serializer=api__pb2.ListRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
 
@@ -57,7 +72,25 @@ class QgisWorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def PullProject(self, request, context):
+    def CheckoutProject(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DropProject(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ClearCache(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListCache(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -81,9 +114,24 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.GenericRequest.FromString,
                     response_serializer=api__pb2.ResponseChunk.SerializeToString,
             ),
-            'PullProject': grpc.unary_unary_rpc_method_handler(
-                    servicer.PullProject,
-                    request_deserializer=api__pb2.PullRequest.FromString,
+            'CheckoutProject': grpc.unary_unary_rpc_method_handler(
+                    servicer.CheckoutProject,
+                    request_deserializer=api__pb2.CheckoutRequest.FromString,
+                    response_serializer=api__pb2.CacheInfo.SerializeToString,
+            ),
+            'DropProject': grpc.unary_unary_rpc_method_handler(
+                    servicer.DropProject,
+                    request_deserializer=api__pb2.DropRequest.FromString,
+                    response_serializer=api__pb2.CacheInfo.SerializeToString,
+            ),
+            'ClearCache': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClearCache,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.Empty.SerializeToString,
+            ),
+            'ListCache': grpc.unary_stream_rpc_method_handler(
+                    servicer.ListCache,
+                    request_deserializer=api__pb2.ListRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
     }
@@ -148,7 +196,7 @@ class QgisWorker(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def PullProject(request,
+    def CheckoutProject(request,
             target,
             options=(),
             channel_credentials=None,
@@ -158,8 +206,59 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/PullProject',
-            api__pb2.PullRequest.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/CheckoutProject',
+            api__pb2.CheckoutRequest.SerializeToString,
+            api__pb2.CacheInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DropProject(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/DropProject',
+            api__pb2.DropRequest.SerializeToString,
+            api__pb2.CacheInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ClearCache(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/ClearCache',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListCache(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListCache',
+            api__pb2.ListRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

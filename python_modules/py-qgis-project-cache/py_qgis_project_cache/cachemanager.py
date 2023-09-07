@@ -33,7 +33,7 @@
 
     # Update the catalog according to
     # the returned status
-    entry = cm.update(md, status)
+    entry, update_status = cm.update(md, status)
 
     myproject = entry.project
     ```
@@ -47,12 +47,18 @@ except ImportError:
     psutil = None
 
 from time import time
-from typing import Tuple, Optional, Iterator
+from typing_extensions import (
+    Tuple,
+    Optional,
+    Iterator,
+    assert_never,
+)
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
 
 from qgis.core import QgsProject
+from qgis.server import QgsServer
 
 from py_qgis_contrib.core import (
     componentmanager,
@@ -80,12 +86,12 @@ class UnreadableResource(Exception):
 
 @dataclass(frozen=True)
 class DebugMetadata:
-    load_memory: int
-    load_time: int
+    load_memory_bytes: int
+    load_time_ms: int
 
 
 @dataclass(frozen=True)
-class CatalogEntry:
+class CacheEntry:
     md: ProjectMetadata
     project: QgsProject
 
@@ -107,14 +113,11 @@ class CheckoutStatus(Enum):
     REMOVED = 2
     NOTFOUND = 3
     NEW = 4
-    # Not returned as cache status by the CacheManager
-    # but may by used to be aware that a resource
-    # has been updated at request time (i.e update from
-    # NEEDUPDATE status)
+    # Returned by update() if the resource
+    # has been updated on NEEDUPDATE.
     UPDATED = 5
 
 
-@componentmanager.register_factory(CACHE_MANAGER_CONTRACTID)
 class CacheManager:
     """ Handle Qgis project cache
     """
@@ -131,11 +134,19 @@ class CacheManager:
         # Load protocol handlers
         componentmanager.register_entrypoints('py_qgis_contrib_protocol_handler')
 
-    def __init__(self, config: ProjectsConfig) -> None:
+    def __init__(
+            self,
+            config: ProjectsConfig,
+            server: Optional[QgsServer] = None,
+    ) -> None:
         self._config = config
-        self._catalog = {}
+        self._cache = {}
         # For debug metadata
         self._process = psutil.Process() if psutil else None
+        self._server = server
+
+    def register_as_service(self):
+        componentmanager.register_service(CACHE_MANAGER_CONTRACTID, self)
 
     @property
     def conf(self) -> str:
@@ -187,7 +198,7 @@ class CacheManager:
             except Exception:
                 logger.error(traceback.format_exc())
 
-    def checkout(self, url: Url) -> Tuple[Optional[ProjectMetadata | CatalogEntry], CheckoutStatus]:
+    def checkout(self, url: Url) -> Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
         """ Checkout status of project from url
 
             Returned status:
@@ -198,16 +209,16 @@ class CacheManager:
             * `NOTFOUND` : Project does not exist in storage
 
             Possible return values are:
-            - `(CatalogEntry, CheckoutStatus.NEEDUPDATE)`
-            - `(CatalogEntry, CheckoutStatus.UNCHANGED)`
-            - `(CatalogEntry, CheckoutStatus.REMOVED)`
+            - `(CacheEntry, CheckoutStatus.NEEDUPDATE)`
+            - `(CacheEntry, CheckoutStatus.UNCHANGED)`
+            - `(CacheEntry, CheckoutStatus.REMOVED)`
             - `(ProjectMetadata, CheckoutStatus.NEW)`
             - `(None, CheckoutStatus.NOTFOUND)`
         """
         handler = self.get_protocol_handler(url.scheme)
         try:
             md = handler.project_metadata(url)
-            e = self._catalog.get(md.uri)
+            e = self._cache.get(md.uri)
             if e:
                 if md.last_modified > e.md.last_modified:
                     retval = (e, CheckoutStatus.NEEDUPDATE)
@@ -217,7 +228,7 @@ class CacheManager:
                 retval = (md, CheckoutStatus.NEW)
         except FileNotFoundError as err:
             # The argument is the resolved uri
-            e = self._catalog.get(err.args[0])
+            e = self._cache.get(err.args[0])
             if e:
                 retval = (e, CheckoutStatus.REMOVED)
             else:
@@ -225,20 +236,27 @@ class CacheManager:
 
         return retval
 
-    def peek(self, url: Url) -> Optional[CatalogEntry]:
-        """ Peek an entry from the the catalog
-
-            Return None if the entry does not exists
+    def checkout_entry(self, entry: CacheEntry) -> Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
+        """ Checkout from existing entry
         """
-        handler = self.get_protocol_handler(url.scheme)
-        return self._catalog.get(handler.resolve_uri(url))
+        handler = self.get_protocol_handler(entry.scheme)
+        try:
+            md = handler.project_metadata(validate_url(entry.uri))
+            if md.last_modified > entry.md.last_modified:
+                retval = (entry, CheckoutStatus.NEEDUPDATE)
+            else:
+                retval = (entry, CheckoutStatus.UNCHANGED)
+        except FileNotFoundError:
+            retval = (entry, CheckoutStatus.REMOVED)
+
+        return retval
 
     def update(
         self,
         md: ProjectMetadata,
         status: CheckoutStatus,
         handler: Optional[IProtocolHandler] = None,
-    ) -> Optional[CatalogEntry]:
+    ) -> Optional[Tuple[CacheEntry, CheckoutStatus]]:
         """ Update catalog entry according to status
 
             * `NEW`: (re)load existing project
@@ -254,74 +272,116 @@ class CacheManager:
         """
         match status:
             case CheckoutStatus.NEW:
-                logger.debug("Adding new entry '%s'", md.uri)
+                logger.debug("CACHE UPDATE: Adding new entry '%s'", md.uri)
                 handler = handler or self.get_protocol_handler(md.scheme)
-                entry = self._new_catalog_entry(md, handler)
-                self._catalog[md.uri] = entry
-                return entry
+                entry = self._new_cache_entry(md, handler)
+                self._cache[md.uri] = entry
+                return entry, status
             case CheckoutStatus.NEEDUPDATE:
-                entry = self._catalog[md.uri]
-                if md.modified_time > entry.md.modified_time:
-                    logger.debug("Updating entry '%s'", md.uri)
-                    handler = handler or self.get_protocol_handler(md.scheme)
-                    entry = self._new_catalog_entry(md, handler)
-                    self._catalog[md.uri] = entry
-                return entry
-            case CheckoutStatus.UNCHANGED:
-                return self._catalog[md.uri]
+                logger.debug("CACHE UPDATE: Updating entry '%s'", md.uri)
+                handler = handler or self.get_protocol_handler(md.scheme)
+                self._delete_cache_entry(md)
+                # Insert new entry
+                entry = self._new_cache_entry(md, handler)
+                self._cache[md.uri] = entry
+                return entry, CheckoutStatus.UPDATED
+            case CheckoutStatus.UNCHANGED | CheckoutStatus.UPDATED:
+                return self._cache[md.uri], status
             case CheckoutStatus.REMOVED:
-                logger.debug("Removing entry '%s'", md.uri)
-                return self._catalog.pop(md.uri)
+                logger.debug("CACHE UPDATE: Removing entry '%s'", md.uri)
+                entry = self._delete_cache_entry(md)
+                return entry, status
+            case _ as unreachable:
+                assert_never(unreachable)
 
-    def _new_catalog_entry(
+    def _new_cache_entry(
         self,
         md: ProjectMetadata,
         handler: IProtocolHandler
-    ) -> CatalogEntry:
+    ) -> CacheEntry:
         """ Create a new catalog entry
         """
         s_time = time()
-        s_mem = self._process.memory_info().rss if self._process else None
+        s_mem = self._process.memory_info().vms if self._process else None
 
         project = handler.project(md, self.conf)
 
-        return CatalogEntry(
+        # Prevent circular ownership
+        if isinstance(md, CacheEntry):
+            last_used_mem = md.debug_meta.load_memory_bytes
+            md = md.md
+        else:
+            last_used_mem = 0
+        #
+        # This is a best effort to get meaningful information
+        # about how memory is used by a project. So we
+        # keep with last mesured footprint in case of reloading
+        # a project
+        #
+        used_mem = self._process.memory_info().vms - s_mem if s_mem else None
+        if used_mem < last_used_mem:
+            used_mem = last_used_mem
+
+        return CacheEntry(
             md,
             project,
             debug_meta=DebugMetadata(
-                load_memory=self._process.memory_info().rss - s_mem if s_mem else None,
-                load_time=int((time() - s_time)*1000.)
+                load_memory_bytes=used_mem,
+                load_time_ms=int((time() - s_time)*1000.)
             ),
         )
 
-    def update_catalog(self) -> Iterator[CatalogEntry]:
+    def update_cache(self) -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
         """ Update all entries in catalog
 
             Yield updated catalog entries
         """
-        for e in self._catalog.values():
+        for e in self._cache.values():
             handler = self.get_protocol_handler(e.md.scheme)
             try:
                 md = handler.project_metadata(e.md)
-                if md.modified_time > e.md.modified_time:
+                if md.last_modfified > e.md.last_modified:
                     yield self.update(md, CheckoutStatus.NEEDUPDATE, handler)
             except FileNotFoundError:
-                self.update(e.md, CheckoutStatus.REMOVED, handler)
-                yield e
+                yield self.update(e.md, CheckoutStatus.REMOVED, handler)
 
     def clear(self) -> None:
         """ Clear all projects
         """
-        self._catalog.clear()
+        logger.trace("Purging cache")
+        if self._server:
+            iface = self._server.serverInterface()
+            for e in self._cache.values():
+                path = e.project.fileName()
+                logger.trace("Removing server config cache for %s", path)
+                iface.removeConfigCacheEntry(e.project.fileName())
 
-    def iter(self) -> Iterator[CatalogEntry]:
-        """ Iterate over all catalog entries
+        self._cache.clear()
+
+    def iter(self) -> Iterator[CacheEntry]:
+        """ Iterate over all cache entries
         """
-        return self._catalog.values()
+        return self._cache.values()
 
-    @property
-    def size(self) -> int:
+    def checkout_iter(self) -> Iterator[CacheEntry]:
+        """ Iterate and checkout over all cache entries
+        """
+        return (self.checkout_entry(e) for e in self.iter())
+
+    def __len__(self) -> int:
         """ Return the number of entries in
-            the catalog
+            the cache
         """
-        return len(self._catalog)
+        return len(self._cache)
+
+    def _delete_cache_entry(self, md: ProjectMetadata) -> CacheEntry:
+        """ Update the server cache
+        """
+        entry = self._cache.pop(md.uri)
+        if self._server:
+            # Update server cache
+            path = entry.project.fileName()
+            logger.trace("Removing Qgis cache for %s", path)
+            iface = self._server.serverInterface()
+            iface.removeConfigCacheEntry(path)
+        return entry

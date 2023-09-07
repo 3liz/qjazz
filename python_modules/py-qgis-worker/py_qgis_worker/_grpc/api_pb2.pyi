@@ -17,6 +17,10 @@ class PingReply(_message.Message):
     echo: str
     def __init__(self, echo: _Optional[str] = ...) -> None: ...
 
+class Empty(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
+
 class ResponseChunk(_message.Message):
     __slots__ = ["chunk"]
     CHUNK_FIELD_NUMBER: _ClassVar[int]
@@ -57,14 +61,16 @@ class GenericRequest(_message.Message):
     direct: bool
     def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ...) -> None: ...
 
-class PullRequest(_message.Message):
-    __slots__ = ["uri"]
+class CheckoutRequest(_message.Message):
+    __slots__ = ["uri", "pull"]
     URI_FIELD_NUMBER: _ClassVar[int]
+    PULL_FIELD_NUMBER: _ClassVar[int]
     uri: str
-    def __init__(self, uri: _Optional[str] = ...) -> None: ...
+    pull: bool
+    def __init__(self, uri: _Optional[str] = ..., pull: bool = ...) -> None: ...
 
 class CacheInfo(_message.Message):
-    __slots__ = ["uri", "status", "name", "storage", "last_modified", "saved_version", "debug_metadata"]
+    __slots__ = ["uri", "status", "in_cache", "name", "storage", "last_modified", "saved_version", "debug_metadata"]
     class DebugMetadataEntry(_message.Message):
         __slots__ = ["key", "value"]
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -74,6 +80,7 @@ class CacheInfo(_message.Message):
         def __init__(self, key: _Optional[str] = ..., value: _Optional[int] = ...) -> None: ...
     URI_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
+    IN_CACHE_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     STORAGE_FIELD_NUMBER: _ClassVar[int]
     LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
@@ -81,9 +88,22 @@ class CacheInfo(_message.Message):
     DEBUG_METADATA_FIELD_NUMBER: _ClassVar[int]
     uri: str
     status: str
+    in_cache: bool
     name: str
     storage: str
     last_modified: str
     saved_version: str
     debug_metadata: _containers.ScalarMap[str, int]
-    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ...) -> None: ...
+    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ...) -> None: ...
+
+class DropRequest(_message.Message):
+    __slots__ = ["uri"]
+    URI_FIELD_NUMBER: _ClassVar[int]
+    uri: str
+    def __init__(self, uri: _Optional[str] = ...) -> None: ...
+
+class ListRequest(_message.Message):
+    __slots__ = ["status_filter"]
+    STATUS_FILTER_FIELD_NUMBER: _ClassVar[int]
+    status_filter: str
+    def __init__(self, status_filter: _Optional[str] = ...) -> None: ...

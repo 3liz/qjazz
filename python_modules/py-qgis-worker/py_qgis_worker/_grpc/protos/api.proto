@@ -8,7 +8,10 @@ service QgisWorker {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
     rpc ExecuteRequest (GenericRequest) returns (stream ResponseChunk) {}
-    rpc PullProject (PullRequest) returns (CacheInfo) {}
+    rpc CheckoutProject (CheckoutRequest) returns (CacheInfo) {}
+    rpc DropProject (DropRequest) returns (CacheInfo) {}
+    rpc ClearCache (Empty) returns (Empty) {}
+    rpc ListCache (ListRequest) returns (stream CacheInfo) {}
 }
 
 
@@ -20,6 +23,9 @@ message PingRequest {
 message PingReply {
     string echo = 1;
 }
+
+
+message Empty {}
 
 
 message ResponseChunk {
@@ -45,16 +51,26 @@ message GenericRequest {
     optional bool direct = 6;
 }
 
-message PullRequest {
+message CheckoutRequest {
     string uri = 1;
+    optional bool pull = 2;
 }
 
 message CacheInfo {
     string uri = 1;
     string status = 2;
-    optional string name = 3;
-    optional string storage = 4;
-    optional string last_modified = 5;
-    optional string saved_version = 6;
-    map<string,int64> debug_metadata = 7;
+    bool in_cache = 3;
+    optional string name = 4;
+    optional string storage = 5;
+    optional string last_modified = 6;
+    optional string saved_version = 7;
+    map<string,int64> debug_metadata = 8;
+}
+
+message DropRequest {
+    string uri = 1;
+}
+
+message ListRequest {
+    optional string status_filter = 1;
 }

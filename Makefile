@@ -10,6 +10,11 @@ test: ${PYTHON_MODULES}
 		$(MAKE) -C $$d test; \
 	done
 
+lint: ${PYTHON_MODULES}
+	@for d in $^; do \
+		$(MAKE) -C $$d lint; \
+	done
+
 configure: $(PYTHON_MODULES)
 	@for d in $^; do \
 		$(MAKE) -C $$d configure; \
