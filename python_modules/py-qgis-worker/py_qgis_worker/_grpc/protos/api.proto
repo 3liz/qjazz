@@ -12,6 +12,7 @@ service QgisWorker {
     rpc DropProject (DropRequest) returns (CacheInfo) {}
     rpc ClearCache (Empty) returns (Empty) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
+    rpc ListPlugins (Empty) returns (stream PluginInfo) {}
 }
 
 
@@ -40,6 +41,7 @@ message OwsRequest {
     optional string url = 5;
     optional bool direct = 6;
     optional string options = 7;
+    optional string request_id = 8;
 }
 
 message GenericRequest {
@@ -49,6 +51,7 @@ message GenericRequest {
     optional string target = 4;
     optional string version = 5;
     optional bool direct = 6;
+    optional string request_id = 7;
 }
 
 message CheckoutRequest {
@@ -73,4 +76,11 @@ message DropRequest {
 
 message ListRequest {
     optional string status_filter = 1;
+}
+
+message PluginInfo {
+    string name = 1;
+    string path = 2;
+    string plugin_type = 3;
+    string json_metadata = 4;
 }

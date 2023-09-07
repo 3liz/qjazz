@@ -49,6 +49,11 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.ListRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
+        self.ListPlugins = channel.unary_stream(
+                '/api.QgisWorker/ListPlugins',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.PluginInfo.FromString,
+                )
 
 
 class QgisWorkerServicer(object):
@@ -96,6 +101,12 @@ class QgisWorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListPlugins(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisWorkerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -133,6 +144,11 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     servicer.ListCache,
                     request_deserializer=api__pb2.ListRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
+            ),
+            'ListPlugins': grpc.unary_stream_rpc_method_handler(
+                    servicer.ListPlugins,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.PluginInfo.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -260,5 +276,22 @@ class QgisWorker(object):
         return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListCache',
             api__pb2.ListRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListPlugins(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListPlugins',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.PluginInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

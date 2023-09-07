@@ -159,4 +159,32 @@ def list_cache(status: str):
             print(MessageToJson(item))
 
 
+@cli_commands.command("plugins")
+def list_plugins():
+    """ List projects from cache
+    """
+    import json
+    with connect() as stub:
+        stream = stub.ListPlugins(
+            api_pb2.Empty()
+        )
+
+        for k, v in stream.initial_metadata():
+            if k == "x-reply-header-installed-plugins":
+                print("Installed plugins:", v, file=sys.stderr)
+
+        for item in stream:
+            print(
+                json.dumps(
+                    dict(
+                        name=item.name,
+                        path=item.path,
+                        pluginType=item.plugin_type,
+                        metadata=json.loads(item.json_metadata),
+                    ),
+                    indent=4,
+                )
+            )
+
+
 cli_commands()

@@ -5,6 +5,7 @@ import asyncio
 import multiprocessing as mp
 
 from multiprocessing.connection import Connection
+from pathlib import Path
 
 from enum import Enum, auto
 from typing_extensions import (
@@ -20,9 +21,9 @@ from typing_extensions import (
     AsyncIterator,
 )
 from dataclasses import dataclass, field
-from pydantic import BaseModel
 
 from py_qgis_project_cache import CheckoutStatus
+from py_qgis_contrib.core.qgis import PluginType
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,7 @@ class MsgType(Enum):
     CLEAR_CACHE = auto()
     LIST_CACHE = auto()
     PROJECT_INFO = auto()
-    LIST_PLUGINS = auto()
+    PLUGINS = auto()
 
 
 # Note: This is defined in python 3.11 via http module
@@ -71,7 +72,7 @@ class RequestReply:
     data: bytes
     chunked: bool
     checkout_status: Optional[CheckoutStatus]
-    headers: Dict = field(default_factory=dict)
+    headers: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -92,7 +93,8 @@ class OWSRequest:
     version: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict = field(default_factory=dict)
+    headers: Dict[str, str] = field(default_factory=dict)
+    request_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -104,7 +106,8 @@ class Request:
     data: bytes
     target: Optional[str]
     direct: bool = False
-    headers: Dict = field(default_factory=dict)
+    headers: Dict[str, str] = field(default_factory=dict)
+    request_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -122,7 +125,8 @@ class Quit:
     return_type: ClassVar[Type] = None
 
 
-class CacheInfo(BaseModel, frozen=True):
+@dataclass(frozen=True)
+class CacheInfo:
     uri: str
     status: CheckoutStatus
     in_cache: bool
@@ -130,7 +134,7 @@ class CacheInfo(BaseModel, frozen=True):
     storage: str = ""
     last_modified: Optional[float] = None
     saved_version: Optional[str] = None
-    debug_metadata: Dict[str, int] = {}  # Safe with pydantic
+    debug_metadata: Dict[str, int] = field(default_factory=dict)
 
 
 # PULL_PROJECT
@@ -169,6 +173,22 @@ class ListCache:
     return_type: ClassVar[Type] = IO[CacheInfo]
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
+
+
+# PLUGINS
+
+@dataclass(frozen=True)
+class PluginInfo:
+    name: str
+    path: Path
+    plugin_type: PluginType
+    metadata: Dict
+
+
+@dataclass(frozen=True)
+class Plugins:
+    msg_id: ClassVar[MsgType] = MsgType.PLUGINS
+    return_type: ClassVar[Type] = IO[PluginType]
 
 #
 # Asynchronous Pipe connection reader

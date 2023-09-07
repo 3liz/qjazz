@@ -98,7 +98,6 @@ class Plugin:
             cp.read_file(f)
             metadata = {s: dict(p.items()) for s, p in cp.items()}
             metadata.pop('DEFAULT', None)
-            metadata.update(path=str(self.path))
             return metadata
 
 
@@ -110,6 +109,14 @@ class QgisPluginService:
         self._config = config
         self._plugins = {}
         self._providers: List[str] = []
+
+    @property
+    def plugins(self) -> Iterator[Plugin]:
+        return (p for p in self._plugins.values())
+    
+    @property
+    def num_plugins(self) -> int:
+        return len(self._plugins)
 
     def register_as_service(self):
         componentmanager.register_service(QGIS_PLUGIN_SERVICE_CONTRACTID, self)

@@ -43,12 +43,12 @@ class WorkerConfig(config.Config):
         )
     )
     reload_outdated_project_on_request: bool = Field(
-        default=True,
+        default=False,
         title="Reload outdated project when requested",
         description=(
             "Reload outdated project at request. "
             "If set to 'false', outdated project in cache will "
-            "not be refrested when requested. "
+            "not be refreshed when requested. "
             "Thus, refreshing project's to cache will require a specific "
             "action from another service or admininstrative "
             "management tools."

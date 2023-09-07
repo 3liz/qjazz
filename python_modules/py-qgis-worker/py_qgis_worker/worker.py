@@ -41,6 +41,7 @@ from py_qgis_project_cache import (
 from . import messages as _m
 from .config import WorkerConfig
 from .requests import Request, Response, _to_qgis_method
+from .plugins import inspect_plugins
 
 Co = CheckoutStatus
 
@@ -106,6 +107,9 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
         logger.debug("Received message: %s", msg.msg_id.name)
         try:
             match msg.msg_id:
+                # --------------------
+                # Qgis server Requests
+                # --------------------
                 case _m.MsgType.OWSREQUEST:
                     handle_ows_request(
                         conn,
@@ -120,11 +124,17 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
                         server,
                         cm, config, _process
                     )
+                # --------------------
+                # Global management
+                # --------------------
                 case _m.MsgType.PING:
                     _m.send_reply(conn, None)
                 case _m.MsgType.QUIT:
                     _m.send_reply(conn, None)
                     break
+                # --------------------
+                # Cache managment
+                # --------------------
                 case _m.MsgType.CHECKOUT_PROJECT:
                     _m.send_reply(
                         conn,
@@ -142,8 +152,12 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
                     send_cache_list(conn, cm, msg.status_filter)
                 case _m.MsgType.PROJECT_INFO:
                     _m.send_reply(conn, None, 405)
-                case _m.MsgType.LIST_PLUGINS:
-                    _m.send_reply(conn, None, 405)
+                # --------------------
+                # Plugin inspection
+                # --------------------
+                case _m.MsgType.PLUGINS:
+                    inspect_plugins(conn, plugin_s)
+                # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)
         except Exception as exc:
@@ -284,6 +298,14 @@ def request_project_from_cache(
         md, co_status = cm.checkout(url)
         match co_status:
             case Co.NEEDUPDATE:
+                # This is configuration dependent
+                # Projects are updated on request only
+                # if the configuration allow it
+                # This is not a good idea to keep an outdated
+                # project in cache since the associated resources
+                # may have chanced. But in the other hand it could
+                # prevents access while project's ressource are
+                # not fully updated
                 if config.reload_outdated_project_on_request:
                     entry, co_status = cm.update(md, co_status)
                 else:
@@ -431,7 +453,7 @@ def send_cache_list(
         co = filter(lambda n: n[1] == status_filter, co)
 
     count = len(cm)
-    _m.send_reply(conn, count, 200)
+    _m.send_reply(conn, count)
     if count:
         try:
             # Stream CacheInfo

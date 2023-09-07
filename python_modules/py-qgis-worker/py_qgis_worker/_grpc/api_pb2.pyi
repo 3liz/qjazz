@@ -28,7 +28,7 @@ class ResponseChunk(_message.Message):
     def __init__(self, chunk: _Optional[bytes] = ...) -> None: ...
 
 class OwsRequest(_message.Message):
-    __slots__ = ["service", "request", "target", "version", "url", "direct", "options"]
+    __slots__ = ["service", "request", "target", "version", "url", "direct", "options", "request_id"]
     SERVICE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
@@ -36,6 +36,7 @@ class OwsRequest(_message.Message):
     URL_FIELD_NUMBER: _ClassVar[int]
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
+    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     service: str
     request: str
     target: str
@@ -43,23 +44,26 @@ class OwsRequest(_message.Message):
     url: str
     direct: bool
     options: str
-    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ...) -> None: ...
+    request_id: str
+    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ...) -> None: ...
 
 class GenericRequest(_message.Message):
-    __slots__ = ["url", "method", "data", "target", "version", "direct"]
+    __slots__ = ["url", "method", "data", "target", "version", "direct", "request_id"]
     URL_FIELD_NUMBER: _ClassVar[int]
     METHOD_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
     VERSION_FIELD_NUMBER: _ClassVar[int]
     DIRECT_FIELD_NUMBER: _ClassVar[int]
+    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     url: str
     method: str
     data: bytes
     target: str
     version: str
     direct: bool
-    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ...) -> None: ...
+    request_id: str
+    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ..., request_id: _Optional[str] = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ["uri", "pull"]
@@ -107,3 +111,15 @@ class ListRequest(_message.Message):
     STATUS_FILTER_FIELD_NUMBER: _ClassVar[int]
     status_filter: str
     def __init__(self, status_filter: _Optional[str] = ...) -> None: ...
+
+class PluginInfo(_message.Message):
+    __slots__ = ["name", "path", "plugin_type", "json_metadata"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    PLUGIN_TYPE_FIELD_NUMBER: _ClassVar[int]
+    JSON_METADATA_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    path: str
+    plugin_type: str
+    json_metadata: str
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., plugin_type: _Optional[str] = ..., json_metadata: _Optional[str] = ...) -> None: ...

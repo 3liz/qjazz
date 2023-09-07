@@ -11,6 +11,7 @@ from typing import (
 )
 
 import traceback
+import json
 
 from py_qgis_contrib.core import logger
 
@@ -99,6 +100,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     url=request.url,
                     direct=request.direct,
                     headers=headers,
+                    request_id=request.request_id,
                 ),
             )
 
@@ -154,6 +156,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     target=request.target,
                     direct=request.direct,
                     headers=headers,
+                    request_id=request.request_id,
                 ),
             )
             # Request failed before reaching Qgis server
@@ -288,6 +291,45 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 await _abort_on_fail(context, status)
 
             return api_pb2.Empty()
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+    #
+    # Plugin list
+    #
+    async def ListPlugins(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.PluginInfo, None, None]:
+
+        try:
+            status, resp = await self._worker.io.send_message(
+                _m.Plugins()
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            # resp is the number of elements in cache
+            await context.send_initial_metadata([("x-reply-header-installed-plugins", str(resp))])
+            if resp > 0:
+                status, item = await self._worker.io.read_message()
+                while status == 206:
+                    yield api_pb2.PluginInfo(
+                        name=item.name,
+                        path=str(item.path),
+                        plugin_type=item.plugin_type.name,
+                        json_metadata=json.dumps(item.metadata),
+                    )
+                    status, item = await self._worker.io.read_message()
+                # Incomplete transmission ?
+                if status != 200:
+                    await _abort_on_fail(context, status)
+
         except ExecError:
             await _abort_on_error(context, status, resp)
         except Exception as err:
