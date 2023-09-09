@@ -71,7 +71,7 @@ class QgisWorkerStub(object):
                 )
         self.Catalog = channel.unary_stream(
                 '/api.QgisWorker/Catalog',
-                request_serializer=api__pb2.Empty.SerializeToString,
+                request_serializer=api__pb2.CatalogRequest.SerializeToString,
                 response_deserializer=api__pb2.CatalogItem.FromString,
                 )
 
@@ -211,7 +211,7 @@ def add_QgisWorkerServicer_to_server(servicer, server):
             ),
             'Catalog': grpc.unary_stream_rpc_method_handler(
                     servicer.Catalog,
-                    request_deserializer=api__pb2.Empty.FromString,
+                    request_deserializer=api__pb2.CatalogRequest.FromString,
                     response_serializer=api__pb2.CatalogItem.SerializeToString,
             ),
     }
@@ -423,7 +423,7 @@ class QgisWorker(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/Catalog',
-            api__pb2.Empty.SerializeToString,
+            api__pb2.CatalogRequest.SerializeToString,
             api__pb2.CatalogItem.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

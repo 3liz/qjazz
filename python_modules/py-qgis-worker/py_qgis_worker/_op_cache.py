@@ -40,7 +40,7 @@ def drop_project(conn: Connection, cm: CacheManager, uri: str):
             )
         case _:
             reply = _m.CacheInfo(
-                uri=md.uri,
+                uri=uri,
                 in_cache=False,
                 status=status,
             )

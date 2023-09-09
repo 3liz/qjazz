@@ -51,6 +51,8 @@ class MsgType(Enum):
     PROJECT_INFO = auto()
     PLUGINS = auto()
     CATALOG = auto()
+    GET_CONFIG = auto()
+    PUT_CONFIG = auto()
 
 
 # Note: This is defined in python 3.11 via http module
@@ -97,6 +99,7 @@ class OWSRequest:
     options: Optional[str] = None
     headers: Dict[str, str] = field(default_factory=dict)
     request_id: str = ""
+    debug_report: bool = False
 
 
 @dataclass(frozen=True)
@@ -110,13 +113,14 @@ class Request:
     direct: bool = False
     headers: Dict[str, str] = field(default_factory=dict)
     request_id: str = ""
+    debug_report: bool = False
 
 
 @dataclass(frozen=True)
 class Ping:
     msg_id: ClassVar[MsgType] = MsgType.PING
     return_type: ClassVar[Type] = None
-
+    echo: Optional[str] = None
 
 # QUIT
 
@@ -221,6 +225,21 @@ class GetProjectInfo:
     msg_id: ClassVar[MsgType] = MsgType.PROJECT_INFO
     return_type: ClassVar[Type] = ProjectInfo
     uri: str
+
+
+# CONFIG
+
+@dataclass(frozen=True)
+class GetConfig:
+    msg_id: ClassVar[MsgType] = MsgType.GET_CONFIG
+    return_type: ClassVar[Type] = str
+
+
+@dataclass(frozen=True)
+class PutConfig:
+    msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
+    return_type: ClassVar[Literal[None]] = None
+    json: str
 
 
 #

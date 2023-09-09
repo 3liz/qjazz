@@ -171,14 +171,22 @@ class JsonConfig(_message.Message):
     json: str
     def __init__(self, json: _Optional[str] = ...) -> None: ...
 
+class CatalogRequest(_message.Message):
+    __slots__ = ["location"]
+    LOCATION_FIELD_NUMBER: _ClassVar[int]
+    location: str
+    def __init__(self, location: _Optional[str] = ...) -> None: ...
+
 class CatalogItem(_message.Message):
-    __slots__ = ["uri", "name", "storage", "last_modified"]
+    __slots__ = ["uri", "name", "storage", "last_modified", "public_uri"]
     URI_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     STORAGE_FIELD_NUMBER: _ClassVar[int]
     LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
+    PUBLIC_URI_FIELD_NUMBER: _ClassVar[int]
     uri: str
     name: str
     storage: str
     last_modified: str
-    def __init__(self, uri: _Optional[str] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ...) -> None: ...
+    public_uri: str
+    def __init__(self, uri: _Optional[str] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., public_uri: _Optional[str] = ...) -> None: ...

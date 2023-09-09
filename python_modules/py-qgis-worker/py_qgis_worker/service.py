@@ -17,6 +17,8 @@ from py_qgis_contrib.core import logger
 
 from . import messages as _m
 
+from .worker import Worker, WorkerError
+
 #
 # https://grpc.github.io/grpc/python/
 #
@@ -52,6 +54,9 @@ async def _abort_on_fail(context: grpc.aio.ServicerContext, code: int):
 
 
 async def _abort_on_error(context: grpc.aio.ServicerContext, code: int, details: str):
+    await context.send_initial_metadata(
+        [('x-reply-status-code', str(code))]
+    )
     await context.abort(_match_grpc_code(code), details)
 
 
@@ -63,7 +68,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     """ Worker API
     """
 
-    def __init__(self, worker):
+    def __init__(self, worker: Worker):
         super().__init__()
         self._worker = worker
 
@@ -74,9 +79,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     ) -> api_pb2.PingReply:
         """  Simple ping request
         """
-        echo = request.echo
-
-        return api_pb2.PingReply(echo=echo)
+        return api_pb2.PingReply(echo=request.echo)
 
     #
     # OWS request
@@ -90,23 +93,18 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         try:
             headers = dict(context.invocation_metadata())
 
-            status, resp = await self._worker.io.send_message(
-                _m.OWSRequest(
-                    service=request.service,
-                    request=request.request,
-                    version=request.version,
-                    options=request.options,
-                    target=request.target,
-                    url=request.url,
-                    direct=request.direct,
-                    headers=headers,
-                    request_id=request.request_id,
-                ),
+            resp, stream = await self._worker.ows_request(
+                service=request.service,
+                request=request.request,
+                version=request.version,
+                options=request.options,
+                target=request.target,
+                url=request.url,
+                direct=request.direct,
+                headers=headers,
+                request_id=request.request_id,
+                debug_report=True,
             )
-
-            # Request failed before reaching Qgis server
-            if status != 200:
-                await _abort_on_fail(context, status)
 
             # Send Headers
             metadata = list(_headers_to_metadata(resp.headers.items()))
@@ -115,16 +113,15 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
 
             # Send data
             yield api_pb2.ResponseChunk(chunk=resp.data)
-
-            if resp.chunked:
-                async for chunk in self._worker.io.stream_bytes():
+            if stream:
+                async for chunk in stream:
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
             _ = await self._worker.io.read()
 
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -148,20 +145,15 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 resp = f"Invalid method {request.method}"
                 raise ExecError
 
-            status, resp = await self._worker.io.send_message(
-                _m.Request(
-                    url=request.url,
-                    method=http_method,
-                    data=request.data,
-                    target=request.target,
-                    direct=request.direct,
-                    headers=headers,
-                    request_id=request.request_id,
-                ),
+            status, stream = await self._worker.request(
+                url=request.url,
+                method=http_method,
+                data=request.data,
+                target=request.target,
+                direct=request.direct,
+                headers=headers,
+                request_id=request.request_id,
             )
-            # Request failed before reaching Qgis server
-            if status != 200:
-                _abort_on_fail(context, status)
 
             # Send Headers
             metadata = list(_headers_to_metadata(resp.headers.items()))
@@ -170,16 +162,15 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
 
             # Send data
             yield api_pb2.ResponseChunk(chunk=resp.data)
-
-            if resp.chunked:
-                async for chunk in self._worker.io.stream_bytes():
+            if stream:
+                async for chunk in stream:
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
             _ = await self._worker.io.read()
 
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -192,19 +183,14 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
-
         try:
-            status, resp = await self._worker.io.send_message(
-                _m.CheckoutProject(uri=request.uri, pull=request.pull)
+            resp = await self._worker.checkout_project(
+                uri=request.uri,
+                pull=request.pull,
             )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
             return _new_cache_info(resp)
-
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -217,19 +203,11 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
-
         try:
-            status, resp = await self._worker.io.send_message(
-                _m.DropProject(uri=request.uri)
-            )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
+            resp = await self._worker.drop_project(uri=request.uri)
             return _new_cache_info(resp)
-
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -249,26 +227,13 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             except KeyError:
                 status_filter = ""
 
-            status, resp = await self._worker.io.send_message(
-                _m.ListCache(status_filter)
-            )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
-            # resp is the number of elements in cache
-            await context.send_initial_metadata([("x-reply-header-cache-count", str(resp))])
-            if resp > 0:
-                status, item = await self._worker.io.read_message()
-                while status == 206:
+            count, items = await self._worker.list_cache(status_filter)
+            await context.send_initial_metadata([("x-reply-header-cache-count", str(count))])
+            if items:
+                async for item in items:
                     yield _new_cache_info(item)
-                    status, item = await self._worker.io.read_message()
-                # Incomplete transmission ?
-                if status != 200:
-                    await _abort_on_fail(context, status)
-
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -281,18 +246,11 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.Empty,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
-
         try:
-            status, resp = await self._worker.io.send_message(
-                _m.ClearCache()
-            )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
+            await self._worker.clear_cache()
             return api_pb2.Empty()
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -307,15 +265,8 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     ) -> Generator[api_pb2.CatalogItem, None, None]:
 
         try:
-            status, resp = await self._worker.io.send_message(
-                _m.Catalog(location=request.location)
-            )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
-            status, item = await self._worker.io.read_message()
-            while status == 206:
+            items = await self._worker.catalog(location=request.location)
+            async for item in items:
                 yield api_pb2.CatalogItem(
                     uri=item.uri,
                     name=item.name,
@@ -323,13 +274,8 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     last_modified=_to_iso8601(datetime.fromtimestamp(item.last_modified)),
                     public_uri=item.public_uri,
                 )
-                status, item = await self._worker.io.read_message()
-            # Incomplete transmission ?
-            if status != 200:
-                await _abort_on_fail(context, status)
-
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.status, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
@@ -345,31 +291,18 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     ) -> Generator[api_pb2.PluginInfo, None, None]:
 
         try:
-            status, resp = await self._worker.io.send_message(
-                _m.Plugins()
-            )
-
-            if status != 200:
-                await _abort_on_fail(context, status)
-
-            # resp is the number of elements in cache
-            await context.send_initial_metadata([("x-reply-header-installed-plugins", str(resp))])
-            if resp > 0:
-                status, item = await self._worker.io.read_message()
-                while status == 206:
+            count, items = await self._worker.list_plugins()
+            await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
+            if items:
+                async for item in items:
                     yield api_pb2.PluginInfo(
                         name=item.name,
                         path=str(item.path),
                         plugin_type=item.plugin_type.name,
                         json_metadata=json.dumps(item.metadata),
                     )
-                    status, item = await self._worker.io.read_message()
-                # Incomplete transmission ?
-                if status != 200:
-                    await _abort_on_fail(context, status)
-
-        except ExecError:
-            await _abort_on_error(context, status, resp)
+        except WorkerError as e:
+            await _abort_on_error(context, e.status, e.details)
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))

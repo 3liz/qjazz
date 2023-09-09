@@ -5,7 +5,7 @@ from ._grpc import api_pb2  # noqa
 from ._grpc import api_pb2_grpc
 
 from .service import RpcService
-from .process import Worker
+from .worker import Worker
 from .config import WorkerConfig, ProjectsConfig
 
 from . import messages

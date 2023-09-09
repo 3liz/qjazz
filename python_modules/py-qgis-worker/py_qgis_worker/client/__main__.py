@@ -187,6 +187,24 @@ def project_info(project: str):
         print(MessageToJson(resp))
 
 
+@cache_commands.command("catalog")
+@click.option('--location', help="Select location")
+def catalog(location: Optional[str]):
+    """ List projects from cache
+    """
+    with connect() as stub:
+        stream = stub.Catalog(
+            api_pb2.CatalogRequest(location=location)
+        )
+
+        for item in stream:
+            print(MessageToJson(item))
+
+#
+# Plugins
+#
+
+
 @cli_commands.group('plugin')
 def plugin_commands():
     """ Commands for cache management

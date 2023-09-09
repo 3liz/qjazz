@@ -72,7 +72,7 @@ def handle_ows_request(
         server,
         cm,
         config,
-        _process
+        _process if msg.debug_report else None,
     )
 
 
@@ -101,7 +101,7 @@ def handle_generic_request(
         server,
         cm,
         config,
-        _process
+        _process if msg.debug_report else None,
     )
 
 

@@ -1,153 +1,301 @@
-""" Implement Qgis server worker
-    as a sub process
-"""
-import os
-import traceback
-
-try:
-    import psutil
-except ImportError:
-    psutil = None
+import multiprocessing as mp
 
 from typing_extensions import (
-    assert_never,
-)
-from multiprocessing.connection import Connection
-
-from qgis.server import QgsServer
-
-from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.qgis import (
-    init_qgis_server,
-    show_qgis_settings,
-    PluginType,
-    QgisPluginService,
-)
-from py_qgis_project_cache import (
-    CacheManager,
-    CheckoutStatus,
+    AsyncIterator,
+    Optional,
+    Dict,
+    Tuple,
+    Any,
 )
 
 from .config import WorkerConfig
-
+from . import _op_worker
 from . import messages as _m
-from . import _op_requests
-from . import _op_plugins
-from . import _op_cache
 
-Co = CheckoutStatus
+from functools import cached_property
 
 
-def load_default_project(cm: CacheManager):
-    """ Load default project
-    """
-    default_project = os.getenv("QGIS_PROJECT_FILE")
-    if default_project:
-        url = cm.resolve_path(default_project, allow_direct=True)
-        md, status = cm.checkout(url)
-        if status == Co.NEW:
-            cm.update(md, status)
+class WorkerError(Exception):
+    def __init__(self, code: int, details: Any = None):
+        self.code = code
+        self.details = details
+
+
+class Worker(mp.Process):
+
+    def __init__(self, config: WorkerConfig):
+        super().__init__(name=config.name, daemon=True)
+        self._worker_conf = config
+        self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
+        self._worker_io = None
+
+    def run(self):
+        server = _op_worker.setup_server(self._worker_conf)
+        _op_worker.qgis_server_run(server, self._child_conn, self._worker_conf)
+
+    @cached_property
+    def io(self) -> _m.Pipe:
+        return _m.Pipe(self._parent_conn)
+
+    # API stubs
+
+    async def ping(self, echo: str) -> str:
+        """  Send ping with echo string
+        """
+        status, resp = await self.io.send_message(_m.Ping(echo))
+        if status != 200:
+            raise WorkerError(status, resp)
+        return resp
+
+    #
+    # Requests
+    #
+
+    async def ows_request(
+        self,
+        service: str,
+        request: str,
+        target: str,
+        url: str = "",
+        version: Optional[str] = None,
+        direct: bool = False,
+        options: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        request_id: str = "",
+        debug_report: bool = False,
+        timeout: int = _m.DEFAULT_TIMEOUT,
+    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator]]:
+        """ Send OWS request
+
+            Exemple:
+            ```
+            resp, stream = await worker.ows_request(
+                service="WFS",
+                request="GetCapabilities",
+                target="/france/france_parts",
+                url="http://localhost:8080/test.3liz.com",
+            )
+            if resp.status_code != 200:
+                print("Request failed")
+            data = resp.data
+            if stream:
+                # Stream remaining bytes
+                async for chunk in stream:
+                    # Do something with chunk of data
+                    ...
+            ```
+        """
+        status, resp = await self.io.send_message(
+            _m.OWSRequest(
+                service=service,
+                request=request,
+                version=version,
+                options=options,
+                target=target,
+                url=url,
+                direct=direct,
+                headers=headers or {},
+                request_id=request_id,
+                debug_report=debug_report,
+            ),
+            timeout=timeout,
+        )
+
+        # Request failed before reaching Qgis server
+        if status != 200:
+            raise WorkerError(status, resp)
+
+        if resp.chunked:
+            return resp, self.io.read_bytes()
         else:
-            logger.error("The project %s does not exists", url)
+            return resp, None
 
+    async def request(
+        self,
+        url: str,
+        data: bytes,
+        target: Optional[str],
+        direct: bool = False,
+        method: _m.HTTPMethod = _m.HTTPMethod.GET,
+        headers: Dict[str, str] = None,
+        request_id: str = "",
+        debug_report: bool = False,
+        timeout: int = _m.DEFAULT_TIMEOUT,
+    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
+        """ Send generic (api) request
 
-def setup_server(config: WorkerConfig) -> QgsServer:
-    """ Setup Qgis server and plugins
-    """
-    # Enable qgis server debug verbosity
-    if logger.isEnabledFor(logger.LogLevel.DEBUG):
-        os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'
-        os.environ['QGIS_DEBUG'] = '1'
+            Exemple:
+            ```
+            resp, stream = await worker.request(
+                url="/wfs3/collections",
+                target="/france/france_parts",
+            )
+            if resp.status_code != 200:
+                print("Request failed")
+            data = resp.data
+            # Stream remaining bytes
+            if stream:
+                async for chunk in stream:
+                    # Do something with chunk of data
+                    ...
+            ```
+        """
+        status, resp = await self.io.send_message(
+            _m.Request(
+                url=url,
+                method=method,
+                data=data,
+                target=target,
+                direct=direct,
+                headers=headers,
+                request_id=request_id,
+            ),
+        )
+        # Request failed before reaching Qgis server
+        if status != 200:
+            raise WorkerError(status, resp)
 
-    projects = config.projects
-    if projects.trust_layer_metadata:
-        os.environ['QGIS_SERVER_TRUST_LAYER_METADATA'] = 'yes'
-    if projects.disable_getprint:
-        os.environ['QGIS_SERVER_DISABLE_GETPRINT'] = 'yes'
+        if resp.chunked:
+            return resp, self.io.read_bytes()
+        else:
+            return resp, None
 
-    # Disable any cache strategy
-    os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
+    #
+    # Cache
+    #
 
-    server = init_qgis_server()
-    CacheManager.initialize_handlers()
+    async def checkout_project(self, uri: str, pull: bool = False) -> _m.CacheInfo:
+        """ Checkout project status
 
-    print(show_qgis_settings())
+            If pull is True, the cache will be updated
+            according the checkout status:
 
-    return server
+            * `NEW`: The Project exists and will be loaded in cache
+            * `NEEDUPDATE`: The Project is already loaded and will be updated in cache
+            * `UNCHANGED`: The Project is loaded, up to date. Nothing happend
+            * `REMOVED`: The Project is loaded but has been removed from storage;
+              project will be removed from cache.
+            * `NOTFOUND`: The project does not exists, nor in storage, nor in cache.
+        """
+        status, resp = await self.io.send_message(
+            _m.CheckoutProject(uri=uri, pull=pull)
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+        return resp
 
+    async def drop_project(self, uri: str) -> _m.CacheInfo:
+        """ Drop project from cache
+        """
+        status, resp = await self.io.send_message(
+            _m.DropProject(uri=uri)
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+        return resp
 
-#
-# Run Qgis server
-#
-def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
-    """ Run Qgis server and process incoming requests
-    """
-    cm = CacheManager(config.projects, server)
+    async def list_cache(
+        self,
+        status_filter: Optional[_m.CheckoutStatus] = None,
+    ) -> Tuple[int, AsyncIterator[_m.CacheInfo]]:
+        """ List projects in cache
 
-    # Load plugins
-    plugin_s = QgisPluginService(config.plugins)
-    plugin_s.load_plugins(PluginType.SERVER, server.serverInterface())
+            Return 2-tuple where first element is the number
+            of items in cache and the second elemeent an async
+            iterator yielding CacheInfo items
+        """
+        status, resp = await self.io.send_message(
+            _m.ListCache(status_filter)
+        )
 
-    load_default_project(cm)
+        if status != 200:
+            raise WorkerError(status, resp)
 
-    # For reporting
-    _process = psutil.Process() if psutil else None
+        if resp > 0:
+            async def _stream():
+                status, resp = await self.io.read_message()
+                while status == 206:
+                    yield resp
+                    status, resp = await self.io.read_message()
+            # Incomplete transmission ?
+            if status != 200:
+                raise WorkerError(status, resp)
 
-    while True:
-        logger.debug("Waiting for messages")
-        msg = conn.recv()
-        logger.debug("Received message: %s", msg.msg_id.name)
-        try:
-            match msg.msg_id:
-                # --------------------
-                # Qgis server Requests
-                # --------------------
-                case _m.MsgType.OWSREQUEST:
-                    _op_requests.handle_ows_request(
-                        conn,
-                        msg,
-                        server,
-                        cm, config, _process
-                    )
-                case _m.MsgType.REQUEST:
-                    _op_requests.handle_generic_request(
-                        conn,
-                        msg,
-                        server,
-                        cm, config, _process
-                    )
-                # --------------------
-                # Global management
-                # --------------------
-                case _m.MsgType.PING:
-                    _m.send_reply(conn, None)
-                case _m.MsgType.QUIT:
-                    _m.send_reply(conn, None)
-                    break
-                # --------------------
-                # Cache managment
-                # --------------------
-                case _m.MsgType.CHECKOUT_PROJECT:
-                    _op_cache.checkout_project(conn, cm, msg.uri, msg.pull)
-                case _m.MsgType.DROP_PROJECT:
-                    _op_cache.drop_project(conn, cm, msg.uri)
-                case _m.MsgType.CLEAR_CACHE:
-                    cm.clear()
-                    _m.send_reply(conn, None)
-                case _m.MsgType.LIST_CACHE:
-                    _op_cache.send_cache_list(conn, cm, msg.status_filter)
-                case _m.MsgType.PROJECT_INFO:
-                    _op_cache.send_project_info(conn, cm, msg.uri)
-                case _m.MsgType.CATALOG:
-                    _op_cache.send_catalog(conn, cm, msg.location)
-                # --------------------
-                # Plugin inspection
-                # --------------------
-                case _m.MsgType.PLUGINS:
-                    _op_plugins.inspect_plugins(conn, plugin_s)
-                # --------------------
-                case _ as unreachable:
-                    assert_never(unreachable)
-        except Exception as exc:
-            logger.critical(traceback.format_exc())
-            _m.send_reply(conn, str(exc), 500)
+            return resp, _stream()
+        else:
+            return resp, None
+
+    async def clear_cache(self) -> None:
+        """  Clear all items in cache
+        """
+        status, resp = await self.io.send_message(
+            _m.ClearCache()
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+
+    async def catalog(self, location: str = None) -> AsyncIterator[_m.CatalogItem]:
+        """ Return all projects availables
+
+            If location is set, returns only projects availables for
+            this particular location
+        """
+        status, resp = await self.io.send_message(
+            _m.Catalog(location=location)
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+
+        async def _stream():
+            status, item = await self.io.read_message()
+            while status == 206:
+                yield item
+                status, item = await self.io.read_message()
+            # Incomplete transmission ?
+            if status != 200:
+                raise WorkerError(status, item)
+
+        return _stream()
+
+    async def project_info(self, uri: str) -> _m.ProjectInfo:
+        """ Return project information from loaded project in
+            cache
+
+            The method will NOT load the project in cache
+        """
+        status, resp = await self.io.send_message(
+            _m.GetProjectInfo(uri=uri)
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+
+        return resp
+
+    #
+    # Plugins
+    #
+
+    async def list_plugins(self) -> Tuple[int, Optional[AsyncIterator[_m.PluginInfo]]]:
+        """ List projects in cache
+
+            Return 2-tuple where first element is the number
+            of loaded plugins and the second elemeent an async
+            iterator yielding PluginInfo items
+        """
+        status, resp = await self.io.send_message(
+            _m.Plugins()
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+        if resp > 0:
+            async def _stream():
+                status, resp = await self.io.read_message()
+                while status == 206:
+                    yield resp
+                    status, resp = await self.io.read_message()
+                # Incomplete transmission ?
+                if status != 200:
+                    raise WorkerError(status, resp)
+            return resp, _stream()
+        else:
+            return resp, None

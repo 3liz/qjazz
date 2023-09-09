@@ -4,7 +4,7 @@ import asyncio  # noqa
 from time import time
 from py_qgis_worker import messages
 from py_qgis_worker import messages as _m
-from py_qgis_worker.process import Worker
+from py_qgis_worker.worker import Worker
 
 from contextlib import asynccontextmanager
 
@@ -24,7 +24,7 @@ async def worker_context(config):
         assert not worker.is_alive()
 
 
-async def test_worker_process(config):
+async def test_worker_io(config):
     """ Test worker process
     """
     async with worker_context(config) as worker:
@@ -40,6 +40,7 @@ async def test_worker_process(config):
                 request="GetCapabilities",
                 target="/france/france_parts",
                 url="http://localhost:8080/test.3liz.com",
+                debug_report=True,
             ),
         )
 
@@ -79,6 +80,7 @@ async def test_chunked_response(config):
                 options="TYPENAME=france_parts_bordure",
                 target="/france/france_parts",
                 url="http://localhost:8080/test.3liz.com",
+                debug_report=True,
             ),
         )
 
@@ -175,3 +177,33 @@ async def test_catalog(config):
             status, item = await worker.io.read_message()
         assert status == 200
         assert count == 3
+
+
+async def test_worker_stubs(config):
+    """ Test worker process
+    """
+    async with worker_context(config) as worker:
+
+        echo = await worker.ping("hello")
+        assert echo == "hello"
+
+        # Test Qgis server OWS request with valid project
+        resp, stream = await worker.ows_request(
+            service="WFS",
+            request="GetCapabilities",
+            target="/france/france_parts",
+            url="http://localhost:8080/test.3liz.com",
+        )
+
+        assert resp.status_code == 200
+        print(f"> {resp.chunked}")
+        print(f"> {resp.headers}")
+
+        # Stream remaining bytes
+        if stream:
+            async for chunk in stream:
+                assert len(chunk) > 0
+
+        # Check nothing left in the pipe
+        with pytest.raises(asyncio.exceptions.TimeoutError):
+            _ = await worker.io.read(timeout=1)

@@ -119,10 +119,10 @@ class Response(QgsServerResponse):
         """ Send a request report
             after the last chunk of data
         """
-        if self._process:
-            memory = self._process.memory_info().vms - self._memory
-        else:
-            memory = None
+        if not self._process:
+            return
+
+        memory = self._process.memory_info().vms - self._memory
 
         logger.debug(">>> Sending request report")
         self._conn.send(
