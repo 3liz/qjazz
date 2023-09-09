@@ -14,7 +14,6 @@ import urllib.parse
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing_extensions import (
-    NewType,
     Union,
     Generator,
     Optional,
@@ -26,7 +25,7 @@ from py_qgis_contrib.core import componentmanager
 
 from .config import ProjectsConfig
 
-Url = NewType('Url', urllib.parse.SplitResult)
+Url = urllib.parse.SplitResult
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
@@ -56,6 +55,18 @@ class IProtocolHandler(ABC):
             resource location
 
             Must be idempotent
+        """
+
+    @abstractmethod
+    def public_path(self, uri: str | Url, location: str, rooturl: Url) -> str:
+        """ Given a search path and an uri corressponding to
+            a resolved_uri for this handler, it returns the uri
+            usable relative to the search path.
+
+            This is practically the reverse of a
+            `CacheManager::resolve_path + resolve_url` calls
+
+            Use it if you need to return a public path for callers
         """
 
     @abstractmethod

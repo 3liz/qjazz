@@ -38,12 +38,12 @@ def connect():
             # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
         except grpc.RpcError as rpcerr:
             print("RPC ERROR:", rpcerr.code(), rpcerr.details(), file=sys.stderr)
-            for (k, v) in rpcerr.trailing_metadata():
-                print(k, ":", v, file=sys.stderr)
+            print_metadata(rpcerr.initial_metadata())
+            print_metadata(rpcerr.trailing_metadata())
 
 
 def print_metadata(metadata):
-    status_code = "n/a"
+    status_code = ""
     for k, v in metadata:
         if k == "x-reply-status-code":
             status_code = v
@@ -52,7 +52,8 @@ def print_metadata(metadata):
             print(h.title(), ":", v, file=sys.stderr)
         elif k.startswith("x-"):
             print(k, ":", v, file=sys.stderr)
-    print("Return code:", status_code, file=sys.stderr)
+    if status_code:
+        print("Return code:", status_code, file=sys.stderr)
 
 
 @click.group('commands')
@@ -60,7 +61,14 @@ def cli_commands():
     pass
 
 
-@cli_commands.command("ows")
+@cli_commands.group('request')
+def request_commands():
+    """ Commands for requesting qgis server
+    """
+    pass
+
+
+@request_commands.command("ows")
 @click.argument('project', nargs=1)
 @click.option("--service", help="OWS service name", required=True)
 @click.option("--request", help="OWS request name", required=True)
@@ -104,7 +112,14 @@ def ows_request(
             print(chunk, file=fp)
 
 
-@cli_commands.command("checkout")
+@cli_commands.group('cache')
+def cache_commands():
+    """ Commands for cache management
+    """
+    pass
+
+
+@cache_commands.command("checkout")
 @click.argument('project', nargs=1)
 @click.option('--pull', is_flag=True, help="Load project in cache")
 def pull_project(project: str, pull: bool):
@@ -118,7 +133,7 @@ def pull_project(project: str, pull: bool):
         print(MessageToJson(resp))
 
 
-@cli_commands.command("drop")
+@cache_commands.command("drop")
 @click.argument('project', nargs=1)
 def drop_project(project: str):
     """ Drop PROJECT from cache
@@ -131,7 +146,7 @@ def drop_project(project: str):
         print(MessageToJson(resp))
 
 
-@cli_commands.command("clear")
+@cache_commands.command("clear")
 def clear_cache():
     """ Clear cache
     """
@@ -141,7 +156,7 @@ def clear_cache():
         )
 
 
-@cli_commands.command("list")
+@cache_commands.command("list")
 @click.option("--status", help="Status filter")
 def list_cache(status: str):
     """ List projects from cache
@@ -159,7 +174,27 @@ def list_cache(status: str):
             print(MessageToJson(item))
 
 
-@cli_commands.command("plugins")
+@cache_commands.command("info")
+@click.argument('info', nargs=1)
+def project_info(project: str):
+    """ Return info from PROJECT in cache
+    """
+    with connect() as stub:
+        resp = stub.GetProjectInfo(
+            api_pb2.ProjectRequest(uri=project)
+        )
+
+        print(MessageToJson(resp))
+
+
+@cli_commands.group('plugin')
+def plugin_commands():
+    """ Commands for cache management
+    """
+    pass
+
+
+@plugin_commands.command("list")
 def list_plugins():
     """ List projects from cache
     """

@@ -1,7 +1,7 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -112,6 +112,47 @@ class ListRequest(_message.Message):
     status_filter: str
     def __init__(self, status_filter: _Optional[str] = ...) -> None: ...
 
+class ProjectRequest(_message.Message):
+    __slots__ = ["uri"]
+    URI_FIELD_NUMBER: _ClassVar[int]
+    uri: str
+    def __init__(self, uri: _Optional[str] = ...) -> None: ...
+
+class ProjectInfo(_message.Message):
+    __slots__ = ["status", "uri", "filename", "crs", "last_modified", "storage", "has_bad_layers", "layers"]
+    class Layer(_message.Message):
+        __slots__ = ["layer_id", "name", "source", "crs", "is_valid", "is_spatial"]
+        LAYER_ID_FIELD_NUMBER: _ClassVar[int]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        SOURCE_FIELD_NUMBER: _ClassVar[int]
+        CRS_FIELD_NUMBER: _ClassVar[int]
+        IS_VALID_FIELD_NUMBER: _ClassVar[int]
+        IS_SPATIAL_FIELD_NUMBER: _ClassVar[int]
+        layer_id: str
+        name: str
+        source: str
+        crs: str
+        is_valid: bool
+        is_spatial: bool
+        def __init__(self, layer_id: _Optional[str] = ..., name: _Optional[str] = ..., source: _Optional[str] = ..., crs: _Optional[str] = ..., is_valid: bool = ..., is_spatial: bool = ...) -> None: ...
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    URI_FIELD_NUMBER: _ClassVar[int]
+    FILENAME_FIELD_NUMBER: _ClassVar[int]
+    CRS_FIELD_NUMBER: _ClassVar[int]
+    LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
+    STORAGE_FIELD_NUMBER: _ClassVar[int]
+    HAS_BAD_LAYERS_FIELD_NUMBER: _ClassVar[int]
+    LAYERS_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    uri: str
+    filename: str
+    crs: str
+    last_modified: str
+    storage: str
+    has_bad_layers: bool
+    layers: _containers.RepeatedCompositeFieldContainer[ProjectInfo.Layer]
+    def __init__(self, status: _Optional[str] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ...) -> None: ...
+
 class PluginInfo(_message.Message):
     __slots__ = ["name", "path", "plugin_type", "json_metadata"]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -123,3 +164,21 @@ class PluginInfo(_message.Message):
     plugin_type: str
     json_metadata: str
     def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., plugin_type: _Optional[str] = ..., json_metadata: _Optional[str] = ...) -> None: ...
+
+class JsonConfig(_message.Message):
+    __slots__ = ["json"]
+    JSON_FIELD_NUMBER: _ClassVar[int]
+    json: str
+    def __init__(self, json: _Optional[str] = ...) -> None: ...
+
+class CatalogItem(_message.Message):
+    __slots__ = ["uri", "name", "storage", "last_modified"]
+    URI_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    STORAGE_FIELD_NUMBER: _ClassVar[int]
+    LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
+    uri: str
+    name: str
+    storage: str
+    last_modified: str
+    def __init__(self, uri: _Optional[str] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ...) -> None: ...

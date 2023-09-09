@@ -27,7 +27,7 @@ def test_collect_projects(data, config):
     collected = list(cm.collect_projects())
     logger.debug(collected)
     assert len(collected) > 0
-    for md in collected:
+    for md, _ in collected:
         match md.scheme:
             case 'file':
                 path = Path(md.uri)
@@ -36,6 +36,18 @@ def test_collect_projects(data, config):
                 assert path.is_relative_to(data)
             case _:
                 pytest.fail(reason=f"unexpected scheme: '{md.scheme}'")
+
+
+def test_collect_projects_from_search_path(data, config):
+
+    cm = CacheManager(config)
+
+    collected = list(cm.collect_projects('/france'))
+    assert len(collected) > 0
+    print('\n')
+    for md, public_path in collected:
+        print("#", md, public_path)
+        assert public_path.startswith('/france')
 
 
 def test_checkout_project(config):

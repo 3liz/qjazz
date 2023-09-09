@@ -10,8 +10,14 @@
 """
 import traceback
 
-from typing import Union, Generator, Optional, Callable, Dict
-from urllib.parse import urlunsplit, parse_qs, urlencode
+from datetime import datetime
+from typing import Iterator, Optional, Callable, Dict
+from urllib.parse import (
+    urlsplit,
+    urlunsplit,
+    parse_qs,
+    urlencode,
+)
 from pathlib import Path
 
 from qgis.core import (
@@ -25,14 +31,12 @@ from py_qgis_contrib.core import logger, componentmanager
 
 from ..config import ProjectsConfig
 from ..storage import (
-    ProjectMetadata,
-    project_storage_metadata,
-    list_storage_projects,
     load_project_from_uri,
 )
 
 from ..common import (
     Url,
+    ProjectMetadata,
     IProtocolHandler,
 )
 
@@ -45,10 +49,11 @@ RESOLVERS = {}
 def resolver_for(name: str):
     """ Decorator for resolver
     """
-    def wrapper(fn):
-        RESOLVERS[name] = fn
-        return fn
+    def wrapper(klass):
+        RESOLVERS[name] = klass
+        return klass
     return wrapper
+
 
 #
 # Default storage uri resolvers
@@ -66,26 +71,32 @@ def resolver_for(name: str):
 # does not have some canonical
 # form for storage uri
 #
+class _DefaultUrlResolver:
+    def resolve_url(self, url: Url) -> str:
+        qs = parse_qs(url.query)
+        if self.parameter not in qs:
+            qs[self.parameter] = [url.path]
+            qs = urlencode(qs, doseq=True)
+            url = url._replace(path="", query=qs)
+        return urlunsplit(url)
+
+    def build_path(self, url: str | Url, location: str, _: Url) -> str:
+        if not isinstance(url, Url):
+            url = urlsplit(url)
+        return str(Path(location).joinpath(
+            parse_qs(url.query)[self.parameter][0]
+        ))
 
 
 @resolver_for('postgresql')
-def postgresql_resolver(url: Url) -> str:
-    qs = parse_qs(url.query)
-    if 'project' not in qs:
-        qs['project'] = [url.path]
-        qs = urlencode(qs, doseq=True)
-        url = url._replace(path="", query=qs)
-    return urlunsplit(url)
+class _Resolver(_DefaultUrlResolver):  # noqa F811
+    parameter = 'project'
 
 
 @resolver_for('geopackage')
-def geopackage_resolver(url: Url) -> str:
-    qs = parse_qs(url.query)
-    if 'projectName' not in qs:
-        qs['projectName'] = [url.path]
-        qs = urlencode(qs, doseq=True)
-        url = url._replace(path="", query=qs)
-    return urlunsplit(url)
+class _Resolver(_DefaultUrlResolver):  # noqa F811
+    parameter = 'projectName'
+
 
 #
 # Handlers registration
@@ -102,16 +113,16 @@ def register_handlers(resolvers: Optional[Dict[str, Callable[[Url], str]]] = Non
         logger.info("### Registering storage handler for %s", storage)
         componentmanager.gComponentManager.register_service(
             f'@3liz.org/cache/protocol-handler;1?scheme={storage}',
-            QgisStorageProtocolHandler(ps, resolvers.get(storage)),
+            QgisStorageProtocolHandler(ps, resolvers.get(storage)()),
         )
 
 
 def load_resolvers(confdir: Path):
     """ Load resolvers configuration
     """
-    resolver_file = confdir.join('resolver.py')
+    resolver_file = confdir.join('resolvers.py')
     if resolver_file.exists():
-        logger.info("Loading resolvers for qgis storage")
+        logger.info("Loading path resolvers for qgis storage")
         with resolver_file.open() as source:
             try:
                 exec(source.read(), {
@@ -122,11 +133,11 @@ def load_resolvers(confdir: Path):
                 traceback.print_exc()
                 raise RuntimeError(f"Failed to load resolver '{resolver_file}'") from None
     else:
-        logger.info("No storage resolvers found")
+        logger.info("No storage path resolvers found")
 
 
 def init_storage_handlers(confdir: Optional[Path]):
-    """ Intialize storage handlers from resolver file
+    """ Initialize storage handlers from resolver file
     """
     if confdir:
         load_resolvers(confdir)
@@ -152,23 +163,62 @@ class QgisStorageProtocolHandler(IProtocolHandler):
     def resolve_uri(self, url: Url) -> str:
         """ Override
         """
-        return self._resolver(url) if self._resolver else url
+        return self._resolver.resolve_url(url) if self._resolver else url
 
-    def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
+    def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
+        """ Override
+        """
+        if self._resolver:
+            return self._resolver.build_path(url, location, rooturl)
+        else:
+            if not isinstance(url, Url):
+                url = urlsplit(url)
+            return str(Path(location).joinpath(url.path))
+
+    def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """ Override
         """
         if isinstance(url, ProjectMetadata):
             uri = url.uri
         else:
             uri = self.resolve_uri(url)
-        return project_storage_metadata(uri, self._storage)
+
+        # Precondition
+        # If there is problem here, then it comes from the
+        # path resolver configuration
+        assert self._storage.isSupportedUri(uri), f"Invalide uri for storage '{self._storage.type()}': {uri}"
+        return self._project_storage_metadata(uri, url.scheme)
 
     def project(self, md: ProjectMetadata, config: ProjectsConfig) -> QgsProject:
         """ Override
         """
         return load_project_from_uri(md.uri, config)
 
-    def projects(self, url: Url) -> Generator[ProjectMetadata, None, None]:
+    def projects(self, url: Url) -> Iterator[ProjectMetadata]:
         """ Override
         """
-        return list_storage_projects(url, self._storage)
+        uri = urlunsplit(url)
+        # Precondition
+        # If there is problem here, then it comes from the
+        # path resolver configuration
+        assert self._storage.isSupportedUri(url), f"Unsupported {uri} for '{self._storage.type()}'"
+
+        for _uri in self._storage.listProjects(uri):
+            yield self._project_storage_metadata(_uri, url.scheme)
+
+    def _project_storage_metadata(self, uri: str, scheme: str) -> ProjectMetadata:
+        """ Read metadata about project
+        """
+        res, md = self._storage.readProjectStorageMetadata(uri)
+        if not res:
+            logger.error("Failed to read storage metadata for %s", uri)
+            raise FileNotFoundError(uri)
+        # XXX
+        last_modified = md.lastModified.toPyDateTime()
+        return ProjectMetadata(
+            uri=uri,
+            name=md.name,
+            scheme=scheme,
+            storage=self._storage.type(),
+            last_modified=datetime.timestamp(last_modified),
+        )

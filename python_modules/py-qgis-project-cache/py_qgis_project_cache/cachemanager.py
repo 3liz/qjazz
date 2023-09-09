@@ -31,7 +31,7 @@
         case CheckoutStatus.NOTFOUND:
             print("Project does not exists")
 
-    # Update the catalog according to
+    # Update the cache according to
     # the returned status
     entry, update_status = cm.update(md, status)
 
@@ -66,21 +66,18 @@ from py_qgis_contrib.core import (
 )
 
 # Import default handlers for auto-registration
-from .common import Url, IProtocolHandler
+from .common import Url, IProtocolHandler, ProjectMetadata
 from .handlers import init_storage_handlers
-from .storage import ProjectMetadata, StrictCheckingFailure
+from .storage import (
+    StrictCheckingFailure,
+    UnreadableResource,
+)
 from .config import ProjectsConfig, validate_url
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
 
 class ResourceNotAllowed(Exception):
-    pass
-
-
-class UnreadableResource(Exception):
-    """ Indicates that the  ressource exists but is not readable
-    """
     pass
 
 
@@ -121,10 +118,10 @@ class CheckoutStatus(Enum):
 class CacheManager:
     """ Handle Qgis project cache
     """
-
     StrictCheckingFailure = StrictCheckingFailure
     ResourceNotAllowed = ResourceNotAllowed
     UnreadableResource = UnreadableResource
+
     CheckoutStatus = CheckoutStatus
 
     @classmethod
@@ -186,15 +183,25 @@ class CacheManager:
             f'@3liz.org/cache/protocol-handler;1?scheme={scheme}'
         )
 
-    def collect_projects(self) -> Iterator[ProjectMetadata]:
+    def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
         """ Collect projects metadata from search paths
 
-            Yield found entries
+            Yield tuple of (entry, public_path) for all found  entries
         """
-        for url in self.conf.search_paths.values():
+        if location:
+            url = self.conf.search_paths.get(location)
+            if not url:
+                logger.error(f"Location '{location}' does not exists in search paths")
+                return
+            else:
+                urls = ((location, url),)
+        else:
+            urls = self.conf.search_paths.items()
+        for location, url in urls:
             try:
                 handler = self.get_protocol_handler(url.scheme)
-                yield from handler.projects(url)
+                for md in handler.projects(url):
+                    yield md, handler.public_path(md.uri, location, url)
             except Exception:
                 logger.error(traceback.format_exc())
 
@@ -257,7 +264,7 @@ class CacheManager:
         status: CheckoutStatus,
         handler: Optional[IProtocolHandler] = None,
     ) -> Optional[Tuple[CacheEntry, CheckoutStatus]]:
-        """ Update catalog entry according to status
+        """ Update cache entry according to status
 
             * `NEW`: (re)load existing project
             * `NEEDUPDATE`: update loaded project
@@ -268,7 +275,7 @@ class CacheManager:
             If the status is NOTFOUND then return None
 
             In all other cases the entry *must* exists in
-            the catalog or an exception is raised
+            the cache or an exception is raised
         """
         match status:
             case CheckoutStatus.NEW:
@@ -299,7 +306,7 @@ class CacheManager:
         md: ProjectMetadata,
         handler: IProtocolHandler
     ) -> CacheEntry:
-        """ Create a new catalog entry
+        """ Create a new cache entry
         """
         s_time = time()
         s_mem = self._process.memory_info().vms if self._process else None
@@ -332,9 +339,9 @@ class CacheManager:
         )
 
     def update_cache(self) -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
-        """ Update all entries in catalog
+        """ Update all entries in cache
 
-            Yield updated catalog entries
+            Yield updated cache entries
         """
         for e in self._cache.values():
             handler = self.get_protocol_handler(e.md.scheme)

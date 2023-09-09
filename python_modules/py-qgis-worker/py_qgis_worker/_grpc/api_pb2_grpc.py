@@ -54,6 +54,26 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.PluginInfo.FromString,
                 )
+        self.SetConfig = channel.unary_unary(
+                '/api.QgisWorker/SetConfig',
+                request_serializer=api__pb2.JsonConfig.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                )
+        self.GetConfig = channel.unary_unary(
+                '/api.QgisWorker/GetConfig',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.JsonConfig.FromString,
+                )
+        self.GetProjectInfo = channel.unary_unary(
+                '/api.QgisWorker/GetProjectInfo',
+                request_serializer=api__pb2.ProjectRequest.SerializeToString,
+                response_deserializer=api__pb2.ProjectInfo.FromString,
+                )
+        self.Catalog = channel.unary_stream(
+                '/api.QgisWorker/Catalog',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.CatalogItem.FromString,
+                )
 
 
 class QgisWorkerServicer(object):
@@ -107,6 +127,30 @@ class QgisWorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetConfig(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetConfig(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetProjectInfo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Catalog(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisWorkerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -149,6 +193,26 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     servicer.ListPlugins,
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.PluginInfo.SerializeToString,
+            ),
+            'SetConfig': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetConfig,
+                    request_deserializer=api__pb2.JsonConfig.FromString,
+                    response_serializer=api__pb2.Empty.SerializeToString,
+            ),
+            'GetConfig': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetConfig,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.JsonConfig.SerializeToString,
+            ),
+            'GetProjectInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetProjectInfo,
+                    request_deserializer=api__pb2.ProjectRequest.FromString,
+                    response_serializer=api__pb2.ProjectInfo.SerializeToString,
+            ),
+            'Catalog': grpc.unary_stream_rpc_method_handler(
+                    servicer.Catalog,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.CatalogItem.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -293,5 +357,73 @@ class QgisWorker(object):
         return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListPlugins',
             api__pb2.Empty.SerializeToString,
             api__pb2.PluginInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SetConfig(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/SetConfig',
+            api__pb2.JsonConfig.SerializeToString,
+            api__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetConfig(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetConfig',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.JsonConfig.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetProjectInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetProjectInfo',
+            api__pb2.ProjectRequest.SerializeToString,
+            api__pb2.ProjectInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Catalog(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/Catalog',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.CatalogItem.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -1,4 +1,6 @@
-
+/*
+    https://protobuf.dev/programming-guides/proto3/ 
+*/
 syntax = "proto3";
 
 package api;
@@ -13,6 +15,10 @@ service QgisWorker {
     rpc ClearCache (Empty) returns (Empty) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
     rpc ListPlugins (Empty) returns (stream PluginInfo) {}
+    rpc SetConfig (JsonConfig) returns (Empty) {}
+    rpc GetConfig (Empty) returns (JsonConfig) {}
+    rpc GetProjectInfo (ProjectRequest) returns (ProjectInfo) {}
+    rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
 }
 
 
@@ -78,9 +84,48 @@ message ListRequest {
     optional string status_filter = 1;
 }
 
+message ProjectRequest {        
+    string uri = 1;
+}
+
+message ProjectInfo {
+    message Layer {
+        string layer_id = 1;
+        string name = 2;
+        string source = 3;
+        string crs = 4;
+        bool is_valid = 5;
+        bool is_spatial = 6;
+    }
+    string status = 1;
+    string uri = 2;
+    string filename = 3;
+    string crs = 4;
+    string last_modified = 5;
+    string storage = 6;
+    bool has_bad_layers = 7;
+    repeated Layer layers = 8; 
+}
+
 message PluginInfo {
     string name = 1;
     string path = 2;
     string plugin_type = 3;
     string json_metadata = 4;
+}
+
+message JsonConfig {
+    string json = 1;
+}
+
+message CatalogRequest {
+    optional string location = 1;
+}
+
+message CatalogItem {
+    string uri = 1;
+    string name = 2;
+    string storage = 3;
+    string last_modified = 4;
+    string public_uri = 5;
 }

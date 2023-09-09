@@ -3,16 +3,8 @@
 # all rights reserved
 """ Handle Qgis storage metadata
 """
-from datetime import datetime
-from pathlib import Path
-
-from urllib.parse import urlunsplit
-from typing import Generator, Optional, Union
-
 from qgis.core import (
     Qgis,
-    QgsApplication,
-    QgsProjectStorage,
     QgsProject,
     QgsProjectBadLayerHandler,
 )
@@ -21,65 +13,16 @@ from qgis.server import QgsServerProjectUtils
 from py_qgis_contrib.core import logger
 
 from .config import ProjectsConfig
-from .common import Url, ProjectMetadata
 
 
 class StrictCheckingFailure(Exception):
     pass
 
 
-def file_metadata(path: Path):
-    st = path.stat()
-    return ProjectMetadata(
-        uri=str(path),
-        name=path.stem,
-        scheme='file',
-        storage='file',
-        last_modified=st.st_mtime
-    )
-
-
-def project_storage_metadata(uri: str, storage: Union[str | QgsProjectStorage]) -> QgsProjectStorage.Metadata:
-    """ Read metadata about project
+class UnreadableResource(Exception):
+    """ Indicates that the  ressource exists but is not readable
     """
-    if isinstance(storage, str):
-        storage = QgsApplication.projectStorageRegistry().projectStorageFromType(storage)
-
-    res, md = storage.readProjectStorageMetadata(uri)
-    if not res:
-        logger.error("Failed to read storage metadata for %s", uri)
-        raise FileNotFoundError(uri)
-    return md
-
-
-def storage_from_uri(uri: str) -> Optional[QgsProjectStorage]:
-    return QgsApplication.projectStorageRegistry().projectStorageFromUri(uri)
-
-
-def list_storage_projects(url: Url, storage: Union[str | QgsProjectStorage]) -> Generator[ProjectMetadata, None, None]:
-    """ Scan project files from path
-
-        If path contains an uri scheme then use QgsProjectStorage to list files
-        (see https://api.qgis.org/api/classQgsProjectStorage.html)
-
-        Otherwise assume we are dealing with files
-    """
-    if isinstance(storage, str):
-        storage = QgsApplication.projectStorageRegistry().projectStorageFromType(storage)
-
-    uri = urlunsplit(url)
-    assert storage.isSupportedUri(uri), f"Invalide uri for storage '{storage.type()}': {uri}"
-
-    for uri in storage.listProjects(uri):
-        md = project_storage_metadata(uri, storage)
-        last_modified = md.lastModified.toPyDateTime()
-        yield ProjectMetadata(
-            uri=md.uri,
-            name=md.name,
-            scheme=url.scheme,
-            storage=storage.type(),
-            last_modified=datetime.timestamp(last_modified),
-        )
+    pass
 
 
 def remove_advertised_urls(self, project: QgsProject) -> None:
@@ -128,10 +71,10 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
     badlayerh = BadLayerHandler()
     project.setBadLayerHandler(badlayerh)
     if not project.read(uri, readflags):
-        raise RuntimeError(f"Failed to read Qgis project {uri}")
+        raise UnreadableResource(uri)
 
     if config.strict_check and not badlayerh.validateLayers(project):
-        raise StrictCheckingFailure
+        raise StrictCheckingFailure(uri)
 
     if config.disable_advertised_urls:
         remove_advertised_urls(project)

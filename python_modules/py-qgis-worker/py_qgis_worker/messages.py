@@ -11,6 +11,7 @@ from enum import Enum, auto
 from typing_extensions import (
     ClassVar,
     Dict,
+    List,
     Any,
     Optional,
     Type,
@@ -49,6 +50,7 @@ class MsgType(Enum):
     LIST_CACHE = auto()
     PROJECT_INFO = auto()
     PLUGINS = auto()
+    CATALOG = auto()
 
 
 # Note: This is defined in python 3.11 via http module
@@ -139,7 +141,6 @@ class CacheInfo:
 
 # PULL_PROJECT
 
-
 @dataclass(frozen=True)
 class CheckoutProject:
     msg_id: ClassVar[MsgType] = MsgType.CHECKOUT_PROJECT
@@ -188,7 +189,58 @@ class PluginInfo:
 @dataclass(frozen=True)
 class Plugins:
     msg_id: ClassVar[MsgType] = MsgType.PLUGINS
-    return_type: ClassVar[Type] = IO[PluginType]
+    return_type: ClassVar[Type] = IO[PluginInfo]
+
+
+# PROJECT_INFO
+
+@dataclass(frozen=True)
+class LayerInfo:
+    layer_id: str
+    name: str
+    source: str
+    crs: str
+    is_valid: bool
+    is_spatial: bool
+
+
+@dataclass(frozen=True)
+class ProjectInfo:
+    status: CheckoutStatus
+    uri: str
+    filename: str
+    crs: str
+    last_modified: float
+    storage: str
+    has_bad_layers: bool
+    layers: List[LayerInfo]
+
+
+@dataclass(frozen=True)
+class GetProjectInfo:
+    msg_id: ClassVar[MsgType] = MsgType.PROJECT_INFO
+    return_type: ClassVar[Type] = ProjectInfo
+    uri: str
+
+
+#
+# CATALOG
+#
+
+@dataclass(frozen=True)
+class CatalogItem:
+    uri: str
+    name: str
+    storage: str
+    last_modified: float
+    public_uri: str
+
+
+@dataclass(frozen=True)
+class Catalog:
+    msg_id: ClassVar[MsgType] = MsgType.CATALOG
+    return_type: ClassVar[Type] = IO[CatalogItem]
+    location: Optional[str] = None
 
 #
 # Asynchronous Pipe connection reader

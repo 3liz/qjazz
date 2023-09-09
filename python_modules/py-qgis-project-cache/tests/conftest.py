@@ -22,6 +22,7 @@ def config(data):
             '/tests': f'{data}/samples/',
             '/france': f'{data}/france_parts/',
             '/montpellier': f'{data}/montpellier/',
+            '/database': 'postgresql://?service=py-qgis',
         }
     )
 

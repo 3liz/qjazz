@@ -8,21 +8,21 @@
 
 """ File protocol handler
 """
-from typing import Generator
+from typing import Iterator
 from itertools import chain
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from qgis.core import QgsProject
 from py_qgis_contrib.core import logger, componentmanager
 
 from ..config import ProjectsConfig
 from ..storage import (
-    ProjectMetadata,
-    file_metadata,
     load_project_from_uri,
 )
 from ..common import (
     Url,
+    ProjectMetadata,
     IProtocolHandler,
 )
 
@@ -30,6 +30,17 @@ from ..common import (
 PROJECT_SFX = ('.qgs', '.qgz')
 
 __all__ = []
+
+
+def file_metadata(path: Path):
+    st = path.stat()
+    return ProjectMetadata(
+        uri=str(path),
+        name=path.stem,
+        scheme='file',
+        storage='file',
+        last_modified=st.st_mtime
+    )
 
 
 @componentmanager.register_factory('@3liz.org/cache/protocol-handler;1?scheme=file')
@@ -61,6 +72,14 @@ class FileProtocolHandler(IProtocolHandler):
         """
         return Path(uri.path)
 
+    def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
+        """ Override
+        """
+        if not isinstance(url, Url):
+            url = urlsplit(url)
+        relpath = Path(url.path).relative_to(rooturl.path)
+        return str(Path(location).joinpath(relpath))
+
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """ Override
         """
@@ -77,7 +96,7 @@ class FileProtocolHandler(IProtocolHandler):
         """
         return load_project_from_uri(md.uri, config)
 
-    def projects(self, url: Url) -> Generator[ProjectMetadata, None, None]:
+    def projects(self, url: Url) -> Iterator[ProjectMetadata]:
         """ List all projects availables from the given uri
         """
         path = Path(url.path)

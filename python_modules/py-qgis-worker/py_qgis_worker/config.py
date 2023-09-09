@@ -58,6 +58,11 @@ class WorkerConfig(config.Config):
         default=QgisPluginConfig(),
         title="Plugins configuration",
     )
+    max_chunk_size: int = Field(
+        default=1024 * 1024,
+        title="Maximum chunk size",
+        description="Set the maximum chunk size for streamed responses.",
+    )
     interfaces: config.NetInterface = Field(
         default=[DEFAULT_INTERFACE],
         title="Interfaces to listen to",

@@ -80,10 +80,8 @@ class Request(QgsServerRequest):
         return QByteArray(self._data) if self._data else QByteArray()
 
 
-# Define maximum chunk size to be 64Ko
-# This will be in accordance with gRPC recommended
-# chunk size
-MAX_CHUNK_SIZE = 1024 * 64
+# Define default chunk size to be 1Mo
+DEFAULT_CHUNK_SIZE = 1024 * 1024
 
 
 class Response(QgsServerResponse):
@@ -97,6 +95,7 @@ class Response(QgsServerResponse):
             conn: Connection,
             co_status: Optional[CheckoutStatus] = None,
             last_modified: Optional[int] = None,
+            chunk_size: int = DEFAULT_CHUNK_SIZE,
             _process: Optional = None,
     ):
         super().__init__()
@@ -111,6 +110,7 @@ class Response(QgsServerResponse):
         self._process = _process
         self._timestamp = time()
         self._last_modified = last_modified
+        self._chunk_size = chunk_size
 
         if self._process:
             self._memory = self._process.memory_info().vms
@@ -193,6 +193,8 @@ class Response(QgsServerResponse):
         # Take care of the logic: if finish and not handler.header_written then there is no
         # chunk following
         chunked = not self._finish or self._header_written
+
+        MAX_CHUNK_SIZE = self._chunk_size
 
         if bytes_avail > MAX_CHUNK_SIZE:
             chunked = True

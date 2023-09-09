@@ -113,7 +113,7 @@ class QgisPluginService:
     @property
     def plugins(self) -> Iterator[Plugin]:
         return (p for p in self._plugins.values())
-    
+
     @property
     def num_plugins(self) -> int:
         return len(self._plugins)

@@ -298,8 +298,46 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             await _abort_on_error(context, 500, str(err))
 
     #
+    # List Catalog Items
+    #
+    async def Catalog(
+        self,
+        request: api_pb2.CatalogRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.CatalogItem, None, None]:
+
+        try:
+            status, resp = await self._worker.io.send_message(
+                _m.Catalog(location=request.location)
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            status, item = await self._worker.io.read_message()
+            while status == 206:
+                yield api_pb2.CatalogItem(
+                    uri=item.uri,
+                    name=item.name,
+                    storage=item.storage,
+                    last_modified=_to_iso8601(datetime.fromtimestamp(item.last_modified)),
+                    public_uri=item.public_uri,
+                )
+                status, item = await self._worker.io.read_message()
+            # Incomplete transmission ?
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+    #
     # Plugin list
     #
+
     async def ListPlugins(
         self,
         request: api_pb2.Empty,
@@ -336,13 +374,54 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
 
+    #
+    # Project info
+    #
+    async def GetProjectInfo(
+        self,
+        request: api_pb2.ProjectRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.ProjectInfo:
 
-#
+        try:
+            status, resp = await self._worker.io.send_message(
+                _m.GetProjectInfo(uri=request.uri)
+            )
+
+            if status != 200:
+                await _abort_on_fail(context, status)
+
+            def _layer(layer):
+                return api_pb2.ProjectInfo.Layer(
+                    layer_id=layer.layer_id,
+                    name=layer.name,
+                    source=layer.source,
+                    crs=layer.crs,
+                    is_valid=layer.is_valid,
+                    is_spatial=layer.is_spatial,
+                )
+
+            return api_pb2.ProjectInfo(
+                status=resp.status.name,
+                uri=resp.uri,
+                filename=resp.filename,
+                crs=resp.crs,
+                last_modified=_to_iso8601(datetime.fromtimestamp(resp.last_modified)),
+                storage=resp.storage,
+                has_bad_layers=resp.has_bad_layers,
+                layers=[_layer(layer) for layer in resp.layers],
+            )
+
+        except ExecError:
+            await _abort_on_error(context, status, resp)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+
 #
 # Build a cache info from response
 #
-
-
 def _new_cache_info(resp) -> api_pb2.CacheInfo:
     if resp.last_modified:
         last_modified = _to_iso8601(datetime.fromtimestamp(resp.last_modified))
