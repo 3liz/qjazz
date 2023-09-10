@@ -8,11 +8,39 @@ from .service import RpcService
 from .worker import Worker
 from .config import WorkerConfig, ProjectsConfig
 
+import click
+
 from . import messages
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core import config
 
 from pathlib import Path
+
+from typing_extensions import Optional
+
+
+WORKER_SECTION = 'worker'
+
+# Add the `[worker]` configuration section
+config.confservice.add_section(WORKER_SECTION, WorkerConfig)
+
+#
+# Load configuration file
+#
+
+
+def load_configuration(configpath: Optional[Path]) -> config.Config:
+    if configpath:
+        cnf = config.read_config_toml(configpath)
+    else:
+        cnf = {}
+    try:
+        config.confservice.validate(cnf)
+    except config.ConfigError as err:
+        print("Configuration error:", err)
+        sys.exit(1)
+    return config.confservice.conf
 
 
 def get_config():
@@ -33,7 +61,6 @@ def get_config():
 
 
 async def serve(worker):
-
     logger.info("Waiting for worker to start...")
     status, _ = await worker.io.send_message(messages.Ping())
     if status != 200:
@@ -42,17 +69,72 @@ async def serve(worker):
 
     server = grpc.aio.server()
     api_pb2_grpc.add_QgisWorkerServicer_to_server(RpcService(worker), server)
-    listen_addr = "[::]:23456"
-    server.add_insecure_port(listen_addr)
+    for iface, port in worker.config.listen:
+        listen_addr = f"{iface}:{port}"
+        logger.info("Listening on port: %s", listen_addr)
+        server.add_insecure_port(listen_addr)
     await server.start()
     await server.wait_for_termination()
 
 
-def main():
+@click.group()
+def cli_commands():
+    pass
 
-    logger.setup_log_handler(logger.LogLevel.DEBUG)
 
-    worker = Worker(get_config())
+@cli_commands.command('version')
+@click.option("--settings", is_flag=True, help="Show Qgis settings")
+def print_version(settings: bool):
+    """ Print version and exit
+    """
+    from py_qgis_contrib.core import qgis
+    qgis.print_qgis_version(settings)
+
+
+@cli_commands.command('config')
+@click.option(
+    "--conf", "-C",
+    help="configuration file",
+    type=click.Path(
+        exists=True,
+        readable=True,
+        dir_okay=False,
+        path_type=Path
+    ),
+)
+@click.option("--schema", is_flag=True, help="Display configuration schema")
+def print_config(conf: Optional[Path], schema: bool = False):
+    """ Display configuration and exit
+    """
+    import json
+    if schema:
+        print(json.dumps(config.confservice.json_schema()))
+    else:
+        print(load_configuration(conf).conf.json())
+
+
+@cli_commands.command('grpc')
+@click.option(
+    "--conf", "-C", "configpath",
+    help="configuration file",
+    type=click.Path(
+        exists=True,
+        readable=True,
+        dir_okay=False,
+        path_type=Path
+    ),
+)
+def serve_grpc(configpath: Optional[Path]):
+    """ Run grpc server
+    """
+    conf = load_configuration(configpath)
+    logger.setup_log_handler(conf.logging.level)
+
+    worker = Worker(config.ConfigProxy(WORKER_SECTION))
     worker.start()
 
     asyncio.run(serve(worker))
+
+
+def main():
+    cli_commands()

@@ -10,11 +10,12 @@ from typing_extensions import (
     Optional,
 )
 
-DEFAULT_INTERFACE = ("0.0.0.0", 23456)
+DEFAULT_INTERFACE = ("[::]", 23456)
 
 
 class WorkerConfig(config.Config):
     name: str = Field(
+        default="",
         title="Name of the worker configuration",
     )
     projects: ProjectsConfig = Field(
@@ -63,9 +64,10 @@ class WorkerConfig(config.Config):
         title="Maximum chunk size",
         description="Set the maximum chunk size for streamed responses.",
     )
-    interfaces: config.NetInterface = Field(
+    listen: List[config.NetInterface] = Field(
         default=[DEFAULT_INTERFACE],
         title="Interfaces to listen to",
+        min_length=1,
     )
     ssl: Optional[config.SSLConfig] = Field(
         default=None,
@@ -73,7 +75,6 @@ class WorkerConfig(config.Config):
     )
 
 
-@config.section("workspace")
 class WorkespaceConfig(config.Config):
     workers: List[WorkerConfig] = Field(
         default=[WorkerConfig(name='default')],

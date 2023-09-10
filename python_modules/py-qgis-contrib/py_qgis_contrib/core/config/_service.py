@@ -31,10 +31,10 @@ import os
 
 from time import time
 from pathlib import Path
-from pydantic import create_model, BaseModel, Field
+from pydantic import create_model, BaseModel, Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Optional, Dict
+from typing_extensions import Optional, Dict, Type
 
 from .. import componentmanager
 
@@ -42,7 +42,10 @@ from .. import componentmanager
 getenv = os.getenv
 
 
-def read_config_file(self, cfgfile: Path) -> Dict:
+ConfigError = ValidationError
+
+
+def read_config_toml(self, cfgfile: Path) -> Dict:
     """ Read configuration from file
     """
     try:
@@ -52,10 +55,6 @@ def read_config_file(self, cfgfile: Path) -> Dict:
         import tomli as toml
 
     cfgfile = Path(cfgfile)
-
-    if not cfgfile.is_file():
-        raise FileNotFoundError(f"Missing configuration file {cfgfile}")
-
     # Load the toml file
     with cfgfile.open() as f:
         return toml.loads(f.read())
@@ -66,7 +65,8 @@ class Config(BaseModel, frozen=True):
     pass
 
 
-DEFAULT_CONFDIR = '/etc/py-qgis-server'
+# XXX Change name
+DEFAULT_APPLICATION_NAME = 'py-qgis-server'
 
 CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
 
@@ -90,7 +90,11 @@ class ConfigService:
             )
         return self._model
 
-    def validate(self, obj: Dict, env_prefix: Optional[str] = None):
+    def validate(
+            self, obj: Dict,
+            application_name: str = DEFAULT_APPLICATION_NAME,
+            env_prefix: Optional[str] = None,
+    ):
         """ Validate the configuration against
             configuration models
         """
@@ -102,8 +106,9 @@ class ConfigService:
                 env_prefix=env_prefix,
             )
 
+            # XXX Use user dir
             confdir: Path = Field(
-                default=Path(DEFAULT_CONFDIR),
+                default=Path(f'/etc/{application_name}'),
                 title="Search path for configuration files",
             )
 
@@ -124,12 +129,12 @@ class ConfigService:
             self.validate(data)
 
     def json_schema(self) -> Dict:
-        return self._create_model().model_json_schema()
+        return self._create_model(BaseSettings).model_json_schema()
 
-    def add_section(self, name: str, config: Config, replace: bool = False):
+    def add_section(self, name: str, model: Type[Config], replace: bool = False):
         if not replace and name in self._configs:
             raise ValueError(f"Config {name} already defined in: {self._configs[name]}")
-        self._configs[name] = config
+        self._configs[name] = model
         self._model_changed = True
 
     @property
@@ -204,6 +209,6 @@ class ConfigProxy:
             attr = ConfigProxy(
                 self._configpath+'.'+name,
                 self._confservice,
-                default=attr,
+                _default=attr,
             )
         return attr

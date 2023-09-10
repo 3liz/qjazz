@@ -13,7 +13,18 @@ import logging
 from contextlib import contextmanager
 from enum import Enum
 
-from typing import Optional
+from typing_extensions import (
+    Optional,
+    Annotated,
+)
+
+from pydantic import (
+    Field,
+    PlainValidator,
+    PlainSerializer,
+    WithJsonSchema,
+)
+
 
 from . import config
 
@@ -41,7 +52,16 @@ FORMATSTR = '%(asctime)s\t[%(process)d]\t%(levelname)s\t%(message)s'
 
 @config.section('logging')
 class LoggingConfig(config.Config):
-    level: LogLevel = LogLevel.INFO
+    level: Annotated[
+        LogLevel,
+        PlainValidator(lambda v: LogLevel[v]),
+        PlainSerializer(lambda x: x.name, return_type=str),
+        WithJsonSchema({
+            'enum': [m for m in LogLevel.__members__],
+            'type': 'str'
+        }),
+        Field(default="INFO", validate_default=True)
+    ]
 
 
 def set_log_level(log_level: Optional[LogLevel] = None):

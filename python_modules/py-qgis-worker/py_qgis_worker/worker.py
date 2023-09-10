@@ -29,9 +29,18 @@ class Worker(mp.Process):
         self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
         self._worker_io = None
 
+    @property
+    def config(self) -> WorkerConfig:
+        return self._worker_conf
+
     def run(self):
+        """ Override """
         server = _op_worker.setup_server(self._worker_conf)
-        _op_worker.qgis_server_run(server, self._child_conn, self._worker_conf)
+        _op_worker.qgis_server_run(
+            server,
+            self._child_conn,
+            self._worker_conf,
+        )
 
     @cached_property
     def io(self) -> _m.Pipe:
@@ -270,7 +279,6 @@ class Worker(mp.Process):
             raise WorkerError(status, resp)
 
         return resp
-
     #
     # Plugins
     #
