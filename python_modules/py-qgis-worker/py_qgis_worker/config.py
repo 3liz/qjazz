@@ -68,6 +68,27 @@ class WorkerConfig(config.Config):
         title="Interfaces to listen to",
         min_length=1,
     )
+    max_waiting_requests: int = Field(
+        default=20,
+        title="Max number of concurrent requests",
+        description=(
+            "The maximum number of requests that can be "
+            "queued for this worker task. If the number of "
+            "waiting requests reach the limit, the subsequent "
+            "requests will be returned with a `service unavailable` "
+            "error"
+        ),
+    )
+    worker_timeout: int = Field(
+        default=20,
+        title="Stalled worker timeout",
+        description=(
+            "Set the amount of time in seconds before considering "
+            "considering that the worker is stalled. "
+            "A stalled worker will be terminated and the server will "
+            "exit with an error code"
+        ),
+    )
 
 
 class WorkspaceConfig(config.Config):

@@ -11,8 +11,6 @@ from .config import WorkerConfig, ProjectsConfig
 
 import click
 
-from . import messages
-
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core import config
 
@@ -62,17 +60,6 @@ def get_config():
 
 
 async def serve(worker):
-    logger.info("Waiting for worker to start...")
-    try:
-        status, _ = await worker.io.send_message(messages.Ping(), timeout=2)
-        assert status == 200, f"Worker Ping() returned error: {status}"
-    except asyncio.exceptions.TimeoutError:
-        if not worker.is_alive():
-            logger.critical("Worker failed with exit code %s", worker.exitcode)
-        else:
-            logger.critical("Worker startup stalled !")
-        return
-
     server = grpc.aio.server()
     api_pb2_grpc.add_QgisWorkerServicer_to_server(RpcService(worker), server)
     for iface, port in worker.config.listen:
@@ -149,7 +136,8 @@ def serve_grpc(configpath: Optional[Path]):
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    worker = Worker(config.ConfigProxy(WORKER_SECTION))
+    # worker = Worker(config.ConfigProxy(WORKER_SECTION))
+    worker = Worker(get_config())
     worker.start()
     try:
         asyncio.run(serve(worker))

@@ -2,6 +2,7 @@ import grpc
 from ._grpc import api_pb2
 from ._grpc import api_pb2_grpc
 
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import (
     Generator,
@@ -10,6 +11,7 @@ from typing import (
     Iterable,
 )
 
+import asyncio
 import traceback
 import json
 
@@ -71,6 +73,10 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     def __init__(self, worker: Worker):
         super().__init__()
         self._worker = worker
+        self._lock = asyncio.Lock()
+        self._timeout = worker.config.worker_timeout
+        self._max_requests = worker.config.max_waiting_requests
+        self._count = 0
 
     async def Ping(
         self,
@@ -81,6 +87,37 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         """
         return api_pb2.PingReply(echo=request.echo)
 
+    @asynccontextmanager
+    async def lock(self, context):
+        """ Lock context
+
+            Prevent race condition on worker
+        """
+        try:
+            if self._count >= self._max_requests:
+                raise WorkerError(503, "Maximum number of waiting requests reached")
+            if not self._worker.is_alive():
+                raise WorkerError(503, "Server shutdown")
+
+            await asyncio.wait_for(self._lock.acquire(), self._timeout)
+            self._count += 1
+            yield
+        except asyncio.TimeoutError:
+            logger.critical("Worker stalled, terminating...")
+            self._worker.terminate()
+            await _abort_on_error(context, 503, "Server stalled")
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details)
+        except asyncio.CancelledError:
+            logger.error("Connection cancelled by client")
+            await self._worker.wait_until_task_done()
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+        finally:
+            self._count -= 1
+            self._lock.release()
+
     #
     # OWS request
     #
@@ -90,7 +127,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
-        try:
+        async with self.lock(context):
             headers = dict(context.invocation_metadata())
 
             resp, stream = await self._worker.ows_request(
@@ -103,7 +140,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 direct=request.direct,
                 headers=headers,
                 request_id=request.request_id,
-                debug_report=True,
+                debug_report=request.debug_report,
             )
 
             # Send Headers
@@ -118,13 +155,14 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
-            _ = await self._worker.io.read()
+            if request.debug_report:
+                report = await self._worker.io.read()
+                context.set_trailling_metatada([
+                    ('x-debug-memory', str(report.memory)),
+                    ('x-debug-duration', str(report.duration)),
+                    ('x-debug-timestamp', str(report.timestamp)),
+                ])
 
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
     #
     # Generic request
     #
@@ -135,7 +173,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
-        try:
+        async with self.lock(context):
             headers = dict(context.invocation_metadata())
 
             try:
@@ -153,6 +191,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 direct=request.direct,
                 headers=headers,
                 request_id=request.request_id,
+                debug_report=request.debug_report,
             )
 
             # Send Headers
@@ -167,33 +206,30 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
-            _ = await self._worker.io.read()
-
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
+            if request.debug_report:
+                report = await self._worker.io.read()
+                context.set_trailling_metatada([
+                    ('x-debug-memory', str(report.memory)),
+                    ('x-debug-duration', str(report.duration)),
+                    ('x-debug-timestamp', str(report.timestamp)),
+                ])
 
     #
     # Checkout project
     #
+
     async def CheckoutProject(
         self,
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
-        try:
+
+        async with self.lock(context):
             resp = await self._worker.checkout_project(
                 uri=request.uri,
                 pull=request.pull,
             )
             return _new_cache_info(resp)
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Drop project
@@ -203,14 +239,10 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
-        try:
+
+        async with self.lock(context):
             resp = await self._worker.drop_project(uri=request.uri)
             return _new_cache_info(resp)
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Cache list
@@ -221,7 +253,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.CacheInfo, None, None]:
 
-        try:
+        async with self.lock(context):
             try:
                 status_filter = _m.CheckoutStatus[request.status_filter]
             except KeyError:
@@ -232,11 +264,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             if items:
                 async for item in items:
                     yield _new_cache_info(item)
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Clear cache
@@ -246,14 +273,10 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.Empty,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
-        try:
+
+        async with self.lock(context):
             await self._worker.clear_cache()
             return api_pb2.Empty()
-        except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # List Catalog Items
@@ -264,7 +287,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.CatalogItem, None, None]:
 
-        try:
+        async with self.lock(context):
             items = await self._worker.catalog(location=request.location)
             async for item in items:
                 yield api_pb2.CatalogItem(
@@ -274,11 +297,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     last_modified=_to_iso8601(datetime.fromtimestamp(item.last_modified)),
                     public_uri=item.public_uri,
                 )
-        except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Project info
@@ -299,7 +317,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 is_spatial=layer.is_spatial,
             )
 
-        try:
+        async with self.lock(context):
             resp = await self._worker.io.project_info(uri=request.uri)
             return api_pb2.ProjectInfo(
                 status=resp.status.name,
@@ -311,11 +329,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 has_bad_layers=resp.has_bad_layers,
                 layers=[_layer(layer) for layer in resp.layers],
             )
-        except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Plugin list
@@ -326,7 +339,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.PluginInfo, None, None]:
 
-        try:
+        async with self.lock(context):
             count, items = await self._worker.list_plugins()
             await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
             if items:
@@ -337,11 +350,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                         plugin_type=item.plugin_type.name,
                         json_metadata=json.dumps(item.metadata),
                     )
-        except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
 
     #
     # Get config
@@ -354,7 +362,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
 
         try:
             retval = self._worker.dump_config()
-            print("#####\n", retval)
             return api_pb2.JsonConfig(json=json.dumps(retval))
         except WorkerError as e:
             await _abort_on_error(context, e.status, e.details)
@@ -370,17 +377,18 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         request: api_pb2.JsonConfig,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
+
         try:
             obj = json.loads(request.json)
-            await self._worker.update_config(obj)
-            return api_pb2.Empty()
         except json.JSONDecodeError as err:
             await _abort_on_error(context, 400, str(err))
-        except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details)
-        except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
+
+        async with self.lock(context):
+            await self._worker.update_config(obj)
+            # Update configuration
+            self._timeout = self._worker.config.worker_timeout
+            self._max_requests = self._worker.config.max_waiting_requests
+            return api_pb2.Empty()
 
 
 #

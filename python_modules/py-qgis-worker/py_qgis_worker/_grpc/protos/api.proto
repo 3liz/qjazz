@@ -48,6 +48,7 @@ message OwsRequest {
     optional bool direct = 6;
     optional string options = 7;
     optional string request_id = 8;
+    optional bool debug_report = 9;
 }
 
 message GenericRequest {
@@ -58,6 +59,7 @@ message GenericRequest {
     optional string version = 5;
     optional bool direct = 6;
     optional string request_id = 7;
+    optional bool debug_report = 9;
 }
 
 message CheckoutRequest {

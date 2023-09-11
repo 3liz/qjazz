@@ -28,7 +28,7 @@ class ResponseChunk(_message.Message):
     def __init__(self, chunk: _Optional[bytes] = ...) -> None: ...
 
 class OwsRequest(_message.Message):
-    __slots__ = ["service", "request", "target", "version", "url", "direct", "options", "request_id"]
+    __slots__ = ["service", "request", "target", "version", "url", "direct", "options", "request_id", "debug_report"]
     SERVICE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
@@ -37,6 +37,7 @@ class OwsRequest(_message.Message):
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
     service: str
     request: str
     target: str
@@ -45,10 +46,11 @@ class OwsRequest(_message.Message):
     direct: bool
     options: str
     request_id: str
-    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ...) -> None: ...
+    debug_report: bool
+    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class GenericRequest(_message.Message):
-    __slots__ = ["url", "method", "data", "target", "version", "direct", "request_id"]
+    __slots__ = ["url", "method", "data", "target", "version", "direct", "request_id", "debug_report"]
     URL_FIELD_NUMBER: _ClassVar[int]
     METHOD_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
@@ -56,6 +58,7 @@ class GenericRequest(_message.Message):
     VERSION_FIELD_NUMBER: _ClassVar[int]
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
     url: str
     method: str
     data: bytes
@@ -63,7 +66,8 @@ class GenericRequest(_message.Message):
     version: str
     direct: bool
     request_id: str
-    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ..., request_id: _Optional[str] = ...) -> None: ...
+    debug_report: bool
+    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ["uri", "pull"]

@@ -266,7 +266,7 @@ class Catalog:
 #
 
 
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 20
 
 
 class Pipe:
@@ -284,6 +284,12 @@ class Pipe:
 
     def write(self, obj):
         self._conn.send(obj)
+
+    def flush(self):
+        """ Pull out all remaining data from pipe
+        """
+        while self._conn.poll():
+            _ = self._conn.recv_bytes()
 
     async def _poll(self, timeout: int):
         """ Asynchronous read of Pipe connection

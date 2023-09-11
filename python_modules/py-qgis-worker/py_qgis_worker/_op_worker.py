@@ -81,7 +81,7 @@ def setup_server(config: WorkerConfig) -> QgsServer:
 #
 # Run Qgis server
 #
-def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
+def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, event):
     """ Run Qgis server and process incoming requests
     """
     cm = CacheManager(config.projects, server)
@@ -95,11 +95,16 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
     # For reporting
     _process = psutil.Process() if psutil else None
 
+    logger.set_log_level(logger.LogLevel.DEBUG)
+
+    import time
+
     while True:
         logger.debug("Waiting for messages")
         try:
             msg = conn.recv()
             logger.debug("Received message: %s", msg.msg_id.name)
+            event.set()
             match msg.msg_id:
                 # --------------------
                 # Qgis server Requests
@@ -173,3 +178,5 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
         except Exception as exc:
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)
+        finally:
+            event.clear()

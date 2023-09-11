@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import asyncio
 
 from typing_extensions import (
     AsyncIterator,
@@ -30,11 +31,32 @@ class Worker(mp.Process):
         super().__init__(name=config.name, daemon=True)
         self._worker_conf = config
         self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
-        self._worker_io = None
+        self._event = mp.Event()
+        self._timeout = config.worker_timeout
 
     @property
     def config(self) -> WorkerConfig:
         return self._worker_conf
+
+    def task_done(self) -> bool:
+        """ Return true if there is no processing
+            at hand
+        """
+        not self._event.is_set()
+
+    async def wait_until_task_done(self):
+        """ Consume all remaining data that may be send
+            by the worker task.
+            This is required if a client abort the request
+            in the middle.
+        """
+        logger.debug("Waiting until task done")
+        while self._event.is_set():
+            try:
+                _ = await self.io.read_bytes(1)
+            except asyncio.TimeoutError:
+                pass
+        self.io.flush()
 
     def dump_config(self) -> Dict:
         if isinstance(self._worker_conf, ConfigProxy):
@@ -42,13 +64,15 @@ class Worker(mp.Process):
         else:
             return self._worker_conf.model_dump()
 
-    async def update_config(self, obj: Dict, timeout: int = 20):
+    async def update_config(self, obj: Dict):
         if isinstance(self._worker_conf, ConfigProxy):
             self._worker_conf.service.update_config(obj)
             status, resp = await self.io.send_message(
                 _m.PutConfig(config=obj),
-                timeout=timeout,
+                timeout=self._timeout,
             )
+            # Update timeout config
+            self._timeout = self.config.worker_timeout
             # Update log level
             level = logger.set_log_level()
             logger.info("Log level set to %s", level.name)
@@ -63,6 +87,7 @@ class Worker(mp.Process):
             server,
             self._child_conn,
             self._worker_conf,
+            self._event,
         )
 
     @cached_property
@@ -74,7 +99,10 @@ class Worker(mp.Process):
     async def ping(self, echo: str) -> str:
         """  Send ping with echo string
         """
-        status, resp = await self.io.send_message(_m.Ping(echo))
+        status, resp = await self.io.send_message(
+            _m.Ping(echo),
+            timeout=self._timeout,
+        )
         if status != 200:
             raise WorkerError(status, resp)
         return resp
@@ -95,7 +123,6 @@ class Worker(mp.Process):
         headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
-        timeout: int = _m.DEFAULT_TIMEOUT,
     ) -> Tuple[_m.RequestReply, Optional[AsyncIterator]]:
         """ Send OWS request
 
@@ -130,7 +157,7 @@ class Worker(mp.Process):
                 request_id=request_id,
                 debug_report=debug_report,
             ),
-            timeout=timeout,
+            timeout=self._timeout,
         )
 
         # Request failed before reaching Qgis server
@@ -152,7 +179,6 @@ class Worker(mp.Process):
         headers: Dict[str, str] = None,
         request_id: str = "",
         debug_report: bool = False,
-        timeout: int = _m.DEFAULT_TIMEOUT,
     ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
         """ Send generic (api) request
 
@@ -182,13 +208,14 @@ class Worker(mp.Process):
                 headers=headers,
                 request_id=request_id,
             ),
+            timeout=self._timeout,
         )
         # Request failed before reaching Qgis server
         if status != 200:
             raise WorkerError(status, resp)
 
         if resp.chunked:
-            return resp, self.io.read_bytes()
+            return resp, self.io.read_bytes(timeout=self._timeout)
         else:
             return resp, None
 
@@ -210,7 +237,8 @@ class Worker(mp.Process):
             * `NOTFOUND`: The project does not exists, nor in storage, nor in cache.
         """
         status, resp = await self.io.send_message(
-            _m.CheckoutProject(uri=uri, pull=pull)
+            _m.CheckoutProject(uri=uri, pull=pull),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
@@ -220,7 +248,8 @@ class Worker(mp.Process):
         """ Drop project from cache
         """
         status, resp = await self.io.send_message(
-            _m.DropProject(uri=uri)
+            _m.DropProject(uri=uri),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
@@ -237,7 +266,8 @@ class Worker(mp.Process):
             iterator yielding CacheInfo items
         """
         status, resp = await self.io.send_message(
-            _m.ListCache(status_filter)
+            _m.ListCache(status_filter),
+            timeout=self._timeout,
         )
 
         if status != 200:
@@ -245,10 +275,10 @@ class Worker(mp.Process):
 
         if resp > 0:
             async def _stream():
-                status, resp = await self.io.read_message()
+                status, resp = await self.io.read_message(timeout=self._timeout)
                 while status == 206:
                     yield resp
-                    status, resp = await self.io.read_message()
+                    status, resp = await self.io.read_message(timeout=self._timeout)
             # Incomplete transmission ?
             if status != 200:
                 raise WorkerError(status, resp)
@@ -261,7 +291,8 @@ class Worker(mp.Process):
         """  Clear all items in cache
         """
         status, resp = await self.io.send_message(
-            _m.ClearCache()
+            _m.ClearCache(),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
@@ -273,16 +304,17 @@ class Worker(mp.Process):
             this particular location
         """
         status, resp = await self.io.send_message(
-            _m.Catalog(location=location)
+            _m.Catalog(location=location),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
 
         async def _stream():
-            status, item = await self.io.read_message()
+            status, item = await self.io.read_message(timeout=self._timeout)
             while status == 206:
                 yield item
-                status, item = await self.io.read_message()
+                status, item = await self.io.read_message(timeout=self._timeout)
             # Incomplete transmission ?
             if status != 200:
                 raise WorkerError(status, item)
@@ -296,7 +328,8 @@ class Worker(mp.Process):
             The method will NOT load the project in cache
         """
         status, resp = await self.io.send_message(
-            _m.GetProjectInfo(uri=uri)
+            _m.GetProjectInfo(uri=uri),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
@@ -314,16 +347,17 @@ class Worker(mp.Process):
             iterator yielding PluginInfo items
         """
         status, resp = await self.io.send_message(
-            _m.Plugins()
+            _m.Plugins(),
+            timeout=self._timeout,
         )
         if status != 200:
             raise WorkerError(status, resp)
         if resp > 0:
             async def _stream():
-                status, resp = await self.io.read_message()
+                status, resp = await self.io.read_message(timeout=self._timeout)
                 while status == 206:
                     yield resp
-                    status, resp = await self.io.read_message()
+                    status, resp = await self.io.read_message(timeout=self._timeout)
                 # Incomplete transmission ?
                 if status != 200:
                     raise WorkerError(status, resp)
