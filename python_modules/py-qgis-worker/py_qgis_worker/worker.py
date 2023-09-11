@@ -12,6 +12,9 @@ from .config import WorkerConfig
 from . import _op_worker
 from . import messages as _m
 
+from py_qgis_contrib.core.config import ConfigProxy
+from py_qgis_contrib.core import logger
+
 from functools import cached_property
 
 
@@ -32,6 +35,26 @@ class Worker(mp.Process):
     @property
     def config(self) -> WorkerConfig:
         return self._worker_conf
+
+    def dump_config(self) -> Dict:
+        if isinstance(self._worker_conf, ConfigProxy):
+            return self._worker_conf.service.conf.model_dump()
+        else:
+            return self._worker_conf.model_dump()
+
+    async def update_config(self, obj: Dict, timeout: int = 20):
+        if isinstance(self._worker_conf, ConfigProxy):
+            self._worker_conf.service.update_config(obj)
+            status, resp = await self.io.send_message(
+                _m.PutConfig(config=obj),
+                timeout=timeout,
+            )
+            # Update log level
+            level = logger.set_log_level()
+            logger.info("Log level set to %s", level.name)
+            logger.trace("Updated worker with configuration\n %s", obj)
+        else:
+            raise WorkerError(403, "Cannot update local configuration")
 
     def run(self):
         """ Override """

@@ -16,8 +16,13 @@ __all__ = [
 
 def _validate_netinterface(v: Tuple[str, int]) -> Tuple[str, int]:
     import ipaddress
-    # This raise a ValueError on invalide ip addresse
-    ipaddress.ip_address(v[0])
+    if v[0] != "[::]":
+        if not v[0]:
+            v[0] = "[::]"
+        else:
+            # This raise a ValueError on invalide ip addresse
+            ipaddress.ip_address(v[0])
+    return v
 
 
 NetInterface = Annotated[

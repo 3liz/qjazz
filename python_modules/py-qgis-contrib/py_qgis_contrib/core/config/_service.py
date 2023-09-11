@@ -31,10 +31,19 @@ import os
 
 from time import time
 from pathlib import Path
-from pydantic import create_model, BaseModel, Field, ValidationError
+
+from pydantic import (
+    create_model,
+    BaseModel,
+    Field,
+    PlainValidator,
+    PlainSerializer,
+    ValidationError,
+)
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Optional, Dict, Type
+from typing_extensions import Annotated, Optional, Dict, Type
 
 from .. import componentmanager
 
@@ -77,14 +86,36 @@ class ConfigService:
         self._conf = None
         self._model_changed = True
         self._timestamp = 0
+        self._env_prefix = 'conf_'
+        self._default_confdir = None
 
-    def _create_model(self, base) -> BaseSettings:
+    def _create_model(self) -> BaseSettings:
         if self._model_changed or not self._model:
+
+            class BaseConfig(BaseSettings, frozen=True):
+                model_config = SettingsConfigDict(
+                    env_nested_delimiter='__',
+                    env_prefix=self._env_prefix,
+                )
+
+                # XXX Use user dir
+                confdir: Annotated[
+                    Path,
+                    PlainValidator(lambda v: Path(v)),
+                    PlainSerializer(lambda x: str(x), return_type=str),
+                ] = Field(
+                    default=self._default_confdir or os.getcwd(),
+                    title="Search path for configuration files",
+                )
+
             self._model = create_model(
                 "BaseConfig",
-                __base__=base,
+                __base__=BaseConfig,
                 **{name: (model, model()) for name, model in self._configs.items()}
             )
+
+            self._model_changed = False
+
         return self._model
 
     def validate(
@@ -95,38 +126,29 @@ class ConfigService:
         """ Validate the configuration against
             configuration models
         """
-        env_prefix = env_prefix or 'conf_'
+        self._env_prefix = env_prefix or self._env_prefix
+        self._default_confdir = default_confdir or self._default_confdir
 
-        class BaseConfig(BaseSettings, frozen=True):
-            model_config = SettingsConfigDict(
-                env_nested_delimiter='__',
-                env_prefix=env_prefix,
-            )
-
-            # XXX Use user dir
-            confdir: Path = Field(
-                default=default_confdir or os.getcwd(),
-                title="Search path for configuration files",
-            )
-
-        BaseConfig = self._create_model(BaseConfig)
+        BaseConfig = self._create_model()
         _conf = BaseConfig.model_validate(obj)
 
         self._conf = _conf
-        self._model_changed = False
         # Update timestamp so that we can check update in
         # proxy
         self._timestamp = time()
 
-    def update_config(self):
+    def update_config(self, obj: Optional[Dict] = None):
         """ Update the configuration
         """
-        if self._model_changed:
+        if self._model_changed or obj:
             data = self._conf.model_dump() if self._conf else {}
+            if obj:
+                for k, v in obj.items():
+                    data[k] = v
             self.validate(data)
 
     def json_schema(self) -> Dict:
-        return self._create_model(BaseSettings).model_json_schema()
+        return self._create_model().model_json_schema()
 
     def add_section(self, name: str, model: Type[Config], replace: bool = False):
         if not replace and name in self._configs:
@@ -190,6 +212,10 @@ class ConfigProxy:
             self._conf = _default
         else:
             self.__update()
+
+    @property
+    def service(self) -> ConfigService:
+        return self._confservice
 
     def __update(self) -> Config:
         if self._confservice._timestamp > self._timestamp:

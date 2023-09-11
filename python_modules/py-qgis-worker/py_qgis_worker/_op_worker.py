@@ -17,6 +17,7 @@ from multiprocessing.connection import Connection
 from qgis.server import QgsServer
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.qgis import (
     init_qgis_server,
     show_qgis_settings,
@@ -150,9 +151,19 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
                 # Config
                 # --------------------
                 case _m.MsgType.PUT_CONFIG:
-                    _m.send_reply(conn, None, 405)
+                    if isinstance(config, ConfigProxy):
+                        config.service.update_config(msg.config)
+                        # Update log level
+                        logger.set_log_level()
+                        _m.send_reply(conn, None)
+                    else:
+                        # It does no make sense to update configuration
+                        # If the configuration is not a proxy
+                        # since cache manager and others will hold immutable
+                        # instance of configuration
+                        _m.send_reply(conn, "", 403)
                 case _m.MsgType.GET_CONFIG:
-                    _m.send_reply(conn, None, 405)
+                    _m.send_reply(conn, config.model_dump())
                 # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)

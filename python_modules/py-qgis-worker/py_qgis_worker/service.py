@@ -343,6 +343,45 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err))
 
+    #
+    # Get config
+    #
+    async def GetConfig(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.JsonConfig:
+
+        try:
+            retval = self._worker.dump_config()
+            print("#####\n", retval)
+            return api_pb2.JsonConfig(json=json.dumps(retval))
+        except WorkerError as e:
+            await _abort_on_error(context, e.status, e.details)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
+    #
+    # Plugin list
+    #
+    async def SetConfig(
+        self,
+        request: api_pb2.JsonConfig,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.Empty:
+        try:
+            obj = json.loads(request.json)
+            await self._worker.update_config(obj)
+            return api_pb2.Empty()
+        except json.JSONDecodeError as err:
+            await _abort_on_error(context, 400, str(err))
+        except WorkerError as e:
+            await _abort_on_error(context, e.status, e.details)
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err))
+
 
 #
 # Build a cache info from response

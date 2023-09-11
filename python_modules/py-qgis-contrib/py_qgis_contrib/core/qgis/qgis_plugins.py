@@ -53,8 +53,8 @@ QGIS_PLUGIN_SERVICE_CONTRACTID = '@3liz.org/qgis-plugin-service;1'
 
 
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
-    if not paths:
-        paths = [Path(p) for p in os.getenv("QGIS_PLUGINPATH", "").split(":")]
+    if not paths and os.getenv("QGIS_PLUGINPATH"):
+        paths = [Path(p) for p in os.getenv("QGIS_PLUGINPATH").split(":")]
     for path in paths:
         if not path.exists() or not path.is_dir():
             print(f"WARNING: '{path}' is not a valid plugin directory")

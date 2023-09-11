@@ -8,6 +8,7 @@ from google.protobuf.json_format import MessageToJson
 
 import sys
 import click
+import json
 
 from pathlib import Path
 from contextlib import contextmanager
@@ -200,6 +201,7 @@ def catalog(location: Optional[str]):
         for item in stream:
             print(MessageToJson(item))
 
+
 #
 # Plugins
 #
@@ -238,6 +240,42 @@ def list_plugins():
                     indent=4,
                 )
             )
+
+
+#
+# Config
+#
+@cli_commands.group('config')
+def config_commands():
+    """ Commands for cache management
+    """
+    pass
+
+
+@config_commands.command("get")
+def get_config():
+    """ List projects from cache
+    """
+    with connect() as stub:
+        resp = stub.GetConfig(api_pb2.Empty())
+        print(resp.json)
+
+
+@config_commands.command("set")
+@click.argument('config', nargs=1)
+def set_config(config: str):
+    """ Send CONFIG to remote
+    """
+    with connect() as stub:
+        if config.startswith('@'):
+            config = Path(config[1:]).open().read()
+
+        # Validate as json
+        try:
+            json.loads(config)
+            stub.SetConfig(api_pb2.JsonConfig(json=config))
+        except json.JSONDecodeError as err:
+            print(err, file=sys.stderr)
 
 
 cli_commands()

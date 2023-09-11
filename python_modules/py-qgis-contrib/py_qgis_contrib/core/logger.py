@@ -64,11 +64,12 @@ class LoggingConfig(config.Config):
     ]
 
 
-def set_log_level(log_level: Optional[LogLevel] = None):
+def set_log_level(log_level: Optional[LogLevel] = None) -> LogLevel:
     """ Set the log level
     """
     log_level = log_level or config.confservice.conf.logging.level
     LOGGER.setLevel(log_level.value)
+    return log_level
 
 
 def setup_log_handler(

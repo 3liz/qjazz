@@ -51,8 +51,8 @@ class MsgType(Enum):
     PROJECT_INFO = auto()
     PLUGINS = auto()
     CATALOG = auto()
-    GET_CONFIG = auto()
     PUT_CONFIG = auto()
+    GET_CONFIG = auto()
 
 
 # Note: This is defined in python 3.11 via http module
@@ -232,14 +232,14 @@ class GetProjectInfo:
 @dataclass(frozen=True)
 class GetConfig:
     msg_id: ClassVar[MsgType] = MsgType.GET_CONFIG
-    return_type: ClassVar[Type] = str
+    return_type: ClassVar[Type] = Dict
 
 
 @dataclass(frozen=True)
 class PutConfig:
     msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
     return_type: ClassVar[Literal[None]] = None
-    json: str
+    config: Optional[Dict] = None
 
 
 #
