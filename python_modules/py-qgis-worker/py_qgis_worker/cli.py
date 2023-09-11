@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import grpc
+import signal
 from ._grpc import api_pb2  # noqa
 from ._grpc import api_pb2_grpc
 
@@ -62,10 +63,15 @@ def get_config():
 
 async def serve(worker):
     logger.info("Waiting for worker to start...")
-    status, _ = await worker.io.send_message(messages.Ping())
-    if status != 200:
-        logger.error("Worker failed with error {status}")
-        sys.exit(1)
+    try:
+        status, _ = await worker.io.send_message(messages.Ping(), timeout=2)
+        assert status == 200, f"Worker Ping() returned error: {status}"
+    except asyncio.exceptions.TimeoutError:
+        if not worker.is_alive():
+            logger.critical("Worker failed with exit code %s", worker.exitcode)
+        else:
+            logger.critical("Worker startup stalled !")
+        return
 
     server = grpc.aio.server()
     api_pb2_grpc.add_QgisWorkerServicer_to_server(RpcService(worker), server)
@@ -73,6 +79,19 @@ async def serve(worker):
         listen_addr = f"{iface}:{port}"
         logger.info("Listening on port: %s", listen_addr)
         server.add_insecure_port(listen_addr)
+
+    def _term(message):
+        logger.info(message)
+        loop.create_task(server.stop(20))
+
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGTERM, lambda: _term("Server terminated"))
+    loop.add_signal_handler(signal.SIGINT, lambda: _term("Server interrupted"))
+    loop.add_signal_handler(
+        signal.SIGCHLD,
+        lambda: _term("Child process terminated")
+    )
+
     await server.start()
     await server.wait_for_termination()
 
@@ -132,8 +151,12 @@ def serve_grpc(configpath: Optional[Path]):
 
     worker = Worker(config.ConfigProxy(WORKER_SECTION))
     worker.start()
-
-    asyncio.run(serve(worker))
+    try:
+        asyncio.run(serve(worker))
+    finally:
+        worker.terminate()
+        worker.join()
+        logger.info("Server shutdown")
 
 
 def main():

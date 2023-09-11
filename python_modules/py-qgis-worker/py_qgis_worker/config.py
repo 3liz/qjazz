@@ -7,7 +7,6 @@ from pydantic import (
 )
 from typing_extensions import (
     List,
-    Optional,
 )
 
 DEFAULT_INTERFACE = ("[::]", 23456)
@@ -15,8 +14,8 @@ DEFAULT_INTERFACE = ("[::]", 23456)
 
 class WorkerConfig(config.Config):
     name: str = Field(
-        default="",
-        title="Name of the worker configuration",
+        default="default",
+        title="Name of the worker instance",
     )
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
@@ -69,13 +68,9 @@ class WorkerConfig(config.Config):
         title="Interfaces to listen to",
         min_length=1,
     )
-    ssl: Optional[config.SSLConfig] = Field(
-        default=None,
-        title="SSL/TLS configuration",
-    )
 
 
-class WorkespaceConfig(config.Config):
+class WorkspaceConfig(config.Config):
     workers: List[WorkerConfig] = Field(
         default=[WorkerConfig(name='default')],
         title="List of worker configuration",

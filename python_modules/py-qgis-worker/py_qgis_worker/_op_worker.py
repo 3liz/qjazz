@@ -96,9 +96,9 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
 
     while True:
         logger.debug("Waiting for messages")
-        msg = conn.recv()
-        logger.debug("Received message: %s", msg.msg_id.name)
         try:
+            msg = conn.recv()
+            logger.debug("Received message: %s", msg.msg_id.name)
             match msg.msg_id:
                 # --------------------
                 # Qgis server Requests
@@ -156,6 +156,9 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig):
                 # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)
+        except KeyboardInterrupt:
+            logger.info("Worker interrupted")
+            break
         except Exception as exc:
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)

@@ -283,7 +283,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     #
     # Project info
     #
-
     async def GetProjectInfo(
         self,
         request: api_pb2.ProjectRequest,
@@ -321,7 +320,6 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     #
     # Plugin list
     #
-
     async def ListPlugins(
         self,
         request: api_pb2.Empty,

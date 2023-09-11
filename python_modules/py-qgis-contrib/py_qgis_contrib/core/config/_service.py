@@ -65,9 +65,6 @@ class Config(BaseModel, frozen=True):
     pass
 
 
-# XXX Change name
-DEFAULT_APPLICATION_NAME = 'py-qgis-server'
-
 CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
 
 
@@ -92,7 +89,7 @@ class ConfigService:
 
     def validate(
             self, obj: Dict,
-            application_name: str = DEFAULT_APPLICATION_NAME,
+            default_confdir: Optional[Path] = None,
             env_prefix: Optional[str] = None,
     ):
         """ Validate the configuration against
@@ -108,7 +105,7 @@ class ConfigService:
 
             # XXX Use user dir
             confdir: Path = Field(
-                default=Path(f'/etc/{application_name}'),
+                default=default_confdir or os.getcwd(),
                 title="Search path for configuration files",
             )
 
