@@ -93,6 +93,13 @@ class ConfigService:
         self._env_prefix = 'conf_'
         self._default_confdir = None
 
+    def _create_base_model(self, base: Type[BaseModel]):
+        return create_model(
+            "BaseConfig",
+            __base__=base,
+            **{name: (model, model()) for name, model in self._configs.items()}
+        )
+
     def _create_model(self) -> BaseSettings:
         if self._model_changed or not self._model:
 
@@ -112,12 +119,7 @@ class ConfigService:
                     title="Search path for configuration files",
                 )
 
-            self._model = create_model(
-                "BaseConfig",
-                __base__=BaseConfig,
-                **{name: (model, model()) for name, model in self._configs.items()}
-            )
-
+            self._model = self._create_base_model(BaseConfig)
             self._model_changed = False
 
         return self._model
@@ -152,7 +154,7 @@ class ConfigService:
             self.validate(data)
 
     def json_schema(self) -> Dict:
-        return self._create_model().model_json_schema()
+        return self._create_base_model(BaseSettings).model_json_schema()
 
     def add_section(self, name: str, model: Type[Config], replace: bool = False):
         if not replace and name in self._configs:

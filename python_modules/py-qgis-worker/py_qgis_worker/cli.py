@@ -100,14 +100,17 @@ def print_version(settings: bool):
     ),
 )
 @click.option("--schema", is_flag=True, help="Display configuration schema")
-def print_config(conf: Optional[Path], schema: bool = False):
+@click.option("--pretty", is_flag=True, help="Pretty format")
+def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = False):
     """ Display configuration and exit
     """
     import json
+    indent = 4 if pretty else None
     if schema:
-        print(json.dumps(config.confservice.json_schema()))
+        json_schema = config.confservice.json_schema()
+        print(json.dumps(json_schema, indent=indent))
     else:
-        print(load_configuration(conf).conf.json())
+        print(load_configuration(conf).model_dump_json(indent=indent))
 
 
 @cli_commands.command('grpc')

@@ -3,6 +3,7 @@ PYTHON_MODULES= \
 	python_modules/py-qgis-contrib \
 	python_modules/py-qgis-project-cache \
 	python_modules/py-qgis-worker \
+	python_modules/py-qgis-scripts \
 	$(NULL)
 
 test: ${PYTHON_MODULES}

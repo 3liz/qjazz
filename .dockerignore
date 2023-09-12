@@ -1,0 +1,17 @@
+tests
+.git
+.gitignore
+data
+config
+.ipython
+.pytest_cache
+.activate
+Makefile
+*.egg-info
+*.toml.in
+python_modules/*/tests
+python_modules/*/.pytest_cache
+python_modules/*/Makefile
+python_modules/*/*.toml.in
+python_modules/*/*.egg-info
+python_modules/*/.gitignore

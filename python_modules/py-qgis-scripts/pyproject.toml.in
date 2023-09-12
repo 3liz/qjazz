@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-worker"
-description = "Qgis Worker"
+name = "py-qgis-scripts"
+description = "Qgis RCP scripts"
 requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -12,23 +12,16 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-contrib==1.0.0.dev0",
-    "py-qgis-project-cache==1.0.0.dev0",
-    "grpcio",
-    "grpcio-tools",
-    "click",
+    "py-qgis-worker==${PIN_VERSION}",
 ]
-version = "1.0.0.dev0"
+version = "${PIN_VERSION}"
+
+[project.scripts]
+qgis-server-rpc = "py_qgis_worker.cli:main"
 
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
-
-[tool.setuptools.packages.find]
-include = [
-    "py_qgis_worker", 
-    "py_qgis_worker.*",
-]
 
 [tool.autopep8]
 max_line = 120
