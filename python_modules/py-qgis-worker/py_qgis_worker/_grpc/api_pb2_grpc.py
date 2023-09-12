@@ -74,6 +74,11 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.CatalogRequest.SerializeToString,
                 response_deserializer=api__pb2.CatalogItem.FromString,
                 )
+        self.GetEnv = channel.unary_unary(
+                '/api.QgisWorker/GetEnv',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.JsonConfig.FromString,
+                )
 
 
 class QgisWorkerServicer(object):
@@ -151,6 +156,12 @@ class QgisWorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetEnv(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisWorkerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -213,6 +224,11 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     servicer.Catalog,
                     request_deserializer=api__pb2.CatalogRequest.FromString,
                     response_serializer=api__pb2.CatalogItem.SerializeToString,
+            ),
+            'GetEnv': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetEnv,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.JsonConfig.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -425,5 +441,22 @@ class QgisWorker(object):
         return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/Catalog',
             api__pb2.CatalogRequest.SerializeToString,
             api__pb2.CatalogItem.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetEnv(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetEnv',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.JsonConfig.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

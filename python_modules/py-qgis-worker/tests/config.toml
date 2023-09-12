@@ -1,0 +1,16 @@
+[logging]
+level = "trace"
+
+[worker]
+name = "Test"
+
+[worker.projects]
+trust_layer_metadata = true
+disable_getprint = true
+force_readonly_layers = true
+
+[worker.projects.search_paths]
+'/tests' = "$location/data/samples"
+'/france' = "$location/data/france_parts"
+'/montpellier' = "$location/data/montpellier"
+ 

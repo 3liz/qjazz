@@ -53,9 +53,12 @@ class MsgType(Enum):
     CATALOG = auto()
     PUT_CONFIG = auto()
     GET_CONFIG = auto()
-
+    ENV = auto()
+    STATS = auto()
 
 # Note: This is defined in python 3.11 via http module
+
+
 class HTTPMethod(Enum):
     GET = auto()
     HEAD = auto()
@@ -261,10 +264,20 @@ class Catalog:
     return_type: ClassVar[Type] = IO[CatalogItem]
     location: Optional[str] = None
 
+
+#
+# ENV
+#
+
+@dataclass(frozen=True)
+class GetEnv:
+    msg_id: ClassVar[MsgType] = MsgType.ENV
+    return_type: ClassVar[Type] = Dict
+
+
 #
 # Asynchronous Pipe connection reader
 #
-
 
 DEFAULT_TIMEOUT = 20
 

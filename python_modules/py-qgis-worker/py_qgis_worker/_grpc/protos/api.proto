@@ -19,6 +19,7 @@ service QgisWorker {
     rpc GetConfig (Empty) returns (JsonConfig) {}
     rpc GetProjectInfo (ProjectRequest) returns (ProjectInfo) {}
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
+    rpc GetEnv (Empty) returns (JsonConfig) {}
 }
 
 

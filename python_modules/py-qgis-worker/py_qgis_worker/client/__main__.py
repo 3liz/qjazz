@@ -278,4 +278,24 @@ def set_config(config: str):
             print(err, file=sys.stderr)
 
 
+#
+#  status
+#
+
+@cli_commands.group('status')
+def status_commands():
+    """ Commands for cache management
+    """
+    pass
+
+
+@status_commands.command("env")
+def get_status_env():
+    """ Get environment status
+    """
+    with connect() as stub:
+        resp = stub.GetEnv(api_pb2.Empty())
+        print(resp.json)
+
+
 cli_commands()

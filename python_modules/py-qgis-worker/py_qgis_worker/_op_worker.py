@@ -4,12 +4,15 @@
 import os
 import traceback
 
+from time import time
+
 try:
     import psutil
 except ImportError:
     psutil = None
 
 from typing_extensions import (
+    Dict,
     assert_never,
 )
 from multiprocessing.connection import Connection
@@ -21,6 +24,7 @@ from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.qgis import (
     init_qgis_server,
     show_qgis_settings,
+    show_all_versions,
     PluginType,
     QgisPluginService,
 )
@@ -78,9 +82,20 @@ def setup_server(config: WorkerConfig) -> QgsServer:
     return server
 
 
+def worker_env() -> Dict:
+    from qgis.core import Qgis
+    return dict(
+        qgis_version=Qgis.QGIS_VERSION_INT,
+        qgis_release=Qgis.QGIS_RELEASE_NAME,
+        versions=list(show_all_versions()),
+        environment=dict(os.environ),
+    )
+
 #
 # Run Qgis server
 #
+
+
 def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, event):
     """ Run Qgis server and process incoming requests
     """
@@ -95,16 +110,14 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
     # For reporting
     _process = psutil.Process() if psutil else None
 
-    logger.set_log_level(logger.LogLevel.DEBUG)
-
-    import time
-
     while True:
         logger.debug("Waiting for messages")
         try:
             msg = conn.recv()
             logger.debug("Received message: %s", msg.msg_id.name)
+            logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
             event.set()
+            _t_start = time()
             match msg.msg_id:
                 # --------------------
                 # Qgis server Requests
@@ -170,6 +183,11 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
                 case _m.MsgType.GET_CONFIG:
                     _m.send_reply(conn, config.model_dump())
                 # --------------------
+                # Status
+                # --------------------
+                case _m.MsgType.ENV:
+                    _m.send_reply(conn, worker_env())
+                # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)
         except KeyboardInterrupt:
@@ -179,4 +197,7 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)
         finally:
+            _t_end = time()
+            if logger.isEnabledFor(logger.LogLevel.TRACE):
+                logger.trace("Response time: %d ms", int((_t_end - _t_start) * 1000.))
             event.clear()

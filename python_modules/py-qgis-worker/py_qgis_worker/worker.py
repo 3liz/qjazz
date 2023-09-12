@@ -26,6 +26,12 @@ class WorkerError(Exception):
 
 
 class Worker(mp.Process):
+    """ Worker stub api
+
+        *WARNING*: There is a race condition between
+        tasks: use a lock mecanism to protect
+        concurrent calls.
+    """
 
     def __init__(self, config: WorkerConfig):
         super().__init__(name=config.name, daemon=True)
@@ -94,13 +100,28 @@ class Worker(mp.Process):
     def io(self) -> _m.Pipe:
         return _m.Pipe(self._parent_conn)
 
+    # ================
     # API stubs
+    # ================
+
+    #
+    # Admin
+    #
 
     async def ping(self, echo: str) -> str:
         """  Send ping with echo string
         """
         status, resp = await self.io.send_message(
             _m.Ping(echo),
+            timeout=self._timeout,
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+        return resp
+
+    async def env(self) -> Dict:
+        status, resp = await self.io.send_message(
+            _m.GetEnv(),
             timeout=self._timeout,
         )
         if status != 200:

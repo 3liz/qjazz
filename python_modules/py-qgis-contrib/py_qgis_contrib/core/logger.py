@@ -54,7 +54,7 @@ FORMATSTR = '%(asctime)s\t[%(process)d]\t%(levelname)s\t%(message)s'
 class LoggingConfig(config.Config):
     level: Annotated[
         LogLevel,
-        PlainValidator(lambda v: LogLevel[v]),
+        PlainValidator(lambda v: LogLevel[v.upper()]),
         PlainSerializer(lambda x: x.name, return_type=str),
         WithJsonSchema({
             'enum': [m for m in LogLevel.__members__],
@@ -78,6 +78,7 @@ def setup_log_handler(
 ):
     """ Initialize log handler with the given log level
     """
+    logging.addLevelName(LogLevel.TRACE.value, LogLevel.TRACE.name)
     logging.addLevelName(LogLevel.REQ.value, LogLevel.REQ.name)
     logging.addLevelName(LogLevel.RREQ.value, LogLevel.RREQ.name)
 
@@ -210,6 +211,14 @@ debug = LOGGER.debug
 
 def trace(msg, *args, **kwargs):
     LOGGER.log(LogLevel.TRACE.value, msg, *args, **kwargs)
+
+
+def log_req(msg, *args, **kwargs):
+    LOGGER.log(LogLevel.REQ.value, msg, *args, **kwargs)
+
+
+def log_rreq(msg, *args, **kwargs):
+    LOGGER.log(LogLevel.RREQ.value, msg, *args, **kwargs)
 
 
 def isEnabledFor(level: LogLevel):

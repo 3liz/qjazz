@@ -7,7 +7,7 @@
 import os
 import sys
 
-from typing import Dict
+from typing import Dict, Iterator
 
 from .. import logger
 
@@ -121,9 +121,8 @@ def install_logger_hook(logprefix: str) -> None:
         elif level == Qgis.Critical:
             logger.error(arg)
         else:
-            # Qgis is somehow very noisy
-            # log only if verbose is set
-            logger.debug(arg)
+            # Qgis may be somehow very noisy
+            logger.trace(arg)
 
     messageLog = QgsApplication.messageLog()
     messageLog.messageReceived.connect(writelogmessage)
@@ -234,6 +233,12 @@ def print_qgis_version(verbose: bool = False) -> None:
         init_qgis_application()
         print(qgis_application.showSettings())
         sys.exit(1)
+
+
+def show_all_versions() -> Iterator[str]:
+    from qgis.core import QgsCommandLineUtils
+    versions = QgsCommandLineUtils.allVersions().split('\n')
+    return (v for v in versions if v)
 
 
 def show_qgis_settings() -> str:

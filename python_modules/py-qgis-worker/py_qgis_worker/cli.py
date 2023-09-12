@@ -7,7 +7,7 @@ from ._grpc import api_pb2_grpc
 
 from .service import RpcService
 from .worker import Worker
-from .config import WorkerConfig, ProjectsConfig
+from .config import WorkerConfig
 
 import click
 
@@ -31,7 +31,10 @@ config.confservice.add_section(WORKER_SECTION, WorkerConfig)
 
 def load_configuration(configpath: Optional[Path]) -> config.Config:
     if configpath:
-        cnf = config.read_config_toml(configpath)
+        cnf = config.read_config_toml(
+            configpath,
+            location=str(configpath.parent.absolute())
+        )
     else:
         cnf = {}
     try:
@@ -42,26 +45,13 @@ def load_configuration(configpath: Optional[Path]) -> config.Config:
     return config.confservice.conf
 
 
-def get_config():
-    data = Path("./tests/data").absolute()
-    return WorkerConfig(
-        name="Test",
-        projects=ProjectsConfig(
-            trust_layer_metadata=True,
-            disable_getprint=True,
-            force_readonly_layers=True,
-            search_paths={
-                '/tests': str(data.joinpath("samples")),
-                '/france': str(data.joinpath("france_parts")),
-                '/montpellier': str(data.joinpath("montpellier")),
-            },
-        ),
-    )
-
-
 async def serve(worker):
     server = grpc.aio.server()
-    api_pb2_grpc.add_QgisWorkerServicer_to_server(RpcService(worker), server)
+    servicer = RpcService(worker)
+
+    await servicer.cache_worker_status()
+
+    api_pb2_grpc.add_QgisWorkerServicer_to_server(servicer, server)
     for iface, port in worker.config.listen:
         listen_addr = f"{iface}:{port}"
         logger.info("Listening on port: %s", listen_addr)
@@ -100,6 +90,7 @@ def print_version(settings: bool):
 @cli_commands.command('config')
 @click.option(
     "--conf", "-C",
+    envvar="QGIS_GRPC_CONFIGFILE",
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -122,6 +113,7 @@ def print_config(conf: Optional[Path], schema: bool = False):
 @cli_commands.command('grpc')
 @click.option(
     "--conf", "-C", "configpath",
+    envvar="QGIS_GRPC_CONFIGFILE",
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -136,8 +128,7 @@ def serve_grpc(configpath: Optional[Path]):
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    # worker = Worker(config.ConfigProxy(WORKER_SECTION))
-    worker = Worker(get_config())
+    worker = Worker(config.ConfigProxy(WORKER_SECTION))
     worker.start()
     try:
         asyncio.run(serve(worker))

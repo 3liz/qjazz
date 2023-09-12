@@ -54,7 +54,7 @@ getenv = os.getenv
 ConfigError = ValidationError
 
 
-def read_config_toml(self, cfgfile: Path) -> Dict:
+def read_config_toml(cfgfile: Path, **kwds) -> Dict:
     """ Read configuration from file
     """
     try:
@@ -66,7 +66,11 @@ def read_config_toml(self, cfgfile: Path) -> Dict:
     cfgfile = Path(cfgfile)
     # Load the toml file
     with cfgfile.open() as f:
-        return toml.loads(f.read())
+        content = f.read()
+        if kwds:
+            from string import Template
+            content = Template(content).substitute(kwds)
+        return toml.loads(content)
 
 
 # Base classe for configuration models

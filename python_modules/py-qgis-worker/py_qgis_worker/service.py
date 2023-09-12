@@ -48,14 +48,8 @@ def _to_iso8601(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat(timespec='milliseconds')
 
 
-async def _abort_on_fail(context: grpc.aio.ServicerContext, code: int):
-    await context.send_initial_metadata(
-        [('x-reply-status-code', str(code))]
-    )
-    raise ExecError
-
-
-async def _abort_on_error(context: grpc.aio.ServicerContext, code: int, details: str):
+async def _abort_on_error(context: grpc.aio.ServicerContext, code: int, details: str, request: str):
+    logger.log_req("%s\t%s\t%s", code, request, details)
     await context.send_initial_metadata(
         [('x-reply-status-code', str(code))]
     )
@@ -77,6 +71,18 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         self._timeout = worker.config.worker_timeout
         self._max_requests = worker.config.max_waiting_requests
         self._count = 0
+        self._cached_worker_env = None
+        self._cached_worker_plugins = None
+
+    async def cache_worker_status(self):
+        # Cache environment since it is immutable
+        logger.debug("Caching worker status")
+        self._cached_worker_env = await self._worker.env()
+        _, items = await self._worker.list_plugins()
+        if items:
+            self._cached_worker_plugins = [item async for item in items]
+        else:
+            self._cached_worker_plugins = []
 
     async def Ping(
         self,
@@ -88,32 +94,43 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         return api_pb2.PingReply(echo=request.echo)
 
     @asynccontextmanager
-    async def lock(self, context):
+    async def lock(self, context, request: str):
         """ Lock context
 
-            Prevent race condition on worker
+            - Prevent race condition on worker
+            - Handle client disconnection
+            - Handle request piling
+            - Handle execution errors
+            - Handle stalled/long running job
         """
         try:
+            # Note: identities are not set if the connection is not
+            # authenticated
+            # logger.trace("Peer identities: %s", context.peer_identities())
+            _on_air = False
             if self._count >= self._max_requests:
                 raise WorkerError(503, "Maximum number of waiting requests reached")
             if not self._worker.is_alive():
                 raise WorkerError(503, "Server shutdown")
-
+            # Prevent race condition
             await asyncio.wait_for(self._lock.acquire(), self._timeout)
             self._count += 1
+            _on_air = True
             yield
         except asyncio.TimeoutError:
             logger.critical("Worker stalled, terminating...")
             self._worker.terminate()
-            await _abort_on_error(context, 503, "Server stalled")
+            await _abort_on_error(context, 503, "Server stalled", request)
         except WorkerError as e:
-            await _abort_on_error(context, e.code, e.details)
+            await _abort_on_error(context, e.code, e.details, request)
         except asyncio.CancelledError:
             logger.error("Connection cancelled by client")
-            await self._worker.wait_until_task_done()
+            if _on_air:
+                # Flush stream from current task
+                await self._worker.wait_until_task_done()
         except Exception as err:
-            logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
+            logger.critical(traceback.format_exc(), request)
+            await _abort_on_error(context, 500, str(err), request)
         finally:
             self._count -= 1
             self._lock.release()
@@ -127,7 +144,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
-        async with self.lock(context):
+        async with self.lock(context, "ExecuteOwsRequest"):
             headers = dict(context.invocation_metadata())
 
             resp, stream = await self._worker.ows_request(
@@ -156,6 +173,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
 
             # Final report
             if request.debug_report:
+                logger.trace("Sending debug report")
                 report = await self._worker.io.read()
                 context.set_trailling_metatada([
                     ('x-debug-memory', str(report.memory)),
@@ -173,7 +191,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
-        async with self.lock(context):
+        async with self.lock(context, "ExecuteRequest"):
             headers = dict(context.invocation_metadata())
 
             try:
@@ -224,7 +242,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
 
-        async with self.lock(context):
+        async with self.lock(context, "CheckoutProject"):
             resp = await self._worker.checkout_project(
                 uri=request.uri,
                 pull=request.pull,
@@ -240,7 +258,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.CacheInfo:
 
-        async with self.lock(context):
+        async with self.lock(context, "DropProject"):
             resp = await self._worker.drop_project(uri=request.uri)
             return _new_cache_info(resp)
 
@@ -253,7 +271,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.CacheInfo, None, None]:
 
-        async with self.lock(context):
+        async with self.lock(context, "ListCache"):
             try:
                 status_filter = _m.CheckoutStatus[request.status_filter]
             except KeyError:
@@ -274,7 +292,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
 
-        async with self.lock(context):
+        async with self.lock(context, "ClearCache"):
             await self._worker.clear_cache()
             return api_pb2.Empty()
 
@@ -287,7 +305,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.CatalogItem, None, None]:
 
-        async with self.lock(context):
+        async with self.lock(context, "Catalog"):
             items = await self._worker.catalog(location=request.location)
             async for item in items:
                 yield api_pb2.CatalogItem(
@@ -317,7 +335,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                 is_spatial=layer.is_spatial,
             )
 
-        async with self.lock(context):
+        async with self.lock(context, "GetProjectInfo"):
             resp = await self._worker.io.project_info(uri=request.uri)
             return api_pb2.ProjectInfo(
                 status=resp.status.name,
@@ -339,17 +357,19 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.PluginInfo, None, None]:
 
-        async with self.lock(context):
-            count, items = await self._worker.list_plugins()
-            await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
-            if items:
-                async for item in items:
-                    yield api_pb2.PluginInfo(
-                        name=item.name,
-                        path=str(item.path),
-                        plugin_type=item.plugin_type.name,
-                        json_metadata=json.dumps(item.metadata),
-                    )
+        if self._cached_worker_plugins is None:
+            async with self.lock(context, "ListPlugins"):
+                await self.cache_worker_status()
+
+        count = len(self._cached_worker_plugins)
+        await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
+        for item in self._cached_worker_plugins:
+            yield api_pb2.PluginInfo(
+                name=item.name,
+                path=str(item.path),
+                plugin_type=item.plugin_type.name,
+                json_metadata=json.dumps(item.metadata),
+            )
 
     #
     # Get config
@@ -364,13 +384,13 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             retval = self._worker.dump_config()
             return api_pb2.JsonConfig(json=json.dumps(retval))
         except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details)
+            await _abort_on_error(context, e.status, e.details, "GetConfig")
         except Exception as err:
             logger.critical(traceback.format_exc())
-            await _abort_on_error(context, 500, str(err))
+            await _abort_on_error(context, 500, str(err), "GetConfig")
 
     #
-    # Plugin list
+    # Set Config
     #
     async def SetConfig(
         self,
@@ -381,19 +401,41 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         try:
             obj = json.loads(request.json)
         except json.JSONDecodeError as err:
-            await _abort_on_error(context, 400, str(err))
+            await _abort_on_error(context, 400, str(err), "SetConfig")
 
-        async with self.lock(context):
+        async with self.lock(context, "SetConfig"):
             await self._worker.update_config(obj)
             # Update configuration
             self._timeout = self._worker.config.worker_timeout
             self._max_requests = self._worker.config.max_waiting_requests
             return api_pb2.Empty()
 
+    #
+    # Get Env Status
+    #
+    async def GetEnv(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.JsonConfig, None, None]:
+
+        if self._cached_worker_env is None:
+            async with self.lock(context, "GetEnv"):
+                await self.cache_worker_status()
+
+        try:
+            return api_pb2.JsonConfig(json=json.dumps(self._cached_worker_env))
+        except WorkerError as e:
+            await _abort_on_error(context, e.status, e.details, "GetEnv")
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err), "GetEnv")
 
 #
 # Build a cache info from response
 #
+
+
 def _new_cache_info(resp) -> api_pb2.CacheInfo:
     if resp.last_modified:
         last_modified = _to_iso8601(datetime.fromtimestamp(resp.last_modified))
