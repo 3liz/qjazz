@@ -91,6 +91,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
     ) -> api_pb2.PingReply:
         """  Simple ping request
         """
+        logger.log_req("Received PING request")
         return api_pb2.PingReply(echo=request.echo)
 
     @asynccontextmanager
@@ -98,8 +99,8 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         """ Lock context
 
             - Prevent race condition on worker
+            - Prevent request piling
             - Handle client disconnection
-            - Handle request piling
             - Handle execution errors
             - Handle stalled/long running job
         """

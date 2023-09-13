@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  worker:
+    image: qgis-services:release
+    networks:
+    - qgis_rpc_network
+    volumes:
+    - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
+    command: ["qgis-server-rpc", "grpc", "-C", "/opt/qgis-services/config.toml"]
+  client:
+    image: qgis-services:release
+    networks:
+    - qgis_rpc_network
+    command: ["sleep infinity"]
+
+networks:
+  qgis_rpc_network:
+    driver: bridge

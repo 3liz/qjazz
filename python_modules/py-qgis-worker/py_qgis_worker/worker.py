@@ -186,7 +186,7 @@ class Worker(mp.Process):
             raise WorkerError(status, resp)
 
         if resp.chunked:
-            return resp, self.io.read_bytes()
+            return resp, self.io.read_bytes(timeout=self._timeout)
         else:
             return resp, None
 

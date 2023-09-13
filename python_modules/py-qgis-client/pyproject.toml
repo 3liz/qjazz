@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-worker"
-description = "Qgis Worker"
+name = "py-qgis-client"
+description = "Qgis gRCP Client"
 requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -12,11 +12,10 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-contrib==1.0.0.dev0",
-    "py-qgis-project-cache==1.0.0.dev0",
     "grpcio",
-    "grpcio-tools",
     "grpcio-health-checking",
+    "grpcio-tools",
+    "py-qgis-contrib==1.0.0.dev0",
     "click",
 ]
 version = "1.0.0.dev0"
@@ -27,8 +26,8 @@ email = "dmarteau@3liz.org"
 
 [tool.setuptools.packages.find]
 include = [
-    "py_qgis_worker", 
-    "py_qgis_worker.*",
+    "py_qgis_client", 
+    "py_qgis_client.*",
 ]
 
 [tool.autopep8]

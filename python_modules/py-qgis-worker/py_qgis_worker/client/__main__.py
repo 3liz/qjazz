@@ -4,12 +4,18 @@ import grpc
 from .._grpc import api_pb2
 from .._grpc import api_pb2_grpc
 
+from grpc_health.v1 import health_pb2       # HealthCheckRequest
+from grpc_health.v1 import health_pb2_grpc  # HealthStub
+
+
 from google.protobuf.json_format import MessageToJson
 
+import os
 import sys
 import click
 import json
 
+from time import time, sleep
 from pathlib import Path
 from contextlib import contextmanager
 from typing import (
@@ -19,22 +25,26 @@ from typing import (
 
 
 @contextmanager
-def connect():
+def connect(
+    use_ssl: bool = False,
+    stub=None,
+):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     #
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
     with grpc.insecure_channel(
-        target="localhost:23456",
+        target=os.getenv("QGIS_GRPC_HOST", "localhost:23456"),
         options=[
-            ("grpc.lb_policy_name", "pick_first"),
-            ("grpc.enable_retries", 0),
+            ("grpc.lb_policy_name", "round_robin"),
+            ("grpc.enable_retries", 1),
             ("grpc.keepalive_timeout_ms", 10000),
         ],
     ) as channel:
         try:
-            yield api_pb2_grpc.QgisWorkerStub(channel)
+            stub = stub or api_pb2_grpc.QgisWorkerStub
+            yield stub(channel)
             # Timeout in seconds.
             # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
         except grpc.RpcError as rpcerr:
@@ -296,6 +306,36 @@ def get_status_env():
     with connect() as stub:
         resp = stub.GetEnv(api_pb2.Empty())
         print(resp.json)
+
+
+@cli_commands.command("ping")
+@click.option("--count", default=1, help="Number of requests to send")
+def ping(count: int):
+    """ Get environment status
+    """
+    with connect() as stub:
+        for n in range(count):
+            _t_start = time()
+            resp = stub.Ping(api_pb2.PingRequest(echo=str(n)))
+            _t_end = time()
+            print(f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end-_t_start) * 1000.)} ms")
+            sleep(1)
+
+
+@cli_commands.command("healthcheck")
+@click.option("--watch", is_flag=True, help="Watch status changes")
+def healthcheck_status(watch: bool):
+    """ Check the status of a GRPC server
+    """
+    with connect(stub=health_pb2_grpc.HealthStub) as stub:
+        ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
+        request = health_pb2.HealthCheckRequest(service="QgisWorker")
+        if watch:
+            for resp in stub.Watch(request):
+                print("status: ", ServingStatus.Name(resp.status))
+        else:
+            resp = stub.Check(request)
+            print(ServingStatus.Name(resp.status))
 
 
 cli_commands()

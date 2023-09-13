@@ -197,7 +197,8 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)
         finally:
-            _t_end = time()
-            if logger.isEnabledFor(logger.LogLevel.TRACE):
-                logger.trace("Response time: %d ms", int((_t_end - _t_start) * 1000.))
-            event.clear()
+            if event.is_set():
+                _t_end = time()
+                if logger.isEnabledFor(logger.LogLevel.TRACE):
+                    logger.trace("Response time: %d ms", int((_t_end - _t_start) * 1000.))
+                event.clear()

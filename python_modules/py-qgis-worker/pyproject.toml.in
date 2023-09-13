@@ -14,6 +14,9 @@ classifiers = [
 dependencies = [
     "py-qgis-contrib==${PIN_VERSION}",
     "py-qgis-project-cache==${PIN_VERSION}",
+    "grpcio",
+    "grpcio-tools",
+    "grpcio-health-checking",
     "click",
 ]
 version = "${PIN_VERSION}"

@@ -1,4 +1,8 @@
 
+DEPTH=.
+
+include $(DEPTH)/config/config.mk
+
 PYTHON_MODULES= \
 	python_modules/py-qgis-contrib \
 	python_modules/py-qgis-project-cache \
@@ -21,3 +25,8 @@ configure: $(PYTHON_MODULES)
 		$(MAKE) -C $$d configure; \
 	done
 
+
+docker-%:
+	$(MAKE) -C docker $*
+
+include $(topsrcdir)/config/rules.mk

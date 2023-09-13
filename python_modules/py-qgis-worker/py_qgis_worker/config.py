@@ -89,6 +89,15 @@ class WorkerConfig(config.Config):
             "exit with an error code"
         ),
     )
+    shutdown_grace_period: int = Field(
+        default=20,
+        title="Shutdown grace period",
+        description=(
+            "The maximum amount of time to wait before "
+            "closing connections. During this period, "
+            "no new connections are allowed."
+        ),
+    )
 
 
 class WorkspaceConfig(config.Config):

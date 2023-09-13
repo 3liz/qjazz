@@ -56,8 +56,8 @@ class MsgType(Enum):
     ENV = auto()
     STATS = auto()
 
-# Note: This is defined in python 3.11 via http module
 
+# Note: HTTPMethod is defined in python 3.11 via http module
 
 class HTTPMethod(Enum):
     GET = auto()

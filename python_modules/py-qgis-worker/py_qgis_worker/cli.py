@@ -5,6 +5,10 @@ import signal
 from ._grpc import api_pb2  # noqa
 from ._grpc import api_pb2_grpc
 
+from grpc_health.v1.health_pb2_grpc import add_HealthServicer_to_server
+from grpc_health.v1._async import HealthServicer
+from grpc_health.v1 import health_pb2
+
 from .service import RpcService
 from .worker import Worker
 from .config import WorkerConfig
@@ -52,21 +56,35 @@ async def serve(worker):
     await servicer.cache_worker_status()
 
     api_pb2_grpc.add_QgisWorkerServicer_to_server(servicer, server)
+
+    # Configure Health check
+    health_servicer = HealthServicer()
+    add_HealthServicer_to_server(health_servicer, server)
+
+    await health_servicer.set("QgisWorker", health_pb2.HealthCheckResponse.SERVING)
+
     for iface, port in worker.config.listen:
         listen_addr = f"{iface}:{port}"
         logger.info("Listening on port: %s", listen_addr)
         server.add_insecure_port(listen_addr)
 
-    def _term(message):
+    shutdown_grace_period = worker.config.shutdown_grace_period
+
+    def _term(message, graceful: bool):
         logger.info(message)
-        loop.create_task(server.stop(20))
+        if graceful:
+            logger.info("Entering graceful shutdown of %d s", shutdown_grace_period)
+            loop.create_task(health_servicer.enter_graceful_shutdown())
+            loop.create_task(server.stop(shutdown_grace_period))
+        else:
+            loop.create_task(server.stop(None))
 
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, lambda: _term("Server terminated"))
-    loop.add_signal_handler(signal.SIGINT, lambda: _term("Server interrupted"))
+    loop.add_signal_handler(signal.SIGTERM, lambda: _term("Server terminated", True))
+    loop.add_signal_handler(signal.SIGINT, lambda: _term("Server interrupted", False))
     loop.add_signal_handler(
         signal.SIGCHLD,
-        lambda: _term("Child process terminated")
+        lambda: _term("Child process terminated", False)
     )
 
     await server.start()
@@ -99,10 +117,10 @@ def print_version(settings: bool):
         path_type=Path
     ),
 )
-@click.option("--schema", is_flag=True, help="Display configuration schema")
+@click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option("--pretty", is_flag=True, help="Pretty format")
 def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = False):
-    """ Display configuration and exit
+    """ Print configuration as json and exit
     """
     import json
     indent = 4 if pretty else None
