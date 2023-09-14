@@ -105,6 +105,7 @@ def ows_request(
     """ Send OWS request
     """
     with connect() as stub:
+        _t_start = time()
         stream = stub.ExecuteOwsRequest(
             api_pb2.OwsRequest(
                 service=service,
@@ -114,13 +115,17 @@ def ows_request(
             ),
             timeout=10,
         )
-
-        if headers:
-            print_metadata(stream.initial_metadata())
+        _t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout
         for chunk in stream:
             print(chunk, file=fp)
+
+        if headers:
+            print_metadata(stream.initial_metadata())
+
+        _t_ms = int((_t_end - _t_start) * 1000.0)
+        print("First chunk retourned in", _t_ms, "ms", file=sys.stderr)
 
 
 @cli_commands.group('cache')
@@ -186,16 +191,20 @@ def list_cache(status: str):
 
 
 @cache_commands.command("info")
-@click.argument('info', nargs=1)
+@click.argument('project', nargs=1)
 def project_info(project: str):
     """ Return info from PROJECT in cache
     """
     with connect() as stub:
-        resp = stub.GetProjectInfo(
+        stream = stub.GetProjectInfo(
             api_pb2.ProjectRequest(uri=project)
         )
+        count = 0
+        for item in stream:
+            count += 1
+            print(MessageToJson(item))
 
-        print(MessageToJson(resp))
+        print(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("catalog")
@@ -207,10 +216,12 @@ def catalog(location: Optional[str]):
         stream = stub.Catalog(
             api_pb2.CatalogRequest(location=location)
         )
-
+        count = 0
         for item in stream:
+            count += 1
             print(MessageToJson(item))
 
+        print(f"Returned {count} items", file=sys.stderr)
 
 #
 # Plugins

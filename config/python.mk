@@ -16,8 +16,13 @@ clean::
 deliver:
 	twine upload -r storage $(SDIST)/*
 
-lint:
+ifeq ($(SKIP_TESTS),1)
+lint::
+	@flake8 $(PYTHON_PKG)
+else
+lint::
 	@flake8 $(PYTHON_PKG) tests
+endif
 
 autopep8:
 	@autopep8 -v --in-place -r --max-line-length=120 $(PYTHON_PKG) tests

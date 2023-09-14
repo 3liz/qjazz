@@ -10,14 +10,14 @@ service QgisWorker {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
     rpc ExecuteRequest (GenericRequest) returns (stream ResponseChunk) {}
-    rpc CheckoutProject (CheckoutRequest) returns (CacheInfo) {}
-    rpc DropProject (DropRequest) returns (CacheInfo) {}
+    rpc CheckoutProject (CheckoutRequest) returns (stream CacheInfo) {}
+    rpc DropProject (DropRequest) returns (stream CacheInfo) {}
     rpc ClearCache (Empty) returns (Empty) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
     rpc ListPlugins (Empty) returns (stream PluginInfo) {}
     rpc SetConfig (JsonConfig) returns (Empty) {}
     rpc GetConfig (Empty) returns (JsonConfig) {}
-    rpc GetProjectInfo (ProjectRequest) returns (ProjectInfo) {}
+    rpc GetProjectInfo (ProjectRequest) returns (stream ProjectInfo) {}
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
     rpc GetEnv (Empty) returns (JsonConfig) {}
 }
@@ -77,6 +77,7 @@ message CacheInfo {
     optional string last_modified = 6;
     optional string saved_version = 7;
     map<string,int64> debug_metadata = 8;
+    optional string cache_id = 9;
 }
 
 message DropRequest {
@@ -107,7 +108,8 @@ message ProjectInfo {
     string last_modified = 5;
     string storage = 6;
     bool has_bad_layers = 7;
-    repeated Layer layers = 8; 
+    repeated Layer layers = 8;
+    optional string cache_id = 9;
 }
 
 message PluginInfo {

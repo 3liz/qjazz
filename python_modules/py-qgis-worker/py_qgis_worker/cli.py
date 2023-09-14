@@ -10,8 +10,8 @@ from grpc_health.v1._async import HealthServicer
 from grpc_health.v1 import health_pb2
 
 from .service import RpcService
-from .worker import Worker
 from .config import WorkerConfig
+from .pool import WorkerPool
 
 import click
 
@@ -49,11 +49,11 @@ def load_configuration(configpath: Optional[Path]) -> config.Config:
     return config.confservice.conf
 
 
-async def serve(worker):
+async def serve(pool):
     server = grpc.aio.server()
-    servicer = RpcService(worker)
+    servicer = RpcService(pool)
 
-    await servicer.cache_worker_status()
+    await pool.initialize()
 
     api_pb2_grpc.add_QgisWorkerServicer_to_server(servicer, server)
 
@@ -63,12 +63,12 @@ async def serve(worker):
 
     await health_servicer.set("QgisWorker", health_pb2.HealthCheckResponse.SERVING)
 
-    for iface, port in worker.config.listen:
+    for iface, port in pool.config.listen:
         listen_addr = f"{iface}:{port}"
         logger.info("Listening on port: %s", listen_addr)
         server.add_insecure_port(listen_addr)
 
-    shutdown_grace_period = worker.config.shutdown_grace_period
+    shutdown_grace_period = pool.config.shutdown_grace_period
 
     def _term(message, graceful: bool):
         logger.info(message)
@@ -143,19 +143,24 @@ def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = Fals
         path_type=Path
     ),
 )
-def serve_grpc(configpath: Optional[Path]):
+@click.option(
+    "--num-workers", "-n",
+    envvar="QGIS_GRPC_NUM_WORKERS",
+    default=1,
+    help="Number of workers to run",
+)
+def serve_grpc(configpath: Optional[Path], num_workers):
     """ Run grpc server
     """
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    worker = Worker(config.ConfigProxy(WORKER_SECTION))
-    worker.start()
+    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION), num_workers)
+    pool.start()
     try:
-        asyncio.run(serve(worker))
+        asyncio.run(serve(pool))
     finally:
-        worker.terminate()
-        worker.join()
+        pool.terminate_and_join()
         logger.info("Server shutdown")
 
 

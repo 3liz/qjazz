@@ -80,6 +80,7 @@ class RequestReply:
     chunked: bool
     checkout_status: Optional[CheckoutStatus]
     headers: Dict[str, str] = field(default_factory=dict)
+    cache_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -144,9 +145,10 @@ class CacheInfo:
     last_modified: Optional[float] = None
     saved_version: Optional[str] = None
     debug_metadata: Dict[str, int] = field(default_factory=dict)
-
+    cache_id: str = ""
 
 # PULL_PROJECT
+
 
 @dataclass(frozen=True)
 class CheckoutProject:
@@ -221,6 +223,7 @@ class ProjectInfo:
     storage: str
     has_bad_layers: bool
     layers: List[LayerInfo]
+    cache_id: str = ""
 
 
 @dataclass(frozen=True)

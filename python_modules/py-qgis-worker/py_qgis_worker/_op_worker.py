@@ -96,7 +96,13 @@ def worker_env() -> Dict:
 #
 
 
-def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, event):
+def qgis_server_run(
+        server: QgsServer,
+        conn: Connection,
+        config: WorkerConfig,
+        event,
+        name: str = "",
+):
     """ Run Qgis server and process incoming requests
     """
     cm = CacheManager(config.projects, server)
@@ -110,13 +116,14 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
     # For reporting
     _process = psutil.Process() if psutil else None
 
+    event.set()
     while True:
-        logger.debug("Waiting for messages")
+        logger.debug("%s: Waiting for messages", name)
         try:
             msg = conn.recv()
+            event.clear()
             logger.debug("Received message: %s", msg.msg_id.name)
             logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
-            event.set()
             _t_start = time()
             match msg.msg_id:
                 # --------------------
@@ -127,14 +134,14 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
                         conn,
                         msg,
                         server,
-                        cm, config, _process
+                        cm, config, _process, cache_id=name,
                     )
                 case _m.MsgType.REQUEST:
                     _op_requests.handle_generic_request(
                         conn,
                         msg,
                         server,
-                        cm, config, _process
+                        cm, config, _process, cache_id=name
                     )
                 # --------------------
                 # Global management
@@ -148,16 +155,16 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
                 # Cache managment
                 # --------------------
                 case _m.MsgType.CHECKOUT_PROJECT:
-                    _op_cache.checkout_project(conn, cm, msg.uri, msg.pull)
+                    _op_cache.checkout_project(conn, cm, msg.uri, msg.pull, cache_id=name)
                 case _m.MsgType.DROP_PROJECT:
-                    _op_cache.drop_project(conn, cm, msg.uri)
+                    _op_cache.drop_project(conn, cm, msg.uri, name)
                 case _m.MsgType.CLEAR_CACHE:
                     cm.clear()
                     _m.send_reply(conn, None)
                 case _m.MsgType.LIST_CACHE:
-                    _op_cache.send_cache_list(conn, cm, msg.status_filter)
+                    _op_cache.send_cache_list(conn, cm, msg.status_filter, cache_id=name)
                 case _m.MsgType.PROJECT_INFO:
-                    _op_cache.send_project_info(conn, cm, msg.uri)
+                    _op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
                 case _m.MsgType.CATALOG:
                     _op_cache.send_catalog(conn, cm, msg.location)
                 # --------------------
@@ -197,8 +204,8 @@ def qgis_server_run(server: QgsServer, conn: Connection, config: WorkerConfig, e
             logger.critical(traceback.format_exc())
             _m.send_reply(conn, str(exc), 500)
         finally:
-            if event.is_set():
+            if not event.is_set():
                 _t_end = time()
                 if logger.isEnabledFor(logger.LogLevel.TRACE):
                     logger.trace("Response time: %d ms", int((_t_end - _t_start) * 1000.))
-                event.clear()
+                event.set()

@@ -355,12 +355,11 @@ class CacheManager:
     def clear(self) -> None:
         """ Clear all projects
         """
-        logger.trace("Purging cache")
         if self._server:
             iface = self._server.serverInterface()
             for e in self._cache.values():
                 path = e.project.fileName()
-                logger.trace("Removing server config cache for %s", path)
+                logger.trace(">> Removing server config cache for %s", path)
                 iface.removeConfigCacheEntry(e.project.fileName())
 
         self._cache.clear()

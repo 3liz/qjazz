@@ -29,12 +29,12 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.GenericRequest.SerializeToString,
                 response_deserializer=api__pb2.ResponseChunk.FromString,
                 )
-        self.CheckoutProject = channel.unary_unary(
+        self.CheckoutProject = channel.unary_stream(
                 '/api.QgisWorker/CheckoutProject',
                 request_serializer=api__pb2.CheckoutRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
-        self.DropProject = channel.unary_unary(
+        self.DropProject = channel.unary_stream(
                 '/api.QgisWorker/DropProject',
                 request_serializer=api__pb2.DropRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
@@ -64,7 +64,7 @@ class QgisWorkerStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.JsonConfig.FromString,
                 )
-        self.GetProjectInfo = channel.unary_unary(
+        self.GetProjectInfo = channel.unary_stream(
                 '/api.QgisWorker/GetProjectInfo',
                 request_serializer=api__pb2.ProjectRequest.SerializeToString,
                 response_deserializer=api__pb2.ProjectInfo.FromString,
@@ -180,12 +180,12 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.GenericRequest.FromString,
                     response_serializer=api__pb2.ResponseChunk.SerializeToString,
             ),
-            'CheckoutProject': grpc.unary_unary_rpc_method_handler(
+            'CheckoutProject': grpc.unary_stream_rpc_method_handler(
                     servicer.CheckoutProject,
                     request_deserializer=api__pb2.CheckoutRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
-            'DropProject': grpc.unary_unary_rpc_method_handler(
+            'DropProject': grpc.unary_stream_rpc_method_handler(
                     servicer.DropProject,
                     request_deserializer=api__pb2.DropRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
@@ -215,7 +215,7 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.JsonConfig.SerializeToString,
             ),
-            'GetProjectInfo': grpc.unary_unary_rpc_method_handler(
+            'GetProjectInfo': grpc.unary_stream_rpc_method_handler(
                     servicer.GetProjectInfo,
                     request_deserializer=api__pb2.ProjectRequest.FromString,
                     response_serializer=api__pb2.ProjectInfo.SerializeToString,
@@ -302,7 +302,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/CheckoutProject',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/CheckoutProject',
             api__pb2.CheckoutRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
@@ -319,7 +319,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/DropProject',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/DropProject',
             api__pb2.DropRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
@@ -421,7 +421,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetProjectInfo',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/GetProjectInfo',
             api__pb2.ProjectRequest.SerializeToString,
             api__pb2.ProjectInfo.FromString,
             options, channel_credentials,

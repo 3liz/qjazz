@@ -44,6 +44,7 @@ def handle_ows_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional,
+    cache_id: str = "",
 ):
     """ Handle OWS request
     """
@@ -77,6 +78,7 @@ def handle_ows_request(
         cm,
         config,
         _process if msg.debug_report else None,
+        cache_id=cache_id,
     )
 
 
@@ -87,6 +89,7 @@ def handle_generic_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional,
+    cache_id: str = "",
 ):
     try:
         method = _to_qgis_method(msg.method)
@@ -110,6 +113,7 @@ def handle_generic_request(
         cm,
         config,
         _process if msg.debug_report else None,
+        cache_id=cache_id,
     )
 
 
@@ -125,6 +129,7 @@ def _handle_generic_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional,
+    cache_id: str
 ):
     """ Handle generic Qgis request
     """
@@ -152,7 +157,7 @@ def _handle_generic_request(
         server.serverInterface().setConfigFilePath(project.fileName())
     else:
         project = None
-        response = Response(conn, _process=_process)
+        response = Response(conn, _process=_process, cache_id=cache_id)
 
     request = Request(url, method, headers, data=data)
     server.handleRequest(request, response, project=project)

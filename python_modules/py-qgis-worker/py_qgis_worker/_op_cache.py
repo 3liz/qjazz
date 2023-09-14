@@ -23,7 +23,7 @@ Co = CheckoutStatus
 #
 # Drop a project from the cache
 #
-def drop_project(conn: Connection, cm: CacheManager, uri: str):
+def drop_project(conn: Connection, cm: CacheManager, uri: str, cache_id: str = ""):
     md, status = cm.checkout(
         cm.resolve_path(uri, allow_direct=True)
     )
@@ -37,12 +37,14 @@ def drop_project(conn: Connection, cm: CacheManager, uri: str):
                 last_modified=md.last_modified,
                 saved_version=e.project.lastSaveVersion().text(),
                 status=status,
+                cache_id=cache_id,
             )
         case _:
             reply = _m.CacheInfo(
                 uri=uri,
                 in_cache=False,
                 status=status,
+                cache_id=cache_id,
             )
 
     _m.send_reply(conn, reply)
@@ -52,7 +54,7 @@ def drop_project(conn: Connection, cm: CacheManager, uri: str):
 # Helper for returning CacheInfo from
 # cache entry
 #
-def _cache_info_from_entry(e: CacheEntry, status, in_cache=True) -> _m.CacheInfo:
+def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str = "") -> _m.CacheInfo:
     return _m.CacheInfo(
         uri=e.uri,
         in_cache=in_cache,
@@ -62,6 +64,7 @@ def _cache_info_from_entry(e: CacheEntry, status, in_cache=True) -> _m.CacheInfo
         last_modified=e.last_modified,
         saved_version=e.project.lastSaveVersion().text(),
         debug_metadata=e.debug_meta.__dict__.copy(),
+        cache_id=cache_id,
     )
 
 
@@ -74,6 +77,7 @@ def checkout_project(
     cm: CacheManager,
     uri: str,
     pull: bool,
+    cache_id: str = "",
 ):
     try:
         url = cm.resolve_path(uri, allow_direct=True)
@@ -87,15 +91,17 @@ def checkout_project(
                         in_cache=False,
                         status=status,
                         storage=md.storage,
-                        last_modified=md.last_modified
+                        last_modified=md.last_modified,
+                        cache_id=cache_id,
                     )
                 case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-                    reply = _cache_info_from_entry(md, status)
+                    reply = _cache_info_from_entry(md, status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
                         in_cache=False,
                         status=status,
+                        cache_id=cache_id,
                     )
                 case _ as unreachable:
                     assert_never(unreachable)
@@ -103,17 +109,18 @@ def checkout_project(
             match status:
                 case Co.NEW:
                     e, status = cm.update(md, status)
-                    reply = _cache_info_from_entry(e, status)
+                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.NEEDUPDATE | Co.REMOVED:
                     e, status = cm.update(md, status)
-                    reply = _cache_info_from_entry(e, status, status != Co.REMOVED)
+                    reply = _cache_info_from_entry(e, status, status != Co.REMOVED, cache_id=cache_id)
                 case Co.UNCHANGED:
-                    reply = _cache_info_from_entry(md, status)
+                    reply = _cache_info_from_entry(md, status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=md.uri,
                         in_cache=False,
                         status=status,
+                        cache_id=cache_id,
                     )
                 case _ as unreachable:
                     assert_never(unreachable)
@@ -133,6 +140,7 @@ def send_cache_list(
     conn: Connection,
     cm: CacheManager,
     status_filter: Optional[CheckoutStatus],
+    cache_id: str = "",
 ):
     co = cm.checkout_iter()
     if status_filter:
@@ -143,7 +151,11 @@ def send_cache_list(
     if count:
         # Stream CacheInfo
         for entry, status in co:
-            _m.send_reply(conn, _cache_info_from_entry(entry, status), 206)
+            _m.send_reply(
+                conn,
+                _cache_info_from_entry(entry, status, cache_id=cache_id),
+                206,
+            )
         # EOT
         _m.send_reply(conn, None)
 
@@ -155,6 +167,7 @@ def send_project_info(
     conn: Connection,
     cm: CacheManager,
     uri: str,
+    cache_id: str = "",
 ):
     def _layer(layer_id: str, layer):
         return _m.LayerInfo(
@@ -184,6 +197,7 @@ def send_project_info(
                         storage=md.storage,
                         has_bad_layers=any(not lyr.is_valid for lyr in layers),
                         layers=layers,
+                        cache_id=cache_id,
                     )
                 )
             case Co.NOTFOUND | Co.NEW:

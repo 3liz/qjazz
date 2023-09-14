@@ -97,6 +97,7 @@ class Response(QgsServerResponse):
             last_modified: Optional[int] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
             _process: Optional = None,
+            cache_id: str = ""
     ):
         super().__init__()
         self._buffer = QBuffer()
@@ -111,6 +112,7 @@ class Response(QgsServerResponse):
         self._timestamp = time()
         self._last_modified = last_modified
         self._chunk_size = chunk_size
+        self._cache_id = cache_id
 
         if self._process:
             self._memory = self._process.memory_info().vms
@@ -163,6 +165,7 @@ class Response(QgsServerResponse):
                 data=data,
                 checkout_status=self._co_status,
                 chunked=chunked,
+                cache_id=self._cache_id,
             )
         )
         self._header_written = True

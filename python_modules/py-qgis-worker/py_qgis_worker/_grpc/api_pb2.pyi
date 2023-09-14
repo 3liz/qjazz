@@ -78,7 +78,7 @@ class CheckoutRequest(_message.Message):
     def __init__(self, uri: _Optional[str] = ..., pull: bool = ...) -> None: ...
 
 class CacheInfo(_message.Message):
-    __slots__ = ["uri", "status", "in_cache", "name", "storage", "last_modified", "saved_version", "debug_metadata"]
+    __slots__ = ["uri", "status", "in_cache", "name", "storage", "last_modified", "saved_version", "debug_metadata", "cache_id"]
     class DebugMetadataEntry(_message.Message):
         __slots__ = ["key", "value"]
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -94,6 +94,7 @@ class CacheInfo(_message.Message):
     LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
     SAVED_VERSION_FIELD_NUMBER: _ClassVar[int]
     DEBUG_METADATA_FIELD_NUMBER: _ClassVar[int]
+    CACHE_ID_FIELD_NUMBER: _ClassVar[int]
     uri: str
     status: str
     in_cache: bool
@@ -102,7 +103,8 @@ class CacheInfo(_message.Message):
     last_modified: str
     saved_version: str
     debug_metadata: _containers.ScalarMap[str, int]
-    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ...) -> None: ...
+    cache_id: str
+    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class DropRequest(_message.Message):
     __slots__ = ["uri"]
@@ -123,7 +125,7 @@ class ProjectRequest(_message.Message):
     def __init__(self, uri: _Optional[str] = ...) -> None: ...
 
 class ProjectInfo(_message.Message):
-    __slots__ = ["status", "uri", "filename", "crs", "last_modified", "storage", "has_bad_layers", "layers"]
+    __slots__ = ["status", "uri", "filename", "crs", "last_modified", "storage", "has_bad_layers", "layers", "cache_id"]
     class Layer(_message.Message):
         __slots__ = ["layer_id", "name", "source", "crs", "is_valid", "is_spatial"]
         LAYER_ID_FIELD_NUMBER: _ClassVar[int]
@@ -147,6 +149,7 @@ class ProjectInfo(_message.Message):
     STORAGE_FIELD_NUMBER: _ClassVar[int]
     HAS_BAD_LAYERS_FIELD_NUMBER: _ClassVar[int]
     LAYERS_FIELD_NUMBER: _ClassVar[int]
+    CACHE_ID_FIELD_NUMBER: _ClassVar[int]
     status: str
     uri: str
     filename: str
@@ -155,7 +158,8 @@ class ProjectInfo(_message.Message):
     storage: str
     has_bad_layers: bool
     layers: _containers.RepeatedCompositeFieldContainer[ProjectInfo.Layer]
-    def __init__(self, status: _Optional[str] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ...) -> None: ...
+    cache_id: str
+    def __init__(self, status: _Optional[str] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class PluginInfo(_message.Message):
     __slots__ = ["name", "path", "plugin_type", "json_metadata"]

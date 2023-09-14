@@ -33,11 +33,11 @@ class Worker(mp.Process):
         concurrent calls.
     """
 
-    def __init__(self, config: WorkerConfig):
-        super().__init__(name=config.name, daemon=True)
+    def __init__(self, config: WorkerConfig, name: Optional[str] = None):
+        super().__init__(name=name or config.name, daemon=True)
         self._worker_conf = config
         self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
-        self._event = mp.Event()
+        self._done_event = mp.Event()
         self._timeout = config.worker_timeout
 
     @property
@@ -48,16 +48,16 @@ class Worker(mp.Process):
         """ Return true if there is no processing
             at hand
         """
-        not self._event.is_set()
+        return self._done_event.is_set()
 
-    async def wait_until_task_done(self):
+    async def consume_until_task_done(self):
         """ Consume all remaining data that may be send
             by the worker task.
             This is required if a client abort the request
             in the middle.
         """
         logger.debug("Waiting until task done")
-        while self._event.is_set():
+        while not self._done_event.is_set():
             try:
                 _ = await self.io.read_bytes(1)
             except asyncio.TimeoutError:
@@ -79,10 +79,7 @@ class Worker(mp.Process):
             )
             # Update timeout config
             self._timeout = self.config.worker_timeout
-            # Update log level
-            level = logger.set_log_level()
-            logger.info("Log level set to %s", level.name)
-            logger.trace("Updated worker with configuration\n %s", obj)
+            logger.trace(f"Updated config for worker '{self.name}'")
         else:
             raise WorkerError(403, "Cannot update local configuration")
 
@@ -93,7 +90,8 @@ class Worker(mp.Process):
             server,
             self._child_conn,
             self._worker_conf,
-            self._event,
+            self._done_event,
+            name=self.name,
         )
 
     @cached_property
@@ -311,6 +309,7 @@ class Worker(mp.Process):
     async def clear_cache(self) -> None:
         """  Clear all items in cache
         """
+        logger.info("Purging cache for '%s'", self.name)
         status, resp = await self.io.send_message(
             _m.ClearCache(),
             timeout=self._timeout,
