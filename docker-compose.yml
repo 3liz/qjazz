@@ -13,6 +13,8 @@ services:
     networks:
     - qgis_rpc_network
     command: ["sleep infinity"]
+    environment:
+        QGIS_GRPC_HOST: worker
 
 networks:
   qgis_rpc_network:

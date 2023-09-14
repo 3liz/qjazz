@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-client"
-description = "Qgis gRCP Client"
+name = "py-qgis-admin"
+description = "Qgis gRCP admin client"
 requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -16,6 +16,8 @@ dependencies = [
     "grpcio-health-checking",
     "grpcio-tools",
     "py-qgis-contrib==${PIN_VERSION}",
+    "docker",
+    "dnspython",
     "click",
 ]
 version = "${PIN_VERSION}"
@@ -26,8 +28,8 @@ email = "dmarteau@3liz.org"
 
 [tool.setuptools.packages.find]
 include = [
-    "py_qgis_client", 
-    "py_qgis_client.*",
+    "py_qgis_admin", 
+    "py_qgis_admin.*", 
 ]
 
 [tool.autopep8]

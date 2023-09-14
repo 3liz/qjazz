@@ -27,12 +27,11 @@ def _validate_netinterface(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
             raise ValueError("Invalid socket address")
     else:
         import ipaddress
-        if v[0] != "[::]":
-            if not v[0]:
-                v[0] = "[::]"
-            else:
-                # This raise a ValueError on invalide ip addresse
-                ipaddress.ip_address(v[0])
+        addr = v[0].strip('[]')
+        # This raise a ValueError on invalid ip address
+        ipaddr = ipaddress.ip_address(addr)
+        if isinstance(ipaddr, ipaddress.IPv6Address):
+            return (f"[{addr}]", v[1])
     return v
 
 

@@ -161,8 +161,28 @@ def send_cache_list(
 
 
 #
+# Update cache
+#
+def update_cache(
+    conn: Connection,
+    cm: CacheManager,
+    cache_id: str = "",
+):
+    for entry, status in cm.update_cache():
+        # Stream CacheInfo
+        _m.send_reply(
+            conn,
+            _cache_info_from_entry(entry, status, cache_id=cache_id),
+            206,
+        )
+    # EOT
+    _m.send_reply(conn, None)
+
+#
 # Send project info
 #
+
+
 def send_project_info(
     conn: Connection,
     cm: CacheManager,

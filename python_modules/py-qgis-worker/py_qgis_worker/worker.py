@@ -306,6 +306,22 @@ class Worker(mp.Process):
         else:
             return resp, None
 
+    async def update_cache(self) -> AsyncIterator[_m.CacheInfo]:
+        """ Update projects in cache
+
+            Return the list of cached object with their new status
+        """
+        async def _stream():
+            status, resp = await self.io.read_message(timeout=self._timeout)
+            while status == 206:
+                yield resp
+                status, resp = await self.io.read_message(timeout=self._timeout)
+            # Incomplete transmission ?
+            if status != 200:
+                raise WorkerError(status, resp)
+
+        return _stream()
+
     async def clear_cache(self) -> None:
         """  Clear all items in cache
         """

@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 
+from time import time
 from contextlib import asynccontextmanager
 
 from typing_extensions import (
@@ -36,6 +37,29 @@ class WorkerPool:
         self._cached_worker_env = None
         self._cached_worker_plugins = None
         self._shutdown = False
+        self._start_time = time()
+
+    @property
+    def request_pressure(self) -> float:
+        return (int((self._count/self._max_requests) + 0.5) * 100.) / 100.
+
+    @property
+    def stopped_workers(self) -> int:
+        return sum(1 for w in self._workers if not w.is_alive())
+
+    @property
+    def num_workers(self) -> int:
+        return len(self._workers)
+
+    @property
+    def worker_failure_pressure(self) -> int:
+        num = len(self._workers)
+        ko = self.stopped_workers
+        return (int((ko/num) + 0.5) * 100.) / 100.
+
+    @property
+    def start_time(self) -> int:
+        return self._start_time
 
     def start(self):
         """ Start all worker's processes
@@ -55,7 +79,7 @@ class WorkerPool:
             and populate the queue
         """
         for w in self._workers:
-            w.ping("")
+            await w.ping("")
             self._avails.put_nowait(w)
         # Cache immutable status
         await self._cache_worker_status()

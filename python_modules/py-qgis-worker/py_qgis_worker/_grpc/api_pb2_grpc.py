@@ -151,9 +151,19 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.CheckoutRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
+        self.PullProjects = channel.stream_stream(
+                '/api.QgisAdmin/PullProjects',
+                request_serializer=api__pb2.ProjectRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
         self.DropProject = channel.unary_stream(
                 '/api.QgisAdmin/DropProject',
                 request_serializer=api__pb2.DropRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.ListCache = channel.unary_stream(
+                '/api.QgisAdmin/ListCache',
+                request_serializer=api__pb2.ListRequest.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
         self.ClearCache = channel.unary_unary(
@@ -161,9 +171,9 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.Empty.FromString,
                 )
-        self.ListCache = channel.unary_stream(
-                '/api.QgisAdmin/ListCache',
-                request_serializer=api__pb2.ListRequest.SerializeToString,
+        self.UpdateCache = channel.unary_stream(
+                '/api.QgisAdmin/UpdateCache',
+                request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.CacheInfo.FromString,
                 )
         self.ListPlugins = channel.unary_stream(
@@ -201,6 +211,11 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.ServerStatus.SerializeToString,
                 response_deserializer=api__pb2.Empty.FromString,
                 )
+        self.Stats = channel.unary_unary(
+                '/api.QgisAdmin/Stats',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.StatsReply.FromString,
+                )
 
 
 class QgisAdminServicer(object):
@@ -218,7 +233,19 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PullProjects(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def DropProject(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListCache(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -230,7 +257,7 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ListCache(self, request, context):
+    def UpdateCache(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -278,6 +305,12 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Stats(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisAdminServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -291,9 +324,19 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.CheckoutRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
+            'PullProjects': grpc.stream_stream_rpc_method_handler(
+                    servicer.PullProjects,
+                    request_deserializer=api__pb2.ProjectRequest.FromString,
+                    response_serializer=api__pb2.CacheInfo.SerializeToString,
+            ),
             'DropProject': grpc.unary_stream_rpc_method_handler(
                     servicer.DropProject,
                     request_deserializer=api__pb2.DropRequest.FromString,
+                    response_serializer=api__pb2.CacheInfo.SerializeToString,
+            ),
+            'ListCache': grpc.unary_stream_rpc_method_handler(
+                    servicer.ListCache,
+                    request_deserializer=api__pb2.ListRequest.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
             'ClearCache': grpc.unary_unary_rpc_method_handler(
@@ -301,9 +344,9 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.Empty.SerializeToString,
             ),
-            'ListCache': grpc.unary_stream_rpc_method_handler(
-                    servicer.ListCache,
-                    request_deserializer=api__pb2.ListRequest.FromString,
+            'UpdateCache': grpc.unary_stream_rpc_method_handler(
+                    servicer.UpdateCache,
+                    request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.CacheInfo.SerializeToString,
             ),
             'ListPlugins': grpc.unary_stream_rpc_method_handler(
@@ -340,6 +383,11 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     servicer.SetServerServingStatus,
                     request_deserializer=api__pb2.ServerStatus.FromString,
                     response_serializer=api__pb2.Empty.SerializeToString,
+            ),
+            'Stats': grpc.unary_unary_rpc_method_handler(
+                    servicer.Stats,
+                    request_deserializer=api__pb2.Empty.FromString,
+                    response_serializer=api__pb2.StatsReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -386,6 +434,23 @@ class QgisAdmin(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def PullProjects(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(request_iterator, target, '/api.QgisAdmin/PullProjects',
+            api__pb2.ProjectRequest.SerializeToString,
+            api__pb2.CacheInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def DropProject(request,
             target,
             options=(),
@@ -398,6 +463,23 @@ class QgisAdmin(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/DropProject',
             api__pb2.DropRequest.SerializeToString,
+            api__pb2.CacheInfo.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListCache(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/ListCache',
+            api__pb2.ListRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -420,7 +502,7 @@ class QgisAdmin(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def ListCache(request,
+    def UpdateCache(request,
             target,
             options=(),
             channel_credentials=None,
@@ -430,8 +512,8 @@ class QgisAdmin(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/ListCache',
-            api__pb2.ListRequest.SerializeToString,
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/UpdateCache',
+            api__pb2.Empty.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -552,5 +634,22 @@ class QgisAdmin(object):
         return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/SetServerServingStatus',
             api__pb2.ServerStatus.SerializeToString,
             api__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Stats(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/Stats',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.StatsReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

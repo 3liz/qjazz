@@ -13,6 +13,7 @@ from typing import (
     Any,
     Iterable,
     Iterator,
+    AsyncIterator,
 )
 
 import traceback
@@ -276,8 +277,24 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 yield _new_cache_info(resp)
 
     #
+    # Pull projects
+    #
+    async def PullProjects(
+        self,
+        requests: AsyncIterator[api_pb2.ProjectRequest],
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.CacheInfo, None, None]:
+
+        async with self.wait_for_all_workers(context, "PullProjects") as workers:
+            async for req in requests:
+                for w in workers:
+                    resp = await w.checkout_project(uri=req.uri, pull=True)
+                yield _new_cache_info(resp)
+
+    #
     # Drop project
     #
+
     async def DropProject(
         self,
         request: api_pb2.CheckoutRequest,
@@ -304,7 +321,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         except KeyError:
             status_filter = ""
 
-        async with self.wait_for_all_workers(context, "ClearCache") as workers:
+        async with self.wait_for_all_workers(context, "ListCache") as workers:
             count = 0
             cachelist = tuple()
             for w in workers:
@@ -331,6 +348,28 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             for w in workers:
                 await w.clear_cache()
             return api_pb2.Empty()
+
+    #
+    # Update cache
+    #
+    async def UpdateCache(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.CacheInfo, None, None]:
+
+        async with self.wait_for_all_workers(context, "UpdateCache") as workers:
+            _workers = list(workers)
+            _all = set()
+            for w in _workers:
+                # Collect all items for all workers
+                _, items = await w.list_cache()
+                if items:
+                    _all.update(item.uri async for item in items)
+            for uri in _all:
+                # Update all items for all workers
+                for w in _workers:
+                    yield await w.checkout(uri, pull=True)
 
     #
     # List Catalog Items
@@ -468,6 +507,25 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "GetEnv")
+
+    #
+    # Stats
+    #
+
+    async def Stats(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.StatsReply:
+        # Server serving status
+        return api_pb2.StatsReply(
+            num_workers=self._pool.num_workers,
+            stopped_workers=self._pool.stopped_workers,
+            worker_failure_pressure=self._pool.worker_failure_pressure,
+            request_pressure=self._pool.request_pressure,
+            uptime=int(time() - self._pool.start_time)
+        )
+
 
 #
 # Build a cache info from response

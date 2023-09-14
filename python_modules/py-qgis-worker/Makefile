@@ -5,6 +5,8 @@ include $(DEPTH)/config/config.mk
 
 PYTHON_PKG=py_qgis_worker
 
+TESTDIR=tests
+
 proto:
 	cd py_qgis_worker/_grpc && python -m grpc_tools.protoc -I./protos \
 		--python_out=. \

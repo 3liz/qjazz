@@ -29,6 +29,20 @@ class Empty(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
+class StatsReply(_message.Message):
+    __slots__ = ["num_workers", "stopped_workers", "worker_failure_pressure", "request_pressure", "uptime"]
+    NUM_WORKERS_FIELD_NUMBER: _ClassVar[int]
+    STOPPED_WORKERS_FIELD_NUMBER: _ClassVar[int]
+    WORKER_FAILURE_PRESSURE_FIELD_NUMBER: _ClassVar[int]
+    REQUEST_PRESSURE_FIELD_NUMBER: _ClassVar[int]
+    UPTIME_FIELD_NUMBER: _ClassVar[int]
+    num_workers: int
+    stopped_workers: int
+    worker_failure_pressure: float
+    request_pressure: float
+    uptime: int
+    def __init__(self, num_workers: _Optional[int] = ..., stopped_workers: _Optional[int] = ..., worker_failure_pressure: _Optional[float] = ..., request_pressure: _Optional[float] = ..., uptime: _Optional[int] = ...) -> None: ...
+
 class ServerStatus(_message.Message):
     __slots__ = ["status"]
     STATUS_FIELD_NUMBER: _ClassVar[int]

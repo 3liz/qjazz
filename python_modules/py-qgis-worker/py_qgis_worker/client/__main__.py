@@ -1,5 +1,16 @@
 """ gRPC Client test
 """
+from typing import (
+    Optional,
+    List,
+)
+from contextlib import contextmanager
+from pathlib import Path
+from time import time, sleep
+import json
+import click
+import sys
+import os
 import grpc
 from .._grpc import api_pb2
 from .._grpc import api_pb2_grpc
@@ -8,20 +19,14 @@ from grpc_health.v1 import health_pb2       # HealthCheckRequest
 from grpc_health.v1 import health_pb2_grpc  # HealthStub
 
 
-from google.protobuf.json_format import MessageToJson
+from google.protobuf import json_format
 
-import os
-import sys
-import click
-import json
 
-from time import time, sleep
-from pathlib import Path
-from contextlib import contextmanager
-from typing import (
-    Optional,
-    List,
-)
+def MessageToJson(msg) -> str:
+    return json_format.MessageToJson(
+        msg,
+        including_default_value_fields=True,
+    )
 
 
 @contextmanager
@@ -141,15 +146,19 @@ def cache_commands():
 @cache_commands.command("checkout")
 @click.argument('project', nargs=1)
 @click.option('--pull', is_flag=True, help="Load project in cache")
-def pull_project(project: str, pull: bool):
-    """ Pull PROJECT in cache
+def checkout_project(project: str, pull: bool):
+    """ CheckoutProject PROJECT from cache
     """
     with connect() as stub:
-        resp = stub.CheckoutProject(
+        stream = stub.CheckoutProject(
             api_pb2.CheckoutRequest(uri=project, pull=pull)
         )
+        count = 0
+        for item in stream:
+            count += 1
+            print(MessageToJson(item))
 
-        print(MessageToJson(resp))
+        print(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("drop")
@@ -158,11 +167,15 @@ def drop_project(project: str):
     """ Drop PROJECT from cache
     """
     with connect() as stub:
-        resp = stub.DropProject(
+        stream = stub.DropProject(
             api_pb2.DropRequest(uri=project)
         )
+        count = 0
+        for item in stream:
+            count += 1
+            print(MessageToJson(item))
 
-        print(MessageToJson(resp))
+        print(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("clear")
@@ -189,6 +202,16 @@ def list_cache(status: str):
             if k == "x-reply-header-cache-count":
                 print("Cache size:", v, file=sys.stderr)
 
+        for item in stream:
+            print(MessageToJson(item))
+
+
+@cache_commands.command("update")
+def update_cache():
+    """ List projects from cache
+    """
+    with connect() as stub:
+        stream = stub.UpdateCache(api_pb2.Empty())
         for item in stream:
             print(MessageToJson(item))
 
@@ -363,7 +386,7 @@ def ping(count: int, server: bool = False):
 
 
 @cli_commands.command("healthcheck")
-@click.option("--watch", is_flag=True, help="Watch status changes")
+@click.option("--watch", "-w", is_flag=True, help="Watch status changes")
 @click.option("--server", is_flag=True, help="Check qgis server service")
 def healthcheck_status(watch: bool, server: bool):
     """ Check the status of a GRPC server
@@ -378,6 +401,25 @@ def healthcheck_status(watch: bool, server: bool):
         else:
             resp = stub.Check(request)
             print(f"{target}", ServingStatus.Name(resp.status))
+
+
+@cli_commands.command("stats")
+@click.option("--watch", "-w", is_flag=True, help="Watch mode")
+@click.option(
+    "--interval", "-i",
+    default=1,
+    help="Interval in seconds in watch mode",
+)
+def display_stats(watch: bool, interval: int):
+    """ Check the status of a GRPC server
+    """
+    with connect() as stub:
+        resp = stub.Stats(api_pb2.Empty())
+        print(MessageToJson(resp))
+        if watch:
+            resp = stub.Stats(api_pb2.Empty())
+            print(MessageToJson(resp))
+            sleep(interval)
 
 
 cli_commands()

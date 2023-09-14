@@ -163,6 +163,8 @@ def qgis_server_run(
                     _m.send_reply(conn, None)
                 case _m.MsgType.LIST_CACHE:
                     _op_cache.send_cache_list(conn, cm, msg.status_filter, cache_id=name)
+                case _m.MsgType.UPDATE_CACHE:
+                    _op_cache.update_cache(conn, cm, cache_id=name)
                 case _m.MsgType.PROJECT_INFO:
                     _op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
                 case _m.MsgType.CATALOG:

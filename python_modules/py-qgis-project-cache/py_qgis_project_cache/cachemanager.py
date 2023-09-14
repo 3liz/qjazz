@@ -349,6 +349,8 @@ class CacheManager:
                 md = handler.project_metadata(e.md)
                 if md.last_modfified > e.md.last_modified:
                     yield self.update(md, CheckoutStatus.NEEDUPDATE, handler)
+                else:
+                    yield (e, CheckoutStatus.UNCHANGED)
             except FileNotFoundError:
                 yield self.update(e.md, CheckoutStatus.REMOVED, handler)
 

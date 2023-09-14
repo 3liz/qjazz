@@ -103,3 +103,12 @@ class WorkerConfig(config.Config):
             "no new connections are allowed."
         ),
     )
+    max_worker_failure_pressure: float = Field(
+        default=0.,
+        title="Max worker failure pressure",
+        description=(
+            "The maximum ratio of terminated/initial workers "
+            "allowed. If this limit is reached,  the server will "
+            "issue a critical failure before exiting."
+        ),
+    )

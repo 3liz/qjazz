@@ -15,9 +15,11 @@ service QgisServer {
 service QgisAdmin {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc CheckoutProject (CheckoutRequest) returns (stream CacheInfo) {}
+    rpc PullProjects (stream ProjectRequest) returns (stream CacheInfo) {}
     rpc DropProject (DropRequest) returns (stream CacheInfo) {}
-    rpc ClearCache (Empty) returns (Empty) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
+    rpc ClearCache (Empty) returns (Empty) {}
+    rpc UpdateCache (Empty) returns (stream CacheInfo) {}
     rpc ListPlugins (Empty) returns (stream PluginInfo) {}
     rpc SetConfig (JsonConfig) returns (Empty) {}
     rpc GetConfig (Empty) returns (JsonConfig) {}
@@ -25,6 +27,7 @@ service QgisAdmin {
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
     rpc GetEnv (Empty) returns (JsonConfig) {}
     rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
+    rpc Stats (Empty) returns (StatsReply) {}
 }
 
 
@@ -46,6 +49,13 @@ enum ServingStatus {
     NOT_SERVING = 1;
 }
 
+message StatsReply {
+    int32 num_workers = 2;
+    int32 stopped_workers = 3;
+    float worker_failure_pressure = 4;
+    float request_pressure = 5;
+    int32 uptime = 6;
+}
 
 message ServerStatus {
     ServingStatus status = 1;
@@ -116,7 +126,7 @@ message ProjectInfo {
         string crs = 4;
         bool is_valid = 5;
         bool is_spatial = 6;
-    }
+    } 
     string status = 1;
     string uri = 2;
     string filename = 3;

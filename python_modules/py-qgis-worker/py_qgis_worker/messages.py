@@ -48,6 +48,7 @@ class MsgType(Enum):
     DROP_PROJECT = auto()
     CLEAR_CACHE = auto()
     LIST_CACHE = auto()
+    UPDATE_CACHE = auto()
     PROJECT_INFO = auto()
     PLUGINS = auto()
     CATALOG = auto()
@@ -183,6 +184,14 @@ class ListCache:
     return_type: ClassVar[Type] = IO[CacheInfo]
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
+
+
+# UPDATE_CACHE
+
+@dataclass(frozen=True)
+class UpdateCache:
+    msg_id: ClassVar[MsgType] = MsgType.UPDATE_CACHE
+    return_type: ClassVar[Type] = IO[CacheInfo]
 
 
 # PLUGINS

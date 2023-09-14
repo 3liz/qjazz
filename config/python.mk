@@ -16,20 +16,16 @@ clean::
 deliver:
 	twine upload -r storage $(SDIST)/*
 
-ifeq ($(SKIP_TESTS),1)
+
 lint::
-	@flake8 $(PYTHON_PKG)
-else
-lint::
-	@flake8 $(PYTHON_PKG) tests
-endif
+	@flake8 $(PYTHON_PKG) $(TESTDIR)
 
 autopep8:
-	@autopep8 -v --in-place -r --max-line-length=120 $(PYTHON_PKG) tests
+	@autopep8 -v --in-place -r --max-line-length=120 $(PYTHON_PKG) $(TESTDIR)
 
-ifeq ($(SKIP_TESTS),1)
+ifndef TESTDIR
 test::
 else
 test:: lint
-	cd tests && pytest -v $(PYTEST_ARGS)
+	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
 endif
