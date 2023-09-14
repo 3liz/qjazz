@@ -5,7 +5,7 @@ import grpc
 from . import api_pb2 as api__pb2
 
 
-class QgisWorkerStub(object):
+class QgisServerStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,73 +15,23 @@ class QgisWorkerStub(object):
             channel: A grpc.Channel.
         """
         self.Ping = channel.unary_unary(
-                '/api.QgisWorker/Ping',
+                '/api.QgisServer/Ping',
                 request_serializer=api__pb2.PingRequest.SerializeToString,
                 response_deserializer=api__pb2.PingReply.FromString,
                 )
         self.ExecuteOwsRequest = channel.unary_stream(
-                '/api.QgisWorker/ExecuteOwsRequest',
+                '/api.QgisServer/ExecuteOwsRequest',
                 request_serializer=api__pb2.OwsRequest.SerializeToString,
                 response_deserializer=api__pb2.ResponseChunk.FromString,
                 )
         self.ExecuteRequest = channel.unary_stream(
-                '/api.QgisWorker/ExecuteRequest',
+                '/api.QgisServer/ExecuteRequest',
                 request_serializer=api__pb2.GenericRequest.SerializeToString,
                 response_deserializer=api__pb2.ResponseChunk.FromString,
                 )
-        self.CheckoutProject = channel.unary_stream(
-                '/api.QgisWorker/CheckoutProject',
-                request_serializer=api__pb2.CheckoutRequest.SerializeToString,
-                response_deserializer=api__pb2.CacheInfo.FromString,
-                )
-        self.DropProject = channel.unary_stream(
-                '/api.QgisWorker/DropProject',
-                request_serializer=api__pb2.DropRequest.SerializeToString,
-                response_deserializer=api__pb2.CacheInfo.FromString,
-                )
-        self.ClearCache = channel.unary_unary(
-                '/api.QgisWorker/ClearCache',
-                request_serializer=api__pb2.Empty.SerializeToString,
-                response_deserializer=api__pb2.Empty.FromString,
-                )
-        self.ListCache = channel.unary_stream(
-                '/api.QgisWorker/ListCache',
-                request_serializer=api__pb2.ListRequest.SerializeToString,
-                response_deserializer=api__pb2.CacheInfo.FromString,
-                )
-        self.ListPlugins = channel.unary_stream(
-                '/api.QgisWorker/ListPlugins',
-                request_serializer=api__pb2.Empty.SerializeToString,
-                response_deserializer=api__pb2.PluginInfo.FromString,
-                )
-        self.SetConfig = channel.unary_unary(
-                '/api.QgisWorker/SetConfig',
-                request_serializer=api__pb2.JsonConfig.SerializeToString,
-                response_deserializer=api__pb2.Empty.FromString,
-                )
-        self.GetConfig = channel.unary_unary(
-                '/api.QgisWorker/GetConfig',
-                request_serializer=api__pb2.Empty.SerializeToString,
-                response_deserializer=api__pb2.JsonConfig.FromString,
-                )
-        self.GetProjectInfo = channel.unary_stream(
-                '/api.QgisWorker/GetProjectInfo',
-                request_serializer=api__pb2.ProjectRequest.SerializeToString,
-                response_deserializer=api__pb2.ProjectInfo.FromString,
-                )
-        self.Catalog = channel.unary_stream(
-                '/api.QgisWorker/Catalog',
-                request_serializer=api__pb2.CatalogRequest.SerializeToString,
-                response_deserializer=api__pb2.CatalogItem.FromString,
-                )
-        self.GetEnv = channel.unary_unary(
-                '/api.QgisWorker/GetEnv',
-                request_serializer=api__pb2.Empty.SerializeToString,
-                response_deserializer=api__pb2.JsonConfig.FromString,
-                )
 
 
-class QgisWorkerServicer(object):
+class QgisServerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
@@ -97,6 +47,166 @@ class QgisWorkerServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def ExecuteRequest(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_QgisServerServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'Ping': grpc.unary_unary_rpc_method_handler(
+                    servicer.Ping,
+                    request_deserializer=api__pb2.PingRequest.FromString,
+                    response_serializer=api__pb2.PingReply.SerializeToString,
+            ),
+            'ExecuteOwsRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteOwsRequest,
+                    request_deserializer=api__pb2.OwsRequest.FromString,
+                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
+            ),
+            'ExecuteRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteRequest,
+                    request_deserializer=api__pb2.GenericRequest.FromString,
+                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'api.QgisServer', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class QgisServer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Ping(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisServer/Ping',
+            api__pb2.PingRequest.SerializeToString,
+            api__pb2.PingReply.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteOwsRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisServer/ExecuteOwsRequest',
+            api__pb2.OwsRequest.SerializeToString,
+            api__pb2.ResponseChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisServer/ExecuteRequest',
+            api__pb2.GenericRequest.SerializeToString,
+            api__pb2.ResponseChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class QgisAdminStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.Ping = channel.unary_unary(
+                '/api.QgisAdmin/Ping',
+                request_serializer=api__pb2.PingRequest.SerializeToString,
+                response_deserializer=api__pb2.PingReply.FromString,
+                )
+        self.CheckoutProject = channel.unary_stream(
+                '/api.QgisAdmin/CheckoutProject',
+                request_serializer=api__pb2.CheckoutRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.DropProject = channel.unary_stream(
+                '/api.QgisAdmin/DropProject',
+                request_serializer=api__pb2.DropRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.ClearCache = channel.unary_unary(
+                '/api.QgisAdmin/ClearCache',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                )
+        self.ListCache = channel.unary_stream(
+                '/api.QgisAdmin/ListCache',
+                request_serializer=api__pb2.ListRequest.SerializeToString,
+                response_deserializer=api__pb2.CacheInfo.FromString,
+                )
+        self.ListPlugins = channel.unary_stream(
+                '/api.QgisAdmin/ListPlugins',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.PluginInfo.FromString,
+                )
+        self.SetConfig = channel.unary_unary(
+                '/api.QgisAdmin/SetConfig',
+                request_serializer=api__pb2.JsonConfig.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                )
+        self.GetConfig = channel.unary_unary(
+                '/api.QgisAdmin/GetConfig',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.JsonConfig.FromString,
+                )
+        self.GetProjectInfo = channel.unary_stream(
+                '/api.QgisAdmin/GetProjectInfo',
+                request_serializer=api__pb2.ProjectRequest.SerializeToString,
+                response_deserializer=api__pb2.ProjectInfo.FromString,
+                )
+        self.Catalog = channel.unary_stream(
+                '/api.QgisAdmin/Catalog',
+                request_serializer=api__pb2.CatalogRequest.SerializeToString,
+                response_deserializer=api__pb2.CatalogItem.FromString,
+                )
+        self.GetEnv = channel.unary_unary(
+                '/api.QgisAdmin/GetEnv',
+                request_serializer=api__pb2.Empty.SerializeToString,
+                response_deserializer=api__pb2.JsonConfig.FromString,
+                )
+        self.SetServerServingStatus = channel.unary_unary(
+                '/api.QgisAdmin/SetServerServingStatus',
+                request_serializer=api__pb2.ServerStatus.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                )
+
+
+class QgisAdminServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def Ping(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -162,23 +272,19 @@ class QgisWorkerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetServerServingStatus(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
-def add_QgisWorkerServicer_to_server(servicer, server):
+
+def add_QgisAdminServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Ping': grpc.unary_unary_rpc_method_handler(
                     servicer.Ping,
                     request_deserializer=api__pb2.PingRequest.FromString,
                     response_serializer=api__pb2.PingReply.SerializeToString,
-            ),
-            'ExecuteOwsRequest': grpc.unary_stream_rpc_method_handler(
-                    servicer.ExecuteOwsRequest,
-                    request_deserializer=api__pb2.OwsRequest.FromString,
-                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
-            ),
-            'ExecuteRequest': grpc.unary_stream_rpc_method_handler(
-                    servicer.ExecuteRequest,
-                    request_deserializer=api__pb2.GenericRequest.FromString,
-                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
             ),
             'CheckoutProject': grpc.unary_stream_rpc_method_handler(
                     servicer.CheckoutProject,
@@ -230,14 +336,19 @@ def add_QgisWorkerServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.JsonConfig.SerializeToString,
             ),
+            'SetServerServingStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetServerServingStatus,
+                    request_deserializer=api__pb2.ServerStatus.FromString,
+                    response_serializer=api__pb2.Empty.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'api.QgisWorker', rpc_method_handlers)
+            'api.QgisAdmin', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class QgisWorker(object):
+class QgisAdmin(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -251,43 +362,9 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/Ping',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/Ping',
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def ExecuteOwsRequest(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ExecuteOwsRequest',
-            api__pb2.OwsRequest.SerializeToString,
-            api__pb2.ResponseChunk.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def ExecuteRequest(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ExecuteRequest',
-            api__pb2.GenericRequest.SerializeToString,
-            api__pb2.ResponseChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -302,7 +379,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/CheckoutProject',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/CheckoutProject',
             api__pb2.CheckoutRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
@@ -319,7 +396,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/DropProject',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/DropProject',
             api__pb2.DropRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
@@ -336,7 +413,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/ClearCache',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/ClearCache',
             api__pb2.Empty.SerializeToString,
             api__pb2.Empty.FromString,
             options, channel_credentials,
@@ -353,7 +430,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListCache',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/ListCache',
             api__pb2.ListRequest.SerializeToString,
             api__pb2.CacheInfo.FromString,
             options, channel_credentials,
@@ -370,7 +447,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/ListPlugins',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/ListPlugins',
             api__pb2.Empty.SerializeToString,
             api__pb2.PluginInfo.FromString,
             options, channel_credentials,
@@ -387,7 +464,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/SetConfig',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/SetConfig',
             api__pb2.JsonConfig.SerializeToString,
             api__pb2.Empty.FromString,
             options, channel_credentials,
@@ -404,7 +481,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetConfig',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/GetConfig',
             api__pb2.Empty.SerializeToString,
             api__pb2.JsonConfig.FromString,
             options, channel_credentials,
@@ -421,7 +498,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/GetProjectInfo',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/GetProjectInfo',
             api__pb2.ProjectRequest.SerializeToString,
             api__pb2.ProjectInfo.FromString,
             options, channel_credentials,
@@ -438,7 +515,7 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisWorker/Catalog',
+        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/Catalog',
             api__pb2.CatalogRequest.SerializeToString,
             api__pb2.CatalogItem.FromString,
             options, channel_credentials,
@@ -455,8 +532,25 @@ class QgisWorker(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/api.QgisWorker/GetEnv',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/GetEnv',
             api__pb2.Empty.SerializeToString,
             api__pb2.JsonConfig.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SetServerServingStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/SetServerServingStatus',
+            api__pb2.ServerStatus.SerializeToString,
+            api__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

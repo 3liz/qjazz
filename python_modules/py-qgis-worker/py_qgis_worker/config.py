@@ -17,6 +17,11 @@ class WorkerConfig(config.Config):
         default="default",
         title="Name of the worker instance",
     )
+    description: str = Field(
+        default="",
+        title="Description",
+        description="Description for administrative purpose",
+    )
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
         title="Projects configuration",
@@ -98,21 +103,3 @@ class WorkerConfig(config.Config):
             "no new connections are allowed."
         ),
     )
-
-
-class WorkspaceConfig(config.Config):
-    workers: List[WorkerConfig] = Field(
-        default=[WorkerConfig(name='default')],
-        title="List of worker configuration",
-        description=(
-            "Configurations for workers. "
-            "Each workers can be configured with a "
-            "specific configuration."
-        )
-    )
-
-    def get_worker_config(self, name: str):
-        for w in self.workers:
-            if w.name == name:
-                return w
-        raise KeyError(name)

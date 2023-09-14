@@ -207,5 +207,10 @@ def qgis_server_run(
             if not event.is_set():
                 _t_end = time()
                 if logger.isEnabledFor(logger.LogLevel.TRACE):
-                    logger.trace("Response time: %d ms", int((_t_end - _t_start) * 1000.))
+                    logger.trace(
+                        "%s\t%s\tResponse time: %d ms",
+                        name,
+                        msg.msg_id.name,
+                        int((_t_end - _t_start) * 1000.),
+                    )
                 event.set()

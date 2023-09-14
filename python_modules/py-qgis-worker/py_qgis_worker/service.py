@@ -2,8 +2,11 @@ import grpc
 from ._grpc import api_pb2
 from ._grpc import api_pb2_grpc
 
+from grpc_health.v1 import health_pb2
+
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from time import time
 from typing import (
     Generator,
     Tuple,
@@ -60,24 +63,7 @@ class ExecError(Exception):
     pass
 
 
-class RpcService(api_pb2_grpc.QgisWorkerServicer):
-    """ Worker API
-    """
-
-    def __init__(self, pool: WorkerPool):
-        super().__init__()
-        self._pool = pool
-
-    async def Ping(
-        self,
-        request: api_pb2.PingRequest,
-        context: grpc.aio.ServicerContext,
-    ) -> api_pb2.PingReply:
-        """  Simple ping request
-        """
-        logger.log_req("Received PING request")
-        return api_pb2.PingReply(echo=request.echo)
-
+class WorkerMixIn:
     @asynccontextmanager
     async def get_worker(self, context, request: str) -> Worker:
         try:
@@ -94,6 +80,31 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, request)
 
+
+# ======================
+# Qgis server service
+#
+# Serve requests to
+# qgis server
+# ======================
+
+
+class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
+
+    def __init__(self, pool: WorkerPool):
+        super().__init__()
+        self._pool = pool
+
+    async def Ping(
+        self,
+        request: api_pb2.PingRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.PingReply:
+        """  Simple ping request
+        """
+        logger.debug("QgisServer: Received PING request")
+        return api_pb2.PingReply(echo=request.echo)
+
     #
     # OWS request
     #
@@ -105,7 +116,7 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
 
         async with self.get_worker(context, "ExecuteOwsRequest") as worker:
             headers = dict(context.invocation_metadata())
-
+            _t_start = time()
             resp, stream = await worker.ows_request(
                 service=request.service,
                 request=request.request,
@@ -124,10 +135,14 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
             metadata.append(('x-reply-status-code', str(resp.status_code)))
             await context.send_initial_metadata(metadata)
 
+            chunk = resp.data
+            size = len(chunk)
+
             # Send data
-            yield api_pb2.ResponseChunk(chunk=resp.data)
+            yield api_pb2.ResponseChunk(chunk=chunk)
             if stream:
                 async for chunk in stream:
+                    size += len(chunk)
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
@@ -140,10 +155,18 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     ('x-debug-timestamp', str(report.timestamp)),
                 ])
 
+            _t_end = time()
+            logger.log_req(
+                "OWS\t%s\t%s\t%d\t%d",
+                request.service,
+                request.request,
+                size,
+                int((_t_end-_t_start)*1000.),
+            )
+
     #
     # Generic request
     #
-
     async def ExecuteRequest(
         self,
         request: api_pb2.GenericRequest,
@@ -190,6 +213,50 @@ class RpcService(api_pb2_grpc.QgisWorkerServicer):
                     ('x-debug-duration', str(report.duration)),
                     ('x-debug-timestamp', str(report.timestamp)),
                 ])
+
+
+# ======================
+# Admin service
+# ======================
+
+
+class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
+
+    def __init__(self, pool: WorkerPool, health_servicer):
+        super().__init__()
+        self._pool = pool
+        self._health_servicer = health_servicer
+
+    async def Ping(
+        self,
+        request: api_pb2.PingRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.PingReply:
+        """  Simple ping request
+        """
+        logger.debug("QgisAdmin Received PING request")
+        return api_pb2.PingReply(echo=request.echo)
+
+    async def SetServerServingStatus(
+        self,
+        request: api_pb2.ServerStatus,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.Empty:
+        """ Set the Healthcheck servec service
+            status
+        """
+        ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
+        match request.status:
+            case api_pb2.ServingStatus.SERVING:
+                status = ServingStatus.SERVING
+            case api_pb2.ServingStatus.NOT_SERVING:
+                status = ServingStatus.NOT_SERVING
+        logger.debug(
+            "Setting server Healthcheck status to %s",
+            ServingStatus.Name(status)
+        )
+        await self._health_servicer.set("QgisServer", status)
+        return api_pb2.Empty()
 
     #
     # Checkout project

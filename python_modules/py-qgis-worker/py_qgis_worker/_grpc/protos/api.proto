@@ -6,10 +6,14 @@ syntax = "proto3";
 package api;
 
 
-service QgisWorker {
+service QgisServer {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
     rpc ExecuteRequest (GenericRequest) returns (stream ResponseChunk) {}
+}
+
+service QgisAdmin {
+    rpc Ping (PingRequest) returns (PingReply) {}
     rpc CheckoutProject (CheckoutRequest) returns (stream CacheInfo) {}
     rpc DropProject (DropRequest) returns (stream CacheInfo) {}
     rpc ClearCache (Empty) returns (Empty) {}
@@ -20,6 +24,7 @@ service QgisWorker {
     rpc GetProjectInfo (ProjectRequest) returns (stream ProjectInfo) {}
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
     rpc GetEnv (Empty) returns (JsonConfig) {}
+    rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
 }
 
 
@@ -34,6 +39,17 @@ message PingReply {
 
 
 message Empty {}
+
+
+enum ServingStatus {
+    SERVING = 0;
+    NOT_SERVING = 1;
+}
+
+
+message ServerStatus {
+    ServingStatus status = 1;
+}
 
 
 message ResponseChunk {

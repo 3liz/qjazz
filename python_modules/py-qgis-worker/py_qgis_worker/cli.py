@@ -9,7 +9,7 @@ from grpc_health.v1.health_pb2_grpc import add_HealthServicer_to_server
 from grpc_health.v1._async import HealthServicer
 from grpc_health.v1 import health_pb2
 
-from .service import RpcService
+from .service import QgisServer, QgisAdmin
 from .config import WorkerConfig
 from .pool import WorkerPool
 
@@ -50,18 +50,21 @@ def load_configuration(configpath: Optional[Path]) -> config.Config:
 
 
 async def serve(pool):
-    server = grpc.aio.server()
-    servicer = RpcService(pool)
 
     await pool.initialize()
 
-    api_pb2_grpc.add_QgisWorkerServicer_to_server(servicer, server)
+    server = grpc.aio.server()
 
     # Configure Health check
     health_servicer = HealthServicer()
     add_HealthServicer_to_server(health_servicer, server)
 
-    await health_servicer.set("QgisWorker", health_pb2.HealthCheckResponse.SERVING)
+    # Add servicesw
+    api_pb2_grpc.add_QgisServerServicer_to_server(QgisServer(pool), server)
+    api_pb2_grpc.add_QgisAdminServicer_to_server(QgisAdmin(pool, health_servicer), server)
+
+    await health_servicer.set("QgisServer", health_pb2.HealthCheckResponse.SERVING)
+    await health_servicer.set("QgisAdmin", health_pb2.HealthCheckResponse.SERVING)
 
     for iface, port in pool.config.listen:
         listen_addr = f"{iface}:{port}"

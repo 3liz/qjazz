@@ -26,8 +26,8 @@ from typing import (
 
 @contextmanager
 def connect(
-    use_ssl: bool = False,
     stub=None,
+    use_ssl: bool = False,
 ):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
@@ -43,7 +43,7 @@ def connect(
         ],
     ) as channel:
         try:
-            stub = stub or api_pb2_grpc.QgisWorkerStub
+            stub = stub or api_pb2_grpc.QgisAdminStub
             yield stub(channel)
             # Timeout in seconds.
             # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
@@ -104,7 +104,7 @@ def ows_request(
 ):
     """ Send OWS request
     """
-    with connect() as stub:
+    with connect(api_pb2_grpc.QgisServerStub) as stub:
         _t_start = time()
         stream = stub.ExecuteOwsRequest(
             api_pb2.OwsRequest(
@@ -115,9 +115,12 @@ def ows_request(
             ),
             timeout=10,
         )
+
+        chunk = next(stream)
         _t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout
+        print(chunk, file=fp)
         for chunk in stream:
             print(chunk, file=fp)
 
@@ -125,7 +128,7 @@ def ows_request(
             print_metadata(stream.initial_metadata())
 
         _t_ms = int((_t_end - _t_start) * 1000.0)
-        print("First chunk retourned in", _t_ms, "ms", file=sys.stderr)
+        print("First chunk returned in", _t_ms, "ms", file=sys.stderr)
 
 
 @cli_commands.group('cache')
@@ -275,7 +278,7 @@ def config_commands():
 
 @config_commands.command("get")
 def get_config():
-    """ List projects from cache
+    """ Get server configuration
     """
     with connect() as stub:
         resp = stub.GetConfig(api_pb2.Empty())
@@ -319,34 +322,62 @@ def get_status_env():
         print(resp.json)
 
 
-@cli_commands.command("ping")
-@click.option("--count", default=1, help="Number of requests to send")
-def ping(count: int):
-    """ Get environment status
+@status_commands.command("disable")
+def disable_server():
+    """ Disable server serving stats
     """
     with connect() as stub:
+        _ = stub.SetServerServingStatus(
+            api_pb2.ServerStatus(status=api_pb2.ServingStatus.NOT_SERVING),
+        )
+
+
+@status_commands.command("enable")
+def enable_server():
+    """ Enable server serving stats
+    """
+    with connect() as stub:
+        _ = stub.SetServerServingStatus(
+            api_pb2.ServerStatus(status=api_pb2.ServingStatus.SERVING),
+        )
+
+
+@cli_commands.command("ping")
+@click.option("--count", default=1, help="Number of requests to send")
+@click.option("--server", is_flag=True, help="Ping qgis server service")
+def ping(count: int, server: bool = False):
+    """ Get environment status
+    """
+    stub = api_pb2_grpc.QgisServerStub if server else None
+    target = "server" if server else "admin"
+    with connect(stub) as stub:
         for n in range(count):
             _t_start = time()
             resp = stub.Ping(api_pb2.PingRequest(echo=str(n)))
             _t_end = time()
-            print(f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end-_t_start) * 1000.)} ms")
+            print(
+                f"({target}) ",
+                f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end-_t_start) * 1000.)} ms",
+            )
             sleep(1)
 
 
 @cli_commands.command("healthcheck")
 @click.option("--watch", is_flag=True, help="Watch status changes")
-def healthcheck_status(watch: bool):
+@click.option("--server", is_flag=True, help="Check qgis server service")
+def healthcheck_status(watch: bool, server: bool):
     """ Check the status of a GRPC server
     """
+    target = "QgisServer" if server else "QgisAdmin"
     with connect(stub=health_pb2_grpc.HealthStub) as stub:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
-        request = health_pb2.HealthCheckRequest(service="QgisWorker")
+        request = health_pb2.HealthCheckRequest(service=target)
         if watch:
             for resp in stub.Watch(request):
-                print("status: ", ServingStatus.Name(resp.status))
+                print(f"{target}:", ServingStatus.Name(resp.status))
         else:
             resp = stub.Check(request)
-            print(ServingStatus.Name(resp.status))
+            print(f"{target}", ServingStatus.Name(resp.status))
 
 
 cli_commands()

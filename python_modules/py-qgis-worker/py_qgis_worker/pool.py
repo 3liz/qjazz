@@ -27,7 +27,7 @@ class WorkerPool:
     """
 
     def __init__(self, config: WorkerConfig, num_workers: int = 1):
-        self._worker_conf = config
+        self._config = config
         self._workers = [Worker(config, name=f"{config.name}_{n}") for n in range(num_workers)]
         self._avails = asyncio.Queue()
         self._timeout = config.worker_timeout
@@ -70,6 +70,14 @@ class WorkerPool:
             self._cached_worker_plugins = [item async for item in items]
         else:
             self._cached_worker_plugins = []
+        #
+        # Update status metadata
+        #
+        self._cached_worker_env.update(
+            name=self._config.name,
+            num_workers=len(self._workers),
+            description=self._config.description,
+        )
 
     @asynccontextmanager
     async def get_worker(self) -> Worker:
@@ -160,28 +168,28 @@ class WorkerPool:
 
     @property
     def config(self) -> WorkerConfig:
-        return self._worker_conf
+        return self._config
 
     def dump_config(self) -> Dict:
-        if isinstance(self._worker_conf, ConfigProxy):
-            return self._worker_conf.service.conf.model_dump()
+        if isinstance(self._config, ConfigProxy):
+            return self._config.service.conf.model_dump()
         else:
-            return self._worker_conf.model_dump()
+            return self._config.model_dump()
 
     async def update_config(self, obj: Dict):
         """ Update config for all workers
         """
-        if isinstance(self._worker_conf, ConfigProxy):
+        if isinstance(self._config, ConfigProxy):
             async with self.wait_for_all_workers() as workers:
-                self.conf.service.update_config(obj)
+                self._config.service.update_config(obj)
                 # Update timeout config
-                self._timeout = self.config.worker_timeout
-                self._max_requests = self.config.max_waiting_requests
+                self._timeout = self._config.worker_timeout
+                self._max_requests = self._config.max_waiting_requests
                 # Update log level
                 level = logger.set_log_level()
                 logger.info("Log level set to %s", level.name)
                 for w in workers:
-                    w.update_config(obj)
+                    await w.update_config(obj)
                 logger.trace("Updated workers with configuration\n %s", obj)
         else:
             raise WorkerError(403, "Cannot update local configuration")
@@ -190,7 +198,8 @@ class WorkerPool:
     # Env
     #
 
-    async def env(self) -> Dict:
+    @property
+    def env(self) -> Dict:
         return self._cached_worker_env
 
     #
