@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 import grpc
 from py_qgis_worker._grpc import api_pb2
 
@@ -12,7 +13,7 @@ from typing_extensions import (
     Sequence,
     AsyncIterator,
     Iterator,
-    Self,
+    Any,
 )
 
 from py_qgis_contrib.core import logger
@@ -22,7 +23,17 @@ from .client import (
     RECONNECT_DELAY,
 )
 
-from .resolver import Resolver
+from .resolvers import Resolver
+from .errors import (
+    ServiceNotAvailable,
+)
+
+# turn a list of arguments into a
+# a sequence
+
+
+def _star(*args) -> Sequence[Any]:
+    return args
 
 
 def MessageToDict(message) -> Dict:
@@ -69,6 +80,9 @@ class PoolClient:
         self._shutdown = False
         self._sync_events = ()
 
+    def __len__(self):
+        return len(self._servers)
+
     @property
     def name(self) -> str:
         return self._resolver.name
@@ -103,21 +117,21 @@ class PoolClient:
             yield server
 
     @property
-    def reachables_servers(self) -> Tuple[int, int]:
+    async def check_servers(self) -> Tuple[int, int]:
         """ Return a tuple of (reachables, unreachables)
             server count
         """
         reachables = 0
         unreachables = 0
         for s in self._servers:
-            if s.serving:
+            if await s.check():
                 reachables += 1
             else:
                 unreachables + 1
         return (reachables, unreachables)
 
     async def enable_servers(self, enable: bool):
-        for s in self.servers(serving=True):
+        for s in self._servers:
             s.enable_servers(enable)
 
     async def update_servers(self):
@@ -137,16 +151,17 @@ class PoolClient:
         new_addr = addresses.difference(current_addr)
         removed_addr = current_addr.difference(addresses)
 
+        if not new_addr and not removed_addr:
+            return
+
         def _update():
             for server in self._servers:
                 if server.address in removed_addr:
-                    # Make sure the server is not serving
-                    if server.serving:
-                        logger.warning(
-                            "Removing serving server at '%s' (%s)",
-                            server.address,
-                            self.name,
-                        )
+                    logger.warning(
+                        "Removing server at '%s' (%s)",
+                        server.address,
+                        self.name,
+                    )
                     server.shutdown()
                 else:
                     # Keep current servers
@@ -161,45 +176,91 @@ class PoolClient:
         # Sync watchers
         self._sync()
 
-    async def watch(self) -> AsyncIterator[Self]:
+    async def watch(self) -> AsyncIterator[Tuple[Tuple[str, bool], ...]]:
         """ Wait for state change in one of the worker
         """
+        queue = asyncio.Queue()
+        exception = None
+
+        async def _watch(server):
+            nonlocal exception
+            try:
+                async for result in server.watch():
+                    await queue.put(result)
+            except Exception as err:
+                logger.error(traceback.format_exc())
+                exception = err
+
         with self.sync_event() as sync:
             while not self._shutdown:
+                exception = None
                 try:
                     # Reconnect
-                    _watchers = tuple(s.watch() for s in self._servers)
-                    while _watchers:
+                    statuses = {s.address: await s.check() for s in self._servers}
+                    yield tuple(statuses.items())
+                   
+                    watchers = tuple(asyncio.create_task(_watch(s)) for s in self._servers)
+                    while watchers:
                         done, pending = await asyncio.wait(
-                            sync.wait(),
-                            *(anext(w) for w in _watchers),
+                            (sync.wait(), queue.get()),
+                            return_when=asyncio.FIRST_COMPLETED,
                         )
                         # Cancel pendings futures
                         for t in pending:
                             t.cancel()
-                        if self.sync.is_set():
+                        if exception:
+                            raise exception
+                        # Asked for resync
+                        if sync.is_set():
                             break
-                        yield self
+                        server, status = done.pop().result()
+                        # Yield on change
+                        if status != statuses[server.address]:
+                            statuses[server.address] = status
+                            yield tuple(statuses.items())
                 except StopAsyncIteration:
                     # Client was shutdown
+                    logger.trace("%s: client shutdown (StopAsyncIteration)")
                     pass
+                finally:
+                    # Cancel watchers
+                    for w in watchers:
+                        w.cancel()
                 sync.clear()
                 if not self._shutdown:
-                    asyncio.sleep(RECONNECT_DELAY)
+                    await asyncio.sleep(RECONNECT_DELAY)
 
-    async def stats(self) -> Iterator[Tuple[PoolItemClient, Optional[api_pb2.StatsReply]]]:
-        for s in self._servers:
-            if s.serving:
-                yield (s, await s.stats())
-            else:
-                yield (s, None)
+    async def stats(self) -> Sequence[Tuple[PoolItemClient, Optional[Dict]]]:
+        """  Return stats for all servers
+        """
+        async def _stats(server):
+            try:
+                msg = MessageToDict(await server.stats())
+                msg.update(address=server.address, status="ok")
+                return server, msg
+            except grpc.RpcError as err:
+                if err.code() == grpc.StatusCode.UNAVAILABLE:
+                    logger.error("Server '{server.name}' is unreachable")
+                    return (server, dict(address=server.address, status="unavailable"))
+                else:
+                    raise
+
+        return await asyncio.gather(*(_stats(s) for s in self._servers))
 
     async def watch_stats(
         self,
         interval: int = 3,
-    ) -> AsyncIterator[Tuple[PoolItemClient, Optional[api_pb2.StatsReply]]]:
+    ) -> AsyncIterator[Sequence[Tuple[PoolItemClient, Optional[Dict]]]]:
         """ Watch service stats
         """
+        def _to_dict(item, stats):
+            if stats:
+                resp = MessageToDict(stats)
+                resp.update(address=item.address, status="ok")
+            else:
+                resp = dict(address=item.address, status="unreachable")
+            return item, resp
+    
         with self.sync_event() as sync:
             while not self._shutdown:
                 try:
@@ -207,15 +268,16 @@ class PoolClient:
                     _watchers = tuple(s.watch_stats(interval) for s in self._servers)
                     while _watchers:
                         results = await asyncio.gather(*(anext(w) for w in _watchers))
-                        yield results
+                        yield tuple(_to_dict(item, stats) for item, stats in results)
                         if sync.is_set():
                             break
                 except StopAsyncIteration:
                     # Client was shutdown
+                    logger.trace("%s: client shutdown (StopAsyncIteration)", self.name)
                     pass
                 sync.clear()
                 if not self.shutdown:
-                    asyncio.sleep(RECONNECT_DELAY)
+                    await asyncio.sleep(RECONNECT_DELAY)
 
     #
     # Cache
@@ -231,6 +293,7 @@ class PoolClient:
                 if not status:
                     status = MessageToDict(item)
                     status.update(serverAddress=server.address)
+                    del status['cacheId']
                     cached_status[status['uri']] = status
                 else:
                     reduce_cache(status, item)
@@ -265,7 +328,7 @@ class PoolClient:
 
         return result
 
-    async def synchronize_caches(self) -> Dict[str, List[Dict]]:
+    async def synchronize_cache(self) -> Dict[str, List[Dict]]:
         """ Synchronize all caches
             for all instances
         """
@@ -291,6 +354,7 @@ class PoolClient:
             async for item in server.pull_projects(*uris):
                 rv = MessageToDict(item)
                 rv.update(serverAddress=server.address)
+                del rv['cacheId']
                 result[item.uri].append(rv)
 
         await asyncio.gather(*(_reduce(s) for s in self._servers))
@@ -299,19 +363,24 @@ class PoolClient:
     async def clear_cache(self) -> None:
         """ Clear cache for all servers
         """
+        serving = False
         for server in self._servers:
             try:
                 await server.clear_cache()
+                serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
                     logger.error("Server '{server.name}' is unreachable")
                 else:
                     raise
+        if not serving:
+            raise ServiceNotAvailable(self.name)
 
     async def pull_projects(self, *uris) -> Dict[str, List[Dict]]:
         """ Pull/Update projects in all cache
         """
         rv = {}
+        serving = False
         for server in self._servers:
             try:
                 cached = {}
@@ -325,12 +394,15 @@ class PoolClient:
                         reduce_cache(_item, item)
                 for uri, _item in cached.items():
                     rv.setdefault(uri, []).append(_item)
+                serving = True
             except grpc.RpcError as err:
-                logger.error("Server '{server.name}' is unreachable")
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
                     logger.error("Server '{server.name}' is unreachable")
                 else:
                     raise
+
+        if not serving:
+            raise ServiceNotAvailable(self.name)
         return rv
 
     #
@@ -342,9 +414,46 @@ class PoolClient:
         """
         # Find a serving server
         # All servers share the same config so
-        # fin a serving to get the catalog
+        # find a serving to get the catalog
+        serving = False
         for s in self._servers:
-            if s.serving:
-                stream = await s.catalog(location)
-                async for item in stream:
+            try:
+                async for item in s.catalog(location):
                     yield MessageToDict(item)
+                serving = True
+            except grpc.RpcError as rpcerr:
+                logger.trace("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
+                if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
+                    continue
+                else:
+                    raise
+        if not serving:
+            raise ServiceNotAvailable(self.name)
+
+
+    #
+    # Conf
+    #
+
+    async def get_config(self) -> Dict:
+        """ Return the configuration
+        """
+        # Find a serving server
+        # All servers share the same config
+        serving = False
+        for s in self._servers:
+            try:
+                return await s.get_config()
+                serving = True
+            except grpc.RpcError as rpcerr:
+                logger.trace("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
+                if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
+                    continue
+                else:
+                    raise
+        if not serving:
+            raise ServiceNotAvailable(self.name)
+
+
+
+

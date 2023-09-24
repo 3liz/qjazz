@@ -7,7 +7,7 @@ services:
     - qgis_rpc_network
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
-    command: ["qgis-server-rpc", "grpc", "-C", "/opt/qgis-services/config.toml"]
+    command: ["qgis-server-rpc", "serve", "-C", "/opt/qgis-services/config.toml"]
   client:
     image: qgis-services:release
     networks:

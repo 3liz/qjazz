@@ -95,7 +95,7 @@ class WorkerConfig(config.Config):
         ),
     )
     shutdown_grace_period: int = Field(
-        default=20,
+        default=3,
         title="Shutdown grace period",
         description=(
             "The maximum amount of time to wait before "

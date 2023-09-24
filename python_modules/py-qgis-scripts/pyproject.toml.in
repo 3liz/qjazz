@@ -13,11 +13,13 @@ classifiers = [
 ]
 dependencies = [
     "py-qgis-worker==${PIN_VERSION}",
+    "py-qgis-admin==${PIN_VERSION}",
 ]
 version = "${PIN_VERSION}"
 
 [project.scripts]
 qgis-server-rpc = "py_qgis_worker.cli:main"
+qgis-server-monitor = "py_qgis_admin.cli:main"
 
 [[project.authors]]
 name = "David Marteau"

@@ -18,6 +18,7 @@ version = "1.0.0.dev0"
 
 [project.scripts]
 qgis-server-rpc = "py_qgis_worker.cli:main"
+qgis-server-monitor = "py_qgis_admin.cli:main"
 
 [[project.authors]]
 name = "David Marteau"

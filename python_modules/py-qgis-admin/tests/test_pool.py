@@ -6,7 +6,7 @@ from py_qgis_admin.pool import (  # noqa
     PoolClient,
 )
 
-from py_qgis_admin.resolver import (  # noqa
+from py_qgis_admin.resolvers import (  # noqa
     Resolver,
     DNSResolverConfig,
     DNSResolver,
@@ -34,15 +34,15 @@ async def test_resolver_config():
             ),
             SocketResolverConfig(
                 type="socket",
-                path="/tmp/my.sock",
+                address="unix:/tmp/my.sock",
             ),
         ],
     )
 
     resolvers = list(config.get_resolvers())
     assert len(resolvers) == 3
-    assert resolvers[0].name == "dns:localhost"
-    assert resolvers[1].name == "dns:localhost"
+    assert resolvers[0].name == "localhost:23456"
+    assert resolvers[1].name == "localhost:23456"
     assert resolvers[2].name == "unix:/tmp/my.sock"
 
     configs = list(await resolvers[0].configs)
@@ -68,16 +68,16 @@ async def test_pool():
 
     pool = PoolClient(resolver)
     assert len(pool._servers) == 0
-    
+
     await pool.update_servers()
     assert len(pool._servers) == 1
 
     # Clear cache
     await pool.clear_cache()
     # Get cache content
-    content =  await pool.cache_content()
+    content = await pool.cache_content()
     assert len(content) == 0
-   
+
     # Pull project
     rv = await pool.pull_projects("/france/france_parts.qgs")
     assert len(rv) == 1
@@ -89,12 +89,9 @@ async def test_pool():
     # Synchronize
     # If there is only one server in the pool
     # there is not much to synchronize
-    rv = await pool.synchronize_caches()
+    rv = await pool.synchronize_cache()
     assert len(rv) == 1
     uri, items = tuple(rv.items())[0]
     assert items[0]['uri'] == uri
     assert items[0]['status'] == 'UNCHANGED'
     assert items[0]['serverAddress'] == '127.0.0.1:23456'
-
-
-

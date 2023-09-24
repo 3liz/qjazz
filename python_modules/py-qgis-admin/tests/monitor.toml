@@ -1,0 +1,8 @@
+
+[resolvers]
+
+[[resolvers.pools]]
+type = "dns"
+host = "localhost"
+port = 23456
+

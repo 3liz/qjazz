@@ -3,6 +3,7 @@ level = "trace"
 
 [worker]
 name = "Test"
+shutdown_grace_period = 5
 
 [worker.projects]
 trust_layer_metadata = true

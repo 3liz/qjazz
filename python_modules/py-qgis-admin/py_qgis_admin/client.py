@@ -101,7 +101,6 @@ class PoolItemClient:
 
         self._server_address = config.address_to_string()
         self._metadata = metadata
-        self._serving = False
         self._env = None
         self._shutdown = False
 
@@ -116,6 +115,7 @@ class PoolItemClient:
 
     @asynccontextmanager
     async def _channel(self) -> grpc.aio.Channel:
+        logger.trace("Connecting to %s", self.address)
         async with (
             grpc.aio.secure_channel(
                 self._server_address,
@@ -129,7 +129,7 @@ class PoolItemClient:
             )
         ) as channel:
             yield channel
-
+    
     @asynccontextmanager
     async def _stub(self) -> api_pb2_grpc.QgisAdminStub:
         async with self._channel() as channel:
@@ -159,48 +159,53 @@ class PoolItemClient:
                     else:
                         raise
 
-    @property
-    def serving(self) -> bool:
-        return self._serving
+    async def check(self) -> bool:
+        """  Check if remote is serving
+        """
+        try:
+            async with self._channel() as channel:
+                stub = health_pb2_grpc.HealthStub(channel)
+                request = health_pb2.HealthCheckRequest(service="QgisAdmin")
+                resp = await stub.Check(request)
+                return resp.status == ServingStatus.SERVING
+        except grpc.RpcError as rpcerr:
+            logger.error("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
+            if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
+                return False
+            else:
+                raise
 
-    async def watch(self) -> AsyncIterator[Self]:
+    async def watch(self) -> AsyncIterator[Tuple[Self, bool]]:
         """ Watch service status
         """
+        serving = False
         while not self._shutdown:
             try:
-                with self._channel() as channel:
+                async with self._channel() as channel:
                     stub = health_pb2_grpc.HealthStub(channel)
-                    request = await health_pb2.HealthCheckRequest(service="QgisAdmin")
-                    resp = await stub.Check(request)
-
-                    self._serving = resp.status == ServingStatus.SERVING
+                    request = health_pb2.HealthCheckRequest(service="QgisAdmin")
                     async for resp in stub.Watch(request):
                         logger.info(
                             "%s\tStatus changed to %s",
                             self._server_address,
                             ServingStatus.Name(resp.status),
                         )
-                        self._serving = resp.status == ServingStatus.SERVING
-                        yield self
+                        serving = resp.status == ServingStatus.SERVING
+                        yield self, serving
                         if self._shutdown:
                             break
             except grpc.RpcError as rpcerr:
-                if self._serving:
-                    self._serving = False
-                    logger.error("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
-                    logger.info(
-                        "%s\tStatus changed to %s",
-                        self._server_address,
-                        ServingStatus.Name(resp.status),
-                    )
-                    # Attempt reconnection
-                    if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
-                        break
-                    else:
-                        # Forward exception
-                        raise
+                logger.trace("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
+                if serving:
+                    serving = False
+                    yield self, serving
+                # Forward exception
+                if rpcerr.code() != grpc.StatusCode.UNAVAILABLE:
+                    raise
+            # Attempt reconnection
             if not self._shutdown:
-                asyncio.sleep(RECONNECT_DELAY)
+                logger.debug("Waiting for reconnection of %s", self.address)
+                await asyncio.sleep(RECONNECT_DELAY)
 
     #
     # Cache
@@ -349,20 +354,20 @@ class PoolItemClient:
         while not self._shutdown:
             try:
                 async with self._stub() as stub:
-                    resp = await stub.Stats(api_pb2.Empty())
-                    yield (self, resp)
-                    if self._shutdown:
-                        break
-                    await asyncio.sleep(interval)
+                    while True:
+                        resp = await stub.Stats(api_pb2.Empty())
+                        yield (self, resp)
+                        if self._shutdown:
+                            break
+                        await asyncio.sleep(interval)
             except grpc.RpcError as rpcerr:
-                logger.error(
+                logger.trace(
                     "Stats request failed: %s\t%s",
                     self._server_address,
                     rpcerr.details()
                 )
                 if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
                     yield (self, None)
-                    break
                 else:
                     # Forward exception
                     raise
