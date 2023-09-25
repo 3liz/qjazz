@@ -198,7 +198,7 @@ class PoolClient:
                     # Reconnect
                     statuses = {s.address: await s.check() for s in self._servers}
                     yield tuple(statuses.items())
-                   
+
                     watchers = tuple(asyncio.create_task(_watch(s)) for s in self._servers)
                     while watchers:
                         done, pending = await asyncio.wait(
@@ -260,7 +260,7 @@ class PoolClient:
             else:
                 resp = dict(address=item.address, status="unreachable")
             return item, resp
-    
+
         with self.sync_event() as sync:
             while not self._shutdown:
                 try:
@@ -430,7 +430,6 @@ class PoolClient:
         if not serving:
             raise ServiceNotAvailable(self.name)
 
-
     #
     # Conf
     #
@@ -453,7 +452,3 @@ class PoolClient:
                     raise
         if not serving:
             raise ServiceNotAvailable(self.name)
-
-
-
-

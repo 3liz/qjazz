@@ -129,7 +129,7 @@ class PoolItemClient:
             )
         ) as channel:
             yield channel
-    
+
     @asynccontextmanager
     async def _stub(self) -> api_pb2_grpc.QgisAdminStub:
         async with self._channel() as channel:

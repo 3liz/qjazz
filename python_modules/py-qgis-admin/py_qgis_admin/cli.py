@@ -103,7 +103,7 @@ def watch(host: Optional[str], configpath: Optional[Path]):
         service = Service(conf.resolvers)
         if not service.num_pools():
             print("No servers", file=sys.stderr)
-            return 
+            return
 
         async def _watch():
             await service.synchronize()
@@ -159,6 +159,7 @@ def stats(host: Optional[str], watch: bool, interval: int, configpath: Optional[
 # Configuration
 #
 
+
 @cli_commands.command('conf')
 @click.option("--host", help="Hostname", required=True)
 @click.option(
@@ -186,8 +187,6 @@ def print_conf(host: Optional[str], configpath: Optional[Path]):
         asyncio.run(_conf(pool))
     else:
         print("ERROR: ", host, "not found", file=sys.stderr)
-
-
 
 
 #

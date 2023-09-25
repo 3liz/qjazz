@@ -2,8 +2,6 @@ import asyncio
 import signal
 import grpc
 
-from contextlib import asynccontextmanager
-
 from ._grpc import api_pb2_grpc
 
 from grpc_health.v1 import health_pb2
@@ -12,9 +10,7 @@ from grpc_health.v1.health_pb2_grpc import add_HealthServicer_to_server
 
 from py_qgis_contrib.core import logger
 
-from .config import WorkerConfig
 from .service import QgisServer, QgisAdmin
-from .pool import WorkerPool
 
 
 async def serve(pool):
