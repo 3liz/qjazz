@@ -18,7 +18,7 @@ RUN mkdir -p /opt/local/ \
     && /opt/local/qgisserver/bin/pip install -U --no-cache-dir pip setuptools wheel \
     && /opt/local/qgisserver/bin/pip install --no-cache-dir \
         -e /python_modules/py-qgis-contrib \
-        -e /python_modules/py-qgis-project-cache \
+        -e /python_modules/py-qgis-cache \
         -e /python_modules/py-qgis-worker \
         -e /python_modules/py-qgis-admin \
         -e /python_modules/py-qgis-scripts \

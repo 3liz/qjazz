@@ -13,7 +13,7 @@ classifiers = [
 ]
 dependencies = [
     "py-qgis-contrib==1.0.0.dev0",
-    "py-qgis-project-cache==1.0.0.dev0",
+    "py-qgis-cache==1.0.0.dev0",
     "grpcio",
     "grpcio-tools",
     "grpcio-health-checking",

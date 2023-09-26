@@ -28,7 +28,7 @@ from py_qgis_contrib.core.qgis import (
     PluginType,
     QgisPluginService,
 )
-from py_qgis_project_cache import (
+from py_qgis_cache import (
     CacheManager,
     CheckoutStatus,
 )

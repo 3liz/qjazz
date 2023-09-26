@@ -9,7 +9,7 @@ from typing_extensions import (
 )
 from multiprocessing.connection import Connection
 
-from py_qgis_project_cache import (
+from py_qgis_cache import (
     CacheManager,
     CacheEntry,
     CheckoutStatus,

@@ -5,7 +5,7 @@ include $(DEPTH)/config/config.mk
 
 PYTHON_MODULES= \
 	python_modules/py-qgis-contrib \
-	python_modules/py-qgis-project-cache \
+	python_modules/py-qgis-cache \
 	python_modules/py-qgis-worker \
 	python_modules/py-qgis-scripts \
 	python_modules/py-qgis-admin \

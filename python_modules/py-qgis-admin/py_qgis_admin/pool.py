@@ -13,7 +13,6 @@ from typing_extensions import (
     Sequence,
     AsyncIterator,
     Iterator,
-    Any,
 )
 
 from py_qgis_contrib.core import logger
@@ -27,13 +26,6 @@ from .resolvers import Resolver
 from .errors import (
     ServiceNotAvailable,
 )
-
-# turn a list of arguments into a
-# a sequence
-
-
-def _star(*args) -> Sequence[Any]:
-    return args
 
 
 def MessageToDict(message) -> Dict:

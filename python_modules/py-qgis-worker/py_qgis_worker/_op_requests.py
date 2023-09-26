@@ -18,7 +18,7 @@ from qgis.server import (
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_project_cache import (
+from py_qgis_cache import (
     CacheManager,
     CacheEntry,
     CheckoutStatus,

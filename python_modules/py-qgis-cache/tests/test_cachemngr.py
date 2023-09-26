@@ -3,7 +3,7 @@ import pytest
 from pathlib import Path
 
 from py_qgis_contrib.core import logger  # noqa
-from py_qgis_project_cache import (
+from py_qgis_cache import (
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,

@@ -1,7 +1,7 @@
 
 from urllib.parse import urlsplit, parse_qs
 
-from py_qgis_project_cache import CacheManager
+from py_qgis_cache import CacheManager
 
 
 def test_postgres_storage(data, config):

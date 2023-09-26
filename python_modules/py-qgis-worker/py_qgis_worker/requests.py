@@ -18,7 +18,7 @@ from qgis.server import (
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_project_cache import CheckoutStatus
+from py_qgis_cache import CheckoutStatus
 
 from . import messages as _m
 

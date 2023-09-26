@@ -1,6 +1,6 @@
 from py_qgis_contrib.core import config
 from py_qgis_contrib.core.qgis import QgisPluginConfig
-from py_qgis_project_cache.config import ProjectsConfig
+from py_qgis_cache.config import ProjectsConfig
 
 from pydantic import (
     Field,
@@ -95,7 +95,7 @@ class WorkerConfig(config.Config):
         ),
     )
     shutdown_grace_period: int = Field(
-        default=3,
+        default=20,
         title="Shutdown grace period",
         description=(
             "The maximum amount of time to wait before "

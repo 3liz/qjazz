@@ -2,7 +2,7 @@ import pytest  # noqa
 import traceback
 
 from pathlib import Path
-from py_qgis_project_cache import ProjectsConfig
+from py_qgis_cache import ProjectsConfig
 
 
 @pytest.fixture(scope='session')
@@ -31,7 +31,7 @@ def pytest_sessionstart(session):
     try:
         from py_qgis_contrib.core import qgis
         qgis.init_qgis_application()
-        from py_qgis_project_cache import CacheManager
+        from py_qgis_cache import CacheManager
         CacheManager.initialize_handlers()
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)

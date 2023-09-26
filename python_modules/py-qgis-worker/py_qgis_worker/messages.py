@@ -23,7 +23,7 @@ from typing_extensions import (
 )
 from dataclasses import dataclass, field
 
-from py_qgis_project_cache import CheckoutStatus
+from py_qgis_cache import CheckoutStatus
 from py_qgis_contrib.core.qgis import PluginType
 
 
