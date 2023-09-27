@@ -18,8 +18,23 @@ from .._grpc import api_pb2_grpc
 from grpc_health.v1 import health_pb2       # HealthCheckRequest
 from grpc_health.v1 import health_pb2_grpc  # HealthStub
 
-
 from google.protobuf import json_format
+
+from py_qgis_contrib.core.config import SSLConfig
+
+
+# Return a ChannelCredential struct
+def _channel_credentials(files: SSLConfig):
+    def _read(f) -> Optional[bytes]:
+        if f:
+            with Path(files.ca).open('rb') as fp:
+                return fp.read()
+
+    return grpc.ssl_channel_credentials(
+        root_certificate=_read(files.ca),
+        certificate=_read(files.cert),
+        private_key=_read(files.key),
+    )
 
 
 def MessageToJson(msg) -> str:
@@ -30,22 +45,43 @@ def MessageToJson(msg) -> str:
 
 
 @contextmanager
-def connect(
-    stub=None,
-    use_ssl: bool = False,
-):
+def connect(stub=None):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     #
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
-    with grpc.insecure_channel(
-        target=os.getenv("QGIS_GRPC_HOST", "localhost:23456"),
-        options=[
-            ("grpc.lb_policy_name", "round_robin"),
-            ("grpc.enable_retries", 1),
-            ("grpc.keepalive_timeout_ms", 10000),
-        ],
+
+    channel_options = [
+        ("grpc.lb_policy_name", "round_robin"),
+        ("grpc.enable_retries", 1),
+        ("grpc.keepalive_timeout_ms", 10000),
+    ]
+
+    target = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
+
+    if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, 'yes', 'true'):
+        ssl_creds = _channel_credentials(
+            SSLConfig(
+                key=os.getenv("CONF_GRPC_SSL_KEYFILE"),
+                cert=os.getenv("CONF_GRPC_SSL_CERTFILE"),
+                ca=os.getenv("CONF_GRPC_SSL_CAFILE"),
+            )
+        )
+    else:
+        ssl_creds = None
+
+    with (
+        grpc.secure_channel(
+            target,
+            ssl_creds,
+            options=channel_options,
+        )
+        if ssl_creds
+        else grpc.insecure_channel(
+            target,
+            options=channel_options,
+        )
     ) as channel:
         try:
             stub = stub or api_pb2_grpc.QgisAdminStub
@@ -117,6 +153,7 @@ def ows_request(
                 request=request,
                 target=project,
                 url=url or "",
+                options='&'.join(param),
             ),
             timeout=10,
         )
@@ -125,9 +162,61 @@ def ows_request(
         _t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout
-        print(chunk, file=fp)
+        fp.buffer.write(chunk.chunk)
         for chunk in stream:
-            print(chunk, file=fp)
+            fp.buffer.write(chunk.chunk)
+
+        if headers:
+            print_metadata(stream.initial_metadata())
+
+        _t_ms = int((_t_end - _t_start) * 1000.0)
+        print("First chunk returned in", _t_ms, "ms", file=sys.stderr)
+
+
+@request_commands.command("api")
+@click.option("--name", help="Api name", required=True)
+@click.option("--path", help="Api path", default="/")
+@click.option('--target', help="Target project")
+@click.option("--param", "-p", multiple=True, help="Parameters KEY=VALUE")
+@click.option("--headers", "-H", is_flag=True, help="Show headers")
+@click.option("--url", help="Origin url")
+@click.option(
+    "--output", "-o",
+    help="Destination file",
+    type=click.Path(dir_okay=False),
+)
+def api_request(
+    name: str,
+    path: str,
+    target: Optional[str],
+    param: List[str],
+    headers: bool,
+    output: Optional[str],
+    url: Optional[str],
+):
+    """ Send Api request
+    """
+    with connect(api_pb2_grpc.QgisServerStub) as stub:
+        _t_start = time()
+        stream = stub.ExecuteApiRequest(
+            api_pb2.ApiRequest(
+                name=name,
+                path=path,
+                method="GET",
+                url=url or "",
+                target=target,
+                options='&'.join(param),
+            ),
+            timeout=10,
+        )
+
+        chunk = next(stream)
+        _t_end = time()
+
+        fp = Path(output).open("w") if output else sys.stdout
+        fp.buffer.write(chunk.chunk)
+        for chunk in stream:
+            fp.buffer.write(chunk.chunk)
 
         if headers:
             print_metadata(stream.initial_metadata())

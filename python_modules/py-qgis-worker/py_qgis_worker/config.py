@@ -1,15 +1,46 @@
 from py_qgis_contrib.core import config
 from py_qgis_contrib.core.qgis import QgisPluginConfig
+from py_qgis_contrib.core.config import (
+    NetInterface,
+    SSLConfig,
+)
 from py_qgis_cache.config import ProjectsConfig
 
 from pydantic import (
     Field,
+    AfterValidator,
 )
+
 from typing_extensions import (
     List,
+    Annotated,
 )
 
 DEFAULT_INTERFACE = ("[::]", 23456)
+
+#
+# Service SSL configuration
+#
+
+
+def _check_ssl_config(sslconf):
+    match (sslconf.key, sslconf.cert):
+        case (str(), None):
+            raise ValueError("Missing ssl cert file")
+        case (None, str()):
+            raise ValueError("Missinc ssl key file")
+    return sslconf
+
+
+class ListenConfig(config.Config):
+    listen: NetInterface = Field(
+        default=DEFAULT_INTERFACE,
+        title="TCP:PORT interface or unix socket",
+    )
+    ssl: Annotated[
+        SSLConfig,
+        AfterValidator(_check_ssl_config)
+    ] = SSLConfig()
 
 
 class WorkerConfig(config.Config):
@@ -68,8 +99,8 @@ class WorkerConfig(config.Config):
         title="Maximum chunk size",
         description="Set the maximum chunk size for streamed responses.",
     )
-    listen: List[config.NetInterface] = Field(
-        default=[DEFAULT_INTERFACE],
+    interfaces: List[ListenConfig] = Field(
+        default=[ListenConfig()],
         title="Interfaces to listen to",
         min_length=1,
     )

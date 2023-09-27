@@ -34,6 +34,7 @@ from py_qgis_cache import (
 )
 
 from .config import WorkerConfig
+from .serverapi import ApiDelegate
 
 from . import messages as _m
 from . import _op_requests
@@ -107,9 +108,15 @@ def qgis_server_run(
     """
     cm = CacheManager(config.projects, server)
 
+    server_iface = server.serverInterface()
+
     # Load plugins
     plugin_s = QgisPluginService(config.plugins)
-    plugin_s.load_plugins(PluginType.SERVER, server.serverInterface())
+    plugin_s.load_plugins(PluginType.SERVER, server_iface)
+
+    # Register delegation api
+    api_delegate = ApiDelegate(server_iface)
+    server_iface.serviceRegistry().registerApi(api_delegate)
 
     load_default_project(cm)
 
@@ -136,12 +143,19 @@ def qgis_server_run(
                         server,
                         cm, config, _process, cache_id=name,
                     )
+                case _m.MsgType.APIREQUEST:
+                    _op_requests.handle_api_request(
+                        conn,
+                        msg,
+                        server,
+                        cm, config, _process, cache_id=name,
+                    )
                 case _m.MsgType.REQUEST:
                     _op_requests.handle_generic_request(
                         conn,
                         msg,
                         server,
-                        cm, config, _process, cache_id=name
+                        cm, config, _process, cache_id=name,
                     )
                 # --------------------
                 # Global management

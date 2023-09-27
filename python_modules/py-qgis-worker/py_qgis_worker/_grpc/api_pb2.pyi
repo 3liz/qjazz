@@ -77,13 +77,36 @@ class OwsRequest(_message.Message):
     debug_report: bool
     def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
+class ApiRequest(_message.Message):
+    __slots__ = ["name", "method", "path", "data", "target", "url", "direct", "options", "request_id", "debug_report"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    METHOD_FIELD_NUMBER: _ClassVar[int]
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    TARGET_FIELD_NUMBER: _ClassVar[int]
+    URL_FIELD_NUMBER: _ClassVar[int]
+    DIRECT_FIELD_NUMBER: _ClassVar[int]
+    OPTIONS_FIELD_NUMBER: _ClassVar[int]
+    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    method: str
+    path: str
+    data: bytes
+    target: str
+    url: str
+    direct: bool
+    options: str
+    request_id: str
+    debug_report: bool
+    def __init__(self, name: _Optional[str] = ..., method: _Optional[str] = ..., path: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+
 class GenericRequest(_message.Message):
-    __slots__ = ["url", "method", "data", "target", "version", "direct", "request_id", "debug_report"]
+    __slots__ = ["url", "method", "data", "target", "direct", "request_id", "debug_report"]
     URL_FIELD_NUMBER: _ClassVar[int]
     METHOD_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
-    VERSION_FIELD_NUMBER: _ClassVar[int]
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
@@ -91,11 +114,10 @@ class GenericRequest(_message.Message):
     method: str
     data: bytes
     target: str
-    version: str
     direct: bool
     request_id: str
     debug_report: bool
-    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., direct: bool = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+    def __init__(self, url: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., direct: bool = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ["uri", "pull"]

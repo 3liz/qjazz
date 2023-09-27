@@ -1,8 +1,21 @@
-## gRPC
+# Qgis server as gRPC service
 
+Implements a Qgis server gRPC service
 
-Refs:
+## Features
 
-* [gPRC exemples](https://github.com/grpc/grpc/tree/master/examples/python)
-* [Async client](https://github.com/grpc/grpc/blob/master/examples/python/helloworld/async_greeter_client.py)
-* [Async streamed client](https://github.com/grpc/grpc/blob/master/examples/python/hellostreamingworld/async_greeter_server.py)
+* Asynchronous
+* Multiple Qgis server processes
+* Full Cache control api
+
+## Run
+
+```
+python -m py_qgis_worker serve [--conf FILE] [--num-processes n]
+```
+
+Run `n` concurrent Qgis processes. 
+
+The gRCP api execute asynchronously a fair-queuing dispatch 
+of messages to the Qgis processes.
+

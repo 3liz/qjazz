@@ -91,18 +91,18 @@ def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = Fals
     ),
 )
 @click.option(
-    "--num-workers", "-n",
-    envvar="QGIS_GRPC_NUM_WORKERS",
+    "--num-processes", "-n",
+    envvar="QGIS_GRPC_NUM_PROCESSES",
     default=1,
-    help="Number of workers to run",
+    help="Number of qgis server processes to run",
 )
-def serve_grpc(configpath: Optional[Path], num_workers):
+def serve_grpc(configpath: Optional[Path], num_processes):
     """ Run grpc server
     """
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION), num_workers)
+    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION), num_processes)
     pool.start()
     try:
         asyncio.run(serve(pool))

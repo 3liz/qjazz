@@ -60,10 +60,6 @@ async def _abort_on_error(context: grpc.aio.ServicerContext, code: int, details:
     await context.abort(_match_grpc_code(code), details)
 
 
-class ExecError(Exception):
-    pass
-
-
 class WorkerMixIn:
     @asynccontextmanager
     async def get_worker(self, context, request: str) -> Worker:
@@ -158,9 +154,79 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 
             _t_end = time()
             logger.log_req(
-                "OWS\t%s\t%s\t%d\t%d",
+                "OWS\t%s\t%s\t%s\t%d\t%d",
                 request.service,
                 request.request,
+                request.target,
+                size,
+                int((_t_end-_t_start)*1000.),
+            )
+
+    #
+    # API request
+    #
+    async def ExecuteApiRequest(
+        self,
+        request: api_pb2.ApiRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> Generator[api_pb2.ResponseChunk, None, None]:
+
+        async with self.get_worker(context, "ExecuteOwsRequest") as worker:
+            headers = dict(context.invocation_metadata())
+
+            _t_start = time()
+
+            try:
+                http_method = _m.HTTPMethod[request.method]
+            except KeyError:
+                resp = f"Invalid method {request.method}"
+                await _abort_on_error(context, 405, resp, "ExecuteApiRequest")
+
+            resp, stream = await worker.api_request(
+                name=request.name,
+                path=request.path,
+                method=http_method,
+                data=request.data,
+                target=request.target,
+                url=request.url,
+                direct=request.direct,
+                options=request.options,
+                headers=headers,
+                request_id=request.request_id,
+                debug_report=request.debug_report,
+            )
+
+            # Send Headers
+            metadata = list(_headers_to_metadata(resp.headers.items()))
+            metadata.append(('x-reply-status-code', str(resp.status_code)))
+            await context.send_initial_metadata(metadata)
+
+            chunk = resp.data
+            size = len(chunk)
+
+            # Send data
+            yield api_pb2.ResponseChunk(chunk=chunk)
+            if stream:
+                async for chunk in stream:
+                    size += len(chunk)
+                    yield api_pb2.ResponseChunk(chunk=chunk)
+
+            # Final report
+            if request.debug_report:
+                logger.trace("Sending debug report")
+                report = await worker.io.read()
+                context.set_trailling_metatada([
+                    ('x-debug-memory', str(report.memory)),
+                    ('x-debug-duration', str(report.duration)),
+                    ('x-debug-timestamp', str(report.timestamp)),
+                ])
+
+            _t_end = time()
+            logger.log_req(
+                "API\t%s\t%s\t%s\t%d\t%d",
+                request.name,
+                request.url,
+                request.target,
                 size,
                 int((_t_end-_t_start)*1000.),
             )
@@ -168,6 +234,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
     #
     # Generic request
     #
+
     async def ExecuteRequest(
         self,
         request: api_pb2.GenericRequest,
@@ -180,9 +247,8 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             try:
                 http_method = _m.HTTPMethod[request.method]
             except KeyError:
-                status = 405
                 resp = f"Invalid method {request.method}"
-                raise ExecError
+                await _abort_on_error(context, 405, resp, "ExecuteRequest")
 
             status, stream = await worker.request(
                 url=request.url,

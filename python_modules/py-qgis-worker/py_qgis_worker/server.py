@@ -9,8 +9,26 @@ from grpc_health.v1._async import HealthServicer
 from grpc_health.v1.health_pb2_grpc import add_HealthServicer_to_server
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core import config
+
+from pathlib import Path
+from typing_extensions import (
+    Optional,
+)
 
 from .service import QgisServer, QgisAdmin
+
+
+def _server_credentials(files: config.SSLConfig):
+    def _read(f) -> Optional[bytes]:
+        with Path(f).open('rb') as fp:
+            return fp.read()
+
+    return grpc.ssl_server_credentials(
+        [[_read(files.ca), _read(files.cert)]],
+        root_certificates=_read(files.ca) if files.ca else None,
+        require_client_auth=files.ca is not None,
+    )
 
 
 async def serve(pool):
@@ -31,14 +49,18 @@ async def serve(pool):
     await health_servicer.set("QgisServer", health_pb2.HealthCheckResponse.SERVING)
     await health_servicer.set("QgisAdmin", health_pb2.HealthCheckResponse.SERVING)
 
-    for listen in pool.config.listen:
-        match listen:
-            case (iface, port):
-                listen_addr = f"{iface}:{port}"
+    for iface in pool.config.interfaces:
+        match iface.listen:
+            case (addr, port):
+                listen_addr = f"{addr}:{port}"
             case socket:
                 listen_addr = socket
-        logger.info("Listening on port: %s", listen_addr)
-        server.add_insecure_port(listen_addr)
+        if iface.ssl.key:
+            logger.info("Listening on port: %s (SSL on)", listen_addr)
+            server.add_secure_port(listen_addr, _server_credentials(iface.ssl))
+        else:
+            logger.info("Listening on port: %s", listen_addr)
+            server.add_insecure_port(listen_addr)
 
     shutdown_grace_period = pool.config.shutdown_grace_period
     max_failure_pressure = pool.config.max_worker_failure_pressure

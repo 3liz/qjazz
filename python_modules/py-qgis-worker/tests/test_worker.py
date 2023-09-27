@@ -35,7 +35,7 @@ async def test_worker_io(config):
 
         # Test Qgis server OWS request with valid project
         status, resp = await worker.io.send_message(
-            messages.OWSRequest(
+            messages.OwsRequest(
                 service="WFS",
                 request="GetCapabilities",
                 target="/france/france_parts",
@@ -73,7 +73,7 @@ async def test_chunked_response(config):
         start = time()
         # Test Qgis server OWS request with valid project
         status, resp = await worker.io.send_message(
-            messages.OWSRequest(
+            messages.OwsRequest(
                 service="WFS",
                 request="GetFeature",
                 version="1.0.0",
@@ -179,7 +179,7 @@ async def test_catalog(config):
         assert count == 3
 
 
-async def test_worker_stubs(config):
+async def test_ows_request(config):
     """ Test worker process
     """
     async with worker_context(config) as worker:
@@ -193,6 +193,36 @@ async def test_worker_stubs(config):
             request="GetCapabilities",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
+        )
+
+        assert resp.status_code == 200
+        print(f"> {resp.chunked}")
+        print(f"> {resp.headers}")
+
+        # Stream remaining bytes
+        if stream:
+            async for chunk in stream:
+                assert len(chunk) > 0
+
+        # Check nothing left in the pipe
+        with pytest.raises(asyncio.exceptions.TimeoutError):
+            _ = await worker.io.read(timeout=1)
+
+
+async def test_api_request(config):
+    """ Test worker process
+    """
+    async with worker_context(config) as worker:
+
+        echo = await worker.ping("hello")
+        assert echo == "hello"
+
+        # Test Qgis server API request with valid project
+        resp, stream = await worker.api_request(
+            name="WFS3",
+            path="/collections",
+            target="/france/france_parts",
+            url="http://localhost:8080/features",
         )
 
         assert resp.status_code == 200

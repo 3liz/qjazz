@@ -44,6 +44,7 @@ class MsgType(Enum):
     QUIT = auto()
     REQUEST = auto()
     OWSREQUEST = auto()
+    APIREQUEST = auto()
     CHECKOUT_PROJECT = auto()
     DROP_PROJECT = auto()
     CLEAR_CACHE = auto()
@@ -92,7 +93,7 @@ class RequestReport:
 
 
 @dataclass(frozen=True)
-class OWSRequest:
+class OwsRequest:
     msg_id: ClassVar[MsgType] = MsgType.OWSREQUEST
     return_type: ClassVar[Type] = RequestReply
     service: str
@@ -108,12 +109,29 @@ class OWSRequest:
 
 
 @dataclass(frozen=True)
+class ApiRequest:
+    msg_id: ClassVar[MsgType] = MsgType.APIREQUEST
+    return_type: ClassVar[Type] = RequestReply
+    name: str
+    path: str
+    method: HTTPMethod
+    url: str = '/'
+    data: Optional[bytes] = None
+    target: Optional[str] = None
+    direct: bool = False
+    options: Optional[str] = None
+    headers: Dict[str, str] = field(default_factory=dict)
+    request_id: str = ""
+    debug_report: bool = False
+
+
+@dataclass(frozen=True)
 class Request:
     msg_id: ClassVar[MsgType] = MsgType.REQUEST
     return_type: ClassVar[Type] = RequestReply
     url: str
     method: HTTPMethod
-    data: bytes
+    data: Optional[bytes]
     target: Optional[str]
     direct: bool = False
     headers: Dict[str, str] = field(default_factory=dict)

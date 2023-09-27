@@ -164,7 +164,7 @@ class Worker(mp.Process):
             ```
         """
         status, resp = await self.io.send_message(
-            _m.OWSRequest(
+            _m.OwsRequest(
                 service=service,
                 request=request,
                 version=version,
@@ -179,6 +179,65 @@ class Worker(mp.Process):
             timeout=self._timeout,
         )
 
+        # Request failed before reaching Qgis server
+        if status != 200:
+            raise WorkerError(status, resp)
+
+        if resp.chunked:
+            return resp, self.io.read_bytes(timeout=self._timeout)
+        else:
+            return resp, None
+
+    async def api_request(
+        self,
+        name: str,
+        path: str,
+        url: str,
+        target: Optional[str] = None,
+        data: Optional[bytes] = None,
+        direct: bool = False,
+        method: _m.HTTPMethod = _m.HTTPMethod.GET,
+        options: Optional[str] = None,
+        headers: Dict[str, str] = None,
+        request_id: str = "",
+        debug_report: bool = False,
+    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
+        """ Send generic (api) request
+
+            Exemple:
+            ```
+            resp, stream = await worker.api_request(
+                name="OGC WFS3 (Draft)"
+                path="/collections"
+                url="http://foo.com/features",
+                target="/france/france_parts",
+            )
+            if resp.status_code != 200:
+                print("Request failed")
+            data = resp.data
+            # Stream remaining bytes
+            if stream:
+                async for chunk in stream:
+                    # Do something with chunk of data
+                    ...
+            ```
+        """
+        status, resp = await self.io.send_message(
+            _m.ApiRequest(
+                name=name,
+                path=path,
+                url=url,
+                method=method,
+                data=data,
+                target=target,
+                direct=direct,
+                options=options,
+                headers=headers or {},
+                request_id=request_id,
+                debug_report=debug_report,
+            ),
+            timeout=self._timeout,
+        )
         # Request failed before reaching Qgis server
         if status != 200:
             raise WorkerError(status, resp)
@@ -224,8 +283,9 @@ class Worker(mp.Process):
                 data=data,
                 target=target,
                 direct=direct,
-                headers=headers,
+                headers=headers or {},
                 request_id=request_id,
+                debug_report=debug_report,
             ),
             timeout=self._timeout,
         )

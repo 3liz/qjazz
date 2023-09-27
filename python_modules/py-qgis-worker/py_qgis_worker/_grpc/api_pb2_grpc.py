@@ -24,6 +24,11 @@ class QgisServerStub(object):
                 request_serializer=api__pb2.OwsRequest.SerializeToString,
                 response_deserializer=api__pb2.ResponseChunk.FromString,
                 )
+        self.ExecuteApiRequest = channel.unary_stream(
+                '/api.QgisServer/ExecuteApiRequest',
+                request_serializer=api__pb2.ApiRequest.SerializeToString,
+                response_deserializer=api__pb2.ResponseChunk.FromString,
+                )
         self.ExecuteRequest = channel.unary_stream(
                 '/api.QgisServer/ExecuteRequest',
                 request_serializer=api__pb2.GenericRequest.SerializeToString,
@@ -46,6 +51,12 @@ class QgisServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExecuteApiRequest(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ExecuteRequest(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -63,6 +74,11 @@ def add_QgisServerServicer_to_server(servicer, server):
             'ExecuteOwsRequest': grpc.unary_stream_rpc_method_handler(
                     servicer.ExecuteOwsRequest,
                     request_deserializer=api__pb2.OwsRequest.FromString,
+                    response_serializer=api__pb2.ResponseChunk.SerializeToString,
+            ),
+            'ExecuteApiRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteApiRequest,
+                    request_deserializer=api__pb2.ApiRequest.FromString,
                     response_serializer=api__pb2.ResponseChunk.SerializeToString,
             ),
             'ExecuteRequest': grpc.unary_stream_rpc_method_handler(
@@ -110,6 +126,23 @@ class QgisServer(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/api.QgisServer/ExecuteOwsRequest',
             api__pb2.OwsRequest.SerializeToString,
+            api__pb2.ResponseChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteApiRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/api.QgisServer/ExecuteApiRequest',
+            api__pb2.ApiRequest.SerializeToString,
             api__pb2.ResponseChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

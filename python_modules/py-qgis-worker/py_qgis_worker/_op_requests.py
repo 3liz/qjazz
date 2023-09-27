@@ -27,6 +27,7 @@ from py_qgis_cache import (
 from . import messages as _m
 from .config import WorkerConfig
 from .requests import Request, Response, _to_qgis_method
+from .serverapi import ROOT_DELEGATE
 
 Co = CheckoutStatus
 
@@ -39,7 +40,7 @@ QGIS_MISSING_PROJECT_ERROR_MSG = "No project defined"
 
 def handle_ows_request(
     conn: Connection,
-    msg: _m.OWSRequest,
+    msg: _m.OwsRequest,
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
@@ -82,6 +83,55 @@ def handle_ows_request(
     )
 
 
+def handle_api_request(
+    conn: Connection,
+    msg: _m.ApiRequest,
+    server: QgsServer,
+    cm: CacheManager,
+    config: WorkerConfig,
+    _process: Optional,
+    cache_id: str = "",
+):
+    """ Handle api request
+    """
+    try:
+        method = _to_qgis_method(msg.method)
+    except ValueError:
+        _m.send_reply(conn, "HTTP Method not supported", 405)
+        return
+
+    if msg.debug_report and not _process:
+        _m.send_reply(conn, "No report available", 409)
+        return
+
+    # Rebuild URL for Qgis server
+    url = f"{msg.url.rstrip('/')}{ROOT_DELEGATE}/{msg.path.lstrip('/')}"
+    if msg.options:
+        url += f"&{msg.options}"
+
+    assert msg.headers is not None
+    headers = msg.headers
+
+    # Pass api name as header
+    # to api delegate
+    headers['x-qgis-api'] = msg.name
+
+    _handle_generic_request(
+        url,
+        msg.target,
+        msg.direct,
+        msg.data,
+        method,
+        msg.headers,
+        conn,
+        server,
+        cm,
+        config,
+        _process if msg.debug_report else None,
+        cache_id=cache_id,
+    )
+
+
 def handle_generic_request(
     conn: Connection,
     msg: _m.Request,
@@ -98,7 +148,7 @@ def handle_generic_request(
         return
 
     if msg.debug_report and not _process:
-        _m.send_reply(conn, "No report availaeble", 409)
+        _m.send_reply(conn, "No report available", 409)
         return
 
     _handle_generic_request(
