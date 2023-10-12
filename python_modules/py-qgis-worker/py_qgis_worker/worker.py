@@ -184,7 +184,8 @@ class Worker(mp.Process):
             raise WorkerError(status, resp)
 
         if resp.chunked:
-            return resp, self.io.read_bytes(timeout=self._timeout)
+            # Stream remaining bytes
+            return resp, self.io.stream_bytes(timeout=self._timeout)
         else:
             return resp, None
 
@@ -243,7 +244,7 @@ class Worker(mp.Process):
             raise WorkerError(status, resp)
 
         if resp.chunked:
-            return resp, self.io.read_bytes(timeout=self._timeout)
+            return resp, self.io.stream_bytes(timeout=self._timeout)
         else:
             return resp, None
 
@@ -294,7 +295,7 @@ class Worker(mp.Process):
             raise WorkerError(status, resp)
 
         if resp.chunked:
-            return resp, self.io.read_bytes(timeout=self._timeout)
+            return resp, self.io.stream_bytes(timeout=self._timeout)
         else:
             return resp, None
 

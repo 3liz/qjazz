@@ -107,7 +107,7 @@ def handle_api_request(
     # Rebuild URL for Qgis server
     url = f"{msg.url.rstrip('/')}{ROOT_DELEGATE}/{msg.path.lstrip('/')}"
     if msg.options:
-        url += f"&{msg.options}"
+        url += f"?{msg.options}"
 
     assert msg.headers is not None
     headers = msg.headers

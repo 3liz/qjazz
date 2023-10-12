@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing_extensions import (
     Optional,
+    List,
 )
 
 from py_qgis_contrib.core import config, logger
@@ -297,6 +298,70 @@ def sync_cache(host: str, configpath: Optional[Path]):
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_sync_cache(pool))
+    else:
+        print("ERROR: ", host, "not found", file=sys.stderr)
+
+
+#
+# Pull projects
+#
+
+@cache_commands.command('pull')
+@click.argument('projects', nargs=-1)
+@click.option("--host", help="Hostname", required=True)
+@click.option(
+    "--conf", "-C", "configpath",
+    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
+    help="configuration file",
+    type=click.Path(
+        exists=True,
+        readable=True,
+        dir_okay=False,
+        path_type=Path,
+    ),
+)
+def pull_projects(projects: List[str], host: str, configpath: Optional[Path]):
+    """ Pull projects in cache for 'host'
+    """
+    conf = load_configuration(configpath)
+
+    async def _pull_projects(pool):
+        await pool.update_servers()
+        print(json.dumps(await pool.pull_projects(*projects), indent=4, sort_keys=True))
+
+    pool = get_pool(conf.resolvers, host)
+    if pool is not None:
+        asyncio.run(_pull_projects(pool))
+    else:
+        print("ERROR: ", host, "not found", file=sys.stderr)
+
+
+@cache_commands.command('drop')
+@click.argument('project', nargs=1)
+@click.option("--host", help="Hostname", required=True)
+@click.option(
+    "--conf", "-C", "configpath",
+    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
+    help="configuration file",
+    type=click.Path(
+        exists=True,
+        readable=True,
+        dir_okay=False,
+        path_type=Path,
+    ),
+)
+def drop_project(project: str, host: str, configpath: Optional[Path]):
+    """ Drop PROJECT from cache for 'host'
+    """
+    conf = load_configuration(configpath)
+
+    async def _drop_project(pool):
+        await pool.update_servers()
+        print(json.dumps(await pool.drop_project(project), indent=4, sort_keys=True))
+
+    pool = get_pool(conf.resolvers, host)
+    if pool is not None:
+        asyncio.run(_drop_project(pool))
     else:
         print("ERROR: ", host, "not found", file=sys.stderr)
 

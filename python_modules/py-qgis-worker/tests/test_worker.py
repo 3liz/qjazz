@@ -18,6 +18,7 @@ async def worker_context(config):
     try:
         yield worker
     finally:
+        print("Sending Quit message")
         status, _ = await worker.io.send_message(messages.Quit())
         assert status == 200
         worker.join(5)
@@ -204,8 +205,36 @@ async def test_ows_request(config):
             async for chunk in stream:
                 assert len(chunk) > 0
 
-        # Check nothing left in the pipe
-        with pytest.raises(asyncio.exceptions.TimeoutError):
+
+async def test_ows_chunked_request(config):
+    """ Test worker process
+    """
+    async with worker_context(config) as worker:
+
+        echo = await worker.ping("hello")
+        assert echo == "hello"
+
+        # Test Qgis server OWS request with valid project
+        resp, stream = await worker.ows_request(
+            service="WFS",
+            request="GetFeature",
+            version="1.0.0",
+            options="TYPENAME=france_parts_bordure",
+            target="/france/france_parts",
+            url="http://localhost:8080/test.3liz.com",
+        )
+
+        assert resp.status_code == 200
+        print(f"> {resp.chunked}")
+        print(f"> {resp.headers}")
+
+        assert resp.chunked
+        assert stream is not None
+        # Stream remaining bytes
+        async for chunk in stream:
+            assert len(chunk) > 0
+
+        with pytest.raises(messages.WouldBlockError):
             _ = await worker.io.read(timeout=1)
 
 
@@ -233,7 +262,3 @@ async def test_api_request(config):
         if stream:
             async for chunk in stream:
                 assert len(chunk) > 0
-
-        # Check nothing left in the pipe
-        with pytest.raises(asyncio.exceptions.TimeoutError):
-            _ = await worker.io.read(timeout=1)

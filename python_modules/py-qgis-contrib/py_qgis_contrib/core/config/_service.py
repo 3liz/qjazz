@@ -43,7 +43,15 @@ from pydantic import (
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing_extensions import Annotated, Optional, Dict, Type
+from typing_extensions import (
+    Annotated,
+    Optional,
+    Dict,
+    Type,
+    Tuple,
+    Any,
+    Callable,
+)
 
 from .. import componentmanager
 
@@ -52,6 +60,17 @@ getenv = os.getenv
 
 
 ConfigError = ValidationError
+
+
+def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
+    cfgfile = Path(cfgfile)
+    # Load the toml file
+    with cfgfile.open() as f:
+        content = f.read()
+        if kwds:
+            from string import Template
+            content = Template(content).substitute(kwds)
+        return loads(content)
 
 
 def read_config_toml(cfgfile: Path, **kwds) -> Dict:
@@ -63,14 +82,21 @@ def read_config_toml(cfgfile: Path, **kwds) -> Dict:
     except ModuleNotFoundError:
         import tomli as toml
 
-    cfgfile = Path(cfgfile)
-    # Load the toml file
-    with cfgfile.open() as f:
-        content = f.read()
-        if kwds:
-            from string import Template
-            content = Template(content).substitute(kwds)
-        return toml.loads(content)
+    return read_config(cfgfile, loads=toml.loads, **kwds)
+
+
+def read_config_json(cfgfile: Path, **kwds) -> Dict:
+    """ Read Json configuration from file
+    """
+    import json
+    return read_config(cfgfile, loads=json.loads, **kwds)
+
+
+def read_config_yaml(cfgfile: Path, **kwds) -> Dict:
+    """ Read Yaml configuration from file
+    """
+    import yaml
+    return read_config(cfgfile, loads=yaml.safe_load, **kwds)
 
 
 # Base classe for configuration models
@@ -94,10 +120,16 @@ class ConfigService:
         self._default_confdir = None
 
     def _create_base_model(self, base: Type[BaseModel]):
+        def _model(model):
+            if isinstance(model, Tuple):
+                return model
+            else:
+                return model, model()
+
         return create_model(
             "BaseConfig",
             __base__=base,
-            **{name: (model, model()) for name, model in self._configs.items()}
+            **{name: _model(model) for name, model in self._configs.items()}
         )
 
     def _create_model(self) -> BaseSettings:
@@ -156,7 +188,12 @@ class ConfigService:
     def json_schema(self) -> Dict:
         return self._create_base_model(BaseSettings).model_json_schema()
 
-    def add_section(self, name: str, model: Type[Config], replace: bool = False):
+    def add_section(
+        self,
+        name: str,
+        model: Type[Config] | Tuple[Type, Any],
+        replace: bool = False,
+    ):
         if not replace and name in self._configs:
             raise ValueError(f"Config {name} already defined in: {self._configs[name]}")
         self._configs[name] = model
@@ -225,9 +262,11 @@ class ConfigProxy:
 
     def __update(self) -> Config:
         if self._confservice._timestamp > self._timestamp:
+            self._timestamp = self._confservice._timestamp
             self._conf = self._confservice.conf
             for attr in self._configpath.split('.'):
-                self._conf = getattr(self._conf, attr)
+                if attr:
+                    self._conf = getattr(self._conf, attr)
 
         return self._conf
 

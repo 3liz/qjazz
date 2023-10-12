@@ -1,0 +1,34 @@
+
+[logging]
+level = "TRACE"
+
+[http]
+listen=["0.0.0.0", 4000]
+
+[backends.test]
+title = "Test backend"
+description = "Backend for local test: run `dc up -d scale worker=<scale>`"
+# Address to reach the backend
+address = ["tcp://worker", 23456]
+# Define route to service
+route = "/test"
+
+# Qgis response timeout
+
+# Define headers that will be forwarded to Qgis server backend
+#forward_headers = ['x-qgis-*', 'x-lizmap-*']
+
+# Allow direct path resolution
+#allow_direct_resolution = false
+
+# WFS/GetFeature limit
+getfeature_limit = 1000
+
+# Api endpoints
+[[backends.test.api]]
+endpoint = "features"
+delegate_to = "wfs3"
+name = "Features OGC Api (WFS3)"
+
+
+

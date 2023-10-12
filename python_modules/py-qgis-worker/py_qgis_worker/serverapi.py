@@ -65,7 +65,7 @@ class ApiDelegate(QgsServerApi):
         request = context.request()
         api = request.header("x-qgis-api")
         api = API_ALIASES.get(api.upper(), api)
-        logger.debug("Executing delegated api for %s", api)
+        logger.debug("Executing delegated api for %s (root: %s)", api, self._rootpath)
         if api:
             api = self.serverIface().serviceRegistry().getApi(api)
         if not api:

@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 
 from py_qgis_worker import messages
 
@@ -23,5 +22,5 @@ async def test_async_read_timeout():
     """
     parent, _ = messages.Pipe.new()
 
-    with pytest.raises(asyncio.exceptions.TimeoutError):
+    with pytest.raises(messages.WouldBlockError):
         await parent.read(timeout=1)

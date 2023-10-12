@@ -1,13 +1,10 @@
 """ Configuration common definitions
 """
-import os
 from ._service import Config
 from pathlib import Path
-from urllib.parse import urlsplit
 from pydantic import (
     Field,
     AfterValidator,
-    PlainValidator,
 )
 from typing_extensions import (
     Annotated,
@@ -38,32 +35,6 @@ def _validate_netinterface(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
 NetInterface = Annotated[
     str | Tuple[str, int],
     AfterValidator(_validate_netinterface),
-]
-
-
-def _validate_address(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
-    if isinstance(v, str):
-        uri = urlsplit(str)
-        match uri.scheme:
-            case "unix" | "":
-                if not uri.path:
-                    raise ValueError("Missing unix socket path")
-                return f"unix:{os.path.abspath(uri.path)}"
-            case "tcp":
-                if not uri.hostname:
-                    raise ValueError("Missing hostname")
-                if not uri.port:
-                    raise ValueError("Missing port")
-                return (uri.hostname, uri.port)
-            case _:
-                raise ValueError("Invalid address")
-    else:
-        return v
-
-
-Address = Annotated[
-    str | Tuple[str, int],
-    PlainValidator(_validate_address),
 ]
 
 

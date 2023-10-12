@@ -8,14 +8,7 @@ services:
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
     command: ["qgis-server-rpc", "serve", "-C", "/opt/qgis-services/config.toml"]
-  client:
-    image: qgis-services:release
-    networks:
-    - qgis_rpc_network
-    command: ["sleep infinity"]
-    environment:
-        QGIS_GRPC_HOST: worker
-
+  
 networks:
   qgis_rpc_network:
     driver: bridge

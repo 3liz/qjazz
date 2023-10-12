@@ -343,11 +343,17 @@ class PoolClient:
         result = {uri: [] for uri in uris}
 
         async def _reduce(server):
-            async for item in server.pull_projects(*uris):
-                rv = MessageToDict(item)
-                rv.update(serverAddress=server.address)
-                del rv['cacheId']
-                result[item.uri].append(rv)
+            try:
+                async for item in server.pull_projects(*uris):
+                    rv = MessageToDict(item)
+                    rv.update(serverAddress=server.address)
+                    del rv['cacheId']
+                    result[item.uri].append(rv)
+            except grpc.RpcError as err:
+                if err.code() == grpc.StatusCode.UNAVAILABLE:
+                    logger.error("Server '{server.name}' is unreachable")
+                else:
+                    raise
 
         await asyncio.gather(*(_reduce(s) for s in self._servers))
         return result
@@ -381,6 +387,37 @@ class PoolClient:
                     if not _item:
                         _item = MessageToDict(item)
                         _item.update(serverAddress=server.address)
+                        del _item['cacheId']
+                        cached[item.uri] = _item
+                    else:
+                        reduce_cache(_item, item)
+                for uri, _item in cached.items():
+                    rv.setdefault(uri, []).append(_item)
+                serving = True
+            except grpc.RpcError as err:
+                if err.code() == grpc.StatusCode.UNAVAILABLE:
+                    logger.error("Server '{server.name}' is unreachable")
+                else:
+                    raise
+
+        if not serving:
+            raise ServiceNotAvailable(self.name)
+        return rv
+
+    async def drop_project(self, uri: str) -> Dict[str, List[Dict]]:
+        """ Pull/Update projects in all cache
+        """
+        rv = {}
+        serving = False
+        for server in self._servers:
+            try:
+                cached = {}
+                async for item in server.drop_project(uri):
+                    _item = cached.get(item.uri)
+                    if not _item:
+                        _item = MessageToDict(item)
+                        _item.update(serverAddress=server.address)
+                        del _item['cacheId']
                         cached[item.uri] = _item
                     else:
                         reduce_cache(_item, item)

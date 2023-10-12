@@ -126,7 +126,7 @@ class Response(QgsServerResponse):
 
         memory = self._process.memory_info().vms - self._memory
 
-        logger.debug(">>> Sending request report")
+        logger.trace(">>> Sending request report")
         self._conn.send(
             _m.RequestReport(
                 memory=memory,
@@ -208,17 +208,18 @@ class Response(QgsServerResponse):
         if not self._header_written:
             # Send headers with first chunk of data
             chunk = next(chunks) if bytes_avail else data
-            logger.debug("Sending response (chunked: %s), size: %s", chunked, len(chunk))
+            logger.trace("Sending response (chunked: %s), size: %s", chunked, len(chunk))
             self._send_response(chunk, chunked)
 
         if chunked:
             for chunk in chunks:
-                logger.debug("Sending chunk of %s bytes", len(chunk))
+                logger.trace("Sending chunk of %s bytes", len(chunk))
                 self._conn.send_bytes(chunk)
 
         if self._finish:
             if chunked:
                 # Send sentinel to signal end of data
+                logger.trace("Sending final chunk")
                 self._conn.send_bytes(b'')
             # Send final report
             self._send_report()

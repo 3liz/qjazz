@@ -125,7 +125,7 @@ def qgis_server_run(
 
     event.set()
     while True:
-        logger.debug("%s: Waiting for messages", name)
+        logger.trace("%s: Waiting for messages", name)
         try:
             msg = conn.recv()
             event.clear()

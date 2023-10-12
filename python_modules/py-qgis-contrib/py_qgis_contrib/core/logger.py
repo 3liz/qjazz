@@ -30,10 +30,6 @@ from . import config
 
 LOGGER = logging.getLogger('py-qgis-logger')
 
-REQ_LOG_TEMPLATE = "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}\t"
-REQ_FORMAT = REQ_LOG_TEMPLATE + '{agent}\t{referer}'
-RREQ_FORMAT = REQ_LOG_TEMPLATE
-
 
 class LogLevel(Enum):
     NOTSET = logging.NOTSET
@@ -107,101 +103,9 @@ def logfile_context(workdir: str, basename: str):
         channel.close()
 
 
-def format_log_request(handler):
-    """ Format current request from the given tornado request handler
-
-        :return a tuple (fmt,code,reqtime,length) where:
-            fmt: the log string
-            code: the http return code
-            reqtime: the request time
-            length: the size of the payload
-    """
-    request = handler.request
-    code = handler.get_status()
-    reqtime = request.request_time()
-
-    length = handler._headers.get('Content-Length') or -1
-    agent = request.headers.get('User-Agent') or ""
-    referer = request.headers.get('Referer') or ""
-
-    fmt = REQ_FORMAT.format(
-        ip=request.remote_ip,
-        method=request.method,
-        url=request.uri,
-        code=code,
-        time=int(1000.0 * reqtime),
-        length=length,
-        referer=referer,
-        agent=agent)
-
-    return fmt, code, reqtime, length
-
-
-def log_request(handler):
-    """ Log the current request
-
-        :param code: The http return code
-        :param reqtiem: The request time
-
-        :return A tuple (code,reqtime,length) where:
-            code: the http retudn code
-            reqtime: the request time
-            length: the size of the payload
-    """
-    fmt, code, reqtime, length = format_log_request(handler)
-    LOGGER.log(LogLevel.REQ.value, fmt)
-    return code, reqtime, length
-
-
-def format_log_rrequest(response):
-    """ Format current r-request from the given response
-
-        :param response: The response returned from the request
-        :return A tuple (fmt,code,reqtime,length) where:
-            fmt: the log string
-            code: the http retudn code
-            reqtime: the request time
-            length: the size of the payload
-    """
-    request = response.request
-    code = response.code
-    reqtime = response.request_time
-
-    length = -1
-    try:
-        length = response.headers['Content-Length']
-    except KeyError:
-        pass
-
-    fmt = RREQ_FORMAT.format(
-        ip='',
-        method=request.method,
-        url=request.url,
-        code=code,
-        time=int(1000.0 * reqtime),
-        length=length)
-
-    return fmt, code, reqtime, length
-
-
-def log_rrequest(response):
-    """ Log the current response request from the given response
-
-        :param response: The response returned from the request
-        :return A tuple (code,reqtime,length) where:
-            code: the http retudn code
-            reqtime: the request time
-            length: the size of the payload
-    """
-    fmt, code, reqtime, length = format_log_rrequest(response)
-    LOGGER.log(LogLevel.RREQ.value, fmt)
-    return code, reqtime, length
-
-
 #
 # Shortcuts
 #
-
 warning = LOGGER.warning
 info = LOGGER.info
 error = LOGGER.error

@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-qgis-scripts"
-description = "Qgis RCP scripts"
+name = "py-qgis-http"
+description = "Qgis server http proxy for gRCP service"
 requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -12,19 +12,25 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-worker==${PIN_VERSION}",
-    "py-qgis-admin==${PIN_VERSION}",
+    "grpcio",
+    "grpcio-health-checking",
+    "grpcio-tools",
+    "py-qgis-contrib==1.0.0.dev0",
+    "py-qgis-worker==1.0.0.dev0",
+    "tornado >= 6",
+    "click",
 ]
-version = "${PIN_VERSION}"
-
-[project.scripts]
-qgis-server-rpc = "py_qgis_worker.cli:main"
-qgis-server-monitor = "py_qgis_admin.cli:main"
-qgis-server-http = "py_qgis_http.cli:main"
+version = "1.0.0.dev0"
 
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
+
+[tool.setuptools.packages.find]
+include = [
+    "py_qgis_http", 
+    "py_qgis_http.*", 
+]
 
 [tool.autopep8]
 max_line = 120

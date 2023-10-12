@@ -22,6 +22,7 @@ RUN mkdir -p /opt/local/ \
         -e /python_modules/py-qgis-worker \
         -e /python_modules/py-qgis-admin \
         -e /python_modules/py-qgis-scripts \
+        -e /python_modules/py-qgis-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \
     && ln -s /opt/local/qgisserver/bin/qgis-server-monitor 
 

@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 
 from py_qgis_cache import CheckoutStatus
 from py_qgis_contrib.core.qgis import PluginType
+from py_qgis_contrib.core import logger
 
 
 @dataclass(frozen=True)
@@ -312,6 +313,12 @@ class GetEnv:
 DEFAULT_TIMEOUT = 20
 
 
+# Raised when there is an attempt
+# to read a connection that would block
+class WouldBlockError(Exception):
+    pass
+
+
 class Pipe:
     """ Wrapper for Connection object that allow reading asynchronously
     """
@@ -340,6 +347,15 @@ class Pipe:
         try:
             if not self._conn.poll():
                 await asyncio.wait_for(self._data_available.wait(), timeout)
+                # This is blocking, but not infinitely
+                # In some cases the _poll() method may return without timeout even
+                # if there is no data to read.
+                # We ensure that we are not going to block forever on recv().
+                if not self._conn.poll(timeout):
+                    logger.warning("Blocking timeout (%ds) in worker connection", timeout)
+                    raise WouldBlockError()
+        except asyncio.exceptions.TimeoutError:
+            raise WouldBlockError() from None
         finally:
             self._data_available.clear()
 

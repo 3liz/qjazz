@@ -1,41 +1,19 @@
-import sys
+import sys  # noqa
 import asyncio
 import click
 
-from py_qgis_contrib.core import config;
-
-from .config import (
-    HttpConfig,
-    ServicesConfig,
+from typing_extensions import (
+    Optional,
 )
 
-HTTP_SECTION = 'http'
-SERVICES_SECTION = 'services'
+from pathlib import Path
 
-# Add the `[http]` configuration section
-config.confservice.add_section(HTTP_SECTION, HttpConfig)
+from py_qgis_contrib.core import config, logger
 
-# Add the `[services]` configuration section
-config.confservice.add_section(SERVICES_SECTION, ServicesConfig)
+from .config import load_configuration, add_configuration_sections
+from .server import serve
 
-#
-# Load configuration file
-#
-
-def load_configuration(configpath: Optional[Path]) -> config.Config:
-    if configpath:
-        cnf = config.read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute())
-        )
-    else:
-        cnf = {}
-    try:
-        config.confservice.validate(cnf)
-    except config.ConfigError as err:
-        print("Configuration error:", err)
-        sys.exit(1)
-    return config.confservice.conf
+add_configuration_sections()
 
 
 @click.group()
@@ -55,17 +33,40 @@ def cli_commands():
         path_type=Path
     ),
 )
-def serve_http(configpath: ServerConfig):
-    
+def serve_http(configpath: Path):
+
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION), num_processes)
-    pool.start()
-    try:
-        asyncio.run(serve(pool))
-    finally:
-        pool.terminate_and_join()
-        logger.info("Server shutdown")
+    asyncio.run(serve(conf))
 
 
+@cli_commands.command('config')
+@click.option(
+    "--conf", "-C", "configpath",
+    envvar="QGIS_HTTP_CONFIGFILE",
+    help="configuration file",
+    type=click.Path(
+        exists=True,
+        readable=True,
+        dir_okay=False,
+        path_type=Path
+    ),
+)
+@click.option("--schema", is_flag=True, help="Print configuration schema")
+@click.option("--pretty", is_flag=True, help="Pretty format")
+def print_config(configpath: Optional[Path], schema: bool = False, pretty: bool = False):
+    """ Print configuration as json and exit
+    """
+    import json
+
+    indent = 4 if pretty else None
+    if schema:
+        json_schema = config.confservice.json_schema()
+        print(json.dumps(json_schema, indent=indent))
+    else:
+        print(load_configuration(configpath).model_dump_json(indent=indent))
+
+
+def main():
+    cli_commands()

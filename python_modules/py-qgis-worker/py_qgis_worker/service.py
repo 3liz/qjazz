@@ -111,6 +111,15 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
+        if request.request_id:
+            logger.log_rreq(
+                "OWS\t%s\t%s\t%s\tREQ-ID:%s",
+                request.service,
+                request.request,
+                request.target,
+                request.request_id,
+            )
+
         async with self.get_worker(context, "ExecuteOwsRequest") as worker:
             headers = dict(context.invocation_metadata())
             _t_start = time()
@@ -154,12 +163,13 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 
             _t_end = time()
             logger.log_req(
-                "OWS\t%s\t%s\t%s\t%d\t%d",
+                "OWS\t%s\t%s\t%s\t%d\t%d%s",
                 request.service,
                 request.request,
                 request.target,
                 size,
                 int((_t_end-_t_start)*1000.),
+                f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
     #
@@ -170,6 +180,15 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         request: api_pb2.ApiRequest,
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
+
+        if request.request_id:
+            logger.log_rreq(
+                "API\t%s\t%s\t%s\tREQ-ID:%s",
+                request.name,
+                request.url,
+                request.target,
+                request.request_id,
+            )
 
         async with self.get_worker(context, "ExecuteOwsRequest") as worker:
             headers = dict(context.invocation_metadata())
@@ -223,12 +242,13 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 
             _t_end = time()
             logger.log_req(
-                "API\t%s\t%s\t%s\t%d\t%d",
+                "API\t%s\t%s\t%s\t%d\t%d%s",
                 request.name,
                 request.url,
                 request.target,
                 size,
                 int((_t_end-_t_start)*1000.),
+                f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
     #
@@ -241,8 +261,18 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         context: grpc.aio.ServicerContext,
     ) -> Generator[api_pb2.ResponseChunk, None, None]:
 
+        if request.request_id:
+            logger.log_req(
+                "---\t%s\t%s\tREQ-ID:%s",
+                request.url,
+                request.target,
+                request.request_id,
+            )
+
         async with self.get_worker(context, "ExecuteRequest") as worker:
             headers = dict(context.invocation_metadata())
+
+            _t_start = time()
 
             try:
                 http_method = _m.HTTPMethod[request.method]
@@ -266,10 +296,14 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             metadata.append(('x-reply-status-code', str(resp.status_code)))
             await context.send_initial_metadata(metadata)
 
+            chunk = resp.data
+            size = len(chunk)
+
             # Send data
-            yield api_pb2.ResponseChunk(chunk=resp.data)
+            yield api_pb2.ResponseChunk(chunk)
             if stream:
                 async for chunk in stream:
+                    size += len(chunk)
                     yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
@@ -280,6 +314,16 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                     ('x-debug-duration', str(report.duration)),
                     ('x-debug-timestamp', str(report.timestamp)),
                 ])
+
+            _t_end = time()
+            logger.log_req(
+                "---\t%s\t%s\t%d\t%d%s",
+                request.url,
+                request.target,
+                size,
+                int((_t_end-_t_start)*1000.),
+                f"\tREQ-ID:{request.request_id}" if request.request_id else "",
+            )
 
 
 # ======================
@@ -369,7 +413,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 
         async with self.wait_for_all_workers(context, "DropProject") as workers:
             for w in workers:
-                resp = await self._worker.drop_project(uri=request.uri)
+                resp = await w.drop_project(uri=request.uri)
                 yield _new_cache_info(resp)
 
     #

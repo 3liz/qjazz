@@ -17,6 +17,7 @@ WORKER_SECTION = 'worker'
 # Add the `[worker]` configuration section
 config.confservice.add_section(WORKER_SECTION, WorkerConfig)
 
+
 #
 # Load configuration file
 #
