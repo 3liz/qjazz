@@ -17,6 +17,8 @@ from .pool import PoolClient
 
 
 class Service:
+    """ Handle all pools (clusters) of gRPC servers
+    """
 
     def __init__(self, resolvers: ResolverConfig):
         self._config = resolvers

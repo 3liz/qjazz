@@ -481,3 +481,21 @@ class PoolClient:
                     raise
         if not serving:
             raise ServiceNotAvailable(self.name)
+
+    async def set_config(self, conf: Dict) -> None:
+        """ Return the configuration
+        """
+        # All servers share the same config
+        serving = False
+        for s in self._servers:
+            try:
+                await s.set_config(conf)
+                serving = True
+            except grpc.RpcError as rpcerr:
+                logger.trace("%s\t%s\t%s", self._server_address, rpcerr.code(), rpcerr.details())
+                if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
+                    continue
+                else:
+                    raise
+        if not serving:
+            raise ServiceNotAvailable(self.name)

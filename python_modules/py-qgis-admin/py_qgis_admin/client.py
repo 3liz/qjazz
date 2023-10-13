@@ -290,17 +290,18 @@ class PoolItemClient:
     # Config
     #
 
-    async def get_config(self) -> Dict:
+    async def get_config(self) -> str:
         """ Get server configuration
         """
         async with self._stub() as stub:
             resp = await stub.GetConfig(api_pb2.Empty())
-            return json.loads(resp.json)
+            return resp.json
 
-    async def set_config(self, config: Dict) -> None:
+    async def set_config(self, config: Dict | str) -> None:
         """ Send CONFIG to remote
         """
-        config = json.dumps(config)
+        if isinstance(config, dict):
+            config = json.dumps(config)
         async with self._stub() as stub:
             await stub.SetConfig(api_pb2.JsonConfig(json=config))
 

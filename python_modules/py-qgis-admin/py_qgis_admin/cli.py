@@ -11,6 +11,8 @@ from typing_extensions import (
     List,
 )
 
+from functools import wraps
+
 from py_qgis_contrib.core import config, logger
 from .service import (
     Service,
@@ -55,6 +57,28 @@ def get_pool(config, name: str) -> Optional[PoolClient]:
     return PoolClient(ResolverConfig.from_string(name))
 
 
+# Workaround https://github.com/pallets/click/issues/295
+def global_options(host_required: bool = True):
+    def _wrapper(f):
+        @wraps(f)
+        @click.option("--host", help="Watch specific hostname", required=host_required)
+        @click.option(
+            "--conf", "-C", "configpath",
+            envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
+            help="configuration file",
+            type=click.Path(
+                exists=True,
+                readable=True,
+                dir_okay=False,
+                path_type=Path,
+            ),
+        )
+        def _inner(*args, **kwargs):
+            return f(*args, **kwargs)
+        return _inner
+    return _wrapper
+
+
 @click.group()
 def cli_commands():
     pass
@@ -73,18 +97,7 @@ def print_pool_status(pool, statuses):
 
 
 @cli_commands.command('watch')
-@click.option("--host", help="Watch specific hostname")
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options(host_required=False)
 def watch(host: Optional[str], configpath: Optional[Path]):
     """ Watch a cluster of qgis gRPC services
     """
@@ -119,22 +132,11 @@ def watch(host: Optional[str], configpath: Optional[Path]):
 #
 
 @cli_commands.command('stats')
-@click.option("--host", help="Hostname", required=True)
 @click.option("--watch", is_flag=True, help="Check periodically")
 @click.option("--interval", help="Check interval (seconds)", default=3)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def stats(host: Optional[str], watch: bool, interval: int, configpath: Optional[Path]):
-    """ Watch a cluster of qgis gRPC services
+    """ Output  qgis gRPC services stats
     """
     conf = load_configuration(configpath)
 
@@ -161,27 +163,62 @@ def stats(host: Optional[str], watch: bool, interval: int, configpath: Optional[
 #
 
 
-@cli_commands.command('conf')
-@click.option("--host", help="Hostname", required=True)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
-def print_conf(host: Optional[str], configpath: Optional[Path]):
-    """ Watch a cluster of qgis gRPC services
+@cli_commands.group('conf')
+def conf_commands():
+    """  Configuration management
+    """
+    pass
+
+
+@conf_commands.command('get')
+@click.option("--format", "indent", is_flag=True, help="Display formatted")
+@global_options()
+def get_conf(indent: bool, host: Optional[str], configpath: Optional[Path]):
+    """ Output gRPC services configuration
     """
     conf = load_configuration(configpath)
 
     async def _conf(pool):
         await pool.update_servers()
-        print(json.dumps(await pool.get_config(), indent=4, sort_keys=True))
+        confdata = await pool.get_config()
+        if indent:
+            print(json.dumps(json.loads(confdata), indent=4, sort_keys=True))
+        else:
+            print(confdata)
+
+    pool = get_pool(conf.resolvers, host)
+    if pool is not None:
+        asyncio.run(_conf(pool))
+    else:
+        print("ERROR: ", host, "not found", file=sys.stderr)
+
+
+@conf_commands.command('set')
+@click.argument('newconf', nargs=1)
+@click.option('--validate', is_flag=True, help="Validate before sending")
+@global_options()
+def set_conf(newconf, validate: bool, host: Optional[str], configpath: Optional[Path]):
+    """ Change gRPC services configuration
+
+        if NEWCONF starts with a '@' then load the configuration from
+        file whose path follow '@'.
+    """
+    if newconf.startswith('@'):
+        newconf = Path(newconf[1:]).open().read()
+
+    if validate:
+        # Validate as json
+        try:
+            json.loads(newconf)
+        except json.JSONDecodeError as err:
+            print(err, file=sys.stderr)
+            sys.exit(1)
+
+    conf = load_configuration(configpath)
+
+    async def _conf(pool):
+        await pool.update_servers()
+        print(json.dumps(await pool.set_config(newconf), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
@@ -195,19 +232,8 @@ def print_conf(host: Optional[str], configpath: Optional[Path]):
 #
 
 @cli_commands.command('catalog')
-@click.option("--host", help="Hostname", required=True)
 @click.option("--location", help="Catalog location")
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def print_catalog(host: str, location: Optional[str], configpath: Optional[Path]):
     """ Print catalog for 'host'
     """
@@ -241,18 +267,7 @@ def cache_commands():
 #
 
 @cache_commands.command('list')
-@click.option("--host", help="Hostname", required=True)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def print_cache_content(host: str, configpath: Optional[Path]):
     """ Print cache content for 'host'
     """
@@ -274,18 +289,7 @@ def print_cache_content(host: str, configpath: Optional[Path]):
 #
 
 @cache_commands.command('sync')
-@click.option("--host", help="Hostname", required=True)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def sync_cache(host: str, configpath: Optional[Path]):
     """ Synchronize cache content for 'host'
     """
@@ -308,18 +312,7 @@ def sync_cache(host: str, configpath: Optional[Path]):
 
 @cache_commands.command('pull')
 @click.argument('projects', nargs=-1)
-@click.option("--host", help="Hostname", required=True)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def pull_projects(projects: List[str], host: str, configpath: Optional[Path]):
     """ Pull projects in cache for 'host'
     """
@@ -338,18 +331,7 @@ def pull_projects(projects: List[str], host: str, configpath: Optional[Path]):
 
 @cache_commands.command('drop')
 @click.argument('project', nargs=1)
-@click.option("--host", help="Hostname", required=True)
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path,
-    ),
-)
+@global_options()
 def drop_project(project: str, host: str, configpath: Optional[Path]):
     """ Drop PROJECT from cache for 'host'
     """

@@ -182,7 +182,7 @@ class ResolverConfig(Config):
         match name:
             case n if n.startswith('unix:'):
                 return SocketResolver.from_string(name)
-            case n if n.startswith('tcp:'):
-                return SocketResolver.from_string(name.replace('tcp:', '', 1))
+            case n if n.startswith('tcp://'):
+                return SocketResolver.from_string(name.removeprefix('tcp://'))
             case other:
                 return DNSResolver.from_string(other)
