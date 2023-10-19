@@ -32,6 +32,8 @@ from .pool import WorkerPool, Worker, WorkerError
 
 def _match_grpc_code(code: int) -> grpc.StatusCode:
     match code:
+        case 400:
+            return grpc.StatusCode.INVALID_ARGUMENT
         case 403:
             return grpc.StatusCode.PERMISSION_DENIED
         case 404 | 410:
@@ -508,7 +510,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.ProjectRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
+    ) -> api_pb2.ProjectInfo:
 
         def _layer(layer):
             return api_pb2.ProjectInfo.Layer(
@@ -524,7 +526,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             for w in workers:
                 try:
                     resp = await w.project_info(uri=request.uri)
-                    yield api_pb2.ProjectInfo(
+                    return api_pb2.ProjectInfo(
                         status=resp.status.name,
                         uri=resp.uri,
                         filename=resp.filename,
@@ -539,6 +541,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                     # Catch 404 errors
                     if err.code != 404:
                         raise
+            # No project found: raise a 404 errors
+            raise WorkerError(404, f"Project {request.uri} not found")
 
     #
     # Plugin list
@@ -551,17 +555,18 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 
         count, plugins = self._pool.list_plugins()
         await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
-        for item in plugins:
-            yield api_pb2.PluginInfo(
-                name=item.name,
-                path=str(item.path),
-                plugin_type=item.plugin_type.name,
-                json_metadata=json.dumps(item.metadata),
-            )
-
+        if plugins:
+            for item in plugins:
+                yield api_pb2.PluginInfo(
+                    name=item.name,
+                    path=str(item.path),
+                    plugin_type=item.plugin_type.name,
+                    metadata=json.dumps(item.metadata),
+                )
     #
     # Get config
     #
+
     async def GetConfig(
         self,
         request: api_pb2.Empty,
@@ -572,7 +577,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             retval = self._pool.dump_config()
             return api_pb2.JsonConfig(json=json.dumps(retval))
         except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details, "GetConfig")
+            await _abort_on_error(context, e.code, e.details, "GetConfig")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "GetConfig")
@@ -595,7 +600,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             await self._pool.update_config(obj)
             return api_pb2.Empty()
         except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details, "SetConfig")
+            await _abort_on_error(context, e.code, e.details, "SetConfig")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "SetConfig")
@@ -613,7 +618,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         try:
             return api_pb2.JsonConfig(json=json.dumps(self._pool.env))
         except WorkerError as e:
-            await _abort_on_error(context, e.status, e.details, "GetEnv")
+            await _abort_on_error(context, e.code, e.details, "GetEnv")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "GetEnv")

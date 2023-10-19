@@ -5,6 +5,9 @@ level = "debug"
 name = "Test"
 shutdown_grace_period = 5
 
+[worker.plugins]
+paths = ['$location/plugins']
+
 [worker.projects]
 trust_layer_metadata = true
 disable_getprint = true

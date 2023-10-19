@@ -15,7 +15,7 @@ from .worker import Worker, WorkerError
 from .config import WorkerConfig
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigProxy
+from py_qgis_contrib.core.config import ConfigProxy, ConfigError
 
 from . import messages as _m
 
@@ -140,6 +140,8 @@ class WorkerPool:
             if worker:
                 # Flush stream from current task
                 await self._worker.consume_until_task_done()
+        except WorkerError:
+            raise
         except Exception as err:
             logger.critical(traceback.format_exc())
             raise WorkerError(500, str(err))
@@ -177,6 +179,8 @@ class WorkerPool:
             # Flush stream from current task
             for w in workers:
                 await w.consume_until_task_done()
+        except WorkerError:
+            raise
         except Exception as err:
             logger.critical(traceback.format_exc())
             raise WorkerError(500, str(err))
@@ -205,7 +209,10 @@ class WorkerPool:
         """
         if isinstance(self._config, ConfigProxy):
             async with self.wait_for_all_workers() as workers:
-                self._config.service.update_config(obj)
+                try:
+                    self._config.service.update_config(obj)
+                except ConfigError as err:
+                    raise WorkerError(400, err.json(include_url=False)) from None
                 # Update timeout config
                 self._timeout = self._config.worker_timeout
                 self._max_requests = self._config.max_waiting_requests

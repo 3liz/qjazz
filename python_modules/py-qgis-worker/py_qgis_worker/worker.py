@@ -13,7 +13,7 @@ from .config import WorkerConfig
 from . import _op_worker
 from . import messages as _m
 
-from py_qgis_contrib.core.config import ConfigProxy
+from py_qgis_contrib.core.config import ConfigProxy, ConfigError
 from py_qgis_contrib.core import logger
 
 from functools import cached_property
@@ -72,7 +72,10 @@ class Worker(mp.Process):
 
     async def update_config(self, obj: Dict):
         if isinstance(self._worker_conf, ConfigProxy):
-            self._worker_conf.service.update_config(obj)
+            try:
+                self._worker_conf.service.update_config(obj)
+            except ConfigError as err:
+                raise WorkerError(400, err.json(include_url=False)) from None
             status, resp = await self.io.send_message(
                 _m.PutConfig(config=obj),
                 timeout=self._timeout,

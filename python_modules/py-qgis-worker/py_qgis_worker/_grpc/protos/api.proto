@@ -24,7 +24,7 @@ service QgisAdmin {
     rpc ListPlugins (Empty) returns (stream PluginInfo) {}
     rpc SetConfig (JsonConfig) returns (Empty) {}
     rpc GetConfig (Empty) returns (JsonConfig) {}
-    rpc GetProjectInfo (ProjectRequest) returns (stream ProjectInfo) {}
+    rpc GetProjectInfo (ProjectRequest) returns (ProjectInfo) {}
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
     rpc GetEnv (Empty) returns (JsonConfig) {}
     rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
@@ -155,7 +155,7 @@ message PluginInfo {
     string name = 1;
     string path = 2;
     string plugin_type = 3;
-    string json_metadata = 4;
+    string metadata = 4;
 }
 
 message JsonConfig {

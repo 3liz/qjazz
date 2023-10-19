@@ -18,14 +18,14 @@ def inspect_plugins(
     _m.send_reply(conn, count)
     if count:
         try:
-            for p in s.plugins():
+            for p in s.plugins:
                 _m.send_reply(
                     conn,
                     _m.PluginInfo(
                         name=p.name,
-                        path=p.Path,
+                        path=p.path,
                         plugin_type=p.plugin_type,
-                        metadata=p.metadata(),
+                        metadata=p.metadata,
                     ),
                     206,
                 )

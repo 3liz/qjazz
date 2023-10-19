@@ -19,6 +19,8 @@ dependencies = [
     "docker",
     "dnspython",
     "click",
+    "jsondiff",
+    "aiohttp",
 ]
 version = "${PIN_VERSION}"
 

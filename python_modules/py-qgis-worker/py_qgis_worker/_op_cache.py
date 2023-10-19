@@ -117,7 +117,7 @@ def checkout_project(
                     reply = _cache_info_from_entry(md, status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
-                        uri=md.uri,
+                        uri=urlunsplit(url),
                         in_cache=False,
                         status=status,
                         cache_id=cache_id,

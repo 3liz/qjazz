@@ -22,17 +22,20 @@ async def test_resolver_config():
     config = ResolverConfig(
         pools=[
             DNSResolverConfig(
+                label="resolver_1",
                 type="dns",
                 host="localhost",
                 port=23456,
             ),
             DNSResolverConfig(
+                label="resolver_2",
                 type="dns",
                 host="localhost",
                 port=23456,
                 ipv6=True,
             ),
             SocketResolverConfig(
+                label="resolver_3",
                 type="socket",
                 address="unix:/tmp/my.sock",
             ),
@@ -41,9 +44,9 @@ async def test_resolver_config():
 
     resolvers = list(config.get_resolvers())
     assert len(resolvers) == 3
-    assert resolvers[0].name == "localhost:23456"
-    assert resolvers[1].name == "localhost:23456"
-    assert resolvers[2].name == "unix:/tmp/my.sock"
+    assert resolvers[0].address == "localhost:23456"
+    assert resolvers[1].address == "localhost:23456"
+    assert resolvers[2].address == "unix:/tmp/my.sock"
 
     configs = list(await resolvers[0].configs)
     assert len(configs) == 1
@@ -69,8 +72,8 @@ async def test_pool():
     pool = PoolClient(resolver)
     assert len(pool._servers) == 0
 
-    await pool.update_servers()
-    assert len(pool._servers) == 1
+    await pool.update_backends()
+    assert len(pool._bakcends) == 1
 
     # Clear cache
     await pool.clear_cache()

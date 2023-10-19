@@ -46,11 +46,18 @@ class LogLevel(Enum):
 FORMATSTR = '%(asctime)s\t[%(process)d]\t%(levelname)s\t%(message)s'
 
 
+def _validate_log_level(v: str) -> LogLevel:
+    try:
+        return LogLevel[v.upper()]
+    except KeyError:
+        raise ValueError(f"Invalid log level value '{v}'")
+
+
 @config.section('logging')
 class LoggingConfig(config.Config):
     level: Annotated[
         LogLevel,
-        PlainValidator(lambda v: LogLevel[v.upper()]),
+        PlainValidator(_validate_log_level),
         PlainSerializer(lambda x: x.name, return_type=str),
         WithJsonSchema({
             'enum': [m for m in LogLevel.__members__],

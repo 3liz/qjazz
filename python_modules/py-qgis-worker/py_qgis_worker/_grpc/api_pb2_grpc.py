@@ -224,7 +224,7 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.JsonConfig.FromString,
                 )
-        self.GetProjectInfo = channel.unary_stream(
+        self.GetProjectInfo = channel.unary_unary(
                 '/api.QgisAdmin/GetProjectInfo',
                 request_serializer=api__pb2.ProjectRequest.SerializeToString,
                 response_deserializer=api__pb2.ProjectInfo.FromString,
@@ -397,7 +397,7 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.JsonConfig.SerializeToString,
             ),
-            'GetProjectInfo': grpc.unary_stream_rpc_method_handler(
+            'GetProjectInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetProjectInfo,
                     request_deserializer=api__pb2.ProjectRequest.FromString,
                     response_serializer=api__pb2.ProjectInfo.SerializeToString,
@@ -613,7 +613,7 @@ class QgisAdmin(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/api.QgisAdmin/GetProjectInfo',
+        return grpc.experimental.unary_unary(request, target, '/api.QgisAdmin/GetProjectInfo',
             api__pb2.ProjectRequest.SerializeToString,
             api__pb2.ProjectInfo.FromString,
             options, channel_credentials,

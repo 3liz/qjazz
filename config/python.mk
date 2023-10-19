@@ -21,7 +21,7 @@ lint::
 	@flake8 $(PYTHON_PKG) $(TESTDIR)
 
 autopep8:
-	@autopep8 -v --in-place -r --max-line-length=120 $(PYTHON_PKG) $(TESTDIR)
+	@autopep8 -v --in-place -r --max-line-length=120 $(AUTOPEP8_EXTRA_ARGS) $(PYTHON_PKG) $(TESTDIR)
 
 ifndef TESTDIR
 test::

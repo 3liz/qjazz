@@ -1,1 +1,9 @@
-../../../tests/config.toml
+
+[resolvers]
+
+[[resolvers.pools]]
+label = "worker"
+type = "dns"
+host = "worker"
+port = 23456
+

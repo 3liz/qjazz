@@ -98,8 +98,8 @@ class Channel:
 
     async def _run_health_check(self):
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
+        stub = health_pb2_grpc.HealthStub(self._channel)
         while self._connected:
-            stub = health_pb2_grpc.HealthStub(self._channel)
             request = health_pb2.HealthCheckRequest(service="QgisServer")
             try:
                 async for resp in stub.Watch(request):
@@ -113,6 +113,8 @@ class Channel:
                         case other:
                             logger.error("Backend: %s, status changed to: %s", self._address, other)
                             self._serving = False
+                    if not self._connected:
+                        break
             except grpc.RpcError as rpcerr:
                 if rpcerr.code() != grpc.StatusCode.UNAVAILABLE:
                     logger.error(
@@ -123,7 +125,8 @@ class Channel:
                     )
                 else:
                     logger.error("Backend: %s: UNAVAILABLE", self._address)
-            await asyncio.sleep(5)
+            if self._connected:
+                await asyncio.sleep(5)
 
     async def close(self):
         if self._channel:

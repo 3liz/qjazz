@@ -78,10 +78,10 @@ class OwsRequest(_message.Message):
     def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class ApiRequest(_message.Message):
-    __slots__ = ["name", "method", "path", "data", "target", "url", "direct", "options", "request_id", "debug_report"]
+    __slots__ = ["name", "path", "method", "data", "target", "url", "direct", "options", "request_id", "debug_report"]
     NAME_FIELD_NUMBER: _ClassVar[int]
-    METHOD_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
+    METHOD_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
     URL_FIELD_NUMBER: _ClassVar[int]
@@ -90,8 +90,8 @@ class ApiRequest(_message.Message):
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
     name: str
-    method: str
     path: str
+    method: str
     data: bytes
     target: str
     url: str
@@ -99,7 +99,7 @@ class ApiRequest(_message.Message):
     options: str
     request_id: str
     debug_report: bool
-    def __init__(self, name: _Optional[str] = ..., method: _Optional[str] = ..., path: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class GenericRequest(_message.Message):
     __slots__ = ["url", "method", "data", "target", "direct", "request_id", "debug_report"]
@@ -212,16 +212,16 @@ class ProjectInfo(_message.Message):
     def __init__(self, status: _Optional[str] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class PluginInfo(_message.Message):
-    __slots__ = ["name", "path", "plugin_type", "json_metadata"]
+    __slots__ = ["name", "path", "plugin_type", "metadata"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     PLUGIN_TYPE_FIELD_NUMBER: _ClassVar[int]
-    JSON_METADATA_FIELD_NUMBER: _ClassVar[int]
+    METADATA_FIELD_NUMBER: _ClassVar[int]
     name: str
     path: str
     plugin_type: str
-    json_metadata: str
-    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., plugin_type: _Optional[str] = ..., json_metadata: _Optional[str] = ...) -> None: ...
+    metadata: str
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., plugin_type: _Optional[str] = ..., metadata: _Optional[str] = ...) -> None: ...
 
 class JsonConfig(_message.Message):
     __slots__ = ["json"]
