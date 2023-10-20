@@ -26,6 +26,7 @@ from typing_extensions import (  # noqa
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
     Config,
+    ConfigProxy,
     SSLConfig,
 )
 
@@ -38,6 +39,7 @@ from .api import (
     API_VERSION,
 )
 
+from .resolvers import RESOLVERS_SECTION
 
 from . import config as server_config   # noqa
 
@@ -170,7 +172,7 @@ def ssl_context(conf: SSLConfig):
 def create_app(conf: Config):
     """ Create a web application
     """
-    service = Service(conf.resolvers)
+    service = Service(ConfigProxy(RESOLVERS_SECTION, _default=conf.resolvers))
 
     asyncio.run(service.synchronize())
 

@@ -33,7 +33,9 @@ class Handlers(
     @property
     def routes(self):
         return [
+            # backends
             web.get(f'/{API_VERSION}/pools', self.get_pools, allow_head=False),
+            web.post(f'/{API_VERSION}/pools', self.post_pools),
             web.get(f'/{API_VERSION}/pools/{{Id}}', self.get_pool_infos, allow_head=False),
             web.get(f'/{API_VERSION}/pools/{{Id}}/backends', self.get_pool_backends, allow_head=False),
             # Config

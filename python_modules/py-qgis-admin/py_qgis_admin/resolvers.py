@@ -14,6 +14,7 @@ from typing_extensions import (
 
 from pydantic import (
     Field,
+    TypeAdapter,
 )
 
 import dns.asyncresolver
@@ -23,6 +24,7 @@ from py_qgis_contrib.core.config import (
     Config,
     SSLConfig,
     NetInterface,
+    section,
 )
 
 from .backend import BackendConfig
@@ -188,7 +190,19 @@ class SocketResolver(Resolver):
 # Aggregate configuration for resolvers
 #
 
+RESOLVERS_SECTION = 'resolvers'
 
+# Used for validating dynamic resolver configuration
+ResolverConfigList = TypeAdapter(
+    List[
+        Union[
+            DNSResolverConfig,
+            SocketResolverConfig,
+        ]
+    ]
+)
+
+@section(RESOLVERS_SECTION)
 class ResolverConfig(Config):
     pools: List[
         Annotated[

@@ -38,6 +38,35 @@ class _Backends:
             text=PoolListResponse.dump_json(body, by_alias=True).decode(),
         )
 
+    async def post_pools(self, request):
+        """
+        summary: Update all pools
+        description: >
+            Update all pools and resynchronize with all pool
+            backends.
+        tags:
+          - backends
+        responses:
+            "200":
+                description: >
+                    Returns the list of all registered pools
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/PoolListResponse'
+        """
+        await self.service.synchronize()
+
+        body = [PoolInfos._from_pool(
+            pool,
+            [_link(request, "item", f"/pools/{pool.label}")],
+        ) for pool in self.service.pools]
+        return web.Response(
+            content_type="application/json",
+            text=PoolListResponse.dump_json(body, by_alias=True).decode(),
+        )
+
+
     async def get_pool_infos(self, request):
         """
         summary: "Pool infos"

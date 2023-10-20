@@ -20,11 +20,6 @@ from .service import (
     PoolClient,
 )
 
-RESOLVERS_SECTION = 'resolvers'
-
-# Add the `[resolvers]` configuration section
-config.confservice.add_section(RESOLVERS_SECTION, ResolverConfig)
-
 
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> config.Config:
     if configpath:

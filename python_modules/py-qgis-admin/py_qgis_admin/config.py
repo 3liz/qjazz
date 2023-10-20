@@ -37,10 +37,12 @@ class HttpConfig(Config):
         default=DEFAULT_INTERFACE,
         title="Interfaces to listen to",
     )
+
     use_ssl: bool = Field(
         default=False,
         title="Use ssl",
     )
+
     ssl: Annotated[
         SSLConfig,
         AfterValidator(_check_ssl_config)
@@ -48,6 +50,7 @@ class HttpConfig(Config):
         default=SSLConfig(),
         title="SSL configuration",
     )
+
     cross_origin: Literal['all', 'same-origin'] | AnyHttpUrl = Field(
         default='all',
         title="CORS origin",
@@ -59,6 +62,7 @@ class HttpConfig(Config):
             "this url."
         )
     )
+
     proxy_conf: bool = Field(
         default=False,
         title="Enable proxy_configuration",
