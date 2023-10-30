@@ -202,6 +202,7 @@ ResolverConfigList = TypeAdapter(
     ]
 )
 
+
 @section(RESOLVERS_SECTION)
 class ResolverConfig(Config):
     pools: List[

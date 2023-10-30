@@ -20,6 +20,15 @@ from .service import (
     PoolClient,
 )
 
+FilePathType = click.Path(
+    exists=True,
+    readable=True,
+    dir_okay=False,
+    path_type=Path,
+)
+
+from . import config  as server_config  # noqa
+
 
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> config.Config:
     if configpath:
@@ -31,6 +40,8 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> con
         cnf = {}
     try:
         config.confservice.validate(cnf)
+        # Load external configuration if requested
+        asyncio.run(config.confservice.conf.config_url.load_configuration())
         if verbose:
             print(config.confservice.conf.model_dump_json(indent=4))
     except config.ConfigError as err:
@@ -61,14 +72,9 @@ def global_options():
         @click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
         @click.option(
             "--conf", "-C", "configpath",
-            envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
+            envvar="PY_QGIS_SERVER_ADMIN_CONFIGFILE",
             help="configuration file",
-            type=click.Path(
-                exists=True,
-                readable=True,
-                dir_okay=False,
-                path_type=Path,
-            ),
+            type=FilePathType,
         )
         def _inner(*args, **kwargs):
             return f(*args, **kwargs)

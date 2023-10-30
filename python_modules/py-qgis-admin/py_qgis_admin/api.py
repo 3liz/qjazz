@@ -1,6 +1,12 @@
 # import traceback
 from aiohttp import web
 
+from py_qgis_contrib.core.config import (
+    confservice,
+)
+
+from py_qgis_contrib.core import logger
+
 from .models import (
     ErrorResponse,
 )
@@ -10,6 +16,7 @@ from .pool import PoolClient
 from ._api.utils import (
     API_VERSION,
     BaseHandlers,
+    _http_error,
 )
 
 from ._api import (
@@ -35,7 +42,7 @@ class Handlers(
         return [
             # backends
             web.get(f'/{API_VERSION}/pools', self.get_pools, allow_head=False),
-            web.post(f'/{API_VERSION}/pools', self.post_pools),
+            web.patch(f'/{API_VERSION}/pools', self.patch_pools),
             web.get(f'/{API_VERSION}/pools/{{Id}}', self.get_pool_infos, allow_head=False),
             web.get(f'/{API_VERSION}/pools/{{Id}}/backends', self.get_pool_backends, allow_head=False),
             # Config
@@ -44,7 +51,7 @@ class Handlers(
             # Cache
             web.get(f'/{API_VERSION}/pools/{{Id}}/catalog', self.get_catalog, allow_head=False),
             web.get(f'/{API_VERSION}/pools/{{Id}}/cache', self.get_cache, allow_head=False),
-            web.post(f'/{API_VERSION}/pools/{{Id}}/cache', self.post_cache),
+            web.patch(f'/{API_VERSION}/pools/{{Id}}/cache', self.patch_cache),
             web.put(f'/{API_VERSION}/pools/{{Id}}/cache', self.put_cache),
             web.delete(f'/{API_VERSION}/pools/{{Id}}/cache', self.delete_cache),
             # Project
@@ -53,6 +60,9 @@ class Handlers(
             web.get(f'/{API_VERSION}/pools/{{Id}}/cache/project/info', self.get_project_info, allow_head=False),
             # Plugins
             web.get(f'/{API_VERSION}/pools/{{Id}}/plugins', self.get_plugins, allow_head=False),
+
+            # Config
+            web.patch(f'/{API_VERSION}/config', self.patch_config),
         ]
 
     def _pool(self, request) -> PoolClient:
@@ -63,4 +73,49 @@ class Handlers(
             raise web.HTTPNotFound(
                 content_type="application/json",
                 text=ErrorResponse(message=f"Unknown pool '{Id}'").model_dump_json(),
+            )
+
+    async def patch_config(self, request):
+        """
+        summary: Reload config
+        description: |
+            Reload config from external URL
+        tags:
+          - config
+        responses:
+            "200":
+                description: >
+                    The new configuration fragment has been retrieved and
+                    the actual configuration has been updated
+                    Returns the actual configuration
+                content:
+                    application/json:
+                        schema:
+                            type: object
+            "403":
+                description: >
+                    No configuration url is defined
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
+        """
+        cnf = confservice.conf.config_url
+        if await cnf.load_configuration():
+
+            # Update log level
+            level = logger.set_log_level()
+            logger.info("Log level set to %s", level.name)
+
+            # Update service
+            await self.service.synchronize()
+
+            return web.Response(
+                content_type="application/json",
+                text=confservice.conf.model_dump_json(),
+            )
+        else:
+            _http_error(
+                web.HTTPUnauthorized,
+                "No config url defined",
             )

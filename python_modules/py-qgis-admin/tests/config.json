@@ -1,0 +1,1 @@
+{"config_url": {"url": "http://config-server/config.json"}, "resolvers": {"pools": [{"label": "worker", "type": "dns", "host": "worker", "port": 23456}]}}

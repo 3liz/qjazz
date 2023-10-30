@@ -208,7 +208,7 @@ class _Cache:
                 f"No backends availables for pool '{pool.label}'",
             )
 
-    async def post_cache(self, request):
+    async def patch_cache(self, request):
         """
         summary: "Synchronize cache"
         description: >

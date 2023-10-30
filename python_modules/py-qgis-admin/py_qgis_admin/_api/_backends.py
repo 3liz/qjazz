@@ -38,12 +38,14 @@ class _Backends:
             text=PoolListResponse.dump_json(body, by_alias=True).decode(),
         )
 
-    async def post_pools(self, request):
+    async def patch_pools(self, request):
         """
-        summary: Update all pools
-        description: >
-            Update all pools and resynchronize with all pool
-            backends.
+        summary: Resynchronize all pools
+        description: |
+            Resynchronize all pools with their backends.
+
+            This is necessary when rescaling backends services
+            or adding new monitored pools.
         tags:
           - backends
         responses:
@@ -65,7 +67,6 @@ class _Backends:
             content_type="application/json",
             text=PoolListResponse.dump_json(body, by_alias=True).decode(),
         )
-
 
     async def get_pool_infos(self, request):
         """

@@ -13,7 +13,6 @@ from typing_extensions import (
 )
 
 from ..models import (
-    CacheItem,
     CacheItemPool,
 )
 
@@ -48,7 +47,6 @@ class ProjectInfo(BaseModel):
     layers: List[LayerInfos]
     cacheId: str
     serverAddress: str
-
 
 
 def cache_item_pool_response(response: Dict[str, Dict], links: List[swagger.Link] = []) -> str:
