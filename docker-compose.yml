@@ -8,7 +8,16 @@ services:
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
     command: ["qgis-server-rpc", "serve", "-C", "/opt/qgis-services/config.toml"]
-  
+  config-server:
+    image: nginx:alpine
+    networks:
+    - qgis_rpc_network
+    volumes:
+    - type: bind
+      source: "${PWD}/python_modules/py-qgis-admin/tests/"
+      target: /usr/share/nginx/html
+      read_only: true
+
 networks:
   qgis_rpc_network:
     driver: bridge
