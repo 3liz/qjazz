@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+
   worker:
     image: qgis-services:release
     networks:
@@ -8,6 +9,7 @@ services:
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
     command: ["qgis-server-rpc", "serve", "-C", "/opt/qgis-services/config.toml"]
+
   config-server:
     image: nginx:alpine
     networks:

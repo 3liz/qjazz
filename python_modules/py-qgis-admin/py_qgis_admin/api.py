@@ -1,5 +1,12 @@
-# import traceback
-from aiohttp import web
+import traceback
+import asyncio
+
+from aiohttp import web, WSMsgType
+from pydantic import BaseModel
+
+from typing_extensions import (
+    Dict,
+)
 
 from py_qgis_contrib.core.config import (
     confservice,
@@ -26,6 +33,16 @@ from ._api import (
     _Projects,
     _Plugins,
 )
+
+
+from . import swagger
+
+
+@swagger.model
+class WatchResponse(BaseModel):
+    label: str
+    address: str
+    backend_status: Dict[str, bool]
 
 
 class Handlers(
@@ -63,6 +80,9 @@ class Handlers(
 
             # Config
             web.patch(f'/{API_VERSION}/config', self.patch_config),
+
+            # Watch
+            web.get(f'/{API_VERSION}/watch', self.ws_watch),
         ]
 
     def _pool(self, request) -> PoolClient:
@@ -119,3 +139,59 @@ class Handlers(
                 web.HTTPUnauthorized,
                 "No config url defined",
             )
+
+
+    async def ws_watch(self, request):
+        """
+        summary: Watch (websocket)
+        description: |
+            Open a websocket for monitoring backends
+            status
+        tags:
+          - healthcheck
+        responses:
+            "200":
+                description: >
+                    Send backend's status changes over the web
+                    socket.
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/WatchResponse'
+ 
+        """
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+
+        closed = False
+        async def watch():
+            try:
+                async for pool, statuses in self.service.watch():
+                    if ws.closed:
+                        break
+                    await ws.send_str(
+                        WatchResponse(
+                            label=pool.label,
+                            address=pool.address,
+                            backend_status=dict(statuses),
+                        ).model_dump_json()
+                    )
+            except Exception as err:
+                logger.critical(traceback.format_exc())
+
+
+        watch_task = asyncio.create_task(watch())
+        try:
+            async for msg in ws:
+                match msg.type:
+                    case WSMsgType.TEXT:
+                        match msg.data:
+                            case 'close':
+                                closed = True
+                                ws.close()
+                    case WSMsgType.ERROR:
+                        logger.error("WS connection error %s", ws.exception())
+        finally:
+            if watch_task:
+                watch_task.cancel()
+            logger.info("WS connection closed")
