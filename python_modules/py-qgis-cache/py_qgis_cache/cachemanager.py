@@ -51,6 +51,7 @@ from typing_extensions import (
     Tuple,
     Optional,
     Iterator,
+    Self,
     assert_never,
 )
 from pathlib import Path
@@ -73,6 +74,7 @@ from .storage import (
     UnreadableResource,
 )
 from .config import ProjectsConfig, validate_url
+
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
@@ -144,6 +146,14 @@ class CacheManager:
 
     def register_as_service(self):
         componentmanager.register_service(CACHE_MANAGER_CONTRACTID, self)
+
+    @classmethod
+    def get_service(cls) -> Self:
+        """ Return cache manager as a service.
+            This require that register_as_service has been called
+            in the current context
+        """
+        return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
 
     @property
     def conf(self) -> str:

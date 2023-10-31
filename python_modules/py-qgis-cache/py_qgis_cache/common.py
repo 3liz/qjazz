@@ -21,13 +21,9 @@ from typing_extensions import (
 
 from qgis.core import QgsProject
 
-from py_qgis_contrib.core import componentmanager
-
 from .config import ProjectsConfig
 
 Url = urllib.parse.SplitResult
-
-CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
 
 @dataclass(frozen=True)
@@ -37,10 +33,6 @@ class ProjectMetadata:
     scheme: str
     storage: Optional[str]
     last_modified: int
-
-
-def get_cacheservice():
-    return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
 
 
 class IProtocolHandler(ABC):

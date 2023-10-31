@@ -108,6 +108,9 @@ def qgis_server_run(
     """
     cm = CacheManager(config.projects, server)
 
+    # Register the cache manager as a service
+    cm.register_as_service()
+
     server_iface = server.serverInterface()
 
     # Load plugins

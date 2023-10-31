@@ -149,17 +149,16 @@ def load_entrypoint(category: str, name: str) -> Any:
     """
     return gComponentManager.load_entrypoint(category, name)
 
+
+def register_service(contractID: str, obj: Any) -> None:
+    """ Alias to component_manager.register_service
+    """
+    gComponentManager.register_service(contractID, obj)
+
+
 #
-# Declare factories or services with decorators
+# Declare service factories with decorators
 #
-
-
-def register_service(contractID: str) -> Any:
-    def wrapper(obj: Any):
-        gComponentManager.register_service(contractID, obj)
-        return obj
-    return wrapper
-
 
 def register_factory(contractID: str) -> Any:
     def wrapper(obj: Any):
