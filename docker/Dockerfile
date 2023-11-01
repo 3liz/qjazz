@@ -23,8 +23,10 @@ RUN mkdir -p /opt/local/ \
         -e /python_modules/py-qgis-admin \
         -e /python_modules/py-qgis-scripts \
         -e /python_modules/py-qgis-http \
+        -e /python_modules/py-qgis-html \
     && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-monitor 
+    && ln -s /opt/local/qgisserver/bin/qgis-server-monitor \
+    && ln -s /opt/local/qgisserver/bin/qgis-server-http
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
