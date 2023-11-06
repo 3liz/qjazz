@@ -140,7 +140,6 @@ class Handlers(
                 "No config url defined",
             )
 
-
     async def ws_watch(self, request):
         """
         summary: Watch (websocket)
@@ -158,12 +157,11 @@ class Handlers(
                     application/json:
                         schema:
                             $ref: '#/definitions/WatchResponse'
- 
+
         """
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
-        closed = False
         async def watch():
             try:
                 async for pool, statuses in self.service.watch():
@@ -176,9 +174,8 @@ class Handlers(
                             backend_status=dict(statuses),
                         ).model_dump_json()
                     )
-            except Exception as err:
+            except Exception:
                 logger.critical(traceback.format_exc())
-
 
         watch_task = asyncio.create_task(watch())
         try:
@@ -187,7 +184,6 @@ class Handlers(
                     case WSMsgType.TEXT:
                         match msg.data:
                             case 'close':
-                                closed = True
                                 ws.close()
                     case WSMsgType.ERROR:
                         logger.error("WS connection error %s", ws.exception())

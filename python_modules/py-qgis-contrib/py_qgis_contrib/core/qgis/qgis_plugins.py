@@ -31,6 +31,7 @@ from typing_extensions import (
     Any,
     Annotated,
     assert_never,
+    Self,
 )
 
 from enum import Enum
@@ -57,7 +58,7 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
         paths = [Path(p) for p in os.getenv("QGIS_PLUGINPATH").split(":")]
     for path in paths:
         if not path.exists() or not path.is_dir():
-            print(f"WARNING: '{path}' is not a valid plugin directory")
+            print(f"WARNING: '{path}' is not a valid plugin directory")  # noqa T201
     return paths
 
 
@@ -120,6 +121,14 @@ class QgisPluginService:
 
     def register_as_service(self):
         componentmanager.register_service(QGIS_PLUGIN_SERVICE_CONTRACTID, self)
+
+    @classmethod
+    def get_service(cls) -> Self:
+        """ Return QgisPluginService instance as a service.
+            This require that register_as_service has been called
+            in the current context
+        """
+        return componentmanager.get_service(QGIS_PLUGIN_SERVICE_CONTRACTID)
 
     def load_plugins(self, plugin_type: PluginType, interface: Optional['QgsServerInterface']):  # noqa F821
         """ Load all plugins found

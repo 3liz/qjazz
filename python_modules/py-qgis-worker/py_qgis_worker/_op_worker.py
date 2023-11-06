@@ -78,7 +78,7 @@ def setup_server(config: WorkerConfig) -> QgsServer:
     server = init_qgis_server()
     CacheManager.initialize_handlers()
 
-    print(show_qgis_settings())
+    print(show_qgis_settings())  # noqa T201
 
     return server
 
@@ -116,6 +116,9 @@ def qgis_server_run(
     # Load plugins
     plugin_s = QgisPluginService(config.plugins)
     plugin_s.load_plugins(PluginType.SERVER, server_iface)
+
+    # Register as a service
+    plugin_s.register_as_service()
 
     # Register delegation api
     api_delegate = ApiDelegate(server_iface)

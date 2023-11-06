@@ -218,7 +218,7 @@ def set_proxy_configuration() -> None:
     )  # noqa E124
 
 
-def print_qgis_version(verbose: bool = False) -> None:
+def print_qgis_version(verbose: bool = False) -> None:  # noqa T201
     """ Output the qgis version
     """
     from qgis.core import Qgis

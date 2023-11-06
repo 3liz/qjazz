@@ -27,7 +27,7 @@ FilePathType = click.Path(
     path_type=Path,
 )
 
-from . import config  as server_config  # noqa
+from . import config as server_config  # noqa
 
 
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> config.Config:

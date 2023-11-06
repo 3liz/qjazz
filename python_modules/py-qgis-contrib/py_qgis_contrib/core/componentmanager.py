@@ -40,7 +40,7 @@ class FactoryEntry(NamedTuple):
 
 
 def _warn(msg: str):
-    print("WARNING:", msg, file=sys.stderr, flush=True)
+    print("WARNING:", msg, file=sys.stderr, flush=True)  # noqa T201
 
 
 def _entry_points(group: str, name: Optional[str] = None) -> List:
