@@ -161,6 +161,11 @@ class CacheManager:
         """
         return self._config
 
+    def search_paths(self) -> Iterator[str]:
+        """ Return the list of search paths
+        """
+        return self.conf.search_paths.keys()
+
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """ Resolve path according to location mapping
 
