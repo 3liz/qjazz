@@ -24,6 +24,7 @@ service QgisAdmin {
     rpc ListPlugins (Empty) returns (stream PluginInfo) {}
     rpc SetConfig (JsonConfig) returns (Empty) {}
     rpc GetConfig (Empty) returns (JsonConfig) {}
+    rpc ReloadConfig (Empty) returns (Empty) {}
     rpc GetProjectInfo (ProjectRequest) returns (ProjectInfo) {}
     rpc Catalog (CatalogRequest) returns (stream CatalogItem) {}
     rpc GetEnv (Empty) returns (JsonConfig) {}

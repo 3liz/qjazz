@@ -8,9 +8,12 @@ from typing_extensions import (
 
 from pathlib import Path
 
-from py_qgis_contrib.core import config, logger
-
-from .config import load_configuration, add_configuration_sections
+from .config import (
+    confservice,
+    load_configuration,
+    add_configuration_sections,
+    ENV_CONFIGFILE,
+)
 from .server import serve
 
 add_configuration_sections()
@@ -22,9 +25,10 @@ def cli_commands():
 
 
 @cli_commands.command('serve')
+@click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
 @click.option(
     "--conf", "-C", "configpath",
-    envvar="QGIS_HTTP_CONFIGFILE",
+    envvar=ENV_CONFIGFILE,
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -33,18 +37,18 @@ def cli_commands():
         path_type=Path
     ),
 )
-def serve_http(configpath: Path):
+def serve_http(configpath: Path, verbose: bool):
 
-    conf = load_configuration(configpath)
-    logger.setup_log_handler(conf.logging.level)
-
+    print("Qgis HTTP middleware", confservice.version, flush=True)
+    conf = load_configuration(configpath, verbose)
     asyncio.run(serve(conf))
 
 
 @cli_commands.command('config')
+@click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
 @click.option(
     "--conf", "-C", "configpath",
-    envvar="QGIS_HTTP_CONFIGFILE",
+    envvar=ENV_CONFIGFILE,
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -55,17 +59,22 @@ def serve_http(configpath: Path):
 )
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option("--pretty", is_flag=True, help="Pretty format")
-def print_config(configpath: Optional[Path], schema: bool = False, pretty: bool = False):
+def print_config(
+    configpath: Optional[Path],
+    verbose: bool,
+    schema: bool = False,
+    pretty: bool = False,
+):
     """ Print configuration as json and exit
     """
     import json
 
     indent = 4 if pretty else None
     if schema:
-        json_schema = config.confservice.json_schema()
+        json_schema = confservice.json_schema()
         print(json.dumps(json_schema, indent=indent))
     else:
-        print(load_configuration(configpath).model_dump_json(indent=indent))
+        print(load_configuration(configpath, verbose).model_dump_json(indent=indent))
 
 
 def main():

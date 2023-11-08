@@ -29,6 +29,3 @@ getfeature_limit = 1000
 endpoint = "features"
 delegate_to = "wfs3"
 name = "Features OGC Api (WFS3)"
-
-
-

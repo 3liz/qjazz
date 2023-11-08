@@ -124,10 +124,12 @@ class ConfigUrl(Config):
                     ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
             else:
                 ssl_context = ssl.create_default_context()
+        else:
+            ssl_context = False  # No ssl validation
 
         async with aiohttp.ClientSession() as session:
             logger.info("Loading configuration from %s", self.url)
-            async with session.get(str(self.url)) as resp:
+            async with session.get(str(self.url), ssl=ssl_context) as resp:
                 cnf = await resp.json()
                 logger.debug("Updating configuration:\n%s", cnf)
                 confservice.update_config(cnf)

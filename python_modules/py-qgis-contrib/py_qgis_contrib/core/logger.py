@@ -78,20 +78,21 @@ def set_log_level(log_level: Optional[LogLevel] = None) -> LogLevel:
 def setup_log_handler(
     log_level: Optional[LogLevel] = None,
     channel: Optional[logging.Handler] = None,
-):
+) -> LogLevel:
     """ Initialize log handler with the given log level
     """
     logging.addLevelName(LogLevel.TRACE.value, LogLevel.TRACE.name)
     logging.addLevelName(LogLevel.REQ.value, LogLevel.REQ.name)
     logging.addLevelName(LogLevel.RREQ.value, LogLevel.RREQ.name)
 
-    set_log_level(log_level)
+    log_level = set_log_level(log_level)
 
     formatter = logging.Formatter(FORMATSTR)
     channel = channel or logging.StreamHandler(sys.stderr)
     channel.setFormatter(formatter)
 
     LOGGER.addHandler(channel)
+    return log_level
 
 
 @contextmanager

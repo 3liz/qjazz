@@ -179,7 +179,10 @@ class Channel:
                 rpcerr.code(),
                 rpcerr.details(),
             )
-            if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
-                raise HTTPError(502)
-            else:
-                raise HTTPError(500)
+            match rpcerr.code():
+                case grpc.StatusCode.NOT_FOUND:
+                    raise HTTPError(404)
+                case grpc.StatusCode.UNAVAILABLE:
+                    raise HTTPError(502)
+                case _:
+                    raise HTTPError(500)

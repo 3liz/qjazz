@@ -6,9 +6,22 @@ services:
     image: qgis-services:release
     networks:
     - qgis_rpc_network
+    environment: 
+      CONF_CONFIG_URL__URL: "http://config-server/config_worker.json"
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
-    command: ["qgis-server-rpc", "serve", "-C", "/opt/qgis-services/config.toml"]
+    command: ["qgis-server-rpc", "serve"]
+
+  proxy:
+    image: qgis-services:release
+    environment:
+      CONF_DISPLAY_XVFB: OFF
+      CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
+    ports:
+    - 127.0.0.1:8003:80
+    networks:
+    - qgis_rpc_network
+    command: ["qgis-server-http", "serve", "--verbose"]
 
   config-server:
     image: nginx:alpine
@@ -16,7 +29,7 @@ services:
     - qgis_rpc_network
     volumes:
     - type: bind
-      source: "${PWD}/python_modules/py-qgis-admin/tests/"
+      source: "${PWD}/tests/"
       target: /usr/share/nginx/html
       read_only: true
 

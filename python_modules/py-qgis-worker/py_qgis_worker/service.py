@@ -6,6 +6,7 @@ from grpc_health.v1 import health_pb2
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 from time import time
 from typing import (
     Generator,
@@ -16,13 +17,16 @@ from typing import (
     AsyncIterator,
 )
 
+import os
 import traceback
 import json
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import read_config_toml, confservice
 
 from . import messages as _m
 
+from .config import ENV_CONFIGFILE, RemoteConfigError
 from .pool import WorkerPool, Worker, WorkerError
 
 #
@@ -406,7 +410,6 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
     #
     # Drop project
     #
-
     async def DropProject(
         self,
         request: api_pb2.CheckoutRequest,
@@ -574,8 +577,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
     ) -> api_pb2.JsonConfig:
 
         try:
-            retval = self._pool.dump_config()
-            return api_pb2.JsonConfig(json=json.dumps(retval))
+            rv = self._pool.config_dump_json()
+            return api_pb2.JsonConfig(json=rv)
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "GetConfig")
         except Exception as err:
@@ -606,9 +609,44 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             await _abort_on_error(context, 500, str(err), "SetConfig")
 
     #
+    # Reload config
+    #
+    async def ReloadConfig(
+        self,
+        request: api_pb2.Empty,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.Empty:
+
+        try:
+            # If remote url is defined, load configuration
+            # from it
+            if confservice.conf.config_url.is_set():
+                obj = await confservice.conf.config_url.load_configuration()
+            elif ENV_CONFIGFILE in os.environ:
+                # Fallback to configfile (if any)
+                configpath = os.environ[ENV_CONFIGFILE]
+                configpath = Path(configpath)
+                logger.info("** Reloading config from %s **", configpath)
+                obj = read_config_toml(
+                    configpath,
+                    location=str(configpath.parent.absolute()),
+                )
+            else:
+                obj = {}
+
+            await self._pool.update_config(obj)
+            return api_pb2.Empty()
+        except RemoteConfigError as err:
+            await _abort_on_error(context, 503, str(err), "Reload")
+        except WorkerError as e:
+            await _abort_on_error(context, e.code, e.details, "ReloadConfig")
+        except Exception as err:
+            logger.critical(traceback.format_exc())
+            await _abort_on_error(context, 500, str(err), "Reload")
+
+    #
     # Get Env Status
     #
-
     async def GetEnv(
         self,
         request: api_pb2.Empty,

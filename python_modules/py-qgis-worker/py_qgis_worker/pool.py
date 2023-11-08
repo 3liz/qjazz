@@ -193,16 +193,15 @@ class WorkerPool:
     #
     # Config
     #
-
     @property
     def config(self) -> WorkerConfig:
         return self._config
 
-    def dump_config(self) -> Dict:
+    def config_dump_json(self) -> Dict:
         if isinstance(self._config, ConfigProxy):
-            return self._config.service.conf.model_dump()
+            return self._config.service.conf.model_dump_json()
         else:
-            return self._config.model_dump()
+            return self._config.model_dump_json()
 
     async def update_config(self, obj: Dict):
         """ Update config for all workers

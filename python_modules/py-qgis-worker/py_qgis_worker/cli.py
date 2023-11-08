@@ -1,3 +1,4 @@
+import os
 import sys
 import asyncio
 import click
@@ -7,7 +8,7 @@ from typing_extensions import Optional
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core import config
 
-from .config import WorkerConfig
+from .config import WorkerConfig, ENV_CONFIGFILE, ENV_NUM_PROCESSES
 from .pool import WorkerPool
 
 from .server import serve
@@ -21,20 +22,26 @@ config.confservice.add_section(WORKER_SECTION, WorkerConfig)
 #
 # Load configuration file
 #
-
-
 def load_configuration(configpath: Optional[Path]) -> config.Config:
     if configpath:
         cnf = config.read_config_toml(
             configpath,
-            location=str(configpath.parent.absolute())
+            location=str(configpath.parent.absolute()),
         )
+        # Needed when reloading configuration
+        os.environ[ENV_CONFIGFILE] = configpath.as_posix()
     else:
         cnf = {}
     try:
         config.confservice.validate(cnf)
+        # Load external configuration if requested
+        config_url = config.confservice.conf.config_url
+        if config_url.is_set():
+            print(f"** Loading initial configuration from <{config_url.url}> **", flush=True)
+            cnf = asyncio.run(config_url.load_configuration())
+            config.confservice.update_config(cnf)
     except config.ConfigError as err:
-        print("Configuration error:", err)
+        print("Configuration error:", err, file=sys.stderr, flush=True)
         sys.exit(1)
     return config.confservice.conf
 
@@ -56,7 +63,7 @@ def print_version(settings: bool):
 @cli_commands.command('config')
 @click.option(
     "--conf", "-C",
-    envvar="QGIS_GRPC_CONFIGFILE",
+    envvar=ENV_CONFIGFILE,
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -82,7 +89,7 @@ def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = Fals
 @cli_commands.command('serve')
 @click.option(
     "--conf", "-C", "configpath",
-    envvar="QGIS_GRPC_CONFIGFILE",
+    envvar=ENV_CONFIGFILE,
     help="configuration file",
     type=click.Path(
         exists=True,
@@ -93,7 +100,7 @@ def print_config(conf: Optional[Path], schema: bool = False, pretty: bool = Fals
 )
 @click.option(
     "--num-processes", "-n",
-    envvar="QGIS_GRPC_NUM_PROCESSES",
+    envvar=ENV_NUM_PROCESSES,
     default=1,
     help="Number of qgis server processes to run",
 )

@@ -143,7 +143,7 @@ class _Router(tornado.routing.Router):
             route = self._router.route(
                 self._routable_class(request=request)
             )
-            logger.trace("Route %s found for %s", route, request.uri)
+            logger.trace("Route %s found for %s", request.uri, route)
             channel = self._routes.get(route.route)
 
             if not channel:

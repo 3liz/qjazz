@@ -80,7 +80,7 @@ class DefaultRouter(RouterBase):
 
         req = routable.request
 
-        logger.trace("DefaultRouter::route for %s", req.uri)
+        logger.trace("DefaultRouter::route for %s (route: %s)", req.uri, route)
 
         # Get the project
         project = req.arguments.get('MAP')
@@ -100,11 +100,20 @@ class DefaultRouter(RouterBase):
             return Route(route=route, project=project)
         else:
             # Check project in request path
-            path = PurePosixPath(req.path).relative_to(route).as_posix()
+            path = str(PurePosixPath(req.path).relative_to(route).as_posix())
+            if path == '.':
+                path = ""
             m = self.API_MATCH.match(path)
             if not m:
                 raise HTTPError(400, reason="Missing api specification")
             _project, api, api_path = m.groups()
+            logger.trace(
+                "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)", 
+                req.uri, 
+                _project, 
+                api, 
+                api_path
+            )
             if project and _project:
                 logger.error("Multiple project definitions in '%s'", req.full_url())
                 raise HTTPError(400, reason="Multiple project definitions in request")

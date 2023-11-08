@@ -111,6 +111,9 @@ CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
 class ConfigService:
 
     def __init__(self):
+
+        from importlib import metadata
+
         self._configs = {}
         self._model = None
         self._conf = None
@@ -118,6 +121,7 @@ class ConfigService:
         self._timestamp = 0
         self._env_prefix = 'conf_'
         self._default_confdir = None
+        self._version = metadata.version('py_qgis_contrib')
 
     def _create_base_model(self, base: Type[BaseModel]):
         def _model(model):
@@ -155,6 +159,10 @@ class ConfigService:
             self._model_changed = False
 
         return self._model
+
+    @property
+    def version(self):
+        return self._version
 
     def validate(
             self, obj: Dict,

@@ -64,12 +64,6 @@ class Worker(mp.Process):
                 pass
         self.io.flush()
 
-    def dump_config(self) -> Dict:
-        if isinstance(self._worker_conf, ConfigProxy):
-            return self._worker_conf.service.conf.model_dump()
-        else:
-            return self._worker_conf.model_dump()
-
     async def update_config(self, obj: Dict):
         if isinstance(self._worker_conf, ConfigProxy):
             try:

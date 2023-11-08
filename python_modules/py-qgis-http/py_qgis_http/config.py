@@ -1,4 +1,7 @@
+import os
 import sys
+import json
+import asyncio
 
 from pathlib import Path
 from glob import glob
@@ -23,11 +26,12 @@ from py_qgis_contrib.core.config import (
     ConfigError,
     read_config_toml,
     confservice,
+    section,
 )
 
 from .resolver import BackendConfig  # noqa
 
-DEFAULT_INTERFACE = ("0.0.0.0", 8080)
+DEFAULT_INTERFACE = ("0.0.0.0", 80)
 
 
 def _check_ssl_config(sslconf):
@@ -84,6 +88,86 @@ class HttpConfig(Config):
                 return socket
 
 
+EXTERNAL_CONFIG_SECTION = "config_url"
+
+DEFAULT_USER_AGENT = f"py-qgis-server2 middleware {confservice.version}"
+
+
+class RemoteConfigError(Exception):
+    pass
+
+
+@section(EXTERNAL_CONFIG_SECTION)
+class ConfigUrl(Config):
+    """
+    Url for external configuration.
+    The configuration is fetched from the remote url
+    at startup and override all local settings.
+    """
+    ssl: Optional[SSLConfig] = None
+    url: Optional[AnyHttpUrl] = Field(
+        default=None,
+        title="External configuration Url",
+        description=(
+            "Url to external configuration. "
+            "The server will issue a GET method against this url at startup. "
+            "The method should returns a valid configuration fragment. "
+        ),
+    )
+
+    user_agent: str = Field(
+        default=DEFAULT_USER_AGENT,
+        title="User agent",
+        description="The user agent for configuration requests",
+    )
+
+    def is_set(self) -> bool:
+        return self.url is not None
+
+    async def load_configuration(self) -> bool:
+        if not self.url:
+            return False
+
+        from tornado import httpclient
+
+        if self.url.scheme == 'https':
+            import ssl
+            if self.ssl:
+                ssl_context = ssl.create_default_context(cafile=self.ssl.ca)
+                if self.ssl.cert:
+                    ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
+            else:
+                ssl_context = ssl.create_default_context()
+        else:
+            ssl_context = None
+
+        client = httpclient.AsyncHTTPClient(
+            force_instance=True,
+            defaults=dict(
+                user_agent=self.user_agent,
+                ssl_options=ssl_context,
+            )
+        )
+
+        try:
+            logger.info("** Loading configuration from %s **", self.url)
+            resp = await client.fetch(str(self.url))
+            if resp.code == 200:
+                cnf = json.loads(resp.body)
+                logger.debug("Updating configuration:\n%s", cnf)
+                confservice.update_config(cnf)
+        except (json.JSONDecodeError, ConfigError) as err:
+            raise RemoteConfigError(f"Invalid configuration: {err}") from None
+        except httpclient.HTTPError as err:
+            raise RemoteConfigError(
+                f"Failed to get configuration from {self.url} (error {err.code})",
+            ) from None
+        finally:
+            client.close()
+
+        return True
+
+
 HTTP_SECTION = 'http'
 BACKENDS_SECTION = 'backends'
 
@@ -116,26 +200,36 @@ def add_configuration_sections(service: Optional[ConfigService] = None):
 #
 
 
+# Environmemnt variables
+ENV_CONFIGFILE = "QGIS_HTTP_CONFIGFILE"
+
+
 class BackendConfigError(Exception):
     def __init__(file, msg):
         super().__init__(f"Service configuration error in {file}: {msg}")
 
 
-def load_configuration(configpath: Optional[Path]) -> Config:
+def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Config:
 
     if configpath:
         cnf = read_config_toml(
             configpath,
             location=str(configpath.parent.absolute())
         )
+        os.environ[ENV_CONFIGFILE] = configpath.as_posix()
     else:
         cnf = {}
     try:
         confservice.validate(cnf)
         conf = confservice.conf
 
-        # Load extra services configuration files
-        if conf.includes:
+        # Load external configuration if requested
+        # Do not load includes if configuration is remote
+        if conf.config_url.is_set():
+            print(f"** Loading initial config from {conf.config_url.url} **", flush=True)
+            asyncio.run(conf.config_url.load_configuration())
+        elif conf.includes:
+            # Load extra services configuration files
             for file in glob(conf.includes):
                 cnf = read_config_toml(file)
                 if BACKENDS_SECTION not in cnf:
@@ -151,10 +245,19 @@ def load_configuration(configpath: Optional[Path]) -> Config:
                             f"service {name} already defined",
                         )
                     cnf.backends[name] = BackendConfig.model_validate(_backend)
+
+        conf = confservice.conf
+        if verbose:
+            print(conf.model_dump_json(indent=4), flush=True)
+
+        log_level = logger.setup_log_handler(logger.LogLevel.TRACE if verbose else None)
+        print("** Log level set to ", log_level.name, flush=True)
+
         return conf
+
     except ConfigError as err:
-        print("Configuration error:", err, file=sys.stderr)
+        print("Configuration error:", err, file=sys.stderr, flush=True)
         sys.exit(1)
     except BackendConfigError as err:
-        print(err, file=sys.stderr)
+        print(err, file=sys.stderr, flush=True)
         sys.exit(1)

@@ -225,6 +225,10 @@ def api_request(
         print("First chunk returned in", _t_ms, "ms", file=sys.stderr)
 
 
+#
+# Cache
+#
+
 @cli_commands.group('cache')
 def cache_commands():
     """ Commands for cache management
@@ -381,6 +385,7 @@ def list_plugins():
 #
 # Config
 #
+
 @cli_commands.group('config')
 def config_commands():
     """ Commands for cache management
@@ -414,9 +419,17 @@ def set_config(config: str):
             print(err, file=sys.stderr)
 
 
+@config_commands.command("reload")
+def reload_config():
+    """ Send CONFIG to remote
+    """
+    with connect() as stub:
+        stub.ReloadConfig(api_pb2.Empty())
+
 #
 #  status
 #
+
 
 @cli_commands.group('status')
 def status_commands():

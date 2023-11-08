@@ -90,7 +90,7 @@ def cli_commands():
 def print_pool_status(pool, statuses):
     statuses = dict(statuses)
     print(f"{pool.label:<15}{pool.address:<15}", "backends:", len(pool))
-    for i, s in enumerate(pool.servers):
+    for i, s in enumerate(pool.backends):
         status = "ok" if statuses[s.address] else "unavailable"
         print(f"{i+1:>2}.", f"{s.address:<20}", status)
 
@@ -150,7 +150,7 @@ def list_pools(verbose: bool, configpath: Optional[Path]):
         await service.synchronize()
         for n, pool in enumerate(service.pools):
             print(f"Pool {n+1:>2}.", f"{pool.label:<15}{pool.address:<15} backends:", len(pool))
-            for s in pool.servers:
+            for s in pool.backends:
                 print(" *", s.address)
 
     asyncio.run(_display())

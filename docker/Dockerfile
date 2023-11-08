@@ -7,7 +7,7 @@ FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION}
 MAINTAINER David Marteau <david.marteau@3liz.com>
 LABEL Description="QGIS gRCP" Vendor="3liz.org"
 
-ARG CACHEBUST="23.09.2"
+ARG CACHEBUST="23.11.08"
 
 COPY python_modules /python_modules
 
@@ -35,6 +35,6 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /home/qgis && chm
 # Allow us to run Xvfb when the container runs with '-u' option
 RUN chmod u+s /usr/bin/Xvfb
 
-EXPOSE 23456
+EXPOSE 23456 80 9876
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

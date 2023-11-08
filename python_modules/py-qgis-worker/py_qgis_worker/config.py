@@ -1,19 +1,24 @@
 from py_qgis_contrib.core import config
+from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.qgis import QgisPluginConfig
 from py_qgis_contrib.core.config import (
     NetInterface,
     SSLConfig,
+    section,
 )
 from py_qgis_cache.config import ProjectsConfig
 
 from pydantic import (
     Field,
     AfterValidator,
+    AnyHttpUrl,
+    Json,
 )
 
 from typing_extensions import (
     List,
     Annotated,
+    Optional,
 )
 
 DEFAULT_INTERFACE = ("[::]", 23456)
@@ -143,3 +148,72 @@ class WorkerConfig(config.Config):
             "issue a critical failure before exiting."
         ),
     )
+
+
+EXTERNAL_CONFIG_SECTION = "config_url"
+
+
+class RemoteConfigError(Exception):
+    pass
+
+
+@section(EXTERNAL_CONFIG_SECTION)
+class ConfigUrl(config.Config):
+    """
+    Url for external configuration.
+    The configuration is fetched from the remote url
+    at startup and override all local settings.
+    """
+    ssl: Optional[SSLConfig] = None
+    url: Optional[AnyHttpUrl] = Field(
+        default=None,
+        title="External configuration Url",
+        description=(
+            "Url to external configuration. "
+            "The server will issue a GET method against this url at startup. "
+            "The method should returns a valid configuration fragment. "
+        ),
+    )
+
+    def is_set(self) -> bool:
+        return self.url is not None
+
+    async def load_configuration(self) -> Optional[Json]:
+        """ Load remote configuration and return the Json
+            object
+        """
+        if not self.url:
+            return None
+
+        import aiohttp
+
+        if self.url.scheme == 'https':
+            import ssl
+            if self.ssl:
+                ssl_context = ssl.create_default_context(cafile=self.ssl.ca)
+                if self.ssl.cert:
+                    ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
+            else:
+                ssl_context = ssl.create_default_context()
+        else:
+            ssl_context = False
+
+        async with aiohttp.ClientSession() as session:
+            logger.info("** Loading configuration from %s **", self.url)
+            try:
+                async with session.get(str(self.url), ssl=False) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    else:
+                        raise RemoteConfigError(
+                            f"Failed to get configuration from {self.url} (error {resp.status})",
+                        )
+            except aiohttp.ClientConnectorSSLError as err:
+                raise RemoteConfigError(str(err))
+
+
+#
+# Environment variables
+#
+ENV_CONFIGFILE = "PY_QGIS_WORKER_CONFIGFILE"
+ENV_NUM_PROCESSES = "PY_QGIS_WORKER_NUM_PROCESSES"
