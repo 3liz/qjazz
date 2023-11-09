@@ -4,7 +4,6 @@ import traceback
 
 from contextlib import contextmanager
 from time import time
-from datetime import datetime, timezone
 from typing_extensions import (
     Optional,
     Dict,
@@ -18,27 +17,10 @@ from qgis.server import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.utils import to_rfc822
 from py_qgis_cache import CheckoutStatus
 
 from . import messages as _m
-
-
-# RFC822
-WEEKDAYS = [
-    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
-]
-
-
-def _to_rfc822(timestamp):
-    """ Convert timestamp in seconds
-        to rfc 822 Last-Modified HTTP format
-    """
-    dt = datetime.fromtimestamp(timestamp).astimezone(timezone.utc)
-    dayname = WEEKDAYS[dt.weekday()]
-    return (
-        f"{dayname}, {dt.day:02} {dt.month:02} {dt.year:04} "
-        f"{dt.hour:02}:{dt.minute:02}:{dt.second:02} GMT"
-    )
 
 
 def _to_qgis_method(method: _m.HTTPMethod) -> QgsServerRequest.Method:
@@ -154,7 +136,7 @@ class Response(QgsServerResponse):
         """ Send response
         """
         if self._last_modified:
-            self._headers['Last-Modified'] = _to_rfc822(self._last_modified)
+            self._headers['Last-Modified'] = to_rfc822(self._last_modified)
 
         # Return reply in Envelop
         _m.send_reply(

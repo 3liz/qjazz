@@ -637,7 +637,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             await self._pool.update_config(obj)
             return api_pb2.Empty()
         except RemoteConfigError as err:
-            await _abort_on_error(context, 503, str(err), "Reload")
+            await _abort_on_error(context, 502, str(err), "Reload")
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "ReloadConfig")
         except Exception as err:

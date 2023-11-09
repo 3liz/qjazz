@@ -1,27 +1,38 @@
+import os
+import json
 import tornado.web
 import tornado.httpserver
 import tornado.netutil
 import tornado.routing
 import tornado.httputil
 
-from py_qgis_worker._grpc import (
-    api_pb2,
-)
-
+from pathlib import Path
 from tornado.web import HTTPError
+from pydantic import ValidationError
 from typing_extensions import (
     Optional,
     Tuple,
     Sequence,
     Dict,
+    Any,
 )
 
 from urllib.parse import urlencode
 from importlib.metadata import version, PackageNotFoundError
 
+from py_qgis_worker._grpc import api_pb2
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.utils import to_rfc822
 
 from .channel import Channel
+from .config import (
+    ENV_CONFIGFILE,
+    read_config_toml,
+    load_include_config_files,
+    confservice,
+    RemoteConfigError,
+    BackendConfig,
+)
 
 try:
     __version__ = version('py_qgis_http')
@@ -58,6 +69,8 @@ class _BaseHandler(tornado.web.RequestHandler):
         self.request_id = self.request.headers.get('X-Request-ID', "")
         if self.request_id:
             self.application.log_rrequest(self.request, self.request_id)
+        if self.request.method != "OPTIONS":
+            self.set_access_control_headers()
 
     def on_connection_close(self) -> None:
         """ Override, log and set 'connection_closed' to True
@@ -105,6 +118,44 @@ class _BaseHandler(tornado.web.RequestHandler):
         else:
             return False
 
+    def resolve_base_url(self) -> None:
+        """ Resolve base url: protocol and host
+        """
+        req = self.request
+        # Check for X-Forwarded-Host header
+        forwarded_host = req.headers.get('X-Forwarded-Host')
+        if forwarded_host:
+            req.host = forwarded_host
+
+        # Check for 'Forwarded headers
+        forwarded = req.headers.get('Forwarded')
+        if forwarded:
+            parts = forwarded.split(';')
+            for p in parts:
+                try:
+                    k, v = p.split('=')
+                    if k == 'host':
+                        req.host = v.strip(' ')
+                    elif k == 'proto':
+                        req.protocol = v.strip(' ')
+                except Exception as e:
+                    logger.error("Forwaded header error: %s", e)
+
+    def get_url(self) -> str:
+        """ Get proxy url
+        """
+        self.resolve_base_url()
+        # Return the full uri without query
+        req = self.request
+        return f"{req.protocol}://{req.host}{req.path}"
+
+    def options(self):
+        self.set_option_headers()
+
+
+#
+# Error Handlers
+#
 
 class NotFoundHandler(_BaseHandler):
     def prepare(self):  # for all methods
@@ -144,37 +195,6 @@ class RpcHandlerMixIn:
                 case n if n.startswith("x-reply-header-"):
                     self.set_header(n.replace("x-reply-header-", "", 1), v)
         self.set_status(status_code)
-
-    def resolve_base_url(self) -> None:
-        """ Resolve base url: protocol and host
-        """
-        req = self.request
-        # Check for X-Forwarded-Host header
-        forwarded_host = req.headers.get('X-Forwarded-Host')
-        if forwarded_host:
-            req.host = forwarded_host
-
-        # Check for 'Forwarded headers
-        forwarded = req.headers.get('Forwarded')
-        if forwarded:
-            parts = forwarded.split(';')
-            for p in parts:
-                try:
-                    k, v = p.split('=')
-                    if k == 'host':
-                        req.host = v.strip(' ')
-                    elif k == 'proto':
-                        req.protocol = v.strip(' ')
-                except Exception as e:
-                    logger.error("Forwaded header error: %s", e)
-
-    def get_url(self) -> str:
-        """ Get proxy url
-        """
-        self.resolve_base_url()
-        # Return the full uri without query
-        req = self.request
-        return f"{req.protocol}://{req.host}{req.path}"
 
     def get_metadata(self) -> Sequence[Tuple[str, str]]:
         return self._channel.get_metadata(
@@ -262,9 +282,6 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
     async def post(self):
         await self._handle_request()
 
-    def options(self):
-        self.set_option_headers()
-
 
 #
 # API
@@ -341,3 +358,143 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
 
     async def patch(self):
         await self._handle_request("PATCH")
+
+
+#
+# Backend managment handler
+#
+
+class JsonErrorMixin:
+    """ Override write error to return json errors
+    """
+
+    def write_error(self, status_code: int, **kwargs: Any) -> None:
+        """ Override, format error as json
+        """
+        self.set_header("Content-Type", "application/json")
+        self.finish(
+            {
+                "code": status_code,
+                "message": self._reason,
+            }
+        )
+
+    def write_json(self, chunk: Optional[str | bytes | dict]):
+        self.set_header("Content-Type", "application/json")
+        self.write(chunk)
+
+
+class BackendHandler(JsonErrorMixin, _BaseHandler):
+    """ Admin Handler
+    """
+
+    def initialize(self, channels):
+        super().initialize()
+        self._channels = channels
+
+    def get(self, name: str):
+        """ Get backend
+        """
+        backend = self._channels.get_backend(name)
+        if not backend:
+            raise HTTPError(404, reason=f"Backend '{name}' does not exists")
+        self.write_json(backend.model_dump_json())
+
+    async def post(self, name: str):
+        """ Add new backend
+        """
+        if self._channels.get_backend(name):
+            raise HTTPError(409, reason=f"Backend '{name}' already exists")
+        try:
+            backend = BackendConfig.model_validate_json(self.request.body)
+            await self._channels.add_backend(name, backend)
+            self.set_header("Location", self.get_url())
+            self.set_status(201)
+        except ValidationError as err:
+            raise HTTPError(400, reason=str(err))
+
+    async def put(self, name):
+        """ Replace backend
+        """
+        if not self._channels.get_backend(name):
+            raise HTTPError(404, f"Backend '{name}' does not exists")
+        try:
+            backend = BackendConfig.model_validate_json(self.request.body)
+            self._channels.remove_backend(name)
+            await self._channels.add_backend(name, backend)
+        except ValidationError as err:
+            raise HTTPError(400, reason=str(err))
+
+    def head(self, name):
+        if not self._channels.get_backend(name):
+            raise HTTPError(404, "Backend {name} does not exists")
+        self.set_header("Content-Type", "application/json")
+
+#
+# Config managment handler
+#
+
+
+class ConfigHandler(JsonErrorMixin, _BaseHandler):
+    """ Configuration Handler
+    """
+
+    def initialize(self, channels):
+        super().initialize()
+        self._channels = channels
+
+    def get(self):
+        """ Return actual configuration
+        """
+        self.set_header("Last-Modified", to_rfc822(confservice.last_modified))
+        self.write_json(confservice.conf.model_dump_json())
+
+    async def patch(self):
+        """ Patch configuration with request content
+        """
+        try:
+            obj = json.loads(self.request.body)
+            confservice.update_config(obj)
+
+            level = logger.set_log_level()
+            logger.info("Log level set to %s", level.name)
+
+            # Resync channels
+            await self._channels.init_channels()
+        except (json.JSONDecodeError, ValidationError) as err:
+            raise HTTPError(400, reason=str(err))
+
+    async def put(self):
+        """ Reload configuration
+        """
+        # If remote url is defined, load configuration
+        # from it
+        config_url = confservice.conf.config_url
+        try:
+            if config_url.is_set():
+                await config_url.load_configuration()
+            elif ENV_CONFIGFILE in os.environ:
+                # Fallback to configfile (if any)
+                configpath = os.environ[ENV_CONFIGFILE]
+                configpath = Path(configpath)
+                logger.info("** Reloading config from %s **", configpath)
+                obj = read_config_toml(
+                    configpath,
+                    location=str(configpath.parent.absolute()),
+                )
+            else:
+                obj = {}
+
+            confservice.update_config(obj)
+            if confservice.conf.includes:
+                load_include_config_files(confservice.conf)
+            # Update log level
+            level = logger.set_log_level()
+            logger.info("Log level set to %s", level.name)
+
+            # Resync channels
+            await self._channels.init_channels()
+        except RemoteConfigError as err:
+            raise HTTPError(502, reason=str(err))
+        except ValidationError as err:
+            raise HTTPError(400, reason=str(err))

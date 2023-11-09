@@ -22,6 +22,8 @@ services:
     networks:
     - qgis_rpc_network
     command: ["qgis-server-http", "serve", "--verbose"]
+    profiles:
+        - proxy
 
   config-server:
     image: nginx:alpine

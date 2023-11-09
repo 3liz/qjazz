@@ -79,7 +79,7 @@ class Handlers(
             web.get(f'/{API_VERSION}/pools/{{Id}}/plugins', self.get_plugins, allow_head=False),
 
             # Config
-            web.patch(f'/{API_VERSION}/config', self.patch_config),
+            web.patch(f'/{API_VERSION}/config', self.reload_config),
 
             # Watch
             web.get(f'/{API_VERSION}/watch', self.ws_watch),
@@ -95,7 +95,7 @@ class Handlers(
                 text=ErrorResponse(message=f"Unknown pool '{Id}'").model_dump_json(),
             )
 
-    async def patch_config(self, request):
+    async def reload_config(self, request):
         """
         summary: Reload config
         description: |

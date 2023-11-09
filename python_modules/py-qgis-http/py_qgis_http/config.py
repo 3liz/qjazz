@@ -88,6 +88,17 @@ class HttpConfig(Config):
                 return socket
 
 
+DEFAULT_ADMIN_INTERFACE = ("unix:///tmp/py-qgis-http-admin.sock")
+
+
+class AdminHttpConfig(HttpConfig):
+    # Redefine net interface default
+    listen: NetInterface = Field(
+        default=DEFAULT_ADMIN_INTERFACE,
+        title="Interfaces to listen to",
+    )
+
+
 EXTERNAL_CONFIG_SECTION = "config_url"
 
 DEFAULT_USER_AGENT = f"py-qgis-server2 middleware {confservice.version}"
@@ -170,12 +181,14 @@ class ConfigUrl(Config):
 
 HTTP_SECTION = 'http'
 BACKENDS_SECTION = 'backends'
+ADMIN_SERVER_SECTION = 'admin_server'
 
 
 def add_configuration_sections(service: Optional[ConfigService] = None):
     # Add the `[http]` configuration section
     service = service or confservice
     service.add_section(HTTP_SECTION, HttpConfig)
+    service.add_section(ADMIN_SERVER_SECTION, AdminHttpConfig)
 
     # Add the `[backends]` configuration section
     service.add_section(
@@ -209,6 +222,26 @@ class BackendConfigError(Exception):
         super().__init__(f"Service configuration error in {file}: {msg}")
 
 
+def load_include_config_files(conf: Config):
+    """ Load extra services configuration files
+    """
+    for file in glob(conf.includes):
+        cnf = read_config_toml(file)
+        if BACKENDS_SECTION not in cnf:
+            logger.debug("No 'services' section in %s", file)
+            continue
+        backends = cnf[BACKENDS_SECTION]
+        if not isinstance(backends, dict):
+            raise BackendConfigError(file, "Invalid backends section")
+        for (name, _backend) in backends.items():
+            if name in conf.backends:
+                raise BackendConfigError(
+                    file,
+                    f"service {name} already defined",
+                )
+            conf.backends[name] = BackendConfig.model_validate(_backend)
+
+
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Config:
 
     if configpath:
@@ -226,32 +259,17 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
         # Load external configuration if requested
         # Do not load includes if configuration is remote
         if conf.config_url.is_set():
-            print(f"** Loading initial config from {conf.config_url.url} **", flush=True)
+            print(f"** Loading initial config from {conf.config_url.url} **", file=sys.stderr, flush=True)
             asyncio.run(conf.config_url.load_configuration())
+            conf = confservice.conf
         elif conf.includes:
-            # Load extra services configuration files
-            for file in glob(conf.includes):
-                cnf = read_config_toml(file)
-                if BACKENDS_SECTION not in cnf:
-                    logger.debug("No 'services' section in %s", file)
-                    continue
-                backends = cnf[BACKENDS_SECTION]
-                if not isinstance(backends, dict):
-                    raise BackendConfigError(file, "Invalid backends section")
-                for (name, _backend) in backends.items():
-                    if name in cnf.backends:
-                        raise BackendConfigError(
-                            file,
-                            f"service {name} already defined",
-                        )
-                    cnf.backends[name] = BackendConfig.model_validate(_backend)
+            load_include_config_files(conf)
 
-        conf = confservice.conf
         if verbose:
-            print(conf.model_dump_json(indent=4), flush=True)
+            print(conf.model_dump_json(indent=4), file=sys.stderr, flush=True)
 
         log_level = logger.setup_log_handler(logger.LogLevel.TRACE if verbose else None)
-        print("** Log level set to ", log_level.name, flush=True)
+        print("** Log level set to ", log_level.name, file=sys.stderr, flush=True)
 
         return conf
 

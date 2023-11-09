@@ -9,12 +9,12 @@ import traceback
 
 from dataclasses import dataclass
 from tornado.web import HTTPError
+from time import time
 
 from pathlib import PurePosixPath
-
 from typing_extensions import (
     Optional,
-    List,
+    Iterator,
 )
 
 from py_qgis_contrib.core.config import Config
@@ -22,13 +22,20 @@ from py_qgis_contrib.core import logger
 
 from .channel import Channel
 from .router import DefaultRouter
-from .config import SSLConfig
+from .config import (
+    SSLConfig,
+    BackendConfig,
+    HttpConfig,
+    AdminHttpConfig,
+)
 from .handlers import (
     _BaseHandler,
     NotFoundHandler,
     OwsHandler,
     ApiHandler,
     ErrorHandler,
+    BackendHandler,
+    ConfigHandler,
 )
 
 
@@ -89,26 +96,107 @@ class App(tornado.web.Application):
         logger.log_rreq(fmt)
 
 
+async def _init_channel(backend: BackendConfig) -> Channel:
+    """  Initialize channel from backend
+    """
+    chan = Channel(backend)
+    await chan.connect()
+    return chan
+
+
+class _Channels:
+    """ Handle channels
+    """
+
+    def __init__(self, conf: Config):
+        self._conf = conf
+        self._channels = []
+        self._last_modified = time()
+
+    @property
+    def conf(self) -> Config:
+        return self._conf
+
+    @property
+    def backends(self) -> Iterator[BackendConfig]:
+        return iter(self._channels)
+
+    @property
+    def last_modified(self) -> float:
+        return self._last_modified
+
+    def is_modified_since(self, timestamp: float) -> bool:
+        return self._last_modified > timestamp
+
+    async def init_channels(self):
+        # Initialize channels
+        logger.info("Reconfiguring channels")
+        channels = await asyncio.gather(*(_init_channel(be) for _, be in self._conf.backends.items()))
+        # Close previous channels
+        if self._channels:
+            logger.trace("Closing current channels")
+            # Run in background since we do want to wait for
+            # grace period before
+            asyncio.create_task(self.close(with_grace_period=True))
+        logger.trace("Setting new channels")
+        self._channels = channels
+        self._last_modified = time()
+
+    async def close(self, with_grace_period: bool = False):
+        channels = self._channels
+        self._channels = []
+        await asyncio.gather(*(chan.close(with_grace_period) for chan in channels))
+
+    def get_backend(self, name: str) -> Optional[BackendConfig]:
+        return self._conf.backends.get(name)
+
+    async def add_backend(self, name: str, backend: BackendConfig):
+        """ Add new backend (equivalent to POST)
+        """
+        assert name not in self._conf.backends
+        self._conf.backends[name] = backend
+        self._channels.append(await _init_channel(backend))
+
+    def remove_backend(self, name: str) -> bool:
+        """ Delete a specific backend from the list
+        """
+        backend = self._conf.backends.pop(name, None)
+        if not backend:
+            return False
+
+        def _close():
+            for chan in self._channels:
+                if chan.address == backend.address:
+                    asyncio.create_task(chan.close(with_grace_period=True))
+                else:
+                    yield chan
+        self._channels = list(_close())
+        return True
+
+
 class _Router(tornado.routing.Router):
     """ Router
     """
 
-    def __init__(self, proxy_conf, channels: List[Channel]):
-        assert isinstance(channels, list), f"Expecting List, found {type(channels)}"
+    def __init__(self, channels: _Channels):
         self.channels = channels
-        self.app = App(
-            default_handler_class=NotFoundHandler,
-            proxy_conf=proxy_conf,
-        )
+        self.app = App(default_handler_class=NotFoundHandler)
 
         # Set router
+        self._channels_last_modified = 0.
         self._router = DefaultRouter()
         self._update_routes()
 
     def _update_routes(self):
         """ Update routes and routable class
         """
-        routes = {chan.route: chan for chan in self.channels}
+        if not self.channels.is_modified_since(self._channels_last_modified):
+            return
+
+        self._channels_last_modified = self.channels.last_modified
+
+        logger.debug("Updating backend's routes")
+        routes = {chan.route: chan for chan in self.channels.backends}
 
         @dataclass
         class _Routable:
@@ -140,6 +228,8 @@ class _Router(tornado.routing.Router):
             Ask inner router to return a `Route` object
         """
         try:
+            # Update routes if required
+            self._update_routes()
             route = self._router.route(
                 self._routable_class(request=request)
             )
@@ -178,6 +268,7 @@ class _Router(tornado.routing.Router):
                                 'path': api_path,
                             },
                         )
+
                 return self._get_error_handler(request, 404)
         except HTTPError as err:
             return self._get_error_handler(request, err.status_code,  err.reason)
@@ -193,33 +284,48 @@ def ssl_context(conf: SSLConfig):
     return ssl_ctx
 
 
-async def serve(conf: Config):
-
-    async def _init_channel(backend):
-        chan = Channel(backend)
-        await chan.connect()
-        return chan
-
-    # Initialize channels
-    channels = await asyncio.gather(*(_init_channel(be) for _, be in conf.backends.items()))
-
-    router = _Router(conf.http.proxy_conf, channels)
-
-    # TODO Dynamic channel configuration
-
+def configure_server(router, conf: HttpConfig) -> tornado.httpserver.HTTPServer:
     server = tornado.httpserver.HTTPServer(
         router,
-        ssl_options=ssl_context(conf.http.ssl) if conf.http.use_ssl else None,
-        xheaders=conf.http.proxy_conf,
+        ssl_options=ssl_context(conf.ssl) if conf.use_ssl else None,
+        xheaders=conf.proxy_conf,
     )
-
-    match conf.http.listen:
+    match conf.listen:
         case (address, port):
             server.listen(port, address=address.strip('[]'))
         case socket:
             socket = socket[len('unix:'):]
             socket = tornado.netutil.bind_unix_socket(socket)
             server.add_socket(socket)
+    return server
+
+
+def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
+    """ Configure admin/managment server
+    """
+    logger.info(f"Configuring admin server at {conf.format_interface()}")
+    configure_server(
+        App(
+            [
+                (r"/backend/([^\/]+)?$", BackendHandler, {'channels':  channels}),
+                (r"/config", ConfigHandler, {'channels': channels}),
+            ],
+            default_handler_class=NotFoundHandler,
+        ),
+        conf,
+    )
+
+
+async def serve(conf: Config):
+
+    # Initialize channels
+    channels = _Channels(conf)
+    await channels.init_channels()
+
+    router = _Router(channels)
+
+    configure_server(router, conf.http)
+    configure_admin_server(conf.admin_server, channels)
 
     event = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -229,5 +335,5 @@ async def serve(conf: Config):
     logger.info(f"Server listening at {conf.http.format_interface()}")
     await event.wait()
 
-    await asyncio.gather(*(chan.close() for chan in channels))
+    await channels.close()
     logger.info("Server shutdown")

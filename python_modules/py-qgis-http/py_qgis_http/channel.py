@@ -63,6 +63,12 @@ class Channel:
         self._address = conf.to_string()
         self._use_ssl = conf.ssl is not None
         self._ssl_creds = _channel_credentials(conf.ssl) if self._use_ssl else None
+        self._usecount = 0
+        self._closing = False
+
+    @property
+    def in_use(self) -> bool:
+        return self._usecount > 0
 
     @property
     def address(self) -> str:
@@ -128,15 +134,31 @@ class Channel:
             if self._connected:
                 await asyncio.sleep(5)
 
-    async def close(self):
-        if self._channel:
-            self._connected = False
-            logger.debug("Closing backend '%s'", self._address)
-            if self._health_check:
-                self._health_check.cancel()
-                self._health_check = None
-            await self._channel.close()
-            self._channel = None
+    async def close(self, with_grace_period: bool = False):
+
+        self._closing = True
+        if not self._channel:
+            return
+
+        if self.in_use and with_grace_period:
+            # Apply grace period
+            logger.debug("** Applying grace period for channel %s", self.address)
+            await asyncio.sleep(self.timeout)
+
+        if self.in_use:
+            logger.error(f"Closing channel {self.address} while in use")
+
+        self._connected = False
+        logger.debug(
+            "Closing backend '%s' (grace period: %s)",
+            self._address,
+            with_grace_period,
+        )
+        if self._health_check:
+            self._health_check.cancel()
+            self._health_check = None
+        await self._channel.close()
+        self._channel = None
 
     async def connect(self) -> bool:
         assert not self._connected
@@ -168,8 +190,10 @@ class Channel:
     async def stub(self):
         """ Return a server stub from the current channel
         """
-        if not self._serving:
+        if not self._serving or self._closing:
             raise HTTPError(503)
+
+        self._usecount += 1
         try:
             yield api_pb2_grpc.QgisServerStub(self._channel)
         except grpc.RpcError as rpcerr:
@@ -186,3 +210,5 @@ class Channel:
                     raise HTTPError(502)
                 case _:
                     raise HTTPError(500)
+        finally:
+            self._usecount -= 1

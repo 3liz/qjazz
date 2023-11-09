@@ -265,6 +265,10 @@ class ConfigProxy:
             self.__update()
 
     @property
+    def last_modified(self) -> float:
+        return self._timestamp
+
+    @property
     def service(self) -> ConfigService:
         return self._confservice
 

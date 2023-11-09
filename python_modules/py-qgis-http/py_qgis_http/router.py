@@ -108,10 +108,10 @@ class DefaultRouter(RouterBase):
                 raise HTTPError(400, reason="Missing api specification")
             _project, api, api_path = m.groups()
             logger.trace(
-                "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)", 
-                req.uri, 
-                _project, 
-                api, 
+                "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)",
+                req.uri,
+                _project,
+                api,
                 api_path
             )
             if project and _project:

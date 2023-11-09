@@ -7,6 +7,7 @@ from typing_extensions import (
 )
 
 from pathlib import Path
+from functools import wraps
 
 from .config import (
     confservice,
@@ -19,46 +20,52 @@ from .server import serve
 add_configuration_sections()
 
 
+FilePathType = click.Path(
+    exists=True,
+    readable=True,
+    dir_okay=False,
+    path_type=Path,
+)
+
+
+# Workaround https://github.com/pallets/click/issues/295
+def global_options():
+    def _wrapper(f):
+        @wraps(f)
+        @click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
+        @click.option(
+            "--conf", "-C", "configpath",
+            envvar=ENV_CONFIGFILE,
+            help="configuration file",
+            type=FilePathType,
+        )
+        def _inner(*args, **kwargs):
+            return f(*args, **kwargs)
+        return _inner
+    return _wrapper
+
+
 @click.group()
 def cli_commands():
     pass
 
 
 @cli_commands.command('serve')
-@click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar=ENV_CONFIGFILE,
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path
-    ),
-)
+@global_options()
 def serve_http(configpath: Path, verbose: bool):
+
+    from py_qgis_contrib.core.config import ConfigProxy
 
     print("Qgis HTTP middleware", confservice.version, flush=True)
     conf = load_configuration(configpath, verbose)
+    conf = ConfigProxy("", _default=conf)
     asyncio.run(serve(conf))
 
 
 @cli_commands.command('config')
-@click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
-@click.option(
-    "--conf", "-C", "configpath",
-    envvar=ENV_CONFIGFILE,
-    help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path
-    ),
-)
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option("--pretty", is_flag=True, help="Pretty format")
+@global_options()
 def print_config(
     configpath: Optional[Path],
     verbose: bool,
