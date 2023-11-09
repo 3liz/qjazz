@@ -31,6 +31,7 @@ from .config import (
 from .handlers import (
     _BaseHandler,
     NotFoundHandler,
+    JsonNotFoundHandler,
     OwsHandler,
     ApiHandler,
     ErrorHandler,
@@ -310,7 +311,7 @@ def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
                 (r"/backend/([^\/]+)?$", BackendHandler, {'channels':  channels}),
                 (r"/config", ConfigHandler, {'channels': channels}),
             ],
-            default_handler_class=NotFoundHandler,
+            default_handler_class=JsonNotFoundHandler,
         ),
         conf,
     )

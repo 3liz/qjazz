@@ -384,6 +384,10 @@ class JsonErrorMixin:
         self.write(chunk)
 
 
+class JsonNotFoundHandler(JsonErrorMixin, NotFoundHandler):
+    pass
+
+
 class BackendHandler(JsonErrorMixin, _BaseHandler):
     """ Admin Handler
     """
