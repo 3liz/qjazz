@@ -17,10 +17,21 @@ QGIS_IMAGE=$(REGISTRY_PREFIX)qgis-platform:$(FLAVOR)
 
 BUILDIMAGE=$(NAME):$(FLAVOR)
 
+# CI build
+ifdef PYPISERVER
+PYPISERVER_SCHEME ?= https
+PIP_OPTIONS="--extra-index-url=$(PYPISERVER_SCHEME)://$(PYPISERVER) --trusted-host=$(PYPISERVER)"
+BUILD_ARGS += --build-arg PIP_OPTIONS=$(PIP_OPTIONS) $(DOCKER_BUILD_ARGS)
+endif
+
 FLAVOR:=release
+BUILD_TARGET:=base
+
+NO_CACHE:=--force-rm --no-cache
 
 build: manifest
-	docker build --rm --force-rm --no-cache $(BUILD_ARGS) -t $(BUILDIMAGE) -f Dockerfile  ..
+	docker build --rm $(NO_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
+		-t $(BUILDIMAGE) -f Dockerfile  ..
 
 MANIFEST=factory.manifest
 

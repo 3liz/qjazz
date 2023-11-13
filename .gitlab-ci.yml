@@ -1,0 +1,31 @@
+stages:
+  - test
+  - docker 
+
+#-----------------
+# Tests
+#-----------------
+
+.tests: 
+  stage: test
+  script:
+    - make test FLAVOR=$QGIS_FLAVOR
+  tags:   
+    - infrav3-dind
+
+tests:ltr: 
+  extends: .tests
+  variables:
+    QGIS_FLAVOR: ltr
+
+tests:release: 
+  extends: .tests
+  needs:    
+    - "tests:ltr"
+  variables:
+    QGIS_FLAVOR: release
+
+
+# Docker build
+include: '/docker/.gitlab-ci.yml'
+

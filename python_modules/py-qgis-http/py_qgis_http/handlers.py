@@ -214,6 +214,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
         super().initialize()
         self._project = project
         self._channel = channel
+        self._debug_report = False
 
     def check_getfeature_limit(self, arguments: Dict) -> Dict:
         """ Take care of WFS/GetFeature limit
@@ -262,6 +263,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
                     direct=self._channel.allow_direct_resolution,
                     options=urlencode(self.check_getfeature_limit(arguments)),
                     request_id=self.request_id,
+                    debug_report=self._debug_report,
                 ),
                 metadata=metadata,
                 timeout=self._channel.timeout,
@@ -303,6 +305,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         self._channel = channel
         self._api = api
         self._path = path
+        self._debug_report = False
 
     async def _handle_request(self, method: str):
         project = self._project
@@ -326,6 +329,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
                     # XXX Check for request query
                     options=urlencode(req.arguments),
                     request_id=self.request_id,
+                    debug_report=self._debug_report,
                 ),
                 metadata=metadata,
                 timeout=self._channel.timeout,

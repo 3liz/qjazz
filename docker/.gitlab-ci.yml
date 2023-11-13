@@ -1,0 +1,33 @@
+#-------------
+# Build
+#-------------
+
+.build-docker:
+  stage: docker
+  script:
+  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=ci_build
+  environment:
+    name: snap
+  artifacts:
+    paths:
+    - "docker/factory.manifest"
+  only:
+    refs:
+    - tags
+    - main
+  tags:
+  - infrav3-dind
+  variables:
+    FACTORY_MANIFEST: "docker/factory.manifest"
+
+
+build-docker:release:
+  extends: .build-docker
+  variables:
+    QGIS_FLAVOR: release
+
+build-docker:ltr:
+  extends: .build-docker
+  variables:
+    QGIS_FLAVOR: ltr
+

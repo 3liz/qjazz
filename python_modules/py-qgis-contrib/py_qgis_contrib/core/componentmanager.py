@@ -58,7 +58,7 @@ class ComponentManager:
         """
         self._contractIDs = {}
 
-    def register_entrypoints(self, category, *args, **kwargs) -> None:
+    def register_entrypoints(self, category) -> None:
         """ Load extension modules
 
             Loaded modules will do self-registration
@@ -67,11 +67,12 @@ class ComponentManager:
         from . import logger
         for ep in _entry_points(category):
             logger.info("Loading module: %s:%s", category, ep.name)
-            ep.load()(*args, **kwargs)
+            ep.load()(self)
 
-    def load_entrypoint(self, category: str, name: str) -> Any:
+    def load_entrypoint(self, category: str, name: str) -> None:
         for ep in _entry_points(category, name):
-            return ep.load()
+            ep.load()(self)
+            return
         raise EntryPointNotFoundError(name)
 
     def register_factory(self, contractID: str, factory: Callable[[], None]) -> None:

@@ -3,7 +3,7 @@
  ARG REGISTRY_PREFIX=''
  ARG QGIS_VERSION=release
 
-FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION}
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} as base
 MAINTAINER David Marteau <david.marteau@3liz.com>
 LABEL Description="QGIS gRCP" Vendor="3liz.org"
 
@@ -38,3 +38,16 @@ RUN chmod u+s /usr/bin/Xvfb
 EXPOSE 23456 80 9876
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# =========
+# CI build
+# =========
+FROM base as ci_build
+
+ARG PIP_OPTIONS
+
+RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
+    "py-amqp-client>=2.0.0" \
+    && /opt/local/qgisserver/bin/pip install --no-cache-dir \
+        -e /python_modules/py-qgis-metrics
+

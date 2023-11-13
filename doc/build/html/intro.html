@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Description &mdash; py-qgis-server2 ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=e556e3f7"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to py-qgis-server2’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            py-qgis-server2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Description</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-in-existing-environment">Install in existing environment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#docker-deployment">Docker deployment</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">py-qgis-server2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Description</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/intro.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="description">
+<span id="project-description"></span><h1>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h1>
+<p>Py-qgis-server2 is a set of services for serving Qgis 3 server requests.</p>
+<p>The services are separated in 3 different services:</p>
+<ul class="simple">
+<li><p>Workers using gRCP protocols for running qgis servers processes</p></li>
+<li><p>Middleware asynchronous HTTP proxy for routing requests to differents worker backends</p></li>
+<li><p>Admin tools and service for inspectings worker’s pool and health checking.</p></li>
+</ul>
+<section id="features">
+<span id="project-features"></span><h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<p>These services have been designed after experimenting with <cite>py-qgis-server &lt;https://https://github.com/3liz/py-qgis-server</cite> on several years on real infrastructure with more that hundreds of customers. From this experiences, we have totally re-designed some base features:</p>
+<ul class="simple">
+<li><p>Totaly separate Qgis server worker’s as microservice and use gRPC protocel to communicate</p></li>
+<li><p>Project’s cache is now totally managed and can be synchronized between workers from the same pool.</p></li>
+<li><p>SSL support between all components</p></li>
+<li><p>Hot scaling with Docker stack (no restart needed)</p></li>
+<li><p>Hot (re)configuration (no restart needed)</p></li>
+</ul>
+</section>
+<section id="requirements">
+<span id="project-requirements"></span><h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>OS: Unix/Posix variants (Linux or OSX) (Windows not officially supported)</p></li>
+<li><p>Python &gt;= 3.10</p></li>
+<li><p>QGIS &gt;= 3.22 installed</p></li>
+</ul>
+</section>
+</section>
+<section id="installation">
+<span id="project-installation"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<section id="install-in-existing-environment">
+<span id="project-pip-install"></span><h2>Install in existing environment<a class="headerlink" href="#install-in-existing-environment" title="Link to this heading"></a></h2>
+<p>The py-qgis-server2 project is splitted into several python packages that can
+be installed independently:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>py-qgis-wo
+</pre></div>
+</div>
+</section>
+</section>
+<section id="docker-deployment">
+<span id="project-docker-run"></span><h1>Docker deployment<a class="headerlink" href="#docker-deployment" title="Link to this heading"></a></h1>
+<p>The <cite>py-qgis-server2 &lt;https://hub.docker.com/3liz/qgis-map-server2&gt;</cite> image bundle
+all packages for running qgis services</p>
+<p>Running workers with docker compose:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3.9&quot;</span>
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qgis-map-server2</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/projects/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/config.toml&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/etc/qgis-services/config.toml</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qgis-server-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-C&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/etc/qgis-services/config.toml&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to py-qgis-server2’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

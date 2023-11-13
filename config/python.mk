@@ -13,7 +13,7 @@ dist::
 clean::
 	rm -rf $(SDIST) *.egg-info
 
-deliver:
+deliver::
 	twine upload -r storage $(SDIST)/*
 
 
