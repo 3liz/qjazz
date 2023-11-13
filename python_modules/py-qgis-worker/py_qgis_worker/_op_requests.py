@@ -23,6 +23,7 @@ from py_qgis_cache import (
     CacheEntry,
     CheckoutStatus,
 )
+from py_qgis_contrib.core.utils import to_rfc822
 
 from . import messages as _m
 from .config import WorkerConfig
@@ -71,7 +72,7 @@ def handle_ows_request(
         url,
         msg.target,
         msg.direct,
-        None,
+        None,  # data
         QgsServerRequest.GetMethod,
         msg.headers,
         conn,
@@ -80,6 +81,7 @@ def handle_ows_request(
         config,
         _process if msg.debug_report else None,
         cache_id=cache_id,
+        request_id=msg.request_id,
     )
 
 
@@ -129,6 +131,7 @@ def handle_api_request(
         config,
         _process if msg.debug_report else None,
         cache_id=cache_id,
+        request_id=msg.request_id,
     )
 
 
@@ -164,6 +167,7 @@ def handle_generic_request(
         config,
         _process if msg.debug_report else None,
         cache_id=cache_id,
+        request_id=msg.request_id,
     )
 
 
@@ -179,7 +183,8 @@ def _handle_generic_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional,
-    cache_id: str
+    cache_id: str,
+    request_id: str,
 ):
     """ Handle generic Qgis request
     """
@@ -195,11 +200,19 @@ def _handle_generic_request(
         if not entry or co_status == Co.REMOVED:
             return
 
+        resp_hdrs = {
+            'Last-Modified': to_rfc822(entry.last_modified),
+            'X-Qgis-Cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
+        }
+
+        if request_id:
+            resp_hdrs['X-Request-ID'] = request_id
+
         project = entry.project
         response = Response(
             conn,
             co_status,
-            last_modified=entry.last_modified,
+            headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             _process=_process,
         )

@@ -160,6 +160,7 @@ class CacheInfo:
     uri: str
     status: CheckoutStatus
     in_cache: bool
+    timestamp: Optional[float] = None
     name: str = ""
     storage: str = ""
     last_modified: Optional[float] = None

@@ -58,6 +58,7 @@ def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str =
     return _m.CacheInfo(
         uri=e.uri,
         in_cache=in_cache,
+        timestamp=e.timestamp,
         status=status,
         name=e.name,
         storage=e.storage,

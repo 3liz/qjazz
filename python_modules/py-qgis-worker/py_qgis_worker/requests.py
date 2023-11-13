@@ -17,7 +17,6 @@ from qgis.server import (
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.utils import to_rfc822
 from py_qgis_cache import CheckoutStatus
 
 from . import messages as _m
@@ -76,7 +75,7 @@ class Response(QgsServerResponse):
             self,
             conn: Connection,
             co_status: Optional[CheckoutStatus] = None,
-            last_modified: Optional[int] = None,
+            headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
             _process: Optional = None,
             cache_id: str = ""
@@ -92,7 +91,7 @@ class Response(QgsServerResponse):
         self._co_status = co_status
         self._process = _process
         self._timestamp = time()
-        self._last_modified = last_modified
+        self._extra_headers = headers or {}
         self._chunk_size = chunk_size
         self._cache_id = cache_id
 
@@ -135,8 +134,7 @@ class Response(QgsServerResponse):
     def _send_response(self, data: bytes, chunked: bool = False):
         """ Send response
         """
-        if self._last_modified:
-            self._headers['Last-Modified'] = to_rfc822(self._last_modified)
+        self._headers.update(self._extra_headers)
 
         # Return reply in Envelop
         _m.send_reply(

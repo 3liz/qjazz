@@ -128,7 +128,7 @@ class CheckoutRequest(_message.Message):
     def __init__(self, uri: _Optional[str] = ..., pull: bool = ...) -> None: ...
 
 class CacheInfo(_message.Message):
-    __slots__ = ["uri", "status", "in_cache", "name", "storage", "last_modified", "saved_version", "debug_metadata", "cache_id"]
+    __slots__ = ["uri", "status", "in_cache", "timestamp", "name", "storage", "last_modified", "saved_version", "debug_metadata", "cache_id"]
     class DebugMetadataEntry(_message.Message):
         __slots__ = ["key", "value"]
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -139,6 +139,7 @@ class CacheInfo(_message.Message):
     URI_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
     IN_CACHE_FIELD_NUMBER: _ClassVar[int]
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     STORAGE_FIELD_NUMBER: _ClassVar[int]
     LAST_MODIFIED_FIELD_NUMBER: _ClassVar[int]
@@ -148,13 +149,14 @@ class CacheInfo(_message.Message):
     uri: str
     status: str
     in_cache: bool
+    timestamp: int
     name: str
     storage: str
     last_modified: str
     saved_version: str
     debug_metadata: _containers.ScalarMap[str, int]
     cache_id: str
-    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., timestamp: _Optional[int] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class DropRequest(_message.Message):
     __slots__ = ["uri"]

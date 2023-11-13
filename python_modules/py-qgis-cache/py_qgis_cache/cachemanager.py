@@ -93,6 +93,7 @@ class DebugMetadata:
 class CacheEntry:
     md: ProjectMetadata
     project: QgsProject
+    timestamp: float
 
     debug_meta: DebugMetadata
 
@@ -117,6 +118,9 @@ class CheckoutStatus(Enum):
     UPDATED = 5
 
 
+PROTOCOL_HANDLER_ENTRYPOINTS = '3liz.org.cache.protocol_handler.1'
+
+
 class CacheManager:
     """ Handle Qgis project cache
     """
@@ -131,7 +135,7 @@ class CacheManager:
         # Register Qgis storage handlers
         init_storage_handlers(confdir)
         # Load protocol handlers
-        componentmanager.register_entrypoints('py_qgis_contrib_protocol_handler')
+        componentmanager.register_entrypoints(PROTOCOL_HANDLER_ENTRYPOINTS)
 
     def __init__(
             self,
@@ -347,6 +351,7 @@ class CacheManager:
         return CacheEntry(
             md,
             project,
+            timestamp=time(),
             debug_meta=DebugMetadata(
                 load_memory_bytes=used_mem,
                 load_time_ms=int((time() - s_time)*1000.)

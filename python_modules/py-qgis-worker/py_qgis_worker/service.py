@@ -683,18 +683,19 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 #
 # Build a cache info from response
 #
-
-
 def _new_cache_info(resp) -> api_pb2.CacheInfo:
-    if resp.last_modified:
-        last_modified = _to_iso8601(datetime.fromtimestamp(resp.last_modified))
-    else:
-        last_modified = ""
+
+    last_modified = _to_iso8601(
+        datetime.fromtimestamp(resp.last_modified)
+    ) if resp.last_modified else ""
+
+    timestamp = int(resp.timestamp) if resp.timestamp else -1
 
     return api_pb2.CacheInfo(
         uri=resp.uri,
         status=resp.status.name,
         in_cache=resp.in_cache,
+        timestamp=timestamp,
         name=resp.name,
         storage=resp.storage,
         last_modified=last_modified,

@@ -112,12 +112,14 @@ message CacheInfo {
     string uri = 1;
     string status = 2;
     bool in_cache = 3;
-    optional string name = 4;
-    optional string storage = 5;
-    optional string last_modified = 6;
-    optional string saved_version = 7;
-    map<string,int64> debug_metadata = 8;
-    optional string cache_id = 9;
+    int64 timestamp = 4;
+    optional string name = 5;
+    optional string storage = 6;
+    optional string last_modified = 7;
+    optional string saved_version = 8;
+    map<string,int64> debug_metadata = 9;
+    optional string cache_id = 10;
+    
 }
 
 message DropRequest {
