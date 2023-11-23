@@ -1,30 +1,20 @@
 import asyncio
+
+from contextlib import asynccontextmanager
+from fnmatch import fnmatch
+from pathlib import Path
+
 import grpc
 
-from fnmatch import fnmatch
-
-from py_qgis_worker._grpc import (  # noqa
-    api_pb2,
-    api_pb2_grpc,
-)
-
-from grpc_health.v1 import health_pb2       # HealthCheckRequest
+from grpc_health.v1 import health_pb2  # HealthCheckRequest
 from grpc_health.v1 import health_pb2_grpc  # HealthStub
-
-from pathlib import Path
-from py_qgis_contrib.core import logger, config
-
 from tornado.web import HTTPError
-from contextlib import asynccontextmanager
+from typing_extensions import Iterator, Optional, Sequence, Tuple
 
-from typing_extensions import (
-    Tuple,
-    Sequence,
-    Iterator,
-    Optional,
-)
+from py_qgis_contrib.core import config, logger
+from py_qgis_worker._grpc import api_pb2, api_pb2_grpc  # noqa
 
-from .resolver import BackendConfig, ApiEndpoint
+from .resolver import ApiEndpoint, BackendConfig
 
 CHANNEL_OPTIONS = [
     ("grpc.lb_policy_name", "round_robin"),
@@ -66,9 +56,18 @@ class Channel:
         self._usecount = 0
         self._closing = False
 
+        self._posix_route = self._conf.route.as_posix()
+        self._meta = {
+            'ROUTE': '.'.join(self._conf.route.parts[1:]),
+        }
+
     @property
     def in_use(self) -> bool:
         return self._usecount > 0
+
+    @property
+    def meta(self) -> str:
+        return self._meta
 
     @property
     def address(self) -> str:
@@ -88,7 +87,7 @@ class Channel:
 
     @property
     def route(self) -> str:
-        return self._conf.route
+        return self._posix_route
 
     @property
     def api_endpoints(self) -> Iterator[ApiEndpoint]:

@@ -1,34 +1,27 @@
+import asyncio
+import json
 import os
 import sys
-import json
-import asyncio
 
-from pathlib import Path
 from glob import glob
-from pydantic import (
-    Field,
-    AnyHttpUrl,
-    AfterValidator,
-)
-from typing_extensions import (
-    Optional,
-    Dict,
-    Literal,
-    Annotated,
-)
+from pathlib import Path
+
+from pydantic import AfterValidator, AnyHttpUrl, Field
+from typing_extensions import Annotated, Dict, Literal, Optional
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
     Config,
-    ConfigService,
-    SSLConfig,
-    NetInterface,
     ConfigError,
-    read_config_toml,
+    ConfigService,
+    NetInterface,
+    SSLConfig,
     confservice,
+    read_config_toml,
     section,
 )
 
+from . import metrics
 from .resolver import BackendConfig  # noqa
 
 DEFAULT_INTERFACE = ("0.0.0.0", 80)
@@ -196,6 +189,18 @@ def add_configuration_sections(service: Optional[ConfigService] = None):
         (Dict[str, BackendConfig], Field(default={})),
     )
 
+    # Add the `[metrics]` optional configuration
+    service.add_section(
+        'metrics',
+        (
+            Optional[metrics.MetricConfig],
+            Field(
+                default=None,
+                title="Metrics configuration",
+            )
+        )
+    )
+
     # Path to services configuration
     service.add_section(
         'includes',
@@ -203,7 +208,12 @@ def add_configuration_sections(service: Optional[ConfigService] = None):
             Optional[str],
             Field(
                 default=None,
-                title="Path or globbing to services configuration files",
+                title="Path to services configuration files",
+                description=(
+                    "Path or globbing to services configuration files. "
+                    "Note that this section is ignored if remote configuration"
+                    "is used."
+                )
             )
         )
     )

@@ -1,19 +1,18 @@
-import sys  # noqa
 import asyncio
+import sys  # noqa
+
+from functools import wraps
+from pathlib import Path
+
 import click
 
-from typing_extensions import (
-    Optional,
-)
-
-from pathlib import Path
-from functools import wraps
+from typing_extensions import Optional
 
 from .config import (
+    ENV_CONFIGFILE,
+    add_configuration_sections,
     confservice,
     load_configuration,
-    add_configuration_sections,
-    ENV_CONFIGFILE,
 )
 from .server import serve
 

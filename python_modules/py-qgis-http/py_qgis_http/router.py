@@ -1,13 +1,13 @@
-import tornado.httputil
 import re
 
-from tornado.web import HTTPError
-from pathlib import PurePosixPath
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing_extensions import (
-    Optional,
-)
+from pathlib import PurePosixPath
+
+import tornado.httputil
+
+from tornado.web import HTTPError
+from typing_extensions import Optional
 
 from py_qgis_contrib.core import logger
 

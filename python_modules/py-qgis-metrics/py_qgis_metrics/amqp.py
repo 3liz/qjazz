@@ -6,7 +6,14 @@ from ..metrics import (
     METRICS_HANDLER_CONTRACTID,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, Awaitable
+from pydantic import BaseModel
+
+from amqpclient.aio import AsyncPublisher
+
+
+class AmqpConfig(BaseModel):
+
 
 
 class AmqpMetrics(Metrics):
@@ -17,7 +24,7 @@ class AmqpMetrics(Metrics):
     def initialize(self, **options) -> Self:
         return self
 
-    def emit(self, key: str, data: Data) -> None:
+    async def emit(self, key: str, data: Data) -> None:
         ...
 
 

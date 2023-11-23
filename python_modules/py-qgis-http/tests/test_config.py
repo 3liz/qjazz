@@ -1,13 +1,8 @@
 
 import pydantic
-from py_qgis_http.config import (
-    add_configuration_sections,
-    ConfigService,
-)
 
-from py_qgis_http.resolver import (
-    NetAddress,
-)
+from py_qgis_http.config import ConfigService, add_configuration_sections
+from py_qgis_http.resolver import NetAddress
 
 try:
     # Python 3.11+

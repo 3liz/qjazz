@@ -1,6 +1,6 @@
-import pytest  # noqa
-
 from pathlib import Path
+
+import pytest  # noqa
 
 
 def pytest_collection_modifyitems(config, items):
@@ -20,8 +20,8 @@ def config(request):
     """ Setup configuration
     """
     from py_qgis_http.config import (
+        add_configuration_sections,
         load_configuration,
-        add_configuration_sections
     )
 
     add_configuration_sections()

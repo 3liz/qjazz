@@ -2,28 +2,19 @@
 """
 import ipaddress
 
-from typing_extensions import (
-    List,
-    Optional,
-    Annotated,
-    Tuple,
-)
-
-from pydantic import (
-    Field,
-    AfterValidator,
-    PlainValidator,
-    PlainSerializer,
-    WithJsonSchema,
-    StringConstraints,
-)
-
 from pathlib import PurePosixPath
 
-from py_qgis_contrib.core.config import (
-    Config,
-    SSLConfig,
+from pydantic import (
+    AfterValidator,
+    Field,
+    PlainSerializer,
+    PlainValidator,
+    StringConstraints,
+    WithJsonSchema,
 )
+from typing_extensions import Annotated, List, Optional, Tuple
+
+from py_qgis_contrib.core.config import Config, SSLConfig
 
 DEFAULT_PORT = 23456
 
@@ -75,7 +66,7 @@ def _validate_route(r: str) -> PurePosixPath:
     if not isinstance(r, str):
         raise ValueError("Expecting string")
     if not r.startswith('/'):
-        raise ValueError("Route must start with a '/'")
+        raise ValueError("Route must starts with a '/'")
     if r.find('/_/') >= 0:
         raise ValueError("Route must not contains the reserved path: '/_/'")
     return PurePosixPath(r)

@@ -16,7 +16,7 @@ dependencies = [
 ]
 version = "${PIN_VERSION}"
 
-[project.entry-points.'3liz.org.metrics.handler.1']
+[project.entry-points.'3liz.org.metrics.handler']
 amqp = 'py_qgis_metrics.handlers.amqp:register'
 
 [[project.authors]]

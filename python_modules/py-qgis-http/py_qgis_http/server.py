@@ -1,44 +1,42 @@
 import asyncio
 import signal
-import tornado.web
-import tornado.httpserver
-import tornado.netutil
-import tornado.routing
-import tornado.httputil
 import traceback
 
 from dataclasses import dataclass
-from tornado.web import HTTPError
+from pathlib import PurePosixPath
 from time import time
 
-from pathlib import PurePosixPath
-from typing_extensions import (
-    Optional,
-    Iterator,
-)
+import tornado.httpserver
+import tornado.httputil
+import tornado.netutil
+import tornado.routing
+import tornado.web
 
-from py_qgis_contrib.core.config import Config
+from tornado.web import HTTPError
+from typing_extensions import Iterator, Optional
+
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import Config
 
 from .channel import Channel
-from .router import DefaultRouter
 from .config import (
-    SSLConfig,
+    AdminHttpConfig,
     BackendConfig,
     HttpConfig,
-    AdminHttpConfig,
+    SSLConfig,
+    metrics,
 )
 from .handlers import (
-    _BaseHandler,
-    NotFoundHandler,
-    JsonNotFoundHandler,
-    OwsHandler,
     ApiHandler,
-    ErrorHandler,
     BackendHandler,
     ConfigHandler,
+    ErrorHandler,
+    JsonNotFoundHandler,
+    NotFoundHandler,
+    OwsHandler,
+    _BaseHandler,
 )
-
+from .router import DefaultRouter
 
 #
 # Router delegate
@@ -179,14 +177,38 @@ class _Router(tornado.routing.Router):
     """ Router
     """
 
-    def __init__(self, channels: _Channels):
+    def __init__(self, channels: _Channels, metrics_conf: metrics.MetricConfig):
         self.channels = channels
+        self.metrics = metrics_conf
         self.app = App(default_handler_class=NotFoundHandler)
+
+        self._metrics_call = None
 
         # Set router
         self._channels_last_modified = 0.
         self._router = DefaultRouter()
         self._update_routes()
+
+        self._init_metrics()
+
+    def _init_metrics(self):
+        """ Initialize metrics service
+            if requested
+        """
+        if not self.metrics:
+            return
+
+        metrics_service = self.metrics.load_service()
+
+        async def _call(request, chan: Channel, data: metrics.Data):
+            routing_key = self.metrics.routing_key_meta(
+                meta=chan.meta,
+                headers=request.headers,
+            )
+            if routing_key:
+                await metrics_service.emit(routing_key, data)
+
+        self._metrics_call = _call
 
     def _update_routes(self):
         """ Update routes and routable class
@@ -230,7 +252,9 @@ class _Router(tornado.routing.Router):
         """
         try:
             # Update routes if required
+            # XXX use event or barrier
             self._update_routes()
+
             route = self._router.route(
                 self._routable_class(request=request)
             )
@@ -245,7 +269,11 @@ class _Router(tornado.routing.Router):
                 return self.app.get_handler_delegate(
                     request,
                     OwsHandler,
-                    {'channel': channel, 'project': route.project},
+                    {
+                        'channel': channel,
+                        'project': route.project,
+                        'metrics': self._metrics_call,
+                    },
                 )
             else:
                 # Check if api endpoint is declared for that the channel
@@ -257,7 +285,7 @@ class _Router(tornado.routing.Router):
                         logger.trace("Found endpoint '%s' for path: %s", ep.endpoint, route.path)
                         api_name = ep.delegate_to or ep.endpoint
                         api_path = route.path or ""
-                        # !IMPORTANT set the root url
+                        # !IMPORTANT set the root url without the api path
                         request.path = request.path.removesuffix(api_path)
                         return self.app.get_handler_delegate(
                             request,
@@ -267,6 +295,7 @@ class _Router(tornado.routing.Router):
                                 'project': route.project,
                                 'api': api_name,
                                 'path': api_path,
+                                'metrics': self._metrics_call,
                             },
                         )
 
@@ -323,7 +352,7 @@ async def serve(conf: Config):
     channels = _Channels(conf)
     await channels.init_channels()
 
-    router = _Router(channels)
+    router = _Router(channels, conf.metrics)
 
     configure_server(router, conf.http)
     configure_admin_server(conf.admin_server, channels)

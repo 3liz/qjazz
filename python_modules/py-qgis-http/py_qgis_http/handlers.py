@@ -1,37 +1,35 @@
-import os
 import json
-import tornado.web
+import os
+
+from contextlib import asynccontextmanager
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+from time import time
+from urllib.parse import urlencode
+
 import tornado.httpserver
+import tornado.httputil
 import tornado.netutil
 import tornado.routing
-import tornado.httputil
+import tornado.web
 
-from pathlib import Path
-from tornado.web import HTTPError
 from pydantic import ValidationError
-from typing_extensions import (
-    Optional,
-    Tuple,
-    Sequence,
-    Dict,
-    Any,
-)
+from tornado.web import HTTPError
+from typing_extensions import Any, Callable, Dict, Optional, Sequence, Tuple
 
-from urllib.parse import urlencode
-from importlib.metadata import version, PackageNotFoundError
-
-from py_qgis_worker._grpc import api_pb2
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_rfc822
+from py_qgis_worker._grpc import api_pb2
 
+from . import metrics
 from .channel import Channel
 from .config import (
     ENV_CONFIGFILE,
-    read_config_toml,
-    load_include_config_files,
-    confservice,
-    RemoteConfigError,
     BackendConfig,
+    RemoteConfigError,
+    confservice,
+    load_include_config_files,
+    read_config_toml,
 )
 
 try:
@@ -181,6 +179,21 @@ class ErrorHandler(_BaseHandler):
 # Qgis request Handlers
 #
 
+# debug report
+async def get_report(stream) -> Tuple[Optional[int], Optional[int]]:
+    """ Return debug report from trailing_metadata
+    """
+    md = await stream.trailing_metadata()
+    memory, duration, timestamp = None, None, None
+    for k, v in md:
+        match k:
+            case 'x-debug-memory':
+                memory = int(v)
+            case 'x-debug-duration':
+                duration = int(v*1000.0)
+    return (memory, duration, timestamp)
+
+
 class RpcHandlerMixIn:
 
     def write_response_headers(self, metadata) -> None:
@@ -201,20 +214,62 @@ class RpcHandlerMixIn:
             (k.lower(), v) for k, v in self.request.headers.items()
         )
 
+    @asynccontextmanager
+    async def collect_metrics(self, service: str, request: str) -> bool:
+        """ Emit metrics
+        """
+        if self._metrics:
+            start = time()
+            try:
+                yield True
+                status_code = self.get_status()
+            except HTTPError as err:
+                status_code = err.status_code
+            finally:
+                project = self._project
+                latency = int((time() - start) * 1000.)
+                if self.report:
+                    memory, duration = self._report
+                    latency -= duration
+                else:
+                    memory, duration = (-1, -1)
+                await self._metrics(
+                    self.request,
+                    self._channel,
+                    metrics.Data(
+                        status=status_code,
+                        service=service,
+                        request=request,
+                        project=project,
+                        memory_footprint=memory,
+                        response_time=duration,
+                        latency=latency,
+                        cached=self._headers.get('X-Qgis-Cache') == 'HIT',
+                    )
+                )
+        else:
+            yield False
 
 #
 # OWS
 #
 
+
 class OwsHandler(_BaseHandler, RpcHandlerMixIn):
     """ OWS Handler
     """
 
-    def initialize(self, channel: Channel, project: Optional[str] = None):
+    def initialize(
+        self,
+        channel: Channel,
+        project: Optional[str] = None,
+        metrics: Optional[Callable[[metrics.Data], None]] = None,
+    ):
         super().initialize()
         self._project = project
         self._channel = channel
-        self._debug_report = False
+        self._metrics = metrics
+        self._report = None
 
     def check_getfeature_limit(self, arguments: Dict) -> Dict:
         """ Take care of WFS/GetFeature limit
@@ -242,12 +297,15 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
 
         return arguments
 
-    async def _handle_request(self):
-        arguments = {k.upper(): v[0] for k, v in self.request.arguments.items()}
+    async def _execute_request(
+        self,
+        arguments,
+        service: str,
+        request: str,
+        version: str,
+        report: bool = False,
+    ):
         project = self._project
-        service = _decode(arguments.pop('SERVICE', ""))
-        request = _decode(arguments.pop('REQUEST', ""))
-        version = _decode(arguments.pop('VERSION', ""))
 
         url = self.get_url()
         metadata = self.get_metadata()
@@ -263,7 +321,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
                     direct=self._channel.allow_direct_resolution,
                     options=urlencode(self.check_getfeature_limit(arguments)),
                     request_id=self.request_id,
-                    debug_report=self._debug_report,
+                    debug_report=report,
                 ),
                 metadata=metadata,
                 timeout=self._channel.timeout,
@@ -277,6 +335,18 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
                     break
                 self.write(chunk.chunk)
                 await self.flush()
+
+            if report:
+                self._report = await get_report(stream)
+
+    async def _handle_request(self):
+        arguments = {k.upper(): v[0] for k, v in self.request.arguments.items()}
+        service = _decode(arguments.pop('SERVICE', ""))
+        request = _decode(arguments.pop('REQUEST', ""))
+        version = _decode(arguments.pop('VERSION', ""))
+
+        async with self.collect_metrics(service, request) as report:
+            await self._execute_request(arguments, service, request, version, report=report)
 
     async def get(self):
         await self._handle_request()
@@ -298,19 +368,21 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         channel: Channel,
         api: str,
         path: str = "/",
-        project: Optional[str] = None
+        project: Optional[str] = None,
+        metrics: Optional[Callable[[metrics.Data], None]] = None,
     ):
         super().initialize()
         self._project = project
         self._channel = channel
         self._api = api
         self._path = path
-        self._debug_report = False
+        self._metrics = metrics
+        self._report = None
 
-    async def _handle_request(self, method: str):
+    async def _execute_request(self, method: str, report: bool = False):
         project = self._project
 
-        # Get the base url as the base url
+        # Get the url as the base url
         url = self.get_url()
         req = self.request
 
@@ -329,7 +401,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
                     # XXX Check for request query
                     options=urlencode(req.arguments),
                     request_id=self.request_id,
-                    debug_report=self._debug_report,
+                    debug_report=report,
                 ),
                 metadata=metadata,
                 timeout=self._channel.timeout,
@@ -347,6 +419,13 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
                     break
                 self.write(chunk.chunk)
                 await self.flush()
+
+            if report:
+                self._report = get_report(stream)
+
+    async def _handle_request(self, method: str):
+        async with self.collect_metrics(self._api, self._path) as report:
+            await self._execute_request(method, report=report)
 
     async def get(self):
         await self._handle_request("GET")
