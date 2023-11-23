@@ -319,7 +319,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
                     target=project,
                     url=url,
                     direct=self._channel.allow_direct_resolution,
-                    options=urlencode(self.check_getfeature_limit(arguments)),
+                    options=urlencode(self.check_getfeature_limit(arguments), doseq=True),
                     request_id=self.request_id,
                     debug_report=report,
                 ),
@@ -386,6 +386,8 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         url = self.get_url()
         req = self.request
 
+        #arguments = {v[0]:  for k, v in req.arguments.items()}
+        arguments = req.arguments
         metadata = self.get_metadata()
 
         async with self._channel.stub() as stub:
@@ -399,7 +401,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
                     url=url,
                     direct=self._channel.allow_direct_resolution,
                     # XXX Check for request query
-                    options=urlencode(req.arguments),
+                    options=urlencode(arguments, doseq=True),
                     request_id=self.request_id,
                     debug_report=report,
                 ),

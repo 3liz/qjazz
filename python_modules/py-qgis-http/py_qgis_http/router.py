@@ -3,6 +3,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import PurePosixPath
+from urllib.parse import unquote_plus
 
 import tornado.httputil
 
@@ -85,7 +86,7 @@ class DefaultRouter(RouterBase):
         # Get the project
         project = req.arguments.get('MAP')
         if project:
-            project = project[0].decode()
+            project = unquote_plus(project[0].decode())
         else:
             project = req.headers.get('X-Qgis-Project')
 
