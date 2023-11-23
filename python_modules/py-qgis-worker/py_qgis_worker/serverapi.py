@@ -11,6 +11,8 @@
     Also there is no way to iterate over registered api and checx for
     `accept` method, we only may rely on the api name to fetch the api
 """
+import traceback
+
 from qgis.PyQt.QtCore import QUrl
 
 from qgis.server import (
@@ -78,12 +80,20 @@ class ApiDelegate(QgsServerApi):
             url.setPath(f"{self._rootpath}{self._extra_path}")
             request.setUrl(url)
             # Delegate to api
-            api.executeRequest(
-                QgsServerApiContext(
-                    self._rootpath,
-                    context.request(),
-                    context.response(),
-                    context.project(),
-                    context.serverInterface(),
+            try:
+                api.executeRequest(
+                    QgsServerApiContext(
+                        self._rootpath,
+                        context.request(),
+                        context.response(),
+                        context.project(),
+                        context.serverInterface(),
+                    )
                 )
-            )
+            except Exception:
+                logger.critical(traceback.format_exc())
+                response = context.response()
+                response.clear()
+                response.setStatusCode(500)
+
+
