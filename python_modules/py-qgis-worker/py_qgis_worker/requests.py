@@ -3,21 +3,15 @@
 import traceback
 
 from contextlib import contextmanager
-from time import time
-from typing_extensions import (
-    Optional,
-    Dict,
-)
 from multiprocessing.connection import Connection
+from time import time
 
-from qgis.PyQt.QtCore import QBuffer, QIODevice, QByteArray
-from qgis.server import (
-    QgsServerRequest,
-    QgsServerResponse,
-)
+from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
+from qgis.server import QgsServerRequest, QgsServerResponse
+from typing_extensions import Dict, Optional
 
-from py_qgis_contrib.core import logger
 from py_qgis_cache import CheckoutStatus
+from py_qgis_contrib.core import logger
 
 from . import messages as _m
 

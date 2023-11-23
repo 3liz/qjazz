@@ -1,19 +1,12 @@
 #
 # Cache management operations
 #
+from multiprocessing.connection import Connection
 from urllib.parse import urlunsplit
 
-from typing_extensions import (
-    Optional,
-    assert_never,
-)
-from multiprocessing.connection import Connection
+from typing_extensions import Optional, assert_never
 
-from py_qgis_cache import (
-    CacheManager,
-    CacheEntry,
-    CheckoutStatus,
-)
+from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus
 
 from . import messages as _m
 

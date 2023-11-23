@@ -1,34 +1,30 @@
 """ Dns resolver
 """
 from abc import ABC, abstractmethod
-from typing_extensions import (
-    List,
-    Optional,
-    Sequence,
-    Generator,
-    Self,
-    Union,
-    Annotated,
-    Literal,
-)
-
-from pydantic import (
-    Field,
-    TypeAdapter,
-)
 
 import dns.asyncresolver
+
+from pydantic import Field, TypeAdapter
+from typing_extensions import (
+    Annotated,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Sequence,
+    Union,
+)
 
 from py_qgis_contrib.core import logger  # noqa
 from py_qgis_contrib.core.config import (
     Config,
-    SSLConfig,
     NetInterface,
+    SSLConfig,
     section,
 )
 
 from .backend import BackendConfig
-
 
 DEFAULT_PORT = 23456
 

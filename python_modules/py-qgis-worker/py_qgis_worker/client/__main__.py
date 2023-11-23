@@ -1,26 +1,24 @@
 """ gRPC Client test
 """
-from typing import (
-    Optional,
-    List,
-)
+import json
+import os
+import sys
+
 from contextlib import contextmanager
 from pathlib import Path
-from time import time, sleep
-import json
-import click
-import sys
-import os
-import grpc
-from .._grpc import api_pb2
-from .._grpc import api_pb2_grpc
+from time import sleep, time
+from typing import List, Optional
 
-from grpc_health.v1 import health_pb2       # HealthCheckRequest
-from grpc_health.v1 import health_pb2_grpc  # HealthStub
+import click
+import grpc
 
 from google.protobuf import json_format
+from grpc_health.v1 import health_pb2  # HealthCheckRequest
+from grpc_health.v1 import health_pb2_grpc  # HealthStub
 
 from py_qgis_contrib.core.config import SSLConfig
+
+from .._grpc import api_pb2, api_pb2_grpc
 
 
 # Return a ChannelCredential struct

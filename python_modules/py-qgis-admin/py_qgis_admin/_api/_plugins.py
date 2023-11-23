@@ -1,27 +1,13 @@
 # import traceback
-from aiohttp import web
-
 from pathlib import Path
 
-from pydantic import (
-    BaseModel,
-    TypeAdapter,
-    Json,
-)
-
-from typing_extensions import (
-    List,
-)
+from aiohttp import web
+from pydantic import BaseModel, Json, TypeAdapter
+from typing_extensions import List
 
 from .. import swagger
-
-from ..errors import (
-    ServiceNotAvailable,
-)
-
-from .utils import (
-    _http_error,
-)
+from ..errors import ServiceNotAvailable
+from .utils import _http_error
 
 
 @swagger.model

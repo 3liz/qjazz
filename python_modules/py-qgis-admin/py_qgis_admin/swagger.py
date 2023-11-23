@@ -1,28 +1,15 @@
 #
 # Build swagger documentation
 #
-import sys  # noqa
 import json
+import sys  # noqa
 
-from pydantic import (
-    TypeAdapter,
-    BaseModel,
-    Json,
-    AnyHttpUrl,
-    Field,
-)
-
-from typing_extensions import (
-    Type,
-    Dict,
-    Literal,
-    List,
-    Optional,
-)
-
-from aiohttp.hdrs import METH_ANY, METH_ALL
-from aiohttp import web
 from inspect import isclass
+
+from aiohttp import web
+from aiohttp.hdrs import METH_ALL, METH_ANY
+from pydantic import AnyHttpUrl, BaseModel, Field, Json, TypeAdapter
+from typing_extensions import Dict, List, Literal, Optional, Type
 
 _models = []
 

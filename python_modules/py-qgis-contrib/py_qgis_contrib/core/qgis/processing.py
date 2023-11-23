@@ -2,14 +2,11 @@
 # Handle processing plugins
 #
 
-from typing import List
-from pydantic import BaseModel
 from pathlib import Path
-from typing_extensions import (
-    Optional,
-    Dict,
-    Any,
-)
+from typing import List
+
+from pydantic import BaseModel
+from typing_extensions import Any, Dict, Optional
 
 try:
     # 3.11+
@@ -17,9 +14,9 @@ try:
 except ModuleNotFoundError:
     import tomli as toml
 
-from .. import logger
-
 from qgis.core import QgsApplication
+
+from .. import logger
 
 
 class ProcessesConfig(BaseModel):
@@ -66,6 +63,7 @@ class ProcessesLoader:
 
         if conf.styles:
             from processing.core.Processing import RenderingStyles
+
             # Load styles for processing output
             styles = {}
             for alg, keys in conf.styles.items():

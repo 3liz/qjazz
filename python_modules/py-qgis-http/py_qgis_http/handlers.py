@@ -386,7 +386,6 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         url = self.get_url()
         req = self.request
 
-        #arguments = {v[0]:  for k, v in req.arguments.items()}
         arguments = req.arguments
         metadata = self.get_metadata()
 

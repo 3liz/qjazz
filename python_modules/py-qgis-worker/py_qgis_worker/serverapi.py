@@ -14,15 +14,9 @@
 import traceback
 
 from qgis.PyQt.QtCore import QUrl
-
-from qgis.server import (
-    QgsServerApi,
-    QgsServerApiContext,
-)
-
+from qgis.server import QgsServerApi, QgsServerApiContext
 
 from py_qgis_contrib.core import logger
-
 
 ROOT_DELEGATE = '/__delegate__'
 
@@ -95,5 +89,3 @@ class ApiDelegate(QgsServerApi):
                 response = context.response()
                 response.clear()
                 response.setStatusCode(500)
-
-

@@ -1,24 +1,19 @@
 """ QGIS gRCP CLI administration
 """
-import sys
 import asyncio
-import click
 import json
-
-from pathlib import Path
-from typing_extensions import (
-    Optional,
-    List,
-)
+import sys
 
 from functools import wraps
+from pathlib import Path
+
+import click
+
+from typing_extensions import List, Optional
 
 from py_qgis_contrib.core import config, logger
-from .service import (
-    Service,
-    ResolverConfig,
-    PoolClient,
-)
+
+from .service import PoolClient, ResolverConfig, Service
 
 FilePathType = click.Path(
     exists=True,

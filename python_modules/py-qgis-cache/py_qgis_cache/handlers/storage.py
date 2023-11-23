@@ -11,34 +11,17 @@
 import traceback
 
 from datetime import datetime
-from typing import Iterator, Optional, Callable, Dict
-from urllib.parse import (
-    urlsplit,
-    urlunsplit,
-    parse_qs,
-    urlencode,
-)
 from pathlib import Path
+from typing import Callable, Dict, Iterator, Optional
+from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from qgis.core import (
-    Qgis,
-    QgsApplication,
-    QgsProject,
-    QgsProjectStorage,
-)
+from qgis.core import Qgis, QgsApplication, QgsProject, QgsProjectStorage
 
-from py_qgis_contrib.core import logger, componentmanager
+from py_qgis_contrib.core import componentmanager, logger
 
+from ..common import IProtocolHandler, ProjectMetadata, Url
 from ..config import ProjectsConfig
-from ..storage import (
-    load_project_from_uri,
-)
-
-from ..common import (
-    Url,
-    ProjectMetadata,
-    IProtocolHandler,
-)
+from ..storage import load_project_from_uri
 
 __all__ = []
 

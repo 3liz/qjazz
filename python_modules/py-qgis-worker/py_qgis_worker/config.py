@@ -1,25 +1,10 @@
-from py_qgis_contrib.core import config
-from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.qgis import QgisPluginConfig
-from py_qgis_contrib.core.config import (
-    NetInterface,
-    SSLConfig,
-    section,
-)
+from pydantic import AfterValidator, AnyHttpUrl, Field, Json
+from typing_extensions import Annotated, List, Optional
+
 from py_qgis_cache.config import ProjectsConfig
-
-from pydantic import (
-    Field,
-    AfterValidator,
-    AnyHttpUrl,
-    Json,
-)
-
-from typing_extensions import (
-    List,
-    Annotated,
-    Optional,
-)
+from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core.config import NetInterface, SSLConfig, section
+from py_qgis_contrib.core.qgis import QgisPluginConfig
 
 DEFAULT_INTERFACE = ("[::]", 23456)
 

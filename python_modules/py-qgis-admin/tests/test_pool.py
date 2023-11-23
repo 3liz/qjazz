@@ -1,19 +1,16 @@
 # flake8: noqa
-import pytest  # noqa
 import asyncio  # noqa
 
-from py_qgis_admin.pool import (  # noqa
-    PoolClient,
-)
+import pytest  # noqa
 
+from py_qgis_admin.pool import PoolClient  # noqa
 from py_qgis_admin.resolvers import (  # noqa
-    Resolver,
-    DNSResolverConfig,
     DNSResolver,
-    SocketResolverConfig,
+    DNSResolverConfig,
+    Resolver,
     ResolverConfig,
+    SocketResolverConfig,
 )
-
 
 pytest_plugins = ('pytest_asyncio',)
 

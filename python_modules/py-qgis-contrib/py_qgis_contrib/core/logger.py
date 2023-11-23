@@ -7,24 +7,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """ Logger
 """
+import logging
 import os
 import sys
-import logging
+
 from contextlib import contextmanager
 from enum import Enum
 
-from typing_extensions import (
-    Optional,
-    Annotated,
-)
-
-from pydantic import (
-    Field,
-    PlainValidator,
-    PlainSerializer,
-    WithJsonSchema,
-)
-
+from pydantic import Field, PlainSerializer, PlainValidator, WithJsonSchema
+from typing_extensions import Annotated, Optional
 
 from . import config
 

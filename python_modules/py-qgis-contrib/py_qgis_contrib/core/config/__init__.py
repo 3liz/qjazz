@@ -1,12 +1,11 @@
 
+from ._models import *  # noqa
 from ._service import (  # noqa
-    ConfigError,
-    ConfigService,
     Config,
+    ConfigError,
     ConfigProxy,
-    section,
+    ConfigService,
     confservice,
     read_config_toml,
+    section,
 )
-
-from ._models import *  # noqa

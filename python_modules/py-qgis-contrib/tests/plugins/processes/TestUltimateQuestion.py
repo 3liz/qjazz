@@ -1,10 +1,7 @@
 """ Test just returning simple value
 """
 
-from qgis.core import (
-    QgsProcessingOutputNumber,
-    QgsProcessingAlgorithm,
-)
+from qgis.core import QgsProcessingAlgorithm, QgsProcessingOutputNumber
 
 
 class TestUltimateQuestion(QgsProcessingAlgorithm):

@@ -1,6 +1,6 @@
-import pytest  # noqa
-
 from pathlib import Path
+
+import pytest  # noqa
 
 
 def pytest_collection_modifyitems(config, items):
@@ -24,7 +24,5 @@ def data(request):
 def config(data):
     """ Setup configuration
     """
-    from py_qgis_admin.config import (
-        ServiceConfig,
-    )
+    from py_qgis_admin.config import ServiceConfig
     return ServiceConfig()

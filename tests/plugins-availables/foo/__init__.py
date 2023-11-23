@@ -1,5 +1,6 @@
 from qgis.core import Qgis, QgsMessageLog
 
+
 def serverClassFactory(serverIface):  # pylint: disable=invalid-name
     """Load wfsOutputExtensionServer class from file wfsOutputExtension.
 

@@ -1,5 +1,5 @@
 
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 from py_qgis_cache import CacheManager
 

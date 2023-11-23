@@ -1,33 +1,24 @@
-import grpc
-from ._grpc import api_pb2
-from ._grpc import api_pb2_grpc
-
-from grpc_health.v1 import health_pb2
+import json
+import os
+import traceback
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from time import time
-from typing import (
-    Generator,
-    Tuple,
-    Any,
-    Iterable,
-    Iterator,
-    AsyncIterator,
-)
+from typing import Any, AsyncIterator, Generator, Iterable, Iterator, Tuple
 
-import os
-import traceback
-import json
+import grpc
+
+from grpc_health.v1 import health_pb2
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import read_config_toml, confservice
+from py_qgis_contrib.core.config import confservice, read_config_toml
 
 from . import messages as _m
-
+from ._grpc import api_pb2, api_pb2_grpc
 from .config import ENV_CONFIGFILE, RemoteConfigError
-from .pool import WorkerPool, Worker, WorkerError
+from .pool import Worker, WorkerError, WorkerPool
 
 #
 # https://grpc.github.io/grpc/python/

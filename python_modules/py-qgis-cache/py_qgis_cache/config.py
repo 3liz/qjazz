@@ -1,16 +1,18 @@
 import os
 
-from py_qgis_contrib.core import config
+from urllib.parse import SplitResult, urlsplit, urlunsplit
+
 from pydantic import (
-    Field,
-    PlainValidator,
-    PlainSerializer,
-    WithJsonSchema,
-    ValidationInfo,
     AfterValidator,
+    Field,
+    PlainSerializer,
+    PlainValidator,
+    ValidationInfo,
+    WithJsonSchema,
 )
-from typing_extensions import Dict, Annotated, Callable
-from urllib.parse import urlsplit, urlunsplit, SplitResult
+from typing_extensions import Annotated, Callable, Dict
+
+from py_qgis_contrib.core import config
 
 
 def _getenv_bool(varname: str) -> bool:

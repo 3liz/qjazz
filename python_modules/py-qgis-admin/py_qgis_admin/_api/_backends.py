@@ -7,10 +7,7 @@ from ..models import (
     PoolInfos,
     PoolListResponse,
 )
-
-from .utils import (
-    _link,
-)
+from .utils import _link
 
 
 class _Backends:

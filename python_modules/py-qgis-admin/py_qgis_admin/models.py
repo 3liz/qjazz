@@ -7,22 +7,19 @@ from pydantic import (  # noqa
     ValidationError,
     WithJsonSchema,
 )
-
 from typing_extensions import (  # noqa
     Annotated,
+    Dict,
+    List,
     Literal,
     Optional,
-    List,
-    Set,
-    Dict,
     Self,
+    Set,
     Type,
 )
 
-
 from . import swagger
 from .pool import PoolClient
-
 
 AnyJson = Annotated[
     Json,

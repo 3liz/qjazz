@@ -11,36 +11,26 @@ try:
 except ImportError:
     psutil = None
 
-from typing_extensions import (
-    Dict,
-    assert_never,
-)
 from multiprocessing.connection import Connection
 
 from qgis.server import QgsServer
+from typing_extensions import Dict, assert_never
 
+from py_qgis_cache import CacheManager, CheckoutStatus
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.qgis import (
-    init_qgis_server,
-    show_qgis_settings,
-    show_all_versions,
     PluginType,
     QgisPluginService,
-)
-from py_qgis_cache import (
-    CacheManager,
-    CheckoutStatus,
+    init_qgis_server,
+    show_all_versions,
+    show_qgis_settings,
 )
 
+from . import _op_cache, _op_plugins, _op_requests
+from . import messages as _m
 from .config import WorkerConfig
 from .serverapi import ApiDelegate
-
-from . import messages as _m
-from . import _op_requests
-from . import _op_plugins
-from . import _op_cache
-
 
 Co = CheckoutStatus
 

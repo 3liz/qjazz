@@ -1,26 +1,14 @@
-from pydantic import (
-    AfterValidator,
-    Field,
-    AnyHttpUrl,
-)
-
-from typing_extensions import (
-    Annotated,
-    Literal,
-    List,
-    Optional,
-)
-
-from py_qgis_contrib.core.config import (
-    Config,
-    SSLConfig,
-    NetInterface,
-    section,
-    confservice,
-)
+from pydantic import AfterValidator, AnyHttpUrl, Field
+from typing_extensions import Annotated, List, Literal, Optional
 
 from py_qgis_contrib.core import logger
-
+from py_qgis_contrib.core.config import (
+    Config,
+    NetInterface,
+    SSLConfig,
+    confservice,
+    section,
+)
 
 DEFAULT_INTERFACE = ("0.0.0.0", 9871)
 

@@ -112,6 +112,7 @@ def install_logger_hook(logprefix: str) -> None:
     """ Install message log hook
     """
     from qgis.core import Qgis, QgsApplication
+
     # Add a hook to qgis  message log
 
     def writelogmessage(message, tag, level):
@@ -131,8 +132,8 @@ def install_logger_hook(logprefix: str) -> None:
 def init_qgis_application():
     setup_qgis_application()
 
-    from qgis.PyQt.QtCore import QCoreApplication
     from qgis.core import QgsApplication
+    from qgis.PyQt.QtCore import QCoreApplication
 
     # From qgis server
     # Will enable us to read qgis setting file
@@ -183,8 +184,8 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':  # noqa: F821
 def load_qgis_settings(optpath):
     """ Load qgis settings
     """
-    from qgis.PyQt.QtCore import QSettings
     from qgis.core import QgsSettings
+    from qgis.PyQt.QtCore import QSettings
 
     QSettings.setDefaultFormat(QSettings.IniFormat)
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, optpath)
@@ -194,8 +195,8 @@ def load_qgis_settings(optpath):
 def set_proxy_configuration() -> None:
     """ Display proxy configuration
     """
-    from qgis.PyQt.QtNetwork import QNetworkProxy
     from qgis.core import QgsNetworkAccessManager
+    from qgis.PyQt.QtNetwork import QNetworkProxy
 
     nam = QgsNetworkAccessManager.instance()
     nam.setupDefaultProxyAndCache()

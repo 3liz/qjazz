@@ -1,6 +1,5 @@
 # import traceback
 from aiohttp import web
-
 from pydantic import (  # noqa
     BaseModel,
     Field,
@@ -8,25 +7,20 @@ from pydantic import (  # noqa
     TypeAdapter,
     ValidationError,
 )
-
 from typing_extensions import (  # noqa
+    Dict,
+    List,
     Literal,
     Optional,
-    List,
-    Set,
-    Dict,
     Self,
+    Set,
     Type,
 )
 
 from py_qgis_contrib.core import logger
 
-from .. import swagger
-from .. import service
-
-from ..models import (
-    ErrorResponse,
-)
+from .. import service, swagger
+from ..models import ErrorResponse
 
 API_VERSION = "v1"
 

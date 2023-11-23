@@ -1,7 +1,8 @@
+from pathlib import Path
+
 import pytest
 
-from pathlib import Path
-from py_qgis_contrib.core import qgis, logger
+from py_qgis_contrib.core import logger, qgis
 
 
 @pytest.fixture(scope='session')

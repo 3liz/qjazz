@@ -1,6 +1,6 @@
-import pytest  # noqa
-
 from pathlib import Path
+
+import pytest  # noqa
 
 
 @pytest.fixture(scope='session')
@@ -12,10 +12,7 @@ def data(request):
 def config(data):
     """ Setup configuration
     """
-    from py_qgis_worker.config import (
-        WorkerConfig,
-        ProjectsConfig,
-    )
+    from py_qgis_worker.config import ProjectsConfig, WorkerConfig
     return WorkerConfig(
         name="Test",
         projects=ProjectsConfig(

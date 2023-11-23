@@ -1,41 +1,18 @@
-import traceback
 import asyncio
+import traceback
 
-from aiohttp import web, WSMsgType
+from aiohttp import WSMsgType, web
 from pydantic import BaseModel
-
-from typing_extensions import (
-    Dict,
-)
-
-from py_qgis_contrib.core.config import (
-    confservice,
-)
+from typing_extensions import Dict
 
 from py_qgis_contrib.core import logger
-
-from .models import (
-    ErrorResponse,
-)
-
-from .pool import PoolClient
-
-from ._api.utils import (
-    API_VERSION,
-    BaseHandlers,
-    _http_error,
-)
-
-from ._api import (
-    _Backends,
-    _Config,
-    _Cache,
-    _Projects,
-    _Plugins,
-)
-
+from py_qgis_contrib.core.config import confservice
 
 from . import swagger
+from ._api import _Backends, _Cache, _Config, _Plugins, _Projects
+from ._api.utils import API_VERSION, BaseHandlers, _http_error
+from .models import ErrorResponse
+from .pool import PoolClient
 
 
 @swagger.model

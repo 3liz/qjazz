@@ -1,24 +1,10 @@
 # import traceback
 from aiohttp import web
+from pydantic import ValidationError
 
-from pydantic import (
-    ValidationError,
-)
-
-from ..models import (
-    PoolBackendConfig,
-    PoolSetConfigResponse,
-    JsonValidator,
-)
-
-from ..errors import (
-    ServiceNotAvailable,
-    RequestArgumentError,
-)
-
-from .utils import (
-    _http_error,
-)
+from ..errors import RequestArgumentError, ServiceNotAvailable
+from ..models import JsonValidator, PoolBackendConfig, PoolSetConfigResponse
+from .utils import _http_error
 
 
 class _Config:

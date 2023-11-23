@@ -1,7 +1,9 @@
-import pytest  # noqa
 import traceback
 
 from pathlib import Path
+
+import pytest  # noqa
+
 from py_qgis_cache import ProjectsConfig
 
 

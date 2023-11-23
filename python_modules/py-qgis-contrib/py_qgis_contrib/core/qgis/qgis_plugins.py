@@ -9,36 +9,28 @@
 """ Qgis server plugin managment
 
 """
-import sys
-import os
 import configparser
+import os
+import sys
 import traceback
 
-from pydantic import (
-    Field,
-    ValidationInfo,
-    AfterValidator,
-)
-
 from dataclasses import dataclass
-
+from enum import Enum
 from pathlib import Path
+
+from pydantic import AfterValidator, Field, ValidationInfo
 from typing_extensions import (
-    Optional,
-    Iterator,
-    Dict,
-    List,
-    Any,
     Annotated,
-    assert_never,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
     Self,
+    assert_never,
 )
 
-from enum import Enum
-
-from .. import logger
-from .. import componentmanager
-from .. import config
+from .. import componentmanager, config, logger
 
 
 class PluginError(Exception):

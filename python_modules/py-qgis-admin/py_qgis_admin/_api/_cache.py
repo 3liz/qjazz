@@ -1,34 +1,12 @@
 # import traceback
 from aiohttp import web
-
-from pydantic import (
-    BaseModel,
-    ValidationError,
-    TypeAdapter,
-    WithJsonSchema,
-)
-
-from typing_extensions import (
-    Dict,
-    List,
-    Annotated,
-)
+from pydantic import BaseModel, TypeAdapter, ValidationError, WithJsonSchema
+from typing_extensions import Annotated, Dict, List
 
 from .. import swagger
-
-from ..models import (
-    CacheItemPool,
-    StringList,
-)
-
-from ..errors import (
-    ServiceNotAvailable,
-)
-
-from .utils import (
-    _link,
-    _http_error,
-)
+from ..errors import ServiceNotAvailable
+from ..models import CacheItemPool, StringList
+from .utils import _http_error, _link
 
 
 @swagger.model

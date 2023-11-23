@@ -1,16 +1,11 @@
 """ Configuration common definitions
 """
-from ._service import Config
 from pathlib import Path
-from pydantic import (
-    Field,
-    AfterValidator,
-)
-from typing_extensions import (
-    Annotated,
-    Tuple,
-    Optional,
-)
+
+from pydantic import AfterValidator, Field
+from typing_extensions import Annotated, Optional, Tuple
+
+from ._service import Config
 
 __all__ = [
     'NetInterface',

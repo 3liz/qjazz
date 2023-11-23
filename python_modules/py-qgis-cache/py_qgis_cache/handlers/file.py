@@ -8,23 +8,18 @@
 
 """ File protocol handler
 """
-from typing import Iterator
 from itertools import chain
 from pathlib import Path
+from typing import Iterator
 from urllib.parse import urlsplit
 
 from qgis.core import QgsProject
-from py_qgis_contrib.core import logger, componentmanager
 
+from py_qgis_contrib.core import componentmanager, logger
+
+from ..common import IProtocolHandler, ProjectMetadata, Url
 from ..config import ProjectsConfig
-from ..storage import (
-    load_project_from_uri,
-)
-from ..common import (
-    Url,
-    ProjectMetadata,
-    IProtocolHandler,
-)
+from ..storage import load_project_from_uri
 
 # Allowed files suffix for projects
 PROJECT_SFX = ('.qgs', '.qgz')

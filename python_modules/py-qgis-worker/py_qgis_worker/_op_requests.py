@@ -1,28 +1,14 @@
 #
 # Qgis server request operations
 #
+from multiprocessing.connection import Connection
 from urllib.parse import urlunsplit
 
-from typing_extensions import (
-    Optional,
-    Tuple,
-    Dict,
-    assert_never,
-)
-from multiprocessing.connection import Connection
+from qgis.server import QgsServer, QgsServerException, QgsServerRequest
+from typing_extensions import Dict, Optional, Tuple, assert_never
 
-from qgis.server import (
-    QgsServer,
-    QgsServerRequest,
-    QgsServerException,
-)
-
+from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus
 from py_qgis_contrib.core import logger
-from py_qgis_cache import (
-    CacheManager,
-    CacheEntry,
-    CheckoutStatus,
-)
 from py_qgis_contrib.core.utils import to_rfc822
 
 from . import messages as _m

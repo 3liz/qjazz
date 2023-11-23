@@ -1,16 +1,17 @@
+import asyncio
 import os
 import sys
-import asyncio
-import click
 
 from pathlib import Path
+
+import click
+
 from typing_extensions import Optional
-from py_qgis_contrib.core import logger
-from py_qgis_contrib.core import config
 
-from .config import WorkerConfig, ENV_CONFIGFILE, ENV_NUM_PROCESSES
+from py_qgis_contrib.core import config, logger
+
+from .config import ENV_CONFIGFILE, ENV_NUM_PROCESSES, WorkerConfig
 from .pool import WorkerPool
-
 from .server import serve
 
 WORKER_SECTION = 'worker'

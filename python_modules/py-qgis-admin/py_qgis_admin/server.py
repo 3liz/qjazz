@@ -1,9 +1,8 @@
 import asyncio
 import traceback
+
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
-
-
 from pydantic import (  # noqa
     BaseModel,
     Field,
@@ -11,38 +10,24 @@ from pydantic import (  # noqa
     TypeAdapter,
     ValidationError,
 )
-
 from typing_extensions import (  # noqa
+    Dict,
+    List,
     Literal,
     Optional,
-    List,
-    Set,
-    Dict,
     Self,
+    Set,
     Type,
 )
 
-
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import (
-    Config,
-    ConfigProxy,
-    SSLConfig,
-)
+from py_qgis_contrib.core.config import Config, ConfigProxy, SSLConfig
 
+from . import config as server_config  # noqa
 from . import swagger
-
-from .service import Service
-from .api import (
-    Handlers,
-    ErrorResponse,
-    API_VERSION,
-)
-
+from .api import API_VERSION, ErrorResponse, Handlers
 from .resolvers import RESOLVERS_SECTION
-
-from . import config as server_config   # noqa
-
+from .service import Service
 
 # routes = web.RouteTableDef()
 

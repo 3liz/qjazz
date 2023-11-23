@@ -3,9 +3,7 @@
 #
 from multiprocessing.connection import Connection
 
-from py_qgis_contrib.core.qgis import (
-    QgisPluginService,
-)
+from py_qgis_contrib.core.qgis import QgisPluginService
 
 from . import messages as _m
 

@@ -15,7 +15,8 @@
     module behaviors without the need for these to do explicit imports
 """
 import sys
-from typing import Any, List, Callable, Optional, NamedTuple
+
+from typing import Any, Callable, List, NamedTuple, Optional
 
 
 class ComponentManagerError(Exception):
@@ -47,6 +48,7 @@ def _entry_points(group: str, name: Optional[str] = None) -> List:
     """ Return entry points
     """
     from importlib import metadata
+
     # See https://docs.python.org/3.10/library/importlib.metadata.html
     return metadata.entry_points().select(group=group, name=name)
 

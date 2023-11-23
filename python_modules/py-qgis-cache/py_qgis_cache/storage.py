@@ -3,11 +3,7 @@
 # all rights reserved
 """ Handle Qgis storage metadata
 """
-from qgis.core import (
-    Qgis,
-    QgsProject,
-    QgsProjectBadLayerHandler,
-)
+from qgis.core import Qgis, QgsProject, QgsProjectBadLayerHandler
 from qgis.server import QgsServerProjectUtils
 
 from py_qgis_contrib.core import logger

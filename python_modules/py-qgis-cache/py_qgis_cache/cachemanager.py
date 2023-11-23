@@ -46,35 +46,22 @@ try:
 except ImportError:
     psutil = None
 
-from time import time
-from typing_extensions import (
-    Tuple,
-    Optional,
-    Iterator,
-    Self,
-    assert_never,
-)
-from pathlib import Path
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from time import time
 
 from qgis.core import QgsProject
 from qgis.server import QgsServer
+from typing_extensions import Iterator, Optional, Self, Tuple, assert_never
 
-from py_qgis_contrib.core import (
-    componentmanager,
-    logger,
-)
+from py_qgis_contrib.core import componentmanager, logger
 
 # Import default handlers for auto-registration
-from .common import Url, IProtocolHandler, ProjectMetadata
-from .handlers import init_storage_handlers
-from .storage import (
-    StrictCheckingFailure,
-    UnreadableResource,
-)
+from .common import IProtocolHandler, ProjectMetadata, Url
 from .config import ProjectsConfig, validate_url
-
+from .handlers import init_storage_handlers
+from .storage import StrictCheckingFailure, UnreadableResource
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 

@@ -1,12 +1,13 @@
-import pytest  # noqa
 import asyncio  # noqa
 
+from contextlib import asynccontextmanager
 from time import time
+
+import pytest  # noqa
+
 from py_qgis_worker import messages
 from py_qgis_worker import messages as _m
 from py_qgis_worker.worker import Worker
-
-from contextlib import asynccontextmanager
 
 pytest_plugins = ('pytest_asyncio',)
 

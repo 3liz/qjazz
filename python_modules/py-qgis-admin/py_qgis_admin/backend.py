@@ -1,34 +1,20 @@
 """ Qgis worker client
 """
 import asyncio
-import grpc
-
-from py_qgis_worker._grpc import (
-    api_pb2,
-    api_pb2_grpc,
-)
-
-from grpc_health.v1 import health_pb2       # HealthCheckRequest
-from grpc_health.v1 import health_pb2_grpc  # HealthStub
-
 import json
 
-from pydantic import (
-    Field,
-    Json,
-)
-
-from pathlib import Path
 from contextlib import asynccontextmanager
-from typing_extensions import (
-    Optional,
-    Dict,
-    Tuple,
-    AsyncIterator,
-    Self,
-)
+from pathlib import Path
+
+import grpc
+
+from grpc_health.v1 import health_pb2  # HealthCheckRequest
+from grpc_health.v1 import health_pb2_grpc  # HealthStub
+from pydantic import Field, Json
+from typing_extensions import AsyncIterator, Dict, Optional, Self, Tuple
 
 from py_qgis_contrib.core import config, logger
+from py_qgis_worker._grpc import api_pb2, api_pb2_grpc
 
 
 class ShutdownInProgress(Exception):

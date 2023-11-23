@@ -1,39 +1,30 @@
 import asyncio
-import traceback
-import grpc
-from py_qgis_worker._grpc import api_pb2
-
-import jsondiff
 import json
+import traceback
+
+from contextlib import contextmanager
+
+import grpc
+import jsondiff
 
 from google.protobuf import json_format
-from contextlib import contextmanager
+from pydantic import Json
 from typing_extensions import (
-    Optional,
-    Dict,
-    List,
-    Tuple,
-    Sequence,
     AsyncIterator,
+    Dict,
     Iterator,
-)
-
-from pydantic import (
-    Json,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_worker._grpc import api_pb2
 
-from .backend import (
-    Backend,
-    RECONNECT_DELAY,
-)
-
+from .backend import RECONNECT_DELAY, Backend
+from .errors import RequestArgumentError, ServiceNotAvailable
 from .resolvers import Resolver
-from .errors import (
-    ServiceNotAvailable,
-    RequestArgumentError,
-)
 
 
 def MessageToDict(message) -> Dict:

@@ -1,4 +1,5 @@
 from qgis.core import QgsApplication
+
 from .TestAlgorithmProvider import TestAlgorithmProvider
 
 

@@ -1,14 +1,14 @@
-import pytest
-
 from pathlib import Path
 
-from py_qgis_contrib.core import logger  # noqa
+import pytest
+
 from py_qgis_cache import (
+    CacheEntry,
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,
-    CacheEntry,
 )
+from py_qgis_contrib.core import logger  # noqa
 
 
 def test_path_resolution(data, config):

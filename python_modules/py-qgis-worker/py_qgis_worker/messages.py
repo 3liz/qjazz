@@ -4,28 +4,28 @@
 import asyncio
 import multiprocessing as mp
 
+from dataclasses import dataclass, field
+from enum import Enum, auto
 from multiprocessing.connection import Connection
 from pathlib import Path
 
-from enum import Enum, auto
 from typing_extensions import (
+    IO,
+    Any,
+    AsyncIterator,
     ClassVar,
     Dict,
     List,
-    Any,
+    Literal,
     Optional,
-    Type,
     Self,
     Tuple,
-    Literal,
-    IO,
-    AsyncIterator,
+    Type,
 )
-from dataclasses import dataclass, field
 
 from py_qgis_cache import CheckoutStatus
-from py_qgis_contrib.core.qgis import PluginType
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.qgis import PluginType
 
 
 @dataclass(frozen=True)

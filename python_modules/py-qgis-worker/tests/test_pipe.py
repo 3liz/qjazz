@@ -2,7 +2,6 @@ import pytest
 
 from py_qgis_worker import messages
 
-
 pytest_plugins = ('pytest_asyncio',)
 
 

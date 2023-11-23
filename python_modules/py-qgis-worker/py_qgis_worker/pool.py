@@ -1,23 +1,17 @@
 import asyncio
 import traceback
 
-from time import time
 from contextlib import asynccontextmanager
+from time import time
 
-from typing_extensions import (
-    Iterator,
-    Dict,
-    Tuple,
-    Optional,
-)
-
-from .worker import Worker, WorkerError
-from .config import WorkerConfig
+from typing_extensions import Dict, Iterator, Optional, Tuple
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigProxy, ConfigError
+from py_qgis_contrib.core.config import ConfigError, ConfigProxy
 
 from . import messages as _m
+from .config import WorkerConfig
+from .worker import Worker, WorkerError
 
 
 class WorkerPool:

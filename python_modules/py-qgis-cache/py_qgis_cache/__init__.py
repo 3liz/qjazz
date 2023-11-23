@@ -1,9 +1,9 @@
 
 # Re-export
 from .cachemanager import (  # noqa F401
+    CacheEntry,
     CacheManager,
-    ProjectsConfig,
     CheckoutStatus,
     ProjectMetadata,
-    CacheEntry,
+    ProjectsConfig,
 )

@@ -1,22 +1,16 @@
-import multiprocessing as mp
 import asyncio
-
-from typing_extensions import (
-    AsyncIterator,
-    Optional,
-    Dict,
-    Tuple,
-    Any,
-)
-
-from .config import WorkerConfig
-from . import _op_worker
-from . import messages as _m
-
-from py_qgis_contrib.core.config import ConfigProxy, ConfigError
-from py_qgis_contrib.core import logger
+import multiprocessing as mp
 
 from functools import cached_property
+
+from typing_extensions import Any, AsyncIterator, Dict, Optional, Tuple
+
+from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import ConfigError, ConfigProxy
+
+from . import _op_worker
+from . import messages as _m
+from .config import WorkerConfig
 
 
 class WorkerError(Exception):

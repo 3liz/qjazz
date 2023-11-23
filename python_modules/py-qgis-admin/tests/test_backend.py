@@ -1,10 +1,8 @@
-import pytest
 import asyncio  # noqa
 
-from py_qgis_admin.backend import (
-    BackendConfig,
-    Backend,
-)
+import pytest
+
+from py_qgis_admin.backend import Backend, BackendConfig
 
 pytest_plugins = ('pytest_asyncio',)
 

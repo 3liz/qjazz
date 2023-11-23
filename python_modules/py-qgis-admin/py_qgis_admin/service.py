@@ -1,20 +1,15 @@
 import asyncio
 import traceback
 
-from typing_extensions import (
-    Iterator,
-    AsyncIterator,
-    Tuple,
-    Sequence,
-)
-
 from contextlib import contextmanager
+
+from typing_extensions import AsyncIterator, Iterator, Sequence, Tuple
 
 from py_qgis_contrib.core import config, logger  # noqa
 
-from .resolvers import ResolverConfig
-from .pool import PoolClient
 from .backend import RECONNECT_DELAY
+from .pool import PoolClient
+from .resolvers import ResolverConfig
 
 
 class Service:
