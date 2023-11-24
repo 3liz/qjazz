@@ -6,12 +6,17 @@ stages:
 # Tests
 #-----------------
 
-.tests: 
+.tests:
+  image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
   stage: test
   script:
+    # XXX shell runned with gitlab runner are not
+    # sourcing ~/.bashrc (but works with `docker run ...`)
+    - source ~/.bashrc
+    - make install FLAVOR=$QGIS_FLAVOR
     - make test FLAVOR=$QGIS_FLAVOR
   tags:   
-    - infrav3-dind
+    - factory
 
 tests:ltr: 
   extends: .tests

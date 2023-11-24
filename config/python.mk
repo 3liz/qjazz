@@ -16,12 +16,15 @@ clean::
 deliver::
 	twine upload -r storage $(SDIST)/*
 
-
 lint::
 	@flake8 $(PYTHON_PKG) $(TESTDIR)
 
+install::
+	pip install -e .
+
 autopep8:
 	@autopep8 -v --in-place -r --max-line-length=120 $(AUTOPEP8_EXTRA_ARGS) $(PYTHON_PKG) $(TESTDIR)
+
 
 ifndef TESTDIR
 test::

@@ -1,29 +1,14 @@
 
-test:: ${DIRS}
-	@for d in $^; do \
-		$(MAKE) -C $$d test || exit 1; \
-	done
+TOPTARGET:=test
 
-lint:: ${DIRS}
-	@for d in $^; do \
-		$(MAKE) -C $$d lint; \
-	done
+.PHONY: $(DIRS)
 
-configure:: ${DIRS}
-	@for d in $^; do \
-		$(MAKE) -C $$d configure; \
-	done
+TOPTARGETS:=test lint configure dist deliver install
 
-dist:: ${DIRS}
-	for d in $^; do  \
-		$(MAKE) -C $$d dist || exit 1; \
-	done
+$(TOPTARGETS):: $(DIRS)
 
-deliver:: ${DIRS}
-	for d in $^; do  \
-		$(MAKE) -C $$d deliver || exit 1; \
-	done
-
+$(DIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 # Add rules for python module
 ifdef PYTHON_PKG

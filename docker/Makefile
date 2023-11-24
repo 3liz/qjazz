@@ -1,3 +1,4 @@
+SHELL:=bash
 #
 #
 DEPTH=..
@@ -52,7 +53,7 @@ tag:
 	{ set -e; source $(MANIFEST); \
 	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version; \
 	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version_short; \
-	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$release_tag;
+	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$release_tag; \
 	}
 
 push:
