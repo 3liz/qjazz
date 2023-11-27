@@ -118,6 +118,7 @@ class ApiRequest:
     method: HTTPMethod
     url: str = '/'
     data: Optional[bytes] = None
+    delegate: bool = False,
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None

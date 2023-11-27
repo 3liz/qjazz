@@ -368,6 +368,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         channel: Channel,
         api: str,
         path: str = "/",
+        delegate: bool = False,
         project: Optional[str] = None,
         metrics: Optional[Callable[[metrics.Data], None]] = None,
     ):
@@ -378,6 +379,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         self._path = path
         self._metrics = metrics
         self._report = None
+        self._delegate = delegate
 
     async def _execute_request(self, method: str, report: bool = False):
         project = self._project

@@ -92,17 +92,23 @@ def handle_api_request(
         _m.send_reply(conn, "No report available", 409)
         return
 
-    # Rebuild URL for Qgis server
-    url = f"{msg.url.rstrip('/')}{ROOT_DELEGATE}/{msg.path.lstrip('/')}"
-    if msg.options:
-        url += f"?{msg.options}"
-
     assert msg.headers is not None
     headers = msg.headers
 
-    # Pass api name as header
-    # to api delegate
-    headers['x-qgis-api'] = msg.name
+    # Rebuild URL for Qgis server
+    if msg.delegate:
+        # Delegate URL
+        url = f"{msg.url.rstrip('/')}{ROOT_DELEGATE}/{msg.path.lstrip('/')}"
+        # Pass api name as header
+        # to api delegate
+        headers['x-qgis-api'] = msg.name
+    else:
+        url = msg.url
+        if msg.path:
+            url = f"{url.rstrip('/')}/{msg.path.lstrip('/')}"
+
+    if msg.options:
+        url += f"?{msg.options}"
 
     _handle_generic_request(
         url,

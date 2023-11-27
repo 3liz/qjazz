@@ -108,6 +108,13 @@ class DefaultRouter(RouterBase):
             if not m:
                 raise HTTPError(400, reason="Missing api specification")
             _project, api, api_path = m.groups()
+
+            # Clean up suffixes from api name
+            if api.endswith(".html"):
+                api = api.removesuffix(".html")
+            elif api.endswith(".json"):
+                api = api.removesuffix(".json")
+
             logger.trace(
                 "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)",
                 req.uri,

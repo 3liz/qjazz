@@ -203,6 +203,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 path=request.path,
                 method=http_method,
                 data=request.data,
+                delegate=request.delegate,
                 target=request.target,
                 url=request.url,
                 direct=request.direct,

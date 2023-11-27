@@ -85,12 +85,13 @@ message ApiRequest {
     string path = 2;
     string method = 3;
     optional bytes data = 4;
-    optional string target = 5;
-    optional string url = 6;
-    optional bool direct = 7;
-    optional string options = 8;
-    optional string request_id = 9;
-    optional bool debug_report = 10;
+    optional bool delegate = 5;
+    optional string target = 6;
+    optional string url = 7;
+    optional bool direct = 8;
+    optional string options = 9;
+    optional string request_id = 10;
+    optional bool debug_report = 11;
 }
 
 message GenericRequest {

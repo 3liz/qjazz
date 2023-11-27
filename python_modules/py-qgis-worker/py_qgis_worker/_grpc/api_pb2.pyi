@@ -1,13 +1,8 @@
-from typing import ClassVar as _ClassVar
-from typing import Iterable as _Iterable
-from typing import Mapping as _Mapping
-from typing import Optional as _Optional
-from typing import Union as _Union
-
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -83,11 +78,12 @@ class OwsRequest(_message.Message):
     def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class ApiRequest(_message.Message):
-    __slots__ = ["name", "path", "method", "data", "target", "url", "direct", "options", "request_id", "debug_report"]
+    __slots__ = ["name", "path", "method", "data", "delegate", "target", "url", "direct", "options", "request_id", "debug_report"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     METHOD_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
+    DELEGATE_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
     URL_FIELD_NUMBER: _ClassVar[int]
     DIRECT_FIELD_NUMBER: _ClassVar[int]
@@ -98,13 +94,14 @@ class ApiRequest(_message.Message):
     path: str
     method: str
     data: bytes
+    delegate: bool
     target: str
     url: str
     direct: bool
     options: str
     request_id: str
     debug_report: bool
-    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
 
 class GenericRequest(_message.Message):
     __slots__ = ["url", "method", "data", "target", "direct", "request_id", "debug_report"]

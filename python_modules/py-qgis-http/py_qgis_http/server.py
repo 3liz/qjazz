@@ -290,6 +290,7 @@ class _Router(tornado.routing.Router):
                                 'project': route.project,
                                 'api': api_name,
                                 'path': api_path,
+                                'delegate': bool(ep.delegate_to),
                                 'metrics': self._metrics_call,
                             },
                         )
@@ -349,6 +350,7 @@ async def serve(conf: Config):
 
     router = _Router(channels)
 
+    metrics_service = None
     if conf.metrics:
         metrics_service = await router.set_metrics(conf.metrics)
 
