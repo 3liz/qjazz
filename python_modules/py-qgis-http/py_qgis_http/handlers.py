@@ -190,7 +190,7 @@ async def get_report(stream) -> Tuple[Optional[int], Optional[int]]:
             case 'x-debug-memory':
                 memory = int(v)
             case 'x-debug-duration':
-                duration = int(v*1000.0)
+                duration = int(float(v) * 1000.0)
     return (memory, duration, timestamp)
 
 
@@ -226,13 +226,13 @@ class RpcHandlerMixIn:
             except HTTPError as err:
                 status_code = err.status_code
             finally:
+                if not self._report:
+                    logger.error("Something prevented to get metric's report...")
+                    return
                 project = self._project
                 latency = int((time() - start) * 1000.)
-                if self.report:
-                    memory, duration = self._report
-                    latency -= duration
-                else:
-                    memory, duration = (-1, -1)
+                memory, duration, _ = self._report
+                latency -= duration
                 await self._metrics(
                     self.request,
                     self._channel,
@@ -422,7 +422,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
                 await self.flush()
 
             if report:
-                self._report = get_report(stream)
+                self._report = await get_report(stream)
 
     async def _handle_request(self, method: str):
         async with self.collect_metrics(self._api, self._path) as report:

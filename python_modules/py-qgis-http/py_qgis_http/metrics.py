@@ -3,13 +3,14 @@
     Metric's exporter connectors must
     implement this class.
 """
+import json
 import os
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from pydantic import ConfigDict, Field
-from typing_extensions import Awaitable, Dict, Mapping, Optional, Self
+from typing_extensions import Dict, Mapping, Optional, Self
 
 from py_qgis_contrib.core import componentmanager as cm
 from py_qgis_contrib.core import config
@@ -29,15 +30,18 @@ class Data:
     latency: int
     cached: bool
 
+    def dump_json(self) -> str:
+        return json.dumps(self.__dict__)
+
 
 class Metrics(ABC):
 
     @abstractmethod
-    def initialize(**options) -> Self:
+    async def initialize(**options) -> Self:
         ...
 
     @abstractmethod
-    def emit(self, key: str, data: Data) -> Awaitable:
+    async def emit(self, key: str, data: Data) -> None:
         ...
 
 #
@@ -65,7 +69,7 @@ class MetricConfig(config.Config):
         default=None,
         title="Default routing key",
     )
-    config: dict = Field(title="Backend configuration")
+    options: dict = Field(title="Backend configuration options")
 
     def routing_key_meta(self, meta: Dict[str, str], headers: Mapping[str, str]) -> str:
         """ Returns the routing_key.
@@ -80,7 +84,7 @@ class MetricConfig(config.Config):
         except KeyError:
             return self.routing_key_default
 
-    def load_service(self) -> Metrics:
+    async def load_service(self) -> Metrics:
         """ Load entrypoint for metrics handler given by 'name'
 
             raises: cm.FactoryNotFoundError|cm.EntryPointNotFoundError
@@ -89,6 +93,6 @@ class MetricConfig(config.Config):
         cm.load_entrypoint(METRICS_HANDLER_ENTRYPOINTS, self.name)
 
         # Initialize the service
-        return cm.get_service(
+        return await cm.get_service(
             f"{METRICS_HANDLER_CONTRACTID}?name={self.name}"
-        ).initialize(**self.config)
+        ).initialize(**self.options)

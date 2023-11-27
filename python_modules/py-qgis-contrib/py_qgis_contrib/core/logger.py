@@ -112,6 +112,10 @@ critical = LOGGER.critical
 debug = LOGGER.debug
 
 
+def logger():
+    return LOGGER
+
+
 def trace(msg, *args, **kwargs):
     LOGGER.log(LogLevel.TRACE.value, msg, *args, **kwargs)
 

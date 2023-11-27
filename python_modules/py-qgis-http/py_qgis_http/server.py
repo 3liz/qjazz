@@ -177,9 +177,8 @@ class _Router(tornado.routing.Router):
     """ Router
     """
 
-    def __init__(self, channels: _Channels, metrics_conf: metrics.MetricConfig):
+    def __init__(self, channels: _Channels):
         self.channels = channels
-        self.metrics = metrics_conf
         self.app = App(default_handler_class=NotFoundHandler)
 
         self._metrics_call = None
@@ -189,26 +188,22 @@ class _Router(tornado.routing.Router):
         self._router = DefaultRouter()
         self._update_routes()
 
-        self._init_metrics()
-
-    def _init_metrics(self):
+    async def set_metrics(self, metrics_conf: metrics.MetricConfig) -> metrics.Metrics:
         """ Initialize metrics service
             if requested
         """
-        if not self.metrics:
-            return
-
-        metrics_service = self.metrics.load_service()
+        _service = await metrics_conf.load_service()
 
         async def _call(request, chan: Channel, data: metrics.Data):
-            routing_key = self.metrics.routing_key_meta(
+            routing_key = metrics_conf.routing_key_meta(
                 meta=chan.meta,
                 headers=request.headers,
             )
             if routing_key:
-                await metrics_service.emit(routing_key, data)
+                await _service.emit(routing_key, data)
 
         self._metrics_call = _call
+        return _service
 
     def _update_routes(self):
         """ Update routes and routable class
@@ -352,7 +347,10 @@ async def serve(conf: Config):
     channels = _Channels(conf)
     await channels.init_channels()
 
-    router = _Router(channels, conf.metrics)
+    router = _Router(channels)
+
+    if conf.metrics:
+        metrics_service = await router.set_metrics(conf.metrics)
 
     configure_server(router, conf.http)
     configure_admin_server(conf.admin_server, channels)
@@ -364,6 +362,9 @@ async def serve(conf: Config):
 
     logger.info(f"Server listening at {conf.http.format_interface()}")
     await event.wait()
-
     await channels.close()
+
+    if metrics_service:
+        metrics_service.close()
+
     logger.info("Server shutdown")

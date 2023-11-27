@@ -28,10 +28,10 @@ endif
 FLAVOR:=release
 BUILD_TARGET:=base
 
-NO_CACHE:=--force-rm --no-cache
+BUILD_CACHE:=--force-rm --no-cache
 
 build: manifest
-	docker build --rm $(NO_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
+	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		-t $(BUILDIMAGE) -f Dockerfile  ..
 
 MANIFEST=factory.manifest

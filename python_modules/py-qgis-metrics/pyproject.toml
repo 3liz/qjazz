@@ -13,11 +13,13 @@ classifiers = [
 ]
 dependencies = [
     "py-qgis-contrib==1.0.0.dev0",
+    "py-qgis-http==1.0.0.dev0",
+    "py-amqp-client>=2.0.0"
 ]
 version = "1.0.0.dev0"
 
-[project.entry-points.'3liz.org.metrics.handler.1']
-amqp = 'py_qgis_metrics.handlers.amqp:register'
+[project.entry-points.'3liz.org.metrics.handler']
+amqp = 'py_qgis_metrics.amqp:register'
 
 [[project.authors]]
 name = "David Marteau"

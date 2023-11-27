@@ -152,7 +152,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             if request.debug_report:
                 logger.trace("Sending debug report")
                 report = await worker.io.read()
-                context.set_trailling_metatada([
+                context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
                     ('x-debug-timestamp', str(report.timestamp)),
@@ -231,7 +231,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             if request.debug_report:
                 logger.trace("Sending debug report")
                 report = await worker.io.read()
-                context.set_trailling_metatada([
+                context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
                     ('x-debug-timestamp', str(report.timestamp)),
@@ -306,7 +306,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             # Final report
             if request.debug_report:
                 report = await worker.io.read()
-                context.set_trailling_metatada([
+                context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
                     ('x-debug-timestamp', str(report.timestamp)),
@@ -350,7 +350,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         request: api_pb2.ServerStatus,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
-        """ Set the Healthcheck servec service
+        """ Set the Healthcheck service
             status
         """
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus

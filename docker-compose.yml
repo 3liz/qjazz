@@ -23,7 +23,7 @@ services:
     - qgis_rpc_network
     command: ["qgis-server-http", "serve", "--verbose"]
     profiles:
-        - proxy
+    - proxy
 
   config-server:
     image: nginx:alpine
@@ -34,6 +34,14 @@ services:
       source: "${PWD}/tests/"
       target: /usr/share/nginx/html
       read_only: true
+
+  amqp:
+    image: rabbitmq:3
+    networks:
+    - qgis_rpc_network
+    profiles:
+    - amqp
+
 
 networks:
   qgis_rpc_network:
