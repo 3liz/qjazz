@@ -4,3 +4,5 @@ ABOUT_CACHE.md
 
 *.egg-info
 /.activate
+
+/doc/build
