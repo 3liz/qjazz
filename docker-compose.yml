@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   worker:
-    image: qgis-services:release
+    image: 3liz/qgis-services:release
     networks:
     - qgis_rpc_network
     environment: 
@@ -13,7 +13,7 @@ services:
     command: ["qgis-server-rpc", "serve"]
 
   proxy:
-    image: qgis-services:release
+    image: 3liz/qgis-services:release
     environment:
       CONF_DISPLAY_XVFB: OFF
       CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
