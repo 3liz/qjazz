@@ -45,15 +45,12 @@ if [[ ! -w $HOME ]]; then
     exit 1
 fi
 
-CONF_DISPLAY_XVFB=${CONF_DISPLAY_XVFB:-ON}
+CONF_DISPLAY_XVFB=${CONF_DISPLAY_XVFB:-OFF}
 #
 # Set up xvfb
 # https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml
 # see https://www.x.org/archive/X11R7.6/doc/man/man1/Xserver.1.xhtml
 #
-XVFB_DEFAULT_ARGS="-screen 0 1024x768x24 -ac +extension GLX +render -noreset"
-XVFB_ARGS=${CONF_XVFB_ARGS:-":99 $XVFB_DEFAULT_ARGS"}
-
 if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
  if [ -f /tmp/.X99-lock ]; then
      echo "ERROR: An existing lock file will prevent Xvfb to start"
@@ -61,6 +58,9 @@ if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
      echo "consider mounting /tmp with option '--tmpfs /tmp'"
      exit 1
  fi
+
+ XVFB_DEFAULT_ARGS="-screen 0 1024x768x24 -ac +extension GLX +render -noreset"
+ XVFB_ARGS=${CONF_XVFB_ARGS:-":99 $XVFB_DEFAULT_ARGS"}
 
  # RUN Xvfb in the background
  echo "Running Xvfb"
