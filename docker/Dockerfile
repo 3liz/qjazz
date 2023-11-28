@@ -7,6 +7,14 @@ FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} as base
 MAINTAINER David Marteau <david.marteau@3liz.com>
 LABEL Description="QGIS gRCP" Vendor="3liz.org"
 
+RUN apt-get update -y \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y --fix-missing --no-install-recommends \
+        bash-completion \
+        jq \
+        less \
+        ${NULL}
+
 ARG CACHEBUST="23.11.08"
 
 COPY python_modules /python_modules
@@ -28,7 +36,7 @@ RUN mkdir -p /opt/local/ \
     && ln -s /opt/local/qgisserver/bin/qgis-server-monitor \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http
 
-COPY docker/docker-entrypoint.sh /usr/local/bin/
+COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
 
 # Set uid root on Xvfb
@@ -38,6 +46,8 @@ RUN chmod u+s /usr/bin/Xvfb
 EXPOSE 23456 80 9876
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
 # =========
 # CI build

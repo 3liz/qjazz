@@ -1,0 +1,28 @@
+
+# Activate shell options
+shopt -s extglob
+shopt -s globstar
+
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Redefine aliases
+alias ls='ls --color=auto'
+alias ll='ls -alh'
+alias la='ls -a'
+alias l='ls -CF'
+
+alias grep='grep --color=auto'
+
+alias rm='rm -I'
+
+PS1_OLD=$PS1
+PS1="\[\e[1;33m\][\w]\n\[\e[1;31m\]\h\[\e[0m\]$ "
+
+# Active the qgis server virtual env
+source /opt/local/qgisserver/bin/activate

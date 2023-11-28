@@ -16,7 +16,7 @@ BUILD_ARGS += --build-arg REGISTRY_PREFIX=$(REGISTRY_PREFIX)
 
 QGIS_IMAGE=$(REGISTRY_PREFIX)qgis-platform:$(FLAVOR)
 
-BUILDIMAGE=$(NAME):$(FLAVOR)
+BUILDIMAGE=$(REGISTRY_PREFIX)$(NAME):$(FLAVOR)
 
 # CI build
 ifdef PYPISERVER
@@ -32,6 +32,7 @@ BUILD_CACHE:=--force-rm --no-cache
 
 build: manifest
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
+		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -f Dockerfile  ..
 
 MANIFEST=factory.manifest
