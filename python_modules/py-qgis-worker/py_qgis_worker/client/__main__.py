@@ -113,7 +113,7 @@ def cli_commands():
 
 @cli_commands.group('request')
 def request_commands():
-    """ Commands for requesting qgis server
+    """ Send Qgis requests
     """
     pass
 
@@ -347,7 +347,7 @@ def catalog(location: Optional[str]):
 
 @cli_commands.group('plugin')
 def plugin_commands():
-    """ Commands for cache management
+    """ Retrive Qgis plugin infos
     """
     pass
 
@@ -386,7 +386,7 @@ def list_plugins():
 
 @cli_commands.group('config')
 def config_commands():
-    """ Commands for cache management
+    """ Commands for configuration management
     """
     pass
 
@@ -429,9 +429,9 @@ def reload_config():
 #
 
 
-@cli_commands.group('status')
+@cli_commands.group('state')
 def status_commands():
-    """ Commands for cache management
+    """ Commands for retrieving and setting rpc service state
     """
     pass
 
@@ -469,7 +469,7 @@ def enable_server():
 @click.option("--count", default=1, help="Number of requests to send")
 @click.option("--server", is_flag=True, help="Ping qgis server service")
 def ping(count: int, server: bool = False):
-    """ Get environment status
+    """ Ping service
     """
     stub = api_pb2_grpc.QgisServerStub if server else None
     target = "server" if server else "admin"
@@ -489,7 +489,7 @@ def ping(count: int, server: bool = False):
 @click.option("--watch", "-w", is_flag=True, help="Watch status changes")
 @click.option("--server", is_flag=True, help="Check qgis server service")
 def healthcheck_status(watch: bool, server: bool):
-    """ Check the status of a GRPC server
+    """ Check and monitor the status of a GRPC server
     """
     target = "QgisServer" if server else "QgisAdmin"
     with connect(stub=health_pb2_grpc.HealthStub) as stub:
@@ -511,7 +511,7 @@ def healthcheck_status(watch: bool, server: bool):
     help="Interval in seconds in watch mode",
 )
 def display_stats(watch: bool, interval: int):
-    """ Check the status of a GRPC server
+    """ Return information about service processes
     """
     with connect() as stub:
         resp = stub.Stats(api_pb2.Empty())
@@ -522,4 +522,9 @@ def display_stats(watch: bool, interval: int):
             sleep(interval)
 
 
-cli_commands()
+# Make it callable for scripts
+def main():
+    cli_commands()
+
+
+main()

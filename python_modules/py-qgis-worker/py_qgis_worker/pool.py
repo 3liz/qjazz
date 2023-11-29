@@ -93,7 +93,7 @@ class WorkerPool:
         #
         self._cached_worker_env.update(
             name=self._config.name,
-            num_workers=len(self._workers),
+            num_processes=len(self._workers),
             description=self._config.description,
         )
 

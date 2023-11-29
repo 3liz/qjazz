@@ -18,7 +18,7 @@ class _Config:
           - in: path
             name: Id
             schema:
-              type: string
+                type: string
             required: true
             description: Identifier for the backend
         tags:
@@ -74,7 +74,7 @@ class _Config:
           - in: path
             name: Id
             schema:
-              type: string
+                type: string
             required: true
             description: Identifier for the backend
         tags:

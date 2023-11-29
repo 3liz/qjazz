@@ -123,7 +123,7 @@ class CacheItem(BaseModel):
 @swagger.model
 class CacheItemPool(BaseModel):
     pool: Dict[str, CacheItem]
-    links: List[swagger.Link] = []
+    links: List[swagger.Link]
 
 
 StringList = swagger.model(

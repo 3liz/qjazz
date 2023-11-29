@@ -74,7 +74,7 @@ class _Backends:
           - in: path
             name: Id
             schema:
-            type: string
+                type: string
             required: true
             description: Identifier for the backend
         tags:

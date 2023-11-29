@@ -19,7 +19,8 @@ version = "1.0.0.dev0"
 
 [project.scripts]
 qgis-server-rpc = "py_qgis_worker.cli:main"
-qgis-server-monitor = "py_qgis_admin.cli:main"
+qgis-server-cli = "py_qgis_worker.client.__main__:main"
+qgis-server-admin = "py_qgis_admin.cli:main"
 qgis-server-http = "py_qgis_http.cli:main"
 
 [[project.authors]]
