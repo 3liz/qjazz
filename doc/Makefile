@@ -18,8 +18,17 @@ md: build
 	mkdir -p ${BUILDDIR}/md
 	sphinx-build -b markdown ./  ${BUILDDIR}/md
 
-build:
+config_doc:
+	@echo "* Creating rpc config documentation"
+	@qgis-server-rpc config --schema --format toml > ./configs/rpc.toml
+	@echo "* Creating proxy config documentation"
+	@qgis-server-http config --schema --format toml > ./configs/proxy.toml
+	@echo "* Creating admin config documentation"
+	@qgis-server-admin doc config --format toml > ./configs/managment.toml
+
+build: 
 
 clean:
 	rm -r ${BUILDDIR}
 
+all: config_doc build

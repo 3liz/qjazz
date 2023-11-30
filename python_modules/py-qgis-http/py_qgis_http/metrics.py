@@ -58,9 +58,9 @@ class MetricConfig(config.Config):
     routing_key: str = Field(
         title="Routing key",
         description=(
-            "The routing key for the metric message "
-            "This key is passed to monitoring backend. "
-            "If meta_key is true, the string is interpreted as a format string "
+            "The routing key for the metric message\n"
+            "This key is passed to monitoring backend.\n"
+            "If meta_key is true, the string is interpreted as a format string\n"
             "with a 'META' dict parameter."
         ),
         examples=['{META[field1]}.{META[field2]}'],

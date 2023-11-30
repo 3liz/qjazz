@@ -1,0 +1,199 @@
+
+[logging]
+level = "INFO"
+
+# Bootstrap configuration from remote location.
+# The configuration is fetched from the remote url
+# at startup and override all local settings.
+[config_url]
+#ssl =   	# Optional
+#
+# External configuration Url
+#
+# Url to external configuration.
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+#url =   	# Optional
+
+#
+#[config_url.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
+[worker]
+#
+# Name of the worker instance
+name = "default"
+#
+# Description
+#
+# Description for administrative purpose
+description = ""
+#
+# Projects configuration
+#
+# Projects and cache configuration
+#projects = strict_check=True trust_layer_metadata=False disable_getprint=False force_readonly_layers=False disable_advertised_urls=False search_paths={} allow_direct_path_resolution=True
+#
+# Max number of projects in cache
+#
+# The maximum number of projects allowed in cache.
+# The default value is set to 50 projects. 
+max_projects = 50
+#
+# Load project in cache when requested
+#
+# Load project in cache at request.
+# If set to 'false', project not loaded in cache will
+# return a 403 HTTP code when requested.
+# Thus, adding project's to cache will require a specific
+# action from another service or admininstrative
+# management tools.
+load_project_on_request = true
+#
+# Reload outdated project when requested
+#
+# Reload outdated project at request.
+# If set to 'false', outdated project in cache will
+# not be refreshed when requested.
+# Thus, refreshing project's to cache will require a specific
+# action from another service or admininstrative
+# management tools.
+reload_outdated_project_on_request = false
+#
+# Plugins configuration
+#plugins = paths=[]
+#
+# Maximum chunk size
+#
+# Set the maximum chunk size for streamed responses.
+max_chunk_size = 1048576
+#
+# Interfaces to listen to
+#interfaces = [ListenConfig(listen=('[::]', 23456), ssl=SSLConfig(ca=None, cert=None, key=None))]
+#
+# Max number of concurrent requests
+#
+# The maximum number of requests that can be
+# queued for this worker task. If the number of
+# waiting requests reach the limit, the subsequent
+# requests will be returned with a `service unavailable`
+# error
+max_waiting_requests = 20
+#
+# Stalled worker timeout
+#
+# Set the amount of time in seconds before considering
+# considering that the worker is stalled.
+# A stalled worker will be terminated and the server will
+# exit with an error code
+worker_timeout = 20
+#
+# Shutdown grace period
+#
+# The maximum amount of time to wait before
+# closing connections. During this period,
+# no new connections are allowed.
+shutdown_grace_period = 20
+#
+# Max worker failure pressure
+#
+# The maximum ratio of terminated/initial workers
+# allowed. If this limit is reached,  the server will
+# issue a critical failure before exiting.
+max_worker_failure_pressure = 0.0
+
+#
+# Projects configuration
+#
+# Projects and cache configuration
+#
+#[worker.projects]
+#
+# Enable strict checking
+#
+# Activate strict checking of project layers.
+# When enabled, Qgis projects with invalid layers will be dismissed.
+# Trying to access such a project will lead to a 'unprocessable Entity'
+# (422) HTTP error
+#strict_check = true
+#
+# Trust layer metadata
+#
+# Trust layer metadata.
+# Improves layer load time by skipping expensive checks
+# like primary key unicity, geometry type and
+# srid and by using estimated metadata on layer load.
+# Since QGIS 3.16
+#trust_layer_metadata = false
+#
+# Disable GetPrint requests
+#
+# Don't load print layouts.
+# Improves project read time if layouts are not required,
+# and allows projects to be safely read in background threads
+# (since print layouts are not thread safe).
+#disable_getprint = false
+#
+# Force read only mode
+#
+# Force layers to open in read only mode
+#force_readonly_layers = false
+#
+# Disable OWS advertised urls
+#
+# Disable ows urls defined in projects.
+# This may be necessary because Qgis projects
+# urls override proxy urls.
+#disable_advertised_urls = false
+#
+# Scheme mapping definitions
+#
+# Defines mapping betweeen location base path and storage handler root url.
+# Resource path relative to location will be joined the the root url path.
+# In the case of Qgis storage, the handler is responsible for transforming
+# the result url into a comprehensive format for the corresponding
+# QgsProjectStorage implementation.
+# This is handled by the default storage implementation for Qgis native
+# project storage. In case of custom QgsProjectStorage, if the scheme does not allow passing
+# project as path component, it is possible to specify a custom resolver function.
+#search_paths = {}
+#
+# Allow direct path resolution
+#
+# Allow direct path resolution if there is
+# no matching from the search paths.
+# Uri are directly interpreted as valid Qgis project's path.
+# WARNING: allowing this may be a security vulnerabilty.
+#allow_direct_path_resolution = true
+
+#
+# Plugins configuration
+#
+#[worker.plugins]
+#
+# Plugin paths
+#
+# List of search paths for plugins. All Qgis plugins found will be loaded if they are compatible with the current Qgis version.
+#paths = []
+
+#
+# Interfaces to listen to
+#
+#[[worker.interfaces]]
+#
+# TCP:PORT interface or unix socket
+#listen = ['[::]', 23456]
+#ssl = ca=None cert=None key=None
+

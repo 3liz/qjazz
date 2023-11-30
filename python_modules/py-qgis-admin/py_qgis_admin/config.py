@@ -40,17 +40,17 @@ class HttpConfig(Config):
         AfterValidator(_check_ssl_config)
     ] = Field(
         default=SSLConfig(),
-        title="SSL configuration",
+        title="SSL certificats",
     )
 
     cross_origin: Literal['all', 'same-origin'] | AnyHttpUrl = Field(
         default='all',
         title="CORS origin",
         description=(
-            "Allows to specify origin for CORS. If set 'all' will set "
-            "Access-Control-Allow-Origin to '*'; 'same-origin' return "
+            "Allows to specify origin for CORS. If set 'all' will set\n"
+            "Access-Control-Allow-Origin to '*'; 'same-origin' return\n"
             "the same value as the 'Origin' request header.\n"
-            "A url may may be specified, restricting allowed origin to "
+            "An url may may be specified, restricting allowed origin to "
             "this url."
         ),
     )
@@ -83,7 +83,10 @@ EXTERNAL_CONFIG_SECTION = "config_url"
 @section(EXTERNAL_CONFIG_SECTION)
 class ConfigUrl(Config):
     """Remote configuration settings"""
-    ssl: Optional[SSLConfig] = None
+    ssl: Optional[SSLConfig] = Field(
+        default=None,
+        title="SSL configuration",
+    )
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",

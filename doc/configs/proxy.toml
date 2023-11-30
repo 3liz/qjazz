@@ -1,0 +1,258 @@
+
+[logging]
+level = "INFO"
+
+# Url for external configuration.
+# The configuration is fetched from the remote url
+# at startup and override all local settings.
+[config_url]
+#ssl =   	# Optional
+#
+# External configuration Url
+#
+# Url to external configuration.
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+# 
+#url =   	# Optional
+#
+# User agent
+#
+# The user agent for configuration requests
+user_agent = "py-qgis-server2 middleware 1.0.0.dev0"
+
+#
+#[config_url.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
+[http]
+#
+# Interfaces to listen to
+listen = ['0.0.0.0', 80]
+#
+# Use ssl
+use_ssl = false
+#
+# SSL configuration
+#ssl = ca=None cert=None key=None
+#
+# CORS origin
+#
+# Allows to specify origin for CORS. If set 'all' will set
+# Access-Control-Allow-Origin to '*'; 'same-origin' return
+# the same value as the 'Origin' request header.
+# A url may may be specified, restricting allowed origin to
+# this url.
+cross_origin = "all"
+#
+# Enable proxy_configuration
+#
+# Indicates that the server is behind a reverse proxy.
+# This enable handling of forwarded proxy headers
+proxy_conf = false
+
+#
+# SSL configuration
+#
+#[http.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
+[admin_server]
+#
+# Interfaces to listen to
+listen = "unix:///tmp/py-qgis-http-admin.sock"
+#
+# Use ssl
+use_ssl = false
+#
+# SSL configuration
+#ssl = ca=None cert=None key=None
+#
+# CORS origin
+#
+# Allows to specify origin for CORS. If set 'all' will set
+# Access-Control-Allow-Origin to '*'; 'same-origin' return
+# the same value as the 'Origin' request header.
+# A url may may be specified, restricting allowed origin to
+# this url.
+cross_origin = "all"
+#
+# Enable proxy_configuration
+#
+# Indicates that the server is behind a reverse proxy.
+# This enable handling of forwarded proxy headers
+proxy_conf = false
+
+#
+# SSL configuration
+#
+#[admin_server.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
+#[backends.key]
+#
+# A descriptive title
+#title = ""
+#
+# A description of the service
+#description = ""
+#
+# Remote address of the service
+#
+#  Validate address
+# 
+#         Address may be:
+#         * A string `unix:path`
+#         * A 2-tuple `(name, port)` where `name` is either an ip addresse
+#           or a hostname
+#     
+#address = ['localhost', 23456]
+#ssl =   	# Optional
+#
+# Route to service
+#route = 	# Required
+#
+# Request timeout
+#
+# Set the timeout for Qgis response in seconds.
+# If a Qgis worker takes more than the corresponding value
+# a timeout error (504) is returned to the client.
+#timeout = 20
+#
+# Forwarded headers
+#
+# Set the headers that will be forwarded to the Qgis server backend.
+# This may be useful if you have plugins that may deal with request headers.
+#forward_headers = ['x-qgis-*', 'x-lizmap-*']
+#
+# Api endpoints
+#api = []
+#
+# Allow direct path resolution
+#
+# Allow remote worker to use direct project path resolution.
+# WARNING: allowing this may be a security vulnerabilty.
+# See worker configuration for details.
+#allow_direct_resolution = false
+#
+# WFS/GetFeature limit
+#
+# Force setting a limit for WFS/GetFeature requests.
+# By default Qgis does not set limits and that may cause
+# issues with large collections.
+#getfeature_limit =   	# Optional
+
+#
+#[backends.key.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
+#
+# Api endpoints
+#
+#[[backends.key.api]]
+#
+# Api endpoint
+#endpoint = 	# Required
+#
+# Api name to delegate to
+#
+# Api delegation allow for using a baseurl different
+# from the expected rootpath of qgis server api.
+# For exemple, wfs3 request may be mapped to a completely different
+# root path. 
+#delegate_to =   	# Optional
+#
+# Descriptive name
+#name = ""
+#
+# Api description
+#description = ""
+
+#
+# Metrics configuration
+#  Metric configuration
+#     
+#[metrics]
+#
+# Metric type
+#name = 	# Required
+#
+# Meta key
+#meta_key = false
+#
+# Routing key
+#
+# The routing key for the metric message
+# This key is passed to monitoring backend.
+# If meta_key is true, the string is interpreted as a format string
+# with a 'META' dict parameter.
+#routing_key = 	# Required
+#
+# Default routing key
+#routing_key_default =   	# Optional
+#
+# Backend configuration options
+#options = 	# Required
+
+#
+# Path to services configuration files
+#
+# Path or globbing to services configuration files.
+# Note that this section is ignored if remote configuration
+# is used.
+#
+# Path to services configuration files
+#
+# Path or globbing to services configuration files.
+# Note that this section is ignored if remote configuration
+# is used.
+#includes =   	# Optional
+

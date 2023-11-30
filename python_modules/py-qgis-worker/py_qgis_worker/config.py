@@ -52,7 +52,7 @@ class WorkerConfig(config.Config):
         default=50,
         title="Max number of projects in cache",
         description=(
-            "The maximum number of projects allowed in cache. "
+            "The maximum number of projects allowed in cache.\n"
             "The default value is set to 50 projects. "
         )
     )
@@ -60,11 +60,11 @@ class WorkerConfig(config.Config):
         default=True,
         title="Load project in cache when requested",
         description=(
-            "Load project in cache at request. "
-            "If set to 'false', project not loaded in cache will "
-            "return a 403 HTTP code when requested. "
-            "Thus, adding project's to cache will require a specific "
-            "action from another service or admininstrative "
+            "Load project in cache at request.\n"
+            "If set to 'false', project not loaded in cache will\n"
+            "return a 403 HTTP code when requested.\n"
+            "Thus, adding project's to cache will require a specific\n"
+            "action from another service or admininstrative\n"
             "management tools."
         )
     )
@@ -72,11 +72,11 @@ class WorkerConfig(config.Config):
         default=False,
         title="Reload outdated project when requested",
         description=(
-            "Reload outdated project at request. "
-            "If set to 'false', outdated project in cache will "
-            "not be refreshed when requested. "
-            "Thus, refreshing project's to cache will require a specific "
-            "action from another service or admininstrative "
+            "Reload outdated project at request.\n"
+            "If set to 'false', outdated project in cache will\n"
+            "not be refreshed when requested.\n"
+            "Thus, refreshing project's to cache will require a specific\n"
+            "action from another service or admininstrative\n"
             "management tools."
         )
     )
@@ -98,10 +98,10 @@ class WorkerConfig(config.Config):
         default=20,
         title="Max number of concurrent requests",
         description=(
-            "The maximum number of requests that can be "
-            "queued for this worker task. If the number of "
-            "waiting requests reach the limit, the subsequent "
-            "requests will be returned with a `service unavailable` "
+            "The maximum number of requests that can be\n"
+            "queued for this worker task. If the number of\n"
+            "waiting requests reach the limit, the subsequent\n"
+            "requests will be returned with a `service unavailable`\n"
             "error"
         ),
     )
@@ -109,9 +109,9 @@ class WorkerConfig(config.Config):
         default=20,
         title="Stalled worker timeout",
         description=(
-            "Set the amount of time in seconds before considering "
-            "considering that the worker is stalled. "
-            "A stalled worker will be terminated and the server will "
+            "Set the amount of time in seconds before considering\n"
+            "considering that the worker is stalled.\n"
+            "A stalled worker will be terminated and the server will\n"
             "exit with an error code"
         ),
     )
@@ -119,8 +119,8 @@ class WorkerConfig(config.Config):
         default=20,
         title="Shutdown grace period",
         description=(
-            "The maximum amount of time to wait before "
-            "closing connections. During this period, "
+            "The maximum amount of time to wait before\n"
+            "closing connections. During this period,\n"
             "no new connections are allowed."
         ),
     )
@@ -128,8 +128,8 @@ class WorkerConfig(config.Config):
         default=0.,
         title="Max worker failure pressure",
         description=(
-            "The maximum ratio of terminated/initial workers "
-            "allowed. If this limit is reached,  the server will "
+            "The maximum ratio of terminated/initial workers\n"
+            "allowed. If this limit is reached,  the server will\n"
             "issue a critical failure before exiting."
         ),
     )
@@ -144,19 +144,19 @@ class RemoteConfigError(Exception):
 
 @section(EXTERNAL_CONFIG_SECTION)
 class ConfigUrl(config.Config):
-    """
-    Url for external configuration.
-    The configuration is fetched from the remote url
-    at startup and override all local settings.
-    """
+    (
+        "Bootstrap configuration from remote location.\n"
+        "The configuration is fetched from the remote url\n"
+        "at startup and override all local settings."
+    )
     ssl: Optional[SSLConfig] = None
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",
         description=(
-            "Url to external configuration. "
-            "The server will issue a GET method against this url at startup. "
-            "The method should returns a valid configuration fragment. "
+            "Url to external configuration.\n"
+            "The server will issue a GET method against this url at startup.\n"
+            "The method should returns a valid configuration fragment."
         ),
     )
 

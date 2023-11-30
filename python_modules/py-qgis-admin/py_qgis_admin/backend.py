@@ -34,10 +34,10 @@ CHANNEL_OPTIONS = [
 class BackendConfig(config.Config):
     server_address: config.NetInterface = Field(
         title="TCP or Socket address",
-        description="Address of worker client",
+        description="Address of Qgis service",
     )
     use_ssl: bool = False
-    ssl_files: Optional[config.SSLConfig] = None
+    ssl: Optional[config.SSLConfig] = None
 
     def address_to_string(self) -> str:
         """ Returns the address as string
@@ -90,7 +90,7 @@ class Backend:
         self._serving = False
         self._address = conf.address_to_string()
         self._use_ssl = conf.use_ssl
-        self._ssl_creds = _channel_credentials(conf.ssl_files) if self._use_ssl else None
+        self._ssl_creds = _channel_credentials(conf.ssl) if self._use_ssl else None
         self._shutdown = False
         self._grace_period = grace_period
         self._shutdown_task = None

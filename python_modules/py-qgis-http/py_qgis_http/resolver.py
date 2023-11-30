@@ -89,9 +89,9 @@ class ApiEndpoint(Config):
         default=None,
         title="Api name to delegate to",
         description=(
-            "Api delegation allow for using a baseurl different "
-            "from the expected rootpath of qgis server api."
-            "For exemple, wfs3 request may be mapped to a completely different "
+            "Api delegation allow for using a baseurl different\n"
+            "from the expected rootpath of qgis server api.\n"
+            "For exemple, wfs3 request may be mapped to a completely different\n"
             "root path. "
         )
     )
@@ -130,17 +130,17 @@ class BackendConfig(Config):
         default=20,
         title="Request timeout",
         description=(
-            "Set the timeout for Qgis response in seconds. "
-            "If a Qgis worker takes more than the corresponding value "
+            "Set the timeout for Qgis response in seconds.\n"
+            "If a Qgis worker takes more than the corresponding value\n"
             "a timeout error (504) is returned to the client."
         ),
     )
 
     forward_headers: List[Annotated[str, StringConstraints(to_lower=True)]] = Field(
         default=['x-qgis-*', 'x-lizmap-*'],
-        title="Define headers that will be forwarded to Qgis server backend",
+        title="Forwarded headers",
         description=(
-            "Set the headers that will be forwarded to the Qgis server backend. "
+            "Set the headers that will be forwarded to the Qgis server backend.\n"
             "This may be useful if you have plugins that may deal with request headers."
         ),
     )
@@ -154,8 +154,8 @@ class BackendConfig(Config):
         default=False,
         title="Allow direct path resolution",
         description=(
-            "Allow remote worker to use direct project path resolution. "
-            "WARNING: allowing this may be a security vulnerabilty. "
+            "Allow remote worker to use direct project path resolution.\n"
+            "WARNING: allowing this may be a security vulnerabilty.\n"
             "See worker configuration for details."
         )
     )
@@ -164,8 +164,8 @@ class BackendConfig(Config):
         default=None,
         title="WFS/GetFeature limit",
         description=(
-            "Force setting a limit for WFS/GetFeature requests. "
-            "By default Qgis does not set limits and that may cause "
+            "Force setting a limit for WFS/GetFeature requests.\n"
+            "By default Qgis does not set limits and that may cause\n"
             "issues with large collections."
         )
     )

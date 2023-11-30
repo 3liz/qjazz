@@ -80,12 +80,16 @@ class BaseResolverConfig(Config):
 
 
 class DNSResolverConfig(BaseResolverConfig):
-    type: Literal['dns']
+    (
+        "Resolver for DNS resolution that may resolve\n"
+        "to multiple ips."
+    )
+    type: Literal['dns'] = Field(description="Must be set to 'dns'")
     host: str = Field(title="Host name")
     port: int = Field(title="Service port", default=DEFAULT_PORT)
     ipv6: bool = Field(default=False, title="Check for ipv6")
-    use_ssl: bool = False
-    ssl_files: Optional[SSLConfig] = None
+    use_ssl: bool = Field(default=False, title="Use ssl connection")
+    ssl: Optional[SSLConfig] = Field(default=None, title="SSL certificats")
 
     def resolver_address(self) -> str:
         return f"{self.host}:{self.port}"
@@ -117,7 +121,7 @@ class DNSResolver(Resolver):
             BackendConfig(
                 server_address=(str(addr), self._config.port),
                 use_ssl=self._config.use_ssl,
-                ssl_files=self._config.ssl_files,
+                ssl=self._config.ssl,
             )
             for addr in addresses
         )
@@ -134,10 +138,11 @@ class DNSResolver(Resolver):
 
 
 class SocketResolverConfig(BaseResolverConfig):
-    type: Literal['socket']
+    """Resolver for socket resolution"""
+    type: Literal['socket'] = Field(description="Must be set to 'socket'")
     address: NetInterface
     use_ssl: bool = False
-    ssl_files: Optional[SSLConfig] = None
+    ssl: Optional[SSLConfig] = Field(default=None, title="SSL certificats")
 
     def resolver_address(self) -> str:
         match self.address:
@@ -169,7 +174,7 @@ class SocketResolver(Resolver):
             BackendConfig(
                 server_address=self._config.address,
                 use_ssl=self._config.use_ssl,
-                ssl_files=self._config.ssl_files,
+                ssl=self._config.ssl,
             ),
         )
 
@@ -207,9 +212,14 @@ class ResolverConfig(Config):
                 DNSResolverConfig,
                 SocketResolverConfig,
             ],
-            Field(discriminator='type')
+            Field(
+                discriminator='type',
+            )
         ]
-    ] = Field(default=[])
+    ] = Field(
+        default=[],
+        title="List of Qgis pool backends",
+    )
 
     def get_resolvers(self) -> Generator[Resolver, None, None]:
         for config in self.pools:

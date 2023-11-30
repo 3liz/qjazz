@@ -499,20 +499,29 @@ def dump_swagger_doc(to_yaml: bool):
         print(doc.model_dump_json())
 
 
-@doc_commands.command('schema')
-@click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
+@doc_commands.command('config')
+@click.option(
+    "--format", "out_fmt",
+    type=click.Choice(('json', 'yaml', 'toml')),
+    default="json",
+    help="Select output format",
+)
 @click.option("--pretty", is_flag=True, help="Pretty format")
-def dump_config_schema(to_yaml: bool, pretty: bool):
-    """  Output configuration as json schema
+def dump_config_schema(out_fmt: str, pretty: bool):
+    """  Output configuration schema
     """
-    json_schema = config.confservice.json_schema()
-    if to_yaml:
-        from ruamel.yaml import YAML
-        yaml = YAML()
-        yaml.dump(json_schema, sys.stdout)
-    else:
-        indent = 4 if pretty else None
-        print(json.dumps(json_schema, indent=indent))
+    match out_fmt:
+        case 'json':
+            json_schema = config.confservice.json_schema()
+            indent = 4 if pretty else None
+            print(json.dumps(json_schema, indent=indent))
+        case 'yaml':
+            from ruamel.yaml import YAML
+            json_schema = config.confservice.json_schema()
+            yaml = YAML()
+            yaml.dump(json_schema, sys.stdout)
+        case 'toml':
+            config.confservice.dump_toml_schema(sys.stdout)
 
 
 @cli_commands.command('serve')

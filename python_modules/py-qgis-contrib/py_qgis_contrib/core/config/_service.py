@@ -42,6 +42,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import (
+    IO,
     Annotated,
     Any,
     Callable,
@@ -94,7 +95,7 @@ def read_config_yaml(cfgfile: Path, **kwds) -> Dict:
     """ Read Yaml configuration from file
     """
     from ruamel.yaml import YAML
-    yaml=YAML(typ='safe')
+    yaml = YAML(typ='safe')
     return read_config(cfgfile, loads=yaml.load, **kwds)
 
 
@@ -194,6 +195,14 @@ class ConfigService:
 
     def json_schema(self) -> Dict:
         return self._create_base_model(BaseSettings).model_json_schema()
+
+    def dump_toml_schema(self, s: IO):
+        """ Dump the configuration as
+            toml 'schema' for documentation purpose
+        """
+        from . import _toml
+        model = self._create_base_model(BaseSettings)
+        _toml.dump_model_toml(s, model)
 
     def add_section(
         self,
