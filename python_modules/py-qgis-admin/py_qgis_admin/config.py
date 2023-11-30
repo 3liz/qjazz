@@ -49,7 +49,7 @@ class HttpConfig(Config):
         description=(
             "Allows to specify origin for CORS. If set 'all' will set "
             "Access-Control-Allow-Origin to '*'; 'same-origin' return "
-            "the same value as the 'Origin' request header."
+            "the same value as the 'Origin' request header.\n"
             "A url may may be specified, restricting allowed origin to "
             "this url."
         ),
@@ -59,7 +59,7 @@ class HttpConfig(Config):
         default=False,
         title="Enable proxy_configuration",
         description=(
-            "Indicates that the server is behind a reverse proxy. "
+            "Indicates that the server is behind a reverse proxy.\n"
             "This enable handling of forwarded proxy headers"
         )
     )
@@ -82,19 +82,15 @@ EXTERNAL_CONFIG_SECTION = "config_url"
 
 @section(EXTERNAL_CONFIG_SECTION)
 class ConfigUrl(Config):
-    """
-    Url for external configuration.
-    The configuration is fetched from the remote url
-    at startup and override all local settings.
-    """
+    """Remote configuration settings"""
     ssl: Optional[SSLConfig] = None
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",
         description=(
-            "Url to external configuration. "
-            "The server will issue a GET method against this url at startup. "
-            "The method should returns a valid configuration fragment. "
+            "The server will issue a GET method against this url at startup.\n"
+            "The method should returns a valid configuration fragment.\n"
+            "Note that this overrides all local settings."
         ),
     )
 

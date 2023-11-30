@@ -5,7 +5,7 @@
 [resolvers]
 
 [[resolvers.pools]]
-label = "worker"
+label = "test"
 type = "dns"
 host = "worker"
 port = 23456

@@ -93,8 +93,9 @@ def read_config_json(cfgfile: Path, **kwds) -> Dict:
 def read_config_yaml(cfgfile: Path, **kwds) -> Dict:
     """ Read Yaml configuration from file
     """
-    import yaml
-    return read_config(cfgfile, loads=yaml.safe_load, **kwds)
+    from ruamel.yaml import YAML
+    yaml=YAML(typ='safe')
+    return read_config(cfgfile, loads=yaml.load, **kwds)
 
 
 # Base classe for configuration models

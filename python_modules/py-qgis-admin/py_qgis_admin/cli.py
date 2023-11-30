@@ -485,25 +485,34 @@ def doc_commands():
 
 @doc_commands.command('openapi')
 @click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
-@global_options()
-def dump_swagger_doc(
-    to_yaml: bool,
-    verbose: bool,
-    configpath: Optional[Path],
-):
+def dump_swagger_doc(to_yaml: bool):
     """  Output swagger api documentation
     """
-    conf = load_configuration(configpath, verbose)
+    from .server import swagger_model
 
-    from .server import create_app
-
-    app = create_app(conf)
-    doc = app['swagger_doc']
+    doc = swagger_model()
     if to_yaml:
-        import yaml
-        print(yaml.dump(doc.model_dump(), indent=2))
+        from ruamel.yaml import YAML
+        yaml = YAML()
+        yaml.dump(doc.model_dump(), sys.stdout)
     else:
         print(doc.model_dump_json())
+
+
+@doc_commands.command('schema')
+@click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
+@click.option("--pretty", is_flag=True, help="Pretty format")
+def dump_config_schema(to_yaml: bool, pretty: bool):
+    """  Output configuration as json schema
+    """
+    json_schema = config.confservice.json_schema()
+    if to_yaml:
+        from ruamel.yaml import YAML
+        yaml = YAML()
+        yaml.dump(json_schema, sys.stdout)
+    else:
+        indent = 4 if pretty else None
+        print(json.dumps(json_schema, indent=indent))
 
 
 @cli_commands.command('serve')

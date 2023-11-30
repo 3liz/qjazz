@@ -21,6 +21,7 @@ dependencies = [
     "click",
     "jsondiff",
     "aiohttp",
+    "ruamel.yaml",
 ]
 version = "${PIN_VERSION}"
 

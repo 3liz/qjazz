@@ -154,6 +154,30 @@ def ssl_context(conf: SSLConfig):
     return ssl_ctx
 
 
+def _swagger_doc(app):
+    return swagger.doc(
+        app,
+        api_version=API_VERSION,
+        tags=[
+            swagger.Tag(name="backends", description="Manage backends"),
+            swagger.Tag(name="backends.config", description="Manage backend's configuration"),
+            swagger.Tag(name="backends.cache", description="Manage backend's cache"),
+            swagger.Tag(name="backends.cache.project", description="Manage project in cache"),
+            swagger.Tag(name="backends.plugins", description="Manage backend's plugins"),
+        ]
+    )
+
+
+def swagger_model() -> BaseModel:
+    """ Return the swagger model
+        for the REST api
+    """
+    handlers = Handlers(None)
+    app = web.Application()
+    app.add_routes(handlers.routes)
+    return _swagger_doc(app)
+
+
 def create_app(conf: Config):
     """ Create a web application
     """
@@ -178,19 +202,8 @@ def create_app(conf: Config):
     # Routing
     app.add_routes(handlers.routes)
 
-    doc = swagger.doc(
-        app,
-        api_version=API_VERSION,
-        tags=[
-            swagger.Tag(name="backends", description="Manage backends"),
-            swagger.Tag(name="backends.config", description="Manage backend's configuration"),
-            swagger.Tag(name="backends.cache", description="Manage backend's cache"),
-            swagger.Tag(name="backends.cache.project", description="Manage project in cache"),
-            swagger.Tag(name="backends.plugins", description="Manage backend's plugins"),
-        ]
-    )
-
-    app['swagger_doc'] = doc
+    # Create documentation model
+    doc = _swagger_doc(app)
 
     # Create a router for the landing page
     async def landing_page(request):
