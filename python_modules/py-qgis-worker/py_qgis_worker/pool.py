@@ -21,11 +21,14 @@ class WorkerPool:
         Management tasks are broadcasted to all workers
     """
 
-    def __init__(self, config: WorkerConfig, num_workers: int = 1):
+    def __init__(self, config: WorkerConfig):
         self._config = config
-        self._workers = [Worker(config, name=f"{config.name}_{n}") for n in range(num_workers)]
+        self._workers = [Worker(
+            config, 
+            name=f"{config.name}_{n}",
+        ) for n in range(config.num_processes)]
         self._avails = asyncio.Queue()
-        self._timeout = config.worker_timeout
+        self._timeout = config.process_timeout
         self._max_requests = config.max_waiting_requests
         self._count = 0
         self._cached_worker_env = None
@@ -207,7 +210,7 @@ class WorkerPool:
                 except ConfigError as err:
                     raise WorkerError(400, err.json(include_url=False)) from None
                 # Update timeout config
-                self._timeout = self._config.worker_timeout
+                self._timeout = self._config.process_timeout
                 self._max_requests = self._config.max_waiting_requests
                 # Update log level
                 level = logger.set_log_level()

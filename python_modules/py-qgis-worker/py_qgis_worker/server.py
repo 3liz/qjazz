@@ -60,7 +60,7 @@ async def serve(pool):
             server.add_insecure_port(listen_addr)
 
     shutdown_grace_period = pool.config.shutdown_grace_period
-    max_failure_pressure = pool.config.max_worker_failure_pressure
+    max_failure_pressure = pool.config.max_processes_failure_pressure
 
     def _term(message, graceful: bool):
         logger.info(message)

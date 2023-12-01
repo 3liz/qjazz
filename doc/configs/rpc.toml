@@ -92,13 +92,13 @@ max_chunk_size = 1048576
 # error
 max_waiting_requests = 20
 #
-# Stalled worker timeout
+# Stalled process timeout
 #
 # Set the amount of time in seconds before considering
-# considering that the worker is stalled.
-# A stalled worker will be terminated and the server will
+# considering that a process is stalled.
+# A stalled process will be terminated and the server will
 # exit with an error code
-worker_timeout = 20
+process_timeout = 20
 #
 # Shutdown grace period
 #
@@ -107,12 +107,25 @@ worker_timeout = 20
 # no new connections are allowed.
 shutdown_grace_period = 20
 #
-# Max worker failure pressure
+# Max allowed processes failure ratio
 #
-# The maximum ratio of terminated/initial workers
+# The maximum ratio of terminated/initial processes
 # allowed. If this limit is reached,  the server will
 # issue a critical failure before exiting.
-max_worker_failure_pressure = 0.0
+max_processes_failure_pressure = 0.0
+#
+# Number of Qgis processes
+#
+# Set the number of Qgis processes per worker.
+# If a processes crash, the worker is in a degraded
+# state. When the last process exit the worker will
+# stop with an error code.
+# 
+# In order not to let the worker degrade itself slowly
+# the number of worker should be kept low (from 1 to 3)
+# or keep a relatively low 'max_processes_failure_pressure'.
+# Note: server must be restarted if this option is modified.
+num_processes = 1
 
 #
 # Projects configuration

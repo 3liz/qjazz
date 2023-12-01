@@ -105,13 +105,13 @@ class WorkerConfig(config.Config):
             "error"
         ),
     )
-    worker_timeout: int = Field(
+    process_timeout: int = Field(
         default=20,
-        title="Stalled worker timeout",
+        title="Stalled process timeout",
         description=(
             "Set the amount of time in seconds before considering\n"
-            "considering that the worker is stalled.\n"
-            "A stalled worker will be terminated and the server will\n"
+            "considering that a process is stalled.\n"
+            "A stalled process will be terminated and the server will\n"
             "exit with an error code"
         ),
     )
@@ -124,13 +124,28 @@ class WorkerConfig(config.Config):
             "no new connections are allowed."
         ),
     )
-    max_worker_failure_pressure: float = Field(
+    max_processes_failure_pressure: float = Field(
         default=0.,
-        title="Max worker failure pressure",
+        title="Max allowed processes failure ratio",
         description=(
-            "The maximum ratio of terminated/initial workers\n"
+            "The maximum ratio of terminated/initial processes\n"
             "allowed. If this limit is reached,  the server will\n"
             "issue a critical failure before exiting."
+        ),
+    )
+
+    num_processes: int = Field(
+        default=1,
+        title="Number of Qgis processes",
+        description=(
+            "Set the number of Qgis processes per worker.\n"
+            "If a processes crash, the worker is in a degraded\n"
+            "state. When the last process exit the worker will\n"
+            "stop with an error code.\n\n"
+            "In order not to let the worker degrade itself slowly\n"
+            "the number of worker should be kept low (from 1 to 3)\n"
+            "or keep a relatively low 'max_processes_failure_pressure'.\n"
+            "Note: server must be restarted if this option is modified."
         ),
     )
 
@@ -201,4 +216,3 @@ class ConfigUrl(config.Config):
 # Environment variables
 #
 ENV_CONFIGFILE = "PY_QGIS_WORKER_CONFIGFILE"
-ENV_NUM_PROCESSES = "PY_QGIS_WORKER_NUM_PROCESSES"

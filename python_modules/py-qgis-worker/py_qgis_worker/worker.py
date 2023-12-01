@@ -32,7 +32,7 @@ class Worker(mp.Process):
         self._worker_conf = config
         self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
         self._done_event = mp.Event()
-        self._timeout = config.worker_timeout
+        self._timeout = config.process_timeout
 
     @property
     def config(self) -> WorkerConfig:
@@ -69,7 +69,7 @@ class Worker(mp.Process):
                 timeout=self._timeout,
             )
             # Update timeout config
-            self._timeout = self.config.worker_timeout
+            self._timeout = self.config.process_timeout
             logger.trace(f"Updated config for worker '{self.name}'")
         else:
             raise WorkerError(403, "Cannot update local configuration")

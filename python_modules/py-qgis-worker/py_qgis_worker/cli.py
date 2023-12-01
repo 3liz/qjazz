@@ -10,7 +10,7 @@ from typing_extensions import Optional
 
 from py_qgis_contrib.core import config, logger
 
-from .config import ENV_CONFIGFILE, ENV_NUM_PROCESSES, WorkerConfig
+from .config import ENV_CONFIGFILE, WorkerConfig
 from .pool import WorkerPool
 from .server import serve
 
@@ -115,19 +115,13 @@ def print_config(conf: Optional[Path], out_fmt: str, schema: bool = False, prett
         path_type=Path
     ),
 )
-@click.option(
-    "--num-processes", "-n",
-    envvar=ENV_NUM_PROCESSES,
-    default=1,
-    help="Number of qgis server processes to run",
-)
-def serve_grpc(configpath: Optional[Path], num_processes):
+def serve_grpc(configpath: Optional[Path]):
     """ Run grpc server
     """
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION), num_processes)
+    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION))
     pool.start()
     try:
         asyncio.run(serve(pool))
