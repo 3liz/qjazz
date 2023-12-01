@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+
+  qgis-rpc:
+    image: 3liz/qgis-services:ltr
+    environment:
+      CONF_DISPLAY_XVFB: ON
+    volumes:
+    - { type: bind, source: "../../tests/data", target: /qgis-projects } 
+    command: ["qgis-server-rpc", "serve"]
+
+  web:
+    image: 3liz/qgis-services:ltr
+    environment:
+      CONF_LOGGING__LEVEL: trace
+      CONF_BACKENDS__BASIC__TITLE: "Basic backends"
+      CONF_BACKENDS__BASIC__ADDRESS: "tcp://qgis-rpc"
+      CONF_BACKENDS__BASIC__ROUTE: "/basic"    
+    ports:
+    - 80:80
+    command: ["qgis-server-http", "serve"]
+
+  # The configuration server 
+  config-server:
+    image: nginx:alpine
+    volumes:
+    - type: bind
+      source: "${PWD}/configs"
+      target: /usr/share/nginx/html
+      read_only: true
+
