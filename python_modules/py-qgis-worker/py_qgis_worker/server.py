@@ -13,6 +13,7 @@ from typing_extensions import Optional
 from py_qgis_contrib.core import config, logger
 
 from ._grpc import api_pb2_grpc
+from .restore import create_restore_object
 from .service import QgisAdmin, QgisServer
 
 
@@ -31,7 +32,12 @@ def _server_credentials(files: config.SSLConfig):
 async def serve(pool):
     """ Run server from pool
     """
+    # Init pool queue
     await pool.initialize()
+
+    # Restore cache if needed
+    restore = create_restore_object(pool.config)
+    await restore.restore(pool)
 
     server = grpc.aio.server()
 
@@ -41,7 +47,10 @@ async def serve(pool):
 
     # Add services
     api_pb2_grpc.add_QgisServerServicer_to_server(QgisServer(pool), server)
-    api_pb2_grpc.add_QgisAdminServicer_to_server(QgisAdmin(pool, health_servicer), server)
+    api_pb2_grpc.add_QgisAdminServicer_to_server(
+        QgisAdmin(pool, health_servicer, restore),
+        server,
+    )
 
     await health_servicer.set("QgisServer", health_pb2.HealthCheckResponse.SERVING)
     await health_servicer.set("QgisAdmin", health_pb2.HealthCheckResponse.SERVING)

@@ -126,6 +126,16 @@ max_processes_failure_pressure = 0.0
 # or keep a relatively low 'max_processes_failure_pressure'.
 # Note: server must be restarted if this option is modified.
 num_processes = 1
+#
+# Restore cache at startup
+#
+# Restore stored cached projets at startup.
+# Note that only projects loaded explicitely with
+# the admin api are stored for restoration.
+# i.e projects loaded through requests (using
+# 'load_project_on_request' option) will not be
+# restored.
+restore_cache = true
 
 #
 # Projects configuration

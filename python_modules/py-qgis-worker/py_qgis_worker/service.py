@@ -19,6 +19,7 @@ from . import messages as _m
 from ._grpc import api_pb2, api_pb2_grpc
 from .config import ENV_CONFIGFILE, RemoteConfigError
 from .pool import Worker, WorkerError, WorkerPool
+from .restore import Restore
 
 #
 # https://grpc.github.io/grpc/python/
@@ -328,13 +329,18 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 # Admin service
 # ======================
 
-
 class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 
-    def __init__(self, pool: WorkerPool, health_servicer):
+    def __init__(
+        self,
+        pool: WorkerPool,
+        health_servicer,
+        restore: Restore,
+    ):
         super().__init__()
         self._pool = pool
         self._health_servicer = health_servicer
+        self._restore = restore
 
     async def Ping(
         self,
@@ -384,6 +390,9 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 )
                 yield _new_cache_info(resp)
 
+                if request.pull:
+                    self._restore.update(resp)
+
     #
     # Pull projects
     #
@@ -399,9 +408,11 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                     resp = await w.checkout_project(uri=req.uri, pull=True)
                 yield _new_cache_info(resp)
 
+                self._restore.update(resp)
     #
     # Drop project
     #
+
     async def DropProject(
         self,
         request: api_pb2.CheckoutRequest,
@@ -413,9 +424,11 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 resp = await w.drop_project(uri=request.uri)
                 yield _new_cache_info(resp)
 
+                self._restore.update(resp)
     #
     # Cache list
     #
+
     async def ListCache(
         self,
         request: api_pb2.ListRequest,
@@ -454,6 +467,9 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         async with self.wait_for_all_workers(context, "ClearCache") as workers:
             for w in workers:
                 await w.clear_cache()
+
+            self._restore.clear()
+
             return api_pb2.Empty()
 
     #

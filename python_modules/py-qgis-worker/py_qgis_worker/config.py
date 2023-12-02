@@ -133,7 +133,6 @@ class WorkerConfig(config.Config):
             "issue a critical failure before exiting."
         ),
     )
-
     num_processes: int = Field(
         default=1,
         title="Number of Qgis processes",
@@ -146,6 +145,18 @@ class WorkerConfig(config.Config):
             "the number of worker should be kept low (from 1 to 3)\n"
             "or keep a relatively low 'max_processes_failure_pressure'.\n"
             "Note: server must be restarted if this option is modified."
+        ),
+    )
+    restore_cache: bool = Field(
+        default=True,
+        title="Restore cache at startup",
+        description=(
+            "Restore stored cached projets at startup.\n"
+            "Note that only projects loaded explicitely with\n"
+            "the admin api are stored for restoration.\n"
+            "i.e projects loaded through requests (using\n"
+            "'load_project_on_request' option) will not be\n"
+            "restored."
         ),
     )
 

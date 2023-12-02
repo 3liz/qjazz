@@ -24,7 +24,7 @@ class WorkerPool:
     def __init__(self, config: WorkerConfig):
         self._config = config
         self._workers = [Worker(
-            config, 
+            config,
             name=f"{config.name}_{n}",
         ) for n in range(config.num_processes)]
         self._avails = asyncio.Queue()
@@ -35,6 +35,10 @@ class WorkerPool:
         self._cached_worker_plugins = None
         self._shutdown = False
         self._start_time = time()
+
+    @property
+    def workers(self) -> Iterator[Worker]:
+        return (w for w in self._workers)
 
     @property
     def request_pressure(self) -> float:
