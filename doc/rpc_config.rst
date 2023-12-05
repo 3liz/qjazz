@@ -75,6 +75,8 @@ Configuration
 When reading configuration from file, the format is TOML
 by default. 
 
+Check the :download:`configuration json schema <specs/rpc-config.json>`.
+
 .. _rpc_configuration_toml:
 
 TOML configuration

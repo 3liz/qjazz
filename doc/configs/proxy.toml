@@ -84,7 +84,7 @@ proxy_conf = false
 [admin_server]
 #
 # Interfaces to listen to
-listen = "unix:///tmp/py-qgis-http-admin.sock"
+listen = ['0.0.0.0', 9876]
 #
 # Use ssl
 use_ssl = false

@@ -515,6 +515,13 @@ class BackendHandler(JsonErrorMixin, _BaseHandler):
         except ValidationError as err:
             raise HTTPError(400, reason=str(err))
 
+    async def delete(self, name):
+        """ Remove backend
+        """
+        if not self._channels.get_backend(name):
+            raise HTTPError(404, f"Backend '{name}' does not exists")
+        self._channels.remove_backend(name)
+
     def head(self, name):
         if not self._channels.get_backend(name):
             raise HTTPError(404, "Backend {name} does not exists")

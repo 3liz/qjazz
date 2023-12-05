@@ -1,6 +1,7 @@
 stages:
   - test
-  - docker 
+  - docker
+  - doc 
 
 #-----------------
 # Tests
@@ -30,7 +31,16 @@ tests:release:
   variables:
     QGIS_FLAVOR: release
 
+doc:
+  stage: doc
+  script: 
+    - make -C doc
+    - $FACTORY_SCRIPTS/deploy-doc doc/build/html doc/doc.manifest
+  tags:
+    - factory-plain
 
 # Docker build
 include: '/docker/.gitlab-ci.yml'
+
+  
 

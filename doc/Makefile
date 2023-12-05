@@ -5,20 +5,20 @@ BUILDDIR=${shell pwd}/build
 
 main: html
 
-html: build
+html:
 	mkdir -p ${BUILDDIR}/html
 	sphinx-build -b html ./  ${BUILDDIR}/html
   
-pdf: build
+pdf:
 	mkdir -p ${BUILDDIR}/latex
 	sphinx-build -b latex ./  ${BUILDDIR}/latex
 	cd ${BUILDDIR}/latex && pdflatex ${PROJECT_NAME}.tex
   
-md: build
+md:
 	mkdir -p ${BUILDDIR}/md
 	sphinx-build -b markdown ./  ${BUILDDIR}/md
 
-config_doc:
+build::
 	@echo "* Creating rpc config documentation"
 	@qgis-server-rpc config --schema --format toml > ./configs/rpc.toml
 	@echo "* Creating proxy config documentation"
@@ -26,7 +26,16 @@ config_doc:
 	@echo "* Creating admin config documentation"
 	@qgis-server-admin doc config --format toml > ./configs/managment.toml
 
-build: 
+
+build::
+	@echo "* Creating rpc server config schema specs"
+	@qgis-server-rpc config --schema > ./specs/rpc-config.json
+	@echo "* Creating proxy config schema specs"
+	@qgis-server-http config --schema > ./specs/proxy-config.json
+	@echo "* Creating admin config schema specs"
+	@qgis-server-admin doc config  > ./specs/admin-config.json
+	@echo "* Creating admin openapi specs"
+	@qgis-server-admin doc openapi > ./specs/openapi-managment.json
 
 clean:
 	rm -r ${BUILDDIR}

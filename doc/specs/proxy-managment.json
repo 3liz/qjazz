@@ -1,0 +1,555 @@
+{
+    "$defs": {
+        "AdminHttpConfig": {
+            "additionalProperties": false,
+            "properties": {
+                "listen": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "prefixItems": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ],
+                            "type": "array"
+                        }
+                    ],
+                    "default": [
+                        "0.0.0.0",
+                        9876
+                    ],
+                    "title": "Interfaces to listen to"
+                },
+                "use_ssl": {
+                    "default": false,
+                    "title": "Use ssl",
+                    "type": "boolean"
+                },
+                "ssl": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/SSLConfig"
+                        }
+                    ],
+                    "default": {
+                        "ca": null,
+                        "cert": null,
+                        "key": null
+                    },
+                    "title": "SSL configuration"
+                },
+                "cross_origin": {
+                    "anyOf": [
+                        {
+                            "enum": [
+                                "all",
+                                "same-origin"
+                            ],
+                            "type": "string"
+                        },
+                        {
+                            "format": "uri",
+                            "minLength": 1,
+                            "type": "string"
+                        }
+                    ],
+                    "default": "all",
+                    "description": "Allows to specify origin for CORS. If set 'all' will set\nAccess-Control-Allow-Origin to '*'; 'same-origin' return\nthe same value as the 'Origin' request header.\nA url may may be specified, restricting allowed origin to\nthis url.",
+                    "title": "CORS origin"
+                },
+                "proxy_conf": {
+                    "default": false,
+                    "description": "Indicates that the server is behind a reverse proxy.\nThis enable handling of forwarded proxy headers",
+                    "title": "Enable proxy_configuration",
+                    "type": "boolean"
+                }
+            },
+            "title": "AdminHttpConfig",
+            "type": "object"
+        },
+        "ApiEndpoint": {
+            "additionalProperties": false,
+            "properties": {
+                "endpoint": {
+                    "pattern": "^[^\\/]+",
+                    "title": "Api endpoint",
+                    "type": "string"
+                },
+                "delegate_to": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Api delegation allow for using a baseurl different\nfrom the expected rootpath of qgis server api.\nFor exemple, wfs3 request may be mapped to a completely different\nroot path. ",
+                    "title": "Api name to delegate to"
+                },
+                "name": {
+                    "default": "",
+                    "title": "Descriptive name",
+                    "type": "string"
+                },
+                "description": {
+                    "default": "",
+                    "title": "Api description",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "endpoint"
+            ],
+            "title": "ApiEndpoint",
+            "type": "object"
+        },
+        "BackendConfig": {
+            "additionalProperties": false,
+            "properties": {
+                "title": {
+                    "default": "",
+                    "title": "A descriptive title",
+                    "type": "string"
+                },
+                "description": {
+                    "default": "",
+                    "title": "A description of the service",
+                    "type": "string"
+                },
+                "address": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "prefixItems": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ],
+                            "type": "array"
+                        }
+                    ],
+                    "default": [
+                        "localhost",
+                        23456
+                    ],
+                    "description": " Validate address\n\n        Address may be:\n        * A string `unix:path`\n        * A 2-tuple `(name, port)` where `name` is either an ip addresse\n          or a hostname\n    ",
+                    "title": "Remote address of the service"
+                },
+                "ssl": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/SSLConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "route": {
+                    "title": "Route to service",
+                    "type": "str"
+                },
+                "timeout": {
+                    "default": 20,
+                    "description": "Set the timeout for Qgis response in seconds.\nIf a Qgis worker takes more than the corresponding value\na timeout error (504) is returned to the client.",
+                    "title": "Request timeout",
+                    "type": "integer"
+                },
+                "forward_headers": {
+                    "default": [
+                        "x-qgis-*",
+                        "x-lizmap-*"
+                    ],
+                    "description": "Set the headers that will be forwarded to the Qgis server backend.\nThis may be useful if you have plugins that may deal with request headers.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Forwarded headers",
+                    "type": "array"
+                },
+                "api": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/$defs/ApiEndpoint"
+                    },
+                    "title": "Api endpoints",
+                    "type": "array"
+                },
+                "allow_direct_resolution": {
+                    "default": false,
+                    "description": "Allow remote worker to use direct project path resolution.\nWARNING: allowing this may be a security vulnerabilty.\nSee worker configuration for details.",
+                    "title": "Allow direct path resolution",
+                    "type": "boolean"
+                },
+                "getfeature_limit": {
+                    "anyOf": [
+                        {
+                            "exclusiveMinimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Force setting a limit for WFS/GetFeature requests.\nBy default Qgis does not set limits and that may cause\nissues with large collections.",
+                    "title": "WFS/GetFeature limit"
+                }
+            },
+            "required": [
+                "route"
+            ],
+            "title": "BackendConfig",
+            "type": "object"
+        },
+        "ConfigUrl": {
+            "additionalProperties": false,
+            "description": "Url for external configuration.\nThe configuration is fetched from the remote url\nat startup and override all local settings.",
+            "properties": {
+                "ssl": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/SSLConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "url": {
+                    "anyOf": [
+                        {
+                            "format": "uri",
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Url to external configuration.\nThe server will issue a GET method against this url at startup.\nThe method should returns a valid configuration fragment.\n",
+                    "title": "External configuration Url"
+                },
+                "user_agent": {
+                    "default": "py-qgis-server2 middleware 1.0.0.dev0",
+                    "description": "The user agent for configuration requests",
+                    "title": "User agent",
+                    "type": "string"
+                }
+            },
+            "title": "ConfigUrl",
+            "type": "object"
+        },
+        "HttpConfig": {
+            "additionalProperties": false,
+            "properties": {
+                "listen": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "prefixItems": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ],
+                            "type": "array"
+                        }
+                    ],
+                    "default": [
+                        "0.0.0.0",
+                        80
+                    ],
+                    "title": "Interfaces to listen to"
+                },
+                "use_ssl": {
+                    "default": false,
+                    "title": "Use ssl",
+                    "type": "boolean"
+                },
+                "ssl": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/SSLConfig"
+                        }
+                    ],
+                    "default": {
+                        "ca": null,
+                        "cert": null,
+                        "key": null
+                    },
+                    "title": "SSL configuration"
+                },
+                "cross_origin": {
+                    "anyOf": [
+                        {
+                            "enum": [
+                                "all",
+                                "same-origin"
+                            ],
+                            "type": "string"
+                        },
+                        {
+                            "format": "uri",
+                            "minLength": 1,
+                            "type": "string"
+                        }
+                    ],
+                    "default": "all",
+                    "description": "Allows to specify origin for CORS. If set 'all' will set\nAccess-Control-Allow-Origin to '*'; 'same-origin' return\nthe same value as the 'Origin' request header.\nA url may may be specified, restricting allowed origin to\nthis url.",
+                    "title": "CORS origin"
+                },
+                "proxy_conf": {
+                    "default": false,
+                    "description": "Indicates that the server is behind a reverse proxy.\nThis enable handling of forwarded proxy headers",
+                    "title": "Enable proxy_configuration",
+                    "type": "boolean"
+                }
+            },
+            "title": "HttpConfig",
+            "type": "object"
+        },
+        "LoggingConfig": {
+            "additionalProperties": false,
+            "properties": {
+                "level": {
+                    "default": "INFO",
+                    "enum": [
+                        "NOTSET",
+                        "TRACE",
+                        "DEBUG",
+                        "INFO",
+                        "REQ",
+                        "RREQ",
+                        "WARNING",
+                        "ERROR",
+                        "CRITICAL"
+                    ],
+                    "title": "Level",
+                    "type": "str"
+                }
+            },
+            "title": "LoggingConfig",
+            "type": "object"
+        },
+        "MetricConfig": {
+            "additionalProperties": false,
+            "description": "Metric configuration\n    ",
+            "properties": {
+                "name": {
+                    "title": "Metric type",
+                    "type": "string"
+                },
+                "meta_key": {
+                    "default": false,
+                    "title": "Meta key",
+                    "type": "boolean"
+                },
+                "routing_key": {
+                    "description": "The routing key for the metric message\nThis key is passed to monitoring backend.\nIf meta_key is true, the string is interpreted as a format string\nwith a 'META' dict parameter.",
+                    "examples": [
+                        "{META[field1]}.{META[field2]}"
+                    ],
+                    "title": "Routing key",
+                    "type": "string"
+                },
+                "routing_key_default": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Default routing key"
+                },
+                "options": {
+                    "title": "Backend configuration options",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "name",
+                "routing_key",
+                "options"
+            ],
+            "title": "MetricConfig",
+            "type": "object"
+        },
+        "SSLConfig": {
+            "additionalProperties": false,
+            "properties": {
+                "ca": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "CA file"
+                },
+                "cert": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to the SSL key file",
+                    "title": "SSL/TLS key"
+                },
+                "key": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to the SSL certificat file",
+                    "title": "SSL/TLS Certificat"
+                }
+            },
+            "title": "SSLConfig",
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "properties": {
+        "logging": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/LoggingConfig"
+                }
+            ],
+            "default": {
+                "level": "INFO"
+            }
+        },
+        "config_url": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/ConfigUrl"
+                }
+            ],
+            "default": {
+                "ssl": null,
+                "url": null,
+                "user_agent": "py-qgis-server2 middleware 1.0.0.dev0"
+            }
+        },
+        "http": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/HttpConfig"
+                }
+            ],
+            "default": {
+                "cross_origin": "all",
+                "listen": [
+                    "0.0.0.0",
+                    80
+                ],
+                "proxy_conf": false,
+                "ssl": {
+                    "ca": null,
+                    "cert": null,
+                    "key": null
+                },
+                "use_ssl": false
+            }
+        },
+        "admin_server": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/AdminHttpConfig"
+                }
+            ],
+            "default": {
+                "cross_origin": "all",
+                "listen": [
+                    "0.0.0.0",
+                    9876
+                ],
+                "proxy_conf": false,
+                "ssl": {
+                    "ca": null,
+                    "cert": null,
+                    "key": null
+                },
+                "use_ssl": false
+            }
+        },
+        "backends": {
+            "additionalProperties": {
+                "$ref": "#/$defs/BackendConfig"
+            },
+            "default": {},
+            "title": "Backends",
+            "type": "object"
+        },
+        "metrics": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/MetricConfig"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Metrics configuration"
+        },
+        "includes": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "Path or globbing to services configuration files.\nNote that this section is ignored if remote configuration\nis used.",
+            "title": "Path to services configuration files"
+        }
+    },
+    "title": "BaseConfig",
+    "type": "object"
+}
