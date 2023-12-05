@@ -35,9 +35,13 @@ doc:
   stage: doc
   script: 
     - make -C doc
-    - $FACTORY_SCRIPTS/deploy-doc doc/build/html doc/doc.manifest
+    - $FACTORY_SCRIPTS/deploy-doc doc/build/html/ doc/doc.manifest
   tags:
     - factory-plain
+  only:
+    refs:
+    - tags
+    - main
 
 # Docker build
 include: '/docker/.gitlab-ci.yml'
