@@ -1,7 +1,19 @@
 #!/bin/bash
 
+set -e
+
 # Qgis need a HOME
 export HOME=/home/qgis
+
+copy_qgis_configuration() {
+    QGIS_CUSTOM_CONFIG_PATH=${QGIS_CUSTOM_CONFIG_PATH:-$QGIS_OPTIONS_PATH}
+    if [[ -n $QGIS_CUSTOM_CONFIG_PATH ]]; then
+        echo "Copying Qgis configuration: $QGIS_CUSTOM_CONFIG_PATH"
+        cp -aRL $QGIS_CUSTOM_CONFIG_PATH/* $HOME/
+    fi
+    export QGIS_CUSTOM_CONFIG_PATH=$HOME
+    export QGIS_OPTIONS_PATH=$HOME
+}
 
 # Check for uid (running with --user)
 if [[ "$UID" != "0" ]]; then 
@@ -67,6 +79,8 @@ if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
  nohup /usr/bin/Xvfb $XVFB_ARGS &
  export DISPLAY=":99"
 fi
+
+copy_qgis_configuration
 
 exec $@
 

@@ -81,7 +81,7 @@ class HttpConfig(Config):
                 return socket
 
 
-DEFAULT_ADMIN_INTERFACE = ("unix:///tmp/py-qgis-http-admin.sock")
+DEFAULT_ADMIN_INTERFACE = ("0.0.0.0", 9876)
 
 
 class AdminHttpConfig(HttpConfig):

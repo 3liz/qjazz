@@ -33,7 +33,7 @@ RUN mkdir -p /opt/local/ \
         -e /python_modules/py-qgis-http \
         -e /python_modules/py-qgis-html \
     && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-monitor \
+    && ln -s /opt/local/qgisserver/bin/qgis-server-admin \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-cli
 

@@ -299,7 +299,7 @@ def list_cache(status: str):
 
 @cache_commands.command("update")
 def update_cache():
-    """ List projects from cache
+    """ Synchronize cache between processes
     """
     with connect() as stub:
         stream = stub.UpdateCache(api_pb2.Empty())
@@ -327,7 +327,7 @@ def project_info(project: str):
 @cache_commands.command("catalog")
 @click.option('--location', help="Select location")
 def catalog(location: Optional[str]):
-    """ List projects from cache
+    """ List available projects from search paths
     """
     with connect() as stub:
         stream = stub.Catalog(

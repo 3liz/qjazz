@@ -208,7 +208,10 @@ restore_cache = true
 #
 # Plugin paths
 #
-# List of search paths for plugins. All Qgis plugins found will be loaded if they are compatible with the current Qgis version.
+# List of search paths for plugins.
+# All Qgis plugins found will be loaded
+# if they are compatible with the current
+# Qgis version.
 #paths = []
 
 #

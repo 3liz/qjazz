@@ -333,7 +333,7 @@ def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
     configure_server(
         App(
             [
-                (r"/backend/([^\/]+)?$", BackendHandler, {'channels':  channels}),
+                (r"/backend/([^\/]+)$", BackendHandler, {'channels':  channels}),
                 (r"/config", ConfigHandler, {'channels': channels}),
             ],
             default_handler_class=JsonNotFoundHandler,

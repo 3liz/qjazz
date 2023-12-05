@@ -62,9 +62,9 @@ class QgisPluginConfig(config.Config):
         default=[],
         title="Plugin paths",
         description=(
-            "List of search paths for plugins. "
-            "All Qgis plugins found will be loaded "
-            "if they are compatible with the current "
+            "List of search paths for plugins.\n"
+            "All Qgis plugins found will be loaded\n"
+            "if they are compatible with the current\n"
             "Qgis version."
         ),
     )

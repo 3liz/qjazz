@@ -10,8 +10,10 @@ Welcome to py-qgis-server2's documentation!
    :maxdepth: 2
    :caption: Contents:
  
-   intro 
-
+   intro
+   rpc_config
+   proxy_config
+   managment 
 
 Indices and tables
 ==================

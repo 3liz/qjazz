@@ -165,6 +165,10 @@ class ConfigService:
     def version(self):
         return self._version
 
+    @property
+    def last_modified(self) -> float:
+        return self._timestamp
+
     def validate(
             self, obj: Dict,
             default_confdir: Optional[Path] = None,
