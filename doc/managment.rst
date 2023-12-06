@@ -74,7 +74,7 @@ You may use the redoc tool to visualize it::
 Configuration
 -------------
 
-Configuration is read from toml file.
+Configuration is read from toml file or from remote http url.
 
 The configuration define Qgis backend's pool with `resolvers` that describe
 how to access the pools - actually only DNS résolution and unix socket are
@@ -137,18 +137,31 @@ Examples::
     ]
 
 
-.. _admin_sync_with_backends:
 
-Synchronizing with backends
----------------------------
 
-When adding new services, the backends configuration need to be updated
+.. _admin_configuration_schema:
 
+Configuration schema
+--------------------
+
+When reading configuration from file, the format is TOML
+by default. 
+
+The configuration schema may be output as different format using the `doc` command
+from the CLI: the `json` or `yaml` format may be used for validation. 
+
+
+.. literalinclude:: configs/managment.toml
+     :language: toml
+
+
+Case scenarios
+==============
 
 .. _admin_cache_sync:
 
-Cache synchronization
----------------------
+Synchronizing pool cache
+------------------------
 
 In pool of Qgis services, cache may be desynchronized for different reasons:
 
@@ -167,25 +180,10 @@ http method:
    Synchronize and update cache between all pool instances
 
 
-
-.. _admin_configuration_schema:
-
-Configuration schema
---------------------
-
-When reading configuration from file, the format is TOML
-by default. 
-
-The configuration schema may be output as different format using the `doc` command
-from the CLI: the `json` or `yaml` format may be used for validation. 
+.. _admin_pools_sync:
 
 
-.. _admin_configuration_toml:
-
-TOML configuration schema
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. literalinclude:: configs/managment.toml
-     :language: toml
+Adding, modifying or removing pool to managment service
+-------------------------------------------------------
 
 
