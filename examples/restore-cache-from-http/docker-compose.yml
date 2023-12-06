@@ -6,6 +6,8 @@ services:
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_CONFIG_URL__URL: "http://config-server/qgis-rpc.json"
+      CONF_RESTORE_CACHE__URL: "http://config-server/cache.json"
+      CONF_RESTORE_CACHE__RESTORE_TYPE: "http"
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
     command: ["qgis-server-rpc", "serve"]

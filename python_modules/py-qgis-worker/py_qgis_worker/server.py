@@ -36,7 +36,7 @@ async def serve(pool):
     await pool.initialize()
 
     # Restore cache if needed
-    restore = create_restore_object(pool.config)
+    restore = create_restore_object()
     await restore.restore(pool)
 
     server = grpc.aio.server()

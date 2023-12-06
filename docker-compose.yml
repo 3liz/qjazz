@@ -6,6 +6,7 @@ services:
     image: 3liz/qgis-services:release
     networks:
     - qgis_rpc_network
+    hostname: worker
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_CONFIG_URL__URL: "http://config-server/config_worker.json"

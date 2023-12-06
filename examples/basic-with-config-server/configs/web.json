@@ -1,0 +1,12 @@
+{
+  "logging": {
+    "level": "trace"
+  },
+  "backends": {
+    "basic": {
+      "title": "Basic backends",
+      "address": "tcp://qgis-rpc",
+      "route": "/basic"    
+    }  
+  }
+}

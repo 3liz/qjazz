@@ -1,0 +1,7 @@
+{
+  "version": "1",
+  "projects": [
+    "/france/france_parts",
+    "/tests/project_simple" 
+  ]
+}

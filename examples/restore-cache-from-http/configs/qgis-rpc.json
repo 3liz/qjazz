@@ -1,0 +1,14 @@
+{
+  "logging": {
+    "level": "trace"
+  },
+  "worker": {
+    "name": "worker",
+    "projects": {
+      "search_paths": {
+        "/france": "/qgis-projects/france_parts",
+        "/tests": "/qgis-projects/samples" 
+      }
+    }
+  }
+}

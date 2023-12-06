@@ -17,6 +17,7 @@ It allows you to:
 * Watch health status 
 * Serve REST managment api  
 
+
 Running managment from CLI
 --------------------------
 
@@ -61,7 +62,7 @@ From this you can use your own dashboard for managing your Qgis clusters.
 Api specification
 ^^^^^^^^^^^^^^^^^
 
-The full api specification is available as json format as `doc/specs/openapi-managment.json`
+Check the full :download:`openapi specification <specs/openapi-managment.json>`.
 
 You may use the redoc tool to visualize it::
 
@@ -146,6 +147,12 @@ Synchronizing with backends
 
 Cache synchronization
 ---------------------
+
+In pool of Qgis services, cache may be desynchronized for different reasons:
+
+* Scaling up the pool
+* Using the `load_project_on_request`
+* Updating container in a orchestrated environment
 
 
 .. _admin_configuration_schema:

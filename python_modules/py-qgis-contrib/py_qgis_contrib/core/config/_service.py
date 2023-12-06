@@ -34,7 +34,6 @@ from time import time
 
 from pydantic import (
     BaseModel,
-    Extra,
     Field,
     PlainSerializer,
     PlainValidator,
@@ -101,7 +100,7 @@ def read_config_yaml(cfgfile: Path, **kwds) -> Dict:
 
 
 # Base classe for configuration models
-class Config(BaseModel, frozen=True, extra=Extra.forbid):
+class Config(BaseModel, frozen=True, extra='forbid'):
     pass
 
 
@@ -140,7 +139,7 @@ class ConfigService:
     def _create_model(self) -> BaseSettings:
         if self._model_changed or not self._model:
 
-            class BaseConfig(BaseSettings, frozen=True, extra=Extra.forbid):
+            class BaseConfig(BaseSettings, frozen=True, extra='forbid'):
                 model_config = SettingsConfigDict(
                     env_nested_delimiter='__',
                     env_prefix=self._env_prefix,

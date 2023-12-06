@@ -19,20 +19,7 @@ from grpc_health.v1 import health_pb2_grpc  # HealthStub
 from py_qgis_contrib.core.config import SSLConfig
 
 from .._grpc import api_pb2, api_pb2_grpc
-
-
-# Return a ChannelCredential struct
-def _channel_credentials(files: SSLConfig):
-    def _read(f) -> Optional[bytes]:
-        if f:
-            with Path(files.ca).open('rb') as fp:
-                return fp.read()
-
-    return grpc.ssl_channel_credentials(
-        root_certificate=_read(files.ca),
-        certificate=_read(files.cert),
-        private_key=_read(files.key),
-    )
+from . import _client
 
 
 def MessageToJson(msg) -> str:
@@ -59,33 +46,17 @@ def connect(stub=None):
     target = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
 
     if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, 'yes', 'true'):
-        ssl_creds = _channel_credentials(
-            SSLConfig(
-                key=os.getenv("CONF_GRPC_SSL_KEYFILE"),
-                cert=os.getenv("CONF_GRPC_SSL_CERTFILE"),
-                ca=os.getenv("CONF_GRPC_SSL_CAFILE"),
-            )
+        ssl = SSLConfig(
+            key=os.getenv("CONF_GRPC_SSL_KEYFILE"),
+            cert=os.getenv("CONF_GRPC_SSL_CERTFILE"),
+            ca=os.getenv("CONF_GRPC_SSL_CAFILE"),
         )
     else:
-        ssl_creds = None
+        ssl = None
 
-    with (
-        grpc.secure_channel(
-            target,
-            ssl_creds,
-            options=channel_options,
-        )
-        if ssl_creds
-        else grpc.insecure_channel(
-            target,
-            options=channel_options,
-        )
-    ) as channel:
+    with _client.stub(target, ssl, channel_options, stub) as _stub:
         try:
-            stub = stub or api_pb2_grpc.QgisAdminStub
-            yield stub(channel)
-            # Timeout in seconds.
-            # Please refer gRPC Python documents for more detail. https://grpc.io/grpc/python/grpc.html
+            yield _stub
         except grpc.RpcError as rpcerr:
             print("RPC ERROR:", rpcerr.code(), rpcerr.details(), file=sys.stderr)
             print_metadata(rpcerr.initial_metadata())

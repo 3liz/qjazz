@@ -147,18 +147,6 @@ class WorkerConfig(config.Config):
             "Note: server must be restarted if this option is modified."
         ),
     )
-    restore_cache: bool = Field(
-        default=True,
-        title="Restore cache at startup",
-        description=(
-            "Restore stored cached projets at startup.\n"
-            "Note that only projects loaded explicitely with\n"
-            "the admin api are stored for restoration.\n"
-            "i.e projects loaded through requests (using\n"
-            "'load_project_on_request' option) will not be\n"
-            "restored."
-        ),
-    )
 
 
 EXTERNAL_CONFIG_SECTION = "config_url"
@@ -212,7 +200,7 @@ class ConfigUrl(config.Config):
         async with aiohttp.ClientSession() as session:
             logger.info("** Loading configuration from %s **", self.url)
             try:
-                async with session.get(str(self.url), ssl=False) as resp:
+                async with session.get(str(self.url), ssl=ssl_context) as resp:
                     if resp.status == 200:
                         return await resp.json()
                     else:
