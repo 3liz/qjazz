@@ -53,7 +53,7 @@ class CacheRestoreConfig(config.Config):
 
 
 def _gettempdir() -> Path:
-    return Path(os.getenv("PY_QGIS_TMPDIR", tempfile.gettempdir()))
+    return Path(os.getenv("CONF_TMPDIR", tempfile.gettempdir()))
 
 
 class _RestoreBase:
@@ -180,7 +180,7 @@ class UrlRestore(_RestoreBase):
             workers
         """
         import aiohttp
-        
+
         conf = self._conf
 
         if conf.url.scheme == 'https':

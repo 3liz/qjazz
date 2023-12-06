@@ -31,6 +31,45 @@ level = "INFO"
 # Path to the SSL certificat file
 #key =   	# Optional
 
+# Restore stored cached projets at startup.
+# Note that only projects loaded explicitely with
+# the admin api are from url are candidate for restoration.
+# i.e projects loaded through requests (using
+# 'load_project_on_request' option) will not be
+# restored.
+[restore_cache]
+#ssl =   	# Optional
+#
+# External cache url
+#
+# Retrieve cache list from external url, for use with the 'external'
+# storage type.
+# The server will issue a GET method against this url at startup.
+# The method should returns a list of projects path in json.
+#url =   	# Optional
+#
+# Storage type used for storing cache list:
+#   'http': use external http/https url.
+#   'tmp' : use internal tmpfile storage.
+#   'none': do not restore anything.
+restore_type = "tmp"
+
+#
+#[restore_cache.ssl]
+#
+# CA file
+#ca =   	# Optional
+#
+# SSL/TLS key
+#
+# Path to the SSL key file
+#cert =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#key =   	# Optional
+
 [worker]
 #
 # Name of the worker instance
@@ -126,16 +165,6 @@ max_processes_failure_pressure = 0.0
 # or keep a relatively low 'max_processes_failure_pressure'.
 # Note: server must be restarted if this option is modified.
 num_processes = 1
-#
-# Restore cache at startup
-#
-# Restore stored cached projets at startup.
-# Note that only projects loaded explicitely with
-# the admin api are stored for restoration.
-# i.e projects loaded through requests (using
-# 'load_project_on_request' option) will not be
-# restored.
-restore_cache = true
 
 #
 # Projects configuration

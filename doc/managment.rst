@@ -142,6 +142,8 @@ Examples::
 Synchronizing with backends
 ---------------------------
 
+When adding new services, the backends configuration need to be updated
+
 
 .. _admin_cache_sync:
 
@@ -153,6 +155,17 @@ In pool of Qgis services, cache may be desynchronized for different reasons:
 * Scaling up the pool
 * Using the `load_project_on_request`
 * Updating container in a orchestrated environment
+
+The :ref:`cache restoration mecanism <rpc_cache_restoration>` may prevent most
+of desynchronization mecanism, it may be required to manually resync caches: 
+
+The cli managment tool provide the `sync` command while the REST api provides the
+http method:
+
+.. http:patch:: /v1/pools/{Id}/cache
+
+   Synchronize and update cache between all pool instances
+
 
 
 .. _admin_configuration_schema:

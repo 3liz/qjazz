@@ -165,7 +165,7 @@ Cache can be managed with the :ref:`service cli command <managing_rpc_services>`
 .. highlight:: txt
 
 Project checkout
-^^^^^^^^^^^^^^^^
+----------------
 
 Whenever a project is checked out from cache, a cache status is returned
 
@@ -199,3 +199,31 @@ You may *pull* the project to make it change state depending on its inital state
    * - NOTFOUND
      - NOTFOUND
      - No action
+
+
+.. _rpc_cache_restoration:
+
+Cache restoration
+-----------------
+
+Cache restoration occurs under some condtions when a service instance is restarted or 
+new instance is created when scaling services.
+
+There is several restoration types:
+
+   * :tmp:  | The list of cached projects is dynamically updated when projects are loaded explicitely
+              with the cache managment api; i.e, projects loaded dynamically with the 
+              `load_project_on_request` option will no be restored. 
+            | The list is saved on disk in a tmp directory and restored when the instance restart.
+   * :http: The list is downloaded from http remote url, it can be considired as a static configuration
+            and no update is done. 
+   * :none: No restoration
+
+.. note::
+
+    With `tmp` restoration type, the directory where the config is stored may be specified with 
+    the `CONF_TMPDIR` environment variable (by default it is saved in the `/tmp` directory).
+
+    For preserving `tmp` cache restoration from container update or scaling update, you may use
+    a persistent docker volume which will be available for any new created container.
+

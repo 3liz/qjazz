@@ -22,7 +22,7 @@ class _Config:
             required: true
             description: Identifier for the backend
         tags:
-        - backends.config
+        - pools.config
         responses:
             "200":
                 description: >
@@ -78,7 +78,7 @@ class _Config:
             required: true
             description: Identifier for the backend
         tags:
-        - backends.config
+        - pools.config
         responses:
             "200":
                 description: >

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 import dns.asyncresolver
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field
 from typing_extensions import (
     Annotated,
     Generator,
@@ -193,30 +193,20 @@ class SocketResolver(Resolver):
 
 RESOLVERS_SECTION = 'resolvers'
 
-# Used for validating dynamic resolver configuration
-ResolverConfigList = TypeAdapter(
-    List[
-        Union[
-            DNSResolverConfig,
-            SocketResolverConfig,
-        ]
-    ]
-)
+ResolverConfigAnnotated = Annotated[
+    Union[
+        DNSResolverConfig,
+        SocketResolverConfig,
+    ],
+    Field(
+        discriminator='type',
+    )
+]
 
 
 @section(RESOLVERS_SECTION)
 class ResolverConfig(Config):
-    pools: List[
-        Annotated[
-            Union[
-                DNSResolverConfig,
-                SocketResolverConfig,
-            ],
-            Field(
-                discriminator='type',
-            )
-        ]
-    ] = Field(
+    pools: List[ResolverConfigAnnotated] = Field(
         default=[],
         title="List of Qgis pool backends",
     )

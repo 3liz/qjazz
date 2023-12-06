@@ -39,7 +39,7 @@ class _Plugins:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.plugins
+          - pools.plugins
         responses:
             "200":
                 description: >

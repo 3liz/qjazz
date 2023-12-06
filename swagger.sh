@@ -4,7 +4,7 @@ if [[ "$1" == "stop" ]]; then
     docker stop swagger
 else
     docker run -p 9875:8080 -d --rm --name swagger \
-        -e SWAGGER_JSON=/doc/openapi.json \
+        -e SWAGGER_JSON=/doc/specs/openapi-managment.json \
         -v $(pwd)/doc:/doc \
         swaggerapi/swagger-ui 
 

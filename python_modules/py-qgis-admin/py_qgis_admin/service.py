@@ -3,7 +3,13 @@ import traceback
 
 from contextlib import contextmanager
 
-from typing_extensions import AsyncIterator, Iterator, Sequence, Tuple
+from typing_extensions import (
+    AsyncIterator,
+    Iterable,
+    Iterator,
+    Sequence,
+    Tuple,
+)
 
 from py_qgis_contrib.core import config, logger  # noqa
 
@@ -32,15 +38,21 @@ class Service:
     def num_pools(self) -> int:
         return len(self._pools)
 
-    def update_pools(self):
+    def update_pools(self) -> Iterable[str]:
         """ Update resolvers
+
+            Returns removed pools label
         """
-        for resolver in self._config.get_resolvers():
-            resolver_id = resolver.label
-            if resolver_id not in self._pools:
-                # Add new pool from resolver
-                pool = PoolClient(resolver)
-                self._pools[pool.label] = pool
+        def _resolve():
+            for resolver in self._config.get_resolvers():
+                resolver_id = resolver.label
+                if resolver_id not in self._pools:
+                    # Add new pool from resolver
+                    pool = PoolClient(resolver)
+                    self._pools[pool.label] = pool
+                yield resolver_id
+
+        return set(self._pools.keys()).differents_update(_resolve())
 
     async def shutdown(self):
         self._shutdown = True
@@ -49,7 +61,13 @@ class Service:
             await pool.shutdown()
 
     async def synchronize(self):
-        self.update_pools()
+        removed = self.update_pools()
+        # Clean dead pools
+        for label in removed:
+            logger.debug("Removing pool %s", label)
+            pool = self._pools.pop(label)
+            await pool.shutdown()
+
         # Resync pools
         for name, pool in self._pools.items():
             await pool.update_backends()

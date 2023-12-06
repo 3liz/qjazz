@@ -61,7 +61,7 @@ class _Projects:
                 type: str
             description: The project uri
         tags:
-          - backends.cache.project
+          - pools.cache.project
         responses:
             "200":
                 description: >
@@ -127,7 +127,7 @@ class _Projects:
                 type: str
             description: The project uri
         tags:
-          - backends.cache.project
+          - pools.cache.project
         responses:
             "200":
                 description: >
@@ -194,7 +194,7 @@ class _Projects:
                 type: str
             description: The project uri
         tags:
-          - backends.cache.project
+          - pools.cache.project
         responses:
             "200":
                 description: >

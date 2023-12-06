@@ -81,7 +81,7 @@ class _Cache:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.cache
+          - pools.cache
         responses:
             "200":
                 description: >
@@ -145,7 +145,7 @@ class _Cache:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.cache
+          - pools.cache
         responses:
             "200":
                 description: >
@@ -199,7 +199,7 @@ class _Cache:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.cache
+          - pools.cache
         responses:
             "200":
                 description: >
@@ -253,7 +253,7 @@ class _Cache:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.cache
+          - pools.cache
         requestBody:
             required: true
             content:
@@ -320,7 +320,7 @@ class _Cache:
             required: true
             description: Identifier for the backend
         tags:
-          - backends.cache
+          - pools.cache
         responses:
             "200":
                 description: >

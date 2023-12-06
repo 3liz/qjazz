@@ -16,7 +16,7 @@ class _Backends:
         """
         description: Return the list of managed pools
         tags:
-          - backends
+          - pools
         responses:
             "200":
                 description: >
@@ -44,7 +44,7 @@ class _Backends:
             This is necessary when rescaling backends services
             or adding new monitored pools.
         tags:
-          - backends
+          - pools
         responses:
             "200":
                 description: >
@@ -78,7 +78,7 @@ class _Backends:
             required: true
             description: Identifier for the backend
         tags:
-          - backends
+          - pools
         responses:
             "200":
                 description: >
@@ -121,7 +121,7 @@ class _Backends:
             required: true
             description: Identifier for the backend
         tags:
-          - backends
+          - pools
         responses:
             "200":
                 description: >
