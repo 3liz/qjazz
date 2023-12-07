@@ -256,12 +256,12 @@ def request_project_from_cache(
                             "Cannot add NEW project '%s': Maximum projects reached",
                             target,
                         )
-                        _m.send_reply(conn, "Max object reached on server", 403)
+                        _m.send_reply(conn, "Max object reached on server", 409)
                     else:
                         entry, co_status = cm.update(md, co_status)
                 else:
-                    logger.error("Request for loading NEW project '%s'", md.uri)
-                    _m.send_reply(conn, target, 403)
+                    logger.error("load_project_on_request disabled for '%s'", md.uri)
+                    _m.send_reply(conn, target, 404)
             case Co.REMOVED:
                 # Do not serve a removed project
                 # Since layer's data may not exists

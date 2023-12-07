@@ -172,7 +172,7 @@ class ErrorHandler(_BaseHandler):
 
     def prepare(self) -> None:
         super().prepare()
-        raise HTTPError(self._status_code, reason=self.reason)
+        raise HTTPError(self.get_status(), reason=self.reason)
 
 
 #
@@ -213,6 +213,16 @@ class RpcHandlerMixIn:
         return self._channel.get_metadata(
             (k.lower(), v) for k, v in self.request.headers.items()
         )
+
+    def on_unknown_rpc_error(self):
+        """ Handle rpc error which is out
+            of gRPC namespace.
+            Usually occurs when a non-Qgis error
+            is raised before reaching qgis server.
+            In this case return the error code found in
+            the initial metadata.
+        """
+        raise HTTPError(self.get_status())
 
     @asynccontextmanager
     async def collect_metrics(self, service: str, request: str) -> bool:
@@ -310,7 +320,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
         url = self.get_url()
         metadata = self.get_metadata()
 
-        async with self._channel.stub() as stub:
+        async with self._channel.stub(self.on_unknown_rpc_error) as stub:
             stream = stub.ExecuteOwsRequest(
                 api_pb2.OwsRequest(
                     service=service,
@@ -391,7 +401,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         arguments = req.arguments
         metadata = self.get_metadata()
 
-        async with self._channel.stub() as stub:
+        async with self._channel.stub(self.on_unknown_rpc_error) as stub:
             stream = stub.ExecuteApiRequest(
                 api_pb2.ApiRequest(
                     name=self._api,

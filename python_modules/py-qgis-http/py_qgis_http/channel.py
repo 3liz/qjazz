@@ -9,7 +9,7 @@ import grpc
 from grpc_health.v1 import health_pb2  # HealthCheckRequest
 from grpc_health.v1 import health_pb2_grpc  # HealthStub
 from tornado.web import HTTPError
-from typing_extensions import Iterator, Optional, Sequence, Tuple
+from typing_extensions import Callable, Iterator, Optional, Sequence, Tuple
 
 from py_qgis_contrib.core import config, logger
 from py_qgis_worker._grpc import api_pb2, api_pb2_grpc  # noqa
@@ -186,7 +186,7 @@ class Channel:
         return self._connected
 
     @asynccontextmanager
-    async def stub(self):
+    async def stub(self, unknown_error_callback: Optional[Callable] = None):
         """ Return a server stub from the current channel
         """
         if not self._serving or self._closing:
@@ -207,7 +207,22 @@ class Channel:
                     raise HTTPError(404)
                 case grpc.StatusCode.UNAVAILABLE:
                     raise HTTPError(502)
-                case _:
+                case grpc.StatusCode.PERMISSION_DENIED:
+                    raise HTTPError(403)
+                case grpc.StatusCode.INVALID_ARGUMENT:
+                    raise HTTPError(400)
+                case grpc.StatusCode.INTERNAL:
                     raise HTTPError(500)
+                case grpc.StatusCode.UNKNOWN:
+                    # Code is outside of gRPC namespace
+                    # Let the caller handle it in case
+                    # the real error code was in initial metadata
+                    if unknown_error_callback:
+                        unknown_error_callback()
+                    else:
+                        raise
+                case _:
+                    # Unhandled error
+                    raise
         finally:
             self._usecount -= 1

@@ -348,6 +348,30 @@ def sync_cache(verbose: bool, host: str, configpath: Optional[Path]):
     else:
         print("ERROR: ", host, "not found", file=sys.stderr)
 
+#
+# Cache clear
+#
+
+
+@cache_commands.command('clear')
+@click.option("--host", help="Watch specific hostname", required=True)
+@global_options()
+def clear_cache(verbose: bool, host: str, configpath: Optional[Path]):
+    """ Clear cache content for 'host'
+    """
+    conf = load_configuration(configpath, verbose)
+
+    async def _cache_clear(pool):
+        await pool.update_backends()
+        await pool.clear_cache()
+        print("{}")
+
+    pool = get_pool(conf.resolvers, host)
+    if pool is not None:
+        asyncio.run(_cache_clear(pool))
+    else:
+        print("ERROR: ", host, "not found", file=sys.stderr)
+
 
 #
 # Pull projects
@@ -451,6 +475,10 @@ def project_info(
         asyncio.run(_project_info(pool))
     else:
         print("ERROR: ", host, "not found", file=sys.stderr)
+
+#
+# Plugins commands
+#
 
 
 @cli_commands.command('plugins')
