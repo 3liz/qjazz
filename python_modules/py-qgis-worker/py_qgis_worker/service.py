@@ -712,4 +712,5 @@ def _new_cache_info(resp) -> api_pb2.CacheInfo:
         cache_id=resp.cache_id,
         last_hit=int(resp.last_hit),
         hits=resp.hits,
+        pinned=resp.pinned,
     )

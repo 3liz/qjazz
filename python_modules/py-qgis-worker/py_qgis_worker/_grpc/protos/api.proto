@@ -122,6 +122,7 @@ message CacheInfo {
     optional string cache_id = 10;
     optional int64 last_hit = 11;
     optional int64 hits = 12;
+    optional bool pinned = 13;
 }
 
 message DropRequest {

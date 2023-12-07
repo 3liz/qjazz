@@ -118,6 +118,7 @@ async def test_cache_api(config):
         )
         assert status == 200
         assert resp.status == _m.CheckoutStatus.NEW
+        assert resp.pinned
 
         uri = resp.uri
 

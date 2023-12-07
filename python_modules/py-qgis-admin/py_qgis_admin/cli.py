@@ -67,7 +67,7 @@ def global_options():
         @click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
         @click.option(
             "--conf", "-C", "configpath",
-            envvar="PY_QGIS_SERVER_ADMIN_CONFIGFILE",
+            envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
             help="configuration file",
             type=FilePathType,
         )

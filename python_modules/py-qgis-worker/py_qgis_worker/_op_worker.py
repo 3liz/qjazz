@@ -165,7 +165,7 @@ def qgis_server_run(
                 # Cache managment
                 # --------------------
                 case _m.MsgType.CHECKOUT_PROJECT:
-                    _op_cache.checkout_project(conn, cm, msg.uri, msg.pull, cache_id=name)
+                    _op_cache.checkout_project(conn, cm, config, msg.uri, msg.pull, cache_id=name)
                 case _m.MsgType.DROP_PROJECT:
                     _op_cache.drop_project(conn, cm, msg.uri, name)
                 case _m.MsgType.CLEAR_CACHE:

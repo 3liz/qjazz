@@ -86,6 +86,7 @@ class CacheEntry:
 
     last_hit: float = 0.
     hits: int = 0
+    pinned: bool = False
 
     # Delegate to ProjectMetadata
     def __getattr__(self, attr):
@@ -96,6 +97,9 @@ class CacheEntry:
         # Get around frozen
         self.__dict__['hits'] += 1
         self.__dict__['last_hit'] = time()
+
+    def pin(self):
+        self.__dict__['pinned'] = True
 
 
 class CheckoutStatus(Enum):

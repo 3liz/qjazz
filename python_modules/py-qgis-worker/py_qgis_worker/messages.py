@@ -170,6 +170,8 @@ class CacheInfo:
     cache_id: str = ""
     last_hit: float = 0
     hits: int = 0
+    pinned: bool = False
+
 
 # PULL_PROJECT
 

@@ -2,13 +2,16 @@
 # Cache management operations
 #
 from multiprocessing.connection import Connection
+from time import time
 from urllib.parse import urlunsplit
 
 from typing_extensions import Optional, assert_never
 
 from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus
+from py_qgis_contrib.core import logger
 
 from . import messages as _m
+from .config import WorkerConfig
 
 Co = CheckoutStatus
 
@@ -61,6 +64,7 @@ def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str =
         cache_id=cache_id,
         last_hit=e.last_hit,
         hits=e.hits,
+        pinned=e.pinned,
     )
 
 
@@ -71,6 +75,7 @@ def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str =
 def checkout_project(
     conn: Connection,
     cm: CacheManager,
+    config: WorkerConfig,
     uri: str,
     pull: bool,
     cache_id: str = "",
@@ -104,13 +109,28 @@ def checkout_project(
         else:
             match status:
                 case Co.NEW:
+                    if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
+                        logger.error(
+                            "Cannot add NEW project '%s': Maximum projects reached",
+                            md.uri,
+                        )
+                        _m.send_reply(conn, "Max object reached on server", 403)
+                        return
                     e, status = cm.update(md, status)
+                    # Pin the entry since this object has been asked explicitely
+                    # in cache
+                    e.pin()
                     reply = _cache_info_from_entry(e, status, cache_id=cache_id)
-                case Co.NEEDUPDATE | Co.REMOVED:
-                    e, status = cm.update(md, status)
-                    reply = _cache_info_from_entry(e, status, status != Co.REMOVED, cache_id=cache_id)
                 case Co.UNCHANGED:
+                    md.pin()  # See above
                     reply = _cache_info_from_entry(md, status, cache_id=cache_id)
+                case Co.NEEDUPDATE:
+                    e, status = cm.update(md, status)
+                    e.pin()  # See above
+                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
+                case Co.REMOVED:
+                    e, status = cm.update(md, status)
+                    reply = _cache_info_from_entry(e, status, False, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
@@ -247,3 +267,42 @@ def send_catalog(
             206,
         )
     _m.send_reply(conn, None)
+
+
+#
+# Cache eviction
+#
+
+def evict_project_from_cache(cm: CacheManager) -> bool:
+    """ Evict a project from cache based on
+        its `popularity`
+
+        Returns `true` if object has been evicted from the
+        cache, `false` otherwise.
+    """
+    # Evaluate an euristics based on last_hit timestamp
+    # and hits number
+    # This is simple model of cache frequency eviction.
+    # Such model is related to `hyperbolic policy`:
+    # https://www.usenix.org/system/files/conference/atc17/atc17-blankstein.pdf
+    # Where eviction scheme is based on popularity over a time period.
+    #
+    # Here we take the number of hits divided by the  lifetime period
+    # of the object in cache
+    #
+    # This should be ok as long the rate of insertion of new object is low
+    # which we assume is the case for this kind of resource.
+    now = time()
+
+    candidate = min(
+        (e for e in cm.iter() if not e.pinned),
+        default=None,
+        key=lambda e: e.hits / (now - e.timestamp)
+    )
+
+    if not candidate:
+        return False
+
+    logger.debug("Evicting '%s' from cache", candidate.uri)
+    cm.update(candidate,  Co.REMOVED)
+    return True
