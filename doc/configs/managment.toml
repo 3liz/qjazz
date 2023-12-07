@@ -56,6 +56,28 @@ level = "INFO"
 # SSL certificats
 #ssl =   	# Optional
 
+#
+# List of Qgis pool backends
+#
+# Plugin resolver
+# 
+# Load resolver from entrypoint extension
+#[[resolvers.pools]]
+#
+# Unique label
+#
+# Unique resolver label. The label must be compatible with a url path component.
+#label = 	# Required
+#
+# Must be set to 'plugin'
+#type = 	# Required
+#
+# Resolver name
+#name = 	# Required
+#
+# Resolver configuration options
+#options = 	# Required
+
 [http]
 #
 # Interfaces to listen to

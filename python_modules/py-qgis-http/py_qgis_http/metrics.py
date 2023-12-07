@@ -15,8 +15,8 @@ from typing_extensions import Dict, Mapping, Optional, Self
 from py_qgis_contrib.core import componentmanager as cm
 from py_qgis_contrib.core import config
 
-METRICS_HANDLER_ENTRYPOINTS = '3liz.org.metrics.handler'
-METRICS_HANDLER_CONTRACTID = '@3liz.org/metrics/handler;1'
+METRICS_HANDLER_ENTRYPOINTS = '3liz.org.map.metrics.handler'
+METRICS_HANDLER_CONTRACTID = '@3liz.org/map/metrics/handler;1'
 
 
 @dataclass(frozen=True)
@@ -88,7 +88,6 @@ class MetricConfig(config.Config):
         """ Load entrypoint for metrics handler given by 'name'
 
             raises: cm.FactoryNotFoundError|cm.EntryPointNotFoundError
-            see https://github.com/alexandermalyga/poltergeist
         """
         cm.load_entrypoint(METRICS_HANDLER_ENTRYPOINTS, self.name)
 

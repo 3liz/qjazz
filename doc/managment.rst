@@ -180,10 +180,31 @@ http method:
    Synchronize and update cache between all pool instances
 
 
-.. _admin_pools_sync:
-
+.. _admin_config_reload:
 
 Adding, modifying or removing pool to managment service
 -------------------------------------------------------
 
+If you add or remove resolver's you will need to reload the configuration.
 
+The REST api provide a method for reloading the configuration:
+
+   .. http:patch:: /v1/config
+
+   Reload the configuration and resync all pools.
+
+All pools will be resynced according to the new resolvers
+    
+
+.. _admin_pools_sync:
+
+Resyncing with rpc pools when rescaling rpc services
+----------------------------------------------------
+
+If you have scaled your rpc services of if some resolvers are handling with dynamic 
+configuration, your will only need to resync with the resolvers in order to take 
+the changes into account.
+
+   .. http:patch:: /vi/pools
+
+   Resync all pools with resolvers.

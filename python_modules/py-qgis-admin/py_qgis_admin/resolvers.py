@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 import dns.asyncresolver
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from typing_extensions import (
     Annotated,
     Generator,
@@ -74,6 +74,9 @@ class BaseResolverConfig(Config):
         )
     )
 
+    def get_resolvers(self):
+        raise NotImplementedError("Subclass must implement 'get_resolvers'")
+
 #
 # DNS resolver
 #
@@ -93,6 +96,9 @@ class DNSResolverConfig(BaseResolverConfig):
 
     def resolver_address(self) -> str:
         return f"{self.host}:{self.port}"
+
+    def get_resolvers(self) -> Generator[Resolver, None, None]:
+        yield from DNSResolver.get_resolvers(self)
 
 
 class DNSResolver(Resolver):
@@ -133,7 +139,9 @@ class DNSResolver(Resolver):
         return cls(DNSResolverConfig(host=host, port=port, type="dns", label=name))
 
 #
-# Unix socket resolver
+# Socket resolver
+#
+# Unix socket or direct ip resolution
 #
 
 
@@ -150,6 +158,9 @@ class SocketResolverConfig(BaseResolverConfig):
                 return f"{addr}:{port}"
             case socket:
                 return socket
+
+    def get_resolvers(self) -> Generator[Resolver, None, None]:
+        yield from SocketResolver.get_resolvers(self)
 
 
 class SocketResolver(Resolver):
@@ -188,19 +199,45 @@ class SocketResolver(Resolver):
 
 
 #
+# Resolver's plugin extension
+#
+RESOLVER_ENTRYPOINTS = '3liz.org.map.admin.resolver'
+RESOLVER_CONTRACTID = '@3liz.org/map/admin/resolver;1'
+
+
+class PluginResolverConfig(BaseResolverConfig):
+    (
+        "Plugin resolver\n\n"
+        "Load resolver from entrypoint extension"
+    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    type: Literal['plugin'] = Field(description="Must be set to 'plugin'")
+    name: str = Field(title="Resolver name")
+
+    options: dict = Field(title="Resolver configuration options")
+
+    def get_resolvers(self) -> Generator[Resolver, None, None]:
+        from py_qgis_contrib.core import componentmanager as cm
+        cm.load_entrypoint(RESOLVER_ENTRYPOINTS, self.name)
+
+        return cm.get_service(
+            f"{RESOLVER_CONTRACTID}?name={self.name}"
+        ).get_resolvers(self)
+
+
+#
 # Aggregate configuration for resolvers
 #
-
 RESOLVERS_SECTION = 'resolvers'
 
 ResolverConfigAnnotated = Annotated[
     Union[
         DNSResolverConfig,
         SocketResolverConfig,
+        PluginResolverConfig,
     ],
-    Field(
-        discriminator='type',
-    )
+    Field(discriminator='type'),
 ]
 
 
@@ -213,11 +250,7 @@ class ResolverConfig(Config):
 
     def get_resolvers(self) -> Generator[Resolver, None, None]:
         for config in self.pools:
-            match config:
-                case DNSResolverConfig():
-                    yield from DNSResolver.get_resolvers(config)
-                case SocketResolverConfig():
-                    yield from SocketResolver.get_resolvers(config)
+            yield from config.get_resolvers()
 
     @staticmethod
     def from_string(address: str) -> Resolver:
