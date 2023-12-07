@@ -13,8 +13,10 @@ services:
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
     command: ["qgis-server-rpc", "serve"]
+    depends_on:
+    - config-server
 
-  proxy:
+  web:
     image: 3liz/qgis-services:release
     environment:
       CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
@@ -24,7 +26,9 @@ services:
     - qgis_rpc_network
     command: ["qgis-server-http", "serve", "--verbose"]
     profiles:
-    - proxy
+    - web
+    depends_on:
+    - config-server
 
   config-server:
     image: nginx:alpine

@@ -710,4 +710,6 @@ def _new_cache_info(resp) -> api_pb2.CacheInfo:
         saved_version=resp.saved_version or "",
         debug_metadata=resp.debug_metadata,
         cache_id=resp.cache_id,
+        last_hit=int(resp.last_hit),
+        hits=resp.hits,
     )

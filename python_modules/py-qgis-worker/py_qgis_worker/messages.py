@@ -168,6 +168,8 @@ class CacheInfo:
     saved_version: Optional[str] = None
     debug_metadata: Dict[str, int] = field(default_factory=dict)
     cache_id: str = ""
+    last_hit: float = 0
+    hits: int = 0
 
 # PULL_PROJECT
 

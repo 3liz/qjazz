@@ -84,9 +84,18 @@ class CacheEntry:
 
     debug_meta: DebugMetadata
 
+    last_hit: float = 0.
+    hits: int = 0
+
     # Delegate to ProjectMetadata
     def __getattr__(self, attr):
         return self.md.__getattribute__(attr)
+
+    # Increase the number of hits
+    def hit_me(self):
+        # Get around frozen
+        self.__dict__['hits'] += 1
+        self.__dict__['last_hit'] = time()
 
 
 class CheckoutStatus(Enum):

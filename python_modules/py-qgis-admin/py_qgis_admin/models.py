@@ -118,6 +118,9 @@ class CacheItem(BaseModel):
     storage: str
     uri: str
     debugMetadata: Optional[Dict[str, str]]
+    timestamp: int
+    lastHit: int
+    hits: int
 
 
 @swagger.model

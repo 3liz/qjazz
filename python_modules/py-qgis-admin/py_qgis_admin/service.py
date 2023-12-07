@@ -52,7 +52,9 @@ class Service:
                     self._pools[pool.label] = pool
                 yield resolver_id
 
-        return set(self._pools.keys()).differents_update(_resolve())
+        removed = set(self._pools.keys())
+        removed.difference_update(_resolve())
+        return removed
 
     async def shutdown(self):
         self._shutdown = True

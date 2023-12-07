@@ -59,6 +59,8 @@ def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str =
         saved_version=e.project.lastSaveVersion().text(),
         debug_metadata=e.debug_meta.__dict__.copy(),
         cache_id=cache_id,
+        last_hit=e.last_hit,
+        hits=e.hits,
     )
 
 

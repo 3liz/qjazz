@@ -192,6 +192,8 @@ def _handle_generic_request(
         if not entry or co_status == Co.REMOVED:
             return
 
+        entry.hit_me()
+
         resp_hdrs = {
             'Last-Modified': to_rfc822(entry.last_modified),
             'X-Qgis-Cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
@@ -238,7 +240,7 @@ def request_project_from_cache(
                 # if the configuration allow it
                 # This is not a good idea to keep an outdated
                 # project in cache since the associated resources
-                # may have chanced. But in the other hand it could
+                # may have changed. But in the other hand it could
                 # prevents access while project's ressource are
                 # not fully updated
                 if config.reload_outdated_project_on_request:

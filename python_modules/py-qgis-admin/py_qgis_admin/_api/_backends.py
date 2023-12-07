@@ -104,6 +104,8 @@ class _Backends:
                     _link(request, "self", f"/pools/{pool.label}"),
                     _link(request, "backends", f"/pools/{pool.label}/backends"),
                     _link(request, "config", f"/pools/{pool.label}/config"),
+                    _link(request, "catalog", f"/pools/{pool.label}/catalog"),
+                    _link(request, "cache", f"/pools/{pool.label}/cache"),
                 ],
             ).model_dump_json(by_alias=True),
         )

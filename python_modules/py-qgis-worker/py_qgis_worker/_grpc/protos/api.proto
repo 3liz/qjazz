@@ -120,7 +120,8 @@ message CacheInfo {
     optional string saved_version = 8;
     map<string,int64> debug_metadata = 9;
     optional string cache_id = 10;
-    
+    optional int64 last_hit = 11;
+    optional int64 hits = 12;
 }
 
 message DropRequest {
