@@ -61,6 +61,22 @@ getenv = os.getenv
 ConfigError = ValidationError
 
 
+def dict_merge(dct, merge_dct):
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    updating only top-level keys, dict_merge recurses down into dicts nested
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+    ``dct``.
+    :param dct: dict onto which the merge is executed
+    :param merge_dct: dct merged into dct
+    :return: None
+    """
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):
+            dict_merge(dct[k], merge_dct[k])
+        else:
+            dct[k] = merge_dct[k]
+
+
 def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
     cfgfile = Path(cfgfile)
     # Load the toml file
@@ -193,8 +209,7 @@ class ConfigService:
         if self._model_changed or obj:
             data = self._conf.model_dump() if self._conf else {}
             if obj:
-                for k, v in obj.items():
-                    data[k] = v
+                dict_merge(data, obj)
             self.validate(data)
 
     def json_schema(self) -> Dict:

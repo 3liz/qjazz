@@ -132,17 +132,15 @@ Managing cache
 
 .. note::
 
-    | There is no cache removal strategy implemented in worker cache: cache is totally 
-      managed using api call.
-
+    | As with the `load_project_on_request` option, there is an eviction strategy implemented 
+      in worker cache only for projects loaded *on the fly*. Managed cache entries are not
+      subject to eviction.
+    | This is not the recommended option if your projects are bigs (many layers) and you should 
+      always prefer managed cache for such projects.  
     | This is mainly because Qgis projects are not simple static resource but instead
       heavily dynamic resource with a lot of side effects (connecting to external source,
-      loading metadata, ...).
-    | This makes sense if you think in term of a publishing process.
+      loading metadata, ...) and this makes sense if you think in term of a publishing process.
     
-    | Note that by default, projects are loaded as they are requested (this is a configurable
-      option). This is convenient if your organize your storage and search path so as to get
-      only publishable projects.
 
 Cache can be managed with the :ref:`service cli command <managing_rpc_services>`::
 

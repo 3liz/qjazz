@@ -94,7 +94,13 @@ class TmpRestore(_RestoreBase):
     def __init__(self):
         import socket
 
-        self._addr = socket.gethostbyname(socket.gethostname())
+        try:
+            # Get our ip if the hostname is resolvable
+            self._addr = socket.gethostbyname(socket.gethostname())
+        except Exception: 
+            # Fallback to pid
+            self._addr = os.getpid()
+
         self._last = set()
         self._curr = set()
         self._path = _gettempdir() / f'{self._addr}.qgis-server.cached'
