@@ -37,6 +37,14 @@ RUN mkdir -p /opt/local/ \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-cli
 
+# Install qgis-plugin-manager
+RUN mkdir -p /opt/local/ \
+    && python3 -m venv --system-site-packages /opt/local/plugin-manager \
+    && cd /usr/local/bin \
+    && /opt/local/plugin-manager/bin/pip install -U --no-cache-dir pip setuptools wheel \
+    && /opt/local/plugin-manager/bin/pip install --no-cache-dir qgis-plugin-manager \
+    && cd /usr/local/bin && ln -s /opt/local/plugin-manager/bin/qgis-plugin-manager
+
 COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
 

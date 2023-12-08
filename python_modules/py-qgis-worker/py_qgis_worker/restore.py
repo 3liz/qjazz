@@ -97,7 +97,7 @@ class TmpRestore(_RestoreBase):
         try:
             # Get our ip if the hostname is resolvable
             self._addr = socket.gethostbyname(socket.gethostname())
-        except Exception: 
+        except Exception:
             # Fallback to pid
             self._addr = os.getpid()
 

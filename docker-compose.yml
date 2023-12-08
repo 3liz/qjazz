@@ -12,6 +12,7 @@ services:
       CONF_CONFIG_URL__URL: "http://config-server/config_worker.json"
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
+    - { type: volume, target: /srv/vol1 }
     command: ["qgis-server-rpc", "serve"]
     depends_on:
     - config-server

@@ -112,7 +112,7 @@ load_project_on_request = true
 reload_outdated_project_on_request = false
 #
 # Plugins configuration
-#plugins = paths=[]
+#plugins = paths=[] install=None install_mode='external'
 #
 # Maximum chunk size
 #
@@ -237,11 +237,31 @@ num_processes = 1
 #
 # Plugin paths
 #
-# List of search paths for plugins.
-# All Qgis plugins found will be loaded
-# if they are compatible with the current
-# Qgis version.
+# The list of search paths for plugins.
+# Qgis plugins found will be loaded according to
+# the 'install' list.
+# If the list is empty, the 'QGIS_PLUGINPATH'
+# variable will be checked.
 #paths = []
+#
+# Installable plugins
+#
+# The list of installable plugins.
+# Note: if the plugin directory contains other plugins
+# plugins not in the list will NOT be loaded !
+# The Plugins will be unstalled at startup
+# if the 'install_mode' is set to 'auto'.
+# Note that an empty list means what it is:
+# i.e, *no* plugins.
+#install =   	# Optional
+#
+# Plugin installation mode
+#
+# If set to 'auto', plugins installation
+# will be checked at startup. Otherwise,
+# Installation will be done from already installed
+# plugins.
+#install_mode = "external"
 
 #
 # Interfaces to listen to

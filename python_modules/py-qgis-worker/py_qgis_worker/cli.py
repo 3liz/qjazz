@@ -38,7 +38,11 @@ def load_configuration(configpath: Optional[Path]) -> config.Config:
         # Load external configuration if requested
         config_url = config.confservice.conf.config_url
         if config_url.is_set():
-            print(f"** Loading initial configuration from <{config_url.url}> **", flush=True)
+            print(
+                f"** Loading initial configuration from <{config_url.url}> **",
+                flush=True,
+                file=sys.stderr,
+            )
             cnf = asyncio.run(config_url.load_configuration())
             config.confservice.update_config(cnf)
     except config.ConfigError as err:
@@ -61,17 +65,20 @@ def print_version(settings: bool):
     qgis.print_qgis_version(settings)
 
 
+FilePathType = click.Path(
+    exists=True,
+    readable=True,
+    dir_okay=False,
+    path_type=Path
+)
+
+
 @cli_commands.command('config')
 @click.option(
     "--conf", "-C",
     envvar=ENV_CONFIGFILE,
     help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path
-    ),
+    type=FilePathType,
 )
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
@@ -103,23 +110,37 @@ def print_config(conf: Optional[Path], out_fmt: str, schema: bool = False, prett
         print(load_configuration(conf).model_dump_json(indent=indent))
 
 
+@cli_commands.command("plugins")
+@click.option(
+    "--conf", "-C", "configpath",
+    envvar=ENV_CONFIGFILE,
+    help="configuration file",
+    type=FilePathType,
+)
+def install_plugins(configpath: Optional[Path]):
+    """ Install plugins
+    """
+    conf = load_configuration(configpath)
+    logger.setup_log_handler(conf.logging.level)
+
+    from py_qgis_contrib.core.qgis import install_plugins
+    install_plugins(conf.worker.plugins)
+
+
 @cli_commands.command('serve')
 @click.option(
     "--conf", "-C", "configpath",
     envvar=ENV_CONFIGFILE,
     help="configuration file",
-    type=click.Path(
-        exists=True,
-        readable=True,
-        dir_okay=False,
-        path_type=Path
-    ),
+    type=FilePathType,
 )
 def serve_grpc(configpath: Optional[Path]):
     """ Run grpc server
     """
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
+
+    conf.worker.plugins.do_install()
 
     pool = WorkerPool(config.ConfigProxy(WORKER_SECTION))
     pool.start()

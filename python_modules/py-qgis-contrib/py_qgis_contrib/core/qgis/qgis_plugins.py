@@ -12,6 +12,7 @@
 import configparser
 import os
 import sys
+import tempfile
 import traceback
 
 from dataclasses import dataclass
@@ -25,8 +26,11 @@ from typing_extensions import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Self,
+    Set,
+    Tuple,
     assert_never,
 )
 
@@ -45,12 +49,28 @@ class PluginType(Enum):
 QGIS_PLUGIN_SERVICE_CONTRACTID = '@3liz.org/qgis-plugin-service;1'
 
 
+def _default_plugin_path() -> Optional[Path]:
+    """ Return the default plugin's path
+    """
+    return Path(
+        os.getenv('QGIS_OPTIONS_PATH')
+        or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
+        or os.getenv('QGIS_HOME')
+        or Path(tempfile.gettempdir(), '.qgis-server')
+    ) / 'plugins'
+
+
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
     if not paths and os.getenv("QGIS_PLUGINPATH"):
         paths = [Path(p) for p in os.getenv("QGIS_PLUGINPATH").split(":")]
+    paths.append(_default_plugin_path())
     for path in paths:
         if not path.exists() or not path.is_dir():
-            print(f"WARNING: '{path}' is not a valid plugin directory")  # noqa T201
+            print(   # noqa T201
+                f"WARNING: '{path}' is not a valid plugin directory",
+                file=sys.stderr,
+                flush=True,
+            )
     return paths
 
 
@@ -62,12 +82,40 @@ class QgisPluginConfig(config.Config):
         default=[],
         title="Plugin paths",
         description=(
-            "List of search paths for plugins.\n"
-            "All Qgis plugins found will be loaded\n"
-            "if they are compatible with the current\n"
-            "Qgis version."
+            "The list of search paths for plugins.\n"
+            "Qgis plugins found will be loaded according to\n"
+            "the 'install' list.\n"
+            "If the list is empty, the 'QGIS_PLUGINPATH'\n"
+            "variable will be checked."
         ),
     )
+    install: Optional[Set[str]] = Field(
+        default=None,
+        title="Installable plugins",
+        description=(
+            "The list of installable plugins.\n"
+            "Note: if the plugin directory contains other plugins\n"
+            "plugins not in the list will NOT be loaded !\n"
+            "The Plugins will be unstalled at startup\n"
+            "if the 'install_mode' is set to 'auto'.\n"
+            "Note that an empty list means what it is:\n"
+            "i.e, *no* plugins."
+        )
+    )
+    install_mode: Literal['auto', 'external'] = Field(
+        default='external',
+        title='Plugin installation mode',
+        description=(
+            "If set to 'auto', plugins installation\n"
+            "will be checked at startup. Otherwise,\n"
+            "Installation will be done from already installed\n"
+            "plugins."
+        ),
+    )
+
+    def do_install(self):
+        if self.install_mode == 'auto':
+            install_plugins(self)
 
 
 @dataclass(frozen=True)
@@ -129,6 +177,8 @@ class QgisPluginService:
             from .processing import ProcessesLoader
             processes = ProcessesLoader(self._providers)
 
+        white_list = self._config.install
+
         for plugin_path in self._config.paths:
 
             sys.path.append(str(plugin_path))
@@ -136,9 +186,14 @@ class QgisPluginService:
             if plugin_type == PluginType.PROCESSING:
                 processes.read_configuration(plugin_path)
 
-            for plugin in find_plugins(plugin_path, plugin_type):
+            for plugin, meta in find_plugins(plugin_path, plugin_type):
                 # noinspection PyBroadException
                 try:
+                    # Check white list
+                    name = meta['general']['name']
+                    if white_list is not None and name not in white_list:
+                        continue
+
                     if plugin in sys.modules:
                         # Take care of module conflicts
                         raise PluginError(
@@ -160,7 +215,7 @@ class QgisPluginService:
                             assert_never(unreachable)
 
                     self._plugins[plugin] = Plugin(
-                        name=plugin,
+                        name=name,
                         path=Path(package.__file__).parent,
                         plugin_type=plugin_type,
                         init=init,
@@ -180,7 +235,10 @@ class QgisPluginService:
         return (reg.providerById(_id) for _id in self._providers)
 
 
-def find_plugins(path: str, plugin_type: PluginType) -> Iterator[str]:
+def find_plugins(
+    path: str,
+    plugin_type: PluginType
+) -> Iterator[Tuple[str, configparser.ConfigParser]]:
     """ return list of plugins in given path
     """
     path = Path(path)
@@ -193,9 +251,11 @@ def find_plugins(path: str, plugin_type: PluginType) -> Iterator[str]:
             # and symlink target path are not visible from the
             # container - give some hint for debugging
             if plugin.is_symlink():
-                logger.warning(f"*** The symbolic link '{plugin}' is not resolved."
-                               " If you are running in docker container please consider"
-                               "mounting the target path in the container.")
+                logger.warning(
+                    f"*** The symbolic link '{plugin}' is not resolved."
+                    " If you are running in docker container please consider"
+                    "mounting the target path in the container."
+                )
             continue
 
         metadata_file = plugin / 'metadata.txt'
@@ -238,7 +298,7 @@ def find_plugins(path: str, plugin_type: PluginType) -> Iterator[str]:
             logger.warning(f"Unsupported version for plugin '{plugin}'. Discarding")
             continue
 
-        yield plugin.name
+        yield plugin.name, cp
 
 
 def checkQgisVersion(minver: str, maxver: str) -> bool:
@@ -261,3 +321,38 @@ def checkQgisVersion(minver: str, maxver: str) -> bool:
     maxver = to_int(maxver) if maxver else version
 
     return minver <= version <= maxver
+
+
+def install_plugins(conf: QgisPluginConfig):
+    """ Install required plugins from installation
+    """
+    plugins = conf.install
+    if not plugins:
+        # Nothing to install
+        print("No plugins to install", file=sys.stderr)  # noqa T201
+        return
+
+    import subprocess
+
+    install_path = _default_plugin_path()
+    install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
+
+    def _run(*args):
+        res = subprocess.run(
+            ["qgis-plugin-manager", *args],
+            cwd=str(install_path),
+        )
+        if res.returncode > 0:
+            raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
+
+    if not (install_path / 'sources.list').exists():
+        _run("init")
+
+    try:
+        _run("update")
+    except RuntimeError:
+        logger.error("Cannot update plugins index, cancelling installation...")
+        return
+
+    for plugin in plugins:
+        _run("install", plugin)

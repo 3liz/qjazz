@@ -4,6 +4,7 @@ set -e
 
 # Qgis need a HOME
 export HOME=/home/qgis
+export QGIS_HOME=$HOME
 
 copy_qgis_configuration() {
     QGIS_CUSTOM_CONFIG_PATH=${QGIS_CUSTOM_CONFIG_PATH:-$QGIS_OPTIONS_PATH}

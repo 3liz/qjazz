@@ -12,4 +12,5 @@ from .qgis_plugins import (  # noqa
     PluginType,
     QgisPluginConfig,
     QgisPluginService,
+    install_plugins,
 )

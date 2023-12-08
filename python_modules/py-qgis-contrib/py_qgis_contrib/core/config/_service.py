@@ -78,6 +78,8 @@ def dict_merge(dct, merge_dct):
 
 
 def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
+    """ Generic config reader
+    """
     cfgfile = Path(cfgfile)
     # Load the toml file
     with cfgfile.open() as f:
@@ -89,7 +91,7 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
 
 
 def read_config_toml(cfgfile: Path, **kwds) -> Dict:
-    """ Read configuration from file
+    """ Read toml configuration from file
     """
     try:
         # Python 3.11+
