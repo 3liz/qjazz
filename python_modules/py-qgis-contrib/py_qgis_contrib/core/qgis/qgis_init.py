@@ -143,7 +143,7 @@ def init_qgis_application():
 
     qgis_application.initQgis()
 
-    optpath = os.getenv('QGIS_OPTIONS_PATH')
+    optpath = os.getenv('QGIS_OPTIONS_PATH') or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
     if optpath:
         # Log qgis settings
         load_qgis_settings(optpath)

@@ -140,7 +140,19 @@ class WorkerPool:
             logger.error("Connection cancelled by client")
             if worker:
                 # Flush stream from current task
-                await self._worker.consume_until_task_done()
+                # Handle timeout, since the main reason
+                # for cancelling may be a stucked or
+                # long polling response.
+                try:
+                    await asyncio.wait_for(
+                        self._worker.consume_until_task_done(),
+                        self._timeout,
+                    )
+                except asyncio.TimeoutError:
+                    logger.critical("Worker stalled, terminating...")
+                    self._shutdown = True
+                    worker.terminate()  # This well trigger a SIGCHLD signal
+                    worker = None       # Do not put back worker on queue
         except WorkerError:
             raise
         except Exception as err:

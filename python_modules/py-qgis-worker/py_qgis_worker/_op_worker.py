@@ -68,7 +68,8 @@ def setup_server(config: WorkerConfig) -> QgsServer:
     server = init_qgis_server()
     CacheManager.initialize_handlers()
 
-    print(show_qgis_settings())  # noqa T201
+    if logger.isEnabledFor(logger.LogLevel.DEBUG):
+        print(show_qgis_settings())  # noqa T201
 
     return server
 
