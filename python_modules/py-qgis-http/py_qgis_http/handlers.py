@@ -2,11 +2,14 @@ import json
 import os
 
 from contextlib import asynccontextmanager
+from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
+from numbers import Integral
 from pathlib import Path
 from time import time
 from urllib.parse import urlencode
 
+import tornado.concurrent
 import tornado.httpserver
 import tornado.httputil
 import tornado.netutil
@@ -14,8 +17,21 @@ import tornado.routing
 import tornado.web
 
 from pydantic import ValidationError
+from tornado.httputil import HTTPServerRequest
 from tornado.web import HTTPError
-from typing_extensions import Any, Callable, Dict, Optional, Sequence, Tuple
+from typing_extensions import (
+    TYPE_CHECKING,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeAlias,
+    Union,
+)
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_rfc822
@@ -52,14 +68,16 @@ ALLOW_DEFAULT_HEADERS = (
 
 
 def _decode(b: str | bytes) -> str:
-    if b and isinstance(b, bytes):
-        return b.decode('utf-8')
-    return b
+    match b:
+        case bytes():
+            return b.decode('utf-8')
+        case str():
+            return b
 
 
 class _BaseHandler(tornado.web.RequestHandler):
 
-    def initialize(self):
+    def initialize(self, *args, **kwargs):
         self.connection_closed = False
         self.request_id = ""
 
@@ -91,27 +109,36 @@ class _BaseHandler(tornado.web.RequestHandler):
     def set_option_headers(
         self,
         allow_methods: Optional[str] = None,
-        allow_headers: Optional[str] = None
+        allow_headers: Optional[str] = None,
     ) -> None:
         """  Set correct headers for 'OPTIONS' method
         """
-        self.set_header("Allow", allow_methods or "POST, GET, OPTIONS")
+        allow_methods = allow_methods or "POST, GET, OPTIONS"
+        self.set_header("Allow", allow_methods)
         self.set_header('Access-Control-Allow-Headers', allow_headers or ALLOW_DEFAULT_HEADERS)
         if self.set_access_control_headers():
             # Required in CORS context
             # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
             self.set_header('Access-Control-Allow-Methods', allow_methods)
 
+    def get_header(self, name: str) -> Optional[str]:
+        """ Return a response header
+        """
+        return self._headers.get(name)
+
     def set_access_control_headers(self) -> bool:
         """  Handle Access control and cross origin headers (CORS)
         """
         origin = self.request.headers.get('Origin')
         if origin:
-            if self._cross_origin:
-                self.set_header('Access-Control-Allow-Origin', '*')
-            else:
-                self.set_header('Access-Control-Allow-Origin', origin)
-                self.set_header('Vary', 'Origin')
+            match self.application.cross_origin:  # type: ignore
+                case 'all':
+                    self.set_header('Access-Control-Allow-Origin', '*')
+                case 'same-origin':
+                    self.set_header('Access-Control-Allow-Origin', origin)
+                    self.set_header('Vary', 'Origin')
+                case _ as url:
+                    self.set_header('Access-Control-Allow-Origin', str(url))
             return True
         else:
             return False
@@ -160,7 +187,7 @@ class NotFoundHandler(_BaseHandler):
         super().prepare()
         raise HTTPError(
             status_code=404,
-            reason="Invalid resource path."
+            reason="Invalid resource path.",
         )
 
 
@@ -179,12 +206,19 @@ class ErrorHandler(_BaseHandler):
 # Qgis request Handlers
 #
 
+ReportType: TypeAlias = Tuple[Optional[int], int, Optional[int]]
+
+
+class RpcStreamProtocol(Protocol):
+    def trailing_metadata(self) -> Awaitable[Sequence[Tuple[str, str]]]: ...
+
+
 # debug report
-async def get_report(stream) -> Tuple[Optional[int], Optional[int]]:
+async def get_report(stream: RpcStreamProtocol) -> ReportType:  # ANN001
     """ Return debug report from trailing_metadata
     """
     md = await stream.trailing_metadata()
-    memory, duration, timestamp = None, None, None
+    memory, duration, timestamp = None, 0, None
     for k, v in md:
         match k:
             case 'x-debug-memory':
@@ -194,9 +228,45 @@ async def get_report(stream) -> Tuple[Optional[int], Optional[int]]:
     return (memory, duration, timestamp)
 
 
-class RpcHandlerMixIn:
+MetricCollector: TypeAlias = Callable[
+    [
+        HTTPServerRequest,
+        Channel,
+        metrics.Data,
+    ],
+    Awaitable,
+]
 
-    def write_response_headers(self, metadata) -> None:
+
+#
+# Implement Mixin as Protocol
+# https://mypy.readthedocs.io/en/latest/more_types.html#mixin-classes
+if TYPE_CHECKING:
+    class RequestHandlerProtocol(Protocol):
+        def set_header(self, name: str, value: Union[bytes, str, int, Integral, datetime]) -> None: ...
+        def get_header(self, name: str) -> Optional[str]: ...
+        def set_status(self, status_code: int, reason: Optional[str] = None) -> None: ...
+        def get_status(self) -> int: ...
+        def finish(self, chunk: Optional[Union[str, bytes, dict]] = None) -> "tornado.concurrent.Future[None]": ...
+        def write(self, chunk: Union[str, bytes, dict]) -> None: ...
+
+        request: HTTPServerRequest
+
+    class QgisServiceProtocol(RequestHandlerProtocol, Protocol):
+        _channel: Channel
+        _project: Optional[str]
+        _metrics: Optional[MetricCollector]
+        _report: Optional[ReportType]
+else:
+    class RequestHandlerProtocol: ...
+    class RPCHandlerProtocol: ...
+
+
+# See https://stackoverflow.com/questions/51930339/how-do-i-correctly-add-type-hints-to-mixin-classes/
+# for a deeper discussion about Protocol and Mixin
+class RpcHandlerMixin(QgisServiceProtocol):
+
+    def write_response_headers(self, metadata: Sequence[Tuple[str, str]]) -> None:
         """ write response headers and return
             status code
         """
@@ -206,7 +276,7 @@ class RpcHandlerMixIn:
                 case "x-reply-status-code":
                     status_code = int(v)
                 case n if n.startswith("x-reply-header-"):
-                    self.set_header(n.replace("x-reply-header-", "", 1), v)
+                    self.set_header(n.removeprefix("x-reply-header-"), v)
         self.set_status(status_code)
 
     def get_metadata(self) -> Sequence[Tuple[str, str]]:
@@ -225,7 +295,7 @@ class RpcHandlerMixIn:
         raise HTTPError(self.get_status())
 
     @asynccontextmanager
-    async def collect_metrics(self, service: str, request: str) -> bool:
+    async def collect_metrics(self, service: str, request: str) -> AsyncGenerator[bool, None]:
         """ Emit metrics
         """
         if self._metrics:
@@ -254,8 +324,8 @@ class RpcHandlerMixIn:
                         memory_footprint=memory,
                         response_time=duration,
                         latency=latency,
-                        cached=self._headers.get('X-Qgis-Cache') == 'HIT',
-                    )
+                        cached=self.get_header('X-Qgis-Cache') == 'HIT',
+                    ),
                 )
         else:
             yield False
@@ -265,7 +335,7 @@ class RpcHandlerMixIn:
 #
 
 
-class OwsHandler(_BaseHandler, RpcHandlerMixIn):
+class OwsHandler(_BaseHandler, RpcHandlerMixin):
     """ OWS Handler
     """
 
@@ -273,15 +343,15 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
         self,
         channel: Channel,
         project: Optional[str] = None,
-        metrics: Optional[Callable[[metrics.Data], None]] = None,
+        metrics: Optional[MetricCollector] = None,
     ):
         super().initialize()
         self._project = project
         self._channel = channel
         self._metrics = metrics
-        self._report = None
+        self._report: Optional[ReportType] = None
 
-    def check_getfeature_limit(self, arguments: Dict) -> Dict:
+    def check_getfeature_limit(self, arguments: Dict[str, bytes]) -> Dict:
         """ Take care of WFS/GetFeature limit
 
             Qgis does not set a default limit and unlimited
@@ -309,7 +379,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
 
     async def _execute_request(
         self,
-        arguments,
+        arguments: Dict[str, bytes],
         service: str,
         request: str,
         version: str,
@@ -369,7 +439,7 @@ class OwsHandler(_BaseHandler, RpcHandlerMixIn):
 # API
 #
 
-class ApiHandler(_BaseHandler, RpcHandlerMixIn):
+class ApiHandler(_BaseHandler, RpcHandlerMixin):
     """ Api Handler
     """
 
@@ -380,7 +450,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         path: str = "/",
         delegate: bool = False,
         project: Optional[str] = None,
-        metrics: Optional[Callable[[metrics.Data], None]] = None,
+        metrics: Optional[MetricCollector] = None,
     ):
         super().initialize()
         self._project = project
@@ -388,7 +458,7 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
         self._api = api
         self._path = path
         self._metrics = metrics
-        self._report = None
+        self._report: Optional[ReportType] = None
         self._delegate = delegate
 
     async def _execute_request(self, method: str, report: bool = False):
@@ -460,22 +530,22 @@ class ApiHandler(_BaseHandler, RpcHandlerMixIn):
 # Backend managment handler
 #
 
-class JsonErrorMixin:
+
+class JsonErrorMixin(RequestHandlerProtocol):
     """ Override write error to return json errors
     """
-
-    def write_error(self, status_code: int, **kwargs: Any) -> None:
+    def write_error(self, status_code: int, **kwargs) -> None:
         """ Override, format error as json
         """
         self.set_header("Content-Type", "application/json")
         self.finish(
             {
                 "code": status_code,
-                "message": self._reason,
-            }
+                "message": self._reason,  # type: ignore
+            },
         )
 
-    def write_json(self, chunk: Optional[str | bytes | dict]):
+    def write_json(self, chunk: Union[str | bytes | dict]):
         self.set_header("Content-Type", "application/json")
         self.write(chunk)
 

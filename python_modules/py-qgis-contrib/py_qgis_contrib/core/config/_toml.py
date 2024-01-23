@@ -1,7 +1,8 @@
 import inspect
 import sys  # noqa
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 from typing_extensions import IO, Type
 
 #
@@ -9,7 +10,7 @@ from typing_extensions import IO, Type
 #
 
 
-def _print_field_doc(s: IO, field: Field):
+def _print_field_doc(s: IO, field: FieldInfo):
     if field.title:
         print('#', file=s)
         print(f"# {field.title}", file=s)
@@ -19,16 +20,16 @@ def _print_field_doc(s: IO, field: Field):
             print(f"# {line}", file=s)
 
 
-def _field_default_repr(field: Field) -> str:
+def _field_default_repr(field: FieldInfo) -> str:
     match field.default:
         case str(s):
             return f'"{s}"'
         case bool(b):
             return "true" if b else "false"
         case int(n) | float(n):
-            return f'{n}'
+            return f"{n}"
         case tuple(t):
-            return list(t)
+            return f"[{','.join(t)}]"
         case default:
             if field.is_required():
                 return "\t# Required"
@@ -36,7 +37,7 @@ def _field_default_repr(field: Field) -> str:
                 return default
 
 
-def _print_field(s: IO, name: str, field: Field, comment: bool = False):
+def _print_field(s: IO, name: str, field: FieldInfo, comment: bool = False):
     if field.default is None:
         # Optional field
         print(f"#{name} =   \t# Optional", file=s)
@@ -58,13 +59,13 @@ def _dump_model(s: IO, model: Type[BaseModel], section: str, comment: bool = Fal
     """
     _print_model_doc(s, model)
     if comment:
-        print(f"#{section}")
+        print(f"#{section}", file=s)
     else:
-        print(section)
+        print(section, file=s)
 
-    for name, field in model.model_fields.items():
-        _print_field_doc(s, field)
-        _print_field(s, name, field, comment=comment)
+    for name, fieldinfo in model.model_fields.items():
+        _print_field_doc(s, fieldinfo)
+        _print_field(s, name, fieldinfo, comment=comment)
 
 
 def _is_model(t: Type) -> bool:
@@ -73,9 +74,7 @@ def _is_model(t: Type) -> bool:
 
 def _unpack_arg(t: Type) -> Type:
     match t.__name__:
-        case 'Annotated':
-            return _unpack_arg(t.__args__[0])
-        case 'Optional':
+        case 'Annotated' | 'Optional':
             return _unpack_arg(t.__args__[0])
         case _:
             return t
@@ -91,7 +90,7 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
     else:
         print(f"[{section}]", file=s)
 
-    def defer(name, field, arg) -> bool:
+    def defer(name, field, arg):
         arg = _unpack_arg(arg)
         rv = False
         if _is_model(arg):
@@ -106,13 +105,13 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
 
     for name, field in model.model_fields.items():
         a = field.annotation
+        if a is None:  # hu ? no annotation
+            continue
         match a.__name__:
             case 'List' | 'Tuple' | 'Union':
                 deferred = defer(f"[[{section}.{name}]]", field, a.__args__[0])
             case 'Dict':
-                deferred = defer(f"[{section}.{name}.{{key}}]", a.__args__[1])
-            case 'Union':
-                deferred = defer(f"[{section}.{name}]", field, a.__args__[0])
+                deferred = defer(f"[{section}.{name}.{{key}}]", field, a.__args__[1])
             case _:
                 deferred = defer(f"[{section}.{name}]", field, a)
 
@@ -136,6 +135,8 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
     print(file=s)
     for name, field in model.model_fields.items():
         _print_field_doc(s, field)
+        if field.annotation is None:
+            continue
         a = _unpack_arg(field.annotation)
         if _is_model(a):
             _print_model_doc(s, a)

@@ -1,5 +1,5 @@
 from pydantic import AfterValidator, AnyHttpUrl, Field
-from typing_extensions import Annotated, List, Literal, Optional
+from typing_extensions import Annotated, List, Literal, Optional, no_type_check
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
@@ -37,7 +37,7 @@ class HttpConfig(Config):
 
     ssl: Annotated[
         SSLConfig,
-        AfterValidator(_check_ssl_config)
+        AfterValidator(_check_ssl_config),
     ] = Field(
         default=SSLConfig(),
         title="SSL certificats",
@@ -61,7 +61,7 @@ class HttpConfig(Config):
         description=(
             "Indicates that the server is behind a reverse proxy.\n"
             "This enable handling of forwarded proxy headers"
-        )
+        ),
     )
 
     auth_tokens: List[str] = Field(
@@ -69,6 +69,7 @@ class HttpConfig(Config):
         description="List of authorized tokens",
     )
 
+    @no_type_check
     def format_interface(self) -> str:
         match self.listen:
             case (address, port):
@@ -83,8 +84,8 @@ EXTERNAL_CONFIG_SECTION = "config_url"
 @section(EXTERNAL_CONFIG_SECTION)
 class ConfigUrl(Config):
     """Remote configuration settings"""
-    ssl: Optional[SSLConfig] = Field(
-        default=None,
+    ssl: SSLConfig = Field(
+        default=SSLConfig(),
         title="SSL configuration",
     )
     url: Optional[AnyHttpUrl] = Field(
@@ -103,20 +104,18 @@ class ConfigUrl(Config):
 
         import aiohttp
 
-        if self.url.scheme == 'https':
-            import ssl
-            if self.ssl:
-                ssl_context = ssl.create_default_context(cafile=self.ssl.ca)
-                if self.ssl.cert:
-                    ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
-            else:
-                ssl_context = ssl.create_default_context()
-        else:
-            ssl_context = False  # No ssl validation
+        use_ssl = self.url.scheme == 'https'
 
         async with aiohttp.ClientSession() as session:
             logger.info("Loading configuration from %s", self.url)
-            async with session.get(str(self.url), ssl=ssl_context) as resp:
+            async with session.get(
+                str(self.url),
+                ssl=self.ssl.create_ssl_client_context() if use_ssl else False,
+            ) as resp:
+                if not resp.status != 200:
+                    raise RuntimeError(
+                        f"Failed to load configuration from {self.url}: error {resp.status}",
+                    )
                 cnf = await resp.json()
                 logger.debug("Updating configuration:\n%s", cnf)
                 confservice.update_config(cnf)

@@ -8,14 +8,13 @@
 
 """ Common definitions
 """
-
 import urllib.parse
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from qgis.core import QgsProject
-from typing_extensions import Generator, Optional, Union
+from typing_extensions import Iterator, Optional, Union
 
 from .config import ProjectsConfig
 
@@ -68,6 +67,6 @@ class IProtocolHandler(ABC):
         """
 
     @abstractmethod
-    def projects(self, uri) -> Generator[ProjectMetadata, None, None]:
+    def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
         """ List all projects availables from the given uri
         """

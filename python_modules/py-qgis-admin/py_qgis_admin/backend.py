@@ -4,14 +4,15 @@ import asyncio
 import json
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 import grpc
 
-from grpc_health.v1 import health_pb2  # HealthCheckRequest
-from grpc_health.v1 import health_pb2_grpc  # HealthStub
+from grpc_health.v1 import (
+    health_pb2,  # HealthCheckRequest
+    health_pb2_grpc,  # HealthStub
+)
 from pydantic import Field, Json
-from typing_extensions import AsyncIterator, Dict, Optional, Self, Tuple
+from typing_extensions import AsyncIterator, Dict, Optional, Self, Tuple, no_type_check
 
 from py_qgis_contrib.core import config, logger
 from py_qgis_worker._grpc import api_pb2, api_pb2_grpc
@@ -37,8 +38,9 @@ class BackendConfig(config.Config):
         description="Address of Qgis service",
     )
     use_ssl: bool = False
-    ssl: Optional[config.SSLConfig] = None
+    ssl: config.SSLConfig = config.SSLConfig()
 
+    @no_type_check
     def address_to_string(self) -> str:
         """ Returns the address as string
         """
@@ -47,20 +49,6 @@ class BackendConfig(config.Config):
                 return f"{host}:{port}"
             case socket:
                 return socket
-
-
-# Return a ChannelCredential struct
-def _channel_credentials(files: config.SSLConfig):
-    def _read(f) -> Optional[bytes]:
-        if f:
-            with Path(files.ca).open('rb') as fp:
-                return fp.read()
-
-    return grpc.ssl_channel_credentials(
-        root_certificate=_read(files.ca),
-        certificat=_read(files.cert),
-        private_key=_read(files.key),
-    )
 
 
 #
@@ -90,10 +78,20 @@ class Backend:
         self._serving = False
         self._address = conf.address_to_string()
         self._use_ssl = conf.use_ssl
-        self._ssl_creds = _channel_credentials(conf.ssl) if self._use_ssl else None
         self._shutdown = False
         self._grace_period = grace_period
         self._shutdown_task = None
+
+        def _read_if(f):
+            if f:
+                with f.open('rb') as fp:
+                    return fp.read()
+
+        self._ssl_creds = grpc.ssl_channel_credentials(
+            root_certificates=_read_if(conf.ssl.cafile),
+            certificate_chain=_read_if(conf.ssl.certfile),
+            private_key=_read_if(conf.ssl.keyfile),
+        ) if self._use_ssl else None
 
     async def shutdown(self):
         """ Shutdown the server
@@ -173,7 +171,7 @@ class Backend:
                 if self._grace_period:
                     # Handle grace period
                     self._shutdown_task = asyncio.create_task(
-                        self._graceful_shutdown_task()
+                        self._graceful_shutdown_task(),
                     )
                 else:
                     # Shutdown immediatly
@@ -183,7 +181,7 @@ class Backend:
         self,
         echo: str,
         count: int = 1,
-        timeout: int = 20
+        timeout: int = 20,
     ) -> AsyncIterator[Optional[str]]:
         """ Ping the remote ervice
 
@@ -263,7 +261,7 @@ class Backend:
         """
         async with self._stub() as stub:
             async for item in stub.CheckoutProject(
-                api_pb2.CheckoutRequest(uri=project, pull=pull)
+                api_pb2.CheckoutRequest(uri=project, pull=pull),
             ):
                 yield item
 
@@ -272,7 +270,7 @@ class Backend:
         """
         async with self._stub() as stub:
             async for item in stub.DropProject(
-                api_pb2.DropRequest(uri=project)
+                api_pb2.DropRequest(uri=project),
             ):
                 yield item
 
@@ -288,7 +286,7 @@ class Backend:
         """
         async with self._stub() as stub:
             async for item in stub.ListCache(
-                api_pb2.ListRequest(status_filter=status)
+                api_pb2.ListRequest(status_filter=status),
             ):
                 yield item
 
@@ -297,7 +295,7 @@ class Backend:
         """
         async with self._stub() as stub:
             return await stub.GetProjectInfo(
-                api_pb2.ProjectRequest(uri=project)
+                api_pb2.ProjectRequest(uri=project),
             )
 
     async def pull_projects(self, *uris) -> AsyncIterator[api_pb2.CacheInfo]:
@@ -313,7 +311,7 @@ class Backend:
         """
         async with self._stub() as stub:
             async for item in stub.Catalog(
-                api_pb2.CatalogRequest(location=location)
+                api_pb2.CatalogRequest(location=location),
             ):
                 yield item
 
@@ -363,23 +361,13 @@ class Backend:
         async with self._stub() as stub:
             _ = await stub.SetServerServingStatus(
                 api_pb2.ServerStatus(
-                    status=api_pb2.ServingStatus.SERVING
+                    status=api_pb2.ServingStatus.SERVING,
                 )
                 if enable
                 else api_pb2.ServerStatus(
-                    status=api_pb2.ServingStatus.NOT_SERVING
-                )
+                    status=api_pb2.ServingStatus.NOT_SERVING,
+                ),
             )
-
-    async def server_enabled(self) -> bool:
-        """ Return true if the server is
-            in serving state
-        """
-        async with self._channel() as channel:
-            stub = health_pb2_grpc.HealthStub(channel)
-            request = await health_pb2.HealthCheckRequest(service="QgisServer")
-            resp = await stub.Check(request)
-            return resp == ServingStatus.SERVING
 
     async def stats(self) -> api_pb2.StatsReply:
         async with self._stub() as stub:
@@ -387,8 +375,8 @@ class Backend:
 
     async def watch_stats(
         self,
-        interval: int = 3
-    ) -> AsyncIterator[Tuple[Self, api_pb2.StatsReply]]:
+        interval: int = 3,
+    ) -> AsyncIterator[Tuple[Self, Optional[api_pb2.StatsReply]]]:
         """ Watch service stats
         """
         while not self._shutdown:
@@ -404,7 +392,7 @@ class Backend:
                 logger.trace(
                     "Stats request failed: %s\t%s",
                     self._address,
-                    rpcerr.details()
+                    rpcerr.details(),
                 )
                 if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
                     yield (self, None)

@@ -7,7 +7,9 @@
 import os
 import sys
 
-from typing import Dict, Iterator
+from typing import Dict, Iterator, Optional, no_type_check
+
+import qgis
 
 from .. import logger
 
@@ -24,7 +26,7 @@ def setup_qgis_paths(prefix: str) -> None:
 
 # We need to keep a reference instance of the qgis_application object
 # and not make this object garbage collected
-qgis_application = None
+qgis_application: Optional['qgis.core.QgsApplication'] = None
 
 
 def qgis_initialized():
@@ -40,11 +42,12 @@ def exit_qgis_application():
         qgis_application = None
 
 
+@no_type_check
 def setup_qgis_application(
     cleanup: bool = True,
     logprefix: str = 'Qgis:',
-    settings: Dict = None,
-) -> 'qgis.core.QgsApplication':   # noqa: F821
+    settings: Optional[Dict] = None,
+) -> 'qgis.core.QgsApplication':
     """ Start qgis application
 
          :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
@@ -101,7 +104,7 @@ def setup_qgis_application(
             qgsettings.setValue(k, v)
 
     # Install logger hook
-    install_logger_hook(logprefix, )
+    install_logger_hook(logprefix)
 
     logger.info("Qgis application configured......")
 
@@ -165,7 +168,7 @@ def init_qgis_processing() -> None:
     Processing.initialize()
 
 
-def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':  # noqa: F821
+def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     """ Init Qgis server
     """
     setup_qgis_application(**kwargs)
@@ -215,11 +218,11 @@ def set_proxy_configuration() -> None:
             QNetworkProxy.HttpProxy: 'HttpProxy',
             QNetworkProxy.HttpCachingProxy: 'HttpCachingProxy',
             QNetworkProxy.HttpCachingProxy: 'FtpCachingProxy',
-        }.get(proxy_type, 'Undetermined')
-    )  # noqa E124
+        }.get(proxy_type, 'Undetermined'),
+    )
 
 
-def print_qgis_version(verbose: bool = False) -> None:  # noqa T201
+def print_qgis_version(verbose: bool = False) -> None:
     """ Output the qgis version
     """
     from qgis.core import Qgis
@@ -232,7 +235,7 @@ def print_qgis_version(verbose: bool = False) -> None:  # noqa T201
 
     if verbose:
         init_qgis_application()
-        print(qgis_application.showSettings())
+        print(qgis_application.showSettings())  # type: ignore
         sys.exit(1)
 
 

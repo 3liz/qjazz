@@ -8,7 +8,7 @@ from py_qgis_cache import (
     CheckoutStatus,
     ProjectMetadata,
 )
-from py_qgis_contrib.core import logger  # noqa
+from py_qgis_contrib.core import logger
 
 
 def test_path_resolution(data, config):

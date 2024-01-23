@@ -8,10 +8,19 @@ from inspect import isclass
 
 from aiohttp import web
 from aiohttp.hdrs import METH_ALL, METH_ANY
-from pydantic import AnyHttpUrl, BaseModel, Field, Json, TypeAdapter
-from typing_extensions import Dict, List, Literal, Optional, Type
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Field,
+    Json,
+    JsonValue,
+    TypeAdapter,
+)
+from typing_extensions import Dict, List, Literal, Optional, Tuple, Type
 
-_models = []
+ModelAlias = Type[BaseModel] | TypeAdapter
+
+_models: List[Tuple[str, ModelAlias]] = []
 
 oapi_title = "Py-Qgis services admin"
 oapi_description = "Manage Py-Qgis services clusters"
@@ -68,29 +77,30 @@ class Link(BaseModel):
 class OpenApiDocument(BaseModel):
     """ Swagger/OpenApi document
     """
-    openapi: Literal[oapi_version] = oapi_version
+    openapi: str = oapi_version
     paths: Dict[str, Json]
     definitions: Dict[str, Json]
     tags: List[Tag]
     info: Info
 
 
-def model(model: Type[BaseModel] | TypeAdapter, name: Optional[str] = None):
+def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
     """ Collect models
     """
     if isinstance(model, TypeAdapter):
         if not name:
-            raise ValueError("Missing 'name' for TypeAdapter")
-        model.__name__ = name
-    _models.append(model)
+            raise ValueError("Missing 'name' for {type(model)}")
+    else:
+        name = model.__name__
+    _models.append((name, model))
     return model
 
 
-def schemas(ref_template="#/definitions/{model}") -> Dict:
+def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]:
     """ Build schema definitions dictionnary from models
     """
     schema_definitions = {}
-    for model in _models:
+    for name, model in _models:
         # print(model, file=sys.stderr)
         match model:
             case TypeAdapter():
@@ -102,7 +112,7 @@ def schemas(ref_template="#/definitions/{model}") -> Dict:
         for n, d in defs.items():
             schema_definitions[n] = d
 
-        schema_definitions[model.__name__] = schema
+        schema_definitions[name] = schema
 
     return schema_definitions
 
@@ -122,16 +132,29 @@ def _get_method_names_for_handler(route):
         }
 
 
-def paths(app) -> Dict:
+def paths(app: web.Application) -> Dict:
     """ Extract swagger doc from aiohttp routes handlers
     """
     import yaml
 
-    paths = {}
+    paths: Dict[str, Dict[str, str]] = {}
     for route in app.router.routes():
 
         methods = {}
         try:
+            if route._resource is None:
+                continue
+
+            url_info = route._resource.get_info()
+            if url_info.get("path", None):
+                url = url_info.get("path")
+            else:
+                url = url_info.get("formatter")
+
+            if not url:
+                # not url ?
+                continue
+
             if isclass(route.handler) and issubclass(route.handler, web.View):
                 for method_name in _get_method_names_for_handler(route):
                     method = getattr(route.handler, method_name)
@@ -139,26 +162,21 @@ def paths(app) -> Dict:
                         methods[method_name] = yaml.full_load(method.__doc__)
             else:
                 try:
-                    methods[route.method.lower()] = yaml.full_load(route.handler.__doc__)
+                    if route.handler.__doc__:
+                        methods[route.method.lower()] = yaml.full_load(route.handler.__doc__)
                 except AttributeError:
                     continue
         except (yaml.scanner.ScannerError, yaml.parser.ParserError) as err:
             raise SwaggerError(
-                f"Yaml error for {route.handler.__qualname__}: {err}"
+                f"Yaml error for {route.handler.__qualname__}: {err}",
             ) from None
-
-        url_info = route._resource.get_info()
-        if url_info.get("path", None):
-            url = url_info.get("path")
-        else:
-            url = url_info.get("formatter")
 
         paths.setdefault(url, {}).update(methods)
         # paths[url] = methods
     return paths
 
 
-def doc(app, tags: List[Tag], api_version: str) -> OpenApiDocument:
+def doc(app: web.Application, tags: List[Tag], api_version: str) -> OpenApiDocument:
     return OpenApiDocument(
         paths={k: json.dumps(v) for k, v in paths(app).items()},
         definitions={k: json.dumps(v) for k, v in schemas().items()},

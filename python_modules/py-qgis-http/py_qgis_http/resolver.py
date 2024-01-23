@@ -43,13 +43,13 @@ def _validate_address(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
         return addr
 
     match v:
-        case (addr, port):
+        case (str(addr), int(port)):
             return (_check_ip(addr.removeprefix('tcp://')), port)
         case str() as addr if addr.startswith('unix:'):
             return addr
         case str() as addr:
             return (_check_ip(addr.removeprefix('tcp://')), DEFAULT_PORT)
-        case _:
+        case _ as addr:
             raise ValueError(f"Unmanageable address: {addr}")
 
 
@@ -83,7 +83,7 @@ Route = Annotated[
 class ApiEndpoint(Config):
     endpoint: str = Field(
         pattern=r"^[^\/]+",
-        title="Api endpoint"
+        title="Api endpoint",
     )
     delegate_to: Optional[str] = Field(
         default=None,
@@ -93,7 +93,7 @@ class ApiEndpoint(Config):
             "from the expected rootpath of qgis server api.\n"
             "For exemple, wfs3 request may be mapped to a completely different\n"
             "root path. "
-        )
+        ),
     )
     name: str = Field(
         default="",
@@ -120,7 +120,8 @@ class BackendConfig(Config):
         description=_validate_address.__doc__,
     )
 
-    ssl: Optional[SSLConfig] = None
+    use_ssl: bool = False
+    ssl: SSLConfig = SSLConfig()
 
     # Define route to service
     route: Route = Field(title="Route to service")
@@ -157,7 +158,7 @@ class BackendConfig(Config):
             "Allow remote worker to use direct project path resolution.\n"
             "WARNING: allowing this may be a security vulnerabilty.\n"
             "See worker configuration for details."
-        )
+        ),
     )
 
     getfeature_limit: Optional[Annotated[int, Field(gt=0)]] = Field(
@@ -167,12 +168,13 @@ class BackendConfig(Config):
             "Force setting a limit for WFS/GetFeature requests.\n"
             "By default Qgis does not set limits and that may cause\n"
             "issues with large collections."
-        )
+        ),
     )
 
     def to_string(self) -> str:
         match self.address:
             case (addr, port):
                 return f"{addr}:{port}"
-            case addr:
-                return addr
+            case _ as addr:
+                return str(addr)
+

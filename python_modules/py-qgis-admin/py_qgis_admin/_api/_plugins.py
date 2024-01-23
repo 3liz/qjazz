@@ -69,7 +69,7 @@ class _Plugins:
             return web.Response(
                 content_type="application/json",
                 text=PluginListResponse.dump_json(
-                    PluginListResponse.validate_python(response)
+                    PluginListResponse.validate_python(response),
                 ).decode(),
             )
         except ServiceNotAvailable:

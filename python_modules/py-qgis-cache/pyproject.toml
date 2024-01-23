@@ -26,3 +26,11 @@ include = [
     "py_qgis_cache", 
     "py_qgis_cache.*",
 ]
+
+[tool.ruff]
+extend = "../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+
+

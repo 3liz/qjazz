@@ -5,30 +5,22 @@ import os
 from amqpclient.aio import AsyncPublisher
 from pika import PlainCredentials
 from pydantic import BaseModel, Field, SecretStr
-from typing_extensions import List, Optional, Self, TypeVar
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import List, Optional, Self, Type
 
 from py_qgis_contrib.core import logger
 from py_qgis_http.metrics import METRICS_HANDLER_CONTRACTID, Data, Metrics
 
-T = TypeVar('T')
 
+class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
 
-def _get_env(env: str, default: T) -> T:
-    val = os.getenv(env, default)
-    if default is not None:
-        val = type(default)(val)
-    return val
-
-
-class AmqpConfig(BaseModel):
-    host: str | List[str] = Field(default=_get_env('AMQP_HOST', None), validate_default=True)
-    port: int = Field(default=_get_env('AMQP_PORT', 5672), validate_default=True)
-    vhost: str = Field(default=_get_env('AMQP_VHOST', "/"), validate_default=True)
-    user: str = Field(default=_get_env('AMQP_USER', ""), validate_default=True)
-    exchange: str = Field(default=_get_env('AMQP_EXCHANGE', None), validate_default=True)
+    host: str | List[str]
+    port: int = Field(default=5672)
+    vhost: str = Field(default="/")
+    user: str = Field(default="")
+    exchange: str
     reconnect_delay: int = Field(
-        default=_get_env('AMQP_RECONNECT_DELAY', 5),
-        validate_default=True,
+        default=5,
         title="Reconnection delay is seconds",
     )
     password: Optional[SecretStr] = Field(
@@ -45,15 +37,19 @@ class AmqpConfig(BaseModel):
         """
         if not self.user:
             # No user, don't bother
-            return
+            return None
 
         if self.password is not None:
             return PlainCredentials(self.user, self.password.get_secret_value())
 
+        creds: Optional[PlainCredentials] = None
+
         # Read credential from AMQPPASSFILE if it exists
         passfile = os.getenv("AMQPPASSFILE")
         if not (passfile and os.path.exists(passfile)):
+            logger.warning("AMQPASSFILE is set but file does not exists.")
             return None
+
         logger.debug("Using AMQP passfile: %s", passfile)
         with open(passfile) as fp:
             for line in fp.readlines():
@@ -64,8 +60,10 @@ class AmqpConfig(BaseModel):
                 cr_vhost, cr_user, passwd = creds.split(':')
                 if cr_vhost in ('*', self.vhost) and cr_user in ('*', self.user):
                     logger.info("Found password for  user '%s' on vhost '%s'", self.user, self.vhost)
-                    return PlainCredentials(self.user, passwd)
-
+                    creds = PlainCredentials(self.user, passwd)
+                    break
+        return creds
+        
 
 class AmqpMetrics(Metrics):
 
@@ -109,7 +107,7 @@ class AmqpMetrics(Metrics):
             content_encoding="utf-8",
         )
 
-    def close(self):
+    async def close(self):
         if self._client:
             self._client.close()
             self._client = None

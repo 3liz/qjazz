@@ -27,9 +27,10 @@ class ListenConfig(config.Config):
         default=DEFAULT_INTERFACE,
         title="TCP:PORT interface or unix socket",
     )
+    use_ssl: bool = False
     ssl: Annotated[
         SSLConfig,
-        AfterValidator(_check_ssl_config)
+        AfterValidator(_check_ssl_config),
     ] = SSLConfig()
 
 
@@ -54,7 +55,7 @@ class WorkerConfig(config.Config):
         description=(
             "The maximum number of projects allowed in cache.\n"
             "The default value is set to 50 projects. "
-        )
+        ),
     )
     load_project_on_request: bool = Field(
         default=True,
@@ -66,7 +67,7 @@ class WorkerConfig(config.Config):
             "Thus, adding project's to cache will require a specific\n"
             "action from another service or admininstrative\n"
             "management tools."
-        )
+        ),
     )
     reload_outdated_project_on_request: bool = Field(
         default=False,
@@ -78,7 +79,7 @@ class WorkerConfig(config.Config):
             "Thus, refreshing project's to cache will require a specific\n"
             "action from another service or admininstrative\n"
             "management tools."
-        )
+        ),
     )
     plugins: QgisPluginConfig = Field(
         default=QgisPluginConfig(),
@@ -163,7 +164,7 @@ class ConfigUrl(config.Config):
         "The configuration is fetched from the remote url\n"
         "at startup and override all local settings."
     )
-    ssl: Optional[SSLConfig] = None
+    ssl: SSLConfig = SSLConfig()
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",
@@ -186,21 +187,15 @@ class ConfigUrl(config.Config):
 
         import aiohttp
 
-        if self.url.scheme == 'https':
-            import ssl
-            if self.ssl:
-                ssl_context = ssl.create_default_context(cafile=self.ssl.ca)
-                if self.ssl.cert:
-                    ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
-            else:
-                ssl_context = ssl.create_default_context()
-        else:
-            ssl_context = False
+        use_ssl = self.url.scheme == 'https'
 
         async with aiohttp.ClientSession() as session:
             logger.info("** Loading configuration from %s **", self.url)
             try:
-                async with session.get(str(self.url), ssl=ssl_context) as resp:
+                async with session.get(
+                    str(self.url),
+                    ssl=self.ssl.create_ssl_client_context() if use_ssl else False,
+                ) as resp:
                     if resp.status == 200:
                         return await resp.json()
                     else:

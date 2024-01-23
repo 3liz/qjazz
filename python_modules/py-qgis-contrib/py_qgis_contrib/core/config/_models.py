@@ -1,5 +1,7 @@
 """ Configuration common definitions
 """
+import ssl
+
 from pathlib import Path
 
 from pydantic import AfterValidator, Field
@@ -37,24 +39,45 @@ NetInterface = Annotated[
 # SSL configuration
 #
 
-def _path_exists(p: Optional[str]):
-    if p is not None and not Path(p).exists():
+def _path_exists(p: Optional[Path]) -> Optional[Path]:
+    if p is not None and not p.exists():
         raise ValueError(f"File '{p}' does not exist")
     return p
 
 
 class SSLConfig(Config):
-    ca: Annotated[Optional[str], AfterValidator(_path_exists)] = Field(
+    cafile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
         default=None,
-        title="CA file"
+        title="CA file",
     )
-    cert: Annotated[Optional[str], AfterValidator(_path_exists)] = Field(
+    certfile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
         default=None,
-        title="SSL/TLS key",
-        description="Path to the SSL key file"
+        title="SSL/TLS  key",
+        description="Path to the SSL key file",
     )
-    key: Annotated[Optional[str], AfterValidator(_path_exists)] = Field(
+    keyfile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
         default=None,
         title="SSL/TLS Certificat",
         description="Path to the SSL certificat file",
     )
+
+    #
+    # Convenient methods for creating ssl context
+    #
+
+    def create_ssl_context(self, purpose: ssl.Purpose) -> ssl.SSLContext:
+        """ Used for validating server client side """
+        ssl_context = ssl.create_default_context(
+            cafile=self.cafile.as_posix() if self.cafile else None,
+        )
+        if self.certfile and self.keyfile:
+            ssl_context.load_cert_chain(self.certfile.as_posix(), self.keyfile.as_posix())
+        return ssl_context
+
+    def create_ssl_client_context(self) -> ssl.SSLContext:
+        """ Used server side """
+        return self.create_ssl_context(ssl.Purpose.SERVER_AUTH)
+
+    def create_ssl_server_context(self) -> ssl.SSLContext:
+        """ Used server side """
+        return self.create_ssl_context(ssl.Purpose.CLIENT_AUTH)

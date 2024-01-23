@@ -19,7 +19,9 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from pydantic import AfterValidator, Field, ValidationInfo
+import qgis
+
+from pydantic import AfterValidator, Field, JsonValue, ValidationInfo
 from typing_extensions import (
     Annotated,
     Any,
@@ -31,7 +33,9 @@ from typing_extensions import (
     Self,
     Set,
     Tuple,
+    Type,
     assert_never,
+    cast,
 )
 
 from .. import componentmanager, config, logger
@@ -49,20 +53,22 @@ class PluginType(Enum):
 QGIS_PLUGIN_SERVICE_CONTRACTID = '@3liz.org/qgis-plugin-service;1'
 
 
-def _default_plugin_path() -> Optional[Path]:
+def _default_plugin_path() -> Path:
     """ Return the default plugin's path
     """
     return Path(
         os.getenv('QGIS_OPTIONS_PATH')
         or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
         or os.getenv('QGIS_HOME')
-        or Path(tempfile.gettempdir(), '.qgis-server')
+        or Path(tempfile.gettempdir(), '.qgis-server'),
     ) / 'plugins'
 
 
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
-    if not paths and os.getenv("QGIS_PLUGINPATH"):
-        paths = [Path(p) for p in os.getenv("QGIS_PLUGINPATH").split(":")]
+    if not paths:
+        path_env = os.getenv("QGIS_PLUGINPATH")
+        if path_env:
+            paths = [Path(p) for p in path_env.split(":")]
     paths.append(_default_plugin_path())
     for path in paths:
         if not path.exists() or not path.is_dir():
@@ -100,7 +106,7 @@ class QgisPluginConfig(config.Config):
             "if the 'install_mode' is set to 'auto'.\n"
             "Note that an empty list means what it is:\n"
             "i.e, *no* plugins."
-        )
+        ),
     )
     install_mode: Literal['auto', 'external'] = Field(
         default='external',
@@ -126,20 +132,20 @@ class Plugin:
     init: Any
 
     @property
-    def metadata(self) -> Optional[Dict]:
+    def metadata(self) -> Optional[JsonValue]:
         """ Return plugin metadata
         """
         # Read metadata
         metadatafile = self.path / 'metadata.txt'
         if not metadatafile.exists():
-            return
+            return None
 
         with metadatafile.open(mode='rt') as f:
             cp = configparser.ConfigParser()
             cp.read_file(f)
             metadata = {s: dict(p.items()) for s, p in cp.items()}
             metadata.pop('DEFAULT', None)
-            return metadata
+            return cast(JsonValue, metadata)
 
 
 class QgisPluginService:
@@ -148,7 +154,7 @@ class QgisPluginService:
 
     def __init__(self, config: QgisPluginConfig) -> None:
         self._config = config
-        self._plugins = {}
+        self._plugins: Dict[str, Plugin] = {}
         self._providers: List[str] = []
 
     @property
@@ -163,14 +169,14 @@ class QgisPluginService:
         componentmanager.register_service(QGIS_PLUGIN_SERVICE_CONTRACTID, self)
 
     @classmethod
-    def get_service(cls) -> Self:
+    def get_service(cls: Type[Self]) -> Self:
         """ Return QgisPluginService instance as a service.
             This require that register_as_service has been called
             in the current context
         """
         return componentmanager.get_service(QGIS_PLUGIN_SERVICE_CONTRACTID)
 
-    def load_plugins(self, plugin_type: PluginType, interface: Optional['QgsServerInterface']):  # noqa F821
+    def load_plugins(self, plugin_type: PluginType, interface: Optional['qgis.server.QgsServerInterface']):
         """ Load all plugins found
         """
         if plugin_type == PluginType.PROCESSING:
@@ -198,7 +204,7 @@ class QgisPluginService:
                         # Take care of module conflicts
                         raise PluginError(
                             f"The module '{plugin}' in '{plugin_path}' conflict with "
-                            f"a previously loaded module: {sys.modules[plugin].__file__}"
+                            f"a previously loaded module: {sys.modules[plugin].__file__}",
                         )
 
                     __import__(plugin)
@@ -216,18 +222,18 @@ class QgisPluginService:
 
                     self._plugins[plugin] = Plugin(
                         name=name,
-                        path=Path(package.__file__).parent,
+                        path=Path(package.__file__).parent,   # type: ignore
                         plugin_type=plugin_type,
                         init=init,
                     )
                     logger.info(f"Loaded plugin {plugin}")
                 except Exception:
                     raise PluginError(
-                        f"Error loading plugin '{plugin}':\n{traceback.format_exc()}"
+                        f"Error loading plugin '{plugin}':\n{traceback.format_exc()}",
                     ) from None
 
     @property
-    def providers(self) -> Iterator['QgsProcessingProvider']:  # noqa F821
+    def providers(self) -> Iterator['qgis.core.QgsProcessingProvider']:
         """ Return published providers
         """
         from qgis.core import QgsApplication
@@ -236,8 +242,8 @@ class QgisPluginService:
 
 
 def find_plugins(
-    path: str,
-    plugin_type: PluginType
+    path: Path | str,
+    plugin_type: PluginType,
 ) -> Iterator[Tuple[str, configparser.ConfigParser]]:
     """ return list of plugins in given path
     """
@@ -254,7 +260,7 @@ def find_plugins(
                 logger.warning(
                     f"*** The symbolic link '{plugin}' is not resolved."
                     " If you are running in docker container please consider"
-                    "mounting the target path in the container."
+                    "mounting the target path in the container.",
                 )
             continue
 

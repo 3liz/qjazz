@@ -12,8 +12,9 @@ import tornado.netutil
 import tornado.routing
 import tornado.web
 
+from tornado.httputil import HTTPServerRequest
 from tornado.web import HTTPError
-from typing_extensions import Iterator, Optional
+from typing_extensions import Any, Callable, Iterator, List, Optional
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import Config
@@ -23,7 +24,7 @@ from .config import (
     AdminHttpConfig,
     BackendConfig,
     HttpConfig,
-    SSLConfig,
+    HttpCORS,
     metrics,
 )
 from .handlers import (
@@ -50,7 +51,14 @@ RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_ID_FORMAT
 
 class App(tornado.web.Application):
 
-    def log_request(self, handler: _BaseHandler) -> None:
+    def __init__(self, *args, cross_origin: HttpCORS, **kwargs):
+        self._cross_origin = cross_origin
+
+    @property
+    def cross_origin(self) -> HttpCORS:
+        return self._cross_origin
+
+    def log_request(self, handler: _BaseHandler) -> None:   # type: ignore
         """ Format current request from the given tornado request handler
         """
         request = handler.request
@@ -69,7 +77,7 @@ class App(tornado.web.Application):
             time=int(1000.0 * reqtime),
             length=length,
             referer=referer,
-            agent=agent
+            agent=agent,
         )
 
         if handler.request_id:
@@ -77,7 +85,7 @@ class App(tornado.web.Application):
 
         logger.log_req(fmt)
 
-    def log_rrequest(self, request, request_id) -> None:
+    def log_rrequest(self, request, request_id):
         """ Log incoming request with request_id
         """
         agent = request.headers.get('User-Agent', "")
@@ -89,7 +97,7 @@ class App(tornado.web.Application):
             url=request.uri,
             referer=referer,
             agent=agent,
-            request_id=request_id
+            request_id=request_id,
         )
 
         logger.log_rreq(fmt)
@@ -108,8 +116,8 @@ class _Channels:
     """
 
     def __init__(self, conf: Config):
-        self._conf = conf
-        self._channels = []
+        self._conf: Any = conf
+        self._channels: List[Channel] = []
         self._last_modified = time()
 
     @property
@@ -117,7 +125,7 @@ class _Channels:
         return self._conf
 
     @property
-    def backends(self) -> Iterator[BackendConfig]:
+    def backends(self) -> Iterator[Channel]:
         return iter(self._channels)
 
     @property
@@ -133,10 +141,13 @@ class _Channels:
         channels = await asyncio.gather(*(_init_channel(be) for _, be in self._conf.backends.items()))
         # Close previous channels
         if self._channels:
+            background_tasks = set()
             logger.trace("Closing current channels")
             # Run in background since we do want to wait for
             # grace period before
-            asyncio.create_task(self.close(with_grace_period=True))
+            task = asyncio.create_task(self.close(with_grace_period=True))
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
         logger.trace("Setting new channels")
         self._channels = channels
         self._last_modified = time()
@@ -164,9 +175,12 @@ class _Channels:
             return False
 
         def _close():
+            background_tasks = set()
             for chan in self._channels:
                 if chan.address == backend.address:
-                    asyncio.create_task(chan.close(with_grace_period=True))
+                    task = asyncio.create_task(chan.close(with_grace_period=True))
+                    background_tasks.add(task)
+                    task.add_done_callback(background_tasks.discard)
                 else:
                     yield chan
         self._channels = list(_close())
@@ -177,11 +191,14 @@ class _Router(tornado.routing.Router):
     """ Router
     """
 
-    def __init__(self, channels: _Channels):
+    def __init__(self, channels: _Channels, conf: HttpConfig):
         self.channels = channels
-        self.app = App(default_handler_class=NotFoundHandler)
+        self.app = App(
+            default_handler_class=NotFoundHandler,
+            cross_origin=conf.cross_origin,
+        )
 
-        self._metrics_call = None
+        self._metrics_call: Optional[Callable] = None
 
         # Set router
         self._channels_last_modified = 0.
@@ -194,7 +211,7 @@ class _Router(tornado.routing.Router):
         """
         _service = await metrics_conf.load_service()
 
-        async def _call(request, chan: Channel, data: metrics.Data):
+        async def _call(request: HTTPServerRequest, chan: Channel, data: metrics.Data):
             routing_key = metrics_conf.routing_key_meta(
                 meta=chan.meta,
                 headers=request.headers,
@@ -205,7 +222,7 @@ class _Router(tornado.routing.Router):
         self._metrics_call = _call
         return _service
 
-    def _update_routes(self):
+    def _update_routes(self) -> None:
         """ Update routes and routable class
         """
         if not self.channels.is_modified_since(self._channels_last_modified):
@@ -218,9 +235,9 @@ class _Router(tornado.routing.Router):
 
         @dataclass
         class _Routable:
-            request: tornado.httputil.HTTPServerRequest
+            request: HTTPServerRequest
 
-            def get_route(self) -> Optional[str]:
+            def get_route(self) -> Optional[str]:  # type: ignore
                 """
                 Return a route (str) for the
                 current request path.
@@ -233,7 +250,12 @@ class _Router(tornado.routing.Router):
         self._routes = routes
         self._routable_class = _Routable
 
-    def _get_error_handler(self, request, code: int, reason: Optional[str] = None):
+    def _get_error_handler(
+        self,
+        request: HTTPServerRequest,
+        code: int,
+        reason: Optional[str] = None,
+    ) -> tornado.httputil.HTTPMessageDelegate:
         return self.app.get_handler_delegate(
             request,
             ErrorHandler,
@@ -251,7 +273,7 @@ class _Router(tornado.routing.Router):
             self._update_routes()
 
             route = self._router.route(
-                self._routable_class(request=request)
+                self._routable_class(request=request),
             )
             logger.trace("Route %s found for %s", request.uri, route)
             channel = self._routes.get(route.route)
@@ -297,29 +319,25 @@ class _Router(tornado.routing.Router):
 
                 return self._get_error_handler(request, 404)
         except HTTPError as err:
-            return self._get_error_handler(request, err.status_code,  err.reason)
+            return self._get_error_handler(request, err.status_code, err.reason)
         except Exception:
             logger.critical(traceback.format_exc())
             return self._get_error_handler(request, 500)
 
 
-def ssl_context(conf: SSLConfig):
-    import ssl
-    ssl_ctx = ssl.create_task_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_ctx.load_cert_chain(conf.cert, conf.key)
-    return ssl_ctx
-
-
-def configure_server(router, conf: HttpConfig) -> tornado.httpserver.HTTPServer:
+def configure_server(
+    router: tornado.routing.Router,
+    conf: HttpConfig,
+) -> tornado.httpserver.HTTPServer:
     server = tornado.httpserver.HTTPServer(
         router,
-        ssl_options=ssl_context(conf.ssl) if conf.use_ssl else None,
+        ssl_options=conf.ssl.create_ssl_server_context() if conf.use_ssl else None,
         xheaders=conf.proxy_conf,
     )
     match conf.listen:
-        case (address, port):
+        case (str(address), int(port)):
             server.listen(port, address=address.strip('[]'))
-        case socket:
+        case str(socket):
             socket = socket[len('unix:'):]
             socket = tornado.netutil.bind_unix_socket(socket)
             server.add_socket(socket)
@@ -337,6 +355,7 @@ def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
                 (r"/config", ConfigHandler, {'channels': channels}),
             ],
             default_handler_class=JsonNotFoundHandler,
+            cross_origin=conf.cross_origin,
         ),
         conf,
     )
@@ -344,11 +363,15 @@ def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
 
 async def serve(conf: Config):
 
+    # Config use dynamic attributs and
+    # mypy cannot deal with that
+    conf: Any = conf
+
     # Initialize channels
     channels = _Channels(conf)
     await channels.init_channels()
 
-    router = _Router(channels)
+    router = _Router(channels, conf.http)
 
     metrics_service = None
     if conf.metrics:
@@ -367,6 +390,6 @@ async def serve(conf: Config):
     await channels.close()
 
     if metrics_service:
-        metrics_service.close()
+        await metrics_service.close()
 
     logger.info("Server shutdown")

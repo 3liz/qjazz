@@ -9,8 +9,8 @@ from enum import Enum, auto
 from multiprocessing.connection import Connection
 from pathlib import Path
 
+from pydantic import JsonValue
 from typing_extensions import (
-    IO,
     Any,
     AsyncIterator,
     ClassVar,
@@ -34,7 +34,7 @@ class Envelop:
     msg: Optional[Any]
 
 
-def send_reply(conn, msg: Optional[Any], status: int = 200):
+def send_reply(conn: Connection, msg: Optional[Any], status: int = 200):  # noqa ANN401
     """  Send a reply in a envelope message
     """
     conn.send(Envelop(status, msg))
@@ -118,7 +118,7 @@ class ApiRequest:
     method: HTTPMethod
     url: str = '/'
     data: Optional[bytes] = None
-    delegate: bool = False,
+    delegate: bool = False
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
@@ -144,7 +144,7 @@ class Request:
 @dataclass(frozen=True)
 class Ping:
     msg_id: ClassVar[MsgType] = MsgType.PING
-    return_type: ClassVar[Type] = None
+    return_type: ClassVar[None] = None
     echo: Optional[str] = None
 
 # QUIT
@@ -153,7 +153,7 @@ class Ping:
 @dataclass(frozen=True)
 class Quit:
     msg_id: ClassVar[MsgType] = MsgType.QUIT
-    return_type: ClassVar[Type] = None
+    return_type: ClassVar[None] = None
 
 
 @dataclass(frozen=True)
@@ -206,7 +206,7 @@ class ClearCache:
 @dataclass(frozen=True)
 class ListCache:
     msg_id: ClassVar[MsgType] = MsgType.LIST_CACHE
-    return_type: ClassVar[Type] = IO[CacheInfo]
+    return_type: ClassVar[Type] = CacheInfo
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
 
@@ -216,7 +216,7 @@ class ListCache:
 @dataclass(frozen=True)
 class UpdateCache:
     msg_id: ClassVar[MsgType] = MsgType.UPDATE_CACHE
-    return_type: ClassVar[Type] = IO[CacheInfo]
+    return_type: ClassVar[Type] = CacheInfo
 
 
 # PLUGINS
@@ -226,13 +226,13 @@ class PluginInfo:
     name: str
     path: Path
     plugin_type: PluginType
-    metadata: Dict
+    metadata: JsonValue
 
 
 @dataclass(frozen=True)
 class Plugins:
     msg_id: ClassVar[MsgType] = MsgType.PLUGINS
-    return_type: ClassVar[Type] = IO[PluginInfo]
+    return_type: ClassVar[Type] = PluginInfo
 
 
 # PROJECT_INFO
@@ -272,14 +272,14 @@ class GetProjectInfo:
 @dataclass(frozen=True)
 class GetConfig:
     msg_id: ClassVar[MsgType] = MsgType.GET_CONFIG
-    return_type: ClassVar[Type] = Dict
+    return_type: ClassVar = JsonValue
 
 
 @dataclass(frozen=True)
 class PutConfig:
     msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
-    return_type: ClassVar[Literal[None]] = None
-    config: Optional[Dict] = None
+    return_type: ClassVar[None] = None
+    config: Optional[JsonValue] = None
 
 
 #
@@ -298,7 +298,7 @@ class CatalogItem:
 @dataclass(frozen=True)
 class Catalog:
     msg_id: ClassVar[MsgType] = MsgType.CATALOG
-    return_type: ClassVar[Type] = IO[CatalogItem]
+    return_type: ClassVar[Type] = CatalogItem
     location: Optional[str] = None
 
 
@@ -329,7 +329,7 @@ class Pipe:
     """ Wrapper for Connection object that allow reading asynchronously
     """
     @classmethod
-    def new(cls) -> Tuple[Self, Connection]:
+    def new(cls: Type[Self]) -> Tuple[Self, Connection]:
         parent, child = mp.Pipe(duplex=True)
         return cls(parent), child
 
@@ -365,11 +365,11 @@ class Pipe:
         finally:
             self._data_available.clear()
 
-    async def read(self, timeout: int = DEFAULT_TIMEOUT) -> Any:
+    async def read(self, timeout: int = DEFAULT_TIMEOUT) -> Any:  # noqa ANN401
         await self._poll(timeout)
         return self._conn.recv()
 
-    async def read_message(self, timeout: int = DEFAULT_TIMEOUT) -> Any:
+    async def read_message(self, timeout: int = DEFAULT_TIMEOUT) -> Any:  # noqa ANN401
         """ Read an Envelop message
         """
         msg = await self.read(timeout)
@@ -385,7 +385,7 @@ class Pipe:
             yield b
             b = await self.read_bytes(timeout)
 
-    async def send_message(self, msg, timeout: int = DEFAULT_TIMEOUT) -> Tuple[int, Any]:
+    async def send_message(self, msg, timeout: int = DEFAULT_TIMEOUT) -> Tuple[int, Any]:  # noqa ANN401
         self._conn.send(msg)
         response = await self.read(timeout)
         # Response must be an Envelop object

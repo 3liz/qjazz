@@ -44,7 +44,7 @@ import traceback
 try:
     import psutil
 except ImportError:
-    psutil = None
+    psutil = None  # type: ignore
 
 from dataclasses import dataclass
 from enum import Enum
@@ -53,7 +53,16 @@ from time import time
 
 from qgis.core import QgsProject
 from qgis.server import QgsServer
-from typing_extensions import Iterator, Optional, Self, Tuple, assert_never
+from typing_extensions import (
+    Dict,
+    Iterable,
+    Iterator,
+    Optional,
+    Self,
+    Tuple,
+    Type,
+    assert_never,
+)
 
 from py_qgis_contrib.core import componentmanager, logger
 
@@ -128,10 +137,8 @@ class CacheManager:
     ResourceNotAllowed = ResourceNotAllowed
     UnreadableResource = UnreadableResource
 
-    CheckoutStatus = CheckoutStatus
-
     @classmethod
-    def initialize_handlers(cls, confdir: Optional[Path] = None):
+    def initialize_handlers(cls: Type[Self], confdir: Optional[Path] = None):
         # Register Qgis storage handlers
         init_storage_handlers(confdir)
         # Load protocol handlers
@@ -143,7 +150,7 @@ class CacheManager:
             server: Optional[QgsServer] = None,
     ) -> None:
         self._config = config
-        self._cache = {}
+        self._cache: Dict[str, CacheEntry] = {}
         # For debug metadata
         self._process = psutil.Process() if psutil else None
         self._server = server
@@ -152,7 +159,7 @@ class CacheManager:
         componentmanager.register_service(CACHE_MANAGER_CONTRACTID, self)
 
     @classmethod
-    def get_service(cls) -> Self:
+    def get_service(cls: Type[Self]) -> Self:
         """ Return cache manager as a service.
             This require that register_as_service has been called
             in the current context
@@ -160,7 +167,7 @@ class CacheManager:
         return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
 
     @property
-    def conf(self) -> str:
+    def conf(self) -> ProjectsConfig:
         """ Return the current configuration
         """
         return self._config
@@ -168,7 +175,7 @@ class CacheManager:
     def search_paths(self) -> Iterator[str]:
         """ Return the list of search paths
         """
-        return self.conf.search_paths.keys()
+        return iter(self.conf.search_paths.keys())
 
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """ Resolve path according to location mapping
@@ -199,7 +206,7 @@ class CacheManager:
         """ Find protocol handler for the given scheme
         """
         return componentmanager.get_service(
-            f'@3liz.org/cache/protocol-handler;1?scheme={scheme}'
+            f'@3liz.org/cache/protocol-handler;1?scheme={scheme}',
         )
 
     def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
@@ -207,6 +214,7 @@ class CacheManager:
 
             Yield tuple of (entry, public_path) for all found  entries
         """
+        urls: Iterable[Tuple[str, Url]]
         if location:
             url = self.conf.search_paths.get(location)
             if not url:
@@ -241,6 +249,7 @@ class CacheManager:
             - `(ProjectMetadata, CheckoutStatus.NEW)`
             - `(None, CheckoutStatus.NOTFOUND)`
         """
+        retval: Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]
         handler = self.get_protocol_handler(url.scheme)
         try:
             md = handler.project_metadata(url)
@@ -262,7 +271,7 @@ class CacheManager:
 
         return retval
 
-    def checkout_entry(self, entry: CacheEntry) -> Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
+    def checkout_entry(self, entry: CacheEntry) -> Tuple[CacheEntry, CheckoutStatus]:
         """ Checkout from existing entry
         """
         handler = self.get_protocol_handler(entry.scheme)
@@ -282,7 +291,7 @@ class CacheManager:
         md: ProjectMetadata,
         status: CheckoutStatus,
         handler: Optional[IProtocolHandler] = None,
-    ) -> Optional[Tuple[CacheEntry, CheckoutStatus]]:
+    ) -> Tuple[CacheEntry, CheckoutStatus]:
         """ Update cache entry according to status
 
             * `NEW`: (re)load existing project
@@ -317,13 +326,15 @@ class CacheManager:
                 logger.debug("CACHE UPDATE: Removing entry '%s'", md.uri)
                 entry = self._delete_cache_entry(md)
                 return entry, status
+            case CheckoutStatus.NOTFOUND:
+                raise ValueError("Invalid CheckoutStatus value for update(): {status}")
             case _ as unreachable:
                 assert_never(unreachable)
 
     def _new_cache_entry(
         self,
         md: ProjectMetadata,
-        handler: IProtocolHandler
+        handler: IProtocolHandler,
     ) -> CacheEntry:
         """ Create a new cache entry
         """
@@ -344,7 +355,7 @@ class CacheManager:
         # keep with last mesured footprint in case of reloading
         # a project
         #
-        used_mem = self._process.memory_info().vms - s_mem if s_mem else None
+        used_mem = self._process.memory_info().vms - s_mem if self._process else None
         if used_mem < last_used_mem:
             used_mem = last_used_mem
 
@@ -354,7 +365,7 @@ class CacheManager:
             timestamp=time(),
             debug_meta=DebugMetadata(
                 load_memory_bytes=used_mem,
-                load_time_ms=int((time() - s_time)*1000.)
+                load_time_ms=int((time() - s_time) * 1000.),
             ),
         )
 
@@ -367,7 +378,7 @@ class CacheManager:
             handler = self.get_protocol_handler(e.md.scheme)
             try:
                 md = handler.project_metadata(e.md)
-                if md.last_modfified > e.md.last_modified:
+                if md.last_modified > e.md.last_modified:
                     yield self.update(md, CheckoutStatus.NEEDUPDATE, handler)
                 else:
                     yield (e, CheckoutStatus.UNCHANGED)
@@ -389,9 +400,9 @@ class CacheManager:
     def iter(self) -> Iterator[CacheEntry]:
         """ Iterate over all cache entries
         """
-        return self._cache.values()
+        return iter(self._cache.values())
 
-    def checkout_iter(self) -> Iterator[CacheEntry]:
+    def checkout_iter(self) -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
         """ Iterate and checkout over all cache entries
         """
         return (self.checkout_entry(e) for e in self.iter())

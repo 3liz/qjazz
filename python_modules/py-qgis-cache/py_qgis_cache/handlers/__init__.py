@@ -6,7 +6,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from .file import *  # noqa: F403,F401
-from .storage import init_storage_handlers  # noqa: F403,F401
+from .file import *  # noqa: F403
+from .storage import init_storage_handlers
 
 __all__ = ['init_storage_handlers']

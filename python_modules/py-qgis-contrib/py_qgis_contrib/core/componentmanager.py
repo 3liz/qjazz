@@ -14,9 +14,14 @@
     or extension or other modules. It then enables for these modules or extensions to rely on the calling
     module behaviors without the need for these to do explicit imports
 """
+# Allow using 'Any' since component manager deal with anything
+# ruff: noqa: ANN401
+
 import sys
 
-from typing import Any, Callable, List, NamedTuple, Optional
+from dataclasses import dataclass
+
+from typing_extensions import Any, Callable, Dict, Generic, List, TypeVar
 
 
 class ComponentManagerError(Exception):
@@ -35,22 +40,32 @@ class EntryPointNotFoundError(ComponentManagerError):
     pass
 
 
-class FactoryEntry(NamedTuple):
-    create_instance: Callable[[], Any]
-    service: Any
+T = TypeVar('T')
+
+
+@dataclass(frozen=True)
+class FactoryEntry(Generic[T]):
+    create_instance: Callable[[], T]
+    service: T
+
+    def _bind_service(self, instance: T) -> 'FactoryEntry':
+        return FactoryEntry(
+            self.create_instance,
+            instance,
+        )
 
 
 def _warn(msg: str):
     print("WARNING:", msg, file=sys.stderr, flush=True)  # noqa T201
 
 
-def _entry_points(group: str, name: Optional[str] = None) -> List:
+def _entry_points(group: str, **kwargs) -> List:
     """ Return entry points
     """
     from importlib import metadata
 
     # See https://docs.python.org/3.10/library/importlib.metadata.html
-    return metadata.entry_points().select(group=group, name=name)
+    return metadata.entry_points().select(group=group, **kwargs)
 
 
 class ComponentManager:
@@ -58,9 +73,9 @@ class ComponentManager:
     def __init__(self) -> None:
         """ Component Manager
         """
-        self._contractIDs = {}
+        self._contractIDs: Dict[str, FactoryEntry] = {}
 
-    def register_entrypoints(self, category) -> None:
+    def register_entrypoints(self, category: str) -> None:
         """ Load extension modules
 
             Loaded modules will do self-registration
@@ -72,12 +87,12 @@ class ComponentManager:
             ep.load()(self)
 
     def load_entrypoint(self, category: str, name: str) -> None:
-        for ep in _entry_points(category, name):
+        for ep in _entry_points(category, name=name):
             ep.load()(self)
             return
         raise EntryPointNotFoundError(name)
 
-    def register_factory(self, contractID: str, factory: Callable[[], None]) -> None:
+    def register_factory(self, contractID: str, factory: Callable[[], Any]) -> None:
         """ Register a factory for the given contract ID
         """
         if not callable(factory):
@@ -116,7 +131,7 @@ class ComponentManager:
         if fe is None:
             raise FactoryNotFoundError(contractID)
         if fe.service is None:
-            fe = fe._replace(service=fe.create_instance())
+            fe = fe._bind_service(fe.create_instance())
             self._contractIDs[contractID] = fe
         return fe.service
 
@@ -147,10 +162,10 @@ def register_entrypoints(category: str, *args, **kwargs) -> None:
     gComponentManager.register_entrypoints(category, *args, **kwargs)
 
 
-def load_entrypoint(category: str, name: str) -> Any:
+def load_entrypoint(category: str, name: str) -> None:
     """ Alias to component_manager.load_entrypoint
     """
-    return gComponentManager.load_entrypoint(category, name)
+    gComponentManager.load_entrypoint(category, name)
 
 
 def register_service(contractID: str, obj: Any) -> None:
@@ -164,7 +179,7 @@ def register_service(contractID: str, obj: Any) -> None:
 #
 
 def register_factory(contractID: str) -> Any:
-    def wrapper(obj: Any):
+    def wrapper(obj):
         gComponentManager.register_factory(contractID, obj)
         return obj
     return wrapper

@@ -1,2 +1,6 @@
 pytest
 pytest_asyncio
+types-protobuf
+ruff
+mypy
+grpcio-tools

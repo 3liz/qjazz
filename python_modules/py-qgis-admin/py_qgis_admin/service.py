@@ -5,6 +5,8 @@ from contextlib import contextmanager
 
 from typing_extensions import (
     AsyncIterator,
+    Dict,
+    Generator,
     Iterable,
     Iterator,
     Sequence,
@@ -24,8 +26,8 @@ class Service:
 
     def __init__(self, resolvers: ResolverConfig):
         self._config = resolvers
-        self._pools = {}
-        self._sync_events = ()
+        self._pools: Dict[str, PoolClient] = {}
+        self._sync_events: Tuple[asyncio.Event, ...] = ()
         self._shutdown = False
         self.update_pools()
 
@@ -76,7 +78,7 @@ class Service:
         self._sync()
 
     @contextmanager
-    def sync_event(self) -> asyncio.Event:
+    def sync_event(self) -> Generator[asyncio.Event, None, None]:
         """ Return a new event for synchronization
         """
         event = asyncio.Event()
@@ -97,12 +99,13 @@ class Service:
     def pools(self) -> Iterator[PoolClient]:
         """ Return the list of server pools
         """
-        return self._pools.values()
+        return iter(self._pools.values())
 
     async def watch(self) -> AsyncIterator[Tuple[PoolClient, Sequence[Tuple[str, bool]]]]:
         """ Wait for state change in one of the worker
         """
-        queue = asyncio.Queue()
+        # See https://github.com/python/mypy/issues/4052
+        queue: asyncio.Queue = asyncio.Queue()
         exception = None
 
         async def _watch(pool):
@@ -114,7 +117,7 @@ class Service:
                 logger.error(traceback.format_exc())
                 exception = err
 
-        with self.sync_event() as sync:
+        with self.sync_event() as sync:  # type: ignore
 
             async def _sentinel():
                 await sync.wait()

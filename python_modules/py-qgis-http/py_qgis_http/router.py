@@ -83,10 +83,12 @@ class DefaultRouter(RouterBase):
 
         logger.trace("DefaultRouter::route for %s (route: %s)", req.uri, route)
 
+        project: str | None
+
         # Get the project
-        project = req.arguments.get('MAP')
-        if project:
-            project = unquote_plus(project[0].decode())
+        map_args = req.arguments.get('MAP')
+        if map_args:
+            project = unquote_plus(map_args[0].decode())
         else:
             project = req.headers.get('X-Qgis-Project')
 
@@ -94,8 +96,7 @@ class DefaultRouter(RouterBase):
             # OWS project
             if not project:
                 # Check project in the path
-                project = PurePosixPath(req.path).relative_to(route)
-                project = f"/{project}"
+                project = '/%s' % PurePosixPath(req.path).relative_to(route)
 
             logger.trace("DefaultRouter::router %s OWS request detected", req.uri)
             return Route(route=route, project=project)
@@ -120,7 +121,7 @@ class DefaultRouter(RouterBase):
                 req.uri,
                 _project,
                 api,
-                api_path
+                api_path,
             )
             if project and _project:
                 logger.error("Multiple project definitions in '%s'", req.full_url())

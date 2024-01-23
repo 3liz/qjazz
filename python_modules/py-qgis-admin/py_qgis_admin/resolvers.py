@@ -10,10 +10,11 @@ from typing_extensions import (
     Generator,
     List,
     Literal,
-    Optional,
     Self,
     Sequence,
+    Type,
     Union,
+    no_type_check,
 )
 
 from py_qgis_contrib.core import logger  # noqa
@@ -30,6 +31,10 @@ DEFAULT_PORT = 23456
 
 
 class Resolver(ABC):
+
+    @abstractmethod
+    def __init__(self, config: Config):
+        ...
 
     @property
     @abstractmethod
@@ -54,7 +59,7 @@ class Resolver(ABC):
         ...
 
     @classmethod
-    def get_resolvers(cls, config: Config) -> Generator[Self, None, None]:
+    def get_resolvers(cls: Type[Self], config: Config) -> Generator[Self, None, None]:
         """ Given a configuration, returns
             all resolvers available from it.
 
@@ -70,8 +75,8 @@ class BaseResolverConfig(Config):
         title="Unique label",
         description=(
             "Unique resolver label. "
-            "The label must be compatible with a url path component."
-        )
+            "The label must be compatible with an url path component."
+        ),
     )
 
     def get_resolvers(self):
@@ -92,7 +97,7 @@ class DNSResolverConfig(BaseResolverConfig):
     port: int = Field(title="Service port", default=DEFAULT_PORT)
     ipv6: bool = Field(default=False, title="Check for ipv6")
     use_ssl: bool = Field(default=False, title="Use ssl connection")
-    ssl: Optional[SSLConfig] = Field(default=None, title="SSL certificats")
+    ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
 
     def resolver_address(self) -> str:
         return f"{self.host}:{self.port}"
@@ -123,7 +128,7 @@ class DNSResolver(Resolver):
         else:
             rdtype = "A"
         addresses = await dns.asyncresolver.resolve(self._config.host, rdtype)
-        return (
+        return tuple(
             BackendConfig(
                 server_address=(str(addr), self._config.port),
                 use_ssl=self._config.use_ssl,
@@ -133,7 +138,7 @@ class DNSResolver(Resolver):
         )
 
     @classmethod
-    def from_string(cls, name: str) -> Self:
+    def from_string(cls: Type[Self], name: str) -> Self:
         host, *rest = name.rsplit(':', 1)
         port = int(rest[0]) if rest else DEFAULT_PORT
         return cls(DNSResolverConfig(host=host, port=port, type="dns", label=name))
@@ -150,8 +155,9 @@ class SocketResolverConfig(BaseResolverConfig):
     type: Literal['socket'] = Field(description="Must be set to 'socket'")
     address: NetInterface
     use_ssl: bool = False
-    ssl: Optional[SSLConfig] = Field(default=None, title="SSL certificats")
+    ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
 
+    @no_type_check
     def resolver_address(self) -> str:
         match self.address:
             case (addr, port):
@@ -190,12 +196,13 @@ class SocketResolver(Resolver):
         )
 
     @classmethod
-    def from_string(cls, address: str) -> Self:
+    def from_string(cls: Type[Self], address: str) -> Self:
+        name = address
         if not address.startswith('unix:'):
             addr, *rest = address.rsplit(':', 1)
             port = int(rest[0]) if rest else DEFAULT_PORT
-            address = (addr, port)
-        return cls(SocketResolverConfig(address=address, type="socket"))
+            address = (addr, port)  # type: ignore
+        return cls(SocketResolverConfig(address=address, type="socket", label=name))
 
 
 #
@@ -222,7 +229,7 @@ class PluginResolverConfig(BaseResolverConfig):
         cm.load_entrypoint(RESOLVER_ENTRYPOINTS, self.name)
 
         return cm.get_service(
-            f"{RESOLVER_CONTRACTID}?name={self.name}"
+            f"{RESOLVER_CONTRACTID}?name={self.name}",
         ).get_resolvers(self)
 
 
@@ -260,5 +267,5 @@ class ResolverConfig(Config):
                 return SocketResolver.from_string(address)
             case n if n.startswith('tcp://'):
                 return SocketResolver.from_string(address.removeprefix('tcp://'))
-            case other:
-                return DNSResolver.from_string(other)
+            case _:
+                return DNSResolver.from_string(address)

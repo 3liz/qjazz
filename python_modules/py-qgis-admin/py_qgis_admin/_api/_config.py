@@ -118,7 +118,7 @@ class _Config:
                 text=PoolSetConfigResponse(
                     label=pool.label,
                     address=pool.address,
-                    diff=await pool.set_config(req.body, diff=True)
+                    diff=await pool.set_config(req.body, diff=True),
                 ).model_dump_json(),
             )
         except ValidationError as e:

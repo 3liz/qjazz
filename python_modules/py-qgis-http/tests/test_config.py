@@ -42,7 +42,7 @@ def test_validate_netaddress():
     class _Conf(pydantic.BaseModel):
         addr: NetAddress
 
-    def _validate(obj) -> NetAddress:
+    def _validate(obj: pydantic.BaseModel) -> NetAddress:
         return _Conf.model_validate(obj).addr
 
     assert _validate({'addr': ["localhost", 12345]}) == ("localhost", 12345)

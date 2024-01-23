@@ -62,7 +62,7 @@ class Handlers(
             web.get(f'/{API_VERSION}/watch', self.ws_watch),
         ]
 
-    def _pool(self, request) -> PoolClient:
+    def _pool(self, request: web.Request) -> PoolClient:
         Id = request.match_info['Id']
         try:
             return self.service[Id]
@@ -149,7 +149,7 @@ class Handlers(
                             label=pool.label,
                             address=pool.address,
                             backend_status=dict(statuses),
-                        ).model_dump_json()
+                        ).model_dump_json(),
                     )
             except Exception:
                 logger.critical(traceback.format_exc())

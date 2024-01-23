@@ -2,16 +2,25 @@ import asyncio
 
 from contextlib import asynccontextmanager
 from fnmatch import fnmatch
-from pathlib import Path
 
 import grpc
 
-from grpc_health.v1 import health_pb2  # HealthCheckRequest
-from grpc_health.v1 import health_pb2_grpc  # HealthStub
+from grpc_health.v1 import (
+    health_pb2,  # HealthCheckRequest
+    health_pb2_grpc,  # HealthStub
+)
 from tornado.web import HTTPError
-from typing_extensions import Callable, Iterator, Optional, Sequence, Tuple
+from typing_extensions import (
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
-from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core import logger
 from py_qgis_worker._grpc import api_pb2, api_pb2_grpc  # noqa
 
 from .resolver import ApiEndpoint, BackendConfig
@@ -25,20 +34,6 @@ CHANNEL_OPTIONS = [
 BACKOFF_TIME = 5
 
 
-# Return a ChannelCredential struct
-def _channel_credentials(files: config.SSLConfig):
-    def _read(f) -> Optional[bytes]:
-        if f:
-            with Path(files.ca).open('rb') as fp:
-                return fp.read()
-
-    return grpc.ssl_channel_credentials(
-        root_certificate=_read(files.ca),
-        certificat=_read(files.cert),
-        private_key=_read(files.key),
-    )
-
-
 class Channel:
     """ A gRPC channel reconnect itself if a backend
         so we don't need to handle a reconnection task
@@ -49,10 +44,9 @@ class Channel:
         self._channel = None
         self._connected = False
         self._serving = False
-        self._health_check = None
+        self._health_check: Optional[asyncio.Task] = None
         self._address = conf.to_string()
-        self._use_ssl = conf.ssl is not None
-        self._ssl_creds = _channel_credentials(conf.ssl) if self._use_ssl else None
+        self._use_ssl = conf.use_ssl
         self._usecount = 0
         self._closing = False
 
@@ -61,12 +55,23 @@ class Channel:
             'ROUTE': '.'.join(self._conf.route.parts[1:]),
         }
 
+        def _read_if(f):
+            if f:
+                with f.open('rb') as fp:
+                    return fp.read()
+
+        self._ssl_creds = grpc.ssl_channel_credentials(
+            root_certificates=_read_if(conf.ssl.cafile),
+            certificate_chain=_read_if(conf.ssl.certfile),
+            private_key=_read_if(conf.ssl.keyfile),
+        ) if self._use_ssl else None
+
     @property
     def in_use(self) -> bool:
         return self._usecount > 0
 
     @property
-    def meta(self) -> str:
+    def meta(self) -> Dict[str, str]:
         return self._meta
 
     @property
@@ -94,7 +99,7 @@ class Channel:
         for ep in self._conf.api:
             yield ep
 
-    def get_metadata(self, items: Sequence[Tuple[str, str]]) -> Sequence[Tuple[str, str]]:
+    def get_metadata(self, items: Iterable[Tuple[str, str]]) -> Sequence[Tuple[str, str]]:
         """
         Filter allowed headers
         """

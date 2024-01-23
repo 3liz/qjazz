@@ -5,9 +5,10 @@ from multiprocessing.connection import Connection
 from time import time
 from urllib.parse import urlunsplit
 
-from typing_extensions import Optional, assert_never
+from qgis.core import QgsMapLayer
+from typing_extensions import Optional, assert_never, cast
 
-from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus
+from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
 
 from . import messages as _m
@@ -15,22 +16,24 @@ from .config import WorkerConfig
 
 Co = CheckoutStatus
 
-
 #
 # Drop a project from the cache
 #
+
+
 def drop_project(conn: Connection, cm: CacheManager, uri: str, cache_id: str = ""):
     md, status = cm.checkout(
-        cm.resolve_path(uri, allow_direct=True)
+        cm.resolve_path(uri, allow_direct=True),
     )
 
     match status:
         case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-            e, status = cm.update(md, Co.REMOVED)
+            e = cast(CacheEntry, md)
+            _, status = cm.update(e.md, Co.REMOVED)
             reply = _m.CacheInfo(
-                uri=md.uri,
+                uri=e.md.uri,
                 in_cache=False,
-                last_modified=md.last_modified,
+                last_modified=e.md.last_modified,
                 saved_version=e.project.lastSaveVersion().text(),
                 status=status,
                 cache_id=cache_id,
@@ -50,7 +53,12 @@ def drop_project(conn: Connection, cm: CacheManager, uri: str, cache_id: str = "
 # Helper for returning CacheInfo from
 # cache entry
 #
-def _cache_info_from_entry(e: CacheEntry, status, in_cache=True, cache_id: str = "") -> _m.CacheInfo:
+def _cache_info_from_entry(
+    e: CacheEntry,
+    status: CheckoutStatus,
+    in_cache: bool = True,
+    cache_id: str = "",
+) -> _m.CacheInfo:
     return _m.CacheInfo(
         uri=e.uri,
         in_cache=in_cache,
@@ -87,16 +95,17 @@ def checkout_project(
         if not pull:
             match status:
                 case Co.NEW:
+                    md = cast(ProjectMetadata, md)
                     reply = _m.CacheInfo(
                         uri=md.uri,
                         in_cache=False,
                         status=status,
-                        storage=md.storage,
+                        storage=md.storage or "<none>",
                         last_modified=md.last_modified,
                         cache_id=cache_id,
                     )
-                case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-                    reply = _cache_info_from_entry(md, status, cache_id=cache_id)
+                case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED:
+                    reply = _cache_info_from_entry(cast(CacheEntry, md), status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
@@ -109,6 +118,7 @@ def checkout_project(
         else:
             match status:
                 case Co.NEW:
+                    md = cast(ProjectMetadata, md)
                     if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
                         logger.error(
                             "Cannot add NEW project '%s': Maximum projects reached",
@@ -117,19 +127,23 @@ def checkout_project(
                         _m.send_reply(conn, "Max object reached on server", 403)
                         return
                     e, status = cm.update(md, status)
+                    e = cast(CacheEntry, e)
                     # Pin the entry since this object has been asked explicitely
                     # in cache
                     e.pin()
                     reply = _cache_info_from_entry(e, status, cache_id=cache_id)
-                case Co.UNCHANGED:
-                    md.pin()  # See above
-                    reply = _cache_info_from_entry(md, status, cache_id=cache_id)
+                # UPDATED for the sake of exhaustiveness
+                case Co.UNCHANGED | Co.UPDATED:
+                    e = cast(CacheEntry, e)
+                    e.pin()  # See above
+                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.NEEDUPDATE:
-                    e, status = cm.update(md, status)
+                    e, status = cm.update(cast(CacheEntry, md).md, status)
+                    e = cast(CacheEntry, e)
                     e.pin()  # See above
                     reply = _cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.REMOVED:
-                    e, status = cm.update(md, status)
+                    e, status = cm.update(cast(CacheEntry, md).md, status)
                     reply = _cache_info_from_entry(e, status, False, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
@@ -205,7 +219,7 @@ def send_project_info(
     uri: str,
     cache_id: str = "",
 ):
-    def _layer(layer_id: str, layer):
+    def _layer(layer_id: str, layer: QgsMapLayer) -> _m.LayerInfo:
         return _m.LayerInfo(
             layer_id=layer_id,
             name=layer.name(),
@@ -221,22 +235,23 @@ def send_project_info(
 
         match status:
             case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-                layers = [_layer(n, l) for (n, l) in md.project.mapLayers().items()]
+                entry = cast(CacheEntry, md)
+                layers = [_layer(n, lyr) for (n, lyr) in entry.project.mapLayers().items()]
                 _m.send_reply(
                     conn,
                     _m.ProjectInfo(
                         status=status,
-                        uri=md.uri,
-                        filename=md.project.fileName(),
-                        crs=md.project.crs().authid(),
-                        last_modified=md.last_modified,
-                        storage=md.storage,
+                        uri=entry.md.uri,
+                        filename=entry.project.fileName(),
+                        crs=entry.project.crs().authid(),
+                        last_modified=entry.md.last_modified,
+                        storage=entry.md.storage or "<none>",
                         has_bad_layers=any(not lyr.is_valid for lyr in layers),
                         layers=layers,
                         cache_id=cache_id,
-                    )
+                    ),
                 )
-            case Co.NOTFOUND | Co.NEW:
+            case Co.NOTFOUND | Co.NEW | Co.UPDATED:
                 _m.send_reply(conn, urlunsplit(url), 404)
             case _ as unreachable:
                 assert_never(unreachable)
@@ -260,7 +275,7 @@ def send_catalog(
             _m.CatalogItem(
                 uri=md.uri,
                 name=md.name,
-                storage=md.storage,
+                storage=md.storage or "<none>",
                 last_modified=md.last_modified,
                 public_uri=public_path,
             ),
@@ -297,12 +312,12 @@ def evict_project_from_cache(cm: CacheManager) -> bool:
     candidate = min(
         (e for e in cm.iter() if not e.pinned),
         default=None,
-        key=lambda e: e.hits / (now - e.timestamp)
+        key=lambda e: e.hits / (now - e.timestamp),
     )
 
     if not candidate:
         return False
 
     logger.debug("Evicting '%s' from cache", candidate.uri)
-    cm.update(candidate,  Co.REMOVED)
+    cm.update(candidate.md, Co.REMOVED)
     return True

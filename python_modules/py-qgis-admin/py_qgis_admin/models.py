@@ -23,7 +23,7 @@ from .pool import PoolClient
 
 AnyJson = Annotated[
     Json,
-    WithJsonSchema({'type': 'object'})
+    WithJsonSchema({'type': 'object'}),
 ]
 
 
@@ -61,7 +61,7 @@ class PoolInfos(BaseModel):
     links: List[swagger.Link]
 
     @classmethod
-    def _from_pool(cls, pool: PoolClient, links: List[swagger.Link]) -> Self:
+    def _from_pool(cls: Type[Self], pool: PoolClient, links: List[swagger.Link]) -> Self:
         return cls(
             label=pool.label,
             address=pool.address,
@@ -110,7 +110,7 @@ class CacheItem(BaseModel):
         WithJsonSchema({
             "type": "string",
             "format": "date-time",
-        })
+        }),
     ]
     name: str
     savedVersion: str

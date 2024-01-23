@@ -3,6 +3,7 @@
 #
 
 from pathlib import Path
+from types import ModuleType
 from typing import List
 
 from pydantic import BaseModel
@@ -10,7 +11,7 @@ from typing_extensions import Any, Dict, Optional
 
 try:
     # 3.11+
-    import toml
+    import tomllib as toml  # type: ignore
 except ModuleNotFoundError:
     import tomli as toml
 
@@ -65,7 +66,7 @@ class ProcessesLoader:
             from processing.core.Processing import RenderingStyles
 
             # Load styles for processing output
-            styles = {}
+            styles: Dict[str, Dict[str, str]] = {}
             for alg, keys in conf.styles.items():
                 styles.setdefault(alg, {})
                 for key, qmlpath in keys.items():
@@ -76,13 +77,15 @@ class ProcessesLoader:
                     logger.warning("Style file not found:  %s", qml)
             RenderingStyles.styles.update(styles)
 
-    def init_processing(self, package) -> Any:
+    def init_processing(self, package: ModuleType) -> Any:  # noqa ANN401 
         """ Initialize processing plugin
         """
         self._register = True
         try:
-            path = Path(package.__file__).parent
-            self.read_configuration(path)
+            # module __file__ may be None
+            if package.__file__ is not None:
+                path = Path(package.__file__).parent
+                self.read_configuration(path)
             init = package.classFactory(None)
             init.initProcessing()
         finally:

@@ -4,7 +4,8 @@ import traceback
 from contextlib import asynccontextmanager
 from time import time
 
-from typing_extensions import Dict, Iterator, Optional, Tuple
+from pydantic import JsonValue
+from typing_extensions import AsyncGenerator, Dict, Iterator, List, Optional, Tuple
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigError, ConfigProxy
@@ -27,12 +28,12 @@ class WorkerPool:
             config,
             name=f"{config.name}_{n}",
         ) for n in range(config.num_processes)]
-        self._avails = asyncio.Queue()
+        self._avails: asyncio.Queue = asyncio.Queue()
         self._timeout = config.process_timeout
         self._max_requests = config.max_waiting_requests
         self._count = 0
         self._cached_worker_env = None
-        self._cached_worker_plugins = None
+        self._cached_worker_plugins: List[_m.PluginInfo] = []
         self._shutdown = False
         self._start_time = time()
 
@@ -42,7 +43,7 @@ class WorkerPool:
 
     @property
     def request_pressure(self) -> float:
-        return (int((self._count/self._max_requests) + 0.5) * 100.) / 100.
+        return (int((self._count / self._max_requests) + 0.5) * 100.) / 100.
 
     @property
     def stopped_workers(self) -> int:
@@ -53,14 +54,14 @@ class WorkerPool:
         return len(self._workers)
 
     @property
-    def worker_failure_pressure(self) -> int:
+    def worker_failure_pressure(self) -> float:
         num = len(self._workers)
         ko = self.stopped_workers
-        return (int((ko/num) + 0.5) * 100.) / 100.
+        return (int((ko / num) + 0.5) * 100.) / 100.
 
     @property
     def start_time(self) -> int:
-        return self._start_time
+        return int(self._start_time)
 
     def start(self):
         """ Start all worker's processes
@@ -105,7 +106,7 @@ class WorkerPool:
         )
 
     @asynccontextmanager
-    async def get_worker(self) -> Worker:
+    async def get_worker(self) -> AsyncGenerator[Worker, None]:
         """ Lock context
 
             - Prevent race condition on worker
@@ -121,7 +122,6 @@ class WorkerPool:
         try:
             self._count += 1
             # Wait for available worker
-            worker = None
             if logger.isEnabledFor(logger.LogLevel.TRACE):
                 logger.trace(
                     "POOL: get_worker: Available workers=%s, waiting requests=%s",
@@ -145,7 +145,7 @@ class WorkerPool:
                 # long polling response.
                 try:
                     await asyncio.wait_for(
-                        self._worker.consume_until_task_done(),
+                        worker.consume_until_task_done(),
                         self._timeout,
                     )
                 except asyncio.TimeoutError:
@@ -164,7 +164,7 @@ class WorkerPool:
                 self._avails.put_nowait(worker)
 
     @asynccontextmanager
-    async def wait_for_all_workers(self) -> Iterator[Worker]:
+    async def wait_for_all_workers(self) -> AsyncGenerator[Iterator[Worker], None]:
         """ Wait for all workers to be available
             by drying ou the queue.
             Yield an iterator for all workers and restore
@@ -210,7 +210,7 @@ class WorkerPool:
     def config(self) -> WorkerConfig:
         return self._config
 
-    def config_dump_json(self) -> Dict:
+    def config_dump_json(self) -> str:
         if isinstance(self._config, ConfigProxy):
             return self._config.service.conf.model_dump_json()
         else:
@@ -242,7 +242,7 @@ class WorkerPool:
     #
 
     @property
-    def env(self) -> Dict:
+    def env(self) -> JsonValue:
         return self._cached_worker_env
 
     #

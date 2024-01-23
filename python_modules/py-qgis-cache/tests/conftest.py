@@ -2,7 +2,7 @@ import traceback
 
 from pathlib import Path
 
-import pytest  # noqa
+import pytest
 
 from py_qgis_cache import ProjectsConfig
 
@@ -25,7 +25,7 @@ def config(data):
             '/france': f'{data}/france_parts/',
             '/montpellier': f'{data}/montpellier/',
             '/database': 'postgresql://?service=py-qgis',
-        }
+        },
     )
 
 

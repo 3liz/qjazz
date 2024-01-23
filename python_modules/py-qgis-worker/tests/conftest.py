@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import pytest  # noqa
+import pytest
 
 
 @pytest.fixture(scope='session')

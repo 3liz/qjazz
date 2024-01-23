@@ -21,7 +21,7 @@ class UnreadableResource(Exception):
     pass
 
 
-def remove_advertised_urls(self, project: QgsProject) -> None:
+def remove_advertised_urls(project: QgsProject) -> None:
     """ Remove advertised url's since they
         may interfere with proxy_urls
     """
@@ -84,7 +84,7 @@ class BadLayerHandler(QgsProjectBadLayerHandler):
         super().__init__()
         self.badLayerNames = set()
 
-    def handleBadLayers(self, layers) -> None:
+    def handleBadLayers(self, layers):
         """ See https://qgis.org/pyqgis/3.0/core/Project/QgsProjectBadLayerHandler.html
         """
         super().handleBadLayers(layers)

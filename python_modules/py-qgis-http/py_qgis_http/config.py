@@ -7,7 +7,7 @@ from glob import glob
 from pathlib import Path
 
 from pydantic import AfterValidator, AnyHttpUrl, Field
-from typing_extensions import Annotated, Dict, Literal, Optional
+from typing_extensions import Annotated, Any, Dict, Literal, Optional, TypeAlias
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
@@ -22,7 +22,7 @@ from py_qgis_contrib.core.config import (
 )
 
 from . import metrics
-from .resolver import BackendConfig  # noqa
+from .resolver import BackendConfig
 
 DEFAULT_INTERFACE = ("0.0.0.0", 80)
 
@@ -32,8 +32,11 @@ def _check_ssl_config(sslconf):
         case (str(), None):
             raise ValueError("Missing ssl cert file")
         case (None, str()):
-            raise ValueError("Missinc ssl key file")
+            raise ValueError("Missing ssl key file")
     return sslconf
+
+
+HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 
 
 class HttpConfig(Config):
@@ -48,12 +51,12 @@ class HttpConfig(Config):
     )
     ssl: Annotated[
         SSLConfig,
-        AfterValidator(_check_ssl_config)
+        AfterValidator(_check_ssl_config),
     ] = Field(
         default=SSLConfig(),
         title="SSL configuration",
     )
-    cross_origin: Literal['all', 'same-origin'] | AnyHttpUrl = Field(
+    cross_origin: HttpCORS = Field(
         default='all',
         title="CORS origin",
         description=(
@@ -62,7 +65,7 @@ class HttpConfig(Config):
             "the same value as the 'Origin' request header.\n"
             "A url may may be specified, restricting allowed origin to\n"
             "this url."
-        )
+        ),
     )
     proxy_conf: bool = Field(
         default=False,
@@ -70,7 +73,7 @@ class HttpConfig(Config):
         description=(
             "Indicates that the server is behind a reverse proxy.\n"
             "This enable handling of forwarded proxy headers"
-        )
+        ),
     )
 
     def format_interface(self) -> str:
@@ -78,7 +81,7 @@ class HttpConfig(Config):
             case (address, port):
                 return f"{address}:{port}"
             case socket:
-                return socket
+                return str(socket)
 
 
 DEFAULT_ADMIN_INTERFACE = ("0.0.0.0", 9876)
@@ -108,7 +111,7 @@ class ConfigUrl(Config):
         "The configuration is fetched from the remote url\n"
         "at startup and override all local settings."
     )
-    ssl: Optional[SSLConfig] = None
+    ssl: SSLConfig = SSLConfig()
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",
@@ -134,23 +137,14 @@ class ConfigUrl(Config):
 
         from tornado import httpclient
 
-        if self.url.scheme == 'https':
-            import ssl
-            if self.ssl:
-                ssl_context = ssl.create_default_context(cafile=self.ssl.ca)
-                if self.ssl.cert:
-                    ssl_context.load_cert_chain(self.ssl.cert, self.ssl.key)
-            else:
-                ssl_context = ssl.create_default_context()
-        else:
-            ssl_context = None
+        use_ssl = self.url.scheme == 'https'
 
         client = httpclient.AsyncHTTPClient(
             force_instance=True,
             defaults=dict(
                 user_agent=self.user_agent,
-                ssl_options=ssl_context,
-            )
+                ssl_options=self.ssl.create_ssl_client_context() if use_ssl else None,
+            ),
         )
 
         try:
@@ -186,36 +180,33 @@ def add_configuration_sections(service: Optional[ConfigService] = None):
     # Add the `[backends]` configuration section
     service.add_section(
         BACKENDS_SECTION,
-        (Dict[str, BackendConfig], Field(default={})),
+        Dict[str, BackendConfig],
+        Field(default={}),
     )
 
     # Add the `[metrics]` optional configuration
     service.add_section(
         'metrics',
-        (
-            Optional[metrics.MetricConfig],
-            Field(
-                default=None,
-                title="Metrics configuration",
-            )
-        )
+        Optional[metrics.MetricConfig],
+        Field(
+            default=None,
+            title="Metrics configuration",
+        ),
     )
 
     # Path to services configuration
     service.add_section(
         'includes',
-        (
-            Optional[str],
-            Field(
-                default=None,
-                title="Path to services configuration files",
-                description=(
-                    "Path or globbing to services configuration files.\n"
-                    "Note that this section is ignored if remote configuration\n"
-                    "is used."
-                )
-            )
-        )
+        Optional[str],
+        Field(
+            default=None,
+            title="Path to services configuration files",
+            description=(
+                "Path or globbing to services configuration files.\n"
+                "Note that this section is ignored if remote configuration\n"
+                "is used."
+            ),
+        ),
     )
 
 #
@@ -228,13 +219,15 @@ ENV_CONFIGFILE = "QGIS_HTTP_CONFIGFILE"
 
 
 class BackendConfigError(Exception):
-    def __init__(file, msg):
+    def __init__(self, file, msg):
         super().__init__(f"Service configuration error in {file}: {msg}")
 
 
 def load_include_config_files(conf: Config):
     """ Load extra services configuration files
     """
+    conf: Any = conf
+
     for file in glob(conf.includes):
         cnf = read_config_toml(file)
         if BACKENDS_SECTION not in cnf:
@@ -257,7 +250,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
     if configpath:
         cnf = read_config_toml(
             configpath,
-            location=str(configpath.parent.absolute())
+            location=str(configpath.parent.absolute()),
         )
         os.environ[ENV_CONFIGFILE] = configpath.as_posix()
     else:

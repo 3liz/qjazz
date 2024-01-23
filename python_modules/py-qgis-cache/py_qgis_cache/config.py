@@ -19,7 +19,7 @@ def _getenv_bool(varname: str) -> bool:
     return os.getenv(varname, 'no').lower() in ('1', 'yes', 'true')
 
 
-def validate_url(v) -> SplitResult:
+def validate_url(v: str) -> SplitResult:
     if not isinstance(v, str):
         raise ValueError("Url must be of type str")
     url = urlsplit(v)
@@ -36,7 +36,7 @@ Url = Annotated[
 ]
 
 
-def _qgis_env_flag_validator(name: str) -> Callable[[str, ValidationInfo], str]:
+def _qgis_env_flag_validator(name: str) -> Callable[[bool, ValidationInfo], bool]:
     def validator(v: bool, info: ValidationInfo) -> bool:
         return v or _getenv_bool(name)
     return validator
@@ -51,7 +51,7 @@ class ProjectsConfig(config.Config):
             "When enabled, Qgis projects with invalid layers will be dismissed.\n"
             "Trying to access such a project will lead to a 'unprocessable Entity'\n"
             "(422) HTTP error"
-        )
+        ),
     )
     trust_layer_metadata: Annotated[
         bool,
@@ -65,7 +65,7 @@ class ProjectsConfig(config.Config):
             "like primary key unicity, geometry type and\n"
             "srid and by using estimated metadata on layer load.\n"
             "Since QGIS 3.16"
-        )
+        ),
     )
     disable_getprint: Annotated[
         bool,
@@ -78,7 +78,7 @@ class ProjectsConfig(config.Config):
             "Improves project read time if layouts are not required,\n"
             "and allows projects to be safely read in background threads\n"
             "(since print layouts are not thread safe)."
-        )
+        ),
     )
     force_readonly_layers: Annotated[
         bool,
@@ -86,7 +86,7 @@ class ProjectsConfig(config.Config):
     ] = Field(
         default=False,
         title="Force read only mode",
-        description="Force layers to open in read only mode"
+        description="Force layers to open in read only mode",
     )
     disable_advertised_urls: bool = Field(
         default=False,
@@ -95,7 +95,7 @@ class ProjectsConfig(config.Config):
             "Disable ows urls defined in projects.\n"
             "This may be necessary because Qgis projects\n"
             "urls override proxy urls."
-        )
+        ),
     )
     search_paths: Dict[str, Url] = Field(
         default={},
@@ -110,7 +110,7 @@ class ProjectsConfig(config.Config):
             "project storage. "
             "In case of custom QgsProjectStorage, if the scheme does not allow passing\n"
             "project as path component, it is possible to specify a custom resolver function."
-        )
+        ),
     )
     allow_direct_path_resolution: bool = Field(
         default=True,
@@ -120,5 +120,5 @@ class ProjectsConfig(config.Config):
             "no matching from the search paths.\n"
             "Uri are directly interpreted as valid Qgis project's path.\n"
             "WARNING: allowing this may be a security vulnerabilty."
-        )
+        ),
     )

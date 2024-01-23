@@ -4,10 +4,12 @@
 from multiprocessing.connection import Connection
 from urllib.parse import urlunsplit
 
-from qgis.server import QgsServer, QgsServerException, QgsServerRequest
-from typing_extensions import Dict, Optional, Tuple, assert_never
+import psutil
 
-from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus
+from qgis.server import QgsServer, QgsServerException, QgsServerRequest
+from typing_extensions import Dict, Optional, Tuple, assert_never, cast
+
+from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_rfc822
 
@@ -31,7 +33,7 @@ def handle_ows_request(
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
-    _process: Optional,
+    _process: Optional[psutil.Process],
     cache_id: str = "",
 ):
     """ Handle OWS request
@@ -77,7 +79,7 @@ def handle_api_request(
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
-    _process: Optional,
+    _process: Optional[psutil.Process],
     cache_id: str = "",
 ):
     """ Handle api request
@@ -133,7 +135,7 @@ def handle_generic_request(
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
-    _process: Optional,
+    _process: Optional[psutil.Process],
     cache_id: str = "",
 ):
     try:
@@ -166,7 +168,7 @@ def handle_generic_request(
 def _handle_generic_request(
     url: str,
     target: Optional[str],
-    allow_direct: str,
+    allow_direct: bool,
     data: Optional[bytes],
     method: QgsServerRequest.Method,
     headers: Dict[str, str],
@@ -174,7 +176,7 @@ def _handle_generic_request(
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
-    _process: Optional,
+    _process: Optional[psutil.Process],
     cache_id: str,
     request_id: str,
 ):
@@ -216,7 +218,7 @@ def _handle_generic_request(
         project = None
         response = Response(conn, _process=_process, cache_id=cache_id)
 
-    request = Request(url, method, headers, data=data)
+    request = Request(url, method, headers, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
 
 
@@ -230,7 +232,7 @@ def request_project_from_cache(
     """ Handle project retrieval from cache
     """
     try:
-        entry = None
+        entry: Optional[CacheEntry]
         url = cm.resolve_path(target, allow_direct)
         md, co_status = cm.checkout(url)
         match co_status:
@@ -243,12 +245,13 @@ def request_project_from_cache(
                 # may have changed. But in the other hand it could
                 # prevents access while project's ressource are
                 # not fully updated
+                entry = cast(CacheEntry, md)
                 if config.reload_outdated_project_on_request:
-                    entry, co_status = cm.update(md, co_status)
-                else:
-                    entry = md
-            case Co.UNCHANGED:
-                entry = md
+                    entry, co_status = cm.update(entry.md, co_status)
+            # checkout() never return UPDATED but for
+            # the sake of exhaustiveness
+            case Co.UNCHANGED | Co.UPDATED:
+                entry = cast(CacheEntry, md)
             case Co.NEW:
                 if config.load_project_on_request:
                     if config.max_projects <= len(cm):
@@ -258,18 +261,19 @@ def request_project_from_cache(
                         )
                         _m.send_reply(conn, "Max object reached on server", 409)
                     else:
-                        entry, co_status = cm.update(md, co_status)
+                        entry, co_status = cm.update(cast(ProjectMetadata, md), co_status)
                 else:
-                    logger.error("load_project_on_request disabled for '%s'", md.uri)
+                    logger.error("load_project_on_request disabled for '%s'", md.uri)  # type: ignore
                     _m.send_reply(conn, target, 404)
             case Co.REMOVED:
                 # Do not serve a removed project
                 # Since layer's data may not exists
                 # anymore
-                logger.warning("Requested removed project: %s", md.uri)
+                entry = cast(CacheEntry, md)
+                logger.warning("Requested removed project: %s", entry.md.uri)  # type: ignore
                 _m.send_reply(conn, target, 410)
-                entry = md
             case Co.NOTFOUND:
+                entry = None
                 logger.error("Requested project not found: %s", urlunsplit(url))
                 _m.send_reply(conn, target, 404)
             case _ as unreachable:

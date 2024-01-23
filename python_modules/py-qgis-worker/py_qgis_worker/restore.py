@@ -8,10 +8,10 @@ import traceback
 from pathlib import Path
 
 from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError
-from typing_extensions import List, Literal, Optional
+from typing_extensions import List, Literal, Optional, Union, cast
 
 from py_qgis_contrib.core import config, logger
-from py_qgis_contrib.core.config import SSLConfig, section
+from py_qgis_contrib.core.config import SSLConfig, confservice
 
 from .messages import CacheInfo
 from .messages import CheckoutStatus as Co
@@ -20,36 +20,73 @@ from .pool import WorkerPool
 CACHE_RESTORE_CONFIG_SECTION = "restore_cache"
 
 
-@section(CACHE_RESTORE_CONFIG_SECTION)
-class CacheRestoreConfig(config.Config):
-    (
-        "Restore stored cached projets at startup.\n"
-        "Note that only projects loaded explicitely with\n"
-        "the admin api are from url are candidate for restoration.\n"
-        "i.e projects loaded through requests (using\n"
-        "'load_project_on_request' option) will not be\n"
-        "restored."
-    )
-    ssl: Optional[SSLConfig] = None
-    url: Optional[AnyHttpUrl] = Field(
-        default=None,
+class TmpRestoreConfig(config.Config):
+    restore_type: Literal['tmp'] = 'tmp'
+
+
+class HttpRestoreConfig(config.Config):
+    restore_type: Literal['http'] = 'http'
+
+    url: AnyHttpUrl = Field(
         title="External cache url",
         description=(
-            "Retrieve cache list from external url, for use with the 'external'\n"
+            "Retrieve cache list from external http url, for use with the 'external'\n"
             "storage type.\n"
             "The server will issue a GET method against this url at startup.\n"
             "The method should returns a list of projects path in json."
         ),
     )
-    restore_type: Literal['http', 'tmp', 'none'] = Field(
-        default='tmp',
+
+
+class HttpsRestoreConfig(config.Config):
+    restore_type: Literal['https'] = 'https'
+
+    url: AnyHttpUrl = Field(
+        title="External cache url",
         description=(
-            "Storage type used for storing cache list:\n"
-            "  'http': use external http/https url.\n"
-            "  'tmp' : use internal tmpfile storage.\n"
-            "  'none': do not restore anything."
-        )
+            "Retrieve cache list from external https url, for use with the 'external'\n"
+            "storage type.\n"
+            "The server will issue a GET method against this url at startup.\n"
+            "The method should returns a list of projects path in json."
+        ),
     )
+
+    ssl: SSLConfig = SSLConfig()
+
+
+class NoRestoreConfig(config.Config):
+    restore_type: Literal['none'] = 'none'
+
+
+CacheRestoreConfig = Union[
+    TmpRestoreConfig,
+    HttpRestoreConfig,
+    HttpsRestoreConfig,
+    NoRestoreConfig,
+]
+
+
+confservice.add_section(
+    CACHE_RESTORE_CONFIG_SECTION,
+    CacheRestoreConfig,
+    Field(
+        default=NoRestoreConfig(),
+        discriminator='restore_type',
+        description=(
+            "Restore stored cached projets at startup.\n"
+            "Note that only projects loaded explicitely with\n"
+            "the admin api or from url are candidate for restoration.\n"
+            "i.e projects loaded through requests (using\n"
+            "'load_project_on_request' option) will not be\n"
+            "restored."
+        ),
+
+    ),
+)
+
+#
+# Implementations
+#
 
 
 def _gettempdir() -> Path:
@@ -58,13 +95,16 @@ def _gettempdir() -> Path:
 
 class _RestoreBase:
 
+    def __init__(self):
+        self._curr = set()
+
     async def restore(self, pool: WorkerPool):
         pass
 
     def clear(self):
         pass
 
-    def update(self, uri: str):
+    def update(self, resp: CacheInfo):
         pass
 
     def _pull(self, pool: WorkerPool):
@@ -76,7 +116,7 @@ class _RestoreBase:
                     resp = await w.checkout_project(uri, pull=True)
                     logger.trace(
                         "RESTORE: Loaded %s in worker %s (status %s)",
-                        uri, w.name, resp.status.name
+                        uri, w.name, resp.status.name,
                     )
 
             # Pull projects into workers
@@ -84,14 +124,19 @@ class _RestoreBase:
         except Exception:
             logger.error(
                 "Failed to load restore list %s",
-                traceback.format_exc()
+                traceback.format_exc(),
             )
             raise
 
 
+# ==========================
+#  Temp file restoration
+# ==========================
+
 class TmpRestore(_RestoreBase):
 
     def __init__(self):
+        super().__init__()
         import socket
 
         try:
@@ -102,7 +147,6 @@ class TmpRestore(_RestoreBase):
             self._addr = os.getpid()
 
         self._last = set()
-        self._curr = set()
         self._path = _gettempdir() / f'{self._addr}.qgis-server.cached'
         self._save_task = None
 
@@ -149,7 +193,7 @@ class TmpRestore(_RestoreBase):
                 except Exception:
                     logger.error(
                         "Failed to save restore list %s",
-                        traceback.format_exc()
+                        traceback.format_exc(),
                     )
                 finally:
                     self._save_task = None
@@ -168,18 +212,19 @@ class TmpRestore(_RestoreBase):
         self._commit()
 
 
+# ==========================
+# Http/Https restoration
+# ==========================
+
 class CacheList(BaseModel):
     version: str = "1"
     projects: List[str]
 
 
-class UrlRestore(_RestoreBase):
+class HttpRestore(_RestoreBase):
 
-    def __init__(self, conf: CacheRestoreConfig):
-        self._curr = set()
+    def __init__(self, conf: Union[HttpRestoreConfig | HttpsRestoreConfig]):
         self._conf = conf
-        if conf.url is None:
-            raise ValueError("Missing url for restore_cache configuration")
 
     async def restore(self, pool: WorkerPool):
         """ Load restore list and pull projects into
@@ -189,16 +234,8 @@ class UrlRestore(_RestoreBase):
 
         conf = self._conf
 
-        if conf.url.scheme == 'https':
-            import ssl
-            if conf.ssl:
-                ssl_context = ssl.create_default_context(cafile=conf.ssl.ca)
-                if self.ssl.cert:
-                    ssl_context.load_cert_chain(conf.ssl.cert, conf.ssl.key)
-            else:
-                ssl_context = ssl.create_default_context()
-        else:
-            ssl_context = False
+        use_ssl = conf.restore_type == 'https'
+        ssl_context = cast(HttpsRestoreConfig, conf).ssl.create_ssl_client_context() if use_ssl else False
 
         async with aiohttp.ClientSession() as session:
             logger.info("** Loading cache configuration from %s **", conf.url)
@@ -209,7 +246,7 @@ class UrlRestore(_RestoreBase):
                         self._curr = set(cached.projects)
                     else:
                         logger.error(
-                            f"Failed to get cache configuration from {conf.url} (error {resp.status})"
+                            f"Failed to get cache configuration from {conf.url} (error {resp.status})",
                         )
             except ValidationError as err:
                 logger.error("Invalid cache configuration: %s", err)
@@ -230,15 +267,14 @@ class RestoreNoop(_RestoreBase):
 Restore = _RestoreBase
 
 
-def create_restore_object(conf: Optional[CacheRestoreConfig] = None):
-    if not conf:
-        from py_qgis_contrib.core.config import confservice
-        conf = confservice.conf.restore_cache
+def create_restore_object(conf: Optional[CacheRestoreConfig] = None) -> _RestoreBase:
 
-    match conf.restore_type:
-        case "tmp":
+    conf = conf or confservice.conf.restore_cache
+
+    match conf:
+        case TmpRestoreConfig():
             return TmpRestore()
-        case "http":
-            return UrlRestore(conf)
+        case HttpRestoreConfig() | HttpsRestoreConfig():
+            return HttpRestore(conf)
         case _:
             return RestoreNoop()

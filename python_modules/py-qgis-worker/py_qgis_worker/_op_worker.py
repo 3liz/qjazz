@@ -4,19 +4,19 @@
 import os
 import traceback
 
-from time import time
-
-try:
-    import psutil
-except ImportError:
-    psutil = None
-
 from multiprocessing.connection import Connection
 
-from qgis.server import QgsServer
-from typing_extensions import Dict, assert_never
+# See https://stackoverflow.com/questions/75630114/multiprocessing-and-event-type-hint-issue-python
+from multiprocessing.synchronize import Event as EventClass
+from time import time
 
-from py_qgis_cache import CacheManager, CheckoutStatus
+import psutil
+
+from pydantic import JsonValue
+from qgis.server import QgsServer
+from typing_extensions import assert_never, cast
+
+from py_qgis_cache import CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.qgis import (
@@ -43,7 +43,7 @@ def load_default_project(cm: CacheManager):
         url = cm.resolve_path(default_project, allow_direct=True)
         md, status = cm.checkout(url)
         if status == Co.NEW:
-            cm.update(md, status)
+            cm.update(cast(ProjectMetadata, md), status)
         else:
             logger.error("The project %s does not exists", url)
 
@@ -74,7 +74,7 @@ def setup_server(config: WorkerConfig) -> QgsServer:
     return server
 
 
-def worker_env() -> Dict:
+def worker_env() -> JsonValue:
     from qgis.core import Qgis
     return dict(
         qgis_version=Qgis.QGIS_VERSION_INT,
@@ -92,8 +92,9 @@ def qgis_server_run(
         server: QgsServer,
         conn: Connection,
         config: WorkerConfig,
-        event,
+        event: EventClass,
         name: str = "",
+        reporting: bool = True,
 ):
     """ Run Qgis server and process incoming requests
     """
@@ -118,7 +119,7 @@ def qgis_server_run(
     load_default_project(cm)
 
     # For reporting
-    _process = psutil.Process() if psutil else None
+    _process = psutil.Process() if reporting else None
 
     event.set()
     while True:

@@ -19,16 +19,16 @@ from typing_extensions import Annotated, Optional
 
 from . import config
 
-LOGGER = logging.getLogger('py-qgis-logger')
+LOGGER = logging.getLogger('as-logger')
 
 
 class LogLevel(Enum):
     NOTSET = logging.NOTSET
-    TRACE = logging.DEBUG-1
+    TRACE = logging.DEBUG - 1
     DEBUG = logging.DEBUG
     INFO = logging.INFO
-    REQ = logging.INFO+1
-    RREQ = logging.INFO+2
+    REQ = logging.INFO + 1
+    RREQ = logging.INFO + 2
     WARNING = logging.WARNING
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
@@ -52,9 +52,9 @@ class LoggingConfig(config.Config):
         PlainSerializer(lambda x: x.name, return_type=str),
         WithJsonSchema({
             'enum': [m for m in LogLevel.__members__],
-            'type': 'str'
+            'type': 'str',
         }),
-        Field(default="INFO", validate_default=True)
+        Field(default="INFO", validate_default=True),
     ]
 
 
@@ -128,5 +128,5 @@ def log_rreq(msg, *args, **kwargs):
     LOGGER.log(LogLevel.RREQ.value, msg, *args, **kwargs)
 
 
-def isEnabledFor(level: LogLevel):
+def isEnabledFor(level: LogLevel) -> bool:
     return LOGGER.isEnabledFor(level.value)

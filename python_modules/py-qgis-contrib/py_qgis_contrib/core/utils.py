@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 #
 
 WEEKDAYS = [
-    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 ]
 
 

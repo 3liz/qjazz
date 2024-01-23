@@ -236,7 +236,7 @@ class _Projects:
                 _http_error(web.HTTPNotFound, f"Project {uri} not in cache")
             return web.Response(
                 content_type="application/json",
-                text=ProjectInfo.model_validate(response).model_dump_json()
+                text=ProjectInfo.model_validate(response).model_dump_json(),
             )
         except ServiceNotAvailable:
             _http_error(

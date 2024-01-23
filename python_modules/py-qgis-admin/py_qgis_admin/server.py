@@ -3,30 +3,24 @@ import traceback
 
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
-from pydantic import (  # noqa
+from pydantic import (
     BaseModel,
-    Field,
-    Json,
-    TypeAdapter,
-    ValidationError,
 )
-from typing_extensions import (  # noqa
+from typing_extensions import (
+    Any,
     Dict,
-    List,
-    Literal,
     Optional,
-    Self,
-    Set,
-    Type,
+    cast,
+    no_type_check,
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import Config, ConfigProxy, SSLConfig
+from py_qgis_contrib.core.config import Config, ConfigProxy
 
 from . import config as server_config  # noqa
 from . import swagger
 from .api import API_VERSION, ErrorResponse, Handlers
-from .resolvers import RESOLVERS_SECTION
+from .resolvers import RESOLVERS_SECTION, ResolverConfig
 from .service import Service
 
 # routes = web.RouteTableDef()
@@ -60,7 +54,7 @@ class AccessLogger(AbstractAccessLogger):
             time=int(1000.0 * time),
             length=length,
             referer=referer,
-            agent=agent
+            agent=agent,
         )
 
         logger.log_req(fmt)
@@ -75,28 +69,43 @@ def forwarded_for(request):
 
 
 def cors_options_headers(
-    request,
-    headers,
+    request: web.Request,
+    headers: Dict[str, str],
     allow_methods: str,
-    allow_headers: Optional[str] = None
-) -> Dict[str, str]:
+    allow_headers: Optional[str] = None,
+):
     """  Set correct headers for 'OPTIONS' method
     """
     allow_methods = "PUT, POST, GET, OPTIONS"
     headers["Allow"] = allow_methods
     headers['Access-Control-Allow-Headers'] = allow_headers or ALLOW_DEFAULT_HEADERS
-    if request.origin.get('Origin'):
+    if request.headers.get('Origin'):
         # Required in CORS context
         # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
         headers['Access-Control-Allow-Methods'] = allow_methods
 
 
-async def set_access_control_headers(request, response):
-    """  Handle Access control and cross origin headers (CORS)
+def set_access_control_headers(mode):
+    """ Build a response prepare callback
     """
-    origin = request.headers.get('Origin')
-    if origin:
-        response.headers['Access-Control-Allow-Origin'] = '*'
+    async def set_access_control_headers_(request, response):
+        """  Handle Access control and cross origin headers (CORS)
+        """
+        origin = request.headers.get('Origin')
+        if not origin:
+            return
+        match mode:
+            case 'all':
+                allow_origin = '*'
+            case 'same-origin':
+                allow_origin = origin
+                response.headers['Vary'] = 'Origin'
+            case _ as url:
+                allow_origin = str(url)
+
+        response.headers['Access-Control-Allow-Origin'] = allow_origin
+
+    return set_access_control_headers_
 
 
 @web.middleware
@@ -113,7 +122,7 @@ async def authenticate(request, handler):
                 raise web.HTTPUnauthorized(
                     headers={'WWW-Authenticate': 'Bearer realm="Qgis services admin api access'},
                     content_type="application/json",
-                    text=ErrorResponse(message="Unauthorized").model_dump_json()
+                    text=ErrorResponse(message="Unauthorized").model_dump_json(),
                 )
     return await handler(request)
 
@@ -130,7 +139,7 @@ async def unhandled_exceptions(request, handler):
             content_type="application/json",
             text=ErrorResponse(
                 message="Internal server error",
-            ).model_dump_json()
+            ).model_dump_json(),
         ) from None
 
 
@@ -147,13 +156,6 @@ def redirect(path):
     return _redirect
 
 
-def ssl_context(conf: SSLConfig):
-    import ssl
-    ssl_ctx = ssl.create_task_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_ctx.load_cert_chain(conf.cert, conf.key)
-    return ssl_ctx
-
-
 def _swagger_doc(app):
     return swagger.doc(
         app,
@@ -164,7 +166,7 @@ def _swagger_doc(app):
             swagger.Tag(name="pools.cache", description="Manage pool's cache"),
             swagger.Tag(name="pools.cache.project", description="Manage project in cache"),
             swagger.Tag(name="pools.plugins", description="Manage pool's plugins"),
-        ]
+        ],
     )
 
 
@@ -172,16 +174,23 @@ def swagger_model() -> BaseModel:
     """ Return the swagger model
         for the REST api
     """
-    handlers = Handlers(None)
+    handlers = Handlers(cast(Service, None))
     app = web.Application()
     app.add_routes(handlers.routes)
     return _swagger_doc(app)
 
 
-def create_app(conf: Config):
+def create_app(conf: Config) -> web.Application:
     """ Create a web application
     """
-    service = Service(ConfigProxy(RESOLVERS_SECTION, _default=conf.resolvers))
+    conf = cast(Any, conf)
+
+    service = Service(
+        cast(
+            ResolverConfig,
+            ConfigProxy(RESOLVERS_SECTION, _default=conf.resolvers),
+        ),
+    )
 
     asyncio.run(service.synchronize())
 
@@ -197,7 +206,9 @@ def create_app(conf: Config):
         },
     )
 
-    app.on_response_prepare.append(set_access_control_headers)
+    app.on_response_prepare.append(
+        set_access_control_headers(conf.http.cross_origin),
+    )
 
     # Routing
     app.add_routes(handlers.routes)
@@ -216,6 +227,7 @@ def create_app(conf: Config):
     return app
 
 
+@no_type_check
 def serve(conf: Config):
     """ Start the web server
     """
@@ -231,7 +243,7 @@ def serve(conf: Config):
     logger.info(f"Server listening at {conf.http.format_interface()}")
     web.run_app(
         app,
-        ssl_context=ssl_context(conf.http.ssl) if conf.http.use_ssl else None,
+        ssl_context=conf.http.ssl.create_ssl_server_context() if conf.http.use_ssl else None,
         handle_signals=True,
         **listen,
     )

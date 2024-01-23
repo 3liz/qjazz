@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from typing_extensions import Optional
+from typing_extensions import Any, Optional, cast
 
 from py_qgis_contrib.core import config, logger
 
@@ -38,15 +38,14 @@ def load_configuration(configpath: Optional[Path]) -> config.Config:
         # Load external configuration if requested
         config_url = config.confservice.conf.config_url
         if config_url.is_set():
-            print(
+            click.echo(
                 f"** Loading initial configuration from <{config_url.url}> **",
-                flush=True,
                 file=sys.stderr,
             )
             cnf = asyncio.run(config_url.load_configuration())
             config.confservice.update_config(cnf)
     except config.ConfigError as err:
-        print("Configuration error:", err, file=sys.stderr, flush=True)
+        click.echo(f"Configuration error: {err}", file=sys.stderr)
         sys.exit(1)
     return config.confservice.conf
 
@@ -69,7 +68,7 @@ FilePathType = click.Path(
     exists=True,
     readable=True,
     dir_okay=False,
-    path_type=Path
+    path_type=Path,
 )
 
 
@@ -98,7 +97,7 @@ def print_config(conf: Optional[Path], out_fmt: str, schema: bool = False, prett
             case 'json':
                 json_schema = config.confservice.json_schema()
                 indent = 4 if pretty else None
-                print(json.dumps(json_schema, indent=indent))
+                click.echo(json.dumps(json_schema, indent=indent))
             case 'yaml':
                 from ruamel.yaml import YAML
                 json_schema = config.confservice.json_schema()
@@ -107,7 +106,7 @@ def print_config(conf: Optional[Path], out_fmt: str, schema: bool = False, prett
             case 'toml':
                 config.confservice.dump_toml_schema(sys.stdout)
     else:
-        print(load_configuration(conf).model_dump_json(indent=indent))
+        click.echo(load_configuration(conf).model_dump_json(indent=indent))
 
 
 @cli_commands.command("plugins")
@@ -120,7 +119,7 @@ def print_config(conf: Optional[Path], out_fmt: str, schema: bool = False, prett
 def install_plugins(configpath: Optional[Path]):
     """ Install plugins
     """
-    conf = load_configuration(configpath)
+    conf: Any = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
     from py_qgis_contrib.core.qgis import install_plugins
@@ -137,12 +136,12 @@ def install_plugins(configpath: Optional[Path]):
 def serve_grpc(configpath: Optional[Path]):
     """ Run grpc server
     """
-    conf = load_configuration(configpath)
+    conf: Any = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
     conf.worker.plugins.do_install()
 
-    pool = WorkerPool(config.ConfigProxy(WORKER_SECTION))
+    pool = WorkerPool(cast(WorkerConfig, config.ConfigProxy(WORKER_SECTION)))
     pool.start()
     try:
         asyncio.run(serve(pool))

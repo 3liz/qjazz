@@ -28,3 +28,11 @@ include = [
     "py_qgis_contrib", 
     "py_qgis_contrib.*",
 ]
+
+[tool.ruff]
+extend = "../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+"py_qgis_contrib/core/qgis/qgis_init.py" = ["T201"]
+"py_qgis_contrib/core/config/_toml.py" = ["T201"]

@@ -17,18 +17,24 @@ deliver::
 	twine upload -r storage $(SDIST)/*
 
 lint::
-	@flake8 $(PYTHON_PKG) $(TESTDIR)
+	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
 
 install::
 	pip install -e .
 
 autopep8:
-	@autopep8 -v --in-place -r --max-line-length=120 $(AUTOPEP8_EXTRA_ARGS) $(PYTHON_PKG) $(TESTDIR)
+	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
+	# Only fix E303 E302 error
+	# since ruff does no implement this yet
+	@autopep8 --in-place -r --select E303,E302 $(PYTHON_PKG) $(TESTDIR)
+
+mypy:
+	@mypy --config-file=$(topsrcdir)/config/mypy.ini -p $(PYTHON_PKG)
 
 
 ifndef TESTDIR
 test::
 else
-test:: lint
+test:: lint mypy
 	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
 endif

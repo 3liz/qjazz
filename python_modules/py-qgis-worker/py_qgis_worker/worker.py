@@ -3,7 +3,7 @@ import multiprocessing as mp
 
 from functools import cached_property
 
-from typing_extensions import Any, AsyncIterator, Dict, Optional, Tuple
+from typing_extensions import AsyncIterator, Dict, Optional, Tuple
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigError, ConfigProxy
@@ -14,7 +14,7 @@ from .config import WorkerConfig
 
 
 class WorkerError(Exception):
-    def __init__(self, code: int, details: Any = None):
+    def __init__(self, code: int, details: str = ""):
         self.code = code
         self.details = details
 
@@ -68,6 +68,8 @@ class Worker(mp.Process):
                 _m.PutConfig(config=obj),
                 timeout=self._timeout,
             )
+            if status != 200:
+                raise WorkerError(status, resp)
             # Update timeout config
             self._timeout = self.config.process_timeout
             logger.trace(f"Updated config for worker '{self.name}'")
@@ -133,7 +135,7 @@ class Worker(mp.Process):
         headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator]]:
+    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
         """ Send OWS request
 
             Exemple:
@@ -191,7 +193,7 @@ class Worker(mp.Process):
         direct: bool = False,
         method: _m.HTTPMethod = _m.HTTPMethod.GET,
         options: Optional[str] = None,
-        headers: Dict[str, str] = None,
+        headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
     ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
@@ -248,7 +250,7 @@ class Worker(mp.Process):
         target: Optional[str],
         direct: bool = False,
         method: _m.HTTPMethod = _m.HTTPMethod.GET,
-        headers: Dict[str, str] = None,
+        headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
     ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
@@ -331,7 +333,7 @@ class Worker(mp.Process):
     async def list_cache(
         self,
         status_filter: Optional[_m.CheckoutStatus] = None,
-    ) -> Tuple[int, AsyncIterator[_m.CacheInfo]]:
+    ) -> Tuple[int, Optional[AsyncIterator[_m.CacheInfo]]]:
         """ List projects in cache
 
             Return 2-tuple where first element is the number
@@ -387,7 +389,7 @@ class Worker(mp.Process):
         if status != 200:
             raise WorkerError(status, resp)
 
-    async def catalog(self, location: str = None) -> AsyncIterator[_m.CatalogItem]:
+    async def catalog(self, location: Optional[str] = None) -> AsyncIterator[_m.CatalogItem]:
         """ Return all projects availables
 
             If location is set, returns only projects availables for

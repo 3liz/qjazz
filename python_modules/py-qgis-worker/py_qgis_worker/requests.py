@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from multiprocessing.connection import Connection
 from time import time
 
+import psutil
+
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
 from typing_extensions import Dict, Optional
@@ -43,7 +45,7 @@ class Request(QgsServerRequest):
         url: str,
         method: QgsServerRequest.Method,
         headers: Dict[str, str],
-        data: bytes,
+        data: Optional[bytes],
     ):
         self._data = data
         super().__init__(url, method, headers=headers)
@@ -71,8 +73,8 @@ class Response(QgsServerResponse):
             co_status: Optional[CheckoutStatus] = None,
             headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
-            _process: Optional = None,
-            cache_id: str = ""
+            _process: Optional[psutil.Process] = None,
+            cache_id: str = "",
     ):
         super().__init__()
         self._buffer = QBuffer()
@@ -81,7 +83,7 @@ class Response(QgsServerResponse):
         self._conn = conn
         self._status_code = 200
         self._header_written = False
-        self._headers = {}
+        self._headers: Dict[str, str] = {}
         self._co_status = co_status
         self._process = _process
         self._timestamp = time()
@@ -107,7 +109,7 @@ class Response(QgsServerResponse):
                 memory=memory,
                 timestamp=self._timestamp,
                 duration=time() - self._timestamp,
-            )
+            ),
         )
 
     def setStatusCode(self, code: int) -> None:
@@ -140,7 +142,7 @@ class Response(QgsServerResponse):
                 checkout_status=self._co_status,
                 chunked=chunked,
                 cache_id=self._cache_id,
-            )
+            ),
         )
         self._header_written = True
 
@@ -177,7 +179,7 @@ class Response(QgsServerResponse):
             chunked = True
             bytes_avail = MAX_CHUNK_SIZE
 
-        chunks = (data[i:i+MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
+        chunks = (data[i:i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
 
         if not self._header_written:
             # Send headers with first chunk of data
@@ -201,7 +203,7 @@ class Response(QgsServerResponse):
         self._buffer.buffer().clear()
 
     def header(self, key: str) -> str:
-        return self._headers.get(key)
+        return self._headers.get(key) or ""
 
     def headers(self) -> Dict[str, str]:
         return self._headers
@@ -226,7 +228,7 @@ class Response(QgsServerResponse):
             if not self._header_written:
                 logger.error("Qgis server error: %s (%s)", message, code)
                 self._status_code = code
-                self._send_response(message or "")
+                self._send_response(message.encode() if message else b"")
                 self._finish = True
             else:
                 logger.error("Cannot set error after header written")

@@ -50,6 +50,8 @@ from typing_extensions import (
     Optional,
     Tuple,
     Type,
+    TypeAlias,
+    assert_never,
 )
 
 from .. import componentmanager
@@ -93,9 +95,10 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
 def read_config_toml(cfgfile: Path, **kwds) -> Dict:
     """ Read toml configuration from file
     """
+    # See https://github.com/python/mypy/issues/1155
     try:
         # Python 3.11+
-        import tomllib as toml
+        import tomllib as toml  # type: ignore
     except ModuleNotFoundError:
         import tomli as toml
 
@@ -125,6 +128,9 @@ class Config(BaseModel, frozen=True, extra='forbid'):
 CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
 
 
+CreateDefault = object()
+
+
 @componentmanager.register_factory(CONFIG_SERVICE_CONTRACTID)
 class ConfigService:
 
@@ -141,24 +147,30 @@ class ConfigService:
         self._default_confdir = None
         self._version = metadata.version('py_qgis_contrib')
 
-    def _create_base_model(self, base: Type[BaseModel]):
+    def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
         def _model(model):
-            if isinstance(model, Tuple):
-                return model
-            else:
-                return model, model()
+            assert isinstance(model, Tuple)
+            match model:
+                case (m,):
+                    return (m, m())
+                case (m, other):
+                    return (m, other)
+                case _ as unreachable:
+                    assert_never(unreachable)
 
         return create_model(
-            "BaseConfig",
+            "_BaseConfig",
             __base__=base,
-            **{name: _model(model) for name, model in self._configs.items()}
+            **{name: _model(model) for name, model in self._configs.items()},
         )
 
     def _create_model(self) -> BaseSettings:
         if self._model_changed or not self._model:
 
-            class BaseConfig(BaseSettings, frozen=True, extra='forbid'):
+            class BaseConfig(BaseSettings):
                 model_config = SettingsConfigDict(
+                    frozen=True,
+                    extra='forbid',
                     env_nested_delimiter='__',
                     env_prefix=self._env_prefix,
                 )
@@ -169,7 +181,7 @@ class ConfigService:
                     PlainValidator(lambda v: Path(v)),
                     PlainSerializer(lambda x: str(x), return_type=str),
                 ] = Field(
-                    default=self._default_confdir or os.getcwd(),
+                    default=Path(self._default_confdir or os.getcwd()),
                     title="Search path for configuration files",
                 )
 
@@ -197,8 +209,8 @@ class ConfigService:
         self._env_prefix = env_prefix or self._env_prefix
         self._default_confdir = default_confdir or self._default_confdir
 
-        BaseConfig = self._create_model()
-        _conf = BaseConfig.model_validate(obj, strict=True)
+        _BaseConfig = self._create_model()
+        _conf = _BaseConfig.model_validate(obj, strict=True)
 
         self._conf = _conf
         # Update timestamp so that we can check update in
@@ -228,12 +240,13 @@ class ConfigService:
     def add_section(
         self,
         name: str,
-        model: Type[Config] | Tuple[Type, Any],
+        model: Type | TypeAlias,
+        field: Any = CreateDefault,  # noqa ANN401
         replace: bool = False,
     ):
         if not replace and name in self._configs:
             raise ValueError(f"Config {name} already defined in: {self._configs[name]}")
-        self._configs[name] = model
+        self._configs[name] = (model,) if field is CreateDefault else (model, field)
         self._model_changed = True
 
     @property
@@ -245,7 +258,12 @@ class ConfigService:
 confservice = componentmanager.get_service(CONFIG_SERVICE_CONTRACTID)
 
 
-def section(name: str, instance: Optional[ConfigService] = None):
+def section(
+    name: str,
+    instance: Optional[ConfigService] = None,
+    *,
+    field: Any = CreateDefault,  # noqa ANN401
+) -> Callable[[Type[Config]], Type[Config]]:
     """ Decorator for config section definition
 
         @config.section("server")
@@ -254,8 +272,8 @@ def section(name: str, instance: Optional[ConfigService] = None):
     """
     service = instance or confservice
 
-    def wrapper(model: Config):
-        service.add_section(name, model)
+    def wrapper(model: Type[Config]) -> Type[Config]:
+        service.add_section(name, model, field)
         return model
     return wrapper
 
@@ -301,6 +319,9 @@ class ConfigProxy:
     def service(self) -> ConfigService:
         return self._confservice
 
+    def model_dump_json(self) -> str:
+        return self.__update().model_dump_json()
+
     def __update(self) -> Config:
         if self._confservice._timestamp > self._timestamp:
             self._timestamp = self._confservice._timestamp
@@ -316,7 +337,7 @@ class ConfigProxy:
         if isinstance(attr, Config):
             # Wrap Config instance in ConfigProxy
             attr = ConfigProxy(
-                self._configpath+'.'+name,
+                self._configpath + '.' + name,
                 self._confservice,
                 _default=attr,
             )

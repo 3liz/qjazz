@@ -10,23 +10,11 @@ from grpc_health.v1._async import HealthServicer
 from grpc_health.v1.health_pb2_grpc import add_HealthServicer_to_server
 from typing_extensions import Optional
 
-from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core import logger
 
 from ._grpc import api_pb2_grpc
 from .restore import create_restore_object
 from .service import QgisAdmin, QgisServer
-
-
-def _server_credentials(files: config.SSLConfig):
-    def _read(f) -> Optional[bytes]:
-        with Path(f).open('rb') as fp:
-            return fp.read()
-
-    return grpc.ssl_server_credentials(
-        [[_read(files.ca), _read(files.cert)]],
-        root_certificates=_read(files.ca) if files.ca else None,
-        require_client_auth=files.ca is not None,
-    )
 
 
 async def serve(pool):
@@ -61,9 +49,25 @@ async def serve(pool):
                 listen_addr = f"{addr}:{port}"
             case socket:
                 listen_addr = socket
-        if iface.ssl.key:
+
+        if iface.use_ssl:
+            # Load certificates
+            def _read_if(f: Path) -> Optional[bytes]:
+                with f.open('rb') as fp:
+                    return fp.read()
+
+            ssl = iface.ssl
+
             logger.info("Listening on port: %s (SSL on)", listen_addr)
-            server.add_secure_port(listen_addr, _server_credentials(iface.ssl))
+            server.add_secure_port(
+                listen_addr,
+                grpc.ssl_server_credentials(
+                    [[_read_if(ssl.keyfile), _read_if(ssl.certfile)]],
+                    # Client authentification
+                    root_certificates=_read_if(ssl.cafile) if ssl.cafile else None,
+                    require_client_auth=ssl.cafile is not None,
+                ),
+            )
         else:
             logger.info("Listening on port: %s", listen_addr)
             server.add_insecure_port(listen_addr)
@@ -71,14 +75,22 @@ async def serve(pool):
     shutdown_grace_period = pool.config.shutdown_grace_period
     max_failure_pressure = pool.config.max_processes_failure_pressure
 
-    def _term(message, graceful: bool):
+    async def graceful_shutdown(message: str, graceful: bool):
         logger.info(message)
         if graceful:
             logger.info("Entering graceful shutdown of %d s", shutdown_grace_period)
-            loop.create_task(health_servicer.enter_graceful_shutdown())
-            loop.create_task(server.stop(shutdown_grace_period))
+            await health_servicer.enter_graceful_shutdown()
+            await server.stop(shutdown_grace_period)
         else:
-            loop.create_task(server.stop(None))
+            await server.stop(None)
+
+    # Keep ref of tasks
+    # see https://docs.python.org/3.11/library/asyncio-task.html#asyncio.create_task
+    background_tasks = set()
+
+    def _term(message: str, graceful: bool):
+        task = loop.create_task(graceful_shutdown(message, graceful))
+        background_tasks.add(task)
 
     def _sigchild_handler():
         pressure = pool.worker_failure_pressure

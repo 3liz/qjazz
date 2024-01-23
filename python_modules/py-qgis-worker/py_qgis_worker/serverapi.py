@@ -15,19 +15,20 @@ import traceback
 
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext
+from typing_extensions import List
 
 from py_qgis_contrib.core import logger
 
 ROOT_DELEGATE = '/__delegate__'
 
 API_ALIASES = {
-    'WFS3': 'OGC WFS3 (Draft)'
+    'WFS3': 'OGC WFS3 (Draft)',
 }
 
 
 class ApiDelegate(QgsServerApi):
 
-    __instances = []
+    __instances: List[QgsServerApi] = []  #  noqa RUF012
 
     def __init__(
             self,
@@ -54,7 +55,7 @@ class ApiDelegate(QgsServerApi):
             return False
 
         self._rootpath = path[:index]
-        self._extra_path = path[index+len(ROOT_DELEGATE):]
+        self._extra_path = path[index + len(ROOT_DELEGATE):]
         return True
 
     def executeRequest(self, context):
@@ -82,7 +83,7 @@ class ApiDelegate(QgsServerApi):
                         context.response(),
                         context.project(),
                         context.serverInterface(),
-                    )
+                    ),
                 )
             except Exception:
                 logger.critical(traceback.format_exc())

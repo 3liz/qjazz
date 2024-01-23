@@ -3,7 +3,7 @@ import asyncio  # noqa
 from contextlib import asynccontextmanager
 from time import time
 
-import pytest  # noqa
+import pytest
 
 from py_qgis_worker import messages
 from py_qgis_worker import messages as _m
@@ -114,7 +114,7 @@ async def test_cache_api(config):
 
         # Pull
         status, resp = await worker.io.send_message(
-            _m.CheckoutProject(uri="/france/france_parts", pull=True)
+            _m.CheckoutProject(uri="/france/france_parts", pull=True),
         )
         assert status == 200
         assert resp.status == _m.CheckoutStatus.NEW
@@ -124,38 +124,38 @@ async def test_cache_api(config):
 
         # Checkout
         status, resp = await worker.io.send_message(
-            _m.CheckoutProject(uri="/france/france_parts", pull=False)
+            _m.CheckoutProject(uri="/france/france_parts", pull=False),
         )
         assert status == 200
         assert resp.status == _m.CheckoutStatus.UNCHANGED
 
         # List
         status, resp = await worker.io.send_message(
-            _m.ListCache()
+            _m.ListCache(),
         )
 
         assert status == 200
         assert resp == 1
-        status, item = await worker.io.read_message()
+        status, _item = await worker.io.read_message()
         while status == 206:
-            status, item = await worker.io.read_message()
+            status, _item = await worker.io.read_message()
         assert status == 200
 
         # Project info
         status, resp = await worker.io.send_message(
-            _m.GetProjectInfo("/france/france_parts")
+            _m.GetProjectInfo("/france/france_parts"),
         )
         assert status == 200
 
         # Drop project
         status, resp = await worker.io.send_message(
-            _m.DropProject(uri)
+            _m.DropProject(uri),
         )
         assert status == 200
 
         # Empty List
         status, resp = await worker.io.send_message(
-            _m.ListCache()
+            _m.ListCache(),
         )
 
         assert status == 200
@@ -168,8 +168,8 @@ async def test_catalog(config):
     async with worker_context(config) as worker:
 
         # Pull
-        status, resp = await worker.io.send_message(
-            _m.Catalog("/france")
+        status, _resp = await worker.io.send_message(
+            _m.Catalog("/france"),
         )
         assert status == 200
         status, item = await worker.io.read_message()

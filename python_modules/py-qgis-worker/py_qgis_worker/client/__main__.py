@@ -13,8 +13,11 @@ import click
 import grpc
 
 from google.protobuf import json_format
-from grpc_health.v1 import health_pb2  # HealthCheckRequest
-from grpc_health.v1 import health_pb2_grpc  # HealthStub
+from google.protobuf.message import Message
+from grpc_health.v1 import (
+    health_pb2,  # HealthCheckRequest
+    health_pb2_grpc,  # HealthStub
+)
 
 from py_qgis_contrib.core.config import SSLConfig
 
@@ -22,7 +25,7 @@ from .._grpc import api_pb2, api_pb2_grpc
 from . import _client
 
 
-def MessageToJson(msg) -> str:
+def MessageToJson(msg: Message) -> str:
     return json_format.MessageToJson(
         msg,
         including_default_value_fields=True,
@@ -58,7 +61,7 @@ def connect(stub=None):
         try:
             yield _stub
         except grpc.RpcError as rpcerr:
-            print("RPC ERROR:", rpcerr.code(), rpcerr.details(), file=sys.stderr)
+            click.echo("RPC ERROR:", rpcerr.code(), rpcerr.details(), file=sys.stderr)
             print_metadata(rpcerr.initial_metadata())
             print_metadata(rpcerr.trailing_metadata())
 
@@ -70,11 +73,11 @@ def print_metadata(metadata):
             status_code = v
         elif k.startswith("x-reply-header-"):
             h = k.replace("x-reply-header-", "", 1)
-            print(h.title(), ":", v, file=sys.stderr)
+            click.echo(h.title(), ":", v, file=sys.stderr)
         elif k.startswith("x-"):
-            print(k, ":", v, file=sys.stderr)
+            click.echo(k, ":", v, file=sys.stderr)
     if status_code:
-        print("Return code:", status_code, file=sys.stderr)
+        click.echo("Return code:", status_code, file=sys.stderr)
 
 
 @click.group('commands')
@@ -139,7 +142,7 @@ def ows_request(
             print_metadata(stream.initial_metadata())
 
         _t_ms = int((_t_end - _t_start) * 1000.0)
-        print("First chunk returned in", _t_ms, "ms", file=sys.stderr)
+        click.echo(f"First chunk returned in {_t_ms} ms", file=sys.stderr)
 
 
 @request_commands.command("api")
@@ -191,7 +194,7 @@ def api_request(
             print_metadata(stream.initial_metadata())
 
         _t_ms = int((_t_end - _t_start) * 1000.0)
-        print("First chunk returned in", _t_ms, "ms", file=sys.stderr)
+        click.echo(f"First chunk returned in {_t_ms} ms", file=sys.stderr)
 
 
 #
@@ -213,14 +216,14 @@ def checkout_project(project: str, pull: bool):
     """
     with connect() as stub:
         stream = stub.CheckoutProject(
-            api_pb2.CheckoutRequest(uri=project, pull=pull)
+            api_pb2.CheckoutRequest(uri=project, pull=pull),
         )
         count = 0
         for item in stream:
             count += 1
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
-        print(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("drop")
@@ -230,14 +233,14 @@ def drop_project(project: str):
     """
     with connect() as stub:
         stream = stub.DropProject(
-            api_pb2.DropRequest(uri=project)
+            api_pb2.DropRequest(uri=project),
         )
         count = 0
         for item in stream:
             count += 1
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
-        print(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("clear")
@@ -246,7 +249,7 @@ def clear_cache():
     """
     with connect() as stub:
         stub.ClearCache(
-            api_pb2.Empty()
+            api_pb2.Empty(),
         )
 
 
@@ -257,15 +260,15 @@ def list_cache(status: str):
     """
     with connect() as stub:
         stream = stub.ListCache(
-            api_pb2.ListRequest(status_filter=status)
+            api_pb2.ListRequest(status_filter=status),
         )
 
         for k, v in stream.initial_metadata():
             if k == "x-reply-header-cache-count":
-                print("Cache size:", v, file=sys.stderr)
+                click.echo(f"Cache size: {v}", file=sys.stderr)
 
         for item in stream:
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
 
 @cache_commands.command("update")
@@ -275,7 +278,7 @@ def update_cache():
     with connect() as stub:
         stream = stub.UpdateCache(api_pb2.Empty())
         for item in stream:
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
 
 @cache_commands.command("info")
@@ -285,14 +288,14 @@ def project_info(project: str):
     """
     with connect() as stub:
         stream = stub.GetProjectInfo(
-            api_pb2.ProjectRequest(uri=project)
+            api_pb2.ProjectRequest(uri=project),
         )
         count = 0
         for item in stream:
             count += 1
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
-        print(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", file=sys.stderr)
 
 
 @cache_commands.command("catalog")
@@ -302,14 +305,14 @@ def catalog(location: Optional[str]):
     """
     with connect() as stub:
         stream = stub.Catalog(
-            api_pb2.CatalogRequest(location=location)
+            api_pb2.CatalogRequest(location=location),
         )
         count = 0
         for item in stream:
             count += 1
-            print(MessageToJson(item))
+            click.echo(MessageToJson(item))
 
-        print(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", file=sys.stderr)
 
 #
 # Plugins
@@ -330,15 +333,15 @@ def list_plugins():
     import json
     with connect() as stub:
         stream = stub.ListPlugins(
-            api_pb2.Empty()
+            api_pb2.Empty(),
         )
 
         for k, v in stream.initial_metadata():
             if k == "x-reply-header-installed-plugins":
-                print("Installed plugins:", v, file=sys.stderr)
+                click.echo("Installed plugins:", v, file=sys.stderr)
 
         for item in stream:
-            print(
+            click.echo(
                 json.dumps(
                     dict(
                         name=item.name,
@@ -347,7 +350,7 @@ def list_plugins():
                         metadata=json.loads(item.json_metadata),
                     ),
                     indent=4,
-                )
+                ),
             )
 
 
@@ -368,7 +371,7 @@ def get_config():
     """
     with connect() as stub:
         resp = stub.GetConfig(api_pb2.Empty())
-        print(resp.json)
+        click.echo(resp.json)
 
 
 @config_commands.command("set")
@@ -385,7 +388,7 @@ def set_config(config: str):
             json.loads(config)
             stub.SetConfig(api_pb2.JsonConfig(json=config))
         except json.JSONDecodeError as err:
-            print(err, file=sys.stderr)
+            click.echo(err, file=sys.stderr)
 
 
 @config_commands.command("reload")
@@ -413,7 +416,7 @@ def get_status_env():
     """
     with connect() as stub:
         resp = stub.GetEnv(api_pb2.Empty())
-        print(resp.json)
+        click.echo(resp.json)
 
 
 @status_commands.command("disable")
@@ -449,9 +452,9 @@ def ping(count: int, server: bool = False):
             _t_start = time()
             resp = stub.Ping(api_pb2.PingRequest(echo=str(n)))
             _t_end = time()
-            print(
-                f"({target}) ",
-                f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end-_t_start) * 1000.)} ms",
+            click.echo(
+                f"({target}) "
+                f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end - _t_start) * 1000.)} ms",
             )
             sleep(1)
 
@@ -468,10 +471,10 @@ def healthcheck_status(watch: bool, server: bool):
         request = health_pb2.HealthCheckRequest(service=target)
         if watch:
             for resp in stub.Watch(request):
-                print(f"{target}:", ServingStatus.Name(resp.status))
+                click.echo(f"{target}:", ServingStatus.Name(resp.status))
         else:
             resp = stub.Check(request)
-            print(f"{target}", ServingStatus.Name(resp.status))
+            click.echo(f"{target}", ServingStatus.Name(resp.status))
 
 
 @cli_commands.command("stats")
@@ -486,10 +489,10 @@ def display_stats(watch: bool, interval: int):
     """
     with connect() as stub:
         resp = stub.Stats(api_pb2.Empty())
-        print(MessageToJson(resp))
+        click.echo(MessageToJson(resp))
         if watch:
             resp = stub.Stats(api_pb2.Empty())
-            print(MessageToJson(resp))
+            click.echo(MessageToJson(resp))
             sleep(interval)
 
 

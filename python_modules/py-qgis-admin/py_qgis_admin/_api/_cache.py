@@ -1,7 +1,14 @@
 # import traceback
 from aiohttp import web
-from pydantic import BaseModel, TypeAdapter, ValidationError, WithJsonSchema
-from typing_extensions import Annotated, Dict, List
+from pydantic import (
+    BaseModel,
+    Json,
+    JsonValue,
+    TypeAdapter,
+    ValidationError,
+    WithJsonSchema,
+)
+from typing_extensions import Annotated, Dict, List, no_type_check
 
 from .. import swagger
 from ..errors import ServiceNotAvailable
@@ -16,7 +23,7 @@ class CatalogItem(BaseModel):
         WithJsonSchema({
             "type": "string",
             "format": "date-time",
-        })
+        }),
     ]
     name: str
     publicUri: str
@@ -36,7 +43,8 @@ CacheContentResponse = swagger.model(
 )
 
 
-def cache_content_response(request, label: str, response: Dict[str, Dict[str, Dict]]):
+@no_type_check
+def cache_content_response(request: web.Request, label: str, response: Dict[str, JsonValue]) -> Json:
     return CacheContentResponse.dump_json(
         CacheContentResponse.validate_python({
             uri: {
@@ -177,8 +185,8 @@ class _Cache:
                 text=cache_content_response(
                     request,
                     pool.label,
-                    response
-                )
+                    response,
+                ),
             )
         except ServiceNotAvailable:
             _http_error(
@@ -231,7 +239,7 @@ class _Cache:
                 text=cache_content_response(
                     request,
                     pool.label,
-                    response
+                    response,
                 ),
             )
         except ServiceNotAvailable:
@@ -292,7 +300,7 @@ class _Cache:
                 text=cache_content_response(
                     request,
                     pool.label,
-                    response
+                    response,
                 ),
             )
         except ValidationError as e:

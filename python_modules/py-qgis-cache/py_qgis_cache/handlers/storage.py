@@ -12,7 +12,7 @@ import traceback
 
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, Iterator, Optional
+from typing import Callable, Dict, Iterator, Optional, Type, TypeAlias
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsProjectStorage
@@ -23,16 +23,18 @@ from ..common import IProtocolHandler, ProjectMetadata, Url
 from ..config import ProjectsConfig
 from ..storage import load_project_from_uri
 
-__all__ = []
+__all__ = []  # type: ignore
 
 
-RESOLVERS = {}
+ResolverFactory: TypeAlias = Type['_UrlResolver'] | Callable[[], '_UrlResolver']
+
+RESOLVERS: Dict[str, ResolverFactory] = {}
 
 
-def resolver_for(name: str):
+def resolver_for(name: str) -> Callable:
     """ Decorator for resolver
     """
-    def wrapper(klass):
+    def wrapper(klass: Type[_UrlResolver]) -> Type[_UrlResolver]:
         RESOLVERS[name] = klass
         return klass
     return wrapper
@@ -54,30 +56,34 @@ def resolver_for(name: str):
 # does not have some canonical
 # form for storage uri
 #
-class _DefaultUrlResolver:
+class _UrlResolver:
+    parameter: str = "project"
+
     def resolve_url(self, url: Url) -> str:
         qs = parse_qs(url.query)
+        # Check that the parameter is not already
+        # defined in the query string
         if self.parameter not in qs:
             qs[self.parameter] = [url.path]
-            qs = urlencode(qs, doseq=True)
-            url = url._replace(path="", query=qs)
+            url = url._replace(path="", query=urlencode(qs, doseq=True))
         return urlunsplit(url)
 
     def build_path(self, url: str | Url, location: str, _: Url) -> str:
-        if not isinstance(url, Url):
+        if isinstance(url, str):
             url = urlsplit(url)
         return str(Path(location).joinpath(
-            parse_qs(url.query)[self.parameter][0]
+            parse_qs(url.query)[self.parameter][0],
         ))
 
 
 @resolver_for('postgresql')
-class _Resolver(_DefaultUrlResolver):  # noqa F811
-    parameter = 'project'
+class PosgresqlResolver(_UrlResolver):
+    # Postgres storage use 'project' as parameter
+    pass
 
 
 @resolver_for('geopackage')
-class _Resolver(_DefaultUrlResolver):  # noqa F811
+class GeopackageResolver(_UrlResolver):
     parameter = 'projectName'
 
 
@@ -86,7 +92,7 @@ class _Resolver(_DefaultUrlResolver):  # noqa F811
 #
 
 
-def register_handlers(resolvers: Optional[Dict[str, Callable[[Url], str]]] = None):
+def register_handlers(resolvers: Optional[Dict[str, ResolverFactory]] = None):
     """ Register storage handlers as protocol handlers
     """
     resolvers = resolvers or RESOLVERS
@@ -94,16 +100,17 @@ def register_handlers(resolvers: Optional[Dict[str, Callable[[Url], str]]] = Non
     for ps in sr.projectStorages():
         storage = ps.type()
         logger.info("### Registering storage handler for %s", storage)
+        resolver = resolvers.get(storage) or _UrlResolver
         componentmanager.gComponentManager.register_service(
             f'@3liz.org/cache/protocol-handler;1?scheme={storage}',
-            QgisStorageProtocolHandler(ps, resolvers.get(storage)()),
+            QgisStorageProtocolHandler(ps, resolver()),
         )
 
 
 def load_resolvers(confdir: Path):
     """ Load resolvers configuration
     """
-    resolver_file = confdir.join('resolvers.py')
+    resolver_file = confdir.joinpath('resolvers.py')
     if resolver_file.exists():
         logger.info("Loading path resolvers for qgis storage")
         with resolver_file.open() as source:
@@ -134,11 +141,10 @@ def init_storage_handlers(confdir: Optional[Path]):
 class QgisStorageProtocolHandler(IProtocolHandler):
     """ Handle postgres protocol
     """
-
     def __init__(
             self,
             storage: QgsProjectStorage,
-            resolver: Optional[Callable[[Url], str]] = None,
+            resolver: Optional[_UrlResolver] = None,
     ):
         self._storage = storage
         self._resolver = resolver
@@ -146,7 +152,7 @@ class QgisStorageProtocolHandler(IProtocolHandler):
     def resolve_uri(self, url: Url) -> str:
         """ Override
         """
-        return self._resolver.resolve_url(url) if self._resolver else url
+        return self._resolver.resolve_url(url) if self._resolver else urlunsplit(url)
 
     def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
         """ Override
@@ -154,7 +160,7 @@ class QgisStorageProtocolHandler(IProtocolHandler):
         if self._resolver:
             return self._resolver.build_path(url, location, rooturl)
         else:
-            if not isinstance(url, Url):
+            if isinstance(url, str):
                 url = urlsplit(url)
             return str(Path(location).joinpath(url.path))
 
@@ -184,7 +190,7 @@ class QgisStorageProtocolHandler(IProtocolHandler):
         # Precondition
         # If there is problem here, then it comes from the
         # path resolver configuration
-        assert self._storage.isSupportedUri(url), f"Unsupported {uri} for '{self._storage.type()}'"
+        assert self._storage.isSupportedUri(uri), f"Unsupported {uri} for '{self._storage.type()}'"
 
         for _uri in self._storage.listProjects(uri):
             yield self._project_storage_metadata(_uri, url.scheme)
@@ -203,5 +209,5 @@ class QgisStorageProtocolHandler(IProtocolHandler):
             name=md.name,
             scheme=scheme,
             storage=self._storage.type(),
-            last_modified=datetime.timestamp(last_modified),
+            last_modified=int(datetime.timestamp(last_modified)),
         )

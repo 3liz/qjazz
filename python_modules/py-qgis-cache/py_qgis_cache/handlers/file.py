@@ -24,17 +24,17 @@ from ..storage import load_project_from_uri
 # Allowed files suffix for projects
 PROJECT_SFX = ('.qgs', '.qgz')
 
-__all__ = []
+__all__ = []  # type: ignore
 
 
-def file_metadata(path: Path):
+def file_metadata(path: Path) -> ProjectMetadata:
     st = path.stat()
     return ProjectMetadata(
         uri=str(path),
         name=path.stem,
         scheme='file',
         storage='file',
-        last_modified=st.st_mtime
+        last_modified=int(st.st_mtime),
     )
 
 
@@ -65,12 +65,12 @@ class FileProtocolHandler(IProtocolHandler):
     def resolve_uri(self, uri: Url) -> str:
         """ Override
         """
-        return Path(uri.path)
+        return uri.path
 
     def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
         """ Override
         """
-        if not isinstance(url, Url):
+        if isinstance(url, str):
             url = urlsplit(url)
         relpath = Path(url.path).relative_to(rooturl.path)
         return str(Path(location).joinpath(relpath))

@@ -9,10 +9,11 @@ from pathlib import Path
 
 import click
 
-from typing_extensions import List, Optional
+from typing_extensions import Any, List, Optional
 
 from py_qgis_contrib.core import config, logger
 
+from .resolvers import BaseResolverConfig
 from .service import PoolClient, ResolverConfig, Service
 
 FilePathType = click.Path(
@@ -29,7 +30,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> con
     if configpath:
         cnf = config.read_config_toml(
             configpath,
-            location=str(configpath.parent.absolute())
+            location=str(configpath.parent.absolute()),
         )
     else:
         cnf = {}
@@ -38,9 +39,9 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> con
         # Load external configuration if requested
         asyncio.run(config.confservice.conf.config_url.load_configuration())
         if verbose:
-            print(config.confservice.conf.model_dump_json(indent=4))
+            click.echo(config.confservice.conf.model_dump_json(indent=4))
     except config.ConfigError as err:
-        print("Configuration error:", err)
+        click.echo(f"Configuration error: {err}")
         sys.exit(1)
 
     logger.setup_log_handler(logger.LogLevel.TRACE if verbose else None)
@@ -48,7 +49,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> con
     return config.confservice.conf
 
 
-def get_pool(config, name: str) -> Optional[PoolClient]:
+def get_pool(config: BaseResolverConfig, name: str) -> Optional[PoolClient]:
     """ Create a pool client from config
     """
     for resolver in config.get_resolvers():
@@ -84,10 +85,10 @@ def cli_commands():
 
 def print_pool_status(pool, statuses):
     statuses = dict(statuses)
-    print(f"{pool.label:<15}{pool.address:<15}", "backends:", len(pool))
+    click.echo(f"{pool.label:<15}{pool.address:<15} backends: {len(pool)}")
     for i, s in enumerate(pool.backends):
         status = "ok" if statuses[s.address] else "unavailable"
-        print(f"{i+1:>2}.", f"{s.address:<20}", status)
+        click.echo(f"{i + 1:>2}. {s.address:<20} {status}")
 
 #
 # Watch
@@ -100,30 +101,30 @@ def print_pool_status(pool, statuses):
 def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
     """ Watch a cluster of qgis gRPC services
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
     if host:
-        async def _watch(pool):
+        async def _watch1(pool):
             await pool.update_backends()
             async for statuses in pool.watch():
                 print_pool_status(pool, statuses)
 
         pool = get_pool(conf.resolvers, host)
         if pool is not None:
-            asyncio.run(_watch(pool))
+            asyncio.run(_watch1(pool))
         else:
-            print("ERROR: ", host, "not found", file=sys.stderr)
+            click.echo(f"ERROR: {host} not found", file=sys.stderr)
     else:
         service = Service(conf.resolvers)
         if not service.num_pools():
-            print("No servers", file=sys.stderr)
+            click.echo("No servers", file=sys.stderr)
             return
 
-        async def _watch():
+        async def _watch0():
             await service.synchronize()
             async for pool, statuses in service.watch():
                 print_pool_status(pool, statuses)
 
-        asyncio.run(_watch())
+        asyncio.run(_watch0())
 
 
 #
@@ -135,18 +136,18 @@ def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
 def list_pools(verbose: bool, configpath: Optional[Path]):
     """ List all pools
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
     service = Service(conf.resolvers)
     if not service.num_pools():
-        print("No servers", file=sys.stderr)
+        click.echo("No servers", file=sys.stderr)
         return
 
     async def _display():
         await service.synchronize()
         for n, pool in enumerate(service.pools):
-            print(f"Pool {n+1:>2}.", f"{pool.label:<15}{pool.address:<15} backends:", len(pool))
+            click.echo(f"Pool {n + 1:>2}. {pool.label:<15}{pool.address:<15} backends: {len(pool)}")
             for s in pool.backends:
-                print(" *", s.address)
+                click.echo(f" * {s.address}")
 
     asyncio.run(_display())
 
@@ -156,28 +157,28 @@ def list_pools(verbose: bool, configpath: Optional[Path]):
 @click.option("--watch", is_flag=True, help="Check periodically")
 @click.option("--interval", help="Check interval (seconds)", default=3)
 @global_options()
-def stats(verbose: bool, host: Optional[str], watch: bool, interval: int, configpath: Optional[Path]):
+def stats(verbose: bool, host: str, watch: bool, interval: int, configpath: Optional[Path]):
     """ Output  qgis gRPC services stats
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     if watch:
         async def _watch(pool):
             await pool.update_backends()
             async for stats in pool.watch_stats(interval):
-                print(json.dumps([r for _, r in stats], indent=4, sort_keys=True))
+                click.echo(json.dumps([r for _, r in stats], indent=4, sort_keys=True))
 
     else:
         async def _watch(pool):
             await pool.update_backends()
             stats = await pool.stats()
-            print(json.dumps([r for _, r in stats], indent=4, sort_keys=True))
+            click.echo(json.dumps([r for _, r in stats], indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_watch(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 #
 # Configuration
@@ -195,24 +196,24 @@ def conf_commands():
 @click.option("--format", "indent", is_flag=True, help="Display formatted")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
-def get_conf(indent: bool, verbose: bool, host: Optional[str], configpath: Optional[Path]):
+def get_conf(indent: bool, verbose: bool, host: str, configpath: Optional[Path]):
     """ Output gRPC services configuration
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _conf(pool):
         await pool.update_backends()
         confdata = await pool.get_config()
         if indent:
-            print(json.dumps(json.loads(confdata), indent=4, sort_keys=True))
+            click.echo(json.dumps(json.loads(confdata), indent=4, sort_keys=True))
         else:
-            print(confdata)
+            click.echo(confdata)
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_conf(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 @conf_commands.command('set')
@@ -222,11 +223,11 @@ def get_conf(indent: bool, verbose: bool, host: Optional[str], configpath: Optio
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def set_conf(
-    newconf,
+    newconf: str,
     validate: bool,
     verbose: bool,
     diff: bool,
-    host: Optional[str],
+    host: str,
     configpath: Optional[Path],
 ):
     """ Change gRPC services configuration
@@ -242,24 +243,24 @@ def set_conf(
         try:
             json.loads(newconf)
         except json.JSONDecodeError as err:
-            print(err, file=sys.stderr)
+            click.echo(err, file=sys.stderr)
             sys.exit(1)
 
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _conf(pool):
         await pool.update_backends()
         jdiff = await pool.set_config(newconf, return_diff=diff)
         if jdiff is not None:
-            print(jdiff)
+            click.echo(jdiff)
         else:
-            print(pool.label)
+            click.echo(pool.label)
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_conf(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 #
@@ -278,18 +279,18 @@ def print_catalog(
 ):
     """ Print catalog for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _catalog(pool):
         await pool.update_backends()
         async for item in pool.catalog(location):
-            print(json.dumps(item, indent=4, sort_keys=True))
+            click.echo(json.dumps(item, indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_catalog(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 #
 # Cache commands
@@ -313,17 +314,17 @@ def cache_commands():
 def print_cache_content(verbose: bool, host: str, configpath: Optional[Path]):
     """ Print cache content for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _cache_list(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.cache_content(), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.cache_content(), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_cache_list(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 #
@@ -336,17 +337,17 @@ def print_cache_content(verbose: bool, host: str, configpath: Optional[Path]):
 def sync_cache(verbose: bool, host: str, configpath: Optional[Path]):
     """ Synchronize cache content for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _sync_cache(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.synchronize_cache(), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.synchronize_cache(), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_sync_cache(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 #
 # Cache clear
@@ -359,18 +360,18 @@ def sync_cache(verbose: bool, host: str, configpath: Optional[Path]):
 def clear_cache(verbose: bool, host: str, configpath: Optional[Path]):
     """ Clear cache content for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _cache_clear(pool):
         await pool.update_backends()
         await pool.clear_cache()
-        print("{}")
+        click.echo("{}")
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_cache_clear(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 #
@@ -389,17 +390,17 @@ def pull_projects(
 ):
     """ Pull projects in cache for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _pull_projects(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.pull_projects(*projects), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.pull_projects(*projects), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_pull_projects(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 @cache_commands.command('checkout')
@@ -414,17 +415,17 @@ def checkout_project(
 ):
     """ Pull projects in cache for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _checkout_project(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.checkout_project(project), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.checkout_project(project), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_checkout_project(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 @cache_commands.command('drop')
@@ -439,17 +440,17 @@ def drop_project(
 ):
     """ Drop PROJECT from cache for 'host'
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _drop_project(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.drop_project(project), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.drop_project(project), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_drop_project(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 @cache_commands.command('info')
@@ -464,17 +465,17 @@ def project_info(
 ):
     """ Get project's details
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _project_info(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.project_info(project), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.project_info(project), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_project_info(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 #
 # Plugins commands
@@ -491,17 +492,17 @@ def list_plugins(
 ):
     """ List backend's loaded plugins
     """
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
 
     async def _list_plugins(pool):
         await pool.update_backends()
-        print(json.dumps(await pool.list_plugins(), indent=4, sort_keys=True))
+        click.echo(json.dumps(await pool.list_plugins(), indent=4, sort_keys=True))
 
     pool = get_pool(conf.resolvers, host)
     if pool is not None:
         asyncio.run(_list_plugins(pool))
     else:
-        print("ERROR: ", host, "not found", file=sys.stderr)
+        click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
 @cli_commands.group('doc')
@@ -524,7 +525,7 @@ def dump_swagger_doc(to_yaml: bool):
         yaml = YAML()
         yaml.dump(doc.model_dump(), sys.stdout)
     else:
-        print(doc.model_dump_json())
+        click.echo(doc.model_dump_json())
 
 
 @doc_commands.command('config')
@@ -542,7 +543,7 @@ def dump_config_schema(out_fmt: str, pretty: bool):
         case 'json':
             json_schema = config.confservice.json_schema()
             indent = 4 if pretty else None
-            print(json.dumps(json_schema, indent=indent))
+            click.echo(json.dumps(json_schema, indent=indent))
         case 'yaml':
             from ruamel.yaml import YAML
             json_schema = config.confservice.json_schema()
@@ -562,7 +563,7 @@ def serve(
     """
     from . import server
 
-    conf = load_configuration(configpath, verbose)
+    conf: Any = load_configuration(configpath, verbose)
     server.serve(conf)
 
 

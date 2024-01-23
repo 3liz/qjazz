@@ -1,15 +1,16 @@
 import asyncio
-import sys  # noqa
+import sys
 
 from functools import wraps
 from pathlib import Path
 
 import click
 
-from typing_extensions import Optional
+from typing_extensions import Optional, cast
 
 from .config import (
     ENV_CONFIGFILE,
+    Config,
     add_configuration_sections,
     confservice,
     load_configuration,
@@ -55,9 +56,9 @@ def serve_http(configpath: Path, verbose: bool):
 
     from py_qgis_contrib.core.config import ConfigProxy
 
-    print("Qgis HTTP middleware", confservice.version, flush=True)
+    click.echo(f"Qgis HTTP middleware {confservice.version}")
     conf = load_configuration(configpath, verbose)
-    conf = ConfigProxy("", _default=conf)
+    conf = cast(Config, ConfigProxy("", _default=conf))
     asyncio.run(serve(conf))
 
 
@@ -88,7 +89,7 @@ def print_config(
             case 'json':
                 json_schema = confservice.json_schema()
                 indent = 4 if pretty else None
-                print(json.dumps(json_schema, indent=indent))
+                click.echo(json.dumps(json_schema, indent=indent))
             case 'yaml':
                 from ruamel.yaml import YAML
                 json_schema = confservice.json_schema()
@@ -97,7 +98,7 @@ def print_config(
             case 'toml':
                 confservice.dump_toml_schema(sys.stdout)
     else:
-        print(load_configuration(configpath, verbose).model_dump_json(indent=indent))
+        click.echo(load_configuration(configpath, verbose).model_dump_json(indent=indent))
 
 
 def main():

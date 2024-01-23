@@ -6,11 +6,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from time import time
-from typing import Any, AsyncIterator, Generator, Iterable, Iterator, Tuple
+from typing import AsyncGenerator, AsyncIterator, Iterable, Iterator, Tuple
 
 import grpc
 
 from grpc_health.v1 import health_pb2
+from grpc_health.v1._async import HealthServicer
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import confservice, read_config_toml
@@ -42,25 +43,38 @@ def _match_grpc_code(code: int) -> grpc.StatusCode:
             return grpc.StatusCode.UNKNOWN
 
 
-def _headers_to_metadata(coll: Iterable[Tuple[str, Any]]):
-    return ((f"x-reply-header-{k.lower()}", str(v)) for k, v in coll)
+def _headers_to_metadata(coll: Iterable[Tuple[str, str]]) -> Iterator[Tuple[str, str]]:
+    return ((f"x-reply-header-{k.lower()}", v) for k, v in coll)
 
 
 def _to_iso8601(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat(timespec='milliseconds')
 
 
-async def _abort_on_error(context: grpc.aio.ServicerContext, code: int, details: str, request: str):
+async def _abort_on_error(
+    context: grpc.aio.ServicerContext,
+    code: int,
+    details: str,
+    request: str,
+):
     logger.log_req("%s\t%s\t%s", code, request, details)
     await context.send_initial_metadata(
-        [('x-reply-status-code', str(code))]
+        [('x-reply-status-code', str(code))],
     )
     await context.abort(_match_grpc_code(code), details)
 
 
 class WorkerMixIn:
+
+    # Hint for mypy that attribute is expected to exists
+    _pool: WorkerPool
+
     @asynccontextmanager
-    async def get_worker(self, context, request: str) -> Worker:
+    async def get_worker(
+        self,
+        context: grpc.aio.ServicerContext,
+        request: str,
+    ) -> AsyncGenerator[Worker, None]:
         try:
             async with self._pool.get_worker() as worker:
                 yield worker
@@ -68,7 +82,11 @@ class WorkerMixIn:
             await _abort_on_error(context, e.code, e.details, request)
 
     @asynccontextmanager
-    async def wait_for_all_workers(self, context, request: str) -> Iterator[Worker]:
+    async def wait_for_all_workers(
+        self,
+        context: grpc.aio.ServicerContext,
+        request: str,
+    ) -> AsyncGenerator[Iterator[Worker], None]:
         try:
             async with self._pool.wait_for_all_workers() as workers:
                 yield workers
@@ -107,7 +125,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         self,
         request: api_pb2.OwsRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.ResponseChunk, None, None]:
+    ) -> AsyncIterator[api_pb2.ResponseChunk]:
 
         if request.request_id:
             logger.log_rreq(
@@ -166,7 +184,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 request.request,
                 request.target,
                 size,
-                int((_t_end-_t_start)*1000.),
+                int((_t_end - _t_start) * 1000.),
                 f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
@@ -177,7 +195,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         self,
         request: api_pb2.ApiRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.ResponseChunk, None, None]:
+    ) -> AsyncIterator[api_pb2.ResponseChunk]:
 
         if request.request_id:
             logger.log_rreq(
@@ -196,8 +214,8 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             try:
                 http_method = _m.HTTPMethod[request.method]
             except KeyError:
-                resp = f"Invalid method {request.method}"
-                await _abort_on_error(context, 405, resp, "ExecuteApiRequest")
+                details = f"Invalid method {request.method}"
+                await _abort_on_error(context, 405, details, "ExecuteApiRequest")
 
             resp, stream = await worker.api_request(
                 name=request.name,
@@ -246,7 +264,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 request.url,
                 request.target,
                 size,
-                int((_t_end-_t_start)*1000.),
+                int((_t_end - _t_start) * 1000.),
                 f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
@@ -258,7 +276,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         self,
         request: api_pb2.GenericRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.ResponseChunk, None, None]:
+    ) -> AsyncIterator[api_pb2.ResponseChunk]:
 
         if request.request_id:
             logger.log_req(
@@ -276,10 +294,10 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             try:
                 http_method = _m.HTTPMethod[request.method]
             except KeyError:
-                resp = f"Invalid method {request.method}"
-                await _abort_on_error(context, 405, resp, "ExecuteRequest")
+                details = f"Invalid method {request.method}"
+                await _abort_on_error(context, 405, details, "ExecuteRequest")
 
-            status, stream = await worker.request(
+            resp, stream = await worker.request(
                 url=request.url,
                 method=http_method,
                 data=request.data,
@@ -320,7 +338,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 request.url,
                 request.target,
                 size,
-                int((_t_end-_t_start)*1000.),
+                int((_t_end - _t_start) * 1000.),
                 f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
@@ -334,7 +352,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
     def __init__(
         self,
         pool: WorkerPool,
-        health_servicer,
+        health_servicer: HealthServicer,
         restore: Restore,
     ):
         super().__init__()
@@ -368,7 +386,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 status = ServingStatus.NOT_SERVING
         logger.debug(
             "Setting server Healthcheck status to %s",
-            ServingStatus.Name(status)
+            ServingStatus.Name(status),
         )
         await self._health_servicer.set("QgisServer", status)
         return api_pb2.Empty()
@@ -380,7 +398,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
+    ) -> AsyncIterator[api_pb2.CacheInfo]:
 
         async with self.wait_for_all_workers(context, "CheckoutProject") as workers:
             for w in workers:
@@ -400,7 +418,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         requests: AsyncIterator[api_pb2.ProjectRequest],
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
+    ) -> AsyncIterator[api_pb2.CacheInfo]:
 
         async with self.wait_for_all_workers(context, "PullProjects") as workers:
             async for req in requests:
@@ -417,7 +435,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.CheckoutRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
+    ) -> AsyncIterator[api_pb2.CacheInfo]:
 
         async with self.wait_for_all_workers(context, "DropProject") as workers:
             for w in workers:
@@ -433,17 +451,17 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.ListRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
+    ) -> AsyncIterator[api_pb2.CacheInfo]:
         """ Sent cache list from all workers
         """
         try:
             status_filter = _m.CheckoutStatus[request.status_filter]
         except KeyError:
-            status_filter = ""
+            status_filter = None
 
         async with self.wait_for_all_workers(context, "ListCache") as workers:
             count = 0
-            cachelist = tuple()
+            cachelist: Tuple[AsyncIterator[_m.CacheInfo], ...] = tuple()
             for w in workers:
                 n, items = await w.list_cache(status_filter)
                 if items:
@@ -479,8 +497,9 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.Empty,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CacheInfo, None, None]:
-
+    ) -> AsyncIterator[api_pb2.CacheInfo]:
+        """ Update and synchronize all Worker's cache
+        """
         async with self.wait_for_all_workers(context, "UpdateCache") as workers:
             _workers = list(workers)
             _all = set()
@@ -488,11 +507,12 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 # Collect all items for all workers
                 _, items = await w.list_cache()
                 if items:
-                    _all.update(item.uri async for item in items)
+                    async for item in items:
+                        _all.add(item.uri)
             for uri in _all:
                 # Update all items for all workers
                 for w in _workers:
-                    yield await w.checkout(uri, pull=True)
+                    yield _new_cache_info(await w.checkout_project(uri, pull=True))
 
     #
     # List Catalog Items
@@ -501,7 +521,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.CatalogRequest,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.CatalogItem, None, None]:
+    ) -> AsyncIterator[api_pb2.CatalogItem]:
 
         async with self.get_worker(context, "Catalog") as worker:
             items = await worker.catalog(location=request.location)
@@ -562,7 +582,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.Empty,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.PluginInfo, None, None]:
+    ) -> AsyncIterator[api_pb2.PluginInfo]:
 
         count, plugins = self._pool.list_plugins()
         await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
@@ -586,12 +606,13 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 
         try:
             rv = self._pool.config_dump_json()
-            return api_pb2.JsonConfig(json=rv)
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "GetConfig")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "GetConfig")
+
+        return api_pb2.JsonConfig(json=rv)
 
     #
     # Set Config
@@ -609,12 +630,13 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 
         try:
             await self._pool.update_config(obj)
-            return api_pb2.Empty()
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "SetConfig")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "SetConfig")
+
+        return api_pb2.Empty()
 
     #
     # Reload config
@@ -632,8 +654,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 obj = await confservice.conf.config_url.load_configuration()
             elif ENV_CONFIGFILE in os.environ:
                 # Fallback to configfile (if any)
-                configpath = os.environ[ENV_CONFIGFILE]
-                configpath = Path(configpath)
+                configpath = Path(os.environ[ENV_CONFIGFILE])
                 logger.info("** Reloading config from %s **", configpath)
                 obj = read_config_toml(
                     configpath,
@@ -643,7 +664,6 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 obj = {}
 
             await self._pool.update_config(obj)
-            return api_pb2.Empty()
         except RemoteConfigError as err:
             await _abort_on_error(context, 502, str(err), "Reload")
         except WorkerError as e:
@@ -652,6 +672,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "Reload")
 
+        return api_pb2.Empty()
+
     #
     # Get Env Status
     #
@@ -659,15 +681,18 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         self,
         request: api_pb2.Empty,
         context: grpc.aio.ServicerContext,
-    ) -> Generator[api_pb2.JsonConfig, None, None]:
+    ) -> api_pb2.JsonConfig:
 
         try:
-            return api_pb2.JsonConfig(json=json.dumps(self._pool.env))
+            rv = api_pb2.JsonConfig(json=json.dumps(self._pool.env))
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "GetEnv")
         except Exception as err:
             logger.critical(traceback.format_exc())
             await _abort_on_error(context, 500, str(err), "GetEnv")
+        # Make mypy happy with return statement since it does not knows
+        # that _abort_on_error actually raise an exception.
+        return rv
 
     #
     # Stats
@@ -684,17 +709,17 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             stopped_workers=self._pool.stopped_workers,
             worker_failure_pressure=self._pool.worker_failure_pressure,
             request_pressure=self._pool.request_pressure,
-            uptime=int(time() - self._pool.start_time)
+            uptime=int(time() - self._pool.start_time),
         )
 
 
 #
 # Build a cache info from response
 #
-def _new_cache_info(resp) -> api_pb2.CacheInfo:
+def _new_cache_info(resp: _m.CacheInfo) -> api_pb2.CacheInfo:
 
     last_modified = _to_iso8601(
-        datetime.fromtimestamp(resp.last_modified)
+        datetime.fromtimestamp(resp.last_modified),
     ) if resp.last_modified else ""
 
     timestamp = int(resp.timestamp) if resp.timestamp else -1

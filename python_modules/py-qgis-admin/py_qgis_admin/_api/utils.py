@@ -25,7 +25,7 @@ from ..models import ErrorResponse
 API_VERSION = "v1"
 
 
-def _public_url(request, path: str) -> str:
+def _public_url(request: web.Request, path: str) -> str:
     """ Return the public base url
     """
     host = request.host
@@ -64,12 +64,12 @@ class BaseHandlers:
         self.service = srvc
 
 
-def _href(request, path: str) -> str:
+def _href(request: web.Request, path: str) -> str:
     return _public_url(request, f"/{API_VERSION}{path}")
 
 
 def _link(
-    request,
+    request: web.Request,
     rel: str,
     path: str,
     mime_type: str = "application/json",

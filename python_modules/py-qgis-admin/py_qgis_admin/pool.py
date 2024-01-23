@@ -8,15 +8,18 @@ import grpc
 import jsondiff
 
 from google.protobuf import json_format
-from pydantic import Json
+from google.protobuf.message import Message
+from pydantic import Json, JsonValue
 from typing_extensions import (
     AsyncIterator,
     Dict,
+    Generator,
     Iterator,
     List,
     Optional,
     Sequence,
     Tuple,
+    cast,
 )
 
 from py_qgis_contrib.core import logger
@@ -27,7 +30,7 @@ from .errors import RequestArgumentError, ServiceNotAvailable
 from .resolvers import Resolver
 
 
-def MessageToDict(message) -> Dict:
+def MessageToDict(message: Message) -> Dict[str, JsonValue]:
     return json_format.MessageToDict(
         message,
         including_default_value_fields=True,
@@ -35,13 +38,13 @@ def MessageToDict(message) -> Dict:
     )
 
 
-def reduce_cache(acc: Dict, item: api_pb2.CacheInfo) -> Dict:
+def reduce_cache(acc: Dict[str, JsonValue], item: api_pb2.CacheInfo) -> Dict:
     """ Reduce cache info and check for consistency
 
         If status are not the same (cache not sync'ed) then
         set the status to 'None'
     """
-    status = acc.status
+    status = acc['status']
     if status and status != item.status:
         acc.update(status=None)
     try:
@@ -66,10 +69,9 @@ class PoolClient:
 
     def __init__(self, resolver: Resolver):
         self._resolver = resolver
-        self._backends = []
-        self._tasks = []
+        self._backends: List[Backend] = []
         self._shutdown = False
-        self._sync_events = ()
+        self._sync_events: Tuple[asyncio.Event, ...] = ()
 
     def __len__(self):
         return len(self._backends)
@@ -89,7 +91,7 @@ class PoolClient:
             await s.shutdown()
 
     @contextmanager
-    def sync_event(self) -> asyncio.Event:
+    def sync_event(self) -> Generator[asyncio.Event, None, None]:
         """ Return a new event for synchronization
         """
         event = asyncio.Event()
@@ -98,7 +100,7 @@ class PoolClient:
             yield event
         finally:
             evts = self._sync_events
-            self._sync_events = tuple(e for e in evts if e is not event)
+            self._sync_events = tuple(e for e in evts if e is not event)  # type: ignore
 
     def _sync(self):
         """ Set all synchronization events
@@ -107,13 +109,13 @@ class PoolClient:
             evt.set()
 
     @property
-    def backends(self) -> Sequence[Backend]:
+    def backends(self) -> Iterator[Backend]:
         for server in self._backends:
             yield server
 
     async def enable_backends(self, enable: bool):
         for s in self._backends:
-            s.enable_server(enable)
+            await s.enable_server(enable)
 
     async def update_backends(self):
         """ Set up all clients from resolver
@@ -136,6 +138,7 @@ class PoolClient:
             return
 
         def _update():
+            background_tasks = set()
             for server in self._backends:
                 if server.address in removed_addr:
                     logger.warning(
@@ -143,7 +146,11 @@ class PoolClient:
                         server.address,
                         self.label,
                     )
-                    asyncio.create_task(server.shutdown())
+                    # See https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+                    # why we need to keep task reference
+                    task = asyncio.create_task(server.shutdown())
+                    background_tasks.add(task)
+                    task.add_done_callback(background_tasks.discard)
                 else:
                     # Keep current servers
                     yield server
@@ -160,7 +167,7 @@ class PoolClient:
     async def watch(self) -> AsyncIterator[Tuple[Tuple[str, bool], ...]]:
         """ Wait for state change in one of the worker
         """
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[Tuple[Backend, bool]] = asyncio.Queue()
         exception = None
 
         async def _watch(server):
@@ -177,7 +184,7 @@ class PoolClient:
                 exception = None
                 try:
                     # Resync
-                    statuses = {}
+                    statuses: Dict[str, bool] = {}
                     watchers = tuple(asyncio.create_task(_watch(s)) for s in self._backends)
                     # Populate statuses
                     while len(statuses) != len(self._backends):
@@ -199,7 +206,7 @@ class PoolClient:
                         # Asked for resync
                         if sync.is_set():
                             break
-                        server, status = done.pop().result()
+                        server, status = done.pop().result()  # type: ignore
                         # Yield on change
                         if status != statuses.get(server.address):
                             statuses[server.address] = status
@@ -265,17 +272,17 @@ class PoolClient:
     # Cache
     #
 
-    async def _reduce_server_cache(self, server) -> Iterator[Tuple[str, Dict]]:
+    async def _reduce_server_cache(self, server: Backend) -> Tuple[str, Iterator[Dict[str, JsonValue]]]:
         """ Consolidate cache for client
         """
-        cached_status = {}
+        cached_status: Dict[str, Dict[str, JsonValue]] = {}
         try:
             async for item in server.list_cache():
                 status = cached_status.get(item.uri)
                 if not status:
                     status = MessageToDict(item)
                     del status['cacheId']
-                    cached_status[status['uri']] = status
+                    cached_status[cast(str, status['uri'])] = status
                 else:
                     reduce_cache(status, item)
         except grpc.RpcError as rpcerr:
@@ -283,12 +290,12 @@ class PoolClient:
                 "Failed to retrieve cache for %s: %s\t%s",
                 server.address,
                 rpcerr.code(),
-                rpcerr.details()
+                rpcerr.details(),
             )
             cached_status.clear()
-        return server.address, cached_status.values()
+        return server.address, iter(cached_status.values())
 
-    async def cache_content(self) -> Dict[str, Dict[str, Dict]]:
+    async def cache_content(self) -> Dict[str, Dict[str, JsonValue]]:
         """ Build a synthetic/consolidated view
             of the cache contents from all
             servers in the cluster.
@@ -297,19 +304,19 @@ class PoolClient:
             by project's resource.
         """
         all_status = await asyncio.gather(
-            *(self._reduce_server_cache(s) for s in self._backends)
+            *(self._reduce_server_cache(s) for s in self._backends),
         )
 
-        result = {}
+        result: Dict[str, Dict[str, JsonValue]] = {}
         # Organize by cache uri
         for addr, status_list in all_status:
             for item in status_list:
-                bucket = result.setdefault(item['uri'], {})
+                bucket = result.setdefault(cast(str, item['uri']), {})
                 bucket[addr] = item
 
         return result
 
-    async def synchronize_cache(self) -> Dict[str, Dict[str, Dict]]:
+    async def synchronize_cache(self) -> Dict[str, Dict[str, JsonValue]]:
         """ Synchronize all caches
             for all instances
         """
@@ -324,12 +331,12 @@ class PoolClient:
                     "Failed to retrieve cache for %s: %s\t%s",
                     server.address,
                     rpcerr.code(),
-                    rpcerr.details()
+                    rpcerr.details(),
                 )
 
         await asyncio.gather(*(_collect(s) for s in self._backends))
 
-        result = {uri: {} for uri in uris}
+        result: Dict[str, Dict[str, JsonValue]] = {uri: {} for uri in uris}
 
         async def _reduce(server):
             try:
@@ -364,15 +371,15 @@ class PoolClient:
         if not serving:
             raise ServiceNotAvailable(self.address)
 
-    async def pull_projects(self, *uris) -> Dict[str, Dict[str, Dict]]:
+    async def pull_projects(self, *uris) -> Dict[str, Dict[str, JsonValue]]:
         """ Pull/Update projects in all cache
         """
-        rv = {}
+        rv: Dict[str, Dict[str, JsonValue]] = {}
         serving = False
 
         for server in self._backends:
             try:
-                cached = {}
+                cached: Dict[str, Dict[str, JsonValue]] = {}
                 async for item in server.pull_projects(*uris):
                     _item = cached.get(item.uri)
                     if not _item:
@@ -409,7 +416,8 @@ class PoolClient:
                         del _item['cacheId']
                     else:
                         reduce_cache(_item, item)
-                rv[server.address] = _item
+                if _item:
+                    rv[server.address] = _item
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -422,7 +430,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def checkout_project(self, uri: str) -> Dict[str, Dict]:
+    async def checkout_project(self, uri: str) -> Dict[str, Dict[str, JsonValue]]:
         """ Pull/Update projects in all cache
         """
         rv = {}
@@ -436,7 +444,8 @@ class PoolClient:
                         del _item['cacheId']
                     else:
                         reduce_cache(_item, item)
-                rv[server.address] = _item
+                if _item:
+                    rv[server.address] = _item
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -449,7 +458,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def project_info(self, uri: str) -> Optional[Dict]:
+    async def project_info(self, uri: str) -> Optional[Dict[str, JsonValue]]:
         """ Pull/Update projects in all cache
 
             Return None if the project is not found
@@ -458,8 +467,7 @@ class PoolClient:
         for server in self._backends:
             try:
                 serving = True
-                item = await server.project_info(uri)
-                item = MessageToDict(item)
+                item = MessageToDict(await server.project_info(uri))
                 item.update(serverAddress=server.address)
                 return item
             except grpc.RpcError as err:
@@ -474,6 +482,7 @@ class PoolClient:
 
         if not serving:
             raise ServiceNotAvailable(self.address)
+        return None  # Makes mypy happy
 
     #
     # Catalog
@@ -528,6 +537,7 @@ class PoolClient:
                     raise
         if not serving:
             raise ServiceNotAvailable(self.address)
+        return None  # Make mypy happy
 
     async def set_config(self, conf: Dict, return_diff: bool = False) -> Optional[Json]:
         """ Change backends configuration
@@ -571,21 +581,21 @@ class PoolClient:
     # Plugins
     #
 
-    async def list_plugins(self) -> List[Dict]:
+    async def list_plugins(self) -> List[Dict[str, JsonValue]]:
         """ Pull/Update projects in all cache
         """
-        plugins = {}
+        plugins: Dict[str, Dict[str, JsonValue]] = {}
         serving = False
         for server in self._backends:
             try:
                 async for item in server.list_plugins():
                     _item = plugins.get(item.name)
-                    if not _item:
+                    if _item is None:
                         _item = MessageToDict(item)
                         _item['backends'] = [server.address]
                         plugins[item.name] = _item
                     else:
-                        _item['backends'].append(server.address)
+                        _item['backends'].append(server.address)  # type: ignore
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
