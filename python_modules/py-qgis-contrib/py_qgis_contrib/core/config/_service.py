@@ -35,6 +35,7 @@ from time import time
 from pydantic import (
     BaseModel,
     Field,
+    JsonValue,
     PlainSerializer,
     PlainValidator,
     ValidationError,
@@ -55,6 +56,7 @@ from typing_extensions import (
 )
 
 from .. import componentmanager
+from ..condition import assert_precondition
 
 # Shortcut
 getenv = os.getenv
@@ -79,7 +81,7 @@ def dict_merge(dct, merge_dct):
             dct[k] = merge_dct[k]
 
 
-def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict:
+def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str, JsonValue]:
     """ Generic config reader
     """
     cfgfile = Path(cfgfile)
@@ -149,7 +151,7 @@ class ConfigService:
 
     def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
         def _model(model):
-            assert isinstance(model, Tuple)
+            assert_precondition(isinstance(model, Tuple))
             match model:
                 case (m,):
                     return (m, m())

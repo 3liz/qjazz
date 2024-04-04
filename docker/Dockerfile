@@ -17,14 +17,15 @@ RUN apt-get update -y \
 
 ARG CACHEBUST="23.11.08"
 
-COPY python_modules /python_modules
+COPY python_modules docker/requirements.txt /python_modules
 
 # Create virtualenv for installing modules
 RUN mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qgisserver \
     && cd /usr/local/bin \
     && /opt/local/qgisserver/bin/pip install -U --no-cache-dir pip setuptools wheel \
-    && /opt/local/qgisserver/bin/pip install --no-cache-dir \
+    && /opt/local/qgisserver/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
+    && /opt/local/qgisserver/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/py-qgis-contrib \
         -e /python_modules/py-qgis-cache \
         -e /python_modules/py-qgis-worker \

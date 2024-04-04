@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   worker:
-    image: 3liz/qgis-services:release
+    image: 3liz/qgis-services:release-eager
     networks:
     - qgis_rpc_network
     hostname: worker
@@ -18,7 +18,7 @@ services:
     - config-server
 
   web:
-    image: 3liz/qgis-services:release
+    image: 3liz/qgis-services:release-eager
     environment:
       CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
     ports:

@@ -76,6 +76,22 @@ class WorkerPool:
         for w in self._workers:
             w.join()
 
+    #async def maintain_pool(self):
+    #    """ Replace dead workers
+    #    """
+    #    replace = []
+    #    for i, worker in enumerate(self._workers):
+    #        if not worker.is_alive():
+    #            w = Worker(self._config, name=f"{self._config.name}_{i}")
+    #            w.start()
+    #            replace.append((i, w))
+    #
+    #    # Wait for convergence
+    #    for i, w in replace:
+    #        await w.ping("")      # Wait for convergence
+    #        self._workers[i] = w  # Replace dead worker
+    #        self._avails.put_nowait(w)
+
     async def initialize(self):
         """ Test that workers are alive
             and populate the queue
@@ -133,7 +149,7 @@ class WorkerPool:
         except asyncio.TimeoutError:
             logger.critical("Worker stalled, terminating...")
             self._shutdown = True
-            worker.terminate()  # This well trigger a SIGCHLD signal
+            worker.terminate()  # This will trigger a SIGCHLD signal
             worker = None       # Do not put back worker on queue
             raise WorkerError(503, "Server stalled")
         except asyncio.CancelledError:
@@ -151,7 +167,7 @@ class WorkerPool:
                 except asyncio.TimeoutError:
                     logger.critical("Worker stalled, terminating...")
                     self._shutdown = True
-                    worker.terminate()  # This well trigger a SIGCHLD signal
+                    worker.terminate()  # This will trigger a SIGCHLD signal
                     worker = None       # Do not put back worker on queue
         except WorkerError:
             raise

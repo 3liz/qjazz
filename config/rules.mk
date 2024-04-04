@@ -3,9 +3,11 @@ TOPTARGET:=test
 
 .PHONY: $(DIRS)
 
-TOPTARGETS:=test lint configure dist deliver install
+TOPTARGETS:=test lint typecheck configure dist deliver install security
 
 $(TOPTARGETS):: $(DIRS)
+
+requirements: $(DIRS)
 
 $(DIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)

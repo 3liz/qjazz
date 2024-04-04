@@ -12,7 +12,6 @@
 import configparser
 import os
 import sys
-import tempfile
 import traceback
 
 from dataclasses import dataclass
@@ -60,7 +59,7 @@ def _default_plugin_path() -> Path:
         os.getenv('QGIS_OPTIONS_PATH')
         or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
         or os.getenv('QGIS_HOME')
-        or Path(tempfile.gettempdir(), '.qgis-server'),
+        or Path.home().joinpath('.qgis-server'),
     ) / 'plugins'
 
 

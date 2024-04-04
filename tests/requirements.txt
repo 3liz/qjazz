@@ -1,6 +1,16 @@
 pytest
-pytest_asyncio
+pytest-asyncio
+pytest-aiohttp
 types-protobuf
 ruff
 mypy
+mypy-extensions
+types-protobuf
+types-psutil
+types-PyYAML
+types-toml
+sphinx
+sphinx-rtd-theme
 grpcio-tools
+pipdeptree
+bandit

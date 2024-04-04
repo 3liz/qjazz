@@ -367,6 +367,15 @@ class Worker(mp.Process):
 
             Return the list of cached object with their new status
         """
+        logger.info("Updating cache for '%s'", self.name)
+        status, resp = await self.io.send_message(
+            _m.UpdateCache(),
+            timeout=self._timeout,
+        )
+
+        if status != 200:
+            raise WorkerError(status, resp)
+
         async def _stream():
             status, resp = await self.io.read_message(timeout=self._timeout)
             while status == 206:

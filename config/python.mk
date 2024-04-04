@@ -17,24 +17,39 @@ deliver::
 	twine upload -r storage $(SDIST)/*
 
 lint::
+	@ruff check $(PYTHON_PKG) $(TESTDIR)
+
+lint-preview::
 	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
 
+
 install::
-	pip install -e .
+	pip install -U --upgrade-strategy=eager -e .
 
-autopep8:
+autopep8::
 	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
-	# Only fix E303 E302 error
-	# since ruff does no implement this yet
-	@autopep8 --in-place -r --select E303,E302 $(PYTHON_PKG) $(TESTDIR)
 
-mypy:
+typecheck::
 	@mypy --config-file=$(topsrcdir)/config/mypy.ini -p $(PYTHON_PKG)
+
+security::
+	@bandit -r $(PYTHON_PKG)
+
+
+.PHONY: $(REQUIREMENTS)
+
+# Output frozen requirements
+requirements: $(REQUIREMENTS)
+	@echo "Optional dependencies: $(OPTIONAL_DEPENDENCIES)"
+	@pipdeptree -p "$$($(DEPTH)/requirements.sh $(OPTIONAL_DEPENDENCIES))" -f \
+		| sed "s/^[ \t]*//" | sed "/^\-e .*/d" \
+		| sort | uniq > $<
+	@echo "Requirements written in $<"
 
 
 ifndef TESTDIR
 test::
 else
-test:: lint mypy
+test:: lint typecheck
 	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
 endif

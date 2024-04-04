@@ -114,6 +114,7 @@ async def authenticate(request, handler):
     """
     tokens = request.app['config'].auth_tokens
     if tokens is not None:
+        # FIXME should not authorize if tokens are requested
         authorization = request.headers.get('Authorization')
         if authorization and authorization.startswith('Bearer '):
             token = authorization[7:]
