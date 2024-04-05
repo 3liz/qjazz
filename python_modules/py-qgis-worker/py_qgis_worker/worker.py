@@ -6,11 +6,11 @@ from functools import cached_property
 from typing_extensions import AsyncIterator, Dict, Optional, Tuple
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigError, ConfigProxy
+from py_qgis_contrib.core.config import ConfigProxy, SectionExists, confservice
 
 from . import _op_worker
 from . import messages as _m
-from .config import WorkerConfig
+from .config import WORKER_SECTION, WorkerConfig
 
 
 class WorkerError(Exception):
@@ -33,6 +33,7 @@ class Worker(mp.Process):
         self._parent_conn, self._child_conn = mp.Pipe(duplex=True)
         self._done_event = mp.Event()
         self._timeout = config.process_timeout
+        self._loglevel = logger.log_level()
 
     @property
     def config(self) -> WorkerConfig:
@@ -58,26 +59,34 @@ class Worker(mp.Process):
                 pass
         self.io.flush()
 
-    async def update_config(self, obj: Dict):
-        if isinstance(self._worker_conf, ConfigProxy):
-            try:
-                self._worker_conf.service.update_config(obj)
-            except ConfigError as err:
-                raise WorkerError(400, err.json(include_url=False)) from None
-            status, resp = await self.io.send_message(
-                _m.PutConfig(config=obj),
-                timeout=self._timeout,
-            )
-            if status != 200:
-                raise WorkerError(status, resp)
-            # Update timeout config
-            self._timeout = self.config.process_timeout
-            logger.trace(f"Updated config for worker '{self.name}'")
-        else:
-            raise WorkerError(403, "Cannot update local configuration")
+    async def update_config(self, worker_conf: WorkerConfig):
+        self._worker_conf = worker_conf
+        status, resp = await self.io.send_message(
+            _m.PutConfig(
+                config={
+                    'logging': {'level': logger.log_level()},
+                    'worker': worker_conf.model_dump(),
+                },
+            ),
+            timeout=self._timeout,
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
+        # Update timeout config
+        self._timeout = self.config.process_timeout
+        logger.trace(f"Updated config for worker '{self.name}'")
 
     def run(self):
         """ Override """
+        logger.setup_log_handler(self._loglevel)
+        # Setup configuration
+        try:
+            confservice.add_section(WORKER_SECTION, WorkerConfig, ...)
+        except SectionExists:
+            pass
+        confservice.validate({WORKER_SECTION: self._worker_conf})
+        # Create proxy for allow update
+        self._worker_conf = ConfigProxy(WORKER_SECTION)
         server = _op_worker.setup_server(self._worker_conf)
         _op_worker.qgis_server_run(
             server,

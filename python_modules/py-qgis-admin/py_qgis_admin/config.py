@@ -1,5 +1,5 @@
-from pydantic import AfterValidator, AnyHttpUrl, Field
-from typing_extensions import Annotated, List, Literal, Optional, no_type_check
+from pydantic import AnyHttpUrl, Field
+from typing_extensions import List, Literal, Optional, no_type_check
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
@@ -11,15 +11,6 @@ from py_qgis_contrib.core.config import (
 )
 
 DEFAULT_INTERFACE = ("0.0.0.0", 9871)
-
-
-def _check_ssl_config(sslconf):
-    match (sslconf.key, sslconf.cert):
-        case (str(), None):
-            raise ValueError("Missing ssl cert file")
-        case (None, str()):
-            raise ValueError("Missing ssl key file")
-    return sslconf
 
 
 @section('http')
@@ -35,10 +26,7 @@ class HttpConfig(Config):
         title="Use ssl",
     )
 
-    ssl: Annotated[
-        SSLConfig,
-        AfterValidator(_check_ssl_config),
-    ] = Field(
+    ssl: SSLConfig = Field(
         default=SSLConfig(),
         title="SSL certificats",
     )
@@ -112,7 +100,7 @@ class ConfigUrl(Config):
                 str(self.url),
                 ssl=self.ssl.create_ssl_client_context() if use_ssl else False,
             ) as resp:
-                if not resp.status != 200:
+                if resp.status != 200:
                     raise RuntimeError(
                         f"Failed to load configuration from {self.url}: error {resp.status}",
                     )

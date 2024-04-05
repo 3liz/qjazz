@@ -127,6 +127,10 @@ class Config(BaseModel, frozen=True, extra='forbid'):
     pass
 
 
+class SectionExists(ValueError):
+    pass
+
+
 CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
 
 
@@ -247,7 +251,7 @@ class ConfigService:
         replace: bool = False,
     ):
         if not replace and name in self._configs:
-            raise ValueError(f"Config {name} already defined in: {self._configs[name]}")
+            raise SectionExists(name)
         self._configs[name] = (model,) if field is CreateDefault else (model, field)
         self._model_changed = True
 

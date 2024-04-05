@@ -2,9 +2,7 @@
 """
 import ssl
 
-from pathlib import Path
-
-from pydantic import AfterValidator, Field
+from pydantic import AfterValidator, Field, FilePath
 from typing_extensions import Annotated, Optional, Tuple
 
 from ._service import Config
@@ -39,23 +37,17 @@ NetInterface = Annotated[
 # SSL configuration
 #
 
-def _path_exists(p: Optional[Path]) -> Optional[Path]:
-    if p is not None and not p.exists():
-        raise ValueError(f"File '{p}' does not exist")
-    return p
-
-
 class SSLConfig(Config):
-    cafile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
+    cafile: Optional[FilePath] = Field(
         default=None,
         title="CA file",
     )
-    certfile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
+    certfile: Optional[FilePath] = Field(
         default=None,
         title="SSL/TLS  key",
         description="Path to the SSL key file",
     )
-    keyfile: Annotated[Optional[Path], AfterValidator(_path_exists)] = Field(
+    keyfile: Optional[FilePath] = Field(
         default=None,
         title="SSL/TLS Certificat",
         description="Path to the SSL certificat file",

@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from typing_extensions import IO, Type
 
+from ..condition import assert_precondition
+
 #
 # Output valid TOML default configuration
 #
@@ -148,7 +150,7 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
                 _dump_model(s, arg, f"[[{name}]]", comment=True)
             elif arg.__name__ == 'Union':
                 for m in arg.__args__:
-                    assert _is_model(m)
+                    assert_precondition(_is_model(m))
                     print(file=s)
                     _dump_model(s, m, f"[[{name}]]", comment=True)
         elif a.__name__ == 'Dict':
@@ -159,7 +161,7 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
                 _dump_section(s, arg, f"{name}.key", comment=True)
             elif arg.__name__ == 'Union':
                 for i, m in enumerate(arg.__args__):
-                    assert _is_model(m)
+                    assert_precondition(_is_model(m))
                     print(file=s)
                     _dump_section(s, m, f"{name}.key{i}", comment=True)
         else:

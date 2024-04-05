@@ -14,7 +14,7 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1._async import HealthServicer
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import confservice, read_config_toml
+from py_qgis_contrib.core.config import ConfigError, confservice, read_config_toml
 
 from . import messages as _m
 from ._grpc import api_pb2, api_pb2_grpc
@@ -44,7 +44,7 @@ def _match_grpc_code(code: int) -> grpc.StatusCode:
 
 
 def _headers_to_metadata(coll: Iterable[Tuple[str, str]]) -> Iterator[Tuple[str, str]]:
-    return ((f"x-reply-header-{k.lower()}", v) for k, v in coll)
+    return ((f"x-reply-header-{k.lower()}", str(v)) for k, v in coll)
 
 
 def _to_iso8601(dt: datetime) -> str:
@@ -629,7 +629,14 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             await _abort_on_error(context, 400, str(err), "SetConfig")
 
         try:
-            await self._pool.update_config(obj)
+            confservice.update_config(obj)
+        except ConfigError as err:
+            await _abort_on_error(context, 400, err.json(include_url=False), "SetConfig")
+
+        logger.trace("Updating workers with configuration\n %s", obj)
+
+        try:
+            await self._pool.update_config(confservice.conf.worker)
         except WorkerError as e:
             await _abort_on_error(context, e.code, e.details, "SetConfig")
         except Exception as err:

@@ -96,7 +96,7 @@ def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
     return model
 
 
-def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]:
+def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]:  # noqa: RUF027
     """ Build schema definitions dictionnary from models
     """
     schema_definitions = {}

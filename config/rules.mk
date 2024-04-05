@@ -3,7 +3,7 @@ TOPTARGET:=test
 
 .PHONY: $(DIRS)
 
-TOPTARGETS:=test lint typecheck configure dist deliver install security
+TOPTARGETS:=test lint lint-preview typecheck configure dist deliver install security
 
 $(TOPTARGETS):: $(DIRS)
 

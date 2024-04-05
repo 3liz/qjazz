@@ -110,6 +110,8 @@ def register_handlers(resolvers: Optional[Dict[str, ResolverFactory]] = None):
 def load_resolvers(confdir: Path):
     """ Load resolvers configuration
     """
+    # XXX Require that resolver file mode is not writable
+    # by 'other'
     resolver_file = confdir.joinpath('resolvers.py')
     if resolver_file.exists():
         logger.info("Loading path resolvers for qgis storage")

@@ -1,5 +1,5 @@
-from pydantic import AfterValidator, AnyHttpUrl, Field, Json
-from typing_extensions import Annotated, List, Optional
+from pydantic import AnyHttpUrl, Field, Json
+from typing_extensions import List, Optional
 
 from py_qgis_cache.config import ProjectsConfig
 from py_qgis_contrib.core import config, logger
@@ -13,25 +13,16 @@ DEFAULT_INTERFACE = ("[::]", 23456)
 #
 
 
-def _check_ssl_config(sslconf):
-    match (sslconf.key, sslconf.cert):
-        case (str(), None):
-            raise ValueError("Missing ssl cert file")
-        case (None, str()):
-            raise ValueError("Missinc ssl key file")
-    return sslconf
-
-
 class ListenConfig(config.Config):
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
         title="TCP:PORT interface or unix socket",
     )
     use_ssl: bool = False
-    ssl: Annotated[
-        SSLConfig,
-        AfterValidator(_check_ssl_config),
-    ] = SSLConfig()
+    ssl: SSLConfig = SSLConfig()
+
+
+WORKER_SECTION = 'worker'
 
 
 class WorkerConfig(config.Config):

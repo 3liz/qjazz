@@ -52,6 +52,7 @@ RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_ID_FORMAT
 class App(tornado.web.Application):
 
     def __init__(self, *args, cross_origin: HttpCORS, **kwargs):
+        super().__init__(*args, **kwargs)
         self._cross_origin = cross_origin
 
     @property

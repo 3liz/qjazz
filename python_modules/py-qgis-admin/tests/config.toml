@@ -1,6 +1,6 @@
 
 #[config_url]
-#url = "http://config-server/config.json"
+#url = "http://localhost:8004/config_worker.json"
 
 [resolvers]
 

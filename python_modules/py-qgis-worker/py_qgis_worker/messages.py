@@ -279,7 +279,7 @@ class GetConfig:
 class PutConfig:
     msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
     return_type: ClassVar[None] = None
-    config: Optional[JsonValue] = None
+    config: Optional[Dict] = None
 
 
 #

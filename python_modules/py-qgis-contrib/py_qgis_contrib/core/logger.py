@@ -130,3 +130,7 @@ def log_rreq(msg, *args, **kwargs):
 
 def isEnabledFor(level: LogLevel) -> bool:
     return LOGGER.isEnabledFor(level.value)
+
+
+def log_level() -> LogLevel:
+    return LogLevel(LOGGER.level)

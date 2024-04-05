@@ -5,6 +5,7 @@ from ._service import (  # noqa
     ConfigError,
     ConfigProxy,
     ConfigService,
+    SectionExists,
     confservice,
     read_config_toml,
     section,

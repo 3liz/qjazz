@@ -12,6 +12,7 @@ from typing import Dict, Iterator, Optional, no_type_check
 import qgis
 
 from .. import logger
+from ..condition import assert_precondition
 
 
 def setup_qgis_paths(prefix: str) -> None:
@@ -54,7 +55,7 @@ def setup_qgis_application(
              Note that prevents qgis to segfault when exiting. Default to True.
     """
     global qgis_application
-    assert qgis_application is None, "Qgis application already initialized"
+    assert_precondition(qgis_application is None, "Qgis application already initialized")
 
     os.environ['QGIS_NO_OVERRIDE_IMPORT'] = '1'
     os.environ['QGIS_DISABLE_MESSAGE_HOOKS'] = '1'

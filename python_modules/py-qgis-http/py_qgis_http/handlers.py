@@ -604,7 +604,7 @@ class BackendHandler(JsonErrorMixin, _BaseHandler):
 
     def head(self, name):
         if not self._channels.get_backend(name):
-            raise HTTPError(404, "Backend {name} does not exists")
+            raise HTTPError(404, f"Backend {name} does not exists")
         self.set_header("Content-Type", "application/json")
 
 #

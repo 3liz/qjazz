@@ -6,15 +6,13 @@ from pathlib import Path
 
 import click
 
-from typing_extensions import Any, Optional, cast
+from typing_extensions import Any, Optional
 
 from py_qgis_contrib.core import config, logger
 
-from .config import ENV_CONFIGFILE, WorkerConfig
+from .config import ENV_CONFIGFILE, WORKER_SECTION, WorkerConfig
 from .pool import WorkerPool
 from .server import serve
-
-WORKER_SECTION = 'worker'
 
 # Add the `[worker]` configuration section
 config.confservice.add_section(WORKER_SECTION, WorkerConfig)
@@ -122,7 +120,6 @@ def install_plugins(configpath: Optional[Path]):
     conf: Any = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    from py_qgis_contrib.core.qgis import install_plugins
     install_plugins(conf.worker.plugins)
 
 
@@ -136,12 +133,16 @@ def install_plugins(configpath: Optional[Path]):
 def serve_grpc(configpath: Optional[Path]):
     """ Run grpc server
     """
+    import multiprocessing as mp
+
+    mp.set_start_method('forkserver')
+
     conf: Any = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
     conf.worker.plugins.do_install()
 
-    pool = WorkerPool(cast(WorkerConfig, config.ConfigProxy(WORKER_SECTION)))
+    pool = WorkerPool(conf.worker)
     pool.start()
     try:
         asyncio.run(serve(pool))

@@ -337,14 +337,14 @@ def install_plugins(conf: QgisPluginConfig):
         print("No plugins to install", file=sys.stderr)  # noqa T201
         return
 
-    import subprocess
+    import subprocess  # nosec
 
     install_path = _default_plugin_path()
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
     def _run(*args):
         res = subprocess.run(
-            ["qgis-plugin-manager", *args],
+            ["qgis-plugin-manager", *args],  # nosec - qgis-plugin-manager may be installed in a virtual env
             cwd=str(install_path),
         )
         if res.returncode > 0:

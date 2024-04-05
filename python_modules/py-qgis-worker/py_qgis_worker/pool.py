@@ -5,10 +5,10 @@ from contextlib import asynccontextmanager
 from time import time
 
 from pydantic import JsonValue
-from typing_extensions import AsyncGenerator, Dict, Iterator, List, Optional, Tuple
+from typing_extensions import AsyncGenerator, Iterator, List, Optional, Tuple
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigError, ConfigProxy
+from py_qgis_contrib.core.config import ConfigProxy
 
 from . import messages as _m
 from .config import WorkerConfig
@@ -76,21 +76,21 @@ class WorkerPool:
         for w in self._workers:
             w.join()
 
-    #async def maintain_pool(self):
-    #    """ Replace dead workers
-    #    """
-    #    replace = []
-    #    for i, worker in enumerate(self._workers):
-    #        if not worker.is_alive():
-    #            w = Worker(self._config, name=f"{self._config.name}_{i}")
-    #            w.start()
-    #            replace.append((i, w))
-    #
-    #    # Wait for convergence
-    #    for i, w in replace:
-    #        await w.ping("")      # Wait for convergence
-    #        self._workers[i] = w  # Replace dead worker
-    #        self._avails.put_nowait(w)
+    async def maintain_pool(self):
+        """ Replace dead workers
+        """
+        replace = []
+        for i, worker in enumerate(self._workers):
+            if not worker.is_alive():
+                w = Worker(self._config, name=f"{self._config.name}_{i}")
+                w.start()
+                replace.append((i, w))
+
+        # Wait for convergence
+        for i, w in replace:
+            await w.ping("")      # Wait for convergence
+            self._workers[i] = w  # Replace dead worker
+            self._avails.put_nowait(w)
 
     async def initialize(self):
         """ Test that workers are alive
@@ -232,26 +232,18 @@ class WorkerPool:
         else:
             return self._config.model_dump_json()
 
-    async def update_config(self, obj: Dict):
+    async def update_config(self, worker_conf: WorkerConfig):
         """ Update config for all workers
         """
-        if isinstance(self._config, ConfigProxy):
-            async with self.wait_for_all_workers() as workers:
-                try:
-                    self._config.service.update_config(obj)
-                except ConfigError as err:
-                    raise WorkerError(400, err.json(include_url=False)) from None
-                # Update timeout config
-                self._timeout = self._config.process_timeout
-                self._max_requests = self._config.max_waiting_requests
-                # Update log level
-                level = logger.set_log_level()
-                logger.info("Log level set to %s", level.name)
-                for w in workers:
-                    await w.update_config(obj)
-                logger.trace("Updated workers with configuration\n %s", obj)
-        else:
-            raise WorkerError(403, "Cannot update local configuration")
+        async with self.wait_for_all_workers() as workers:
+            # Update timeout config
+            self._timeout = self._config.process_timeout
+            self._max_requests = self._config.max_waiting_requests
+            # Update log level
+            level = logger.set_log_level()
+            logger.info("Log level set to %s", level.name)
+            for w in workers:
+                await w.update_config(self._config)
 
     #
     # Env

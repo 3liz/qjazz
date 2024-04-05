@@ -327,7 +327,7 @@ class CacheManager:
                 entry = self._delete_cache_entry(md)
                 return entry, status
             case CheckoutStatus.NOTFOUND:
-                raise ValueError("Invalid CheckoutStatus value for update(): {status}")
+                raise ValueError(f"Invalid CheckoutStatus value for update(): {status}")
             case _ as unreachable:
                 assert_never(unreachable)
 

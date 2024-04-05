@@ -1,1 +1,83 @@
-{"confdir":"/home/david/qgis/python_modules/py-qgis-http","logging":{"level":"TRACE"},"config_url":{"ssl":null,"url":null,"user_agent":"py-qgis-server2 middleware 1.0.0.dev0"},"http":{"listen":["0.0.0.0",80],"use_ssl":false,"ssl":{"ca":null,"cert":null,"key":null},"cross_origin":"all","proxy_conf":false},"backends":{"test":{"title":"Test backend","description":"Backend for local test: run `dc up -d scale worker=<scale>`","address":["worker",23456],"ssl":null,"route":"/test","timeout":20,"forward_headers":["x-qgis-*","x-lizmap-*"],"api":[{"endpoint":"features","delegate_to":"wfs3","name":"Features OGC Api (WFS3)","description":""}],"allow_direct_resolution":false,"getfeature_limit":1000}},"includes":null}
+{
+    "confdir": "/home/david/qgis/python_modules/py-qgis-http",
+    "logging": {
+        "level": "TRACE"
+    },
+    "config_url": {
+        "ssl": {
+            "cafile": null,
+            "certfile": null,
+            "keyfile": null
+        },
+        "url": null,
+        "user_agent": "py-qgis-server2 middleware 1.0.0.dev0"
+    },
+    "http": {
+        "listen": [
+            "0.0.0.0",
+           80
+        ],
+        "use_ssl": false,
+        "ssl": {
+            "cafile": null,
+            "certfile": null,
+            "keyfile": null
+        },
+        "cross_origin": "all",
+        "proxy_conf": false
+    },
+    "admin_server": {
+        "listen": [
+            "0.0.0.0",
+            9876
+        ],
+        "use_ssl": false,
+        "ssl": {
+            "cafile": null,
+            "certfile": null,
+            "keyfile": null
+        },
+        "cross_origin": "all",
+        "proxy_conf": false
+    },
+    "backends": {
+        "test": {
+            "title": "Test backend",
+            "description": "Backend for local test: run `dc up -d scale worker=<scale>`",
+            "address": [
+                "worker",
+                23456
+            ],
+            "use_ssl": false,
+            "ssl": {
+                "cafile": null,
+                "certfile": null,
+                "keyfile": null
+            },
+            "route": "/test",
+            "timeout": 20,
+            "forward_headers": [
+                "x-qgis-*",
+                "x-lizmap-*"
+            ],
+            "api": [
+                {
+                    "endpoint": "features",
+                    "delegate_to": "wfs3",
+                    "name": "Features OGC Api (WFS3)",
+                    "description": ""
+                },
+                {
+                    "endpoint": "wfs3",
+                    "delegate_to": null,
+                    "name": "Features OGC Api (WFS3)",
+                    "description": ""
+                }
+            ],
+            "allow_direct_resolution": false,
+            "getfeature_limit": 1000
+        }
+    },
+    "metrics": null,
+    "includes": null
+}

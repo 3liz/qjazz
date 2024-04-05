@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   worker:
@@ -23,6 +21,7 @@ services:
       CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
     ports:
     - 127.0.0.1:8003:80
+    - 127.0.0.1:9876:9876
     networks:
     - qgis_rpc_network
     command: ["qgis-server-http", "serve", "--verbose"]
@@ -35,6 +34,8 @@ services:
     image: nginx:alpine
     networks:
     - qgis_rpc_network
+    ports:
+    - 127.0.0.1:8004:80
     volumes:
     - type: bind
       source: "${PWD}/tests/"

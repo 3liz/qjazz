@@ -8,7 +8,7 @@ extend-exclude = [
 
 [lint]
 extend-select = ["E", "F", "I", "ANN", "W", "T", "COM", "RUF"]
-ignore = ["ANN101", "ANN002", "ANN003"]
+ignore = ["ANN101", "ANN002", "ANN003", "RUF100"]
 
 [format]
 indent-style = "space"

@@ -6,8 +6,8 @@ import sys
 from glob import glob
 from pathlib import Path
 
-from pydantic import AfterValidator, AnyHttpUrl, Field
-from typing_extensions import Annotated, Any, Dict, Literal, Optional, TypeAlias
+from pydantic import AnyHttpUrl, Field
+from typing_extensions import Any, Dict, Literal, Optional, TypeAlias
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
@@ -27,15 +27,6 @@ from .resolver import BackendConfig
 DEFAULT_INTERFACE = ("0.0.0.0", 80)
 
 
-def _check_ssl_config(sslconf):
-    match (sslconf.key, sslconf.cert):
-        case (str(), None):
-            raise ValueError("Missing ssl cert file")
-        case (None, str()):
-            raise ValueError("Missing ssl key file")
-    return sslconf
-
-
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 
 
@@ -49,10 +40,7 @@ class HttpConfig(Config):
         default=False,
         title="Use ssl",
     )
-    ssl: Annotated[
-        SSLConfig,
-        AfterValidator(_check_ssl_config),
-    ] = Field(
+    ssl: SSLConfig = Field(
         default=SSLConfig(),
         title="SSL configuration",
     )

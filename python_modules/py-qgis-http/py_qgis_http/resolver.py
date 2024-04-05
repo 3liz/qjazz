@@ -177,4 +177,3 @@ class BackendConfig(Config):
                 return f"{addr}:{port}"
             case _ as addr:
                 return str(addr)
-
