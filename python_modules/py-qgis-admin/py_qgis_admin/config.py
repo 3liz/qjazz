@@ -10,7 +10,7 @@ from py_qgis_contrib.core.config import (
     section,
 )
 
-DEFAULT_INTERFACE = ("0.0.0.0", 9871)
+DEFAULT_INTERFACE = ("127.0.0.1", 9871)
 
 
 @section('http')

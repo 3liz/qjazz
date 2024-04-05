@@ -11,6 +11,7 @@ from typing_extensions import Dict, Optional, Tuple, assert_never, cast
 
 from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.utils import to_rfc822
 
 from . import messages as _m
@@ -94,7 +95,7 @@ def handle_api_request(
         _m.send_reply(conn, "No report available", 409)
         return
 
-    assert msg.headers is not None
+    assert_precondition(msg.headers is not None, "Headers are None")
     headers = msg.headers
 
     # Rebuild URL for Qgis server

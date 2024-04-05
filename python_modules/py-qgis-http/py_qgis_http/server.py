@@ -17,6 +17,7 @@ from tornado.web import HTTPError
 from typing_extensions import Any, Callable, Iterator, List, Optional
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.config import Config
 
 from .channel import Channel
@@ -164,7 +165,7 @@ class _Channels:
     async def add_backend(self, name: str, backend: BackendConfig):
         """ Add new backend (equivalent to POST)
         """
-        assert name not in self._conf.backends
+        assert_precondition(name not in self._conf.backends)
         self._conf.backends[name] = backend
         self._channels.append(await _init_channel(backend))
 

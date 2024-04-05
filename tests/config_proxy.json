@@ -15,7 +15,7 @@
     "http": {
         "listen": [
             "0.0.0.0",
-           80
+            80
         ],
         "use_ssl": false,
         "ssl": {

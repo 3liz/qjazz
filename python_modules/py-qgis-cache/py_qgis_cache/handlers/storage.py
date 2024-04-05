@@ -8,16 +8,16 @@
 
 """ Generic protocol handler for Qgis storage
 """
-import traceback
 
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Iterator, Optional, Type, TypeAlias
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from qgis.core import Qgis, QgsApplication, QgsProject, QgsProjectStorage
+from qgis.core import QgsApplication, QgsProject, QgsProjectStorage
 
 from py_qgis_contrib.core import componentmanager, logger
+from py_qgis_contrib.core.condition import assert_precondition
 
 from ..common import IProtocolHandler, ProjectMetadata, Url
 from ..config import ProjectsConfig
@@ -26,7 +26,7 @@ from ..storage import load_project_from_uri
 __all__ = []  # type: ignore
 
 
-ResolverFactory: TypeAlias = Type['_UrlResolver'] | Callable[[], '_UrlResolver']
+ResolverFactory: TypeAlias = Type['_DefaultUrlResolver'] | Callable[[], '_DefaultUrlResolver']
 
 RESOLVERS: Dict[str, ResolverFactory] = {}
 
@@ -34,7 +34,7 @@ RESOLVERS: Dict[str, ResolverFactory] = {}
 def resolver_for(name: str) -> Callable:
     """ Decorator for resolver
     """
-    def wrapper(klass: Type[_UrlResolver]) -> Type[_UrlResolver]:
+    def wrapper(klass: Type[_DefaultUrlResolver]) -> Type[_DefaultUrlResolver]:
         RESOLVERS[name] = klass
         return klass
     return wrapper
@@ -56,10 +56,13 @@ def resolver_for(name: str) -> Callable:
 # does not have some canonical
 # form for storage uri
 #
-class _UrlResolver:
+class _DefaultUrlResolver:
     parameter: str = "project"
 
     def resolve_url(self, url: Url) -> str:
+        """ Build an url by moving the path as query
+            parameter and return the url as a string.
+        """
         qs = parse_qs(url.query)
         # Check that the parameter is not already
         # defined in the query string
@@ -69,21 +72,30 @@ class _UrlResolver:
         return urlunsplit(url)
 
     def build_path(self, url: str | Url, location: str, _: Url) -> str:
+        """ Build a path by appending the value of the
+            query parameter to the `location` path.
+
+            Returns the resulting path
+        """
         if isinstance(url, str):
             url = urlsplit(url)
         return str(Path(location).joinpath(
             parse_qs(url.query)[self.parameter][0],
         ))
 
+#
+# Default resolvers for knwon QgisStorages.
+#
+
 
 @resolver_for('postgresql')
-class PosgresqlResolver(_UrlResolver):
+class PosgresqlResolver(_DefaultUrlResolver):
     # Postgres storage use 'project' as parameter
     pass
 
 
 @resolver_for('geopackage')
-class GeopackageResolver(_UrlResolver):
+class GeopackageResolver(_DefaultUrlResolver):
     parameter = 'projectName'
 
 
@@ -100,39 +112,16 @@ def register_handlers(resolvers: Optional[Dict[str, ResolverFactory]] = None):
     for ps in sr.projectStorages():
         storage = ps.type()
         logger.info("### Registering storage handler for %s", storage)
-        resolver = resolvers.get(storage) or _UrlResolver
+        resolver = resolvers.get(storage) or _DefaultUrlResolver
         componentmanager.gComponentManager.register_service(
             f'@3liz.org/cache/protocol-handler;1?scheme={storage}',
             QgisStorageProtocolHandler(ps, resolver()),
         )
 
 
-def load_resolvers(confdir: Path):
-    """ Load resolvers configuration
-    """
-    # XXX Require that resolver file mode is not writable
-    # by 'other'
-    resolver_file = confdir.joinpath('resolvers.py')
-    if resolver_file.exists():
-        logger.info("Loading path resolvers for qgis storage")
-        with resolver_file.open() as source:
-            try:
-                exec(source.read(), {
-                    'resolver_for': resolver_for,
-                    'qgis_version': Qgis.QGIS_VERSION_INT,
-                })
-            except Exception:
-                traceback.print_exc()
-                raise RuntimeError(f"Failed to load resolver '{resolver_file}'") from None
-    else:
-        logger.info("No storage path resolvers found")
-
-
 def init_storage_handlers(confdir: Optional[Path]):
     """ Initialize storage handlers from resolver file
     """
-    if confdir:
-        load_resolvers(confdir)
     register_handlers()
 
 #
@@ -146,7 +135,7 @@ class QgisStorageProtocolHandler(IProtocolHandler):
     def __init__(
             self,
             storage: QgsProjectStorage,
-            resolver: Optional[_UrlResolver] = None,
+            resolver: Optional[_DefaultUrlResolver] = None,
     ):
         self._storage = storage
         self._resolver = resolver
@@ -177,7 +166,10 @@ class QgisStorageProtocolHandler(IProtocolHandler):
         # Precondition
         # If there is problem here, then it comes from the
         # path resolver configuration
-        assert self._storage.isSupportedUri(uri), f"Invalide uri for storage '{self._storage.type()}': {uri}"
+        assert_precondition(
+            self._storage.isSupportedUri(uri),
+            f"Invalide uri for storage '{self._storage.type()}': {uri}",
+        )
         return self._project_storage_metadata(uri, url.scheme)
 
     def project(self, md: ProjectMetadata, config: ProjectsConfig) -> QgsProject:
@@ -192,7 +184,10 @@ class QgisStorageProtocolHandler(IProtocolHandler):
         # Precondition
         # If there is problem here, then it comes from the
         # path resolver configuration
-        assert self._storage.isSupportedUri(uri), f"Unsupported {uri} for '{self._storage.type()}'"
+        assert_precondition(
+            self._storage.isSupportedUri(uri),
+            f"Unsupported {uri} for '{self._storage.type()}'",
+        )
 
         for _uri in self._storage.listProjects(uri):
             yield self._project_storage_metadata(_uri, url.scheme)

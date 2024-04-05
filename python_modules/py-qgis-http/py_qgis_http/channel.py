@@ -165,7 +165,7 @@ class Channel:
         self._channel = None
 
     async def connect(self) -> bool:
-        assert not self._connected
+        assert not self._connected  # nosec
         logger.debug("Backend: connecting to %s", self._address)
         try:
             self._channel = grpc.aio.secure_channel(

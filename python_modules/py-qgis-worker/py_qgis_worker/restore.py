@@ -1,7 +1,7 @@
 
 import asyncio
 import os
-import pickle
+import pickle  # nosec
 import tempfile
 import traceback
 
@@ -170,8 +170,14 @@ class TmpRestore(_RestoreBase):
                 return
         try:
             logger.info("Restoring cache list from %s", path)
+            if os.stat(path).st_mode & 0o777 != 0o640:
+                logger.error(
+                    "SECURITY WARNING: %s: has unexpected file mode, "
+                    "cache list will not be restored",
+                )
+                return
             with path.open('rb') as io:
-                self._last = pickle.load(io)
+                self._last = pickle.load(io)    # nosec
                 self._curr = self._last.copy()
         except Exception:
             logger.error(
@@ -189,6 +195,7 @@ class TmpRestore(_RestoreBase):
                 try:
                     with self._path.open('wb') as io:
                         pickle.dump(self._curr, io)
+                    self._path.chmod(0o640)
                     self._last = self._curr.copy()
                 except Exception:
                     logger.error(

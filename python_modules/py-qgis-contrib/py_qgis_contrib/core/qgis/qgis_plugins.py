@@ -38,6 +38,7 @@ from typing_extensions import (
 )
 
 from .. import componentmanager, config, logger
+from ..condition import assert_precondition
 
 
 class PluginError(Exception):
@@ -115,6 +116,14 @@ class QgisPluginConfig(config.Config):
             "will be checked at startup. Otherwise,\n"
             "Installation will be done from already installed\n"
             "plugins."
+        ),
+    )
+    plugin_manager: Path = Field(
+        default=Path("/usr/local/bin/qgis-plugin_manager"),
+        title="Path to plugin manager executable",
+        description=(
+            "The absolute path to the qgis-plugin_manager executable\n"
+            "that will be used for installing plugin in automatic mode."
         ),
     )
 
@@ -339,12 +348,14 @@ def install_plugins(conf: QgisPluginConfig):
 
     import subprocess  # nosec
 
+    assert_precondition(conf.plugin_manager.is_absolute())
+
     install_path = _default_plugin_path()
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
     def _run(*args):
         res = subprocess.run(
-            ["qgis-plugin-manager", *args],  # nosec - qgis-plugin-manager may be installed in a virtual env
+            [conf.plugin_manager, *args],  # nosec; path is checked to be absolute
             cwd=str(install_path),
         )
         if res.returncode > 0:

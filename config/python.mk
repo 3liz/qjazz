@@ -50,6 +50,6 @@ requirements: $(REQUIREMENTS)
 ifndef TESTDIR
 test::
 else
-test:: lint-preview typecheck
+test:: lint-preview typecheck security
 	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
 endif

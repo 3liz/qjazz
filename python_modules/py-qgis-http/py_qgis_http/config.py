@@ -24,7 +24,7 @@ from py_qgis_contrib.core.config import (
 from . import metrics
 from .resolver import BackendConfig
 
-DEFAULT_INTERFACE = ("0.0.0.0", 80)
+DEFAULT_INTERFACE = ("127.0.0.1", 80)
 
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
@@ -72,7 +72,7 @@ class HttpConfig(Config):
                 return str(socket)
 
 
-DEFAULT_ADMIN_INTERFACE = ("0.0.0.0", 9876)
+DEFAULT_ADMIN_INTERFACE = ("127.0.0.1", 9876)
 
 
 class AdminHttpConfig(HttpConfig):

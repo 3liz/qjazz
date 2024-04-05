@@ -23,6 +23,7 @@ from typing_extensions import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import PostconditionError, assert_postcondition
 from py_qgis_worker._grpc import api_pb2
 
 from .backend import RECONNECT_DELAY, Backend
@@ -48,10 +49,10 @@ def reduce_cache(acc: Dict[str, JsonValue], item: api_pb2.CacheInfo) -> Dict:
     if status and status != item.status:
         acc.update(status=None)
     try:
-        assert acc['name'] == item.name
-        assert acc['lastModified'] == item.last_modified
-        assert acc['savedVersion'] == item.saved_version
-    except AssertionError:
+        assert_postcondition(acc['name'] == item.name)
+        assert_postcondition(acc['lastModified'] == item.last_modified)
+        assert_postcondition(acc['savedVersion'] == item.saved_version)
+    except PostconditionError:
         logger.error("Mismatched cache info for %s", item.uri)
     return acc
 
