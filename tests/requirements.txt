@@ -1,7 +1,6 @@
 pytest
 pytest-asyncio
 pytest-aiohttp
-types-protobuf
 ruff
 mypy
 mypy-extensions

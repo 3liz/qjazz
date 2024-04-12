@@ -14,7 +14,7 @@ stages:
     # XXX shell runned with gitlab runner are not
     # sourcing ~/.bashrc (but works with `docker run ...`)
     - source ~/.bashrc
-    - make install FLAVOR=$QGIS_FLAVOR
+    - make install install-tests FLAVOR=$QGIS_FLAVOR
     - make test FLAVOR=$QGIS_FLAVOR
   tags:   
     - factory

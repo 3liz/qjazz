@@ -26,6 +26,9 @@ lint-preview::
 install::
 	pip install -U --upgrade-strategy=eager -e .
 
+install-tests::
+	pip install  -r $(topsrcdir)/tests/requirements.txt
+
 autopep8::
 	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
 
