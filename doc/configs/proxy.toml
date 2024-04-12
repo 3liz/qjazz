@@ -6,7 +6,7 @@ level = "INFO"
 # The configuration is fetched from the remote url
 # at startup and override all local settings.
 [config_url]
-#ssl =   	# Optional
+#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -25,28 +25,28 @@ user_agent = "py-qgis-server2 middleware 1.0.0.dev0"
 #[config_url.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
 [http]
 #
 # Interfaces to listen to
-listen = ['0.0.0.0', 80]
+listen = ["127.0.0.1",80]
 #
 # Use ssl
 use_ssl = false
 #
 # SSL configuration
-#ssl = ca=None cert=None key=None
+#ssl = cafile=None certfile=None keyfile=None
 #
 # CORS origin
 #
@@ -69,28 +69,28 @@ proxy_conf = false
 #[http.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
 [admin_server]
 #
 # Interfaces to listen to
-listen = ['0.0.0.0', 9876]
+listen = ["127.0.0.1",9876]
 #
 # Use ssl
 use_ssl = false
 #
 # SSL configuration
-#ssl = ca=None cert=None key=None
+#ssl = cafile=None certfile=None keyfile=None
 #
 # CORS origin
 #
@@ -113,17 +113,17 @@ proxy_conf = false
 #[admin_server.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
 #[backends.key]
 #
@@ -142,8 +142,9 @@ proxy_conf = false
 #         * A 2-tuple `(name, port)` where `name` is either an ip addresse
 #           or a hostname
 #     
-#address = ['localhost', 23456]
-#ssl =   	# Optional
+#address = ["localhost",23456]
+#use_ssl = false
+#ssl = cafile=None certfile=None keyfile=None
 #
 # Route to service
 #route = 	# Required
@@ -182,17 +183,17 @@ proxy_conf = false
 #[backends.key.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
 #
 # Api endpoints

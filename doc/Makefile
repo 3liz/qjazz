@@ -3,6 +3,7 @@ PROJECT_NAME=py-qgis-server
 
 BUILDDIR=${shell pwd}/build
 
+
 main: html
 
 html:
@@ -40,4 +41,4 @@ build::
 clean:
 	rm -r ${BUILDDIR}
 
-all: config_doc build
+all: build main

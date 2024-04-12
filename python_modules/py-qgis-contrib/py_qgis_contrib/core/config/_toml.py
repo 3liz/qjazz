@@ -22,6 +22,16 @@ def _print_field_doc(s: IO, field: FieldInfo):
             print(f"# {line}", file=s)
 
 
+def _to_string(v: str | bool | int | float) -> str:
+    match v:
+        case str(s):
+            return f'"{s}"'
+        case bool(b):
+            return "true" if b else "false"
+        case int(n) | float(n):
+            return f"{n}"
+
+
 def _field_default_repr(field: FieldInfo) -> str:
     match field.default:
         case str(s):
@@ -31,7 +41,7 @@ def _field_default_repr(field: FieldInfo) -> str:
         case int(n) | float(n):
             return f"{n}"
         case tuple(t):
-            return f"[{','.join(t)}]"
+            return f"[{','.join(_to_string(v) for v in t)}]"
         case default:
             if field.is_required():
                 return "\t# Required"

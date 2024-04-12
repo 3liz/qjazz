@@ -16,7 +16,7 @@ level = "INFO"
 #
 # Unique label
 #
-# Unique resolver label. The label must be compatible with a url path component.
+# Unique resolver label. The label must be compatible with an url path component.
 #label = 	# Required
 #
 # Must be set to 'dns'
@@ -35,7 +35,7 @@ level = "INFO"
 #use_ssl = false
 #
 # SSL certificats
-#ssl =   	# Optional
+#ssl = cafile=None certfile=None keyfile=None
 
 #
 # List of Qgis pool backends
@@ -45,7 +45,7 @@ level = "INFO"
 #
 # Unique label
 #
-# Unique resolver label. The label must be compatible with a url path component.
+# Unique resolver label. The label must be compatible with an url path component.
 #label = 	# Required
 #
 # Must be set to 'socket'
@@ -54,7 +54,7 @@ level = "INFO"
 #use_ssl = false
 #
 # SSL certificats
-#ssl =   	# Optional
+#ssl = cafile=None certfile=None keyfile=None
 
 #
 # List of Qgis pool backends
@@ -66,7 +66,7 @@ level = "INFO"
 #
 # Unique label
 #
-# Unique resolver label. The label must be compatible with a url path component.
+# Unique resolver label. The label must be compatible with an url path component.
 #label = 	# Required
 #
 # Must be set to 'plugin'
@@ -81,13 +81,13 @@ level = "INFO"
 [http]
 #
 # Interfaces to listen to
-listen = ['0.0.0.0', 9871]
+listen = ["127.0.0.1",9871]
 #
 # Use ssl
 use_ssl = false
 #
 # SSL certificats
-#ssl = ca=None cert=None key=None
+#ssl = cafile=None certfile=None keyfile=None
 #
 # CORS origin
 #
@@ -112,23 +112,23 @@ auth_tokens = []
 #[http.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
 # Remote configuration settings
 [config_url]
 #
 # SSL configuration
-#ssl =   	# Optional
+#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -143,15 +143,15 @@ auth_tokens = []
 #[config_url.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 

@@ -6,7 +6,7 @@ level = "INFO"
 # The configuration is fetched from the remote url
 # at startup and override all local settings.
 [config_url]
-#ssl =   	# Optional
+#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -19,56 +19,33 @@ level = "INFO"
 #[config_url.ssl]
 #
 # CA file
-#ca =   	# Optional
+#cafile =   	# Optional
 #
-# SSL/TLS key
+# SSL/TLS  key
 #
 # Path to the SSL key file
-#cert =   	# Optional
+#certfile =   	# Optional
 #
 # SSL/TLS Certificat
 #
 # Path to the SSL certificat file
-#key =   	# Optional
+#keyfile =   	# Optional
 
+#
 # Restore stored cached projets at startup.
 # Note that only projects loaded explicitely with
-# the admin api are from url are candidate for restoration.
+# the admin api or from url are candidate for restoration.
 # i.e projects loaded through requests (using
 # 'load_project_on_request' option) will not be
 # restored.
-[restore_cache]
-#ssl =   	# Optional
 #
-# External cache url
-#
-# Retrieve cache list from external url, for use with the 'external'
-# storage type.
-# The server will issue a GET method against this url at startup.
-# The method should returns a list of projects path in json.
-#url =   	# Optional
-#
-# Storage type used for storing cache list:
-#   'http': use external http/https url.
-#   'tmp' : use internal tmpfile storage.
-#   'none': do not restore anything.
-restore_type = "tmp"
-
-#
-#[restore_cache.ssl]
-#
-# CA file
-#ca =   	# Optional
-#
-# SSL/TLS key
-#
-# Path to the SSL key file
-#cert =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#key =   	# Optional
+# Restore stored cached projets at startup.
+# Note that only projects loaded explicitely with
+# the admin api or from url are candidate for restoration.
+# i.e projects loaded through requests (using
+# 'load_project_on_request' option) will not be
+# restored.
+#restore_cache = restore_type='none'
 
 [worker]
 #
@@ -112,7 +89,7 @@ load_project_on_request = true
 reload_outdated_project_on_request = false
 #
 # Plugins configuration
-#plugins = paths=[] install=None install_mode='external'
+#plugins = paths=[] install=None install_mode='external' plugin_manager=PosixPath('/usr/local/bin/qgis-plugin_manager')
 #
 # Maximum chunk size
 #
@@ -120,7 +97,7 @@ reload_outdated_project_on_request = false
 max_chunk_size = 1048576
 #
 # Interfaces to listen to
-#interfaces = [ListenConfig(listen=('[::]', 23456), ssl=SSLConfig(ca=None, cert=None, key=None))]
+#interfaces = [ListenConfig(listen=('[::]', 23456), use_ssl=False, ssl=SSLConfig(cafile=None, certfile=None, keyfile=None))]
 #
 # Max number of concurrent requests
 #
@@ -165,6 +142,15 @@ max_processes_failure_pressure = 0.0
 # or keep a relatively low 'max_processes_failure_pressure'.
 # Note: server must be restarted if this option is modified.
 num_processes = 1
+#
+# Rescale period
+#
+# Set the interval in seconds between rescaling of the number of
+# live processes.
+# Scaling will adjust the number of processes according 
+# to the configuration and dead processes will be replaced
+# with new processes.
+rescale_period = 5
 
 #
 # Projects configuration
@@ -262,6 +248,12 @@ num_processes = 1
 # Installation will be done from already installed
 # plugins.
 #install_mode = "external"
+#
+# Path to plugin manager executable
+#
+# The absolute path to the qgis-plugin_manager executable
+# that will be used for installing plugin in automatic mode.
+#plugin_manager = /usr/local/bin/qgis-plugin_manager
 
 #
 # Interfaces to listen to
@@ -269,6 +261,7 @@ num_processes = 1
 #[[worker.interfaces]]
 #
 # TCP:PORT interface or unix socket
-#listen = ['[::]', 23456]
-#ssl = ca=None cert=None key=None
+#listen = ["[::]",23456]
+#use_ssl = false
+#ssl = cafile=None certfile=None keyfile=None
 
