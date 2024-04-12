@@ -31,7 +31,7 @@ BUILD_TARGET:=base
 
 #BUILD_CACHE:=--force-rm --no-cache
 
-build: manifest
+build: manifest requirements
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -t $(BUILDNAME):$(FLAVOR)-eager  -f Dockerfile  ..
