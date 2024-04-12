@@ -1,5 +1,6 @@
 import asyncio
 import signal
+import traceback
 
 from pathlib import Path
 
@@ -72,12 +73,10 @@ async def serve(pool):
             logger.info("Listening on port: %s", listen_addr)
             server.add_insecure_port(listen_addr)
 
-    shutdown_grace_period = pool.config.shutdown_grace_period
-    max_failure_pressure = pool.config.max_processes_failure_pressure
-
     async def graceful_shutdown(message: str, graceful: bool):
         logger.info(message)
         if graceful:
+            shutdown_grace_period = pool.config.shutdown_grace_period
             logger.info("Entering graceful shutdown of %d s", shutdown_grace_period)
             await health_servicer.enter_graceful_shutdown()
             await server.stop(shutdown_grace_period)
@@ -89,16 +88,31 @@ async def serve(pool):
     background_tasks = set()
 
     def _term(message: str, graceful: bool):
-        task = loop.create_task(graceful_shutdown(message, graceful))
+        task = asyncio.create_task(graceful_shutdown(message, graceful))
         background_tasks.add(task)
 
     def _sigchild_handler():
         pressure = pool.worker_failure_pressure
+        max_failure_pressure = pool.config.max_processes_failure_pressure
         if pressure >= max_failure_pressure:
             logger.critical("Max worker failure reached, terminating...")
             _term("Child process terminated", False)
         else:
             logger.warning("Child process terminated (pressure: %s", pressure)
+
+    # Set scaling task
+    async def autoscale():
+        while True:
+            try:
+                scale_period = pool.config.scale_period
+                await asyncio.sleep(scale_period or 30)
+                if not scale_period:
+                    continue
+                await pool.maintain_pool(restore.projects)
+            except Exception:
+                logger.error("Scaling failed: %s", traceback.format_exc())
+
+    background_tasks.add(asyncio.create_task(autoscale()))
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: _term("Server terminated", True))

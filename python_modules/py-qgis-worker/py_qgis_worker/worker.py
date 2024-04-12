@@ -45,6 +45,13 @@ class Worker(mp.Process):
         """
         return self._done_event.is_set()
 
+    async def quit(self):
+        """ Send a quit message
+        """
+        status, _ = await self.io.send_message(_m.Quit(), timeout=self._timeout)
+        if status != 200:
+            raise WorkerError(status, "Message failure (QUIT)")
+
     async def consume_until_task_done(self):
         """ Consume all remaining data that may be send
             by the worker task.

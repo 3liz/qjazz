@@ -8,7 +8,15 @@ import traceback
 from pathlib import Path
 
 from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError
-from typing_extensions import List, Literal, Optional, Union, cast
+from typing_extensions import (
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from py_qgis_contrib.core import config, logger
 from py_qgis_contrib.core.config import SSLConfig, confservice
@@ -127,6 +135,18 @@ class _RestoreBase:
                 traceback.format_exc(),
             )
             raise
+
+    @property
+    def projects(self) -> Iterator[str]:
+        """ Return an iterator to current stored
+            uris
+        """
+        yield from self._curr
+
+# Define generic Restore type
+
+
+Restore = TypeVar('Restore', bound=_RestoreBase)
 
 
 # ==========================
@@ -269,9 +289,6 @@ class HttpRestore(_RestoreBase):
 #
 class RestoreNoop(_RestoreBase):
     pass
-
-
-Restore = _RestoreBase
 
 
 def create_restore_object(conf: Optional[CacheRestoreConfig] = None) -> _RestoreBase:

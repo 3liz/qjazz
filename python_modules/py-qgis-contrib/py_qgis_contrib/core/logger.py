@@ -37,9 +37,9 @@ class LogLevel(Enum):
 FORMATSTR = '%(asctime)s\t[%(process)d]\t%(levelname)s\t%(message)s'
 
 
-def _validate_log_level(v: str) -> LogLevel:
+def _validate_log_level(v: str | LogLevel) -> LogLevel:
     try:
-        return LogLevel[v.upper()]
+        return LogLevel[v.upper()] if isinstance(v, str) else v
     except KeyError:
         raise ValueError(f"Invalid log level value '{v}'")
 

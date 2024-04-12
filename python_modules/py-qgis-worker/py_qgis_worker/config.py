@@ -139,6 +139,18 @@ class WorkerConfig(config.Config):
             "Note: server must be restarted if this option is modified."
         ),
     )
+    rescale_period: int = Field(
+        default=5,
+        ge=0,
+        title="Rescale period",
+        description=(
+            "Set the interval in seconds between rescaling of the number of\n"
+            "live processes.\n"
+            "Scaling will adjust the number of processes according \n"
+            "to the configuration and dead processes will be replaced\n"
+            "with new processes."
+        ),
+    )
 
 
 EXTERNAL_CONFIG_SECTION = "config_url"
