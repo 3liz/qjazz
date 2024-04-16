@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import sys
 
@@ -123,33 +122,23 @@ class ConfigUrl(Config):
         if not self.url:
             return False
 
-        from tornado import httpclient
+        import aiohttp
 
         use_ssl = self.url.scheme == 'https'
 
-        client = httpclient.AsyncHTTPClient(
-            force_instance=True,
-            defaults=dict(
-                user_agent=self.user_agent,
-                ssl_options=self.ssl.create_ssl_client_context() if use_ssl else None,
-            ),
-        )
-
-        try:
+        async with aiohttp.ClientSession() as session:
             logger.info("** Loading configuration from %s **", self.url)
-            resp = await client.fetch(str(self.url))
-            if resp.code == 200:
-                cnf = json.loads(resp.body)
+            async with session.get(
+                str(self.url),
+                ssl=self.ssl.create_ssl_client_context() if use_ssl else False,
+            ) as resp:
+                if resp.status != 200:
+                    raise RemoteConfigError(
+                        f"Failed to get configuration from {self.url} (error {resp.status})",
+                    )
+                cnf = await resp.json()
                 logger.debug("Updating configuration:\n%s", cnf)
                 confservice.update_config(cnf)
-        except (json.JSONDecodeError, ConfigError) as err:
-            raise RemoteConfigError(f"Invalid configuration: {err}") from None
-        except httpclient.HTTPError as err:
-            raise RemoteConfigError(
-                f"Failed to get configuration from {self.url} (error {err.code})",
-            ) from None
-        finally:
-            client.close()
 
         return True
 
