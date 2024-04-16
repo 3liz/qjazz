@@ -8,7 +8,8 @@ from typing_extensions import List
 
 from py_qgis_contrib.core import logger
 
-from .channels import Channel, Channels
+from .channel import Channel, ChannelStatus
+from .channels import Channels
 from .config import (
     ENV_CONFIGFILE,
     BackendConfig,
@@ -29,6 +30,7 @@ class BackendItem(JsonModel):
     name: str
     address: str
     serving: bool
+    status: ChannelStatus
     config: BackendConfig
     links: List[Link]
 
@@ -37,6 +39,7 @@ class BackendSummary(JsonModel):
     name: str
     address: str
     serving: bool
+    status: ChannelStatus
     links: List[Link]
 
 
@@ -49,6 +52,7 @@ def backend_summary(request: web.Request, channel: Channel) -> BackendSummary:
         name=channel.name,
         serving=channel.serving,
         address=channel.address,
+        status=channel.status,
         links=[
             make_link(
                 request,
@@ -109,6 +113,7 @@ def backends_route(
                     name=channel.name,
                     address=channel.address,
                     serving=channel.serving,
+                    status=channel.status,
                     config=channel.config,
                     links=[
                         make_link(

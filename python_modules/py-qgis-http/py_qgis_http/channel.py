@@ -15,6 +15,7 @@ from typing_extensions import (
     Dict,
     Iterable,
     Iterator,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -33,6 +34,8 @@ CHANNEL_OPTIONS = [
 
 BACKOFF_TIME = 5
 
+ChannelStatus = Literal["notset", "available", "unavailable"]
+
 
 class Channel:
     """ A gRPC channel reconnect itself if a backend
@@ -50,6 +53,7 @@ class Channel:
         self._use_ssl = conf.use_ssl
         self._usecount = 0
         self._closing = False
+        self._status: ChannelStatus = "notset"
 
         self._posix_route = self._conf.route.as_posix()
         self._meta = {
@@ -74,6 +78,10 @@ class Channel:
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def status(self) -> ChannelStatus:
+        return self._status
 
     @property
     def serving(self) -> bool:
@@ -125,6 +133,7 @@ class Channel:
         while self._connected:
             request = health_pb2.HealthCheckRequest(service="QgisServer")
             try:
+                self._status = "available"
                 async for resp in stub.Watch(request):
                     match resp.status:
                         case ServingStatus.SERVING:
@@ -148,6 +157,7 @@ class Channel:
                         rpcerr.details(),
                     )
                 else:
+                    self._status = "unavailable"
                     logger.error("Backend: %s: UNAVAILABLE", self._address)
             if self._connected:
                 await asyncio.sleep(5)

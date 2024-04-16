@@ -17,7 +17,7 @@ dependencies = [
     "grpcio-tools",
     "py-qgis-contrib==1.0.0.dev0",
     "py-qgis-worker==1.0.0.dev0",
-    "tornado >= 6",
+    "aiohttp",
     "click",
 ]
 version = "1.0.0.dev0"

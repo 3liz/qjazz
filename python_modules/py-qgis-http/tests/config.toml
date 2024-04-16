@@ -9,8 +9,8 @@ listen=["0.0.0.0", 4000]
 title = "Test backend"
 description = "Backend for local test: run `dc up -d scale worker=<scale>`"
 # Address to reach the backend
-# address = ["tcp://worker", 23456]
-address = ["localhost", 23456]
+address = ["tcp://worker", 23456]
+#address = ["localhost", 23456]
 # Define route to service
 route = "/test"
 

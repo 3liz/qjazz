@@ -110,6 +110,12 @@ class WorkerPool:
         if not replace:
             return
 
+        logger.info(
+            "Restoring workers (%s dead workers on %s)",
+            len(replace),
+            self.num_workers,
+        )
+
         async def _restore(i: int, w: Worker):
             try:
                 # Wait for convergence
@@ -217,11 +223,6 @@ class WorkerPool:
                 logger.info("Scaling down workers to %s", cur)
                 await self._shrink(procs - cur, restore)
             else:
-                logger.info(
-                    "Restoring workers (%s dead workers on %s)",
-                    self.stopped_workers,
-                    self.num_workers,
-                )
                 await self._maintain_pool(restore)
 
     async def initialize(self):

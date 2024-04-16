@@ -104,9 +104,9 @@ async def serve(pool):
     async def autoscale():
         while True:
             try:
-                scale_period = pool.config.scale_period
-                await asyncio.sleep(scale_period or 30)
-                if not scale_period:
+                rescale_period = pool.config.rescale_period
+                await asyncio.sleep(rescale_period or 30)
+                if not rescale_period:
                     continue
                 await pool.maintain_pool(restore.projects)
             except Exception:

@@ -20,7 +20,7 @@ services:
     environment:
       CONF_CONFIG_URL__URL: "http://config-server/config_proxy.json"
     ports:
-    - 127.0.0.1:8003:80
+    - 127.0.0.1:4000:80
     - 127.0.0.1:9876:9876
     networks:
     - qgis_rpc_network
