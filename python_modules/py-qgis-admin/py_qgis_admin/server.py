@@ -71,7 +71,6 @@ def forwarded_for(request):
 def cors_options_headers(
     request: web.Request,
     headers: Dict[str, str],
-    allow_methods: str,
     allow_headers: Optional[str] = None,
 ):
     """  Set correct headers for 'OPTIONS' method

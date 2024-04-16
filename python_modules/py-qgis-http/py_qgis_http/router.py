@@ -5,25 +5,23 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from urllib.parse import unquote_plus
 
-import tornado.httputil
-
-from tornado.web import HTTPError
-from typing_extensions import Optional
+from aiohttp import web
+from typing_extensions import Awaitable, Mapping, Optional, Protocol
 
 from py_qgis_contrib.core import logger
 
+from .webutils import _decode
 
-class Routable(ABC):
+
+class Routable(Protocol):
 
     @property
-    @abstractmethod
-    def request(self) -> tornado.httputil.HTTPServerRequest:
+    def request(self) -> web.Request:
         """ Return the server Request
         """
         ...
 
-    @abstractmethod
-    def get_route(self) -> str:
+    def get_route(self) -> str | None:
         """ Return the route from the original request path
         """
 
@@ -39,10 +37,20 @@ class Route:
 class RouterBase(ABC):
 
     @abstractmethod
-    def route(self, routable: Routable) -> Route:
+    def route(self, routable: Routable) -> Awaitable[Route]:
         """ Return a `Route` object from the request object
         """
         ...
+
+    async def arguments(self, request: web.Request) -> Mapping[str, str]:
+        args: Mapping
+        if request.method == 'GET':
+            args = request.query
+        elif request.content_type.startswith('application/x-www-form-urlencoded') or \
+            request.content_type.startswith('multipart/form-data'):
+            args = await request.post()
+        return args
+
 
 #
 # The default router
@@ -73,41 +81,43 @@ class DefaultRouter(RouterBase):
     """
     API_MATCH = re.compile(r'(?:(.+)/_/)?([^\/]+)(/.*)?')
 
-    def route(self, routable: Routable) -> Route:
+    async def route(self, routable: Routable) -> Route:
         # Get the route from the request path
         route = routable.get_route()
         if not route:
-            raise HTTPError(404)
+            raise web.HTTPNotFound()
 
-        req = routable.request
+        request = routable.request
 
-        logger.trace("DefaultRouter::route for %s (route: %s)", req.uri, route)
+        logger.trace("DefaultRouter::route for %s (route: %s)", request.url, route)
 
         project: str | None
 
-        # Get the project
-        map_args = req.arguments.get('MAP')
-        if map_args:
-            project = unquote_plus(map_args[0].decode())
-        else:
-            project = req.headers.get('X-Qgis-Project')
+        args = await self.arguments(request)
 
-        if req.arguments.get('SERVICE') is not None:
+        # Get the project
+        map_arg = _decode('MAP', args.get('MAP', ''))
+        if map_arg:
+            project = unquote_plus(map_arg)
+        else:
+            project = request.headers.get('X-Qgis-Project')
+
+        if args.get('SERVICE') is not None:
             # OWS project
             if not project:
                 # Check project in the path
-                project = '/%s' % PurePosixPath(req.path).relative_to(route)
+                project = '/%s' % PurePosixPath(request.path).relative_to(route)
 
-            logger.trace("DefaultRouter::router %s OWS request detected", req.uri)
+            logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)
         else:
             # Check project in request path
-            path = str(PurePosixPath(req.path).relative_to(route).as_posix())
+            path = str(PurePosixPath(request.path).relative_to(route).as_posix())
             if path == '.':
                 path = ""
             m = self.API_MATCH.match(path)
             if not m:
-                raise HTTPError(400, reason="Missing api specification")
+                raise web.HTTPBadRequest(reason="Missing api specification")
             _project, api, api_path = m.groups()
 
             # Clean up suffixes from api name
@@ -118,14 +128,14 @@ class DefaultRouter(RouterBase):
 
             logger.trace(
                 "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)",
-                req.uri,
+                request.url,
                 _project,
                 api,
                 api_path,
             )
             if project and _project:
-                logger.error("Multiple project definitions in '%s'", req.full_url())
-                raise HTTPError(400, reason="Multiple project definitions in request")
+                logger.error("Multiple project definitions in '%s'", request.url)
+                raise web.HTTPBadRequest(reason="Multiple project definitions in request")
             elif not project:
                 project = f"/{_project}"
 

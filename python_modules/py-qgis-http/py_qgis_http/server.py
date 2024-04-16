@@ -2,47 +2,51 @@ import asyncio
 import signal
 import traceback
 
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import PurePosixPath
-from time import time
 
-import tornado.httpserver
-import tornado.httputil
-import tornado.netutil
-import tornado.routing
-import tornado.web
-
-from tornado.httputil import HTTPServerRequest
-from tornado.web import HTTPError
-from typing_extensions import Any, Callable, Iterator, List, Optional
+from aiohttp import web
+from aiohttp.abc import AbstractAccessLogger
+from typing_extensions import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Optional,
+    TypeAlias,
+    no_type_check,
+)
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.config import Config
 
+from . import metrics
+from .admin import backends_list_route, backends_route, config_route
 from .channel import Channel
+from .channels import Channels
 from .config import (
     AdminHttpConfig,
-    BackendConfig,
     HttpConfig,
     HttpCORS,
-    metrics,
+    MetricConfig,
 )
-from .handlers import (
-    ApiHandler,
-    BackendHandler,
-    ConfigHandler,
-    ErrorHandler,
-    JsonNotFoundHandler,
-    NotFoundHandler,
-    OwsHandler,
-    _BaseHandler,
-)
+from .handlers import api_handler, ows_handler
+from .models import ErrorResponse
 from .router import DefaultRouter
 
+try:
+    __version__ = version('py_qgis_http')
+except PackageNotFoundError:
+    __version__ = "dev"
+
+SERVER_HEADER = f"Py-Qgis-Http-Server {__version__}"
+
 #
-# Router delegate
+# Logging
 #
+
 
 REQ_LOG_TEMPLATE = "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}\t"
 REQ_FORMAT = REQ_LOG_TEMPLATE + '{agent}\t{referer}'
@@ -50,179 +54,193 @@ REQ_ID_FORMAT = "REQ-ID:{request_id}"
 RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_ID_FORMAT
 
 
-class App(tornado.web.Application):
+class AccessLogger(AbstractAccessLogger):
+    """ Custom access logger
+    """
 
-    def __init__(self, *args, cross_origin: HttpCORS, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cross_origin = cross_origin
+    def log(self, request: web.BaseRequest, response: web.StreamResponse, duration: float):
 
-    @property
-    def cross_origin(self) -> HttpCORS:
-        return self._cross_origin
-
-    def log_request(self, handler: _BaseHandler) -> None:   # type: ignore
-        """ Format current request from the given tornado request handler
-        """
-        request = handler.request
-        code = handler.get_status()
-        reqtime = request.request_time()
-
-        length = handler._headers.get('Content-Length') or -1
+        length = response.headers.get('Content-Length') or -1
         agent = request.headers.get('User-Agent', "")
         referer = request.headers.get('Referer', "")
 
         fmt = REQ_FORMAT.format(
-            ip=request.remote_ip,
+            ip=request.remote,
             method=request.method,
-            url=request.uri,
-            code=code,
-            time=int(1000.0 * reqtime),
+            url=request.path,
+            code=response.status,
+            time=int(1000.0 * duration),
             length=length,
             referer=referer,
             agent=agent,
         )
 
-        if handler.request_id:
-            fmt += f"\t{REQ_ID_FORMAT.format(request_id=handler.request_id)}"
+        # See https://docs.aiohttp.org/en/stable/web_advanced.html#request-s-storage
+        request_id = request.get('request_id')
+        if request_id:
+            fmt += f"\t{REQ_ID_FORMAT.format(request_id=request_id)}"
 
         logger.log_req(fmt)
 
-    def log_rrequest(self, request, request_id):
-        """ Log incoming request with request_id
-        """
-        agent = request.headers.get('User-Agent', "")
-        referer = request.headers.get('Referer', "")
 
-        fmt = RREQ_FORMAT.format(
-            ip=request.remote_ip,
-            method=request.method,
-            url=request.uri,
-            referer=referer,
-            agent=agent,
-            request_id=request_id,
+def log_rrequest(request: web.Request):
+    """ Log incoming request
+    """
+    agent = request.headers.get('User-Agent', "")
+    referer = request.headers.get('Referer', "")
+
+    fmt = RREQ_FORMAT.format(
+        ip=request.remote,
+        method=request.method,
+        url=request.path,
+        referer=referer,
+        agent=agent,
+        request_id=request.get('request_id', ""),
+    )
+
+    logger.log_rreq(fmt)
+
+
+#
+# CORS
+#
+
+async def cors_options_handler(
+    request: web.Request,
+    allow_methods: str,
+    allow_headers: str,
+) -> web.Response:
+    """  Set correct headers for 'OPTIONS' method
+    """
+    allow_methods = allow_methods
+    headers = {
+        "Allow":  allow_methods,
+        "Access-Control-Allow-Headers": allow_headers,
+    }
+    if request.headers.get('Origin'):
+        # Required in CORS context
+        # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
+        headers['Access-Control-Allow-Methods'] = allow_methods
+
+    return web.Response(headers=headers)
+
+
+def set_access_control_headers(
+    mode: HttpCORS,
+) -> Callable[[web.Request, web.StreamResponse], Awaitable[None]]:
+    """ Build a response prepare callback
+    """
+    async def set_access_control_headers_(
+        request: web.Request,
+        response: web.StreamResponse,
+    ):
+        """  Handle Access control and cross origin headers (CORS)
+        """
+        origin = request.headers.get('Origin')
+        if origin:
+            match mode:
+                case 'all':
+                    allow_origin = '*'
+                case 'same-origin':
+                    allow_origin = origin
+                    response.headers['Vary'] = 'Origin'
+                case _ as url:
+                    allow_origin = str(url)
+
+            response.headers['Access-Control-Allow-Origin'] = allow_origin
+
+    return set_access_control_headers_  # typing: ignore [return-value]
+
+
+#
+#  Headers
+#
+
+async def set_server_headers(request: web.Request, response: web.StreamResponse):
+    """ Set server headers
+    """
+    response.headers['Server'] = SERVER_HEADER
+
+    request_id = request.get('request_id')
+    if request_id:
+        response.headers['X-Request-ID'] = request_id
+
+
+#
+# Unhandled exceptions
+#
+
+@web.middleware
+async def log_incoming_request(request, handler):
+    request_id = request.headers.get('X-Request-ID', "")
+    if request_id:
+        request['request_id'] = request_id
+        log_rrequest(request)
+    return await handler(request)
+
+
+@web.middleware
+async def unhandled_exceptions(request, handler):
+    try:
+        return await handler(request)
+    except web.HTTPException:
+        raise
+    except Exception:
+        logger.critical(f"Error handling request:\n{traceback.format_exc()}")
+        raise web.HTTPInternalServerError(
+            content_type="application/json",
+            text=ErrorResponse(
+                message="Internal server error",
+            ).model_dump_json(),
+        ) from None
+
+
+@web.middleware
+async def json_exception(request, handler):
+    try:
+        return await handler(request)
+    except web.HTTPException as e:
+        headers = e.headers
+        headers['Content-Type'] = "application/json"
+        return web.Response(
+            status=e.status,
+            text=ErrorResponse(message=e.reason).model_dump_json(),
+            headers=headers,
         )
 
-        logger.log_rreq(fmt)
 
+#
+# Router
+#
 
-async def _init_channel(backend: BackendConfig) -> Channel:
-    """  Initialize channel from backend
-    """
-    chan = Channel(backend)
-    await chan.connect()
-    return chan
+class _Router:
 
-
-class _Channels:
-    """ Handle channels
-    """
-
-    def __init__(self, conf: Config):
-        self._conf: Any = conf
-        self._channels: List[Channel] = []
-        self._last_modified = time()
-
-    @property
-    def conf(self) -> Config:
-        return self._conf
-
-    @property
-    def backends(self) -> Iterator[Channel]:
-        return iter(self._channels)
-
-    @property
-    def last_modified(self) -> float:
-        return self._last_modified
-
-    def is_modified_since(self, timestamp: float) -> bool:
-        return self._last_modified > timestamp
-
-    async def init_channels(self):
-        # Initialize channels
-        logger.info("Reconfiguring channels")
-        channels = await asyncio.gather(*(_init_channel(be) for _, be in self._conf.backends.items()))
-        # Close previous channels
-        if self._channels:
-            background_tasks = set()
-            logger.trace("Closing current channels")
-            # Run in background since we do want to wait for
-            # grace period before
-            task = asyncio.create_task(self.close(with_grace_period=True))
-            background_tasks.add(task)
-            task.add_done_callback(background_tasks.discard)
-        logger.trace("Setting new channels")
-        self._channels = channels
-        self._last_modified = time()
-
-    async def close(self, with_grace_period: bool = False):
-        channels = self._channels
-        self._channels = []
-        await asyncio.gather(*(chan.close(with_grace_period) for chan in channels))
-
-    def get_backend(self, name: str) -> Optional[BackendConfig]:
-        return self._conf.backends.get(name)
-
-    async def add_backend(self, name: str, backend: BackendConfig):
-        """ Add new backend (equivalent to POST)
-        """
-        assert_precondition(name not in self._conf.backends)
-        self._conf.backends[name] = backend
-        self._channels.append(await _init_channel(backend))
-
-    def remove_backend(self, name: str) -> bool:
-        """ Delete a specific backend from the list
-        """
-        backend = self._conf.backends.pop(name, None)
-        if not backend:
-            return False
-
-        def _close():
-            background_tasks = set()
-            for chan in self._channels:
-                if chan.address == backend.address:
-                    task = asyncio.create_task(chan.close(with_grace_period=True))
-                    background_tasks.add(task)
-                    task.add_done_callback(background_tasks.discard)
-                else:
-                    yield chan
-        self._channels = list(_close())
-        return True
-
-
-class _Router(tornado.routing.Router):
-    """ Router
-    """
-
-    def __init__(self, channels: _Channels, conf: HttpConfig):
+    def __init__(self, channels: Channels, conf: HttpConfig):
         self.channels = channels
-        self.app = App(
-            default_handler_class=NotFoundHandler,
-            cross_origin=conf.cross_origin,
-        )
 
-        self._metrics_call: Optional[Callable] = None
+        self._collect: Optional[Callable] = None
 
         # Set router
         self._channels_last_modified = 0.
         self._router = DefaultRouter()
         self._update_routes()
 
-    async def set_metrics(self, metrics_conf: metrics.MetricConfig) -> metrics.Metrics:
+    async def set_metrics(self, metrics_conf: MetricConfig) -> metrics.Metrics:
         """ Initialize metrics service
             if requested
         """
-        _service = await metrics_conf.load_service()
+        metrics_service = await metrics_conf.load_service()
 
-        async def _call(request: HTTPServerRequest, chan: Channel, data: metrics.Data):
+        async def _collect(request: web.Request, chan: Channel, data: metrics.Data):
             routing_key = metrics_conf.routing_key_meta(
                 meta=chan.meta,
                 headers=request.headers,
             )
             if routing_key:
-                await _service.emit(routing_key, data)
+                await metrics_service.emit(routing_key, data)
 
-        self._metrics_call = _call
-        return _service
+        self._collect = _collect
+        return metrics_service
 
     def _update_routes(self) -> None:
         """ Update routes and routable class
@@ -237,7 +255,7 @@ class _Router(tornado.routing.Router):
 
         @dataclass
         class _Routable:
-            request: HTTPServerRequest
+            request: web.Request
 
             def get_route(self) -> Optional[str]:  # type: ignore
                 """
@@ -252,115 +270,174 @@ class _Router(tornado.routing.Router):
         self._routes = routes
         self._routable_class = _Routable
 
-    def _get_error_handler(
-        self,
-        request: HTTPServerRequest,
-        code: int,
-        reason: Optional[str] = None,
-    ) -> tornado.httputil.HTTPMessageDelegate:
-        return self.app.get_handler_delegate(
-            request,
-            ErrorHandler,
-            {"status_code": code, "reason": reason},
-        )
-
-    def find_handler(self, request, **kwargs):
+    async def do_route(self, request: web.Request) -> web.StreamResponse:
         """ Override
 
             Ask inner router to return a `Route` object
         """
-        try:
-            # Update routes if required
-            # XXX use event or barrier
-            self._update_routes()
+        # Update routes if required
+        # XXX use event or barrier
+        self._update_routes()
 
-            route = self._router.route(
-                self._routable_class(request=request),
+        route = await self._router.route(self._routable_class(request=request))
+        logger.trace("Route %s found for %s", request.url, route)
+        channel = self._routes.get(route.route)
+
+        if not channel:
+            logger.error("Router %s returned invalid route %s", route)
+            raise web.HTTPInternalServerError()
+
+        if route.api is None:
+            response = await ows_handler(
+                request,
+                channel=channel,
+                project=route.project,
+                cors_options_handler=cors_options_handler,
+                collect=self._collect,
             )
-            logger.trace("Route %s found for %s", request.uri, route)
-            channel = self._routes.get(route.route)
-
-            if not channel:
-                logger.error("Router %s returned invalid route %s", route)
-                return self._get_error_handler(request, 500)
-
-            if route.api is None:
-                return self.app.get_handler_delegate(
-                    request,
-                    OwsHandler,
-                    {
-                        'channel': channel,
-                        'project': route.project,
-                        'metrics': self._metrics_call,
-                    },
-                )
+        else:
+            # Check if api endpoint is declared for the channel
+            # Note: it is expected that the api path is relative to
+            # the request path
+            api = route.api
+            for ep in channel.api_endpoints:
+                if api == ep.endpoint:
+                    logger.trace("Found endpoint '%s' for path: %s", ep.endpoint, route.path)
+                    api_name = ep.delegate_to or ep.endpoint
+                    api_path = route.path or ""
+                    # !IMPORTANT set the root url without the api path
+                    request.path = request.path.removesuffix(api_path)
+                    response = await api_handler(
+                        request,
+                        channel=channel,
+                        project=route.project,
+                        api=api_name,
+                        path=api_path,
+                        delegate=bool(ep.delegate_to),
+                        cors_options_handler=cors_options_handler,
+                        collect=self._collect,
+                    )
+                    break
             else:
-                # Check if api endpoint is declared for that the channel
-                # Note: it is expected that the api path is relative to
-                # the request path
-                api = route.api
-                for ep in channel.api_endpoints:
-                    if api == ep.endpoint:
-                        logger.trace("Found endpoint '%s' for path: %s", ep.endpoint, route.path)
-                        api_name = ep.delegate_to or ep.endpoint
-                        api_path = route.path or ""
-                        # !IMPORTANT set the root url without the api path
-                        request.path = request.path.removesuffix(api_path)
-                        return self.app.get_handler_delegate(
-                            request,
-                            ApiHandler,
-                            {
-                                'channel': channel,
-                                'project': route.project,
-                                'api': api_name,
-                                'path': api_path,
-                                'delegate': bool(ep.delegate_to),
-                                'metrics': self._metrics_call,
-                            },
-                        )
+                raise web.HTTPNotFound()
 
-                return self._get_error_handler(request, 404)
-        except HTTPError as err:
-            return self._get_error_handler(request, err.status_code, err.reason)
-        except Exception:
-            logger.critical(traceback.format_exc())
-            return self._get_error_handler(request, 500)
+        return response
 
 
-def configure_server(
-    router: tornado.routing.Router,
-    conf: HttpConfig,
-) -> tornado.httpserver.HTTPServer:
-    server = tornado.httpserver.HTTPServer(
-        router,
-        ssl_options=conf.ssl.create_ssl_server_context() if conf.use_ssl else None,
-        xheaders=conf.proxy_conf,
-    )
+#
+# Server
+#
+
+Site: TypeAlias = web.TCPSite | web.UnixSite
+
+
+@no_type_check
+async def start_site(conf: HttpConfig, runner: web.AppRunner) -> Site:
+
+    ssl_context = conf.ssl.create_ssl_server_context() if conf.use_ssl else None
+
+    site: Site
     match conf.listen:
-        case (str(address), int(port)):
-            server.listen(port, address=address.strip('[]'))
-        case str(socket):
-            socket = socket[len('unix:'):]
-            socket = tornado.netutil.bind_unix_socket(socket)
-            server.add_socket(socket)
-    return server
+        case (address, port):
+            site = web.TCPSite(
+                runner,
+                host=address.strip('[]'),
+                port=port,
+                ssl_context=ssl_context,
+            )
+        case socket:
+            site = web.UnixSite(
+                runner,
+                socket[len('unix:'):],
+                ssl_context=ssl_context,
+            )
+
+    await site.start()
+    return site
 
 
-def configure_admin_server(conf: AdminHttpConfig, channels: _Channels):
+@asynccontextmanager
+async def setup_ogc_server(
+    conf: HttpConfig,
+    metrics_conf: Optional[MetricConfig],
+    channels: Channels,
+) -> AsyncGenerator[web.AppRunner, None]:
+
+    app = web.Application(
+        middlewares=[
+            log_incoming_request,
+            unhandled_exceptions,
+        ],
+        handler_args={
+            'access_log_class': AccessLogger,
+        },
+    )
+
+    # CORS support
+    app.on_response_prepare.append(set_access_control_headers(conf.cross_origin))
+    app.on_response_prepare.append(set_server_headers)
+
+    router = _Router(channels, conf)
+
+    metrics_service = None
+    if metrics_conf:
+        metrics_service = await router.set_metrics(metrics_conf)
+
+        async def close_service(app: web.Application):
+            await metrics_service.close()
+        app.on_cleanup.append(close_service)
+
+    router = _Router(channels, conf)
+
+    app.router.add_route('*', "/{tail:.*}", router.do_route)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    try:
+        yield runner
+    finally:
+        await runner.cleanup()
+
+
+@asynccontextmanager
+async def setup_adm_server(
+    conf: AdminHttpConfig,
+    channels: Channels,
+) -> AsyncGenerator[web.AppRunner, None]:
     """ Configure admin/managment server
     """
     logger.info(f"Configuring admin server at {conf.format_interface()}")
-    configure_server(
-        App(
-            [
-                (r"/backend/([^\/]+)$", BackendHandler, {'channels':  channels}),
-                (r"/config", ConfigHandler, {'channels': channels}),
-            ],
-            default_handler_class=JsonNotFoundHandler,
-            cross_origin=conf.cross_origin,
-        ),
-        conf,
+
+    app = web.Application(
+        middlewares=[
+            log_incoming_request,
+            json_exception,
+            unhandled_exceptions,
+        ],
+        handler_args={
+            'access_log_class': AccessLogger,
+        },
     )
+
+    # CORS support
+    app.on_response_prepare.append(
+        set_access_control_headers(conf.cross_origin),
+    )
+
+    app.add_routes(
+        [
+            backends_route(channels, cors_options_handler),
+            backends_list_route(channels, cors_options_handler),
+            config_route(channels, cors_options_handler),
+        ],
+    )
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    try:
+        yield runner
+    finally:
+        await runner.cleanup()
 
 
 async def serve(conf: Config):
@@ -370,28 +447,23 @@ async def serve(conf: Config):
     conf: Any = conf
 
     # Initialize channels
-    channels = _Channels(conf)
+    channels = Channels(conf)
     await channels.init_channels()
 
-    router = _Router(channels, conf.http)
+    async with setup_ogc_server(conf.http, conf.metrics, channels) as ogc_runner:
+        async with setup_adm_server(conf.admin_server, channels) as adm_runner:
 
-    metrics_service = None
-    if conf.metrics:
-        metrics_service = await router.set_metrics(conf.metrics)
+            _ogc_site: Site = await start_site(conf.http, ogc_runner)
+            _adm_site: Site = await start_site(conf.admin_server, adm_runner)
 
-    configure_server(router, conf.http)
-    configure_admin_server(conf.admin_server, channels)
+            event = asyncio.Event()
 
-    event = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGINT, event.set)
-    loop.add_signal_handler(signal.SIGTERM, event.set)
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGINT, event.set)
+            loop.add_signal_handler(signal.SIGTERM, event.set)
 
-    logger.info(f"Server listening at {conf.http.format_interface()}")
-    await event.wait()
+            logger.info(f"Server listening at {conf.http.format_interface()}")
+            await event.wait()
+
     await channels.close()
-
-    if metrics_service:
-        await metrics_service.close()
-
     logger.info("Server shutdown")

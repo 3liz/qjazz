@@ -5,11 +5,11 @@ from fnmatch import fnmatch
 
 import grpc
 
+from aiohttp import web
 from grpc_health.v1 import (
     health_pb2,  # HealthCheckRequest
     health_pb2_grpc,  # HealthStub
 )
-from tornado.web import HTTPError
 from typing_extensions import (
     Callable,
     Dict,
@@ -39,7 +39,8 @@ class Channel:
         so we don't need to handle a reconnection task
     """
 
-    def __init__(self, conf: BackendConfig):
+    def __init__(self, name: str, conf: BackendConfig):
+        self._name = name
         self._conf = conf
         self._channel = None
         self._connected = False
@@ -65,6 +66,18 @@ class Channel:
             certificate_chain=_read_if(conf.ssl.certfile),
             private_key=_read_if(conf.ssl.keyfile),
         ) if self._use_ssl else None
+
+    @property
+    def config(self) -> BackendConfig:
+        return self._conf
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def serving(self) -> bool:
+        return self._serving
 
     @property
     def in_use(self) -> bool:
@@ -127,6 +140,7 @@ class Channel:
                         break
             except grpc.RpcError as rpcerr:
                 if rpcerr.code() != grpc.StatusCode.UNAVAILABLE:
+                    self._serving = False
                     logger.error(
                         "Backend error:\t%s\t%s\t%s",
                         self._address,
@@ -195,7 +209,7 @@ class Channel:
         """ Return a server stub from the current channel
         """
         if not self._serving or self._closing:
-            raise HTTPError(503)
+            raise web.HTTPServiceUnavailable()
 
         self._usecount += 1
         try:
@@ -209,21 +223,21 @@ class Channel:
             )
             match rpcerr.code():
                 case grpc.StatusCode.NOT_FOUND:
-                    raise HTTPError(404)
+                    raise web.HTTPNotFound()
                 case grpc.StatusCode.UNAVAILABLE:
-                    raise HTTPError(502)
+                    raise web.HTTPServiceUnavailable()
                 case grpc.StatusCode.PERMISSION_DENIED:
-                    raise HTTPError(403)
+                    raise web.HTTPForbidden()
                 case grpc.StatusCode.INVALID_ARGUMENT:
-                    raise HTTPError(400)
+                    raise web.HTTPBadRequest()
                 case grpc.StatusCode.INTERNAL:
-                    raise HTTPError(500)
+                    raise web.HTTPInternalServerError()
                 case grpc.StatusCode.UNKNOWN:
                     # Code is outside of gRPC namespace
                     # Let the caller handle it in case
                     # the real error code was in initial metadata
                     if unknown_error_callback:
-                        unknown_error_callback()
+                        unknown_error_callback(rpcerr.initial_metadata())
                     else:
                         raise
                 case _:

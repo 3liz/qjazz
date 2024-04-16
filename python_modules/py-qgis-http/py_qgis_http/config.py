@@ -21,7 +21,7 @@ from py_qgis_contrib.core.config import (
     section,
 )
 
-from . import metrics
+from .metrics import MetricConfig
 from .resolver import BackendConfig
 
 DEFAULT_INTERFACE = ("127.0.0.1", 80)
@@ -175,7 +175,7 @@ def add_configuration_sections(service: Optional[ConfigService] = None):
     # Add the `[metrics]` optional configuration
     service.add_section(
         'metrics',
-        Optional[metrics.MetricConfig],
+        Optional[MetricConfig],
         Field(
             default=None,
             title="Metrics configuration",
