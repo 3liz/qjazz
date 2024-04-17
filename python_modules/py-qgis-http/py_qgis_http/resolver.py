@@ -103,6 +103,16 @@ class ApiEndpoint(Config):
         default="",
         title="Api description",
     )
+    enable_html_delegate: bool = Field(
+        default=False,
+        title="Enable html in delegated endpoint",
+        description=(
+            "Enable fetching html resources in delegated endpoints.\n"
+            "Enable this if the delegated api handle correctly html\n"
+            "template resource resolution in Qgis server when using\n"
+            "delegated api endpoint."
+        ),
+    )
 
 
 class BackendConfig(Config):

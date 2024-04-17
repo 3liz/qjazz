@@ -30,7 +30,7 @@ from py_qgis_contrib.core.qgis import (
 from . import _op_cache, _op_plugins, _op_requests
 from . import messages as _m
 from .config import WorkerConfig
-from .serverapi import ApiDelegate
+from .delegate import ApiDelegate
 
 Co = CheckoutStatus
 

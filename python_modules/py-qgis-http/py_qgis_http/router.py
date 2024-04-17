@@ -135,7 +135,6 @@ class DefaultRouter(RouterBase):
             # Clean up suffixes from api name
             if api.endswith(".html"):
                 api = api.removesuffix(".html")
-                api_path = ".html"
             elif api.endswith(".json"):
                 api = api.removesuffix(".json")
 

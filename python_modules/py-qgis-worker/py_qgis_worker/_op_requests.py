@@ -16,8 +16,8 @@ from py_qgis_contrib.core.utils import to_rfc822
 
 from . import messages as _m
 from .config import WorkerConfig
+from .delegate import ROOT_DELEGATE
 from .requests import Request, Response, _to_qgis_method
-from .serverapi import ROOT_DELEGATE
 
 Co = CheckoutStatus
 

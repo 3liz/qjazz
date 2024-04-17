@@ -17,6 +17,5 @@ pydantic-settings==2.2.1
 python-dotenv==1.0.1
 setuptools==69.2.0
 tomli==2.0.1
-tornado==6.4
 typing_extensions==4.10.0
 yarl==1.9.4

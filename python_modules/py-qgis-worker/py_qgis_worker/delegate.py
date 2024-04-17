@@ -10,6 +10,10 @@
 
     Also there is no way to iterate over registered api and checx for
     `accept` method, we only may rely on the api name to fetch the api
+
+    NOTE: template handling is broken in Qgis server: instead of trying
+    to get resource path for api root name it try to resolve the path from
+    the url and this does not work in delegated api url.
 """
 import traceback
 

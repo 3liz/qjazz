@@ -328,6 +328,7 @@ async def api_handler(
                     path=path,
                     method=request.method,
                     data=await request.read() if request.has_body else None,
+                    delegate=delegate,
                     target=project,
                     url=url,
                     direct=channel.allow_direct_resolution,

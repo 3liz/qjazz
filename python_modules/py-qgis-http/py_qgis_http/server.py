@@ -41,15 +41,17 @@ try:
 except PackageNotFoundError:
     __version__ = "dev"
 
-SERVER_HEADER = f"Py-Qgis-Http-Server {__version__}"
+SERVER_HEADER = f"Py-Qgis-Http-Server2 {__version__}"
 
 #
 # Logging
 #
 
 
-REQ_LOG_TEMPLATE = "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}\t"
-REQ_FORMAT = REQ_LOG_TEMPLATE + '{agent}\t{referer}'
+REQ_FORMAT = (
+    "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}"
+    "\t{agent}\t{referer}"
+)
 REQ_ID_FORMAT = "REQ-ID:{request_id}"
 RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_ID_FORMAT
 
@@ -302,7 +304,21 @@ class _Router:
             api = route.api
             for ep in channel.api_endpoints:
                 if api == ep.endpoint:
-                    logger.trace("Found endpoint '%s' for path: %s", ep.endpoint, route.path)
+                    logger.trace(
+                        "Found endpoint '%s' (delegate to: %s) for path: %s",
+                        ep.endpoint,
+                        ep.delegate_to or "n/a",
+                        route.path,
+                    )
+                    #
+                    # Qgis server has a problem when resolving
+                    # html template resource paths, so disable
+                    # fetching html resources by default
+                    #
+                    if ep.delegate_to and not ep.enable_html_delegate:
+                        if request.path.endswith('.html'):
+                            raise web.HTTPUnsupportedMediaType()
+
                     api_name = ep.delegate_to or ep.endpoint
                     api_path = route.path or ""
                     response = await api_handler(
