@@ -1,8 +1,5 @@
-import re
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import PurePosixPath
 from urllib.parse import unquote_plus
 
 from aiohttp import web
@@ -76,11 +73,9 @@ class DefaultRouter(RouterBase):
        If the project is not defined as `MAP` parameter
        or as `X-Qgis-Project` header, we take the relative path from
        the route in the request path.
-    * `<channel_route>/(?:<project_path>/_/)(/<api_path>)` is routed
-       os API request
+    * `<channel_route>/(?:<project_path>/_/)(<api_path>)` is routed
+       as API request
     """
-    API_MATCH = re.compile(r'(?:(.+)/_/)?([^\/]+)(/.*)?')
-
     async def route(self, routable: Routable) -> Route:
         # Get the route from the request path
         route = routable.get_route()
@@ -106,37 +101,50 @@ class DefaultRouter(RouterBase):
             # OWS project
             if not project:
                 # Check project in the path
-                project = '/%s' % PurePosixPath(request.path).relative_to(route)
+                project = request.path.removeprefix(route)
 
             logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)
         else:
             # Check project in request path
-            path = str(PurePosixPath(request.path).relative_to(route).as_posix())
-            if path == '.':
-                path = ""
-            m = self.API_MATCH.match(path)
-            if not m:
+            path = request.path.removeprefix(route)
+
+            head, sep, tail = path.partition('/_/')
+            if tail:
+                # Handle {:project}/_/{:api_path} scheme
+                if project:
+                    # If the project is already defined with MAP or
+                    # header: redirect to the project's location
+                    logger.warning(
+                        "Project's redefinition in url %s: sending redirection",
+                        request.url,
+                    )
+                    raise web.HTTPFound(f"{route}{project}/_/{tail}")
+                project = f"{head}"
+                api, _, api_path = tail.partition('/')
+            elif head and not sep:
+                # Handle {:api_path} scheme
+                api, _, api_path = head.partition('/')
+            else:
+                # Invalid path ending with '/_/'
                 raise web.HTTPBadRequest(reason="Missing api specification")
-            _project, api, api_path = m.groups()
+
+            if api_path:
+                api_path = f"/{api_path}"
 
             # Clean up suffixes from api name
             if api.endswith(".html"):
                 api = api.removesuffix(".html")
+                api_path = ".html"
             elif api.endswith(".json"):
                 api = api.removesuffix(".json")
 
             logger.trace(
                 "DefaultRouter::router %s API request detected (project %s, api: %s, path: %s)",
                 request.url,
-                _project,
+                project,
                 api,
                 api_path,
             )
-            if project and _project:
-                logger.error("Multiple project definitions in '%s'", request.url)
-                raise web.HTTPBadRequest(reason="Multiple project definitions in request")
-            elif not project:
-                project = f"/{_project}"
 
             return Route(route=route, project=project, api=api, path=api_path)

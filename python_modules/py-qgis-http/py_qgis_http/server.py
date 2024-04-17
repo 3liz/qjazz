@@ -280,7 +280,7 @@ class _Router:
         self._update_routes()
 
         route = await self._router.route(self._routable_class(request=request))
-        logger.trace("Route %s found for %s", request.url, route)
+        logger.trace("Route %s found for %s", route, request.url)
         channel = self._routes.get(route.route)
 
         if not channel:
@@ -305,8 +305,6 @@ class _Router:
                     logger.trace("Found endpoint '%s' for path: %s", ep.endpoint, route.path)
                     api_name = ep.delegate_to or ep.endpoint
                     api_path = route.path or ""
-                    # !IMPORTANT set the root url without the api path
-                    request.path = request.path.removesuffix(api_path)
                     response = await api_handler(
                         request,
                         channel=channel,

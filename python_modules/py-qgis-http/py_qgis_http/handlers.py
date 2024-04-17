@@ -20,7 +20,7 @@ from py_qgis_worker._grpc import api_pb2
 
 from . import metrics
 from .channel import Channel
-from .webutils import CORSHandler, _decode, public_location
+from .webutils import CORSHandler, _decode, public_location, public_url
 
 #
 # Qgis request Handlers
@@ -316,7 +316,8 @@ async def api_handler(
     if collect:
         start = time()
 
-    url = public_location(request)
+    # !IMPORTANT set the root url without the api path
+    url = public_url(request, request.path.removesuffix(path))
     metadata = get_metadata(request, channel)
 
     try:
