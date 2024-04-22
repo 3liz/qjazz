@@ -102,7 +102,7 @@ class QgisPluginConfig(config.Config):
             "The list of installable plugins.\n"
             "Note: if the plugin directory contains other plugins\n"
             "plugins not in the list will NOT be loaded !\n"
-            "The Plugins will be unstalled at startup\n"
+            "The Plugins will be installed at startup\n"
             "if the 'install_mode' is set to 'auto'.\n"
             "Note that an empty list means what it is:\n"
             "i.e, *no* plugins."

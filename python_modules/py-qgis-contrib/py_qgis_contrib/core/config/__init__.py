@@ -7,6 +7,7 @@ from ._service import (  # noqa
     ConfigService,
     SectionExists,
     confservice,
+    read_config_json,
     read_config_toml,
     section,
 )

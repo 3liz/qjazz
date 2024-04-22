@@ -1,0 +1,11 @@
+
+# Minimal docker compose for running examples
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "127.0.0.1:5672:5672"
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "127.0.0.1:6379:6379"

@@ -25,14 +25,17 @@ A worker may run a configurable number of Qgis processes.  Incoming Qgis request
 to the gRPC service are distributed with a fair-queuing dispatching algorithm to 
 the embedded Qgis server processes.
 
-The purpose of these processes is not to scale but to ensure some fault-tolerance system up
-to some limit.
+You may increase or decrease the number of processes but another strategy is to 
+scale the number of worker services while keeping the number of sub-processes relatively
+small. 
+
+Depending of the situation it may be better to choose one or another strategy.
 
 Life cycle and pressure conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If a processes crash, the worker is then in a *degraded*
-state that can be monitored. When the last process exit the worker will
+state that can be monitored. When the number of dead process exceed some limite will
 stop with an error code.
 
 There is one condition for a worker to deliberatly exit 

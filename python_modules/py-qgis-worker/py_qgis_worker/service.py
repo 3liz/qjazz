@@ -15,6 +15,7 @@ from grpc_health.v1._async import HealthServicer
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigError, confservice, read_config_toml
+from py_qgis_contrib.core.utils import to_iso8601
 
 from . import messages as _m
 from ._grpc import api_pb2, api_pb2_grpc
@@ -45,10 +46,6 @@ def _match_grpc_code(code: int) -> grpc.StatusCode:
 
 def _headers_to_metadata(coll: Iterable[Tuple[str, str]]) -> Iterator[Tuple[str, str]]:
     return ((f"x-reply-header-{k.lower()}", str(v)) for k, v in coll)
-
-
-def _to_iso8601(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).isoformat(timespec='milliseconds')
 
 
 async def _abort_on_error(
@@ -530,7 +527,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                     uri=item.uri,
                     name=item.name,
                     storage=item.storage,
-                    last_modified=_to_iso8601(datetime.fromtimestamp(item.last_modified)),
+                    last_modified=to_iso8601(datetime.fromtimestamp(item.last_modified)),
                     public_uri=item.public_uri,
                 )
 
@@ -562,7 +559,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                         uri=resp.uri,
                         filename=resp.filename,
                         crs=resp.crs,
-                        last_modified=_to_iso8601(datetime.fromtimestamp(resp.last_modified)),
+                        last_modified=to_iso8601(datetime.fromtimestamp(resp.last_modified)),
                         storage=resp.storage,
                         has_bad_layers=resp.has_bad_layers,
                         layers=[_layer(layer) for layer in resp.layers],
@@ -725,7 +722,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 #
 def _new_cache_info(resp: _m.CacheInfo) -> api_pb2.CacheInfo:
 
-    last_modified = _to_iso8601(
+    last_modified = to_iso8601(
         datetime.fromtimestamp(resp.last_modified),
     ) if resp.last_modified else ""
 

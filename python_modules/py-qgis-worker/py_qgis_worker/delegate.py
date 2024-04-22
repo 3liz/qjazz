@@ -8,7 +8,7 @@
     this is problematic when running behind a proxy since there is no way
     to specify a custom URL as for ows api (i.e `X-Qgis-Service-Url` header)
 
-    Also there is no way to iterate over registered api and checx for
+    Also there is no way to iterate over registered api and check for
     `accept` method, we only may rely on the api name to fetch the api
 
     NOTE: template handling is broken in Qgis server: instead of trying
