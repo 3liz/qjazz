@@ -3,7 +3,7 @@ import os
 import traceback
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import AsyncGenerator, AsyncIterator, Iterable, Iterator, Tuple

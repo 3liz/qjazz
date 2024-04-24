@@ -1,7 +1,7 @@
 
 from qgis.core import Qgis, QgsUnitTypes
 
-from py_qgis_processes.schemas import ogc
+from py_qgis_processes_schemas import ogc
 
 
 def test_uom_schema():

@@ -24,7 +24,9 @@ known-first-party = [
     "py_qgis_worker",
     "py_qgis_admin",
     "py_qgis_http",
-    "py-qgis-metrics",
+    "py_qgis_metrics",
+    "py_qgis_processes",
+    "py_qgis_processes_schemas",
 ]
 known-third-party = [
     "qgis",

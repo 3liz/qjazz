@@ -1,10 +1,14 @@
 from types import MappingProxyType
 
 from qgis.core import (
+    QgsProcessingParameterBand,
     QgsProcessingParameterBoolean,
+    QgsProcessingParameterColor,
+    QgsProcessingParameterDateTime,
     QgsProcessingParameterDistance,
-    # QgsProcessingParameterDuration,
+    QgsProcessingParameterDuration,
     QgsProcessingParameterEnum,
+    QgsProcessingParameterField,
     QgsProcessingParameterNumber,
     QgsProcessingParameterRange,
     QgsProcessingParameterScale,
@@ -16,9 +20,14 @@ from typing_extensions import Optional
 from .base import InputParameter as InputParameterBase
 from .base import ParameterDefinition
 from .literal import (
+    ParameterBand,
     ParameterBool,
+    ParameterColor,
+    ParameterDateTime,
     ParameterDistance,
+    ParameterDuration,
     ParameterEnum,
+    ParameterField,
     ParameterNumber,
     ParameterRange,
     ParameterScale,
@@ -28,20 +37,20 @@ from .literal import (
 # Type mapping
 
 QGIS_TYPES = MappingProxyType({
-    # ParameterType.Band
+    QgsProcessingParameterBand.typeName(): ParameterBand,
     QgsProcessingParameterBoolean.typeName(): ParameterBool,
-    # ParameterType.Color
+    QgsProcessingParameterColor.typeName(): ParameterColor,
     # ParameterType.CoordinateOperation
     # ParameterType.Crs
     # ParameterType.DatabaseSchema
     # ParameterType.DatabaseTable
-    # ParameterType.DateTime
+    QgsProcessingParameterDateTime.typeName(): ParameterDateTime,
     # ParameterType.DxfLayers
     QgsProcessingParameterEnum.typeName(): ParameterEnum,
     # ParameterType.Expression
     # ParameterType.Extent
     # ParameterType.FeatureSource
-    # ParameterType.Field
+    QgsProcessingParameterField.typeName(): ParameterField,
     # ParameterType.FieldMapping
     # ParameterType.File
     # ParameterType.Geometry
@@ -56,7 +65,7 @@ QGIS_TYPES = MappingProxyType({
     # ParameterType.MultipleLayers
     QgsProcessingParameterNumber.typeName(): ParameterNumber,
     QgsProcessingParameterDistance.typeName(): ParameterDistance,
-    # QgsProcessingParameterDuration.typeName(): ParameterDuration,
+    QgsProcessingParameterDuration.typeName(): ParameterDuration,
     QgsProcessingParameterScale.typeName(): ParameterScale,
     # ParameterType.Point
     # ParameterType.PointCloudLayer

@@ -22,11 +22,9 @@ from py_qgis_contrib.core.qgis import (
     show_all_versions,
     show_qgis_settings,
 )
+from py_qgis_processes_schemas import ProcessesSummary
 
 from .celery import JobContext, Worker
-from .schemas import (
-    ProcessesSummary,
-)
 
 
 class QgisContext:

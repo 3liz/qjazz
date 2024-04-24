@@ -13,7 +13,7 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-  'pydantic >= 2.2',
+  'pydantic >= 2.7',
   'pydantic-settings',
   'typing-extensions',
   'tomli >= 1.1.0 ; python_version < "3.11"'

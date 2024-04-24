@@ -9,10 +9,11 @@ requires-python = ">= 3.10"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: POSIX",
 ]
 dependencies = [
-  'pydantic >= 2.2',
+  'pydantic >= 2.7',
   'pydantic-settings',
   'typing-extensions',
   'tomli >= 1.1.0 ; python_version < "3.11"'

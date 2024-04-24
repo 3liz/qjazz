@@ -14,6 +14,7 @@ classifiers = [
 dependencies = [
     "py-qgis-contrib==${PIN_VERSION}",
     "py-qgis-cache==${PIN_VERSION}",
+    "pydantic-extra-types",
     "celery>=5.3.6",
     "redis>=5.0.3",
     "click",
@@ -31,6 +32,8 @@ email = "dmarteau@3liz.org"
 include = [
     "py_qgis_processes", 
     "py_qgis_processes.*",
+    "py_qgis_processes_schemas", 
+    "py_qgis_processes_schemas.*", 
 ]
 
 [tool.ruff]

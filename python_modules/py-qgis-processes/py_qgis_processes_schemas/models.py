@@ -38,3 +38,5 @@ class Link(JsonModel):
     templated: bool = False
     # Language of the resource referenced
     hreflang: Optional[str] = None
+
+

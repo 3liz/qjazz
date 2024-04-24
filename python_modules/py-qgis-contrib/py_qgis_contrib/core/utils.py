@@ -45,4 +45,3 @@ def utc_now() -> datetime:
         timezone - which is NOT what `datetime.utcnow()` do.
     """
     return datetime.now(timezone.utc)
- 

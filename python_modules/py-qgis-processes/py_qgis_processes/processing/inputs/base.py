@@ -17,7 +17,7 @@ from typing_extensions import (
     TypeVar,
 )
 
-from ...processes import InputDescription
+from py_qgis_processes_schemas.processes import InputDescription
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 
@@ -26,34 +26,52 @@ T = TypeVar('T')
 
 class InputParameter(Generic[T]):
 
-    _BasicType: ClassVar[Optional[Type]] = None
+    _ParameterType: ClassVar[Optional[Type]] = None
 
-    def __init__(self, param: ParameterDefinition, project: Optional[QgsProject] = None):
+    def __init__(self,
+            param: ParameterDefinition,
+            project: Optional[QgsProject] = None,
+            validation_only: bool = False,
+        ):
         self._param = param
-        self._project = project
+        self._model = self.model(
+            param,
+            project,
+            validation_only,
+        )
 
-        # Handle defaultValue
-        # XXX In some case QVariant are
-        # not converted to python object (SIP bug ?)
-        # Problem stated in getting QgsProcessingParameterFeatureSource
-        # from processing.core.parameters.getParameterFromString
-        default = param.defaultValue()
-        if isinstance(default, QVariant):
-            default = None if default.isNull() else default.value()
+    def validate(self, inp: JsonValue) -> T:
+        return self._model.validate_python(inp)
+
+    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> T:
+        return self.validate(inp)
+
+    @classmethod
+    def model(
+        cls: Type[Self],
+        param: ParameterDefinition,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> TypeAdapter:
 
         field: Dict = {}
 
-        if default is not None:
-            field.update(default=default)
+        if not validation_only:
+            # Handle defaultValue
+            # XXX In some case QVariant are
+            # not converted to python object (SIP bug ?)
+            # Problem stated in getting QgsProcessingParameterFeatureSource
+            # from processing.core.parameters.getParameterFromString
+            default = param.defaultValue()
+            if isinstance(default, QVariant):
+                default = None if default.isNull() else default.value()
 
-        _type = self.create_model(param, field, project)
+            if default is not None:
+                field.update(default=default)
 
-        self._model = TypeAdapter(
-            Annotated[_type, Field(**field)],  # type: ignore [pydantic-field, valid-type]
-        )
+        _type = cls.create_model(param, field, project, validation_only)
 
-    def value(self, inp: JsonValue) -> T:
-        return self._model.validate_python(inp)
+        return TypeAdapter(Annotated[_type, Field(**field)])  # type: ignore [pydantic-field, valid-type]
 
     @classmethod
     def create_model(
@@ -61,10 +79,11 @@ class InputParameter(Generic[T]):
         param: ParameterDefinition,
         field: Dict,
         project: Optional[QgsProject] = None,
+        validation_only: bool = False,
     ) -> Type:
-        if cls._BasicType is None:  # type: ignore [attr-defined]
+        if cls._ParameterType is None:  # type: ignore [attr-defined]
             raise NotImplementedError()
-        return cls._BasicType  # type: ignore [attr-defined]
+        return cls._ParameterType  # type: ignore [attr-defined]
 
     def json_schema(self) -> Dict[str, JsonValue]:
         """ Create json schema
