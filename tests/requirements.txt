@@ -4,7 +4,7 @@ pytest-aiohttp
 ruff
 mypy
 mypy-extensions
-types-protobuf
+types-protobuf<5
 types-psutil
 types-PyYAML
 types-toml
