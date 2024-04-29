@@ -12,11 +12,11 @@ from typing_extensions import (
     Dict,
     Generic,
     Optional,
-    Self,
     Type,
     TypeVar,
 )
 
+from py_qgis_processes_schemas.models import one_of
 from py_qgis_processes_schemas.processes import InputDescription
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
@@ -48,7 +48,7 @@ class InputParameter(Generic[T]):
 
     @classmethod
     def model(
-        cls: Type[Self],
+        cls,
         param: ParameterDefinition,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -75,7 +75,7 @@ class InputParameter(Generic[T]):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: ParameterDefinition,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -91,10 +91,7 @@ class InputParameter(Generic[T]):
         schema = self._model.json_schema()
         schema.pop('title', None)
 
-        if 'anyOf' in schema:
-            # See https://github.com/pydantic/pydantic/issues/656#
-            schema['oneOf'] = schema['anyOf']
-            del schema['anyOf']
+        one_of(schema)
 
         return schema
 

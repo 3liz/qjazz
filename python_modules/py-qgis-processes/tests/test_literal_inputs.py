@@ -169,7 +169,7 @@ def test_parameter_distance():
     print("\ntest_parameter_distance::", schema)
     assert schema['type'] == 'number'
     assert schema['x-ogc-definition'] == ogc.OgcDataType['length']
-    assert schema['x-ogc-uom'] == str(ogc.UOMRef.from_name('m'))
+    assert schema['x-ogc-uom'] == ogc.uom_ref('m')
 
 
 def test_parameter_scale():

@@ -18,13 +18,20 @@ Using `x-ogc-*` is a OGC standart proposal described  in https://github.com/open
 
 Ref: see https://github.com/opengeospatial/ogcapi-features/issues/838
 
-## Extra `format` specification:
+## `format` specification:
 
-Additionally to OGC `schema` and standard JsonSchema keywords to the standard OGC schema formats,
+### OGC `format` keywords:
+
+* [`ogc-bbox`](https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/processes-core/bbox.yaml)
+* [`geojson-geometry`](http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/geometryGeoJSON.yaml)
+* [`geojson-feature`](http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/featureGeoJSON.yaml) 
+
+
+#### Qgis `format` extensions:
 
 These keywords will be used when there is no OGC alternative for complex data structure:
 
 * `x-qgis-parameter-<name>` Where `<name>` is the name of an input/output QgisParameterDefinition
    class (ex: `enum` for `QgisProcessingParameterEnum`, `range` for `QgisProcessingParameterRange`,
    ...).
-   Corresponding definitions will be provided with the documentation.
+   Corresponding definitions will be provided with the documentation

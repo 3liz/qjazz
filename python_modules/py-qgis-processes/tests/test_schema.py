@@ -10,4 +10,4 @@ def test_uom_schema():
     for u in Qgis.DistanceUnit:
         if u == Qgis.DistanceUnit.Unknown:
             continue
-        assert ogc.UOMRef.ref(QgsUnitTypes.toString(u)) is not None
+        assert ogc.UOM.get(QgsUnitTypes.toString(u)) is not None

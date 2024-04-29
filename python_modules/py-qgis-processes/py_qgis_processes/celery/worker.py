@@ -148,7 +148,7 @@ class Job(celery.Task):
         else:
             args = ()
 
-        out = self.run(*args, **meta.__run_config__.model_dump())
+        out = self.run(*args, **meta.__run_config__.dict())
         # Return output as json compatible format
         return outputs.dump_python(out, mode='json')
 

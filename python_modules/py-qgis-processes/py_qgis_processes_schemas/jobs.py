@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from pydantic import AnyUrl, Field, JsonValue, TypeAdapter
+from pydantic import Field, JsonValue, TypeAdapter
 from typing_extensions import (
     ClassVar,
     Dict,
@@ -69,13 +69,3 @@ class JobStatus(JsonModel):
 
 
 JobResults: TypeAlias = Dict[str, JsonValue]
-
-
-class Format(JsonModel):
-    media_type: str
-    encoding: str
-    schema_: AnyUrl | Dict[str, JsonValue] = Field(alias="schema")
-
-
-class QualifiedInputValue(Format):
-    value: JsonValue

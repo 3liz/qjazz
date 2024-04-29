@@ -1,11 +1,18 @@
 from pydantic import (
     AnyHttpUrl,
+    AnyUrl,
     BaseModel,
     Field,
+    JsonValue,
     alias_generators,
 )
 from typing_extensions import (
+    Annotated,
+    Dict,
     Optional,
+    Type,
+    TypeAlias,
+    TypeVar,
 )
 
 #
@@ -13,6 +20,27 @@ model_json_properties = dict(
     alias_generator=alias_generators.to_camel,
     populate_by_name=True,
 )
+
+
+# Ensure that union type use `OneOf` in schema
+# instead of `anyOf`
+
+# See https://github.com/pydantic/pydantic/issues/656#
+
+T = TypeVar('T')
+
+
+def one_of(s):
+    if 'anyOf' in s:
+        s['oneOf'] = s['anyOf']
+        del s['anyOf']
+
+# Example: OneOf[str|int] will produce:
+# {'oneOf': [{'type': 'string'}, {'type': 'integer'}]} instead of:
+# {'anyOf': ... }
+
+
+OneOf = Annotated[T, Field(json_schema_extra=one_of)]
 
 
 class JsonModel(BaseModel, **model_json_properties):
@@ -40,3 +68,32 @@ class Link(JsonModel):
     hreflang: Optional[str] = None
 
 
+def MediaType(
+    _type: Type,
+    media_type: str,
+    *,
+    encoding: Optional[str] = None,
+    schema: Optional[str] = None,
+) -> TypeAlias:
+
+    schema_extra: Dict = {'contentMediaType': media_type}
+    if encoding:
+        schema_extra.update(contentEncoding=encoding)
+    if schema:
+        schema_extra.update(contentSchema=schema)
+
+    return Annotated[_type, Field(json_schema_extra=schema_extra)]
+
+
+class Format(JsonModel):
+    media_type: str
+    encoding: Optional[str] = None
+    schema_: Optional[AnyUrl | Dict[str, JsonValue]] = Field(None, alias="schema")
+
+
+class QualifiedInputValue(Format):
+    value: JsonValue
+
+
+class InputValueError(Exception):
+    pass

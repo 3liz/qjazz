@@ -22,14 +22,14 @@ lint::
 lint-preview::
 	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
 
+lint-fix::
+	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
+
 install::
 	pip install -U --upgrade-strategy=eager -e .
 
-autopep8::
-	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
-
-typecheck::
-	@mypy --config-file=$(topsrcdir)/config/mypy.ini -p $(PYTHON_PKG)
+typecheck:: $(PYTHON_PKG)
+	@mypy --config-file=$(topsrcdir)/config/mypy.ini -p $<
 
 security::
 	@bandit -r $(PYTHON_PKG)

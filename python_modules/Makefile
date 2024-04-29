@@ -11,6 +11,7 @@ DIRS= \
 	py-qgis-http \
 	py-qgis-html \
 	py-qgis-scripts \
+	py-qgis-processes \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

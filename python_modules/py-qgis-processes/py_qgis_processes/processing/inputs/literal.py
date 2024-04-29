@@ -28,13 +28,16 @@ from typing_extensions import (
     List,
     Literal,
     Optional,
-    Self,
     Sequence,
     Set,
     Type,
 )
 
-from py_qgis_processes_schemas.ogc import OgcDataType, UOMRef
+from py_qgis_processes_schemas import (
+    InputValueError,
+    OgcDataType,
+    ogc,
+)
 
 from .base import InputParameter
 
@@ -63,7 +66,7 @@ class ParameterEnum(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterEnum,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -98,7 +101,7 @@ class ParameterEnum(InputParameter):
                     case str():
                         pass
                     case _:
-                        raise ValueError(f"Invalid default Enum value: {default}")
+                        raise InputValueError(f"Invalid default Enum value: {default}")
 
                 field.update(default=default)
                 field.update(json_schema_extra={'format': "x-qgis-parameter-enum"})
@@ -144,7 +147,7 @@ class ParameterNumber(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterNumber,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -161,7 +164,7 @@ class ParameterNumber(InputParameter):
             case QgsProcessingParameterNumber.Integer:
                 _type = int
             case invalid:
-                raise ValueError(f"Invalid type for number: {invalid}")
+                raise InputValueError(f"Invalid type for number: {invalid}")
 
         return _type
 
@@ -174,7 +177,7 @@ class ParameterDistance(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterDistance,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -190,12 +193,12 @@ class ParameterDistance(InputParameter):
             ref = None
         else:
             uom = QgsUnitTypes.toString(unit)
-            ref = UOMRef.from_name(uom)
+            ref = ogc.uom_ref(uom)
 
         if not validation_only:
             schema_extra = {'x-ogc-definition': OgcDataType['length']}
             if ref:
-                schema_extra['x-ogc-uom'] = str(ref)
+                schema_extra['x-ogc-uom'] = ref
                 schema_extra['x-ogc-uom-name'] = uom
 
             field.update(json_schema_extra=schema_extra)
@@ -212,7 +215,7 @@ class ParameterScale(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterScale,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -233,7 +236,7 @@ class ParameterDuration(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterDuration,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -249,12 +252,12 @@ class ParameterDuration(InputParameter):
             ref = None
         else:
             uom = QgsUnitTypes.toString(unit)
-            ref = UOMRef.from_name(uom)
+            ref = ogc.uom_ref(uom)
 
         if not validation_only:
             schema_extra = {'x-ogc-definition': OgcDataType['time']}
             if ref:
-                schema_extra['x-ogc-uom'] = str(ref)
+                schema_extra['x-ogc-uom'] = ref
                 schema_extra['x-ogc-uom-name'] = uom
 
             field.update(json_schema_extra=schema_extra)
@@ -270,7 +273,7 @@ class ParameterRange(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterRange,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -298,7 +301,7 @@ class ParameterRange(InputParameter):
                         left, right = default.split(':')
                         field.update(default=[_type(left), _type(right)])
                     case _:
-                        ValueError(f"Invalid default value for parameter Range: {default}")
+                        InputValueError(f"Invalid default value for parameter Range: {default}")
 
             field.update(json_schema_extra={'format': "x-qgis-parameter-range"})
 
@@ -314,7 +317,7 @@ class ParameterDateTime(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterDateTime,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -387,7 +390,7 @@ class ParameterBand(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterBand,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -422,7 +425,7 @@ class ParameterColor(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterColor,
         field: Dict,
         project: Optional[QgsProject] = None,
@@ -438,7 +441,7 @@ class ParameterColor(InputParameter):
                 case QColor():
                     pass
                 case _:
-                    raise ValueError(f"Invalid default value for color: {default}")
+                    raise InputValueError(f"Invalid default value for color: {default}")
 
             # XXX: QColor has not not the same color hex representation as
             # CSS3 spec (i.e QColor: '#aarrggbb', CSS3: '#rrggbbaa')
@@ -471,7 +474,7 @@ class ParameterField(InputParameter):
 
     @classmethod
     def create_model(
-        cls: Type[Self],
+        cls,
         param: QgsProcessingParameterField,
         field: Dict,
         project: Optional[QgsProject] = None,

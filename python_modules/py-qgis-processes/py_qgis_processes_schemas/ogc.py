@@ -15,10 +15,11 @@ from types import MappingProxyType
 
 from pydantic import (
     AnyUrl,
-    GetCoreSchemaHandler,
+    HttpUrl,
 )
-from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Any, Optional, Self, Tuple, Type
+from typing_extensions import (
+    Optional,
+)
 
 OGC_OPENGIS_URL = AnyUrl("https://www.opengis.net")
 
@@ -84,7 +85,7 @@ OGC_UOM_URN = "urn:ogc:def:uom"
 UCUM = f"{OGC_UOM_URN}:UCUM"
 OGC_UOM = f"{OGC_UOM_URN}:OGC:1.0"
 
-OGC_UOM = MappingProxyType({
+UOM = MappingProxyType({
     'deg': (UCUM, 'deg'),
     'degree': (UCUM, 'deg'),
     'degrees': (UCUM, 'deg'),
@@ -144,43 +145,45 @@ OGC_UOM = MappingProxyType({
 })
 
 
-class CrsRef(AnyUrl):
+# CRSs
 
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls: Type[Self], source_type: Any, handler: GetCoreSchemaHandler,  # noqa ANN401
-    ) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(cls, handler(AnyUrl))
-
-    @classmethod
-    def new(cls: Type[Self], auth_code: int | str, auth_name: str = "OGC", version: str = "1.3") -> Self:
-        return cls(f"{OGC_OPENGIS_URL}/def/crs/{auth_name}/{version}/{auth_code}")
-
-    @classmethod
-    def from_epsg(cls: Type[Self], code: int) -> Self:
-        return cls.new(code, "EPSG", version="9.9.1")
-
-    @classmethod
-    def wgs84(cls: Type[Self]) -> Self:
-        return cls.new("CRS84")
+# Crs references may by either urn string or Url
+CRSRef = str | HttpUrl
 
 
-class UOMRef(AnyUrl):
+def crs_ref(
+    auth_code: int | str,
+    auth_name: str,
+    *,
+    version: Optional[str] = None,
+) -> str:
+    # Version is not required
+    if version:
+        return f"urn:ogc:def:crs:{auth_name}:{version}:{auth_code}"
+    else:
+        return f"urn:ogc:def:crs:{auth_name}:{auth_code}"
 
-    @staticmethod
-    def ref(name: str) -> Optional[Tuple[str, str]]:
-        return OGC_UOM.get(name)
 
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls: Type[Self], source_type: Any, handler: GetCoreSchemaHandler,  # noqa ANN401
-    ) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(cls, handler(AnyUrl))
+def crs_ref_from_epsg(code: int | str) -> str:
+    return crs_ref(code, "EPSG")
 
-    @classmethod
-    def from_name(cls: Type[Self], name: str) -> Optional[Self]:
-        urn = OGC_UOM.get(name)
-        if urn:
-            return cls(f"{urn[0]}:{urn[1]}")
-        else:
-            return None
+
+def crs_definition_url(ref: str) -> HttpUrl:
+    """  URL to the GML definition
+    """
+    path = ref.removeprefix('urn:ogc:').replace(':', '/')
+    return HttpUrl(f"{OGC_OPENGIS_URL}/{path}")
+
+
+# Default crss definitions
+WGS84 = crs_ref("CRS84", "OGC", version="1.3")
+
+
+# UOMs
+
+UOMRef = str | HttpUrl
+
+
+def uom_ref(name: str) -> Optional[str]:
+    urn = UOM.get(name)
+    return f"{urn[0]}:{urn[1]}" if urn else None
