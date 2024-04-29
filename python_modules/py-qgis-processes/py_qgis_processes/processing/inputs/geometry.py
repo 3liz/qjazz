@@ -291,7 +291,6 @@ class ParameterExtent(InputParameter):
 
         return _type
 
-
     def value(
         self, inp: JsonValue,
         project: Optional[QgsProject] = None,
@@ -300,7 +299,7 @@ class ParameterExtent(InputParameter):
         value = self.validate(inp)
 
         bbox = value.bbox
-        rect = QgsRectangle(bbox[0],  bbox[1], bbox[2], bbox[3])
+        rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
 
         crs = QgsCoordinateReferenceSystem()
         crs.createFromUserInput(value.crs)

@@ -21,6 +21,11 @@ from qgis.core import (
 )
 
 from py_qgis_processes.processing.inputs import InputParameter
+from py_qgis_processes.processing.inputs.literal import (
+    DateTimeParameterDataType,
+    FieldParameterDataType,
+    NumberParameterType,
+)
 from py_qgis_processes_schemas import ogc
 
 
@@ -121,7 +126,7 @@ def test_parameter_number():
 
     param = QgsProcessingParameterNumber(
         "Number",
-        type=Qgis.ProcessingNumberParameterType.Integer,
+        type=NumberParameterType.Integer,
     )
 
     inp = InputParameter(param)
@@ -141,7 +146,7 @@ def test_parameter_number():
 
     param = QgsProcessingParameterNumber(
         "Number",
-        type=Qgis.ProcessingNumberParameterType.Double,
+        type=NumberParameterType.Double,
         minValue=0.,
         maxValue=1.,
     )
@@ -236,7 +241,7 @@ def test_parameter_datetime():
 
     param = QgsProcessingParameterDateTime(
         "DateTime",
-        type=Qgis.ProcessingDateTimeParameterDataType.Date,
+        type=DateTimeParameterDataType.Date,
     )
     inp = InputParameter(param)
     schema = inp.json_schema()
@@ -244,7 +249,7 @@ def test_parameter_datetime():
 
     param = QgsProcessingParameterDateTime(
         "DateTime",
-        type=Qgis.ProcessingDateTimeParameterDataType.Time,
+        type=DateTimeParameterDataType.Time,
     )
     inp = InputParameter(param)
     schema = inp.json_schema()
@@ -293,7 +298,7 @@ def test_parameter_field():
     param = QgsProcessingParameterField(
         "Field",
         parentLayerParameterName="ParentLayer",
-        type=Qgis.ProcessingFieldParameterDataType.Numeric,
+        type=FieldParameterDataType.Numeric,
     )
 
     inp = InputParameter(param)

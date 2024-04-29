@@ -268,6 +268,11 @@ class ParameterDuration(InputParameter):
 #
 # QgsProcessingParameterRange
 #
+if Qgis.QGIS_VERSION_INT >= 33600:
+    NumberParameterType = Qgis.ProcessingNumberParameterType
+else:
+    NumberParameterType = QgsProcessingParameterNumber
+
 
 class ParameterRange(InputParameter):
 
@@ -285,9 +290,9 @@ class ParameterRange(InputParameter):
         _type: Type
 
         match param.dataType():
-            case Qgis.ProcessingNumberParameterType.Integer:
+            case NumberParameterType.Integer:
                 _type = int
-            case Qgis.ProcessingNumberParameterType.Double:
+            case NumberParameterType.Double:
                 _type = float
 
         field.update(min_length=2, max_length=2)
@@ -313,6 +318,12 @@ class ParameterRange(InputParameter):
 # QgsProcessingParameterDateTime
 #
 
+if Qgis.QGIS_VERSION_INT >= 33600:
+    DateTimeParameterDataType = Qgis.ProcessingDateTimeParameterDataType
+else:
+    DateTimeParameterDataType = QgsProcessingParameterDateTime
+
+
 class ParameterDateTime(InputParameter):
 
     @classmethod
@@ -335,12 +346,12 @@ class ParameterDateTime(InputParameter):
         minimum = to_py(param.minimum())
 
         match param.dataType():
-            case Qgis.ProcessingDateTimeParameterDataType.Date:
+            case DateTimeParameterDataType.Date:
                 _type = datetime.date
                 minimum = minimum and minimum.date()
                 maximum = maximum and maximum.date()
                 default = default and default.toPyDate()
-            case Qgis.ProcessingDateTimeParameterDataType.Time:
+            case DateTimeParameterDataType.Time:
                 minimum = minimum and minimum.time()
                 maximum = maximum and maximum.time()
                 default = default and default.toPyTime()
@@ -372,9 +383,9 @@ class ParameterDateTime(InputParameter):
         _value = self.validate(inp)
 
         match self._param.dataType():
-            case Qgis.ProcessingDateTimeParameterDataType.Date:
+            case DateTimeParameterDataType.Date:
                 _value = QDate(_value)
-            case Qgis.ProcessingDateTimeParameterDataType.Time:
+            case DateTimeParameterDataType.Time:
                 _value = QTime(_value)
             case _:  # DateTime
                 _value = QDateTime(_value)
@@ -469,6 +480,31 @@ class ParameterColor(InputParameter):
 # QgsProcessingParameterField
 #
 
+if Qgis.QGIS_VERSION_INT >= 33600:
+    FieldParameterDataType = Qgis.ProcessingFieldParameterDataType
+    def field_datatype_name(value: Qgis.ProcessingFieldParameterDataType) -> str:
+        return value.name
+else:
+    FieldParameterDataType = QgsProcessingParameterField
+    def field_datatype_name(value: int) -> str:   # type: ignore [misc]
+        match value:
+            case QgsProcessingParameterField.Any:
+                field_datatype = 'Any'
+            case QgsProcessingParameterField.Numeric:
+                field_datatype = 'Numeric'
+            case QgsProcessingParameterField.String:
+                field_datatype = 'String'
+            case QgsProcessingParameterField.DateTime:
+                field_datatype = 'DateTime'
+            case QgsProcessingParameterField.Binary:
+                field_datatype = 'Binary'
+            case QgsProcessingParameterField.Boolean:
+                field_datatype = 'Boolean'
+            case _:
+                raise ValueError(f"Unexpected field_datatype: {value}")
+        return field_datatype
+
+
 class ParameterField(InputParameter):
     # CSS3 color
 
@@ -489,7 +525,7 @@ class ParameterField(InputParameter):
         if not validation_only:
             schema_extra = {
                 'format': "x-qgis-parameter-field",
-                'x-qgis-field-dataType': param.dataType().name,
+                'x-qgis-field-dataType': field_datatype_name(param.dataType()),
             }
 
             parent_layer_param = param.parentLayerParameterName()
