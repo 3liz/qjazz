@@ -28,9 +28,20 @@ known-first-party = [
     "py_qgis_processes",
     "py_qgis_processes_schemas",
 ]
-known-third-party = [
+#known-third-party = [
+#    "qgis",
+#]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
     "qgis",
+    "first-party",
+    "local-folder",
 ]
+
+[lint.isort.sections]
+qgis = ["qgis"]
 
 [lint.flake8-annotations]
 ignore-fully-untyped = true

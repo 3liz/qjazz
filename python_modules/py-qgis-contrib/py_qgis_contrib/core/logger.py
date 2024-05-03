@@ -19,7 +19,7 @@ from typing_extensions import Annotated, Optional
 
 from . import config
 
-LOGGER = logging.getLogger('as-logger')
+LOGGER = logging.getLogger('py-qgis')
 
 
 class LogLevel(Enum):

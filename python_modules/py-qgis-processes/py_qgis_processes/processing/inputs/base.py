@@ -1,10 +1,5 @@
 
 from pydantic import Field, JsonValue, TypeAdapter
-from qgis.core import (
-    QgsProcessingParameterDefinition,
-    QgsProject,
-)
-from qgis.PyQt.QtCore import QVariant
 from typing_extensions import (
     Annotated,
     Any,
@@ -13,11 +8,22 @@ from typing_extensions import (
     Generic,
     Optional,
     Type,
+    TypeAlias,
     TypeVar,
 )
 
+from qgis.core import (
+    QgsProcessingContext,
+    QgsProcessingParameterDefinition,
+    QgsProject,
+)
+from qgis.PyQt.QtCore import QVariant
+
+from py_qgis_contrib.core.config import confservice
 from py_qgis_processes_schemas.models import one_of
-from py_qgis_processes_schemas.processes import InputDescription
+from py_qgis_processes_schemas.processes import InputDescription, ValuePassing
+
+from ..config import ProcessingConfig
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 
@@ -31,19 +37,40 @@ class InputParameter(Generic[T]):
     def __init__(self,
             param: ParameterDefinition,
             project: Optional[QgsProject] = None,
+            *,
             validation_only: bool = False,
+            config: Optional[ProcessingConfig] = None,
         ):
+        self._config = config or confservice.conf.processing
         self._param = param
-        self._model = self.model(
+
+        annotated = self.model(
             param,
             project,
-            validation_only,
+            validation_only=validation_only,
+            config=self._config,
         )
+        self._metadata = annotated.__metadata__[0]
+        self._model = TypeAdapter(annotated)
+
+    @property
+    def config(self) -> ProcessingConfig:
+        return self._config
+
+    def set_config(self, config: ProcessingConfig):
+        self._config = config
+
+    @property
+    def metadata(self) -> Any:  #  noqa ANN401
+        return self._metadata
+
+    def value_passing(self) -> ValuePassing:
+        return ('byValue',)
 
     def validate(self, inp: JsonValue) -> T:
         return self._model.validate_python(inp)
 
-    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> T:
+    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> T:
         return self.validate(inp)
 
     @classmethod
@@ -51,8 +78,10 @@ class InputParameter(Generic[T]):
         cls,
         param: ParameterDefinition,
         project: Optional[QgsProject] = None,
+        *,
         validation_only: bool = False,
-    ) -> TypeAdapter:
+        config: Optional[ProcessingConfig] = None,
+    ) -> TypeAlias:
 
         field: Dict = {}
 
@@ -69,9 +98,28 @@ class InputParameter(Generic[T]):
             if default is not None:
                 field.update(default=default)
 
-        _type = cls.create_model(param, field, project, validation_only)
+        _type = cls.create_model_with_config(
+            param,
+            field,
+            project,
+            validation_only=validation_only,
+            config=config or confservice.conf.processing,
+        )
 
-        return TypeAdapter(Annotated[_type, Field(**field)])  # type: ignore [pydantic-field, valid-type]
+        metadata = field.pop('metadata', None)
+        return Annotated[_type, metadata, Field(**field)]  # type: ignore [pydantic-field, valid-type]
+
+    @classmethod
+    def create_model_with_config(
+        cls,
+        param: ParameterDefinition,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        *,
+        validation_only: bool = False,
+        config: ProcessingConfig,
+    ) -> Type:
+        return cls.create_model(param, field, project, validation_only=validation_only)
 
     @classmethod
     def create_model(
@@ -84,6 +132,11 @@ class InputParameter(Generic[T]):
         if cls._ParameterType is None:  # type: ignore [attr-defined]
             raise NotImplementedError()
         return cls._ParameterType  # type: ignore [attr-defined]
+
+    @classmethod
+    def visible(cls, param: ParameterDefinition, project: Optional[QgsProject] = None) -> bool:
+        flags = int(param.flags())
+        return flags & QgsProcessingParameterDefinition.FlagHidden == 0
 
     def json_schema(self) -> Dict[str, JsonValue]:
         """ Create json schema
@@ -101,9 +154,6 @@ class InputParameter(Generic[T]):
         param = self._param
 
         flags = int(param.flags())
-        # hidden = flags & QgsProcessingParameterDefinition.FlagHidden != 0
-        # if hidden:
-        #    return None
 
         kwargs: Dict[str, Any] = {}
 
@@ -115,10 +165,12 @@ class InputParameter(Generic[T]):
         description = param.help()
 
         schema = self.json_schema()
+        value_passing = self.value_passing()
 
         return InputDescription(
             title=title,
             description=description,
             schema=schema,
+            value_passing=value_passing,
             **kwargs,
         )

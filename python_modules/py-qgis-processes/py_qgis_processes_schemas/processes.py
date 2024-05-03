@@ -55,11 +55,12 @@ class DescriptionType(JsonModel):
 _NonZeroPositiveInt = Annotated[int, Field(gt=0)]
 
 
+ValuePassing = Sequence[Literal["byValue", "byReference"]]
+
+
 class InputDescription(DescriptionType):
     schema_: JsonValue = Field(alias="schema")
-    valuePassing: Sequence[Literal["byValue", "byReference"]] = Field(
-        default=['byValue'],
-    )
+    value_passing: ValuePassing = ('byValue',)
     min_occurs: _NonZeroPositiveInt = 1
     max_occurs: _NonZeroPositiveInt | Literal["unbounded"] = 1
 

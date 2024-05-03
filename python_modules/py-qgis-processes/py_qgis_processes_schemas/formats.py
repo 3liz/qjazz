@@ -5,6 +5,8 @@
 # based on Web Processing Service Best Practices Discussion Paper, OGC 12-029
 # http://opengeospatial.org/standards/wps
 
+import mimetypes
+
 from typing_extensions import NamedTuple, Optional
 
 
@@ -15,27 +17,38 @@ class Format(NamedTuple):
 
 
 class _Formats(NamedTuple):
-    WKT = Format('application/wkt', '.wkt', None)                          # type: ignore [misc]
-    GEOJSON = Format('application/vnd.geo+json', '.geojson', None)         # type: ignore [misc]
-    JSON = Format('application/json', '.json', None)                       # type: ignore [misc]
-    SHP = Format('application/x-zipped-shp', '.zip', None)                 # type: ignore [misc]
-    GML = Format('application/gml+xml', '.gml', None)                      # type: ignore [misc]
-    GEOTIFF = Format('image/tiff; subtype=geotiff', '.tiff', None)         # type: ignore [misc]
-    WCS = Format('application/xogc-wcs', '.xml', None)                     # type: ignore [misc]
-    WCS100 = Format('application/x-ogc-wcs; version=1.0.0', '.xml', None)  # type: ignore [misc]
-    WCS110 = Format('application/x-ogc-wcs; version=1.1.0', '.xml', None)  # type: ignore [misc]
-    WCS20 = Format('application/x-ogc-wcs; version=2.0', '.xml', None)     # type: ignore [misc]
-    WFS = Format('application/x-ogc-wfs', '.xml', None)                    # type: ignore [misc]
-    WFS100 = Format('application/x-ogc-wfs; version=1.0.0', '.xml', None)  # type: ignore [misc]
-    WFS110 = Format('application/x-ogc-wfs; version=1.1.0', '.xml', None)  # type: ignore [misc]
-    WFS20 = Format('application/x-ogc-wfs; version=2.0', '.xml', None)     # type: ignore [misc]
-    WMS = Format('application/x-ogc-wms', '.xml', None)                    # type: ignore [misc]
-    WMS130 = Format('application/x-ogc-wms; version=1.3.0', '.xml', None)  # type: ignore [misc]
-    WMS110 = Format('application/x-ogc-wms; version=1.1.0', '.xml', None)  # type: ignore [misc]
-    WMS100 = Format('application/x-ogc-wms; version=1.0.0', '.xml', None)  # type: ignore [misc]
-    TEXT = Format('text/plain', '.txt', None)                              # type: ignore [misc]
-    NETCDF = Format('application/x-netcdf', '.nc', None)                   # type: ignore [misc]
-    ANY = Format('application/octet-stream', '.nc', None)                  # type: ignore [misc]
+    WKT: Format = Format('application/wkt', '.wkt', None)
+    GEOJSON: Format = Format('application/vnd.geo+json', '.geojson', None)
+    JSON: Format = Format('application/json', '.json', None)
+    SHP: Format = Format('application/x-zipped-shp', '.zip', None)
+    GML: Format = Format('application/gml+xml', '.gml', None)
+    GEOTIFF: Format = Format('image/tiff; subtype=geotiff', '.tif', None)
+    WCS: Format = Format('application/xogc-wcs', '.xml', None)
+    WCS100: Format = Format('application/x-ogc-wcs; version=1.0.0', '.xml', None)
+    WCS110: Format = Format('application/x-ogc-wcs; version=1.1.0', '.xml', None)
+    WCS20: Format = Format('application/x-ogc-wcs; version=2.0', '.xml', None)
+    WFS: Format = Format('application/x-ogc-wfs', '.xml', None)
+    WFS100: Format = Format('application/x-ogc-wfs; version=1.0.0', '.xml', None)
+    WFS110: Format = Format('application/x-ogc-wfs; version=1.1.0', '.xml', None)
+    WFS20: Format = Format('application/x-ogc-wfs; version=2.0', '.xml', None)
+    WMS: Format = Format('application/x-ogc-wms', '.xml', None)
+    WMS130: Format = Format('application/x-ogc-wms; version=1.3.0', '.xml', None)
+    WMS110: Format = Format('application/x-ogc-wms; version=1.1.0', '.xml', None)
+    WMS100: Format = Format('application/x-ogc-wms; version=1.0.0', '.xml', None)
+    TEXT: Format = Format('text/plain', '.txt', None)
+    NETCDF: Format = Format('application/x-netcdf', '.nc', None)
+    ANY: Format = Format('application/octet-stream', '', None)
 
 
 Formats = _Formats()  # type: ignore [call-arg]
+
+
+def _get_mimetypes():
+    mimetypes.init()
+    for f in Formats:
+        # Add new suffixes (without overriding)
+        if f.suffix and f.suffix not in mimetypes.types_map:
+            mimetypes.add_type(f.media_type, f.suffix)
+
+
+_get_mimetypes()

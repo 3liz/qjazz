@@ -38,7 +38,9 @@ class QgisContext:
             verbose = logger.isEnabledFor(logger.LogLevel.DEBUG)
             if verbose:
                 os.environ['QGIS_DEBUG'] = '1'
-            init_qgis_application()
+
+            init_qgis_application(settings=self._ctx.processing.settings())
+
             if verbose:
                 logger.debug(show_qgis_settings())  # noqa T201
 
@@ -60,14 +62,14 @@ class QgisContext:
         return cm
 
     @cached_property
-    def init_processing(self):
+    def init_processing(self) -> QgisPluginService:
         try:
             plugin_s = QgisPluginService.get_service()
         except FactoryNotFoundError:
             init_qgis_processing()
             # Load plugins
             plugin_s = QgisPluginService(self._ctx.processing.plugins)
-            plugin_s.load_plugins(PluginType.PROCESSING)
+            plugin_s.load_plugins(PluginType.PROCESSING, None)
             plugin_s.register_as_service()
         return plugin_s
 

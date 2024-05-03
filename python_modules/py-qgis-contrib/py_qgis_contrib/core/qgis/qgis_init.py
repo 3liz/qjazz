@@ -47,7 +47,6 @@ def exit_qgis_application():
 def setup_qgis_application(
     cleanup: bool = True,
     logprefix: str = 'Qgis:',
-    settings: Optional[Dict] = None,
 ) -> 'qgis.core.QgsApplication':
     """ Start qgis application
 
@@ -97,13 +96,6 @@ def setup_qgis_application(
         def exitQgis():
             exit_qgis_application()
 
-    if settings:
-        # Initialize settings
-        from qgis.core import QgsSettings
-        qgsettings = QgsSettings()
-        for k, v in settings.items():
-            qgsettings.setValue(k, v)
-
     # Install logger hook
     install_logger_hook(logprefix)
 
@@ -133,7 +125,7 @@ def install_logger_hook(logprefix: str) -> None:
     messageLog.messageReceived.connect(writelogmessage)
 
 
-def init_qgis_application():
+def init_qgis_application(settings: Optional[Dict] = None):
     setup_qgis_application()
 
     from qgis.core import QgsApplication
@@ -145,12 +137,19 @@ def init_qgis_application():
     QCoreApplication.setOrganizationDomain(QgsApplication.QGIS_ORGANIZATION_DOMAIN)
     QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
 
-    qgis_application.initQgis()
+    qgis_application.initQgis()  # type: ignore [union-attr]
 
     optpath = os.getenv('QGIS_OPTIONS_PATH') or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
     if optpath:
         # Log qgis settings
         load_qgis_settings(optpath)
+
+    if settings:
+        # Initialize settings
+        from qgis.core import QgsSettings
+        qgsettings = QgsSettings()
+        for k, v in settings.items():
+            qgsettings.setValue(k, v)
 
 
 def init_qgis_processing() -> None:

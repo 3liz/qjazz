@@ -4,11 +4,13 @@ from pydantic import (
     BaseModel,
     Field,
     JsonValue,
+    TypeAdapter,
     alias_generators,
 )
 from typing_extensions import (
     Annotated,
     Dict,
+    Literal,
     Optional,
     Type,
     TypeAlias,
@@ -68,6 +70,17 @@ class Link(JsonModel):
     hreflang: Optional[str] = None
 
 
+#
+# Extented link reference for input
+# by reference
+#
+class LinkReference(Link):
+    # Http method
+    method: Optional[Literal["GET", "POST"]] = None
+    # Request body
+    body: Optional[str] = None
+
+
 def MediaType(
     _type: Type,
     media_type: str,
@@ -93,6 +106,10 @@ class Format(JsonModel):
 
 class QualifiedInputValue(Format):
     value: JsonValue
+
+
+# Create a typeadapter for Reference/Qualified input
+RefOrQualifiedInput = TypeAdapter(QualifiedInputValue | LinkReference)
 
 
 class InputValueError(Exception):

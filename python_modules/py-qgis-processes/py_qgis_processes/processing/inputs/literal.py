@@ -4,8 +4,21 @@ import sys
 
 from pydantic import Field, JsonValue
 from pydantic_extra_types.color import Color
+from typing_extensions import (
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+)
+
 from qgis.core import (
     Qgis,
+    QgsProcessingContext,
     QgsProcessingParameterBand,
     QgsProcessingParameterColor,
     QgsProcessingParameterDateTime,
@@ -21,17 +34,6 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QDate, QDateTime, QTime
 from qgis.PyQt.QtGui import QColor
-from typing_extensions import (
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-)
 
 from py_qgis_processes_schemas import (
     InputValueError,
@@ -108,7 +110,11 @@ class ParameterEnum(InputParameter):
 
         return _type
 
-    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> int | Sequence[int]:
+    def value(
+        self,
+        inp: JsonValue,
+        context: Optional[QgsProcessingContext] = None,
+    ) -> int | Sequence[int]:
 
         _value = self.validate(inp)
 
@@ -378,7 +384,11 @@ class ParameterDateTime(InputParameter):
 
         return _type
 
-    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> QDate | QTime | QDateTime:
+    def value(
+        self,
+        inp: JsonValue,
+        context: Optional[QgsProcessingContext] = None,
+    ) -> QDate | QTime | QDateTime:
 
         _value = self.validate(inp)
 
@@ -463,7 +473,7 @@ class ParameterColor(InputParameter):
 
         return Color
 
-    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> QColor:
+    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> QColor:
 
         _value = self.validate(inp)
 

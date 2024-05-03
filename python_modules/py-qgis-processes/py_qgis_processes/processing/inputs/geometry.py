@@ -8,6 +8,18 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
+from typing_extensions import (
+    Annotated,
+    Any,
+    Dict,
+    Iterator,
+    Optional,
+    Sequence,
+    Type,
+    TypeAlias,
+    Union,
+)
+
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -25,17 +37,6 @@ from qgis.core import (
     QgsReferencedPointXY,
     QgsReferencedRectangle,
     QgsWkbTypes,
-)
-from typing_extensions import (
-    Annotated,
-    Any,
-    Dict,
-    Iterator,
-    Optional,
-    Sequence,
-    Type,
-    TypeAlias,
-    Union,
 )
 
 from py_qgis_contrib.core import logger
@@ -117,7 +118,7 @@ class ParameterGeometry(InputParameter):
 
         return _type
 
-    def value(self, inp: JsonValue, project: Optional[QgsProject] = None) -> QgsGeometry:
+    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> QgsGeometry:
 
         # Check for qualified input
         match inp:
@@ -160,10 +161,10 @@ class ParameterPoint(ParameterGeometry):
 
     def value(
         self, inp: JsonValue,
-        project: Optional[QgsProject] = None,
+        context: Optional[QgsProcessingContext] = None,
     ) -> QgsReferencedPointXY | QgsPointXY:
 
-        g = super().value(inp, project)
+        g = super().value(inp, context)
         match g:
             case QgsReferencedGeometry():
                 p = qgsgeometry_to_point(g, g.crs())
@@ -224,7 +225,7 @@ class ParameterCrs(InputParameter):
 
     def value(
         self, inp: JsonValue,
-        project: Optional[QgsProject] = None,
+        context: Optional[QgsProcessingContext] = None,
     ) -> QgsCoordinateReferenceSystem:
 
         value = self.validate(inp)
@@ -293,7 +294,7 @@ class ParameterExtent(InputParameter):
 
     def value(
         self, inp: JsonValue,
-        project: Optional[QgsProject] = None,
+        context: Optional[QgsProcessingContext] = None,
     ) -> QgsReferencedRectangle:
 
         value = self.validate(inp)
