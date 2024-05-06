@@ -55,7 +55,8 @@ def test_parameter_file(workdir: Path, qgis_session: ProcessingConfig):
 
     assert str(expected) == value
     assert expected.exists()
-    assert expected.open('r').read() == ascii_content
+    with expected.open('r') as f:
+        assert f.read() == ascii_content
 
 
 def test_parameter_filedestination(workdir: Path, qgis_session: ProcessingConfig):

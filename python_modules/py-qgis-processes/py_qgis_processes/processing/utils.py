@@ -58,7 +58,7 @@ LayerType = Qgis.LayerType
 
 
 if Qgis.QGIS_VERSION_INT >= 33600:
-    ProcessingFileParamaterBehavior = Qgis.ProcessingFileParameterBehavior
+    ProcessingFileParameterBehavior = Qgis.ProcessingFileParameterBehavior
 else:
     from qgis.core import QgsProcessingParameterFile
     ProcessingFileParameterBehavior = QgsProcessingParameterFile.Behavior

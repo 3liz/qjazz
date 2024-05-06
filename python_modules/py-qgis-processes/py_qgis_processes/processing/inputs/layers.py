@@ -78,7 +78,7 @@ class ParameterMapLayer(InputParameter):
             _type = Set[_type]
 
         if not validation_only:
-            field['format'] = cls._format
+            field.update(json_schema_extra={'format': cls._format})
 
         return _type
 
