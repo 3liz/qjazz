@@ -18,8 +18,6 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-import qgis
-
 from pydantic import AfterValidator, Field, JsonValue, ValidationInfo
 from typing_extensions import (
     Annotated,
@@ -36,6 +34,8 @@ from typing_extensions import (
     assert_never,
     cast,
 )
+
+import qgis
 
 from .. import componentmanager, config, logger
 from ..condition import assert_precondition

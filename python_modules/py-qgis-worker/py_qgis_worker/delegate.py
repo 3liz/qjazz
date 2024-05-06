@@ -17,9 +17,10 @@
 """
 import traceback
 
+from typing_extensions import List
+
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext
-from typing_extensions import List
 
 from py_qgis_contrib.core import logger
 

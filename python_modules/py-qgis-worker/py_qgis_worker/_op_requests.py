@@ -6,8 +6,9 @@ from urllib.parse import urlunsplit
 
 import psutil
 
-from qgis.server import QgsServer, QgsServerException, QgsServerRequest
 from typing_extensions import Dict, Optional, Tuple, assert_never, cast
+
+from qgis.server import QgsServer, QgsServerException, QgsServerRequest
 
 from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger

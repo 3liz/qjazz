@@ -5,8 +5,9 @@ from multiprocessing.connection import Connection
 from time import time
 from urllib.parse import urlunsplit
 
-from qgis.core import QgsMapLayer
 from typing_extensions import Optional, assert_never, cast
+
+from qgis.core import QgsMapLayer
 
 from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger

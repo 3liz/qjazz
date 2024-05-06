@@ -13,8 +13,9 @@ from time import time
 import psutil
 
 from pydantic import JsonValue
-from qgis.server import QgsServer
 from typing_extensions import assert_never, cast
+
+from qgis.server import QgsServer
 
 from py_qgis_cache import CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger

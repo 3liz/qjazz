@@ -13,8 +13,9 @@ import urllib.parse
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from qgis.core import QgsProject
 from typing_extensions import Iterator, Optional, Union
+
+from qgis.core import QgsProject
 
 from .config import ProjectsConfig
 

@@ -51,8 +51,6 @@ from enum import Enum
 from pathlib import Path
 from time import time
 
-from qgis.core import QgsProject
-from qgis.server import QgsServer
 from typing_extensions import (
     Dict,
     Iterable,
@@ -63,6 +61,9 @@ from typing_extensions import (
     Type,
     assert_never,
 )
+
+from qgis.core import QgsProject
+from qgis.server import QgsServer
 
 from py_qgis_contrib.core import componentmanager, logger
 

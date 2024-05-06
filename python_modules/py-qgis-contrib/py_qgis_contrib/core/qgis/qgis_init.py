@@ -156,6 +156,7 @@ def init_qgis_processing() -> None:
     """ Initialize processing
     """
     from processing.core.Processing import Processing
+
     from qgis.analysis import QgsNativeAlgorithms
     from qgis.core import QgsApplication
 

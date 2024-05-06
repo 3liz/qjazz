@@ -8,9 +8,10 @@ from time import time
 
 import psutil
 
+from typing_extensions import Dict, Optional
+
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
-from typing_extensions import Dict, Optional
 
 from py_qgis_cache import CheckoutStatus
 from py_qgis_contrib.core import logger
