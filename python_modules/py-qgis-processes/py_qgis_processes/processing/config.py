@@ -16,6 +16,7 @@ from py_qgis_contrib.core.config import (
     section,
 )
 from py_qgis_contrib.core.qgis import QgisPluginConfig
+from py_qgis_processes_schemas.ogc import WGS84
 
 
 # Processing job config section
@@ -60,14 +61,14 @@ class ProcessingConfig(BaseConfig):
     )
     adjust_ellipsoid: bool = Field(
         default=False,
-        title="Force ellipsoid imposed by the src project",
+        title="Force ellipsoid imposed by the source project",
         description=(
             "Force the ellipsoid from the src project into the destination project.\n"
             "This only apply if the src project has a valid CRS."
         ),
     )
     default_crs: str = Field(
-        default="EPSG:4326",
+        default=WGS84,
         title="Set default CRS",
         description=(
             "Set the CRS to use when no source map is specified.\n"

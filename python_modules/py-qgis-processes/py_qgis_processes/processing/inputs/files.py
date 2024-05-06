@@ -17,10 +17,7 @@ from typing_extensions import (
     cast,
 )
 
-from qgis.core import (
-    QgsProcessingContext,
-    QgsProject,
-)
+from qgis.core import QgsProject
 
 from py_qgis_contrib.core import logger
 from py_qgis_processes_schemas import (
@@ -41,6 +38,7 @@ from .base import (
     InputParameter,
     ParameterDefinition,
     ProcessingConfig,
+    ProcessingContext,
 )
 
 #
@@ -86,14 +84,14 @@ class ParameterFile(InputParameter):
 
         return _type
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> str:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
 
         param = self._param
 
         if param.behavior() == ProcessingFileParameterBehavior.Folder:
             # XXX Passing a folder is not really relevant for processes API
             # except if we allow raw input value
-            if self.config.raw_destination_input_sink:
+            if context and context.config.raw_destination_input_sink:
                 return cast(str, inp)
             else:
                 logger.warning("Folder behavior not allowed for %s", param.name())
@@ -101,25 +99,32 @@ class ParameterFile(InputParameter):
 
         _inp = RefOrQualifiedInput.validate_python(inp)
 
-        destination = Path(param.name()).with_suffix(param.extension())
+        workdir = (context and context.workdir) or Path()
+        destination = workdir.joinpath(param.name()).with_suffix(param.extension())
 
         try:
             value: Any   # Makes Mypy happy
 
             with destination.open('wb') as out:
                 match _inp:
+                    case str():
+                        value = _inp
+                        out.write(value.encode())
                     case QualifiedInputValue():
                         value = _inp.value
                         if _inp.encoding == 'base64':
                             value = base64.b64decode(value)
-                        out.write(value)
+                            out.write(value)
+                        else:
+                            out.write(value.encode())
                     case LinkReference():
-                        download_ref(_inp, self.config, out)
+                        download_ref(_inp, context and context.config, out)
 
             return str(destination)
-        finally:
+        except:
             if destination.exists():
                 destination.unlink()
+            raise
 
 
 #
@@ -130,15 +135,19 @@ class ParameterFileDestination(InputParameter):
 
     _ParameterType = str
 
-    def _resolve_path(self, inp: JsonValue) -> Path:
+    def _resolve_path(self, inp: JsonValue, context: ProcessingContext) -> Path:
 
         _inp = self.validate(inp)
 
-        if self.config.raw_destination_input_sink:
+        if context.config.raw_destination_input_sink:
             value = _inp
         else:
             # Normalize path
-            value = Path(_inp).relative_to('/').resolve()
+            value = context.workdir.joinpath(_inp.removeprefix('/')).resolve()
+            if not value.is_relative_to(context.workdir):
+                # Truncate the path to to its single name
+                value = Path(value.name)
+
             if str(value) != _inp:
                 logger.warning(
                     "Value for '%s' has been truncated to '%s'",
@@ -148,8 +157,8 @@ class ParameterFileDestination(InputParameter):
 
         return value
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> str:
-        path = self._resolve_path(inp)
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
+        path = self._resolve_path(inp, context or ProcessingContext())
 
         ext = self._param.defaultFileExtension()
         if ext:
@@ -163,15 +172,15 @@ class ParameterFileDestination(InputParameter):
 
 class ParameterFolderDestination(ParameterFileDestination):
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> str:
-        return str(self._resolve_path(inp))
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
+        return str(self._resolve_path(inp, context or ProcessingContext()))
 
 #
 # Utils
 #
 
 
-def download_ref(ref: LinkReference, config: ProcessingConfig, writer: IO):
+def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer: IO):
     """ Download reference
     """
     method = ref.method or 'GET'
@@ -190,11 +199,12 @@ def download_ref(ref: LinkReference, config: ProcessingConfig, writer: IO):
     if ref.body:
         kwargs.update(data=ref.body)
 
-    ssl = config.certificats
-    if ssl.cafile:
-        kwargs.update(verify=str(ssl.cafile))
-    if ssl.keyfile and ssl.certfile:
-        kwargs.update(cert=(str(ssl.certfile), str(ssl.keyfile)))
+    if config:
+        ssl = config.certificats
+        if ssl.cafile:
+            kwargs.update(verify=str(ssl.cafile))
+        if ssl.keyfile and ssl.certfile:
+            kwargs.update(cert=(str(ssl.certfile), str(ssl.keyfile)))
 
     resp = requests.request(method, href, headers=headers, stream=True, **kwargs)
     if resp.status_code != 200:

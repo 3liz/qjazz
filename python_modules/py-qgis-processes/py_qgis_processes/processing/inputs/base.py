@@ -13,7 +13,6 @@ from typing_extensions import (
 )
 
 from qgis.core import (
-    QgsProcessingContext,
     QgsProcessingParameterDefinition,
     QgsProject,
 )
@@ -24,6 +23,7 @@ from py_qgis_processes_schemas.models import one_of
 from py_qgis_processes_schemas.processes import InputDescription, ValuePassing
 
 from ..config import ProcessingConfig
+from ..context import ProcessingContext
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 
@@ -41,24 +41,16 @@ class InputParameter(Generic[T]):
             validation_only: bool = False,
             config: Optional[ProcessingConfig] = None,
         ):
-        self._config = config or confservice.conf.processing
         self._param = param
 
         annotated = self.model(
             param,
             project,
             validation_only=validation_only,
-            config=self._config,
+            config=config,
         )
         self._metadata = annotated.__metadata__[0]
         self._model = TypeAdapter(annotated)
-
-    @property
-    def config(self) -> ProcessingConfig:
-        return self._config
-
-    def set_config(self, config: ProcessingConfig):
-        self._config = config
 
     @property
     def metadata(self) -> Any:  #  noqa ANN401
@@ -70,7 +62,7 @@ class InputParameter(Generic[T]):
     def validate(self, inp: JsonValue) -> T:
         return self._model.validate_python(inp)
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> T:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> T:
         return self.validate(inp)
 
     @classmethod

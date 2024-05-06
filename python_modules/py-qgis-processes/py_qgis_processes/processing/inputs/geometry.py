@@ -50,7 +50,11 @@ from py_qgis_processes_schemas import (
     geojson,
 )
 
-from .base import InputParameter, ParameterDefinition
+from .base import (
+    InputParameter,
+    ParameterDefinition,
+    ProcessingContext,
+)
 
 #
 # QgsProcessingParameterGeometry
@@ -118,7 +122,7 @@ class ParameterGeometry(InputParameter):
 
         return _type
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> QgsGeometry:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> QgsGeometry:
 
         # Check for qualified input
         match inp:
@@ -161,7 +165,7 @@ class ParameterPoint(ParameterGeometry):
 
     def value(
         self, inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QgsReferencedPointXY | QgsPointXY:
 
         g = super().value(inp, context)
@@ -225,7 +229,7 @@ class ParameterCrs(InputParameter):
 
     def value(
         self, inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QgsCoordinateReferenceSystem:
 
         value = self.validate(inp)
@@ -294,7 +298,7 @@ class ParameterExtent(InputParameter):
 
     def value(
         self, inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QgsReferencedRectangle:
 
         value = self.validate(inp)

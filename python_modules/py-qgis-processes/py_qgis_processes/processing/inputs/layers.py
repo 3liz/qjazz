@@ -17,7 +17,6 @@ from typing_extensions import (
 )
 
 from qgis.core import (
-    QgsProcessingContext,
     QgsProcessingFeatureSourceDefinition,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterLimitedDataTypes,
@@ -31,7 +30,7 @@ from ..utils import (
     parse_layer_spec,
     raw_destination_sink,
 )
-from .base import InputParameter, ParameterDefinition
+from .base import InputParameter, ParameterDefinition, ProcessingContext
 
 #
 # Layers input may be passed in various forms:
@@ -86,7 +85,7 @@ class ParameterMapLayer(InputParameter):
     def value(
         self,
         inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> str | Sequence[str]:
 
         _inp = self.validate(inp)
@@ -128,7 +127,7 @@ class ParameterFeatureSource(ParameterMapLayer):
     def value(
         self,
         inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QgsProcessingFeatureSourceDefinition:
 
         #
@@ -203,7 +202,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
 
         return Sequence[TileWriter]
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> str:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
 
         _inp = self.validate(inp)
         return _inp.model_dump(mode='json')
@@ -278,19 +277,19 @@ class ParameterLayerDestination(InputParameter):
     def value(
         self,
         inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QgsProcessingOutputLayerDefinition:
 
         destination = self.validate(inp)
 
         extension = self.metadata.ext
 
-        if self.config.raw_destination_input_sink:
+        if context and context.config.raw_destination_input_sink:
             sink, destination = raw_destination_sink(
                 self._param,
                 destination,
                 extension,
-                self.config.raw_destination_root_path,
+                context.config.raw_destination_root_path,
             )
         else:
             #

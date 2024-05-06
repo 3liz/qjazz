@@ -18,7 +18,6 @@ from typing_extensions import (
 
 from qgis.core import (
     Qgis,
-    QgsProcessingContext,
     QgsProcessingParameterBand,
     QgsProcessingParameterColor,
     QgsProcessingParameterDateTime,
@@ -41,7 +40,7 @@ from py_qgis_processes_schemas import (
     ogc,
 )
 
-from .base import InputParameter
+from .base import InputParameter, ProcessingContext
 
 #
 # QgsProcessingParameterBoolean
@@ -113,7 +112,7 @@ class ParameterEnum(InputParameter):
     def value(
         self,
         inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> int | Sequence[int]:
 
         _value = self.validate(inp)
@@ -387,7 +386,7 @@ class ParameterDateTime(InputParameter):
     def value(
         self,
         inp: JsonValue,
-        context: Optional[QgsProcessingContext] = None,
+        context: Optional[ProcessingContext] = None,
     ) -> QDate | QTime | QDateTime:
 
         _value = self.validate(inp)
@@ -473,7 +472,7 @@ class ParameterColor(InputParameter):
 
         return Color
 
-    def value(self, inp: JsonValue, context: Optional[QgsProcessingContext] = None) -> QColor:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> QColor:
 
         _value = self.validate(inp)
 

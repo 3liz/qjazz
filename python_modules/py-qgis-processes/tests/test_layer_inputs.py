@@ -2,7 +2,6 @@
 from pathlib import Path
 
 from qgis.core import (
-    QgsProcessingContext,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterMapLayer,
@@ -14,6 +13,7 @@ from qgis.core import (
 )
 
 from py_qgis_processes.processing.config import ProcessingConfig
+from py_qgis_processes.processing.context import ProcessingContext
 from py_qgis_processes.processing.inputs import InputParameter
 from py_qgis_processes.processing.inputs.layers import (
     ParameterFeatureSource,
@@ -109,10 +109,10 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     assert param.defaultFileExtension() == 'fgb'
 
-    context = QgsProcessingContext()
-    context.destination_project = None
-
     config = qgis_session
+
+    context = ProcessingContext(config)
+    context.destination_project = None
 
     inp = InputParameter(param, config=config)
     assert isinstance(inp, ParameterVectorDestination)
@@ -127,9 +127,9 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     assert value.destinationName == 'bar'
     assert value.sink.staticValue() == './VectorDestination.fgb'
 
-    config_update = dict(raw_destination_input_sink=True)
-
-    inp.set_config(config.model_copy(update=config_update))
+    context.config = config.model_copy(
+        update=dict(raw_destination_input_sink=True),
+    )
 
     value = inp.value("/foobar.csv", context)
     assert value.destinationName == 'foobar'
@@ -139,15 +139,19 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     assert value.destinationName == 'foobar'
     assert value.sink.staticValue() == 'foobar.fgb'
 
-    config_update.update(raw_destination_root_path=Path('/unsafe'))
+    context.config = config.model_copy(
+        update=dict(
+            raw_destination_input_sink=True,
+            raw_destination_root_path=Path('/unsafe'),
+        ),
+    )
 
-    inp.set_config(config.model_copy(update=config_update))
     value = inp.value("file:/path/to/foobar.csv|layername=foobaz", context)
     assert value.destinationName == 'foobaz'
     assert value.sink.staticValue() == '/unsafe/path/to/foobar.csv'
 
     # Use postgres uri as sink
-    value = inp.value("postgres://service=foobar|layername=foobaz")
+    value = inp.value("postgres://service=foobar|layername=foobaz", context)
     assert value.destinationName == 'foobaz'
     assert value.sink.staticValue() == 'postgres://service=foobar'
 

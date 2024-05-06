@@ -19,6 +19,13 @@ def data(rootdir: Path) -> Path:
     return rootdir.joinpath('data')
 
 
+@pytest.fixture(scope='session')
+def workdir(rootdir: Path) -> Path:
+    path = rootdir.joinpath('__workdir__')
+    path.mkdir(exist_ok=True)
+    return path
+
+
 def pytest_collection_modifyitems(config, items):
     if not qgis.qgis_initialized():
         skip_qgis = pytest.mark.skip(reason="No qgis environment")
