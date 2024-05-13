@@ -19,11 +19,11 @@
   </projectCrs>
   <layer-tree-group>
     <customproperties/>
-    <layer-tree-layer id="raster_layer_2710a97a_b100_4569_9242_99d41dfbdcd9" expanded="1" source="../../../../qgis/QGIS-master/tests/testdata/raster_layer.tiff" providerKey="gdal" name="raster_layer" checked="Qt::Checked">
+    <layer-tree-layer id="raster_layer_57b98875_c994_4d8b_867e_e8dfa865b02d" expanded="1" source="./raster_layer.tiff" providerKey="gdal" name="raster_layer" checked="Qt::Checked">
       <customproperties/>
     </layer-tree-layer>
     <custom-order enabled="0">
-      <item>raster_layer_2710a97a_b100_4569_9242_99d41dfbdcd9</item>
+      <item>raster_layer_57b98875_c994_4d8b_867e_e8dfa865b02d</item>
     </custom-order>
   </layer-tree-group>
   <snapping-settings enabled="0" mode="2" type="1" tolerance="12" unit="1" intersection-snapping="0">
@@ -33,10 +33,10 @@
   <mapcanvas name="theMapCanvas" annotationsVisible="1">
     <units>degrees</units>
     <extent>
-      <xmin>-125.32502989876333288</xmin>
-      <ymin>8.92652411414999847</ymin>
-      <xmax>-73.50761150323667437</xmax>
-      <ymax>57.36120302985000308</ymax>
+      <xmin>-171.18022402707222795</xmin>
+      <ymin>5.01150026236307156</ymin>
+      <xmax>-33.65459550938808775</xmax>
+      <ymax>61.21646575772754773</ymax>
     </extent>
     <rotation>0</rotation>
     <destinationsrs>
@@ -58,7 +58,7 @@
   <legend updateDrawingOrder="true">
     <legendlayer drawingOrder="-1" name="raster_layer" showFeatureCount="0" checked="Qt::Checked" open="true">
       <filegroup hidden="false" open="true">
-        <legendlayerfile layerid="raster_layer_2710a97a_b100_4569_9242_99d41dfbdcd9" visible="1" isInOverview="0"/>
+        <legendlayerfile layerid="raster_layer_57b98875_c994_4d8b_867e_e8dfa865b02d" visible="1" isInOverview="0"/>
       </filegroup>
     </legendlayer>
   </legend>
@@ -143,8 +143,8 @@
         <xmax>-74.74135956027302541</xmax>
         <ymax>56.20799638900000161</ymax>
       </extent>
-      <id>raster_layer_2710a97a_b100_4569_9242_99d41dfbdcd9</id>
-      <datasource>../../../../qgis/QGIS-master/tests/testdata/raster_layer.tiff</datasource>
+      <id>raster_layer_57b98875_c994_4d8b_867e_e8dfa865b02d</id>
+      <datasource>./raster_layer.tiff</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -238,7 +238,7 @@
     </maplayer>
   </projectlayers>
   <layerorder>
-    <layer id="raster_layer_2710a97a_b100_4569_9242_99d41dfbdcd9"/>
+    <layer id="raster_layer_57b98875_c994_4d8b_867e_e8dfa865b02d"/>
   </layerorder>
   <properties>
     <Gui>
@@ -278,9 +278,14 @@
       <Automatic type="bool">true</Automatic>
       <DecimalPlaces type="int">2</DecimalPlaces>
     </PositionPrecision>
+    <SpatialRefSys>
+      <ProjectionsEnabled type="int">1</ProjectionsEnabled>
+    </SpatialRefSys>
   </properties>
   <visibility-presets/>
-  <transformContext/>
+  <transformContext>
+    <srcDest sourceTransform="+towgs84=-10,158,187" destTransform="" source="EPSG:26713" dest="EPSG:4326"/>
+  </transformContext>
   <projectMetadata>
     <identifier></identifier>
     <parentidentifier></parentidentifier>
@@ -290,7 +295,7 @@
     <abstract></abstract>
     <links/>
     <author>David Marteau</author>
-    <creation>2019-11-14T15:03:42</creation>
+    <creation>2019-11-14T15:05:54</creation>
   </projectMetadata>
   <Annotations/>
   <Layouts/>

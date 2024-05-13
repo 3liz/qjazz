@@ -14,7 +14,6 @@ from qgis.core import (
     QgsProcessingParameterDistance,
     QgsProcessingParameterDuration,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterField,
     QgsProcessingParameterNumber,
     QgsProcessingParameterRange,
     QgsProcessingParameterScale,
@@ -22,12 +21,13 @@ from qgis.core import (
 )
 
 from py_qgis_processes.processing.inputs import InputParameter
-from py_qgis_processes.processing.inputs.literal import (
-    DateTimeParameterDataType,
-    FieldParameterDataType,
-    NumberParameterType,
-)
+from py_qgis_processes.processing.inputs.datetime import DateTimeParameterDataType
+from py_qgis_processes.processing.inputs.literal import NumberParameterType
 from py_qgis_processes_schemas import ogc
+
+
+def meta(seq, s):
+    return next(filter(lambda m: m.role == s, seq)).value
 
 
 def test_parameter_description():
@@ -81,7 +81,6 @@ def test_parameter_enum():
 
     assert schema['type'] == 'string'
     assert schema['default'] == 'bar'
-    assert schema['format'] == 'x-qgis-parameter-enum'
 
     with pytest.raises(ValidationError):
         value = inp.value("not_an_option")
@@ -211,7 +210,7 @@ def test_parameter_range():
     schema = inp.json_schema()
     print("\ntest_parameter_range::", schema)
     assert schema['type'] == 'array'
-    assert schema['format'] == 'x-qgis-parameter-range'
+    assert schema['format'] == 'x-range'
     assert schema['maxLength'] == 2
     assert schema['minLength'] == 2
 
@@ -267,7 +266,6 @@ def test_parameter_band():
     print("\ntest_parameter_band::", schema)
     assert schema['type'] == 'integer'
     assert schema['minimum'] == 0
-    assert schema['format'] == 'x-qgis-parameter-band'
 
     param = QgsProcessingParameterBand("Band", allowMultiple=True)
     inp = InputParameter(param)
@@ -292,28 +290,3 @@ def test_parameter_color():
 
     value = inp.value("red")
     assert value == QColor(255, 0, 0)
-
-
-def test_parameter_field():
-
-    param = QgsProcessingParameterField(
-        "Field",
-        parentLayerParameterName="ParentLayer",
-        type=FieldParameterDataType.Numeric,
-    )
-
-    inp = InputParameter(param)
-
-    schema = inp.json_schema()
-    print("\ntest_parameter_field::", schema)
-    assert schema['type'] == 'string'
-    assert schema['format'] == 'x-qgis-parameter-field'
-    assert schema['x-qgis-parentLayerParameterName'] == 'ParentLayer'
-    assert schema['x-qgis-field-dataType'] == 'Numeric'
-
-    param = QgsProcessingParameterField("Field", allowMultiple=True)
-    inp = InputParameter(param)
-    schema = inp.json_schema()
-    print("\ntest_parameter_field::multiple", schema)
-    assert schema['type'] == 'array'
-    assert schema['minItems'] == 1

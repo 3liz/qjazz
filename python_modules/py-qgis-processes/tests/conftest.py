@@ -51,7 +51,7 @@ def cache_config(data: Path) -> ProjectsConfig:
         disable_getprint=True,
         force_readonly_layers=True,
         search_paths={
-            '/tests': f'{data}/samples/',
+            '/samples': f'{data}/samples/',
             '/france': f'{data}/france_parts/',
             '/montpellier': f'{data}/montpellier/',
             '/database': 'postgresql://?service=py-qgis',

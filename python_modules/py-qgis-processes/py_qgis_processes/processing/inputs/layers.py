@@ -1,13 +1,13 @@
 
-
 from pathlib import Path
-from types import SimpleNamespace
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Extra, JsonValue
+from pydantic import BaseModel, Extra, Field, JsonValue
 from typing_extensions import (
+    Annotated,
     Any,
     Dict,
+    List,
     Literal,
     Optional,
     Sequence,
@@ -17,11 +17,18 @@ from typing_extensions import (
 )
 
 from qgis.core import (
+    Qgis,
     QgsProcessingFeatureSourceDefinition,
     QgsProcessingOutputLayerDefinition,
+    QgsProcessingParameterBand,
+    QgsProcessingParameterExpression,
+    QgsProcessingParameterField,
+    QgsProcessingParameterFieldMapping,
     QgsProcessingParameterLimitedDataTypes,
     QgsProject,
 )
+
+from py_qgis_processes_schemas.models import NullField
 
 from ..utils import (
     ProcessingSourceType,
@@ -30,7 +37,14 @@ from ..utils import (
     parse_layer_spec,
     raw_destination_sink,
 )
-from .base import InputParameter, ParameterDefinition, ProcessingContext
+from .base import (
+    InputMeta,
+    InputParameter,
+    Metadata,
+    MetadataValue,
+    ParameterDefinition,
+    ProcessingContext,
+)
 
 #
 # Layers input may be passed in various forms:
@@ -47,7 +61,11 @@ class ParameterMapLayer(InputParameter):
 
     _DefaultSourceType = ProcessingSourceType.MapLayer
     _multiple: bool = False
-    _format: str = "x-qgis-parameter-maplayer"
+
+    @classmethod
+    def is_spatial(cls) -> Optional[bool]:
+        # Do not care if layer is spatial or not
+        return None
 
     @classmethod
     def sourcetypes(cls, param: ParameterDefinition) -> Set[ProcessingSourceType]:  # type: ignore [valid-type]
@@ -70,15 +88,12 @@ class ParameterMapLayer(InputParameter):
         _type: Any = str
 
         if project:
-            allowed_sources = layer_names_from_context(project, sourcetypes)
+            allowed_sources = layer_names_from_context(project, sourcetypes, cls.is_spatial())
             if allowed_sources:
                 _type = Literal[allowed_sources]
 
         if cls._multiple:
             _type = Set[_type]
-
-        if not validation_only:
-            field.update(json_schema_extra={'format': cls._format})
 
         return _type
 
@@ -86,7 +101,7 @@ class ParameterMapLayer(InputParameter):
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
-    ) -> str | Sequence[str]:
+    ) -> JsonValue:
 
         _inp = self.validate(inp)
         if self._multiple:
@@ -104,7 +119,6 @@ class ParameterMapLayer(InputParameter):
 class ParameterMultipleLayers(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.Vector
     _multiple = True
-    _format: str = "x-qgis-parameter-multiplelayers"
 
 
 #
@@ -113,7 +127,6 @@ class ParameterMultipleLayers(ParameterMapLayer):
 
 class ParameterVectorLayer(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.Vector
-    _format = "x-qgis-parameter-vectorlayer"
 
 #
 # QgsProcessingParameterFeatureSource
@@ -122,7 +135,6 @@ class ParameterVectorLayer(ParameterMapLayer):
 
 class ParameterFeatureSource(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.Vector
-    _format = "x-qgis-parameter-featuresource"
 
     def value(
         self,
@@ -147,17 +159,6 @@ class ParameterFeatureSource(ParameterMapLayer):
 
 class ParameterRasterLayer(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.Raster
-    _format = "x-qgis-parameter-rasterlayer"
-
-
-#
-# QgsProcessingParameterMeshLayer
-#
-
-
-class ParameterMeshLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Mesh
-    _format = "x-qgis-parameter-meshlayer"
 
 
 #
@@ -166,7 +167,6 @@ class ParameterMeshLayer(ParameterMapLayer):
 
 class ParameterPointCloudLayer(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.PointCloud
-    _format = "x-qgis-parameter-pointcloudlayer"
 
 
 #
@@ -176,7 +176,6 @@ class ParameterPointCloudLayer(ParameterMapLayer):
 class ParameterVectorTileWriterLayers(ParameterMapLayer):
     _DefaultSourceType = ProcessingSourceType.Vector
     _multiple = True
-    _format = "x-qgis-parameter-vectortilewriterlayers"
 
     @classmethod
     def create_model(
@@ -202,22 +201,77 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
 
         return Sequence[TileWriter]
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
-
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
         _inp = self.validate(inp)
-        return _inp.model_dump(mode='json')
+        return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
+
+#
+# QgsProcessingParameterDxfLayers
+#
+
+class ParameterDxfLayers(ParameterMapLayer):
+    _DefaultSourceType = ProcessingSourceType.Vector
+    _multiple: bool = True
+
+    @classmethod
+    def is_spatial(cls) -> Optional[bool]:
+        # Require spatial layers
+        return True
+
+
+#
+# QgsProcessingParameterAnnotationLayer
+#
+
+class ParameterAnnotationLayer(ParameterMapLayer):
+    _DefaultSourceType = ProcessingSourceType.Annotation
+
+
+#
+# QgsProcessingParameterTinInputLayers
+#
+
+class ParameterTinInputLayers(ParameterMapLayer):
+    _DefaultSourceType = ProcessingSourceType.Vector
+    _multiple = True
+
+    @classmethod
+    def create_model(
+        cls,
+        param: ParameterDefinition,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Type:
+
+        _type: Any = super(cls, cls).create_model(
+            param,
+            field,
+            project,
+            validation_only,
+        )
+
+        # Inputs are List of dict
+        # Build intermediate representation for
+        # enforcing constraints
+        class TinInput(BaseModel, extra='allow'):
+            source: _type
+            attributeIndex: str
+            type_: str = Field(alias="type")
+
+        return Sequence[TinInput]
+
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+        _inp = self.validate(inp)
+        return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
 #
 # Layer destination
 #
 
-class Metadata(SimpleNamespace):
-    pass
-
 
 class ParameterLayerDestination(InputParameter):
-    _format: Optional[str] = None
 
     @classmethod
     def get_default_value(cls, field: Dict, param: ParameterDefinition) -> Tuple[str, str]:
@@ -263,14 +317,11 @@ class ParameterLayerDestination(InputParameter):
         ext, defval = cls.get_default_value(field, param)
 
         if not validation_only:
-            field.update(default=defval)
-            schema_extra = {}
-            if cls._format:
-                schema_extra['format'] = cls._format
-            field.update(json_schema_extra=schema_extra)
+            if defval:
+                field.update(default=defval)
 
         # Add field metadata
-        field.update(metadata=Metadata(ext=ext))
+        field.update(meta=InputMeta(ext=ext))
 
         return _type
 
@@ -280,11 +331,13 @@ class ParameterLayerDestination(InputParameter):
         context: Optional[ProcessingContext] = None,
     ) -> QgsProcessingOutputLayerDefinition:
 
+        context = context or ProcessingContext()
+
         destination = self.validate(inp)
 
-        extension = self.metadata.ext
+        extension = self.meta.ext
 
-        if context and context.config.raw_destination_input_sink:
+        if context.config.raw_destination_input_sink:
             sink, destination = raw_destination_sink(
                 self._param,
                 destination,
@@ -303,9 +356,9 @@ class ParameterLayerDestination(InputParameter):
 
             output_name = get_valid_filename(self._param.name())
             # Use canonical file name
-            sink = f"./{output_name}.{extension}"
+            sink = str(context.workdir.joinpath(f"{output_name}.{extension}"))
 
-        destination_project = context and context.destination_project
+        destination_project = context.destination_project
 
         value = QgsProcessingOutputLayerDefinition(sink, destination_project)
         value.destinationName = destination
@@ -318,15 +371,14 @@ class ParameterLayerDestination(InputParameter):
 #
 
 class ParameterRasterDestination(ParameterLayerDestination):
-    _format = "x-qgis-parameter-rasterdestination"
-
+    pass
 
 #
 # QgsProcessingParameterVectorDestination
 #
 
+
 class ParameterVectorDestination(ParameterLayerDestination):
-    _format = "x-qgis-parameter-vectordestination"
 
     @classmethod
     def create_model(
@@ -357,7 +409,7 @@ class ParameterVectorDestination(ParameterLayerDestination):
 #
 
 class ParameterFeatureSink(ParameterVectorDestination):
-    _format = "x-qgis-parameter-featuresink"
+    pass
 
 
 #
@@ -365,12 +417,256 @@ class ParameterFeatureSink(ParameterVectorDestination):
 #
 
 class ParameterPointCloudDestination(ParameterLayerDestination):
-    _format = "x-qgis-parameter-pointclouddestination"
+    pass
+
 
 #
 # QgsProcessingVectorTileDestination
 #
 
-
 class ParameterVectorTileDestination(ParameterLayerDestination):
-    _format = "x-qgis-parameter-vectortiledestination"
+    pass
+
+
+#
+# QgsProcessingParameterField
+#
+
+if Qgis.QGIS_VERSION_INT >= 33600:
+    FieldParameterDataType = Qgis.ProcessingFieldParameterDataType
+    def field_datatype_name(value: Qgis.ProcessingFieldParameterDataType) -> str:
+        return value.name
+else:
+    FieldParameterDataType = QgsProcessingParameterField
+    def field_datatype_name(value: int) -> str:   # type: ignore [misc]
+        match value:
+            case QgsProcessingParameterField.Any:
+                field_datatype = 'Any'
+            case QgsProcessingParameterField.Numeric:
+                field_datatype = 'Numeric'
+            case QgsProcessingParameterField.String:
+                field_datatype = 'String'
+            case QgsProcessingParameterField.DateTime:
+                field_datatype = 'DateTime'
+            case QgsProcessingParameterField.Binary:
+                field_datatype = 'Binary'
+            case QgsProcessingParameterField.Boolean:
+                field_datatype = 'Boolean'
+            case _:
+                raise ValueError(f"Unexpected field_datatype: {value}")
+        return field_datatype
+
+
+class ParameterField(InputParameter):
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        md.append(MetadataValue(role="dataType", value=field_datatype_name(param.dataType())))
+        md.append(MetadataValue(role="defaultToAllFields", value=param.defaultToAllFields()))
+
+        parent_layer_param = param.parentLayerParameterName()
+        if parent_layer_param:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_param,
+                ),
+            )
+
+        return md
+
+    @classmethod
+    def create_model(
+        cls,
+        param: QgsProcessingParameterField,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Type:
+
+        _type: Any = str  #
+
+        if param.allowMultiple():
+            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
+
+        return _type
+
+#
+# QgsProcessingParameterFieldMapping
+#
+
+
+class FieldMapping(BaseModel, extra='allow'):
+    name: str
+    type_: str = Field(alias="type")
+    expression: str
+
+
+class ParameterFieldMapping(InputParameter):
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterFieldMapping) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        parent_layer_param = param.parentLayerParameterName()
+        if parent_layer_param:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_param,
+                ),
+            )
+
+        return md
+
+    @classmethod
+    def create_model(
+        cls,
+        param: QgsProcessingParameterField,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Type:
+
+        return Sequence[FieldMapping]
+
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+        _inp = self.validate(inp)
+        return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
+
+
+#
+# QgisProcessingParameterExpression
+#
+
+class ParameterExpression(InputParameter):
+    _ParameterType = str
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterExpression) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        md.append(MetadataValue(role="expressionType", value=param.expressionType().name))
+        parent_layer_parameter = param.parentLayerParameterName()
+        if parent_layer_parameter:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_parameter,
+                ),
+            )
+
+        return md
+
+
+#
+# QgsProcessingParameterBand
+#
+
+class ParameterBand(InputParameter):
+
+    @classmethod
+    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        parent_layer_param = param.parentLayerParameterName()
+        if parent_layer_param:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_param,
+                ),
+            )
+
+        return md
+
+    @classmethod
+    def create_model(
+        cls,
+        param: QgsProcessingParameterBand,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Type:
+
+        _type: Any = Annotated[int, Field(ge=0)]  #
+
+        if param.allowMultiple():
+            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
+
+        return _type
+
+
+#
+# QgsProcessingParameterAggregate
+#
+
+# See analyzing/processing/qgsalgorithmaggregate.cpp
+class AggregateItem(BaseModel, extra='allow'):
+    name: str
+    type_: str = Field(alias='type')
+    type_name: Optional[str] = NullField()
+    sub_type: Optional[int] = NullField()
+    input_: str = Field(alias='input')
+    aggregate: str
+    length: Optional[int] = NullField()
+    precision: Optional[int] = NullField()
+    delimiter: Optional[str] = NullField()
+
+
+class ParameterAggregate(InputParameter):
+    _ParameterType = Sequence[AggregateItem]
+
+    @classmethod
+    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        parent_layer_param = param.parentLayerParameterName()
+        if parent_layer_param:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_param,
+                ),
+            )
+
+        return md
+
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+        _inp = self.validate(inp)
+        return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
+
+
+#
+# QgsProcessingParameterAlignRasterLayers
+#
+
+
+class ParameterAlignRasterLayers(InputParameter):
+
+    @classmethod
+    def create_model(
+        cls,
+        param: QgsProcessingParameterField,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Type:
+
+        _type: Any = str
+        if project:
+            allowed_layers = layer_names_from_context(
+                project,
+                (ProcessingSourceType.Raster,),
+                True,
+            )
+            if allowed_layers:
+                _type = Literal[allowed_layers]  # type: ignore [valid-type]
+
+        class AlignRasterItem(BaseModel):
+            inputFile: _type
+            outputFile: str
+            resampleMethod: int
+
+        return Sequence[_type] | Sequence[AlignRasterItem]  # type: ignore [return-value]
+
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+        _inp = self.validate(inp)
+        return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)

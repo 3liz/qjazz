@@ -6,6 +6,7 @@ from .processes import (  # noqa F401
     MetadataLink,
     InputDescription,
     OutputDescription,
+    ValuePassing,
 )
 
 from .ogc import (  # noqa F401

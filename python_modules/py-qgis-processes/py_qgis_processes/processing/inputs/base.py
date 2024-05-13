@@ -1,4 +1,6 @@
 
+from types import SimpleNamespace
+
 from pydantic import Field, JsonValue, TypeAdapter
 from typing_extensions import (
     Annotated,
@@ -6,6 +8,7 @@ from typing_extensions import (
     ClassVar,
     Dict,
     Generic,
+    List,
     Optional,
     Type,
     TypeAlias,
@@ -18,9 +21,13 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QVariant
 
-from py_qgis_contrib.core.config import confservice
+from py_qgis_processes_schemas import (
+    InputDescription,
+    Metadata,
+    MetadataValue,
+    ValuePassing,
+)
 from py_qgis_processes_schemas.models import one_of
-from py_qgis_processes_schemas.processes import InputDescription, ValuePassing
 
 from ..config import ProcessingConfig
 from ..context import ProcessingContext
@@ -28,6 +35,10 @@ from ..context import ProcessingContext
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 
 T = TypeVar('T')
+
+
+class InputMeta(SimpleNamespace):
+    pass
 
 
 class InputParameter(Generic[T]):
@@ -43,18 +54,22 @@ class InputParameter(Generic[T]):
         ):
         self._param = param
 
-        annotated = self.model(
-            param,
-            project,
-            validation_only=validation_only,
-            config=config,
-        )
-        self._metadata = annotated.__metadata__[0]
+        annotated = self.model(param, project, validation_only=validation_only)
+
+        self._meta = annotated.__metadata__[0]
         self._model = TypeAdapter(annotated)
 
+    @classmethod
+    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+        return [MetadataValue(role="typeName", value=param.type())]
+
+    @classmethod
+    def keywords(cls, parame: ParameterDefinition) -> List[str]:
+        return []
+
     @property
-    def metadata(self) -> Any:  #  noqa ANN401
-        return self._metadata
+    def meta(self) -> InputMeta:
+        return self._meta
 
     def value_passing(self) -> ValuePassing:
         return ('byValue',)
@@ -72,7 +87,6 @@ class InputParameter(Generic[T]):
         project: Optional[QgsProject] = None,
         *,
         validation_only: bool = False,
-        config: Optional[ProcessingConfig] = None,
     ) -> TypeAlias:
 
         field: Dict = {}
@@ -90,28 +104,10 @@ class InputParameter(Generic[T]):
             if default is not None:
                 field.update(default=default)
 
-        _type = cls.create_model_with_config(
-            param,
-            field,
-            project,
-            validation_only=validation_only,
-            config=config or confservice.conf.processing,
-        )
+        _type = cls.create_model(param, field, project, validation_only=validation_only)
 
-        metadata = field.pop('metadata', None)
-        return Annotated[_type, metadata, Field(**field)]  # type: ignore [pydantic-field, valid-type]
-
-    @classmethod
-    def create_model_with_config(
-        cls,
-        param: ParameterDefinition,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        *,
-        validation_only: bool = False,
-        config: ProcessingConfig,
-    ) -> Type:
-        return cls.create_model(param, field, project, validation_only=validation_only)
+        meta = field.pop('meta', None)
+        return Annotated[_type, meta, Field(**field)]  # type: ignore [pydantic-field, valid-type]
 
     @classmethod
     def create_model(
@@ -156,13 +152,12 @@ class InputParameter(Generic[T]):
         title = param.description() or param.name().capitalize().replace('_', ' ')
         description = param.help()
 
-        schema = self.json_schema()
-        value_passing = self.value_passing()
-
         return InputDescription(
             title=title,
             description=description,
-            schema=schema,
-            value_passing=value_passing,
+            schema=self.json_schema(),
+            value_passing=self.value_passing(),
+            metadata=self.metadata(param),
+            keywords=self.keywords(param),
             **kwargs,
         )

@@ -219,7 +219,7 @@ class ParameterCrs(InputParameter):
                 if crs.isValid:
                     field.update(default=crs.toOgcUrn())
 
-            field.update(json_schema_extra={'format': "x-qgis-parameter-crs"})
+            field.update(json_schema_extra={'format': "x-ogc-crs"})
 
             _type = CrsDefinition
         else:
@@ -241,10 +241,19 @@ class ParameterCrs(InputParameter):
 
         return crs
 
+
+#
+# QgsProcessingParameterCoordinateOperation
+#
+
+class ParameterCoordinateOperation(ParameterCrs):
+    # Input is a coordinate reference system
+    pass
+
+
 #
 # QgsProcessingParameterExtent
 #
-
 
 class ParameterExtent(InputParameter):
 

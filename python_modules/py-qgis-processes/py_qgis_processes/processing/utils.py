@@ -2,6 +2,7 @@
 import re
 import traceback
 
+from collections.abc import Container
 from enum import Enum
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -9,7 +10,6 @@ from urllib.parse import parse_qs, urlsplit
 from typing_extensions import (
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
 )
@@ -79,10 +79,14 @@ def get_valid_filename(s: str) -> str:
 
 def filter_layer_from_context(
     layer: QgsMapLayer,
-    sourcetypes: Set[ProcessingSourceType],  # type: ignore [valid-type]
+    sourcetypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+    spatial: Optional[bool] = None,
 ) -> bool:
     """ Find candidate layers according to datatypes
     """
+    if spatial is not None and layer.isSpatial() != spatial:
+        return False
+
     match layer.type():
         case LayerType.Vector:
             match layer.geometryType():
@@ -113,13 +117,14 @@ def filter_layer_from_context(
 
 def layer_names_from_context(
     project: QgsProject,
-    sourcetypes: Set[ProcessingSourceType],  # type: ignore [valid-type]
+    sourcetypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+    spatial: Optional[bool] = None,
 ) -> Sequence[str]:
 
     layers = (layer for layer in project.mapLayers().values())
     if ProcessingSourceType.MapLayer not in sourcetypes:
         layers = filter(   # type: ignore  [assignment]
-            lambda layer: filter_layer_from_context(layer, sourcetypes),
+            lambda layer: filter_layer_from_context(layer, sourcetypes, spatial),
             layers,
         )
 

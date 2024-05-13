@@ -3,34 +3,51 @@ from types import MappingProxyType
 from typing_extensions import Optional
 
 from qgis.core import (
+    QgsProcessingParameterAggregate,
+    QgsProcessingParameterAlignRasterLayers,
+    QgsProcessingParameterAnnotationLayer,
     QgsProcessingParameterBand,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterColor,
+    QgsProcessingParameterCoordinateOperation,
     QgsProcessingParameterCrs,
+    QgsProcessingParameterDatabaseSchema,
+    QgsProcessingParameterDatabaseTable,
     QgsProcessingParameterDateTime,
     QgsProcessingParameterDistance,
     QgsProcessingParameterDuration,
+    QgsProcessingParameterDxfLayers,
     QgsProcessingParameterEnum,
+    QgsProcessingParameterExpression,
     QgsProcessingParameterExtent,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
+    QgsProcessingParameterFieldMapping,
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterGeometry,
+    QgsProcessingParameterLayout,
+    QgsProcessingParameterLayoutItem,
     QgsProcessingParameterMapLayer,
+    QgsProcessingParameterMapTheme,
+    QgsProcessingParameterMatrix,
+    QgsProcessingParameterMeshDatasetGroups,
+    QgsProcessingParameterMeshDatasetTime,
     QgsProcessingParameterMeshLayer,
     QgsProcessingParameterMultipleLayers,
     QgsProcessingParameterNumber,
     QgsProcessingParameterPoint,
     QgsProcessingParameterPointCloudDestination,
     QgsProcessingParameterPointCloudLayer,
+    QgsProcessingParameterProviderConnection,
     QgsProcessingParameterRange,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterScale,
     QgsProcessingParameterString,
+    QgsProcessingParameterTinInputLayers,
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterVectorTileDestination,
@@ -45,74 +62,98 @@ from .base import (
     ParameterDefinition,
     ProcessingConfig,
 )
+from .datetime import (
+    ParameterDateTime,
+)
 from .files import (
     ParameterFile,
     ParameterFileDestination,
     ParameterFolderDestination,
 )
 from .geometry import (
+    ParameterCoordinateOperation,
     ParameterCrs,
     ParameterExtent,
     ParameterGeometry,
     ParameterPoint,
 )
 from .layers import (
+    ParameterAggregate,
+    ParameterAlignRasterLayers,
+    ParameterAnnotationLayer,
+    ParameterBand,
+    ParameterDxfLayers,
+    ParameterExpression,
     ParameterFeatureSink,
     ParameterFeatureSource,
+    ParameterField,
+    ParameterFieldMapping,
     ParameterMapLayer,
-    ParameterMeshLayer,
     ParameterMultipleLayers,
     ParameterPointCloudDestination,
     ParameterPointCloudLayer,
     ParameterRasterDestination,
     ParameterRasterLayer,
+    ParameterTinInputLayers,
     ParameterVectorDestination,
     ParameterVectorLayer,
     ParameterVectorTileDestination,
     ParameterVectorTileWriterLayers,
 )
 from .literal import (
-    ParameterBand,
     ParameterBool,
     ParameterColor,
-    ParameterDateTime,
+    ParameterDatabaseSchema,
+    ParameterDatabaseTable,
     ParameterDistance,
     ParameterDuration,
     ParameterEnum,
-    ParameterField,
+    ParameterLayout,
+    ParameterLayoutItem,
+    ParameterMapTheme,
     ParameterNumber,
+    ParameterProviderConnection,
     ParameterRange,
     ParameterScale,
     ParameterString,
+)
+from .matrix import ParameterMatrix
+from .mesh import (
+    ParameterMeshDatasetGroups,
+    ParameterMeshDatasetTime,
+    ParameterMeshLayer,
 )
 
 # Type mapping
 
 QGIS_TYPES = MappingProxyType({
+    QgsProcessingParameterAggregate.typeName(): ParameterAggregate,
+    QgsProcessingParameterAlignRasterLayers.typeName(): ParameterAlignRasterLayers,
+    QgsProcessingParameterAnnotationLayer.typeName(): ParameterAnnotationLayer,
     QgsProcessingParameterBand.typeName(): ParameterBand,
     QgsProcessingParameterBoolean.typeName(): ParameterBool,
     QgsProcessingParameterColor.typeName(): ParameterColor,
-    # ParameterType.CoordinateOperation
+    QgsProcessingParameterCoordinateOperation: ParameterCoordinateOperation,
     QgsProcessingParameterCrs.typeName(): ParameterCrs,
-    # ParameterType.DatabaseSchema
-    # ParameterType.DatabaseTable
+    QgsProcessingParameterDatabaseSchema.typeName(): ParameterDatabaseSchema,
+    QgsProcessingParameterDatabaseTable.typeName(): ParameterDatabaseTable,
     QgsProcessingParameterDateTime.typeName(): ParameterDateTime,
-    # ParameterType.DxfLayers
+    QgsProcessingParameterDxfLayers.typeName(): ParameterDxfLayers,
     QgsProcessingParameterEnum.typeName(): ParameterEnum,
-    # ParameterType.Expression
+    QgsProcessingParameterExpression.typeName(): ParameterExpression,
     QgsProcessingParameterExtent.typeName(): ParameterExtent,
     QgsProcessingParameterFeatureSource.typeName(): ParameterFeatureSource,
     QgsProcessingParameterField.typeName(): ParameterField,
-    # ParameterType.FieldMapping
+    QgsProcessingParameterFieldMapping.typeName(): ParameterFieldMapping,
     QgsProcessingParameterFile.typeName(): ParameterFile,
     QgsProcessingParameterGeometry.typeName(): ParameterGeometry,
-    # ParameterType.Layout
-    # ParameterType.LayoutItem
+    QgsProcessingParameterLayout.typeName(): ParameterLayout,
+    QgsProcessingParameterLayoutItem.typeName(): ParameterLayoutItem,
     QgsProcessingParameterMapLayer.typeName(): ParameterMapLayer,
-    # ParameterType.MapTheme
-    # ParameterType.Matrix
-    # ParameterType.MeshDatasetGroups
-    # ParameterType.MeshDatasetTime
+    QgsProcessingParameterMapTheme.typeName(): ParameterMapTheme,
+    QgsProcessingParameterMatrix.typeName(): ParameterMatrix,
+    QgsProcessingParameterMeshDatasetGroups.typeName(): ParameterMeshDatasetGroups,
+    QgsProcessingParameterMeshDatasetTime.typeName(): ParameterMeshDatasetTime,
     QgsProcessingParameterMeshLayer.typeName(): ParameterMeshLayer,
     QgsProcessingParameterMultipleLayers.typeName(): ParameterMultipleLayers,
     QgsProcessingParameterNumber.typeName(): ParameterNumber,
@@ -121,11 +162,11 @@ QGIS_TYPES = MappingProxyType({
     QgsProcessingParameterScale.typeName(): ParameterScale,
     QgsProcessingParameterPoint.typeName(): ParameterPoint,
     QgsProcessingParameterPointCloudLayer.typeName(): ParameterPointCloudLayer,
-    # ParameterType.ProviderConnection
+    QgsProcessingParameterProviderConnection.typeName(): ParameterProviderConnection,
     QgsProcessingParameterRange.typeName(): ParameterRange,
     QgsProcessingParameterRasterLayer.typeName(): ParameterRasterLayer,
     QgsProcessingParameterString.typeName(): ParameterString,
-    # ParameterType.TinInputLayers
+    QgsProcessingParameterTinInputLayers.typeName(): ParameterTinInputLayers,
     QgsProcessingParameterVectorLayer.typeName(): ParameterVectorLayer,
     QgsProcessingParameterVectorTileWriterLayers.typeName(): ParameterVectorTileWriterLayers,
     QgsProcessingParameterFeatureSink.typeName(): ParameterFeatureSink,
@@ -135,17 +176,15 @@ QGIS_TYPES = MappingProxyType({
     QgsProcessingParameterRasterDestination.typeName(): ParameterRasterDestination,
     QgsProcessingParameterVectorDestination.typeName(): ParameterVectorDestination,
     QgsProcessingParameterVectorTileDestination.typeName(): ParameterVectorTileDestination,
-    # ParameterType.Aggregate
-    # ParameterType.AlignRasterLayers
 })
 
 
 def InputParameter(
-        param: ParameterDefinition,
-        project: Optional[QgsProject] = None,
-        *,
-        config: Optional[ProcessingConfig] = None,
-    ) -> InputParameterBase:
+    param: ParameterDefinition,
+    project: Optional[QgsProject] = None,
+    *,
+    config: Optional[ProcessingConfig] = None,
+) -> InputParameterBase:
 
     Input = QGIS_TYPES.get(param.type())
     if Input is None:

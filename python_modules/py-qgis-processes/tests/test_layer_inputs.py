@@ -3,11 +3,15 @@ from pathlib import Path
 
 from qgis.core import (
     QgsProcessingOutputLayerDefinition,
+    QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterField,
+    QgsProcessingParameterFieldMapping,
     QgsProcessingParameterMapLayer,
-    QgsProcessingParameterMeshLayer,
     QgsProcessingParameterMultipleLayers,
+    QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
+    QgsProcessingParameterTinInputLayers,
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
 )
@@ -16,13 +20,23 @@ from py_qgis_processes.processing.config import ProcessingConfig
 from py_qgis_processes.processing.context import ProcessingContext
 from py_qgis_processes.processing.inputs import InputParameter
 from py_qgis_processes.processing.inputs.layers import (
+    FieldParameterDataType,
+    ParameterAlignRasterLayers,
     ParameterFeatureSource,
+    ParameterField,
+    ParameterFieldMapping,
     ParameterMapLayer,
     ParameterMultipleLayers,
+    ParameterRasterDestination,
     ParameterRasterLayer,
+    ParameterTinInputLayers,
     ParameterVectorDestination,
     ParameterVectorLayer,
 )
+
+
+def meta(seq, s):
+    return next(filter(lambda m: m.role == s, seq)).value
 
 
 def test_parameter_layer_maplayer():
@@ -34,8 +48,6 @@ def test_parameter_layer_maplayer():
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_maplayer::", schema)
-
-    assert schema['format'] == 'x-qgis-parameter-maplayer'
 
     # Check layer spec
     value = inp.value("layer:layername")
@@ -56,8 +68,6 @@ def test_parameter_layer_vectorlayer():
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectorlayer::", schema)
 
-    assert schema['format'] == 'x-qgis-parameter-vectorlayer'
-
 
 def test_parameter_layer_rasterlayer():
 
@@ -69,8 +79,6 @@ def test_parameter_layer_rasterlayer():
     schema = inp.json_schema()
     print("\ntest_parameter_layer_rasterlayer::", schema)
 
-    assert schema['format'] == 'x-qgis-parameter-rasterlayer'
-
 
 def test_parameter_layer_featuresource(qgis_session):
 
@@ -81,8 +89,6 @@ def test_parameter_layer_featuresource(qgis_session):
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_featuresource::", schema)
-
-    assert schema['format'] == 'x-qgis-parameter-featuresource'
 
 
 def test_parameter_layer_multiplelayers(projects):
@@ -97,7 +103,6 @@ def test_parameter_layer_multiplelayers(projects):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_multiplelayers::", schema)
 
-    assert schema['format'] == 'x-qgis-parameter-multiplelayers'
     assert 'france_parts' in schema['items']['enum']
 
 
@@ -114,18 +119,18 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     context = ProcessingContext(config)
     context.destination_project = None
 
-    inp = InputParameter(param, config=config)
+    inp = InputParameter(param)
     assert isinstance(inp, ParameterVectorDestination)
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectordestination::schema", schema)
 
-    assert schema['format'] == 'x-qgis-parameter-vectordestination'
+    assert schema.get('default') is None
 
     value = inp.value("bar", context)
     assert isinstance(value, QgsProcessingOutputLayerDefinition)
     assert value.destinationName == 'bar'
-    assert value.sink.staticValue() == './VectorDestination.fgb'
+    assert value.sink.staticValue() == 'VectorDestination.fgb'
 
     context.config = config.model_copy(
         update=dict(raw_destination_input_sink=True),
@@ -156,13 +161,101 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     assert value.sink.staticValue() == 'postgres://service=foobar'
 
 
-def test_parameter_layer_mesh():
+def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
 
-    param = QgsProcessingParameterMeshLayer("Mesh")
+    param = QgsProcessingParameterRasterDestination("RasterDestination")
+    config = qgis_session
+
+    context = ProcessingContext(config)
+    context.destination_project = None
+
+    inp = InputParameter(param)
+    assert isinstance(inp, ParameterRasterDestination)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_layer_rasterdestination::schema", schema)
+
+
+def test_parameter_tininputlayers():
+
+    param = QgsProcessingParameterTinInputLayers("TinInputLayers")
 
     inp = InputParameter(param)
 
-    schema = inp.json_schema()
-    print("\ntest_parameter_layer_mesh::", schema)
+    assert isinstance(inp, ParameterTinInputLayers)
 
-    assert schema['format'] == 'x-qgis-parameter-meshlayer'
+    schema = inp.json_schema()
+    print("\ntest_parameter_tininputlayer::", schema)
+
+
+def test_parameter_field():
+
+    param = QgsProcessingParameterField(
+        "Field",
+        parentLayerParameterName="ParentLayer",
+        type=FieldParameterDataType.Numeric,
+    )
+
+    inp = InputParameter(param)
+    assert isinstance(inp, ParameterField)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_field::", schema)
+    assert schema['type'] == 'string'
+
+    md = inp.metadata(param)
+    print("test_parameter_field::metadata", md)
+    assert meta(md, "typeName") == "field"
+    assert meta(md, "parentLayerParameterName") == "ParentLayer"
+    assert meta(md, "dataType") == "Numeric"
+
+    param = QgsProcessingParameterField("Field", allowMultiple=True)
+    inp = InputParameter(param)
+    schema = inp.json_schema()
+    print("\ntest_parameter_field::multiple", schema)
+    assert schema['type'] == 'array'
+    assert schema['minItems'] == 1
+
+
+def test_parameter_fieldmapping():
+
+    param = QgsProcessingParameterFieldMapping(
+        "FieldMapping",
+        parentLayerParameterName="ParentLayer",
+    )
+
+    inp = InputParameter(param)
+
+    assert isinstance(inp, ParameterFieldMapping)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_fieldmapping::", schema)
+
+
+def test_parameter_alignrasterlayers(projects):
+
+    project = projects.get('/samples/raster_layer')
+
+    param = QgsProcessingParameterAlignRasterLayers("AlignRasterLayers")
+
+    inp = InputParameter(param, project)
+
+    assert isinstance(inp, ParameterAlignRasterLayers)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_alignrasterlayers::", schema)
+
+    value = inp.value(
+        [
+            {
+                "inputFile": "raster_layer",
+                "outputFile": "whatever",
+                "resampleMethod": 0,
+            },
+        ],
+    )
+
+    print("\ntest_parameter_alignrasterlayers::value", value)
+
+    assert param.checkValueIsAcceptable(value)
+

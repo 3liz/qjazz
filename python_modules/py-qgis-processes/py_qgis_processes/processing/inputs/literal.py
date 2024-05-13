@@ -1,11 +1,9 @@
 
-import datetime
 import sys
 
-from pydantic import Field, JsonValue
+from pydantic import JsonValue
 from pydantic_extra_types.color import Color
 from typing_extensions import (
-    Annotated,
     Any,
     Dict,
     List,
@@ -18,29 +16,34 @@ from typing_extensions import (
 
 from qgis.core import (
     Qgis,
-    QgsProcessingParameterBand,
     QgsProcessingParameterColor,
-    QgsProcessingParameterDateTime,
+    QgsProcessingParameterDatabaseSchema,
+    QgsProcessingParameterDatabaseTable,
     QgsProcessingParameterDistance,
     QgsProcessingParameterDuration,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterField,
+    QgsProcessingParameterLayout,
+    QgsProcessingParameterLayoutItem,
     QgsProcessingParameterNumber,
     QgsProcessingParameterRange,
     QgsProcessingParameterScale,
     QgsProject,
     QgsUnitTypes,
 )
-from qgis.PyQt.QtCore import QDate, QDateTime, QTime
 from qgis.PyQt.QtGui import QColor
 
 from py_qgis_processes_schemas import (
     InputValueError,
+    Metadata,
+    MetadataValue,
     OgcDataType,
     ogc,
 )
 
-from .base import InputParameter, ProcessingContext
+from .base import (
+    InputParameter,
+    ProcessingContext,
+)
 
 #
 # QgsProcessingParameterBoolean
@@ -58,10 +61,10 @@ class ParameterBool(InputParameter):
 class ParameterString(InputParameter):
     _ParameterType = str
 
-
 #
 # QgsProcessingParameterEnum
 #
+
 
 class ParameterEnum(InputParameter):
 
@@ -105,7 +108,6 @@ class ParameterEnum(InputParameter):
                         raise InputValueError(f"Invalid default Enum value: {default}")
 
                 field.update(default=default)
-                field.update(json_schema_extra={'format': "x-qgis-parameter-enum"})
 
         return _type
 
@@ -129,10 +131,10 @@ class ParameterEnum(InputParameter):
 
         return _value
 
+
 #
 # QgsProcessingParameterNumber
 #
-
 
 def set_number_minmax(param: QgsProcessingParameterNumber, field: Dict):
 
@@ -173,10 +175,10 @@ class ParameterNumber(InputParameter):
 
         return _type
 
+
 #
 # QgsProcessingParameterDistance
 #
-
 
 class ParameterDistance(InputParameter):
 
@@ -236,6 +238,10 @@ class ParameterScale(InputParameter):
 
         return _type
 
+
+#
+# QgsProcessingParameterDuration
+#
 
 class ParameterDuration(InputParameter):
 
@@ -313,126 +319,9 @@ class ParameterRange(InputParameter):
                     case _:
                         InputValueError(f"Invalid default value for parameter Range: {default}")
 
-            field.update(json_schema_extra={'format': "x-qgis-parameter-range"})
+            field.update(json_schema_extra={'format': "x-range"})
 
         _type = Sequence[_type]  # type: ignore [valid-type]
-        return _type
-
-
-#
-# QgsProcessingParameterDateTime
-#
-
-if Qgis.QGIS_VERSION_INT >= 33600:
-    DateTimeParameterDataType = Qgis.ProcessingDateTimeParameterDataType
-else:
-    DateTimeParameterDataType = QgsProcessingParameterDateTime
-
-
-class ParameterDateTime(InputParameter):
-
-    @classmethod
-    def create_model(
-        cls,
-        param: QgsProcessingParameterDateTime,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> Type:
-
-        _type: Type
-
-        def to_py(qdt):
-            return qdt.toPyDateTime() if qdt.isValid() else None
-
-        default = field.pop('default', None)
-
-        maximum = to_py(param.maximum())
-        minimum = to_py(param.minimum())
-
-        match param.dataType():
-            case DateTimeParameterDataType.Date:
-                _type = datetime.date
-                minimum = minimum and minimum.date()
-                maximum = maximum and maximum.date()
-                default = default and default.toPyDate()
-            case DateTimeParameterDataType.Time:
-                minimum = minimum and minimum.time()
-                maximum = maximum and maximum.time()
-                default = default and default.toPyTime()
-                _type = datetime.time
-            case _:  # DateTime
-                _type = datetime.datetime
-                default = default and default.toPyDateTime()
-
-        if maximum:
-            field.update(le=maximum)
-        if minimum:
-            field.update(ge=minimum)
-
-        if not validation_only:
-            schema_extra = {}
-            if maximum:
-                schema_extra['formatMaximum'] = maximum.isoformat()
-            if minimum:
-                schema_extra['formatMinimum'] = minimum.isoformat()
-            field.update(json_schema_extra=schema_extra)
-
-            if default:
-                field.update(default=default)
-
-        return _type
-
-    def value(
-        self,
-        inp: JsonValue,
-        context: Optional[ProcessingContext] = None,
-    ) -> QDate | QTime | QDateTime:
-
-        _value = self.validate(inp)
-
-        match self._param.dataType():
-            case DateTimeParameterDataType.Date:
-                _value = QDate(_value)
-            case DateTimeParameterDataType.Time:
-                _value = QTime(_value)
-            case _:  # DateTime
-                _value = QDateTime(_value)
-
-        return _value
-
-
-#
-# QgsProcessingParameterBand
-#
-
-class ParameterBand(InputParameter):
-
-    @classmethod
-    def create_model(
-        cls,
-        param: QgsProcessingParameterBand,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> Type:
-
-        _type: Any = Annotated[int, Field(ge=0)]  #
-
-        if param.allowMultiple():
-            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
-
-        if not validation_only:
-            schema_extra = {
-                'format': "x-qgis-parameter-band",
-            }
-
-            parent_layer_param = param.parentLayerParameterName()
-            if parent_layer_param:
-                schema_extra['x-qgis-parentLayerParameterName'] = parent_layer_param
-
-            field.update(json_schema_extra=schema_extra)
-
         return _type
 
 
@@ -486,61 +375,110 @@ class ParameterColor(InputParameter):
 
 
 #
-# QgsProcessingParameterField
+# QgsProcessingParameterDatabaseSchema
 #
 
-if Qgis.QGIS_VERSION_INT >= 33600:
-    FieldParameterDataType = Qgis.ProcessingFieldParameterDataType
-    def field_datatype_name(value: Qgis.ProcessingFieldParameterDataType) -> str:
-        return value.name
-else:
-    FieldParameterDataType = QgsProcessingParameterField
-    def field_datatype_name(value: int) -> str:   # type: ignore [misc]
-        match value:
-            case QgsProcessingParameterField.Any:
-                field_datatype = 'Any'
-            case QgsProcessingParameterField.Numeric:
-                field_datatype = 'Numeric'
-            case QgsProcessingParameterField.String:
-                field_datatype = 'String'
-            case QgsProcessingParameterField.DateTime:
-                field_datatype = 'DateTime'
-            case QgsProcessingParameterField.Binary:
-                field_datatype = 'Binary'
-            case QgsProcessingParameterField.Boolean:
-                field_datatype = 'Boolean'
-            case _:
-                raise ValueError(f"Unexpected field_datatype: {value}")
-        return field_datatype
+
+class ParameterDatabaseSchema(ParameterString):
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterDatabaseSchema) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        parent_connection_param = param.parentConnectionParameterName()
+        if parent_connection_param:
+            md.append(
+                MetadataValue(
+                    role="parentConnectionParameterName",
+                    value=parent_connection_param,
+                ),
+            )
+
+        return md
 
 
-class ParameterField(InputParameter):
-    # CSS3 color
+#
+# QgsProcessingParameterDatabaseTable
+#
+
+
+class ParameterDatabaseTable(ParameterString):
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterDatabaseTable) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        md.append(MetadataValue(role="allowNewTableNames", value=param.allowNewTableNames()))
+
+        parent_connection_param = param.parentConnectionParameterName()
+        if parent_connection_param:
+            md.append(
+                MetadataValue(
+                    role="parentConnectionParameterName",
+                    value=parent_connection_param,
+                ),
+            )
+
+        return md
+
+
+#
+#  QgsProcessingParameterProviderConnection
+#
+
+class ParameterProviderConnection(ParameterString):
+    pass
+
+
+#
+# QgisProcessingParameterLayout
+#
+
+class ParameterLayout(InputParameter):
 
     @classmethod
     def create_model(
         cls,
-        param: QgsProcessingParameterField,
+        param: QgsProcessingParameterLayout,
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> Type:
 
-        _type: Any = str  #
+        _type: Any = str
 
-        if param.allowMultiple():
-            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
-
-        if not validation_only:
-            schema_extra = {
-                'format': "x-qgis-parameter-field",
-                'x-qgis-field-dataType': field_datatype_name(param.dataType()),
-            }
-
-            parent_layer_param = param.parentLayerParameterName()
-            if parent_layer_param:
-                schema_extra['x-qgis-parentLayerParameterName'] = parent_layer_param
-
-            field.update(json_schema_extra=schema_extra)
+        if project:
+            managers = project.layoutManager()
+            values = tuple(layout.name() for layout in managers.printLayouts())
+            if values:
+                _type = Literal[values]
 
         return _type
+
+#
+# QgisProcessingParameterLayoutItem
+#
+
+
+class ParameterLayoutItem(InputParameter):
+    _ParameterType = str
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterLayoutItem) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        parent_layout_parameter = param.parentLayoutParameterName()
+        if parent_layout_parameter:
+            md.append(
+                MetadataValue(
+                    role="parentLayoutParameterName",
+                    value=parent_layout_parameter,
+                ),
+            )
+
+        return md
+
+#
+# QgisProcessingParameterMapTheme
+#
+
+
+class ParameterMapTheme(InputParameter):
+    _ParameterType = str

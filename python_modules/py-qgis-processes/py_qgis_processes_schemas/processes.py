@@ -15,18 +15,18 @@ from typing_extensions import (
     Sequence,
 )
 
-from .models import JsonModel, Link
+from .models import JsonModel, Link, NullField
 
 
 class MetadataLink(Link):
-    role: Optional[str] = None
+    role: Optional[str] = NullField()
 
 
 class MetadataValue(JsonModel):
-    role: Optional[str] = None
-    title: Optional[str] = None
-    lang: Optional[str] = None
-    value: Optional[JsonValue] = None
+    role: Optional[str] = NullField()
+    title: Optional[str] = NullField()
+    lang: Optional[str] = NullField()
+    value: Optional[JsonValue]
 
 #
 # Metadata
@@ -41,9 +41,9 @@ Metadata = Annotated[
 
 class DescriptionType(JsonModel):
     title: str = ""
-    description: Optional[str] = None
+    description: Optional[str] = NullField()
     keywords: Sequence[str] = ()
-    metadata: Optional[Metadata] = None
+    metadata: Sequence[Metadata] = ()
 
 
 #
