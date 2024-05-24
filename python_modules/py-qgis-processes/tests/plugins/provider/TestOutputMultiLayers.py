@@ -2,55 +2,39 @@
 """
 import traceback
 
-
-
-from qgis.core import (
-    QgsProcessing,
-    QgsProcessingUtils,
-    QgsProcessingAlgorithm,
-    QgsProcessingException,
-    QgsProcessingAlgorithm,
-    QgsProcessingParameterNumber,
-    QgsProcessingParameterVectorLayer,
-    QgsProcessingParameterFeatureSource,
-    QgsProcessingParameterField,
-    QgsProcessingParameterString,
-    QgsProcessingParameterVectorDestination,
-    QgsProcessingParameterFileDestination,
-    QgsProcessingOutputHtml,
-    QgsProcessingOutputFile,
-    QgsProcessingOutputNumber,
-    QgsProcessingOutputVectorLayer,
-    QgsSettings,
-    QgsFeatureRequest
-)
-from qgis.PyQt.QtCore import Qt, QCoreApplication
-
 import processing
 
-class TestSimpleBuffer(QgsProcessingAlgorithm):
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingOutputVectorLayer,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterNumber,
+)
+
+
+class TestOutputVectorLayer(QgsProcessingAlgorithm):
 
     INPUT = 'INPUT'
     DISTANCE = 'DISTANCE'
-    OUTPUT_VECTOR = 'OUTPUT_VECTOR'
+    OUTPUT = 'OUTPUT'
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'simplebuffer'
+        return 'vectoroutput'
 
     def displayName(self):
-        return 'Simple buffer'
+        return 'Vector output test'
 
     def createInstance(self, config={}):
-        """ Virtual override 
+        """ Virtual override
 
             see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
-    def initAlgorithm( self, config=None ):
+    def initAlgorithm(self, config=None):
         """ Virtual override
 
             see https://qgis.org/api/classQgsProcessingAlgorithm.html
@@ -58,21 +42,21 @@ class TestSimpleBuffer(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.INPUT,
-                'Input layer'
-            )
+                'Input layer',
+            ),
         )
 
         self.addParameter(QgsProcessingParameterNumber(self.DISTANCE, 'Distance',
             type=QgsProcessingParameterNumber.Double, defaultValue=1000))
 
-        self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT_VECTOR, 'Buffered Layer'))
+        self.addOutput(QgsProcessingOutputVectorLayer(self.OUTPUT, "Output"))
 
     def processAlgorithm(self, parameters, context, feedback):
         try:
-            output = self.parameterAsOutputLayer(parameters, self.OUTPUT_VECTOR, context)
+            output = 'my_output_vector.shp'
 
             # Run buffer
-            buffer_result = processing.run("qgis:buffer", {
+            _buffer_result = processing.run("qgis:buffer", {
                 'INPUT': parameters[self.INPUT],
                 'DISTANCE': parameters[self.DISTANCE],
                 'SEGMENTS': 10,
@@ -80,11 +64,10 @@ class TestSimpleBuffer(QgsProcessingAlgorithm):
                 'JOIN_STYLE': 0,
                 'MITER_LIMIT': 2,
                 'DISSOLVE': False,
-                'OUTPUT': output
+                'OUTPUT': output,
             }, context=context, feedback=feedback)
 
-            return { self.OUTPUT_VECTOR: output }
+            return {self.OUTPUT: output}
 
         except Exception:
             traceback.print_exc()
-

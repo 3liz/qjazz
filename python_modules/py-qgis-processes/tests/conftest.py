@@ -1,12 +1,28 @@
+import sys
 import traceback
 
 from pathlib import Path
 
-import pytest  # noqa
+import pytest
 
 from py_qgis_cache import ProjectsConfig
 from py_qgis_contrib.core import qgis
 from py_qgis_processes.processing.config import ProcessingConfig
+
+
+def pytest_report_header(config):
+    from osgeo import gdal
+
+    from qgis.core import Qgis
+    from qgis.PyQt import Qt
+
+    gdal_version = gdal.VersionInfo('VERSION_NUM')
+    return (
+        f"QGIS : {Qgis.QGIS_VERSION_INT}\n"
+        f"Python GDAL : {gdal_version}\n"
+        f"Python : {sys.version}\n"
+        f"QT : {Qt.QT_VERSION_STR}"
+    )
 
 
 @pytest.fixture(scope='session')
@@ -67,6 +83,23 @@ def processing_config(rootdir: Path, cache_config: ProjectsConfig) -> Processing
         plugins=QgisPluginConfig(
             paths=[rootdir.joinpath('plugins')],
         ),
+    )
+
+
+@pytest.fixture(scope='session')
+def processing_raw_config(
+    rootdir: Path,
+    workdir: Path,
+    cache_config: ProjectsConfig,
+) -> ProcessingConfig:
+    from py_qgis_processes.processing.config import QgisPluginConfig
+    return ProcessingConfig(
+        projects=cache_config,
+        plugins=QgisPluginConfig(
+            paths=[rootdir.joinpath('plugins')],
+        ),
+        raw_destination_input_sink=True,
+        raw_destination_root_path=workdir,
     )
 
 

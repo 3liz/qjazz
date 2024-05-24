@@ -4,6 +4,7 @@ ABOUT_CACHE.md
 
 *.egg-info
 /.activate
+/.bash_aliases
 
 /doc/build
 tmp

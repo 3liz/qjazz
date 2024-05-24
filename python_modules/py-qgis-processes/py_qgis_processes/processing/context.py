@@ -21,17 +21,17 @@ class ProcessingContext(QgsProcessingContext):
 
     def __init__(self, config: Optional[ProcessingConfig] = None):
         super().__init__()
-        self._base_url: Optional[str] = None
         self._destination_project: Optional[QgsProject] = None
         self._config = config or confservice.conf.processing
+        self._store_url: str = "./jobs/00000000-0000-0000-0000-000000000000/files"
 
     @property
-    def url(self) -> Optional[str]:
-        return self._base_url
+    def store_url(self) -> str:
+        return self._store_url
 
-    @url.setter
-    def url(self, url: Optional[str]):
-        self._base_url = url
+    @store_url.setter
+    def store_url(self, url: str):
+        self._store_url = url.removesuffix('/')
 
     @property
     def config(self) -> ProcessingConfig:
@@ -74,3 +74,11 @@ class ProcessingContext(QgsProcessingContext):
             destination_project.setCrs(crs, self.config.adjust_ellipsoid)
 
         return destination_project
+
+    def reference_url(self, resource: str) -> str:
+        """ Return a proper reference url for the resource
+        """
+        return f"{self._store_url}/{resource}"
+
+    def file_reference(self, path: Path) -> str:
+        return self.reference_url(str(path.relative_to(self.workdir)))

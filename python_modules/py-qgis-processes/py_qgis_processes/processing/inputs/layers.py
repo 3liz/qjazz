@@ -7,17 +7,18 @@ from typing_extensions import (
     Annotated,
     Any,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
     Sequence,
     Set,
-    Tuple,
-    Type,
+    TypeAlias,
 )
 
 from qgis.core import (
     Qgis,
+    QgsMapLayer,
     QgsProcessingFeatureSourceDefinition,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterBand,
@@ -25,20 +26,23 @@ from qgis.core import (
     QgsProcessingParameterField,
     QgsProcessingParameterFieldMapping,
     QgsProcessingParameterLimitedDataTypes,
+    QgsProcessingUtils,
     QgsProject,
 )
 
-from py_qgis_processes_schemas.models import NullField
+from py_qgis_processes_schemas.models import (
+    NullField,
+    OutputFormatDefinition,
+)
 
 from ..utils import (
     ProcessingSourceType,
+    compatible_layers,
     get_valid_filename,
-    layer_names_from_context,
     parse_layer_spec,
     raw_destination_sink,
 )
 from .base import (
-    InputMeta,
     InputParameter,
     Metadata,
     MetadataValue,
@@ -59,20 +63,20 @@ from .base import (
 
 class ParameterMapLayer(InputParameter):
 
-    _DefaultSourceType = ProcessingSourceType.MapLayer
     _multiple: bool = False
 
     @classmethod
-    def is_spatial(cls) -> Optional[bool]:
-        # Do not care if layer is spatial or not
-        return None
-
-    @classmethod
-    def sourcetypes(cls, param: ParameterDefinition) -> Set[ProcessingSourceType]:  # type: ignore [valid-type]
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
         if isinstance(param, QgsProcessingParameterLimitedDataTypes):
-            return set(param.dataTypes())
+            dtypes = param.dataTypes()
         else:
-            return {cls._DefaultSourceType}
+            dtypes = ()
+
+        return compatible_layers(project, dtypes)
 
     @classmethod
     def create_model(
@@ -81,14 +85,12 @@ class ParameterMapLayer(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
-
-        sourcetypes = cls.sourcetypes(param)
+    ) -> TypeAlias:
 
         _type: Any = str
 
         if project:
-            allowed_sources = layer_names_from_context(project, sourcetypes, cls.is_spatial())
+            allowed_sources = tuple(layer.name() for layer in cls.compatible_layers(param, project))
             if allowed_sources:
                 _type = Literal[allowed_sources]
 
@@ -117,24 +119,60 @@ class ParameterMapLayer(InputParameter):
 #
 
 class ParameterMultipleLayers(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
     _multiple = True
 
+    @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return compatible_layers(project, (param.layerType(),))
 
+    @classmethod
+    def create_model(
+        cls,
+        param: ParameterDefinition,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> TypeAlias:
+
+        _type = super(cls, cls).create_model(param, field, project, validation_only)
+
+        min_number = param.minimumNumberInputs()
+        if min_number > 0:
+            field.update(min_length=min_number)
+
+        return _type
 #
 # QgsProcessingParameterVectorLayer
 #
 
+
 class ParameterVectorLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
+    @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return QgsProcessingUtils.compatibleVectorLayers(project, param.dataTypes())
+
 
 #
 # QgsProcessingParameterFeatureSource
 #
 
-
 class ParameterFeatureSource(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
+
+    @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return QgsProcessingUtils.compatibleVectorLayers(project, param.dataTypes())
 
     def value(
         self,
@@ -158,7 +196,13 @@ class ParameterFeatureSource(ParameterMapLayer):
 
 
 class ParameterRasterLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Raster
+    @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return QgsProcessingUtils.compatibleRasterLayers(project)
 
 
 #
@@ -166,7 +210,13 @@ class ParameterRasterLayer(ParameterMapLayer):
 #
 
 class ParameterPointCloudLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.PointCloud
+    @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return QgsProcessingUtils.compatiblePointCloudLayers(project)
 
 
 #
@@ -174,8 +224,6 @@ class ParameterPointCloudLayer(ParameterMapLayer):
 #
 
 class ParameterVectorTileWriterLayers(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
-    _multiple = True
 
     @classmethod
     def create_model(
@@ -184,7 +232,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = super(cls, cls).create_model(
             param,
@@ -211,13 +259,16 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
 #
 
 class ParameterDxfLayers(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
     _multiple: bool = True
 
     @classmethod
-    def is_spatial(cls) -> Optional[bool]:
-        # Require spatial layers
-        return True
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return (layer for layer in QgsProcessingUtils.compatibleVectorLayers(project)
+                    if layer.isSpatial())
 
 
 #
@@ -225,7 +276,9 @@ class ParameterDxfLayers(ParameterMapLayer):
 #
 
 class ParameterAnnotationLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Annotation
+    @classmethod
+    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Sequence[str]:
+        return QgsProcessingUtils.compatibleAnnotationLayers(project)
 
 
 #
@@ -233,8 +286,11 @@ class ParameterAnnotationLayer(ParameterMapLayer):
 #
 
 class ParameterTinInputLayers(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Vector
     _multiple = True
+
+    @classmethod
+    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Sequence[str]:
+        return QgsProcessingUtils.compatibleVectorLayer(project)
 
     @classmethod
     def create_model(
@@ -243,7 +299,7 @@ class ParameterTinInputLayers(ParameterMapLayer):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = super(cls, cls).create_model(
             param,
@@ -271,33 +327,29 @@ class ParameterTinInputLayers(ParameterMapLayer):
 #
 
 
-class ParameterLayerDestination(InputParameter):
+class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
+
+    def initialize(self):
+        self.output_extension = f".{self._param.defaultFileExtension()}"
 
     @classmethod
-    def get_default_value(cls, field: Dict, param: ParameterDefinition) -> Tuple[str, str]:
+    def get_default_value(cls, field: Dict, param: ParameterDefinition) -> str:
         #
         # Get the file extension as we need it
         # for writing the resulting file
         #
         defval = field.pop('default', None)
 
-        ext = param.defaultFileExtension()
-
-        # XXX Need to be revisited
         if isinstance(defval, QgsProcessingOutputLayerDefinition):
-            sink = defval.sink
+            sink = defval.sink and defval.sink.staticValue()
             if sink:
-                # Try to get extension from the sink value
-                sink = sink.staticValue()
-                if sink:
-                    # Remove extra open options
-                    url = urlsplit(sink.partition('|')[0])
-                    if url.path and url.scheme.lower() in ('', 'file'):
-                        p = Path(url.path)
-                        ext = p.suffix.removeprefix('.') or ext
-                        defval = defval.destinationName or p.stem
+                # Remove extra open options
+                url = urlsplit(sink.partition('|')[0])
+                if url.path and url.scheme.lower() in ('', 'file'):
+                    p = Path(url.path)
+                    defval = defval.destinationName or p.stem
 
-        return ext, defval
+        return defval
 
     @classmethod
     def create_model(
@@ -306,22 +358,16 @@ class ParameterLayerDestination(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type = str
 
-        # Since QgsProcessingOutputLayerDefinition may
-        # be defined as default value, get extension
-        # and layer name from it
-
-        ext, defval = cls.get_default_value(field, param)
-
         if not validation_only:
+            # Since QgsProcessingOutputLayerDefinition may
+            # be defined as default value, get layer name from it
+            defval = cls.get_default_value(field, param)
             if defval:
                 field.update(default=defval)
-
-        # Add field metadata
-        field.update(meta=InputMeta(ext=ext))
 
         return _type
 
@@ -334,13 +380,13 @@ class ParameterLayerDestination(InputParameter):
         context = context or ProcessingContext()
 
         destination = self.validate(inp)
-
-        extension = self.meta.ext
+        extension = self.output_extension
 
         if context.config.raw_destination_input_sink:
             sink, destination = raw_destination_sink(
                 self._param,
                 destination,
+                context.workdir,
                 extension,
                 context.config.raw_destination_root_path,
             )
@@ -356,7 +402,7 @@ class ParameterLayerDestination(InputParameter):
 
             output_name = get_valid_filename(self._param.name())
             # Use canonical file name
-            sink = str(context.workdir.joinpath(f"{output_name}.{extension}"))
+            sink = str(context.workdir.joinpath(f"{output_name}{extension}"))
 
         destination_project = context.destination_project
 
@@ -381,13 +427,24 @@ class ParameterRasterDestination(ParameterLayerDestination):
 class ParameterVectorDestination(ParameterLayerDestination):
 
     @classmethod
+    def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
+        md = super(cls, cls).metadata(param)
+        md.append(
+            MetadataValue(
+                role="dataType",
+                value=ProcessingSourceType(param.dataType()).name,
+            ),
+        )
+        return md
+
+    @classmethod
     def create_model(
         cls,
         param: ParameterDefinition,
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type = super(cls, cls).create_model(
             param,
@@ -398,7 +455,6 @@ class ParameterVectorDestination(ParameterLayerDestination):
 
         if not validation_only:
             schema_extra = field.get('json_schema_extra', {})
-            schema_extra['x-qgis-datatype'] = str(param.dataType())
             field.update(json_schema_extra=schema_extra)
 
         return _type
@@ -483,7 +539,7 @@ class ParameterField(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = str  #
 
@@ -526,7 +582,7 @@ class ParameterFieldMapping(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         return Sequence[FieldMapping]
 
@@ -585,7 +641,7 @@ class ParameterBand(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = Annotated[int, Field(ge=0)]  #
 
@@ -642,21 +698,25 @@ class ParameterAggregate(InputParameter):
 class ParameterAlignRasterLayers(InputParameter):
 
     @classmethod
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return QgsProcessingUtils.compatibleRasterLayers(project)
+
+    @classmethod
     def create_model(
         cls,
         param: QgsProcessingParameterField,
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = str
         if project:
-            allowed_layers = layer_names_from_context(
-                project,
-                (ProcessingSourceType.Raster,),
-                True,
-            )
+            allowed_layers = tuple(layer.name() for layer in cls.compatible_layers(param, project))
             if allowed_layers:
                 _type = Literal[allowed_layers]  # type: ignore [valid-type]
 

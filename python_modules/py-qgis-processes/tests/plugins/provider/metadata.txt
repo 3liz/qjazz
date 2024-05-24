@@ -1,7 +1,7 @@
 [general]
 name=Tests
-qgisMinimumVersion=3.0
-;qgisMaximumVersion=
+qgisMinimumVersion=3.34
+qgisMaximumVersion=3.99
 description=Test plugin
 version=1.0.0
 author=

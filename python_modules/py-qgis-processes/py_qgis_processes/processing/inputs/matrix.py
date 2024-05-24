@@ -7,7 +7,7 @@ from typing_extensions import (
     List,
     Optional,
     Sequence,
-    Type,
+    TypeAlias,
 )
 
 from qgis.core import (
@@ -84,7 +84,7 @@ class ParameterMatrix(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         headers = param.headers()
         cols = len(headers) if headers else None

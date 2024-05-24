@@ -15,7 +15,7 @@ from typing_extensions import (
     Sequence,
 )
 
-from .models import JsonModel, Link, NullField
+from .models import JsonModel, Link, LinkHttp, NullField
 
 
 class MetadataLink(Link):
@@ -84,7 +84,7 @@ class ProcessesSummary(DescriptionType):
         'async-execute',
         'dismiss',
     )
-    links: Sequence[Link] = Field(default=[])
+    links: Sequence[LinkHttp] = Field(default=[])
 
 
 class ProcessesDescription(ProcessesSummary):

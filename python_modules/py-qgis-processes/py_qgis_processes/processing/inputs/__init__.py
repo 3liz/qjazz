@@ -58,13 +58,8 @@ from qgis.core import (
 from .base import (
     InputParameter as InputParameterBase,
 )
-from .base import (
-    ParameterDefinition,
-    ProcessingConfig,
-)
-from .datetime import (
-    ParameterDateTime,
-)
+from .base import ParameterDefinition
+from .datetime import ParameterDateTime
 from .files import (
     ParameterFile,
     ParameterFileDestination,
@@ -179,15 +174,31 @@ QGIS_TYPES = MappingProxyType({
 })
 
 
+InputParameterDef = InputParameterBase
+
+
 def InputParameter(
     param: ParameterDefinition,
     project: Optional[QgsProject] = None,
     *,
-    config: Optional[ProcessingConfig] = None,
-) -> InputParameterBase:
+    validation_only: bool = False,
+) -> InputParameterDef:
 
     Input = QGIS_TYPES.get(param.type())
     if Input is None:
         raise ValueError(f"Unsupported parameter: {param}")
 
-    return Input(param, project, config=config)
+    return Input(param, project, validation_only=validation_only)
+
+
+def _is_parameter_hidden(
+    param: ParameterDefinition,
+    project: Optional[QgsProject] = None,
+) -> bool:
+    Input = QGIS_TYPES.get(param.type())
+    if Input is None:
+        raise ValueError(f"Unsupported parameter: {param}")
+    return Input.hidden(param, project)
+
+
+InputParameter.is_hidden = _is_parameter_hidden  # type: ignore [attr-defined]

@@ -14,7 +14,7 @@ from typing_extensions import (
     TypeAlias,
 )
 
-from .models import JsonModel, Link
+from .models import JsonModel, Link, OutputFormat
 
 DateTime = TypeAdapter(datetime)
 
@@ -66,6 +66,15 @@ class JobStatus(JsonModel):
     exception: JobException
 
     links: Sequence[Link] = ()
+
+
+class Output(JsonModel):
+    format: OutputFormat
+
+
+class JobExecute(JsonModel):
+    inputs: Dict[str, JsonValue]
+    outputs: Dict[str, Output]
 
 
 JobResults: TypeAlias = Dict[str, JsonValue]

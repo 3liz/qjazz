@@ -13,10 +13,11 @@ from typing_extensions import NamedTuple, Optional
 class Format(NamedTuple):
     media_type: str
     suffix: str
-    schema: Optional[str]
+    schema: Optional[str] = None
 
 
 class _Formats(NamedTuple):
+    ANY: Format = Format('application/octet-stream', '', None)
     WKT: Format = Format('application/wkt', '.wkt', None)
     GEOJSON: Format = Format('application/vnd.geo+json', '.geojson', None)
     JSON: Format = Format('application/json', '.json', None)
@@ -35,9 +36,14 @@ class _Formats(NamedTuple):
     WMS130: Format = Format('application/x-ogc-wms; version=1.3.0', '.xml', None)
     WMS110: Format = Format('application/x-ogc-wms; version=1.1.0', '.xml', None)
     WMS100: Format = Format('application/x-ogc-wms; version=1.0.0', '.xml', None)
-    TEXT: Format = Format('text/plain', '.txt', None)
-    NETCDF: Format = Format('application/x-netcdf', '.nc', None)
-    ANY: Format = Format('application/octet-stream', '', None)
+    TEXT: Format = Format('text/plain', 'txt', None)
+    NETCDF: Format = Format('application/netcdf', '.nc', None)
+    DXF: Format = Format('application/x-dxf', '.dxf', None)
+    # According to OGC best practices
+    # http://www.opengis.net/doc/wps1.0-best-practice-dp
+    # naming schema is x-ogc-<gdal code lower case>
+    FLATGEOBUF: Format = Format('application/x-ogc-flatgeobuf', '.fgb', None)
+    GPKG: Format = Format('application/x-ogc-gpkg', '.gpkg', None)
 
 
 Formats = _Formats()  # type: ignore [call-arg]

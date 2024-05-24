@@ -4,9 +4,6 @@
 from pathlib import Path
 
 from pydantic import Field
-from typing_extensions import (
-    Optional,
-)
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
@@ -37,7 +34,6 @@ class WorkerConfig(CeleryConfig):
             "for initializing Celery worker."
         ),
     )
-    routing_name: Optional[str] = None
 
 
 def load_configuration(configpath: Path) -> BaseConfig:

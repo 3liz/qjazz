@@ -46,10 +46,9 @@ class Worker(Celery):
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
 
-        # We want each application with its own queue and exchange
-        if conf.worker.routing_name:
-            self.conf.task_default_queue = conf.worker.routing_name
-            self.conf.task_default_exchange = conf.worker.routing_name
+        # We want each service with its own queue and exchange
+        self.conf.task_default_queue = conf.worker.service_name
+        self.conf.task_default_exchange = conf.worker.service_name
 
         self.__processing_config__ = conf.processing
 

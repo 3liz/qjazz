@@ -1,16 +1,14 @@
 
-from types import SimpleNamespace
 
 from pydantic import Field, JsonValue, TypeAdapter
 from typing_extensions import (
     Annotated,
     Any,
-    ClassVar,
     Dict,
     Generic,
     List,
     Optional,
-    Type,
+    Self,
     TypeAlias,
     TypeVar,
 )
@@ -23,13 +21,14 @@ from qgis.PyQt.QtCore import QVariant
 
 from py_qgis_processes_schemas import (
     InputDescription,
+    JsonDict,
     Metadata,
     MetadataValue,
     ValuePassing,
+    remove_auto_title,
 )
 from py_qgis_processes_schemas.models import one_of
 
-from ..config import ProcessingConfig
 from ..context import ProcessingContext
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
@@ -37,39 +36,59 @@ ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParamete
 T = TypeVar('T')
 
 
-class InputMeta(SimpleNamespace):
-    pass
-
-
 class InputParameter(Generic[T]):
 
-    _ParameterType: ClassVar[Optional[Type]] = None
+    _ParameterType: TypeAlias | None = None
 
-    def __init__(self,
+    def __init__(
+            self,
             param: ParameterDefinition,
             project: Optional[QgsProject] = None,
             *,
             validation_only: bool = False,
-            config: Optional[ProcessingConfig] = None,
         ):
-        self._param = param
 
         annotated = self.model(param, project, validation_only=validation_only)
-
-        self._meta = annotated.__metadata__[0]
+        self._param = param
         self._model = TypeAdapter(annotated)
+        self.initialize()
+
+    def initialize(self):
+        pass
+
+    def rebind(
+        self,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> Self:
+        """ Duplicate the class and rebind it with
+            another project.
+        """
+        return self.__class__(self._param, project, validation_only=validation_only)
+
+    @property
+    def name(self) -> str:
+        return self._param.name()
+
+    def optional_default_value(self, context: Optional[ProcessingContext] = None) -> Optional[T]:
+        """ Some optional destination parameters may
+            force create a output value.
+            This is the case with parameters created
+            with the model designer.
+        """
+        # Note: createByDefault is defined for QgsProcessingParameteDestination
+        if self._param.isDestination() and self._param.createByDefault():
+            return self._param.name()
+        else:
+            return None
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
         return [MetadataValue(role="typeName", value=param.type())]
 
     @classmethod
-    def keywords(cls, parame: ParameterDefinition) -> List[str]:
+    def keywords(cls, param: ParameterDefinition) -> List[str]:
         return []
-
-    @property
-    def meta(self) -> InputMeta:
-        return self._meta
 
     def value_passing(self) -> ValuePassing:
         return ('byValue',)
@@ -106,8 +125,7 @@ class InputParameter(Generic[T]):
 
         _type = cls.create_model(param, field, project, validation_only=validation_only)
 
-        meta = field.pop('meta', None)
-        return Annotated[_type, meta, Field(**field)]  # type: ignore [pydantic-field, valid-type]
+        return Annotated[_type, Field(**field)]  # type: ignore [pydantic-field, valid-type]
 
     @classmethod
     def create_model(
@@ -116,37 +134,36 @@ class InputParameter(Generic[T]):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
-        if cls._ParameterType is None:  # type: ignore [attr-defined]
+    ) -> TypeAlias:
+        if cls._ParameterType is None:
             raise NotImplementedError()
-        return cls._ParameterType  # type: ignore [attr-defined]
+        return cls._ParameterType
 
     @classmethod
-    def visible(cls, param: ParameterDefinition, project: Optional[QgsProject] = None) -> bool:
-        flags = int(param.flags())
-        return flags & QgsProcessingParameterDefinition.FlagHidden == 0
+    def hidden(cls, param: ParameterDefinition, project: Optional[QgsProject] = None) -> bool:
+        return int(param.flags()) & QgsProcessingParameterDefinition.FlagHidden != 0
 
-    def json_schema(self) -> Dict[str, JsonValue]:
+    @property
+    def optional(self) -> bool:
+        return int(self._param.flags()) & QgsProcessingParameterDefinition.FlagOptional != 0
+
+    def json_schema(self) -> JsonDict:
         """ Create json schema
         """
         schema = self._model.json_schema()
         schema.pop('title', None)
-
         one_of(schema)
-
+        remove_auto_title(schema)
         return schema
 
     def description(self) -> InputDescription:
-        """ Parse processing paramater definition to InputDescription
+        """ Parse processing parameter definition to InputDescription
         """
         param = self._param
 
-        flags = int(param.flags())
-
         kwargs: Dict[str, Any] = {}
 
-        optional = flags & QgsProcessingParameterDefinition.FlagOptional != 0
-        if optional:
+        if self.optional:
             kwargs.update(min_occurs=0)
 
         title = param.description() or param.name().capitalize().replace('_', ' ')

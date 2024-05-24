@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 from typing_extensions import (
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -12,10 +13,13 @@ from typing_extensions import (
     Union,
 )
 
-from qgis.core import QgsMeshDatasetGroupMetadata
+from qgis.core import (
+    QgsMeshDatasetGroupMetadata,
+    QgsProcessingUtils,
+    QgsProject,
+)
 from qgis.PyQt.QtCore import QDateTime
 
-from ..utils import ProcessingSourceType
 from .base import (
     InputParameter,
     Metadata,
@@ -31,7 +35,9 @@ from .layers import ParameterMapLayer
 
 
 class ParameterMeshLayer(ParameterMapLayer):
-    _DefaultSourceType = ProcessingSourceType.Mesh
+    @classmethod
+    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Iterable[str]:
+        return QgsProcessingUtils.compatibleMeshLayers(project)
 
 
 #

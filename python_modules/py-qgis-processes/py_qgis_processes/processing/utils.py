@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from typing_extensions import (
+    Iterable,
     Optional,
     Sequence,
     Tuple,
@@ -20,15 +21,18 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingContext,
     QgsProcessingDestinationParameter,
+    QgsProcessingParameterFileDestination,
+    QgsProcessingUtils,
     QgsProject,
     QgsRectangle,
     QgsVectorLayer,
-    QgsWkbTypes,
 )
 
 from py_qgis_contrib.core import logger
 from py_qgis_processes_schemas import (
+    Format,
     InputValueError,
+    mimetypes,
 )
 
 ProcessingSourceType: Type
@@ -67,6 +71,27 @@ else:
 #
 # Utils
 #
+def compatible_layers(
+    project: QgsProject,
+    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+) -> Iterable[QgsMapLayer]:
+    if dtypes:
+        layers = QgsProcessingUtils.compatibleVectorLayers(project, dtypes)
+        if ProcessingSourceType.Raster in dtypes:
+            layers.extend(QgsProcessingUtils.compatibleRasterLayers(project))
+        if ProcessingSourceType.Mesh in dtypes:
+            layers.extend(QgsProcessingUtils.compatibleMeshLayers(project))
+        if ProcessingSourceType.Annotation in dtypes:
+            layers.extend(QgsProcessingUtils.compatibleAnnotationLayers(project))
+        if ProcessingSourceType.VectorTile in dtypes:
+            layers.extend(QgsProcessingUtils.compatibleVectoTileLayers(project))
+        if ProcessingSourceType.PointCloud in dtypes:
+            layers.extend(QgsProcessingUtils.compatiblePointCloudLayers(project))
+        return layers
+    else:
+        return QgsProcessingUtils.compatibleLayers(project)
+
+
 def get_valid_filename(s: str) -> str:
     """ Return a valid filename from input str
 
@@ -75,60 +100,6 @@ def get_valid_filename(s: str) -> str:
     """
     s = str(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '_', s)
-
-
-def filter_layer_from_context(
-    layer: QgsMapLayer,
-    sourcetypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
-    spatial: Optional[bool] = None,
-) -> bool:
-    """ Find candidate layers according to datatypes
-    """
-    if spatial is not None and layer.isSpatial() != spatial:
-        return False
-
-    match layer.type():
-        case LayerType.Vector:
-            match layer.geometryType():
-                case QgsWkbTypes.PointGeometry:
-                    return ProcessingSourceType.VectorPoint in sourcetypes
-                case QgsWkbTypes.LineGeometry:
-                    return ProcessingSourceType.VectorLine in sourcetypes
-                case QgsWkbTypes.PointGeometry:
-                    return ProcessingSourceType.VectorPolygon in sourcetypes
-                case _:
-                    return ProcessingSourceType.VectorAnyGeometry in sourcetypes \
-                        or ProcessingSourceType.Vector in sourcetypes
-        case LayerType.Raster:
-            return ProcessingSourceType.Raster in sourcetypes
-        case LayerType.Mesh:
-            return ProcessingSourceType.Mesh in sourcetypes
-        case LayerType.VectorTile:
-            return ProcessingSourceType.VectorTile in sourcetypes
-        case LayerType.Annotation:
-            return ProcessingSourceType.Annotation in sourcetypes
-        case LayerType.PointCloud:
-            return ProcessingSourceType.PointCloud in sourcetypes
-        # Group/Tiled scene have no corresponding processing
-        # source type
-
-    return False
-
-
-def layer_names_from_context(
-    project: QgsProject,
-    sourcetypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
-    spatial: Optional[bool] = None,
-) -> Sequence[str]:
-
-    layers = (layer for layer in project.mapLayers().values())
-    if ProcessingSourceType.MapLayer not in sourcetypes:
-        layers = filter(   # type: ignore  [assignment]
-            lambda layer: filter_layer_from_context(layer, sourcetypes, spatial),
-            layers,
-        )
-
-    return tuple(layer.name() for layer in layers)
 
 
 def parse_layer_spec(
@@ -190,9 +161,52 @@ def parse_layer_spec(
     return p, has_selection
 
 
+def resolve_raw_path(
+    p: str,
+    workdir: Path,
+    root_path: Optional[Path],
+    extension: str,
+) -> Path:
+    #
+    # Resolve raw path
+    #
+    p = Path(p)
+    # Absolute path are stored in root folder
+    if p.is_absolute():
+        p = p.relative_to('/')
+        if root_path:
+            p = root_path.joinpath(p)
+    else:
+        p = workdir.joinpath(p)
+
+    # Check for extension:
+    if extension and not p.suffix:
+        p = p.with_suffix(extension)
+
+    return p
+
+
+def resolve_raw_reference(
+    ref: str,
+    workdir: Path,
+    root_path: Optional[Path],
+    extension: str,
+) -> Optional[Path]:
+    #
+    # Resolve raw reference
+    #
+    path: Optional[Path] = None
+    url = urlsplit(ref)
+    if url.path and url.scheme.lower() == 'file':
+        path = resolve_raw_path(url.path, workdir, root_path, extension)
+
+    return path
+
+
 def raw_destination_sink(
     param: QgsProcessingDestinationParameter,
     destination: str,
+    workdir: Path,
     default_extension: str,
     root_path: Optional[Path],
 ) -> Tuple[str, str]:
@@ -214,17 +228,7 @@ def raw_destination_sink(
 
     url = urlsplit(destination)
     if url.path and url.scheme.lower() in ('', 'file'):
-        p = Path(url.path)
-
-        if p.is_absolute():
-            p = p.relative_to('/')
-            if root_path:
-                p = root_path.joinpath(p)
-
-        # Check for extension:
-        if not p.suffix:
-            p = p.with_suffix(f'.{default_extension}')
-
+        p = resolve_raw_path(url.path, workdir, root_path, default_extension)
         destinationName = destinationName or p.stem
         sink = str(p)
     else:
@@ -232,3 +236,20 @@ def raw_destination_sink(
         sink = destination
 
     return sink, destinationName
+
+
+def output_file_formats(param: QgsProcessingParameterFileDestination) -> Sequence[Format]:
+    #
+    # Retrieve format list from file extensions
+    #
+    formats = []
+    ext_re = re.compile(r'.*([.][a-z]+)')
+    for filter_ in param.fileFilter().split(";;"):
+        m = ext_re.match(filter_)
+        if m:
+            ext = m.group(1)
+            mime = mimetypes.types_map.get(ext)
+            if mime:
+                formats.append(Format(media_type=mime, suffix=ext))
+
+    return formats

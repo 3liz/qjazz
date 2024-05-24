@@ -226,13 +226,9 @@ def set_proxy_configuration() -> None:
 def print_qgis_version(verbose: bool = False) -> None:
     """ Output the qgis version
     """
-    from qgis.core import Qgis
-
-    if Qgis.QGIS_VERSION_INT < 32200:
-        print(f"QGIS {Qgis.QGIS_VERSION} '{Qgis.QGIS_RELEASE_NAME}' ({Qgis.QGIS_VERSION_INT})")
-    else:
-        from qgis.core import QgsCommandLineUtils
-        print(QgsCommandLineUtils.allVersions())
+    from qgis.core import QgsCommandLineUtils
+   
+    print(QgsCommandLineUtils.allVersions())
 
     if verbose:
         init_qgis_application()

@@ -15,7 +15,6 @@ from typing_extensions import (
     Iterator,
     Optional,
     Sequence,
-    Type,
     TypeAlias,
     Union,
 )
@@ -98,7 +97,7 @@ class ParameterGeometry(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = cls.get_geometry_type(param)
         if not validation_only:
@@ -202,7 +201,7 @@ class ParameterCrs(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         if not validation_only:
             default = field.pop('default', None)
@@ -264,7 +263,7 @@ class ParameterExtent(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         if not validation_only:
             default = field.pop('default', None)

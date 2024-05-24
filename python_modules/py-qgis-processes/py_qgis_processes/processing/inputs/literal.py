@@ -12,6 +12,7 @@ from typing_extensions import (
     Sequence,
     Set,
     Type,
+    TypeAlias,
 )
 
 from qgis.core import (
@@ -75,7 +76,7 @@ class ParameterEnum(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         opts = tuple(param.options())
 
@@ -159,7 +160,7 @@ class ParameterNumber(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Type[float | int]
 
@@ -189,7 +190,7 @@ class ParameterDistance(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type = float
 
@@ -227,7 +228,7 @@ class ParameterScale(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type = float
 
@@ -252,7 +253,7 @@ class ParameterDuration(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type = float
 
@@ -294,7 +295,7 @@ class ParameterRange(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         default = field.get('default')
 
@@ -339,7 +340,7 @@ class ParameterColor(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         if not validation_only:
             default = field.pop('default', None)
@@ -441,7 +442,7 @@ class ParameterLayout(InputParameter):
         field: Dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> TypeAlias:
 
         _type: Any = str
 

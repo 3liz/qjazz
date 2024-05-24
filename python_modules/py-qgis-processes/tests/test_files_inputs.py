@@ -13,16 +13,16 @@ from py_qgis_processes.processing.context import (
     ProcessingConfig,
     ProcessingContext,
 )
-from py_qgis_processes.processing.inputs import InputParameter
-from py_qgis_processes.processing.inputs.files import (
+from py_qgis_processes.processing.inputs import (
+    InputParameter,
     ParameterFile,
     ParameterFileDestination,
 )
 
 
-def test_parameter_file(workdir: Path, qgis_session: ProcessingConfig):
+def test_parameter_file(workdir: Path, processing_config: ProcessingConfig):
 
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(processing_config)
     context.workdir = workdir
 
     param = QgsProcessingParameterFile("test_parameter_file", extension=".txt")
@@ -57,6 +57,29 @@ def test_parameter_file(workdir: Path, qgis_session: ProcessingConfig):
     assert expected.exists()
     with expected.open('r') as f:
         assert f.read() == ascii_content
+
+
+def test_parameter_raw_file(workdir: Path, processing_raw_config: ProcessingConfig):
+
+    context = ProcessingContext(processing_raw_config)
+    context.workdir = workdir
+
+    param = QgsProcessingParameterFile("test_parameter_raw_file", extension=".txt")
+
+    inp = InputParameter(param)
+
+    input_file = workdir.joinpath(param.name()).with_suffix('.txt')
+    with input_file.open('w') as f:
+        f.write("hello_world")
+
+    value = inp.value(
+        {
+            "href": f"file:///{input_file.name}",
+        },
+        context,
+    )
+    print("test_parameter_file::value", value)
+    assert str(input_file) == value
 
 
 def test_parameter_filedestination(workdir: Path, qgis_session: ProcessingConfig):

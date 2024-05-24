@@ -258,4 +258,3 @@ def test_parameter_alignrasterlayers(projects):
     print("\ntest_parameter_alignrasterlayers::value", value)
 
     assert param.checkValueIsAcceptable(value)
-

@@ -28,8 +28,8 @@ lint-fix::
 install::
 	pip install -U --upgrade-strategy=eager -e .
 
-typecheck:: $(PYTHON_PKG)
-	@mypy --config-file=$(topsrcdir)/config/mypy.ini -p $<
+typing:: $(PYTHON_PKG)
+	$(MYPY) -p $<
 
 security::
 	@bandit -r $(PYTHON_PKG)
@@ -49,6 +49,6 @@ requirements: $(REQUIREMENTS)
 ifndef TESTDIR
 test::
 else
-test:: lint typecheck security
+test:: lint typing security
 	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
 endif

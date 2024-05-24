@@ -84,7 +84,7 @@ def list_processes(ctx: JobContext, /) -> List[ProcessesSummary]:
     return []
 
 
-@app.job(name="env", run_context=True)
+@app.job(name="versions", run_context=True)
 def env(ctx: JobContext, /) -> Dict[str, JsonValue]:
     """Return execution environnement"""
     with QgisContext(ctx):
@@ -93,5 +93,4 @@ def env(ctx: JobContext, /) -> Dict[str, JsonValue]:
             qgis_version=Qgis.QGIS_VERSION_INT,
             qgis_release=Qgis.QGIS_RELEASE_NAME,
             versions=list(show_all_versions()),
-            environment=dict(os.environ),
         )
