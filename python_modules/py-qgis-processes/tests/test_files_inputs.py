@@ -2,8 +2,6 @@
 import random
 import string
 
-from pathlib import Path
-
 from qgis.core import (
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
@@ -20,10 +18,12 @@ from py_qgis_processes.processing.inputs import (
 )
 
 
-def test_parameter_file(workdir: Path, processing_config: ProcessingConfig):
+def test_parameter_file(processing_config: ProcessingConfig):
 
     context = ProcessingContext(processing_config)
-    context.workdir = workdir
+    context.job_id = "test_parameter_file"
+
+    context.workdir.mkdir(exist_ok=True)
 
     param = QgsProcessingParameterFile("test_parameter_file", extension=".txt")
 
@@ -38,7 +38,7 @@ def test_parameter_file(workdir: Path, processing_config: ProcessingConfig):
     print("test_parameter_file::description", description)
     assert description.value_passing == ('byValue', 'byReference')
 
-    expected = workdir.joinpath(param.name()).with_suffix('.txt')
+    expected = context.workdir.joinpath(param.name()).with_suffix('.txt')
     if expected.exists():
         expected.unlink()
 
@@ -59,18 +59,22 @@ def test_parameter_file(workdir: Path, processing_config: ProcessingConfig):
         assert f.read() == ascii_content
 
 
-def test_parameter_raw_file(workdir: Path, processing_raw_config: ProcessingConfig):
+def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
+    """ Test input ref from local file system
+    """
 
     context = ProcessingContext(processing_raw_config)
-    context.workdir = workdir
+    context.job_id = "test_parameter_raw_file"
+
+    raw_destination_path = processing_raw_config.raw_destination_root_path
 
     param = QgsProcessingParameterFile("test_parameter_raw_file", extension=".txt")
 
     inp = InputParameter(param)
 
-    input_file = workdir.joinpath(param.name()).with_suffix('.txt')
+    input_file = raw_destination_path.joinpath(param.name()).with_suffix('.txt')
     with input_file.open('w') as f:
-        f.write("hello_world")
+        f.write("hello world")
 
     value = inp.value(
         {
@@ -78,14 +82,13 @@ def test_parameter_raw_file(workdir: Path, processing_raw_config: ProcessingConf
         },
         context,
     )
-    print("test_parameter_file::value", value)
+    print("\ntest_parameter_file::value", value)
     assert str(input_file) == value
 
 
-def test_parameter_filedestination(workdir: Path, qgis_session: ProcessingConfig):
+def test_parameter_filedestination(qgis_session: ProcessingConfig):
 
     context = ProcessingContext(qgis_session)
-    context.workdir = workdir
 
     param = QgsProcessingParameterFileDestination("test_parameter_filedestination")
 
@@ -98,7 +101,7 @@ def test_parameter_filedestination(workdir: Path, qgis_session: ProcessingConfig
     schema = inp.json_schema()
     print("\ntest_parameter_file::schema", schema)
 
-    expected = workdir.joinpath(param.name()).with_suffix('.txt')
+    expected = context.workdir.joinpath(param.name()).with_suffix('.txt')
 
     value = inp.value(param.name(), context)
 

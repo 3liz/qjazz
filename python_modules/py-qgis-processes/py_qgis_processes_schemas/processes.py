@@ -67,6 +67,7 @@ class InputDescription(DescriptionType):
 
 class OutputDescription(DescriptionType):
     schema_: JsonValue = Field(alias="schema")
+    value_passing: ValuePassing = ('byValue',)
 
 
 #

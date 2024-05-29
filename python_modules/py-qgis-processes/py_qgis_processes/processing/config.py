@@ -1,6 +1,9 @@
 
-from pydantic import DirectoryPath, Field
+from pathlib import Path
+
+from pydantic import AfterValidator, DirectoryPath, Field, HttpUrl
 from typing_extensions import (
+    Annotated,
     Dict,
     List,
     Optional,
@@ -19,6 +22,12 @@ from py_qgis_contrib.core.qgis import QgisPluginConfig
 from py_qgis_processes_schemas.ogc import WGS84
 
 
+def _validate_absolute_path(p: Path) -> Path:
+    if not p.is_absolute():
+        raise ValueError(f"Path {p} must be absolute")
+    return p
+
+
 # Processing job config section
 @section('processing')
 class ProcessingConfig(BaseConfig):
@@ -30,6 +39,19 @@ class ProcessingConfig(BaseConfig):
     plugins: QgisPluginConfig = Field(
         default=QgisPluginConfig(),
         title="Plugin configuration",
+    )
+    workdir: Annotated[
+        DirectoryPath,
+        AfterValidator(_validate_absolute_path),
+    ] = Field(
+        default=Path().absolute(),   # Current path
+        title="Working directory",
+        description=(
+            "Parent working directory where processes are executed.\n"
+            "Each processes will create a working directory for storing\n"
+            "result files and logs.\n"
+            "The default value is set to the current directory."
+        ),
     )
     exposed_providers: List[str] = Field(
         default=['script', 'model'],
@@ -76,6 +98,11 @@ class ProcessingConfig(BaseConfig):
             "'GdalSpatialReference::SetFromUserInput()'"
         ),
     )
+    advertised_services_url: Optional[HttpUrl] = Field(
+        default=None,
+        title="Advertised services urls",
+        description="Url used for  OGC services references.",
+    )
     raw_destination_input_sink: bool = Field(
         default=False,
         title="Use destination input as sink",
@@ -95,7 +122,10 @@ class ProcessingConfig(BaseConfig):
             "Otherwise, they will be stored in the job folder.\n"
         ),
     )
-    raw_destination_root_path: Optional[DirectoryPath] = Field(
+    raw_destination_root_path: Annotated[
+        Optional[DirectoryPath],
+        AfterValidator(lambda p: p and _validate_absolute_path(p)),
+    ] = Field(
         default=None,
         title="Raw destination root path",
         description=(

@@ -384,7 +384,7 @@ class ParameterDatabaseSchema(ParameterString):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDatabaseSchema) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterDatabaseSchema, cls).metadata(param)
         parent_connection_param = param.parentConnectionParameterName()
         if parent_connection_param:
             md.append(
@@ -406,7 +406,7 @@ class ParameterDatabaseTable(ParameterString):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDatabaseTable) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterDatabaseTable, cls).metadata(param)
         md.append(MetadataValue(role="allowNewTableNames", value=param.allowNewTableNames()))
 
         parent_connection_param = param.parentConnectionParameterName()
@@ -464,7 +464,7 @@ class ParameterLayoutItem(InputParameter):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterLayoutItem) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterLayoutItem, cls).metadata(param)
         parent_layout_parameter = param.parentLayoutParameterName()
         if parent_layout_parameter:
             md.append(

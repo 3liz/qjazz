@@ -56,7 +56,7 @@ class ParameterMeshDatasetGroups(InputParameter):
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterMeshDatasetGroups, cls).metadata(param)
         mesh_layer_param = param.meshLayerParameterName()
         if mesh_layer_param:
             md.append(
@@ -119,7 +119,7 @@ class ParameterMeshDatasetTime(InputParameter):
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterMeshDatasetTime, cls).metadata(param)
         mesh_layer_param = param.meshLayerParameterName()
         if mesh_layer_param:
             md.append(

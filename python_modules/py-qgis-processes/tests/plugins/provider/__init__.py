@@ -10,9 +10,12 @@ class Test:
 
     def initProcessing(self):
         reg = QgsApplication.processingRegistry()
-        reg.addProvider(TestAlgorithmProvider())
+
+        # XXX we *MUST* keep instance of provider
+        self._provider = TestAlgorithmProvider()
+        reg.addProvider(self._provider)
 
 
-def ClassFactory(iface: None) -> Test:
+def classFactory(iface: None) -> Test:
 
     return Test()

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing_extensions import Optional
 
 from qgis.core import (
+    Qgis,
     QgsCoordinateReferenceSystem,
     QgsProcessingContext,
     QgsProject,
@@ -23,7 +24,29 @@ class ProcessingContext(QgsProcessingContext):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
         self._config = config or confservice.conf.processing
-        self._store_url: str = "./jobs/00000000-0000-0000-0000-000000000000/files"
+        self._job_id = "00000000-0000-0000-0000-000000000000"
+        self._store_url: str = f"./jobs/{self._job_id}/files"
+        self._advertised_services_url = "."
+        # Initialize temporaryFolder with workdir
+        self._workdir = self._config.workdir.joinpath(self._job_id)
+        self.setTemporaryFolder(str(self._workdir))
+
+    @property
+    def job_id(self) -> str:
+        return self._job_id
+
+    @job_id.setter
+    def job_id(self, ident: str):
+        self._job_id = ident
+        self._workdir = self._config.workdir.joinpath(ident)
+
+    @property
+    def advertised_ows_services_url(self) -> str:
+        return self._advertised_services_url
+
+    @advertised_ows_services_url.setter
+    def advertised_ows_services_url(self, url: str):
+        self._advertised_services_url = url
 
     @property
     def store_url(self) -> str:
@@ -43,11 +66,7 @@ class ProcessingContext(QgsProcessingContext):
 
     @property
     def workdir(self) -> Path:
-        return Path(self.temporaryFolder())
-
-    @workdir.setter
-    def workdir(self, path: Path):
-        self.setTemporaryFolder(str(path))
+        return self._workdir
 
     @property
     def destination_project(self) -> Optional[QgsProject]:
@@ -57,8 +76,10 @@ class ProcessingContext(QgsProcessingContext):
     def destination_project(self, project: Optional[QgsProject]):
         self._destination_project = project
 
-    def create_project(self) -> QgsProject:
-        """ Create destination project
+    def create_project(self, name: str) -> QgsProject:
+        """ Create a destination project
+
+            Note: this do NOT set the context destination_project.
         """
         project = self.project()
         if project:
@@ -73,12 +94,40 @@ class ProcessingContext(QgsProcessingContext):
         if crs.isValid():
             destination_project.setCrs(crs, self.config.adjust_ellipsoid)
 
+        destination_project.setFileName(f"{self.workdir.joinpath(name)}.qgs")
+
+        # Store files as relative path
+        destination_project.setFilePathStorage(Qgis.FilePathType.Relative)
+
+        # Write advertised URLs
+        destination_project.writeEntry('WMSUrl', '/', self.ows_reference(name, "WMS"))
+        destination_project.writeEntry('WCSUrl', '/', self.ows_reference(name, "WCS"))
+        destination_project.writeEntry('WFSUrl', '/', self.ows_reference(name, "WFS"))
+        destination_project.writeEntry('WMTSUrl', '/', self.ows_reference(name, "WMTS"))
+
         return destination_project
 
-    def reference_url(self, resource: str) -> str:
+    def store_reference_url(self, resource: str) -> str:
         """ Return a proper reference url for the resource
         """
         return f"{self._store_url}/{resource}"
 
     def file_reference(self, path: Path) -> str:
-        return self.reference_url(str(path.relative_to(self.workdir)))
+        return self.store_reference_url(str(path.relative_to(self.workdir)))
+
+    def ows_reference(
+        self, name: str,
+        service: Optional[str],
+        request: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> str:
+        service = service or "WMS"
+        request = request or "GetCapabilities"
+        url = (
+            f"{self.advertised_ows_services_url}/{self.job_id}/{name}"
+            f"?SERVICE={service}&REQUEST={request}"
+        )
+        if query:
+            url = f"{url}&{query}"
+
+        return url

@@ -138,7 +138,7 @@ class ParameterMultipleLayers(ParameterMapLayer):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type = super(cls, cls).create_model(param, field, project, validation_only)
+        _type = super(ParameterMultipleLayers, cls).create_model(param, field, project, validation_only)
 
         min_number = param.minimumNumberInputs()
         if min_number > 0:
@@ -234,7 +234,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type: Any = super(cls, cls).create_model(
+        _type: Any = super(ParameterVectorTileWriterLayers, cls).create_model(
             param,
             field,
             project,
@@ -301,7 +301,7 @@ class ParameterTinInputLayers(ParameterMapLayer):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type: Any = super(cls, cls).create_model(
+        _type: Any = super(ParameterTinInputLayers, cls).create_model(
             param,
             field,
             project,
@@ -428,7 +428,7 @@ class ParameterVectorDestination(ParameterLayerDestination):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterVectorDestination, cls).metadata(param)
         md.append(
             MetadataValue(
                 role="dataType",
@@ -446,7 +446,7 @@ class ParameterVectorDestination(ParameterLayerDestination):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type = super(cls, cls).create_model(
+        _type = super(ParameterVectorDestination, cls).create_model(
             param,
             field,
             project,
@@ -517,7 +517,7 @@ class ParameterField(InputParameter):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterField, cls).metadata(param)
         md.append(MetadataValue(role="dataType", value=field_datatype_name(param.dataType())))
         md.append(MetadataValue(role="defaultToAllFields", value=param.defaultToAllFields()))
 
@@ -563,7 +563,7 @@ class ParameterFieldMapping(InputParameter):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterFieldMapping) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterFieldMapping, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
             md.append(
@@ -600,7 +600,7 @@ class ParameterExpression(InputParameter):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterExpression) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterExpression, cls).metadata(param)
         md.append(MetadataValue(role="expressionType", value=param.expressionType().name))
         parent_layer_parameter = param.parentLayerParameterName()
         if parent_layer_parameter:
@@ -622,7 +622,7 @@ class ParameterBand(InputParameter):
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterBand, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
             md.append(
@@ -673,7 +673,7 @@ class ParameterAggregate(InputParameter):
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterAggregate, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
             md.append(

@@ -91,7 +91,7 @@ def test_parameter_layer_featuresource(qgis_session):
     print("\ntest_parameter_layer_featuresource::", schema)
 
 
-def test_parameter_layer_multiplelayers(projects):
+def test_parameter_layer_multilayers(projects):
 
     project = projects.get('/france/france_parts')
 
@@ -117,7 +117,9 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     config = qgis_session
 
     context = ProcessingContext(config)
-    context.destination_project = None
+    assert context.destination_project is None
+
+    workdir = context.workdir
 
     inp = InputParameter(param)
     assert isinstance(inp, ParameterVectorDestination)
@@ -130,10 +132,12 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     value = inp.value("bar", context)
     assert isinstance(value, QgsProcessingOutputLayerDefinition)
     assert value.destinationName == 'bar'
-    assert value.sink.staticValue() == 'VectorDestination.fgb'
+    assert value.sink.staticValue() == str(workdir.joinpath('VectorDestination.fgb'))
 
-    context.config = config.model_copy(
-        update=dict(raw_destination_input_sink=True),
+    context = ProcessingContext(
+        config.model_copy(
+            update=dict(raw_destination_input_sink=True),
+        ),
     )
 
     value = inp.value("/foobar.csv", context)
@@ -144,10 +148,12 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     assert value.destinationName == 'foobar'
     assert value.sink.staticValue() == 'foobar.fgb'
 
-    context.config = config.model_copy(
-        update=dict(
-            raw_destination_input_sink=True,
-            raw_destination_root_path=Path('/unsafe'),
+    context = ProcessingContext(
+        config.model_copy(
+            update=dict(
+                raw_destination_input_sink=True,
+                raw_destination_root_path=Path('/unsafe'),
+            ),
         ),
     )
 

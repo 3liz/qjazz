@@ -114,7 +114,7 @@ def parse_layer_spec(
 
         :return: A tuple (path, bool)
     """
-    if layerspec.find('layer:', 0, 6) == -1:
+    if not layerspec.startswith('layer:'):
         # Nothing to do with it
         return layerspec, False
 

@@ -27,6 +27,14 @@ from .files import (
     OutputFolder,
     OutputHtml,
 )
+from .layers import (
+    OutputMapLayer,
+    OutputMultipleLayers,
+    OutputPointCloudLayer,
+    OutputRasterLayer,
+    OutputVectorLayer,
+    OutputVectorTileLayer,
+)
 from .literals import (
     OutputBoolean,
     OutputNumber,
@@ -41,15 +49,15 @@ QGIS_TYPES = MappingProxyType({
     QgsProcessingOutputFile.typeName(): OutputFile,
     QgsProcessingOutputFolder.typeName(): OutputFolder,
     QgsProcessingOutputHtml.typeName(): OutputHtml,
-    QgsProcessingOutputMapLayer.typeName(): None,
-    QgsProcessingOutputMultipleLayers.typeName(): None,
+    QgsProcessingOutputMapLayer.typeName(): OutputMapLayer,
+    QgsProcessingOutputMultipleLayers.typeName(): OutputMultipleLayers,
     QgsProcessingOutputNumber.typeName(): OutputNumber,
-    QgsProcessingOutputPointCloudLayer.typeName(): None,
-    QgsProcessingOutputRasterLayer.typeName(): None,
+    QgsProcessingOutputPointCloudLayer.typeName(): OutputPointCloudLayer,
+    QgsProcessingOutputRasterLayer.typeName(): OutputRasterLayer,
     QgsProcessingOutputString.typeName(): OutputString,
     QgsProcessingOutputVariant.typeName(): None,
-    QgsProcessingOutputVectorLayer.typeName(): None,
-    QgsProcessingOutputVectorTileLayer.typeName(): None,
+    QgsProcessingOutputVectorLayer.typeName(): OutputVectorLayer,
+    QgsProcessingOutputVectorTileLayer.typeName(): OutputVectorTileLayer,
 })
 
 

@@ -166,7 +166,7 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterFileDestination, cls).metadata(param)
 
         formats = output_file_formats(param)
         if formats:

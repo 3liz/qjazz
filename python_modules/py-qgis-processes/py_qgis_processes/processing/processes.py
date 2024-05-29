@@ -132,9 +132,11 @@ class ProcessAlg:
     def description(self, project: Optional[QgsProject] = None) -> ProcessesDescription:
         """ Return a process description including inputs and outputs description
         """
-        description = self._description.copy()
-
-        description.inputs = {inp.name: inp.description() for inp in self.inputs(project)}
-        description.outputs = {out.name: out.description() for out in self.outputs()}
+        description = self._description.model_copy(
+            update=dict(
+                inputs={inp.name: inp.description() for inp in self.inputs(project)},
+                outputs={out.name: out.description() for out in self.outputs()},
+            ),
+        )
 
         return description

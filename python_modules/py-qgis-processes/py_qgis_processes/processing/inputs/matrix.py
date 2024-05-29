@@ -70,7 +70,7 @@ class ParameterMatrix(InputParameter):
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterMatrix) -> List[Metadata]:
-        md = super(cls, cls).metadata(param)
+        md = super(ParameterMatrix, cls).metadata(param)
         fixed = param.hasFixedNumberRows()
         md.append(MetadataValue(role="hasFixedNumberRows", value=fixed))
         if fixed:

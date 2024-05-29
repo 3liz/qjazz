@@ -6,44 +6,70 @@
 # http://opengeospatial.org/standards/wps
 
 import mimetypes
+import re
 
-from typing_extensions import NamedTuple, Optional
+from dataclasses import dataclass
+
+from typing_extensions import (
+    NamedTuple,
+    Optional,
+    Self,
+    cast,
+)
+
+SERVICE_MATCH = re.compile(r'^application/x-ogc-(wms|wcs|wfs|wmts)')
 
 
-class Format(NamedTuple):
+@dataclass
+class Format:
     media_type: str
     suffix: str
-    schema: Optional[str] = None
+    title: str = ""
+
+    def __eq__(self, other: object) -> bool:
+        return self.media_type == cast(Self, other).media_type
+
+    @staticmethod
+    def service(media_type: str) -> Optional[str]:
+        """ Extract ows service from media_type
+        """
+        m = SERVICE_MATCH.match(media_type)
+        return m.group(1).upper() if m else None
 
 
 class _Formats(NamedTuple):
-    ANY: Format = Format('application/octet-stream', '', None)
-    WKT: Format = Format('application/wkt', '.wkt', None)
-    GEOJSON: Format = Format('application/vnd.geo+json', '.geojson', None)
-    JSON: Format = Format('application/json', '.json', None)
-    SHP: Format = Format('application/x-zipped-shp', '.zip', None)
-    GML: Format = Format('application/gml+xml', '.gml', None)
-    GEOTIFF: Format = Format('image/tiff; subtype=geotiff', '.tif', None)
-    WCS: Format = Format('application/xogc-wcs', '.xml', None)
-    WCS100: Format = Format('application/x-ogc-wcs; version=1.0.0', '.xml', None)
-    WCS110: Format = Format('application/x-ogc-wcs; version=1.1.0', '.xml', None)
-    WCS20: Format = Format('application/x-ogc-wcs; version=2.0', '.xml', None)
-    WFS: Format = Format('application/x-ogc-wfs', '.xml', None)
-    WFS100: Format = Format('application/x-ogc-wfs; version=1.0.0', '.xml', None)
-    WFS110: Format = Format('application/x-ogc-wfs; version=1.1.0', '.xml', None)
-    WFS20: Format = Format('application/x-ogc-wfs; version=2.0', '.xml', None)
-    WMS: Format = Format('application/x-ogc-wms', '.xml', None)
-    WMS130: Format = Format('application/x-ogc-wms; version=1.3.0', '.xml', None)
-    WMS110: Format = Format('application/x-ogc-wms; version=1.1.0', '.xml', None)
-    WMS100: Format = Format('application/x-ogc-wms; version=1.0.0', '.xml', None)
-    TEXT: Format = Format('text/plain', 'txt', None)
-    NETCDF: Format = Format('application/netcdf', '.nc', None)
-    DXF: Format = Format('application/x-dxf', '.dxf', None)
+    ANY: Format = Format('application/octet-stream', '')
+    WKT: Format = Format('application/wkt', '.wkt', "WKT")
+    GEOJSON: Format = Format('application/vnd.geo+json', '.geojson', "GeoJson")
+    JSON: Format = Format('application/json', '.json', "Json")
+    SHP: Format = Format('application/x-zipped-shp', '.zip', "ESRI Shapefile")
+    GML: Format = Format('application/gml+xml', '.gml', "GML")
+    GEOTIFF: Format = Format('image/tiff; subtype=geotiff', '.tif', "GeoTiff")
+    WCS: Format = Format('application/xogc-wcs', '.xml', "WCS")
+    WCS100: Format = Format('application/x-ogc-wcs; version=1.0.0', '.xml', "WCS version 1.0.0")
+    WCS110: Format = Format('application/x-ogc-wcs; version=1.1.0', '.xml', "WCS version 1.1.0")
+    WCS20: Format = Format('application/x-ogc-wcs; version=2.0', '.xml', "WCS version 2.0")
+    WFS: Format = Format('application/x-ogc-wfs', '.xml', "WFS")
+    WFS100: Format = Format('application/x-ogc-wfs; version=1.0.0', '.xml', "WFS 1.0.0")
+    WFS110: Format = Format('application/x-ogc-wfs; version=1.1.0', '.xml', "WFS 1.1.0")
+    WFS20: Format = Format('application/x-ogc-wfs; version=2.0', '.xml', "WFS 2.0")
+    WMS: Format = Format('application/x-ogc-wms', '.xml', "WMS")
+    WMS100: Format = Format('application/x-ogc-wms; version=1.0.0', '.xml', "WMS 1.0.0")
+    WMS110: Format = Format('application/x-ogc-wms; version=1.1.0', '.xml', "WMS 1.1.0")
+    WMS111: Format = Format('application/x-ogc-wms; version=1.1.1', '.xml', "WMS 1.1.1")
+    WMS130: Format = Format('application/x-ogc-wms; version=1.3.0', '.xml', "WMS 1.3.0")
+    WMTS: Format = Format('application/x-ogc-wmts', '.xml', "WMTS")
+    WMTS100: Format = Format('application/x-ogc-wmts; version=1.0.0', '.xml', "WMTS 1.0.0")
+    TEXT: Format = Format('text/plain', 'txt', "Text")
+    NETCDF: Format = Format('application/netcdf', '.nc', "NetCDF")
+    DXF: Format = Format('application/x-dxf', '.dxf', "Autodesk DXF")
     # According to OGC best practices
     # http://www.opengis.net/doc/wps1.0-best-practice-dp
     # naming schema is x-ogc-<gdal code lower case>
-    FLATGEOBUF: Format = Format('application/x-ogc-flatgeobuf', '.fgb', None)
-    GPKG: Format = Format('application/x-ogc-gpkg', '.gpkg', None)
+    FLATGEOBUF: Format = Format('application/x-ogc-flatgeobuf', '.fgb', "FlatGeobuf")
+    GPKG: Format = Format('application/x-ogc-gpkg', '.gpkg', "GeoPackage")
+    # OGC API
+    FEATURES: Format = Format('application/x-ogc-features+json', '.json', "OGC API Features")
 
 
 Formats = _Formats()  # type: ignore [call-arg]

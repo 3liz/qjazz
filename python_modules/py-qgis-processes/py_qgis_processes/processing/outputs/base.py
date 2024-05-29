@@ -31,6 +31,7 @@ from py_qgis_processes_schemas import (
     Output,
     OutputDescription,
     OutputFormatDefinition,
+    ValuePassing,
     remove_auto_title,
 )
 from py_qgis_processes_schemas.models import one_of
@@ -73,6 +74,9 @@ class OutputParameter(Generic[T]):
     @classmethod
     def keywords(cls, outp: OutputDefinition) -> List[str]:
         return []
+
+    def value_passing(self) -> ValuePassing:
+        return ('byValue',)
 
     @classmethod
     def model(
@@ -123,6 +127,7 @@ class OutputParameter(Generic[T]):
             schema=self.json_schema(),
             metadata=self.metadata(outp),
             keywords=self.keywords(outp),
+            value_passing=self.value_passing(),
         )
 
     @classmethod
@@ -166,20 +171,15 @@ class OutputParameter(Generic[T]):
             Note that output declaration for processes/execute command
             are limited to a `format` declaration
         """
-        # Check out formats
-        try:
-            self.output_format = Output.model_validate(out).format
-        except ValidationError:
-            logger.error(traceback.format_exc())
-            raise InputValueError(f"{self._out.name()}: Invalid format definition")
+        if isinstance(self, OutputFormatDefinition):
+            try:
+                self.output_format = Output.model_validate(out).format
+            except ValidationError:
+                logger.error(traceback.format_exc())
+                raise InputValueError(f"{self._out.name()}: Invalid format definition")
 
-        format_definition = param and self.format_definition
-        if format_definition and not format_definition.is_any():
-            allowed_formats = set(fmt.media_type for fmt in self.allowed_formats)
-            if allowed_formats and self.output_format.media_type in allowed_formats:
-                if isinstance(param, OutputFormatDefinition):
-                    param.copy_format_from(format_definition)
-            else:
+            # Test if format is in allowed_formats
+            if self.output_format not in self.allowed_formats:
                 raise InputValueError(f"{self._out.name()}: invalid format '{self.output_format}'")
 
     def dump_json(self, value: T) -> JsonValue:

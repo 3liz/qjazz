@@ -76,9 +76,10 @@ def cache_config(data: Path) -> ProjectsConfig:
 
 
 @pytest.fixture(scope='session')
-def processing_config(rootdir: Path, cache_config: ProjectsConfig) -> ProcessingConfig:
+def processing_config(rootdir: Path, workdir: Path, cache_config: ProjectsConfig) -> ProcessingConfig:
     from py_qgis_processes.processing.config import QgisPluginConfig
     return ProcessingConfig(
+        workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
             paths=[rootdir.joinpath('plugins')],
@@ -94,6 +95,7 @@ def processing_raw_config(
 ) -> ProcessingConfig:
     from py_qgis_processes.processing.config import QgisPluginConfig
     return ProcessingConfig(
+        workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
             paths=[rootdir.joinpath('plugins')],
@@ -153,3 +155,12 @@ def projects(cache_manager):
 
     print("Deleting projects cache")
     cm.clear()
+
+
+@pytest.fixture(scope='session')
+def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
+    """
+    """
+    plugin_service = qgis.QgisPluginService(qgis_session.plugins)
+    plugin_service.load_plugins(qgis.PluginType.PROCESSING, None)
+    return plugin_service

@@ -162,13 +162,16 @@ def MediaType(
     return Annotated[_type, Field(json_schema_extra=schema_extra)]
 
 
-class Format(JsonModel):
+class OutputFormat(JsonModel):
     media_type: str
     encoding: Optional[str] = NullField()
     schema_: Optional[AnyUrl | JsonDict] = NullField(alias="schema")
 
+    def __eq__(self, other: object) -> bool:
+        return self.media_type == cast(Self, other).media_type
 
-class QualifiedInputValue(Format):
+
+class QualifiedInputValue(OutputFormat):
     value: JsonValue
 
 # Create a typeadapter for Reference/Qualified input
@@ -176,24 +179,18 @@ class QualifiedInputValue(Format):
 
 RefOrQualifiedInput = TypeAdapter(QualifiedInputValue | LinkReference)
 
-# Prevent name collision with formats.Format
-OutputFormat = Format
-
 #
 # Mixin class for handling output format in
 # input parameters with auto-created output -
 # like destination parameters
 #
 
-AnyFormat = Format(media_type="application/octet-stream")
+AnyFormat = OutputFormat(media_type="application/octet-stream")
 
 
 class OutputFormatDefinition:
     _output_format: OutputFormat = AnyFormat
     _output_ext: str = ''
-
-    def is_any(self) -> bool:
-        return self.output_format.media_type == AnyFormat.media_type
 
     @property
     def output_format(self) -> OutputFormat:

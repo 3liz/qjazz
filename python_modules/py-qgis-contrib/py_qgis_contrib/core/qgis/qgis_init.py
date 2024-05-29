@@ -227,7 +227,7 @@ def print_qgis_version(verbose: bool = False) -> None:
     """ Output the qgis version
     """
     from qgis.core import QgsCommandLineUtils
-   
+
     print(QgsCommandLineUtils.allVersions())
 
     if verbose:
