@@ -1,9 +1,12 @@
 #
 #
 #
-from pathlib import Path
+import sys
 
-from typing_extensions import Optional
+from pathlib import Path
+from string import Template
+
+from typing_extensions import Optional, cast
 
 from qgis.core import (
     Qgis,
@@ -13,9 +16,11 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.config import confservice
 
 from .config import ProcessingConfig
+from .utils import get_valid_filename
 
 
 class ProcessingContext(QgsProcessingContext):
@@ -24,12 +29,10 @@ class ProcessingContext(QgsProcessingContext):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
         self._config = config or confservice.conf.processing
-        self._job_id = "00000000-0000-0000-0000-000000000000"
-        self._store_url: str = f"./jobs/{self._job_id}/files"
-        self._advertised_services_url = "."
-        # Initialize temporaryFolder with workdir
-        self._workdir = self._config.workdir.joinpath(self._job_id)
-        self.setTemporaryFolder(str(self._workdir))
+
+        self.job_id = "00000000-0000-0000-0000-000000000000"
+        self.store_url(f"./jobs/{self._job_id}/files/$resource")
+        self.advertised_services_url(f"./ows/{self._job_id}/$name")
 
     @property
     def job_id(self) -> str:
@@ -39,22 +42,22 @@ class ProcessingContext(QgsProcessingContext):
     def job_id(self, ident: str):
         self._job_id = ident
         self._workdir = self._config.workdir.joinpath(ident)
+        # Initialize temporaryFolder with workdir
+        self.setTemporaryFolder(str(self._workdir))
 
-    @property
-    def advertised_ows_services_url(self) -> str:
-        return self._advertised_services_url
+    def advertised_services_url(self, url: str):
+        """ Set advertised_services_url template
+        """
+        self._advertised_services_url = Template(url)
+        if sys.version_info >= (3, 11) and not self._advertised_services_url.is_valid():
+            raise ValueError(f"Invalid advertised services url template: {url}")
 
-    @advertised_ows_services_url.setter
-    def advertised_ows_services_url(self, url: str):
-        self._advertised_services_url = url
-
-    @property
-    def store_url(self) -> str:
-        return self._store_url
-
-    @store_url.setter
     def store_url(self, url: str):
-        self._store_url = url.removesuffix('/')
+        """ Set store_url template
+        """
+        self._store_url = Template(url)
+        if sys.version_info >= (3, 11) and not self._advertised_services_url.is_valid():
+            raise ValueError(f"Invalid store url template: {url}")
 
     @property
     def config(self) -> ProcessingConfig:
@@ -94,29 +97,32 @@ class ProcessingContext(QgsProcessingContext):
         if crs.isValid():
             destination_project.setCrs(crs, self.config.adjust_ellipsoid)
 
-        destination_project.setFileName(f"{self.workdir.joinpath(name)}.qgs")
+        # Set project filename
+        filename = get_valid_filename(name)
+        destination_project.setFileName(f"{self.workdir.joinpath(filename)}.qgs")
 
         # Store files as relative path
         destination_project.setFilePathStorage(Qgis.FilePathType.Relative)
 
         # Write advertised URLs
-        destination_project.writeEntry('WMSUrl', '/', self.ows_reference(name, "WMS"))
-        destination_project.writeEntry('WCSUrl', '/', self.ows_reference(name, "WCS"))
-        destination_project.writeEntry('WFSUrl', '/', self.ows_reference(name, "WFS"))
-        destination_project.writeEntry('WMTSUrl', '/', self.ows_reference(name, "WMTS"))
+        destination_project.writeEntry('WMSUrl', '/', self._ows_reference(name, "WMS"))
+        destination_project.writeEntry('WCSUrl', '/', self._ows_reference(name, "WCS"))
+        destination_project.writeEntry('WFSUrl', '/', self._ows_reference(name, "WFS"))
+        destination_project.writeEntry('WMTSUrl', '/', self._ows_reference(name, "WMTS"))
 
         return destination_project
 
     def store_reference_url(self, resource: str) -> str:
         """ Return a proper reference url for the resource
         """
-        return f"{self._store_url}/{resource}"
+        return self._store_url.substitute(resource=resource)
 
     def file_reference(self, path: Path) -> str:
         return self.store_reference_url(str(path.relative_to(self.workdir)))
 
-    def ows_reference(
-        self, name: str,
+    def _ows_reference(
+        self,
+        name: str,
         service: Optional[str],
         request: Optional[str] = None,
         query: Optional[str] = None,
@@ -124,10 +130,25 @@ class ProcessingContext(QgsProcessingContext):
         service = service or "WMS"
         request = request or "GetCapabilities"
         url = (
-            f"{self.advertised_ows_services_url}/{self.job_id}/{name}"
+            f"{self._advertised_services_url.substitute(name=name)}"
             f"?SERVICE={service}&REQUEST={request}"
         )
         if query:
             url = f"{url}&{query}"
 
         return url
+
+    def ows_reference(
+        self,
+        *,
+        service: Optional[str],
+        request: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> str:
+        assert_precondition(self._destination_project is not None, "Destination project required")
+        return self._ows_reference(
+            Path(cast(QgsProject, self._destination_project).fileName()).stem,
+            service,
+            request,
+            query,
+        )

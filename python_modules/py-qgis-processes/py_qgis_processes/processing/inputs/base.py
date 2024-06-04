@@ -100,6 +100,18 @@ class InputParameter(Generic[T]):
         return self.validate(inp)
 
     @classmethod
+    def default_value(cls, param: ParameterDefinition) -> T:
+        # Handle defaultValue
+        # XXX In some case QVariant are
+        # not converted to python object (SIP bug ?)
+        # Problem stated in getting QgsProcessingParameterFeatureSource
+        # from processing.core.parameters.getParameterFromString
+        default = param.defaultValue()
+        if isinstance(default, QVariant):
+            default = None if default.isNull() else default.value()
+        return default
+
+    @classmethod
     def model(
         cls,
         param: ParameterDefinition,
@@ -111,15 +123,7 @@ class InputParameter(Generic[T]):
         field: Dict = {}
 
         if not validation_only:
-            # Handle defaultValue
-            # XXX In some case QVariant are
-            # not converted to python object (SIP bug ?)
-            # Problem stated in getting QgsProcessingParameterFeatureSource
-            # from processing.core.parameters.getParameterFromString
-            default = param.defaultValue()
-            if isinstance(default, QVariant):
-                default = None if default.isNull() else default.value()
-
+            default = cls.default_value(param)
             if default is not None:
                 field.update(default=default)
 

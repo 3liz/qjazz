@@ -36,6 +36,7 @@ from qgis.PyQt.QtGui import QColor
 from py_qgis_processes_schemas import (
     InputValueError,
     Metadata,
+    MetadataLink,
     MetadataValue,
     OgcDataType,
     ogc,
@@ -181,105 +182,73 @@ class ParameterNumber(InputParameter):
 # QgsProcessingParameterDistance
 #
 
-class ParameterDistance(InputParameter):
+class ParameterDistance(ParameterNumber):
 
     @classmethod
-    def create_model(
-        cls,
-        param: QgsProcessingParameterDistance,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> TypeAlias:
-
-        _type = float
-
-        set_number_minmax(param, field)
+    def metadata(cls, param: QgsProcessingParameterDistance) -> List[Metadata]:
+        md = super(ParameterDistance, cls).metadata(param)
+        md.append(MetadataLink(role="ogcType", href=OgcDataType['length'], title="length"))
 
         unit = param.defaultUnit()
-        if unit == Qgis.DistanceUnit.Unknown:
-            ref = None
-        else:
+        if unit != Qgis.DistanceUnit.Unknown:
             uom = QgsUnitTypes.toString(unit)
             ref = ogc.uom_ref(uom)
-
-        if not validation_only:
-            schema_extra = {'x-ogc-definition': OgcDataType['length']}
             if ref:
-                schema_extra['x-ogc-uom'] = ref
-                schema_extra['x-ogc-uom-name'] = uom
-
-            field.update(json_schema_extra=schema_extra)
-
-        set_number_minmax(param, field)
-        return _type
+                md.append(
+                    MetadataLink(
+                        role="uom",
+                        href=ogc.uom_ref(uom),
+                        title=uom,
+                    ),
+                )
+        return md
 
 
 #
 # QgsProcessingParameterScale
 #
 
-class ParameterScale(InputParameter):
+
+class ParameterScale(ParameterNumber):
 
     @classmethod
-    def create_model(
-        cls,
-        param: QgsProcessingParameterScale,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> TypeAlias:
+    def metadata(cls, param: QgsProcessingParameterScale) -> List[Metadata]:
+        md = super(ParameterScale, cls).metadata(param)
+        md.append(MetadataLink(role="ogcType", href=OgcDataType['scale'], title="scale"))
 
-        _type = float
-
-        set_number_minmax(param, field)
-
-        if not validation_only:
-            field.update(json_schema_extra={'x-ogc-definition': OgcDataType['scale']})
-
-        return _type
+        return md
 
 
 #
 # QgsProcessingParameterDuration
 #
 
-class ParameterDuration(InputParameter):
+class ParameterDuration(ParameterNumber):
 
     @classmethod
-    def create_model(
-        cls,
-        param: QgsProcessingParameterDuration,
-        field: Dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> TypeAlias:
-
-        _type = float
-
-        set_number_minmax(param, field)
+    def metadata(cls, param: QgsProcessingParameterDuration) -> List[Metadata]:
+        md = super(ParameterDuration, cls).metadata(param)
+        md.append(MetadataLink(role="ogcType", href=OgcDataType['time'], title="time"))
 
         unit = param.defaultUnit()
-        if unit == Qgis.TemporalUnit.Unknown:
-            ref = None
-        else:
+        if unit != Qgis.TemporalUnit.Unknown:
             uom = QgsUnitTypes.toString(unit)
             ref = ogc.uom_ref(uom)
-
-        if not validation_only:
-            schema_extra = {'x-ogc-definition': OgcDataType['time']}
             if ref:
-                schema_extra['x-ogc-uom'] = ref
-                schema_extra['x-ogc-uom-name'] = uom
-
-            field.update(json_schema_extra=schema_extra)
-
-        return _type
-
+                md.append(
+                    MetadataLink(
+                        role="uom",
+                        href=ogc.uom_ref(uom),
+                        title=uom,
+                    ),
+                )
+        return md
 
 #
 # QgsProcessingParameterRange
 #
+
+
 if Qgis.QGIS_VERSION_INT >= 33600:
     NumberParameterType = Qgis.ProcessingNumberParameterType
 else:

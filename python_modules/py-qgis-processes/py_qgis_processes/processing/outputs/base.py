@@ -68,6 +68,10 @@ class OutputParameter(Generic[T]):
         return self._alg
 
     @classmethod
+    def hidden(cls, outp: OutputDefinition) -> bool:
+        return False
+
+    @classmethod
     def metadata(cls, outp: OutputDefinition) -> List[Metadata]:
         return [MetadataValue(role="typeName", value=outp.type())]
 

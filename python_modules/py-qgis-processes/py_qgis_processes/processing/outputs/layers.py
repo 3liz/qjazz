@@ -6,39 +6,38 @@
 #
 import traceback
 
-from pydantic import TypeAdapter
+from pathlib import Path
+from urllib.parse import quote, urlencode
+
 from typing_extensions import (
-    Any,
     ClassVar,
-    Dict,
-    List,
-    Literal,
-    Optional,
     Sequence,
+    Tuple,
     TypeAlias,
 )
 
 from qgis.core import (
+    QgsMapLayer,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingUtils,
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_processes_schemas import (
     Format,
     Formats,
+    JsonDict,
     Link,
-    NullField,
     OutputFormat,
     OutputFormatDefinition,
     ValuePassing,
+    mimetypes,
 )
 
 from .base import (
     JsonValue,
-    Metadata,
-    MetadataValue,
     OutputDefinition,
     OutputParameter,
     ProcessingContext,
@@ -48,6 +47,8 @@ LayerHint: TypeAlias = QgsProcessingUtils.LayerHint
 
 
 class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
+
+    _Model = Link
 
     _ServiceFormats: ClassVar[Sequence[Format]] = ()
     _LayerHint: ClassVar[LayerHint] = LayerHint.UnknownType
@@ -59,43 +60,23 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
     def value_passing(self) -> ValuePassing:
         return ('byReference',)
 
-    @classmethod
-    def metadata(cls, outdef: OutputDefinition) -> List[Metadata]:
-        md = super(OutputLayerBase, cls).metadata(outdef)
-        md.append(
-            MetadataValue(
-                role="allowedFormats",
-                value=[
-                    {
-                        "media_type": f.media_type,
-                        'title': f.title,
-                    }
-                    for f in cls._ServiceFormats
-                ],
-            ),
-        )
-        return md
+    def json_schema(self) -> JsonDict:
+        schema = super().json_schema()
 
-    @classmethod
-    def create_model(
-        cls,
-        outp: OutputDefinition,
-        field: Dict,
-        alg: Optional[QgsProcessingAlgorithm],
-    ) -> TypeAlias:
-
-        _type: Any = Link
-
-        formats = cls.get_output_formats(outp, alg)
+        formats = self.allowed_formats
         if formats:
-            class _Ref(_type):
-                mime_type: Optional[         # type: ignore [valid-type]
-                    Literal[tuple(fmt.media_type for fmt in formats)]
-                ] = NullField(serialization_alias="type")
+            schema = {
+                '$defs': {'Link': schema},
+                'anyOf': [
+                    {
+                        '$ref': '#/$defs/Link',
+                        'contentMediaType': fmt.media_type,
+                        'title': fmt.title,
+                    } for fmt in formats
+                ],
+            }
 
-            _type = _Ref
-
-        return _type
+        return schema
 
     @classmethod
     def get_output_formats(
@@ -111,23 +92,38 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
         context: ProcessingContext,
     ) -> JsonValue:
 
-        name = add_layer_to_load_on_completion(
+        layer, name = add_layer_to_load_on_completion(
             value,
             self.name,
             context,
             self._LayerHint,
         )
 
+        self.advertise_layer(layer, name, context)
+
         media_type = self.output_format.media_type
 
-        reference_url = context.ows_reference(name, service=Format.service(media_type))
+        reference_url = context.ows_reference(
+            service=Format.service(media_type),
+            query=urlencode((('LAYERS', name),), quote_via=quote),
+        )
 
         return Link(
             href=reference_url,
             mime_type=media_type,
             title=self.title,
-            description=self._out.description,
+            description=self._out.description(),
         ).model_dump(mode='json', by_alias=True, exclude_none=True)
+
+    def advertise_layer(self, layer: QgsMapLayer, name: str, context: ProcessingContext):
+        """ Advertised layer for server GetCapabilities requests
+        """
+        datasource = Path(layer.source())
+
+        if datasource.exists() and datasource.is_relative_to(context.workdir):
+            media_type = mimetypes.types_map.get(datasource.suffix, Formats.ANY.media_type)
+            layer.setDataUrl(context.file_reference(datasource))
+            layer.setDataUrlFormat(media_type)
 
 
 #
@@ -233,46 +229,35 @@ class OutputMultipleLayers(OutputLayerBase):
         Formats.WMTS100,
     )
 
-    @classmethod
-    def create_model(
-        cls,
-        outp: OutputDefinition,
-        field: Dict,
-        alg: Optional[QgsProcessingAlgorithm],
-    ) -> TypeAlias:
-
-        _type: Any = super(OutputMultipleLayers, cls).create_model(outp, field, alg)
-        return Sequence[_type]
-
     def output(
         self,
         value: Sequence[str],
         context: ProcessingContext,
     ) -> JsonValue:
 
-        media_type = self.output_format.media_type
-        service = Format.service(media_type)
-
-        links = [
-            Link(
-                href=context.ows_reference(name, service=service),
-                media_type=media_type,
-            ) for name in (
+        layers = ','.join(
+            layer.name for layer, name in (
                 add_layer_details(
                     self.name,
-                    lyrname,
+                    v,
                     self._LayerHint,
                     context,
-                ) for lyrname in value
+                ) for v in value
             )
-        ]
-
-        return TypeAdapter(self.model).dump_python(
-            links,
-            mode='json',
-            by_alias=True,
-            exclude_none=True,
         )
+
+        media_type = self.output_format.media_type
+        reference_url = context.ows_reference(
+            service=Format.service(media_type),
+            query=urlencode((('LAYERS', layers),), quote_via=quote),
+        )
+
+        return Link(
+            href=reference_url,
+            mime_type=media_type,
+            title=self.title,
+            description=self._out.description(),
+        ).model_dump(mode='json', by_alias=True, exclude_none=True)
 
 
 #
@@ -284,7 +269,7 @@ def add_layer_to_load_on_completion(
     output_name: str,
     context: QgsProcessingContext,
     hint: LayerHint,
-) -> str:
+) -> QgsMapLayer:
     """ Add layer to load on completion
         The layer will be added to the destination project
 
@@ -293,43 +278,44 @@ def add_layer_to_load_on_completion(
     if context.willLoadLayerOnCompletion(value):
         # Do not add the layer twice: may be already added
         # in layer destination parameter
-        details = context.layerToLoadOnCompletionDetails(value)
-        if details.name:
-            logger.debug(
-                "Skipping already added layer for %s (details name: %s)",
-                output_name,
-                details.name,
+        try:
+            details = context.layerToLoadOnCompletionDetails(value)
+            layer = QgsProcessingUtils.mapLayerFromString(
+                value,
+                context,
+                typeHint=details.layerTypeHint,
             )
-            layer_name = details.name
-        else:
-            try:
-                layer = QgsProcessingUtils.mapLayerFromString(
-                    value,
-                    context,
-                    typeHint=details.layerTypeHint,
+            assert_postcondition(layer is not None, f"No layer found for '{value}'")
+            if details.name:
+                logger.debug(
+                    "Skipping already added layer for %s (details name: %s)",
+                    output_name,
+                    details.name,
                 )
-                if layer is not None:
-                    details.setOutputLayerName(layer)
-                    logger.debug("Layer name for '%s' set to '%s'", output_name, layer.name())
-                    layer_name = layer.name()
-            except Exception:
-                logger.error(
-                    "Processing: Error loading result layer %s:\n%s",
-                    layer.name(),
-                    traceback.format_exc(),
-                )
-                raise
-        return layer_name
+                name = details.name
+            else:
+                details.setOutputLayerName(layer)
+                name = layer.name()
+                logger.debug("Layer name for '%s' set to '%s'", output_name, name)
+        except Exception:
+            logger.error(
+                "Processing: Error loading result layer for  %s:\n%s",
+                value,
+                traceback.format_exc(),
+            )
+            raise
+
+        return layer, name
     else:
         return add_layer_details(output_name, value, hint, context)
 
 
 def add_layer_details(
     output_name: str,
-    lyrname: str,
+    value: str,
     hint: LayerHint,
     context: QgsProcessingContext,
-) -> str:
+) -> Tuple[QgsMapLayer, str]:
     #
     # Create new layer details and call addLayerToLoadOnCompletion
     #
@@ -338,12 +324,11 @@ def add_layer_details(
     details = QgsProcessingContext.LayerDetails("", context.destination_project, output_name, hint)
     try:
         layer = QgsProcessingUtils.mapLayerFromString(
-            lyrname,
+            value,
             context,
             typeHint=details.layerTypeHint,
         )
-        if layer is None:
-            raise ValueError("No layer found for '%s'", lyrname)
+        assert_postcondition(layer is not None, f"No layer found for '{value}'")
         # Fix layer name
         # Because if details name is empty it will be set to the file name
         # see https://qgis.org/api/qgsprocessingcontext_8cpp_source.html#l00128
@@ -351,14 +336,13 @@ def add_layer_details(
         # setting is set to false (see processfactory.py:129)
         details.setOutputLayerName(layer)
         logger.debug("Layer name for '%s' set to '%s'", output_name, layer.name())
-        context.addLayerToLoadOnCompletion(lyrname, details)
-        result = layer.name()
+        context.addLayerToLoadOnCompletion(value, details)
     except Exception:
         logger.error(
             "Processing: Error loading result layer %s:\n%s",
-            lyrname,
+            value,
             traceback.format_exc(),
         )
         raise
 
-    return result
+    return layer, layer.name()

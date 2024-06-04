@@ -73,8 +73,8 @@ class Output(JsonModel):
 
 
 class JobExecute(JsonModel):
-    inputs: Dict[str, JsonValue]
-    outputs: Dict[str, Output]
+    inputs: Dict[str, JsonValue] = Field(default={})
+    outputs: Dict[str, Output] = Field(default={})
 
 
 JobResults: TypeAlias = Dict[str, JsonValue]

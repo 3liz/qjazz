@@ -13,6 +13,7 @@ from typing_extensions import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     TypeAlias,
 )
 
@@ -28,9 +29,16 @@ from qgis.core import (
     QgsProcessingParameterLimitedDataTypes,
     QgsProcessingUtils,
     QgsProject,
+    QgsRectangle,
+    QgsVectorLayer,
 )
 
-from py_qgis_processes_schemas.models import (
+from py_qgis_contrib.core import logger
+from py_qgis_processes_schemas import (
+    WGS84,
+    BoundingBox,
+    InputValueError,
+    JsonModel,
     NullField,
     OutputFormatDefinition,
 )
@@ -39,7 +47,6 @@ from ..utils import (
     ProcessingSourceType,
     compatible_layers,
     get_valid_filename,
-    parse_layer_spec,
     raw_destination_sink,
 )
 from .base import (
@@ -90,7 +97,8 @@ class ParameterMapLayer(InputParameter):
         _type: Any = str
 
         if project:
-            allowed_sources = tuple(layer.name() for layer in cls.compatible_layers(param, project))
+            layers = cls.compatible_layers(param, project)
+            allowed_sources = tuple(layer.name() for layer in layers)
             if allowed_sources:
                 _type = Literal[allowed_sources]
 
@@ -99,24 +107,10 @@ class ParameterMapLayer(InputParameter):
 
         return _type
 
-    def value(
-        self,
-        inp: JsonValue,
-        context: Optional[ProcessingContext] = None,
-    ) -> JsonValue:
-
-        _inp = self.validate(inp)
-        if self._multiple:
-            _inp = [parse_layer_spec(s)[0] for s in _inp]
-        else:
-            _inp = parse_layer_spec(_inp)[0]
-
-        return _inp
-
-
 #
 # QgsProcessingParameterMultipleLayers
 #
+
 
 class ParameterMultipleLayers(ParameterMapLayer):
     _multiple = True
@@ -145,10 +139,11 @@ class ParameterMultipleLayers(ParameterMapLayer):
             field.update(min_length=min_number)
 
         return _type
+
+
 #
 # QgsProcessingParameterVectorLayer
 #
-
 
 class ParameterVectorLayer(ParameterMapLayer):
     @classmethod
@@ -164,6 +159,7 @@ class ParameterVectorLayer(ParameterMapLayer):
 # QgsProcessingParameterFeatureSource
 #
 
+
 class ParameterFeatureSource(ParameterMapLayer):
 
     @classmethod
@@ -174,20 +170,83 @@ class ParameterFeatureSource(ParameterMapLayer):
     ) -> Iterable[QgsMapLayer]:
         return QgsProcessingUtils.compatibleVectorLayers(project, param.dataTypes())
 
+    @classmethod
+    def create_model(
+        cls,
+        param: ParameterDefinition,
+        field: Dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> TypeAlias:
+
+        _type: Any = super(ParameterFeatureSource, cls).create_model(
+            param,
+            field,
+            project,
+            validation_only,
+        )
+
+        field.update(json_schema_extra={'format': 'x-feature-source'})
+
+        crsdef = WGS84
+        if project:
+            crs = project.crs()
+            if crs.isValid():
+                crsdef = crs.toOgcUri()
+
+        class _Model(JsonModel):
+            source: _type
+            intersect: Optional[BoundingBox(Annotated[str, Field(crsdef)])] = NullField(  # type: ignore [valid-type]
+                title="BoundingBox intersection",
+                description="BoundingBox for selecting intersecting features",
+            )
+            expression: Optional[str] = NullField(
+                title="Qgis expression",
+                description="Qgis expression for selecting features",
+            )
+
+        return _type | _Model
+
     def value(
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QgsProcessingFeatureSourceDefinition:
 
-        #
-        # Support feature selection
-        #
         _inp = self.validate(inp)
 
-        value, has_selection = parse_layer_spec(_inp, context, allow_selection=True)
-        value = QgsProcessingFeatureSourceDefinition(value, selectedFeaturesOnly=has_selection)
+        has_selection = False
 
+        if isinstance(_inp, str):
+            source = _inp
+        else:
+            source = _inp.source
+            if context and (_inp.intersect or _inp.expression):
+                #
+                # Support feature selection
+                #
+                has_selection = True
+
+                layer = context.getMapLayer(_inp.source)
+                if not layer:
+                    raise InputValueError(f"No layer '{_inp.source}' found")
+
+                behavior = QgsVectorLayer.SetSelection
+
+                # Apply filter rect first
+                if _inp.intersect:
+                    logger.debug("Applying feature source intersect: %s", _inp.intersect)
+                    bbox = _inp.intersect
+                    rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+                    layer.selectByRect(rect, behavior=behavior)
+                    behavior = QgsVectorLayer.IntersectSelection
+
+                # Selection by expression
+                if _inp.expression:
+                    logger.debug("Applying feature source expression: %s", _inp.expression)
+                    layer.selectByExpression(_inp.expression, behavior=behavior)
+
+        value = QgsProcessingFeatureSourceDefinition(source, selectedFeaturesOnly=has_selection)
         return value
 
 #
@@ -330,15 +389,22 @@ class ParameterTinInputLayers(ParameterMapLayer):
 class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
 
     def initialize(self):
-        self.output_extension = f".{self._param.defaultFileExtension()}"
+        # Get default extensionfrom default value
+        param = self._param
+        _, ext = self.get_default_value(self.default_value(param), param)
+
+        self.output_extension = ext
 
     @classmethod
-    def get_default_value(cls, field: Dict, param: ParameterDefinition) -> str:
+    def get_default_value(cls,
+        defval: str | QgsProcessingOutputLayerDefinition,
+        param: ParameterDefinition,
+    ) -> Tuple[str, str]:
         #
         # Get the file extension as we need it
         # for writing the resulting file
         #
-        defval = field.pop('default', None)
+        ext = f".{param.defaultFileExtension()}"
 
         if isinstance(defval, QgsProcessingOutputLayerDefinition):
             sink = defval.sink and defval.sink.staticValue()
@@ -347,9 +413,10 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
                 url = urlsplit(sink.partition('|')[0])
                 if url.path and url.scheme.lower() in ('', 'file'):
                     p = Path(url.path)
+                    ext = p.suffix or ext
                     defval = defval.destinationName or p.stem
 
-        return defval
+        return defval, ext
 
     @classmethod
     def create_model(
@@ -363,9 +430,10 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
         _type = str
 
         if not validation_only:
+            default = field.pop('default', None)
             # Since QgsProcessingOutputLayerDefinition may
             # be defined as default value, get layer name from it
-            defval = cls.get_default_value(field, param)
+            defval, _ = cls.get_default_value(default, param)
             if defval:
                 field.update(default=defval)
 

@@ -58,4 +58,4 @@ class TestMultiOptionValue(QgsProcessingAlgorithm):
 
         param = self.parameterAsEnums(parameters, self.INPUT, context)
 
-        return {self.OUTPUT: "selection is %s" % ','.join(str(x) for x in param)}
+        return {self.OUTPUT: "selection is %s" % ','.join(str(x) for x in sorted(param))}

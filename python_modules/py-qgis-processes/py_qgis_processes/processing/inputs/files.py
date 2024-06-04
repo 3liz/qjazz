@@ -15,6 +15,7 @@ from typing_extensions import (
     Optional,
     TypeAlias,
     Union,
+    assert_never,
     cast,
 )
 
@@ -130,18 +131,18 @@ class ParameterFile(InputParameter):
 
             with destination.open('wb') as out:
                 match _inp:
-                    case str():
-                        value = _inp
-                        out.write(value.encode())
                     case QualifiedInputValue():
                         value = _inp.value
-                        if _inp.encoding == 'base64':
+                        if _inp.encoding in ('base64', 'binary'):
                             value = base64.b64decode(value)
                             out.write(value)
                         else:
                             out.write(value.encode())
                     case LinkReference():
                         download_ref(_inp, context and context.config, out)
+                    case _ as unreachable:
+                        # XXX should never happen
+                        assert_never(unreachable)  # type: ignore [arg-type]
 
             return str(destination)
         except:

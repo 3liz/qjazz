@@ -49,14 +49,6 @@ def test_parameter_layer_maplayer():
     schema = inp.json_schema()
     print("\ntest_parameter_layer_maplayer::", schema)
 
-    # Check layer spec
-    value = inp.value("layer:layername")
-    assert value == "layername"
-
-    # test arbitrary layer scheme
-    value = inp.value("foobar:layername")
-    assert value == "foobar:layername"
-
 
 def test_parameter_layer_vectorlayer():
 
@@ -90,6 +82,8 @@ def test_parameter_layer_featuresource(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_featuresource::", schema)
 
+    assert schema.get('format') == 'x-feature-source'
+
 
 def test_parameter_layer_multilayers(projects):
 
@@ -110,9 +104,7 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     param = QgsProcessingParameterVectorDestination("VectorDestination")
 
-    assert qgis_session.default_vector_file_ext == 'fgb'
-
-    assert param.defaultFileExtension() == 'fgb'
+    assert param.defaultFileExtension() == qgis_session.default_vector_file_ext
 
     config = qgis_session
 

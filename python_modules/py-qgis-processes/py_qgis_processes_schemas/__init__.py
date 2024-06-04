@@ -10,6 +10,7 @@ from .processes import (  # noqa F401
 )
 from .jobs import (  # noqa F401
     JobException,
+    JobExecute,
     JobStatus,
     JobStatusCode,
     JobResults,
@@ -34,6 +35,7 @@ from .models import (         # noqa F401
     LinkReference,
     JsonDict,
     JsonModel,
+    JsonValue,
     OneOf,
     OutputFormat,
     OutputFormatDefinition,

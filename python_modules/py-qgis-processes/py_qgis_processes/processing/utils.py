@@ -1,11 +1,10 @@
 
 import re
-import traceback
 
 from collections.abc import Container
 from enum import Enum
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import urlsplit
 
 from typing_extensions import (
     Iterable,
@@ -19,19 +18,14 @@ from qgis.core import (
     Qgis,
     QgsMapLayer,
     QgsProcessing,
-    QgsProcessingContext,
     QgsProcessingDestinationParameter,
     QgsProcessingParameterFileDestination,
     QgsProcessingUtils,
     QgsProject,
-    QgsRectangle,
-    QgsVectorLayer,
 )
 
-from py_qgis_contrib.core import logger
 from py_qgis_processes_schemas import (
     Format,
-    InputValueError,
     mimetypes,
 )
 
@@ -100,65 +94,6 @@ def get_valid_filename(s: str) -> str:
     """
     s = str(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '_', s)
-
-
-def parse_layer_spec(
-    layerspec: str,
-    context: Optional[QgsProcessingContext] = None,
-    allow_selection: bool = False,
-) -> Tuple[str, bool]:
-    """ Parse a layer specification
-
-        if allow_selection is set to True: 'select' parameter
-        is interpreted has holding a qgis feature request expression
-
-        :return: A tuple (path, bool)
-    """
-    if not layerspec.startswith('layer:'):
-        # Nothing to do with it
-        return layerspec, False
-
-    u = urlsplit(layerspec)
-    p = u.path
-
-    if not (allow_selection and context):
-        return p, False
-
-    has_selection = False
-    qs = parse_qs(u.query)
-    feat_requests = qs.get('select', [])
-    feat_rects = qs.get('rect', [])
-
-    if feat_rects or feat_requests:
-
-        has_selection = True
-        layer = context.getMapLayer(p)
-
-        if not layer:
-            logger.error("No layer path for %s", layerspec)
-            raise InputValueError("No layer '%s' found" % u.path)
-
-        if layer.type() != QgsMapLayer.VectorLayer:
-            logger.warning("Can apply selection only to vector layer")
-        else:
-            behavior = QgsVectorLayer.SetSelection
-            try:
-                logger.debug("Applying features selection: %s", qs)
-
-                # Apply filter rect first
-                if feat_rects:
-                    rect = QgsRectangle(feat_rects[-1].split(',')[:4])
-                    layer.selectByRect(rect, behavior=behavior)
-                    behavior = QgsVectorLayer.IntersectSelection
-
-                # Selection by expressions
-                if feat_requests:
-                    ftreq = feat_requests[-1]
-                    layer.selectByExpression(ftreq, behavior=behavior)
-            except Exception:
-                logger.error(traceback.format_exc())
-                raise
-    return p, has_selection
 
 
 def resolve_raw_path(

@@ -4,12 +4,12 @@ from .base import OutputParameter
 
 
 class OutputBoolean(OutputParameter):
-    _ValueType = bool
+    _Model = bool
 
 
 class OutputString(OutputParameter):
-    _ValueType = str
+    _Model = str
 
 
 class OutputNumber(OutputParameter):
-    _ValueType = float
+    _Model = float

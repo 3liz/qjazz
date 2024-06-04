@@ -27,14 +27,19 @@ class ProcessesConfig(BaseModel):
 
 
 class ProcessesLoader:
-    def __init__(self, providers):
+    def __init__(self, providers: List[str], allow_scripts: bool = True):
 
-        self._discard = set()
+        self._discard: set[str] = set()
         self._providers = providers
         self._register = False
 
         reg = QgsApplication.processingRegistry()
         reg.providerAdded.connect(self._registerProvider)
+
+        # Support models and script
+        for ident in (('model', 'script') if allow_scripts else ('model',)):
+            if reg.providerById(ident):
+                self._providers.append(ident)
 
     def __del__(self):
         # Ensure proper disconnection from QT slot

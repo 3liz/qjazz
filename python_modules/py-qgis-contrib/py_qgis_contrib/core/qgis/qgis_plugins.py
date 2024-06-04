@@ -105,7 +105,7 @@ class QgisPluginConfig(config.Config):
             "The Plugins will be installed at startup\n"
             "if the 'install_mode' is set to 'auto'.\n"
             "Note that an empty list means what it is:\n"
-            "i.e, *no* plugins."
+            "i.e, *no* installed plugins."
         ),
     )
     install_mode: Literal['auto', 'external'] = Field(
@@ -114,9 +114,14 @@ class QgisPluginConfig(config.Config):
         description=(
             "If set to 'auto', plugins installation\n"
             "will be checked at startup. Otherwise,\n"
-            "Installation will be done from already installed\n"
+            "Installation will be done from already available\n"
             "plugins."
         ),
+    )
+    enable_scripts: bool = Field(
+        default=True,
+        title="Enable scripts",
+        description="Enable publish processing scripts",
     )
     plugin_manager: Path = Field(
         default=Path("/usr/local/bin/qgis-plugin_manager"),
@@ -189,7 +194,7 @@ class QgisPluginService:
         """
         if plugin_type == PluginType.PROCESSING:
             from .processing import ProcessesLoader
-            processes = ProcessesLoader(self._providers)
+            processes = ProcessesLoader(self._providers, allow_scripts=self._config.enable_scripts)
 
         white_list = self._config.install
 

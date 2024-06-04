@@ -19,5 +19,5 @@ def test_processing_plugin(plugindir):
     s.load_plugins(PluginType.PROCESSING, None)
 
     providers = list(s.providers)
-    assert len(providers) == 1
-    assert providers[0].id() == 'processing_test'
+    assert len(providers) == 3
+    assert 'processing_test' in set(p.id() for p in providers)

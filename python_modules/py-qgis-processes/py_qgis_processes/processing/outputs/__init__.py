@@ -1,6 +1,6 @@
 from types import MappingProxyType
 
-from typing_extensions import Optional
+from typing_extensions import Optional, Type
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -41,11 +41,28 @@ from .literals import (
     OutputString,
 )
 
+
+class UnsupportedOutput(OutputParameterBase):
+    #
+    # Mark unsupported output parameters as hidden parameters
+    #
+    # Those paramaters are still valid parameters but makes no sense
+    # when used in the context of a processes api.
+    #
+
+    def initialize(self):
+        raise NotImplementedError(f"{self._param} cannot be instancied")
+
+    @classmethod
+    def hidden(cls, outp: OutputDefinition) -> bool:
+        return True
+
+
 # Type mapping
 
 QGIS_TYPES = MappingProxyType({
     QgsProcessingOutputBoolean.typeName(): OutputBoolean,
-    QgsProcessingOutputConditionalBranch.typeName(): None,
+    QgsProcessingOutputConditionalBranch.typeName(): UnsupportedOutput,
     QgsProcessingOutputFile.typeName(): OutputFile,
     QgsProcessingOutputFolder.typeName(): OutputFolder,
     QgsProcessingOutputHtml.typeName(): OutputHtml,
@@ -55,7 +72,7 @@ QGIS_TYPES = MappingProxyType({
     QgsProcessingOutputPointCloudLayer.typeName(): OutputPointCloudLayer,
     QgsProcessingOutputRasterLayer.typeName(): OutputRasterLayer,
     QgsProcessingOutputString.typeName(): OutputString,
-    QgsProcessingOutputVariant.typeName(): None,
+    QgsProcessingOutputVariant.typeName(): UnsupportedOutput,
     QgsProcessingOutputVectorLayer.typeName(): OutputVectorLayer,
     QgsProcessingOutputVectorTileLayer.typeName(): OutputVectorTileLayer,
 })
@@ -64,13 +81,24 @@ QGIS_TYPES = MappingProxyType({
 OutputParameterDef = OutputParameterBase
 
 
-def OutputParameter(
-    out: OutputDefinition,
-    alg: Optional[QgsProcessingAlgorithm] = None,
-) -> OutputParameterDef:
+#
+# Parameter proxy class
+#
+class _OutputParameter:
 
-    Output = QGIS_TYPES.get(out.type())
-    if Output is None:
-        raise ValueError(f"Unsupported output parameter: {out}")
+    @classmethod
+    def get(cls, out: OutputDefinition) -> Type[OutputParameterDef]:
+        Output = QGIS_TYPES.get(out.type())
+        if Output is None:
+            raise ValueError(f"Unsupported input parameter: {out}")
+        return Output
 
-    return Output(out, alg)
+    def __call__(
+        self,
+        out: OutputDefinition,
+        alg: Optional[QgsProcessingAlgorithm] = None,
+    ) -> OutputParameterDef:
+        return self.get(out)(out, alg)
+
+
+OutputParameter = _OutputParameter()

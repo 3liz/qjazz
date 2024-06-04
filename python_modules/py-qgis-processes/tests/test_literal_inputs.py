@@ -173,8 +173,12 @@ def test_parameter_distance():
 
     print("\ntest_parameter_distance::", schema)
     assert schema['type'] == 'number'
-    assert schema['x-ogc-definition'] == ogc.OgcDataType['length']
-    assert schema['x-ogc-uom'] == ogc.uom_ref('m')
+
+    metadata = {m.role: m for m in inp.metadata(param)}
+    print("\ntest_parameter_scale::metadata", metadata)
+
+    assert metadata['ogcType'].href == ogc.OgcDataType['length']
+    assert metadata['uom'].href == ogc.uom_ref('m')
 
 
 def test_parameter_scale():
@@ -185,8 +189,13 @@ def test_parameter_scale():
 
     schema = inp.json_schema()
     print("\ntest_parameter_scale::", schema)
+
     assert schema['type'] == 'number'
-    assert schema['x-ogc-definition'] == ogc.OgcDataType['scale']
+
+    metadata = {m.role: m for m in inp.metadata(param)}
+    print("\ntest_parameter_scale::metadata", metadata)
+
+    assert metadata['ogcType'].href == ogc.OgcDataType['scale']
 
 
 def test_parameter_duration():
@@ -198,7 +207,11 @@ def test_parameter_duration():
     schema = inp.json_schema()
     print("\ntest_parameter_duration::", schema)
     assert schema['type'] == 'number'
-    assert schema['x-ogc-definition'] == ogc.OgcDataType['time']
+
+    metadata = {m.role: m for m in inp.metadata(param)}
+    print("\ntest_parameter_scale::metadata", metadata)
+
+    assert metadata['ogcType'].href == ogc.OgcDataType['time']
 
 
 def test_parameter_range():

@@ -6,6 +6,7 @@
 from pydantic import (
     Field,
     JsonValue,
+    TypeAdapter,
 )
 from typing_extensions import (
     Annotated,
@@ -53,7 +54,7 @@ class DescriptionType(JsonModel):
 #
 
 _NonZeroPositiveInt = Annotated[int, Field(gt=0)]
-
+_PositiveInt = Annotated[int, Field(ge=0)]
 
 ValuePassing = Sequence[Literal["byValue", "byReference"]]
 
@@ -61,7 +62,7 @@ ValuePassing = Sequence[Literal["byValue", "byReference"]]
 class InputDescription(DescriptionType):
     schema_: JsonValue = Field(alias="schema")
     value_passing: ValuePassing = ('byValue',)
-    min_occurs: _NonZeroPositiveInt = 1
+    min_occurs: _PositiveInt = 1
     max_occurs: _NonZeroPositiveInt | Literal["unbounded"] = 1
 
 
@@ -89,5 +90,9 @@ class ProcessesSummary(DescriptionType):
 
 
 class ProcessesDescription(ProcessesSummary):
-    inputs: Dict[str, InputDescription]
-    outputs: Dict[str, OutputDescription]
+    inputs: Dict[str, InputDescription] = Field(default={})
+    outputs: Dict[str, OutputDescription] = Field(default={})
+
+
+# Adapter for process Summary list
+ProcessSummaryList = TypeAdapter(Sequence[ProcessesSummary])

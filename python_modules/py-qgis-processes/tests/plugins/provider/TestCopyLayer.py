@@ -1,9 +1,9 @@
 """ Test just returning simple value
 """
+from pathlib import Path
 
 from qgis.core import (
     QgsProcessingAlgorithm,
-    QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
     QgsVectorFileWriter,
@@ -37,8 +37,12 @@ class TestCopyLayer(QgsProcessingAlgorithm):
            see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, 'Vector Layer'))
-        self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, 'Output Layer',
-                          defaultValue=QgsProcessingOutputLayerDefinition(f'{self.OUTPUT}.shp')))
+        self.addParameter(
+            QgsProcessingParameterVectorDestination(self.OUTPUT, 'Output Layer'),
+        )
+
+    def flags(self):
+        return super().flags() | QgsProcessingAlgorithm.FlagRequiresProject
 
     def processAlgorithm(self, parameters, context, feedback):
         """ Virtual override
@@ -46,12 +50,23 @@ class TestCopyLayer(QgsProcessingAlgorithm):
             see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
-        outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
+        outlayer = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
+
+        # Get driver from extension
+        ext = Path(outlayer).suffix
+
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = QgsVectorFileWriter.driverForExtension(ext)
 
         # Save a copy of our layer
-        err = QgsVectorFileWriter.writeAsVectorFormat(layer, outfile, "utf-8", driverName="ESRI Shapefile")
+        (err, msg, outfile, _layer_name) = QgsVectorFileWriter.writeAsVectorFormatV3(
+            layer,
+            outlayer,
+            context.transformContext(),
+            options,
+        )
 
-        if err[0] != QgsVectorFileWriter.NoError:
-            feedback.reportError(f"Error writing vector layer {outfile}: {err}")
+        if err != QgsVectorFileWriter.NoError:
+            feedback.reportError(f"Error  writing vector layer '{outlayer}': {msg}")
 
         return {self.OUTPUT: outfile}

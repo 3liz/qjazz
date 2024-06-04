@@ -1,5 +1,4 @@
 import sys
-import traceback
 
 from pathlib import Path
 
@@ -50,12 +49,11 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_qgis)
 
 
-def pytest_sessionfinish(session, exitstatus):
-    try:
-        from py_qgis_contrib.core import qgis
-        qgis.exit_qgis_application()
-    except Exception:
-        traceback.print_exc()
+def pytest_sessionstart(session: pytest.Session):
+    workdir = Path(session.startdir).joinpath('__workdir__')
+    if workdir.exists():
+        import shutil
+        shutil.rmtree(workdir)
 
 
 @pytest.fixture(scope='session')
@@ -163,4 +161,5 @@ def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
     """
     plugin_service = qgis.QgisPluginService(qgis_session.plugins)
     plugin_service.load_plugins(qgis.PluginType.PROCESSING, None)
+    plugin_service.register_as_service()
     return plugin_service

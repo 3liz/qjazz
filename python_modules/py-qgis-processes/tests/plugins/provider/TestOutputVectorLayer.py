@@ -2,6 +2,8 @@
 """
 import traceback
 
+from pathlib import Path
+
 import processing
 
 from qgis.core import (
@@ -53,7 +55,7 @@ class TestOutputVectorLayer(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         try:
-            output = 'my_output_vector.shp'
+            output = str(Path(context.temporaryFolder()).joinpath('my_output_vector.fgb'))
 
             # Run buffer
             _buffer_result = processing.run("qgis:buffer", {

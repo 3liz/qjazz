@@ -10,7 +10,6 @@ from pathlib import Path
 
 from pydantic import ValidationError
 from typing_extensions import (
-    Any,
     Dict,
     Literal,
     Optional,
@@ -54,8 +53,28 @@ from .base import (
 
 class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
 
+    _Model = Link
+
     def value_passing(self) -> ValuePassing:
         return ('byReference',)
+
+    def json_schema(self) -> JsonDict:
+        schema = super().json_schema()
+
+        formats = self.allowed_formats
+        if formats:
+            schema = {
+                '$defs': {'Link': schema},
+                'anyOf': [
+                    {
+                        '$ref': '#/$defs/Link',
+                        'contentMediaType': fmt.media_type,
+                        'title': fmt.title,
+                    } for fmt in formats
+                ],
+            }
+
+        return schema
 
     @classmethod
     def get_output_formats(
@@ -69,27 +88,6 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
             return output_file_formats(inputdef)
         else:
             return ()
-
-    @classmethod
-    def create_model(
-        cls,
-        outp: OutputDefinition,
-        field: Dict,
-        alg: Optional[QgsProcessingAlgorithm],
-    ) -> TypeAlias:
-
-        _type: Any = Link
-
-        formats = cls.get_output_formats(outp, alg)
-        if formats:
-            class _Ref(_type):
-                mime_type: Optional[         # type: ignore [valid-type]
-                    Literal[tuple(fmt.media_type for fmt in formats)]
-                ] = NullField(serialization_alias="type")
-
-            _type = _Ref
-
-        return _type
 
     def validate_output(self, out: JsonDict, param: Optional[InputParameterDef] = None):
         """ Override

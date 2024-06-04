@@ -108,7 +108,7 @@ class ParameterGeometry(InputParameter):
 
             _type = Annotated[
                 _type,
-                Field(json_schema_extra={'format': 'geojson-schema'}),
+                Field(json_schema_extra={'format': 'geojson-geometry'}),
             ]
 
         _type = OneOf[   # type: ignore [misc, valid-type]
@@ -284,7 +284,7 @@ class ParameterExtent(InputParameter):
                     context,
                 )
 
-                default_crs = crs.toOgcUrn() if crs.isValid() else WGS84
+                default_crs = crs.toOgcUri() if crs.isValid() else WGS84
 
                 _type = BoundingBox(Annotated[CrsDefinition, Field(default_crs)])
 

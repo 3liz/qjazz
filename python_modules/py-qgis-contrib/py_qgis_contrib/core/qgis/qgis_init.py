@@ -45,7 +45,7 @@ def exit_qgis_application():
 
 @no_type_check
 def setup_qgis_application(
-    cleanup: bool = True,
+    cleanup: bool = False,
     logprefix: str = 'Qgis:',
 ) -> 'qgis.core.QgsApplication':
     """ Start qgis application
@@ -88,6 +88,7 @@ def setup_qgis_application(
     if cleanup:
         # Closing QgsApplication on exit will
         # prevent our app to segfault on exit()
+        # XXX Doesn't seem necessary anymore
         import atexit
 
         logger.info(f"{logprefix} Installing cleanup hook")
@@ -156,7 +157,6 @@ def init_qgis_processing() -> None:
     """ Initialize processing
     """
     from processing.core.Processing import Processing
-
     from qgis.analysis import QgsNativeAlgorithms
     from qgis.core import QgsApplication
 

@@ -41,7 +41,7 @@ section-order = [
 ]
 
 [lint.isort.sections]
-qgis = ["qgis"]
+qgis = ["qgis", "processing"]
 
 [lint.flake8-annotations]
 ignore-fully-untyped = true

@@ -1,6 +1,13 @@
 from types import MappingProxyType
 
-from typing_extensions import Optional
+from pydantic import ValidationError
+from typing_extensions import (
+    Any,
+    Iterable,
+    Mapping,
+    Optional,
+    Type,
+)
 
 from qgis.core import (
     QgsProcessingParameterAggregate,
@@ -55,6 +62,9 @@ from qgis.core import (
     QgsProject,
 )
 
+from py_qgis_processes_schemas import InputValueError, JsonValue
+
+from ..context import ProcessingContext
 from .base import (
     InputParameter as InputParameterBase,
 )
@@ -177,28 +187,52 @@ QGIS_TYPES = MappingProxyType({
 InputParameterDef = InputParameterBase
 
 
-def InputParameter(
-    param: ParameterDefinition,
-    project: Optional[QgsProject] = None,
-    *,
-    validation_only: bool = False,
-) -> InputParameterDef:
+#
+# Parameter proxy class
+#
+class _InputParameter:
 
-    Input = QGIS_TYPES.get(param.type())
-    if Input is None:
-        raise ValueError(f"Unsupported parameter: {param}")
+    @classmethod
+    def get(cls, param: ParameterDefinition) -> Type[InputParameterDef]:
+        Input = QGIS_TYPES.get(param.type())
+        if Input is None:
+            raise ValueError(f"Unsupported input parameter: {param}")
+        return Input
 
-    return Input(param, project, validation_only=validation_only)
+    def __call__(
+        self,
+        param: ParameterDefinition,
+        project: Optional[QgsProject] = None,
+        *,
+        validation_only: bool = False,
+    ) -> InputParameterDef:
+        return self.get(param)(
+            param,
+            project,
+            validation_only=validation_only,
+        )
+
+    @staticmethod
+    def parameters(
+        inputs: Iterable[InputParameterDef],
+        params: Mapping[str, JsonValue],
+        context: ProcessingContext,
+    ) -> Mapping[str, Any]:
+        """  Convert inputs to parameters
+        """
+        def _value(inp: InputParameterDef) -> Any:  # noqa ANN401
+            v = params.get(inp.name)
+            if not (v or inp.optional):
+                raise InputValueError(f"Missing parameter {inp.name}")
+            try:
+                return inp.value(v, context)
+            except ValidationError as e:
+                details = e.json(include_url=False, include_input=False)
+                raise InputValueError(
+                    f"{inp.name}: Validation error: {details}",
+                ) from None
+
+        return {i.name: _value(i) for i in inputs}
 
 
-def _is_parameter_hidden(
-    param: ParameterDefinition,
-    project: Optional[QgsProject] = None,
-) -> bool:
-    Input = QGIS_TYPES.get(param.type())
-    if Input is None:
-        raise ValueError(f"Unsupported parameter: {param}")
-    return Input.hidden(param, project)
-
-
-InputParameter.is_hidden = _is_parameter_hidden  # type: ignore [attr-defined]
+InputParameter = _InputParameter()
