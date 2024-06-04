@@ -43,9 +43,9 @@ ProcessingAlgorithmFlag: TypeAlias   # type: ignore [valid-type]
 ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]
 
 if Qgis.QGIS_VERSION_INT >= 33600:
-    # In qgis 3.36+ ProcessingSourceType is a real python enum
+    # In qgis 3.36+ ProcessingAlgorithmFlags is a real python enum
     ProcessingAlgorithmFlag = Qgis.ProcessingAlgorithmFlag
-    ProcessingAlgorithmFlags = QgsProcessingAlgorithm.ProcessingAlgorithmFlags
+    ProcessingAlgorithmFlags = Qgis.ProcessingAlgorithmFlags
 else:
     from enum import Enum
 
