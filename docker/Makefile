@@ -54,7 +54,6 @@ manifest:
 
 # Merge requirement files
 requirements: $(REQUIREMENTS)
-	$(MAKE) -C ../python_modules requirements
 	@cat $$(ls -1 ../python_modules/*/$<) | sort | uniq > ./$<
 
 

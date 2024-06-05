@@ -137,6 +137,9 @@ class QgisPluginConfig(config.Config):
             install_plugins(self)
 
 
+JsonDict = Dict[str, JsonValue]
+
+
 @dataclass(frozen=True)
 class Plugin:
     name: str
@@ -145,20 +148,20 @@ class Plugin:
     init: Any
 
     @property
-    def metadata(self) -> Optional[JsonValue]:
+    def metadata(self) -> JsonDict:
         """ Return plugin metadata
         """
         # Read metadata
         metadatafile = self.path / 'metadata.txt'
         if not metadatafile.exists():
-            return None
+            return {}
 
         with metadatafile.open(mode='rt') as f:
             cp = configparser.ConfigParser()
             cp.read_file(f)
             metadata = {s: dict(p.items()) for s, p in cp.items()}
             metadata.pop('DEFAULT', None)
-            return cast(JsonValue, metadata)
+            return cast(JsonDict, metadata)
 
 
 class QgisPluginService:

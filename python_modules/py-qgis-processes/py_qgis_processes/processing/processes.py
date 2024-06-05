@@ -76,10 +76,16 @@ else:
 class ProcessAlgorithm:
 
     @classmethod
-    def algorithms(cls, include_deprecated: bool = False) -> Iterator[Self]:
+    def algorithms(
+        cls,
+        include_deprecated: bool = False,
+        providers: Sequence[str] = (),
+    ) -> Iterator[Self]:
         """ Iterate over all published algorithms
         """
         for provider in QgisPluginService.get_service().providers:
+            if providers and provider.id() not in providers:
+                continue
             for alg in provider.algorithms():
                 if not cls.hidden(alg) and (include_deprecated or not cls._deprecated(alg)):
                     yield cls(alg)
@@ -159,12 +165,6 @@ class ProcessAlgorithm:
             MetadataValue(role="RequireProject", title="Require project", value=self.require_project),
         ]
 
-        helpstr = alg.shortHelpString()
-        if helpstr:
-            description.metadata.append(
-                MetadataValue(role="HelpString", title="Help", value=helpstr),
-            )
-
         return description
 
     def summary(self) -> ProcessesSummary:
@@ -192,6 +192,7 @@ class ProcessAlgorithm:
         """
         description = self._description.model_copy(
             update=dict(
+                description=self._alg.shortHelpString() or self._alg.shortDescription(),
                 inputs={inp.name: inp.description() for inp in self.inputs(project)},
                 outputs={out.name: out.description() for out in self.outputs()},
             ),
@@ -243,7 +244,7 @@ class ProcessAlgorithm:
         """ Execute request
         """
         # Create a destination project
-        # Note: Destination project must be create *before"
+        # Note: Destination project must be created *before"
         # evaluating parameters.
         if not context.destination_project:
             context.destination_project = context.create_project(self.ident)

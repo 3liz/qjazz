@@ -1,6 +1,7 @@
 from .processes import (  # noqa F401
     ProcessesSummary,
     ProcessesDescription,
+    ProcessSummaryList,
     Metadata,
     MetadataValue,
     MetadataLink,
