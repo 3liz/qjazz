@@ -9,5 +9,6 @@ from .processes import (                   # noqa F401
     JobExecute,
     JobResults,
     ProcessAlgorithm,
+    ProcessSummary,
 )
 from .runalg import RunProcessingException # noqa F401

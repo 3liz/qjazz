@@ -1,7 +1,4 @@
-import os
 import types
-
-from pathlib import Path
 
 import celery
 import celery.states
@@ -10,6 +7,7 @@ from pydantic import (
     ValidationError,
 )
 from typing_extensions import (
+    Any,
     ClassVar,
     Dict,
     Optional,
@@ -21,7 +19,7 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_iso8601, utc_now
 
 from ._celery import Celery
-from .config import ProcessingConfig, confservice, load_configuration
+from .config import WorkerConfig
 from .runconfig import RunConfigSchema, create_job_run_config
 
 #
@@ -33,30 +31,24 @@ JobContext: TypeAlias = types.SimpleNamespace
 
 class Worker(Celery):
 
-    def __init__(self, **kwargs):
+    def __init__(self, conf: WorkerConfig, **kwargs):
 
-        path = os.getenv("WORKER_CONFIG_PATH")
-        if path:
-            conf = load_configuration(Path(path))
-        else:
-            conf = confservice.conf
-
-        super().__init__(conf.worker.service_name, conf.worker, **kwargs)
+        super().__init__(conf.service_name, conf, **kwargs)
 
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
 
         # We want each service with its own queue and exchange
-        self.conf.task_default_queue = conf.worker.service_name
-        self.conf.task_default_exchange = conf.worker.service_name
-
-        self.__processing_config__ = conf.processing
+        self.conf.task_default_queue = conf.service_name
+        self.conf.task_default_exchange = conf.service_name
 
         # Add the inspect command
         # See https://docs.celeryq.dev/en/stable/userguide/workers.html
         # #writing-your-own-remote-control-commands
         from celery.worker.control import inspect_command
         inspect_command()(_run_configs)
+
+        self._job_context: Dict[str, Any] = {}
 
     def job(
         self,
@@ -86,7 +78,7 @@ class Worker(Celery):
             name=f"{self.main}.{name}",
             base=Job,
             track_started=True,
-            processing_config=self.__processing_config__,
+            _worker_job_context=self._job_context,
             **kwargs,
         )
 
@@ -112,8 +104,7 @@ class Job(celery.Task):
 
     RUN_CONFIGS: ClassVar[Dict[str, RunConfigSchema]] = {}
 
-    # Set in decorator
-    processing_config: ClassVar[Optional[ProcessingConfig]] = None
+    _worker_metadata: ClassVar[Dict] = {}
 
     # To be set in decorator
     run_context: bool = False
@@ -149,7 +140,7 @@ class Job(celery.Task):
 
         out = self.run(*args, **meta.__run_config__.dict())
         # Return output as json compatible format
-        return outputs.dump_python(out, mode='json')
+        return outputs.dump_python(out, mode='json', by_alias=True, exclude_none=True)
 
     def before_start(self, task_id, args, kwargs):
         #
@@ -169,9 +160,7 @@ class Job(celery.Task):
         # This is a workaround for adding extra metadata
         # the the stored backend data.
         metadata = kwargs.pop('__metadata__', {})
-        metadata.update(
-            processing=self.processing_config,
-        )
+        metadata.update(self._worker_job_context)
 
         meta = kwargs.pop('__meta__', {})
         meta.update(
@@ -199,7 +188,11 @@ class Job(celery.Task):
                 kwargs.clear()
                 kwargs.update(run_config)
         except ValidationError as e:
-            errors = [d for d in e.errors(include_url=False, include_input=False)]
+            errors = [d for d in e.errors(
+                include_url=False,
+                include_input=False,
+                include_context=False,
+            )]
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
             raise ValueError("Invalid arguments")
@@ -217,7 +210,7 @@ class Job(celery.Task):
         self.update_state(
             state=Worker.STATE_UPDATED,
             meta=dict(
-                progress=int(percent_done * 100.0) if percent_done is not None else None,
+                progress=int(percent_done + 0.5) if percent_done is not None else None,
                 message=message,
                 updated=to_iso8601(utc_now()),
             ),

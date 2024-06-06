@@ -136,6 +136,12 @@ def cli_commands(
     )
 
 
+@cli_commands.command('version')
+def print_versions():
+    for v in qgis.show_all_versions():
+        echo(v)
+
+
 @cli_commands.command('config')
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
@@ -193,6 +199,7 @@ def processing_plugins(
 #
 # Providers
 #
+
 
 @cli_commands.command("providers")
 @click.option("--all", "all_providers", is_flag=True, help="List all providers")

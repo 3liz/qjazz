@@ -31,8 +31,8 @@ from py_qgis_processes_schemas import (
     JsonDict,
     LinkHttp,
     MetadataValue,
-    ProcessesDescription,
-    ProcessesSummary,
+    ProcessDescription,
+    ProcessSummary,
 )
 
 from . import runalg
@@ -140,7 +140,7 @@ class ProcessAlgorithm:
 
         alg = self._alg
 
-        description = ProcessesDescription(
+        description = ProcessDescription(
             id_=alg.id(),
             title=alg.displayName(),
             description=alg.shortDescription(),
@@ -161,6 +161,8 @@ class ProcessAlgorithm:
 
         # Update metadata
         description.metadata = [
+            MetadataValue(role="QgisVersion", title="Qgis version", value=Qgis.version()),
+            MetadataValue(role="QgisVersionInt", title="Qgis version int", value=Qgis.versionInt()),
             MetadataValue(role="Deprecated", title="Deprecated", value=self.deprecated),
             MetadataValue(role="KnownIssues", title="Known issues", value=self.known_issues),
             MetadataValue(role="RequireProject", title="Require project", value=self.require_project),
@@ -168,7 +170,7 @@ class ProcessAlgorithm:
 
         return description
 
-    def summary(self) -> ProcessesSummary:
+    def summary(self) -> ProcessSummary:
         return self._description
 
     def inputs(
@@ -188,7 +190,7 @@ class ProcessAlgorithm:
             if not Output.hidden(outp):
                 yield Output(outp, self._alg)
 
-    def description(self, project: Optional[QgsProject] = None) -> ProcessesDescription:
+    def description(self, project: Optional[QgsProject] = None) -> ProcessDescription:
         """ Return a process description including inputs and outputs description
         """
         description = self._description.model_copy(
@@ -214,12 +216,6 @@ class ProcessAlgorithm:
         """ Validate parameters
         """
         project = context.project()
-
-        # Ensure that workdir exists
-        assert_precondition(
-            context.workdir.is_dir(),
-            f"Context workdir not a directory: '{context.workdir}'",
-        )
 
         if self.require_project and not project:
             raise InputValueError("Algorithm {self.ident} require project")
@@ -250,6 +246,12 @@ class ProcessAlgorithm:
     ) -> JobResults:
         """ Execute request
         """
+        # Ensure that workdir exists
+        assert_precondition(
+            context.workdir.is_dir(),
+            f"Context workdir is not a directory: '{context.workdir}'",
+        )
+
         # Create a destination project
         # Note: Destination project must be created *before"
         # evaluating parameters.

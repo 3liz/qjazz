@@ -1,6 +1,7 @@
 #
 # Handle processing plugins
 #
+import traceback
 
 from pathlib import Path
 from types import ModuleType
@@ -72,10 +73,8 @@ class ProcessesLoader:
                         from otbprovider.OtbAlgorithmProvider import OtbAlgorithmProvider
                         p = OtbAlgorithmProvider()
                         reg.addProvider(p)
-                    case _:
-                        pass
             except Exception:
-                pass
+                logger.error(traceback.format_exc())
 
             return p
 

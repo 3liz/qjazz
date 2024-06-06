@@ -78,7 +78,7 @@ class OutputDescription(DescriptionType):
 JobControlOptions = Literal['sync-execute', 'async-execute', 'dismiss']
 
 
-class ProcessesSummary(DescriptionType):
+class ProcessSummary(DescriptionType):
     id_: str = Field(alias="id", title="Process id")
     version: str
     job_control_options: Sequence[JobControlOptions] = (
@@ -89,10 +89,10 @@ class ProcessesSummary(DescriptionType):
     links: Sequence[LinkHttp] = Field(default=[])
 
 
-class ProcessesDescription(ProcessesSummary):
+class ProcessDescription(ProcessSummary):
     inputs: Dict[str, InputDescription] = Field(default={})
     outputs: Dict[str, OutputDescription] = Field(default={})
 
 
 # Adapter for process Summary list
-ProcessSummaryList = TypeAdapter(Sequence[ProcessesSummary])
+ProcessSummaryList = TypeAdapter(Sequence[ProcessSummary])

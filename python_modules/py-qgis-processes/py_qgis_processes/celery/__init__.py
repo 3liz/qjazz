@@ -1,2 +1,2 @@
 
-from .worker import Worker, JobContext  # noqa F401
+from .worker import Job, JobContext, Worker  # noqa F401

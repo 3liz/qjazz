@@ -1,4 +1,7 @@
 
+[worker]
+service_name = "TestProcessingWorker"
+
 [processing]
 workdir = "$location/__workdir__"
 
