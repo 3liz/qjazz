@@ -4,9 +4,18 @@ from pathlib import Path
 
 import pytest
 
+from qgis.core import (
+    QgsProcessingFeedback,
+)
+
 from py_qgis_cache import ProjectsConfig
 from py_qgis_contrib.core import qgis
-from py_qgis_processes.processing.config import ProcessingConfig
+from py_qgis_processes.processing import (
+    ProcessingConfig,
+    ProcessingContext,
+)
+
+from .utils import FeedBack
 
 
 def pytest_report_header(config):
@@ -115,6 +124,22 @@ def qgis_session(processing_config: ProcessingConfig) -> ProcessingConfig:
 
     assert qgis.qgis_initialized()
     return processing_config
+
+
+@pytest.fixture(scope="function")
+def feedback() -> QgsProcessingFeedback:
+    return FeedBack()
+
+
+@pytest.fixture(scope="function")
+def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> ProcessingContext:
+    context = ProcessingContext(qgis_session)
+    context.setFeedback(feedback)
+
+    # Create the default workdir
+    context.workdir.mkdir(exist_ok=True)
+
+    return context
 
 
 @pytest.fixture(scope='session')

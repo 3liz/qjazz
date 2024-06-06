@@ -22,6 +22,7 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.qgis import QgisPluginService
 from py_qgis_processes_schemas import (
     InputValueError,
@@ -213,6 +214,12 @@ class ProcessAlgorithm:
         """ Validate parameters
         """
         project = context.project()
+
+        # Ensure that workdir exists
+        assert_precondition(
+            context.workdir.is_dir(),
+            f"Context workdir not a directory: '{context.workdir}'",
+        )
 
         if self.require_project and not project:
             raise InputValueError("Algorithm {self.ident} require project")

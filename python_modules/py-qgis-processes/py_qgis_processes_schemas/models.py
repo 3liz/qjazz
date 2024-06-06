@@ -8,14 +8,17 @@ from pydantic import (
     Field,
     JsonValue,
     TypeAdapter,
+    ValidationError,
     alias_generators,
 )
+from pydantic_core import ErrorDetails
 from typing_extensions import (
     Annotated,
     Dict,
     Literal,
     Optional,
     Self,
+    Sequence,
     Type,
     TypeAlias,
     TypeVar,
@@ -229,10 +232,37 @@ class OutputFormatDefinition:
         self._output_format = other._output_format
         self._output_ext = other._output_ext
 
+
 #
 # Input error
 #
 
-
 class InputValueError(Exception):
-    pass
+    def __init__(
+        self,
+        msg: str,
+        validation_details: Optional[ValidationError] = None,
+    ):
+        super().__init__(msg)
+        self._details = validation_details
+
+    @property
+    def errors(self) -> Sequence[ErrorDetails]:
+        """ Return error details
+        """
+        return (self._details and self._details.errors(
+            include_url=False,
+            include_context=False,
+            include_input=False,
+        )) or ()
+
+    @property
+    def json(self) -> str:
+        """ Return errors as json string
+        """
+        return (self._details and self._details.json(
+            include_url=False,
+            include_context=False,
+            include_input=False,
+            indent=4,
+        )) or "null"

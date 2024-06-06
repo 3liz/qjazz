@@ -12,15 +12,22 @@ from click import echo, style
 from pydantic import (
     JsonValue,
     TypeAdapter,
+    ValidationError,
 )
 from typing_extensions import (
     Any,
+    NoReturn,
     Optional,
 )
 
-from qgis.core import QgsProcessingFeedback, QgsProject
+from qgis.core import (
+    QgsApplication,
+    QgsProcessingFeedback,
+    QgsProject,
+)
 
 from py_qgis_contrib.core import config, logger, qgis
+from py_qgis_contrib.core.condition import assert_postcondition
 
 from .config import ProcessingConfig
 
@@ -93,6 +100,11 @@ def get_project(path: str) -> QgsProject:
     return project
 
 
+def abort_with_error(ctx: click.Context, msg: str) -> NoReturn:
+    echo(style(msg, fg="red"), err=True)
+    ctx.abort()
+
+
 FilePathType = click.Path(
     exists=True,
     readable=True,
@@ -108,16 +120,19 @@ FilePathType = click.Path(
     type=FilePathType,
     envvar="PY_QGIS_PROCESSES_CONFIG",
 )
+@click.option("--profile", help="Qgis profile to use")
 @click.option("--verbose", "-v", is_flag=True, help="Set verbose output")
 @click.pass_context
 def cli_commands(
     ctx: click.Context,
     configpath: Optional[Path],
+    profile: str,
     verbose: bool = False,
 ):
     ctx.obj = SimpleNamespace(
         configpath=configpath,
         verbose=verbose,
+        profile=profile,
     )
 
 
@@ -176,11 +191,39 @@ def processing_plugins(
         echo(p.path)
 
 #
+# Providers
+#
+
+@cli_commands.command("providers")
+@click.option("--all", "all_providers", is_flag=True, help="List all providers")
+@click.pass_context
+def processing_providers(
+    ctx: click.Context,
+    all_providers: bool,
+):
+    """ List (published) providers
+    """
+    conf: Any = load_configuration(ctx.obj.configpath)
+    plugins = init_qgis(conf.processing, use_projects=False)
+
+    if all_providers:
+        providers = QgsApplication.processingRegistry().providers()
+    else:
+        providers = plugins.providers
+
+    for p in providers:
+        echo(style(f"* {p.id():<20}", bold=True), nl=False)
+        echo(f"{p.longName():<30}")
+        warning = p.warningMessage()
+        if warning:
+            echo(style(f"\t{warning}", fg='yellow'))
+
+
+#
 # Processes
 #
 
-
-@cli_commands.group('processes')
+@cli_commands.group('process')
 def processes_commands():
     """ Processes commands
     """
@@ -253,8 +296,7 @@ def describe_processes(
 
     alg = ProcessAlgorithm.find_algorithm(ident)
     if alg is None:
-        echo(style(f"Algorithm '{ident}' not found", fg="red"))
-        ctx.abort()
+        abort_with_error(ctx, f"Algorithm '{ident}' not found")
 
     project = get_project(project_path) if project_path else None
 
@@ -263,97 +305,146 @@ def describe_processes(
 
 
 @processes_commands.command("execute")
-@click.argument("inputs")
-@click.option("--ident", help="Processe ID", required=True)
+@click.argument("ident")
+@click.option("--inputs", help="Job request")
+@click.option("--jobid", help="Pass an explicit Job id")
 @click.option("--project", "project_path", help="Path to project")
-@click.option("--force-yaml", is_flag=True, help="Force inputs as Yam")
 @click.option("--dry-run", is_flag=True, help="Dry run")
 @click.pass_context
 def execute_processes(
     ctx: click.Context,
-    inputs: str,
     ident: str,
+    inputs: str,
+    jobid: str,
     project_path: str,
-    force_yaml: bool,
     dry_run: bool,
 ):
-    """ Execute process
+    """ Execute process IDENT
     """
-    from py_qgis_processes_schemas import JobExecute, JsonDict
+    from py_qgis_processes_schemas import (
+        InputValueError,
+        JobExecute,
+        JsonDict,
+    )
 
     from .processes import (
         ProcessAlgorithm,
         ProcessingContext,
+        runalg,
     )
 
+    #
     # Read inputs
-    if inputs.startswith('@'):
+    #
+
+    if not inputs:
+        inputs = "{}"
+    elif inputs.startswith('@'):
         # File inputs
-        path = Path(inputs[1:])
-        if not path.exists():
-            echo(style(f"{path} not found", fg='red'))
-            ctx.abort()
-
-        if force_yaml or path.suffix in ('.yml', '.yaml'):
-            from ruamel.yaml import YAML
-            request = JobExecute.model_validate(YAML().load(path))
-        else:
+        try:
             with Path(inputs[1:]).open() as f:
+                inputs = f.read()
                 request = JobExecute.model_validate_json(f.read())
-    else:
-        if inputs == '-':
-            # Read from standard input
-            import fileinput
+        except FileNotFoundError as err:
+            abort_with_error(ctx, f"{err}")
+    elif inputs == '-':
+        # Read from standard input
+        import fileinput
 
-            from io import StringIO
-            s = StringIO()
-            for line in fileinput.input():
-                s.write(line)
-            inputs = s.getvalue()
+        from io import StringIO
+        s = StringIO()
+        for line in fileinput.input():
+            s.write(line)
+        inputs = s.getvalue()
 
-        inputs = inputs.strip(' ')
-        if inputs.startswith('{') and not force_yaml:
-            request = JobExecute.model_validate_json(inputs)
-        else:
-            from ruamel.yaml import YAML
-            request = JobExecute.model_validate(YAML().load(StringIO(inputs)))
+    try:
+        request = JobExecute.model_validate_json(inputs)
+    except ValidationError as err:
+        abort_with_error(ctx, err.json(
+            include_url=False,
+            include_input=False,
+            include_context=False,
+            indent=4,
+        ),
+    )
+
+    #
+    # Initalize
+    #
+
+    if not ctx.obj.verbose:
+        logger.set_log_level(logger.LogLevel.INFO)
+
+    if not jobid:
+        from uuid import uuid4
+        jobid = str(uuid4())
 
     conf: Any = load_configuration(ctx.obj.configpath)
     init_qgis(conf.processing)
 
+    #
+    # Execute
+    #
+
     alg = ProcessAlgorithm.find_algorithm(ident)
     if alg is None:
-        echo(style(f"Algorithm '{ident}' not found", fg="red"))
-        ctx.abort()
+        abort_with_error(ctx, f"Algorithm '{ident}' not found")
 
     project = get_project(project_path) if project_path else None
 
     feedback = FeedBack()
     context = ProcessingContext(conf.processing)
-    context.feedback = feedback
+    context.setFeedback(feedback)
 
-    # Set workdir
+    context.job_id = jobid
+    context.workdir.mkdir(parents=True, exist_ok=True)
+    context.store_url(str(context.workdir.joinpath('$resource')))
 
     if project:
         context.setProject(project)
     elif alg.require_project:
-        echo(style("Algorithm require project", fg='red'))
-        ctx.abort()
+        abort_with_error(ctx, "Algorithm require project")
 
-    if dry_run:
-        echo(style("Dry run, not executing process", fg='yellow'))
-        echo("Request is:")
-        echo(request.model_dump_json(indent=4))
+    try:
+        if dry_run:
+            echo(style("Dry run, not executing process", fg='yellow'), err=True)
+            alg.validate_execute_parameters(request, feedback, context)
+            echo(
+                TypeAdapter(JsonDict).dump_json(
+                    {
+                        'job_id': jobid,
+                        'workdir': str(context.workdir),
+                        'request': request.model_dump(mode='json'),
+                    },
+                    indent=4,
+                ),
+            )
+        else:
+            results = alg.execute(request, feedback, context)
+            echo(
+                TypeAdapter(JsonDict).dump_json(
+                    {
+                        'job_id': jobid,
+                        'workdir': str(context.workdir),
+                        'result': results,
+                    },
+                    indent=4,
+                ),
+            )
 
-        alg.validate_execute_parameters(request, feedback, context)
+            # Write modified project
+            destination_project = context.destination_project
+            if destination_project and destination_project.isDirty():
+                echo(style("Writing destination project", fg='green'), err=True)
+                assert_postcondition(
+                    destination_project.write(),
+                    f"Failed no save destination project {destination_project.fileName()}",
+                )
 
-        return
-
-    if not ctx.obj.verbose:
-        logger.set_log_level(logger.LogLevel.INFO)
-
-    results = alg.execute(request, feedback, context)
-    echo(TypeAdapter(JsonDict).dump_json(results, indent=4))
+    except InputValueError as err:
+        abort_with_error(ctx, f"Input error: {err}, {err.json}")
+    except runalg.RunProcessingException as err:
+        abort_with_error(ctx, f"Execute error: {err}")
 
 
 class FeedBack(QgsProcessingFeedback):

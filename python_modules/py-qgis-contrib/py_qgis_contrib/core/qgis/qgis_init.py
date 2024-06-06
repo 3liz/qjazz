@@ -45,6 +45,8 @@ def exit_qgis_application():
 
 @no_type_check
 def setup_qgis_application(
+    *,
+    profile: Optional[str] = None,
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
 ) -> 'qgis.core.QgsApplication':
@@ -82,7 +84,15 @@ def setup_qgis_application(
     # does not do the job correctly
     os.environ['QGIS_PREFIX_PATH'] = qgis_prefix
 
-    qgis_application = QgsApplication([], False)
+    # XXX: note, setting the platform to anything else than
+    # 'external' will prevent loading Grass and OTB providers
+    qgis_application = QgsApplication(
+        [],
+        False,
+        profileFolder=profile or "",
+        platformName="py-qgis-application",
+    )
+
     qgis_application.setPrefixPath(qgis_prefix, True)
 
     if cleanup:
@@ -126,8 +136,12 @@ def install_logger_hook(logprefix: str) -> None:
     messageLog.messageReceived.connect(writelogmessage)
 
 
-def init_qgis_application(settings: Optional[Dict] = None):
-    setup_qgis_application()
+def init_qgis_application(
+    settings: Optional[Dict] = None,
+    *,
+    profile: Optional[str] = None,
+):
+    setup_qgis_application(profile=profile)
 
     from qgis.core import QgsApplication
     from qgis.PyQt.QtCore import QCoreApplication
@@ -157,15 +171,12 @@ def init_qgis_processing() -> None:
     """ Initialize processing
     """
     from processing.core.Processing import Processing
-    from qgis.analysis import QgsNativeAlgorithms
-    from qgis.core import QgsApplication
 
     # Update the network configuration
     # XXX: At the time the settings are read, the networkmanager is already
     # initialized, but with the wrong settings
     set_proxy_configuration()
 
-    QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
     Processing.initialize()
 
 

@@ -15,6 +15,7 @@ from qgis.core import (
     QgsMapLayer,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
+    QgsProcessingException,
     QgsProcessingFeedback,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterDefinition,
@@ -81,9 +82,12 @@ def execute(
     try:
         results, ok = alg.run(parameters, context, feedback, catchExceptions=False)
         if not ok:
-            raise RunProcessingException(f"Algorithm '{alg.id()}' failed")
+            logger.error(f"Algorithm {alg.id()} returned ok={ok}")
+    except QgsProcessingException as err:
+        # Note: QgsProcessingException exception add stack trace in its message
+        raise RunProcessingException(f"Algorithm failed with error {err}") from None
     except Exception as err:
-        logger.critical(traceback.format_exc())
+        logger.error(traceback.format_exc())
         raise RunProcessingException(f"Algorithm failed with error {err}") from None
 
     # From https://github.com/qgis/QGIS/blob/master/python/plugins/processing/core/Processing.py
@@ -201,7 +205,7 @@ def set_output_layer_style(
         if not style.is_file():
             # Fallback to defined rendering styles
             style = RenderingStyles.getStyle(alg.id(), output_name)
-        logger.debug("Getting style for %s: %s <%s>", alg.id(), output_name, style)
+        logger.trace("Getting style for %s: %s <%s>", alg.id(), output_name, style)
 
     # Get defaults styles
     if style is None:
@@ -218,5 +222,5 @@ def set_output_layer_style(
             else:
                 style = QgisProcessingConfig.getSetting(QgisProcessingConfig.VECTOR_POLYGON_STYLE)
     if style:
-        logger.debug("Adding style '%s' to layer %s (output_name %s)", style, details.name, output_name)
+        logger.trace("Adding style '%s' to layer %s (output_name %s)", style, details.name, output_name)
         layer.loadNamedStyle(style)

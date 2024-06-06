@@ -48,16 +48,20 @@ class ProcessingContext(QgsProcessingContext):
     def advertised_services_url(self, url: str):
         """ Set advertised_services_url template
         """
-        self._advertised_services_url = Template(url)
-        if sys.version_info >= (3, 11) and not self._advertised_services_url.is_valid():
+        _advertised_services_url = Template(url)
+        if sys.version_info >= (3, 11) and not _advertised_services_url.is_valid():
             raise ValueError(f"Invalid advertised services url template: {url}")
+
+        self._advertised_services_url = _advertised_services_url
 
     def store_url(self, url: str):
         """ Set store_url template
         """
-        self._store_url = Template(url)
-        if sys.version_info >= (3, 11) and not self._advertised_services_url.is_valid():
+        _store_url = Template(url)
+        if sys.version_info >= (3, 11) and not _store_url.is_valid():
             raise ValueError(f"Invalid store url template: {url}")
+
+        self._store_url = _store_url
 
     @property
     def config(self) -> ProcessingConfig:

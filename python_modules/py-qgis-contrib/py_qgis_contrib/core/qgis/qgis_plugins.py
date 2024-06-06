@@ -39,6 +39,7 @@ import qgis
 
 from .. import componentmanager, config, logger
 from ..condition import assert_precondition
+from .processing import BuiltinProviderSet
 
 
 class PluginError(Exception):
@@ -120,8 +121,16 @@ class QgisPluginConfig(config.Config):
     )
     enable_scripts: bool = Field(
         default=True,
-        title="Enable scripts",
-        description="Enable publish processing scripts",
+        title="Enable processing scripts",
+        description="Enable publication of processing scripts",
+    )
+    extra_builtin_providers: BuiltinProviderSet = Field(
+        default=set(),
+        title="Extra builtins providers",
+        description=(
+            "Load extra builtin processing providers\n"
+            "such as 'grass' and 'otb'."
+        ),
     )
     plugin_manager: Path = Field(
         default=Path("/usr/local/bin/qgis-plugin_manager"),
@@ -198,6 +207,10 @@ class QgisPluginService:
         if plugin_type == PluginType.PROCESSING:
             from .processing import ProcessesLoader
             processes = ProcessesLoader(self._providers, allow_scripts=self._config.enable_scripts)
+            # Load extra builtins
+            extras = self._config.extra_builtin_providers
+            if extras:
+                self._BUILTIN_PROVIDERS = processes.load_builtin_providers(extras)
 
         white_list = self._config.install
 

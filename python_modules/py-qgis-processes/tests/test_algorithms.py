@@ -10,24 +10,20 @@ from qgis.core import (
     QgsProcessingUtils,
 )
 
-from py_qgis_contrib.core.qgis import QgisPluginService
 from py_qgis_processes.processing import (
     InputValueError,
     JobExecute,
     ProcessAlgorithm,
-    ProcessingConfig,
     ProcessingContext,
+    runalg,
 )
 
 from .utils import FeedBack
 
 
-def test_algorithms_simple(qgis_session: ProcessingConfig, plugins: QgisPluginService):
+def test_algorithms_simple(feedback, context, plugins):
     """ Execute a simple algorithm
     """
-    feedback = FeedBack()
-    context = ProcessingContext(qgis_session)
-    context.feedback = feedback
     pa = ProcessAlgorithm.find_algorithm('processes_test:testsimplevalue')
 
     print("\ntest_algorithms_simple:description", pa.description().model_dump_json(indent=True))
@@ -45,13 +41,9 @@ def test_algorithms_simple(qgis_session: ProcessingConfig, plugins: QgisPluginSe
     assert results['OUTPUT'] == "1 stuff"
 
 
-def test_algorithms_option(qgis_session: ProcessingConfig, plugins: QgisPluginService):
+def test_algorithms_option(feedback, context, plugins):
     """ Execute a simple choice algorithm
     """
-    feedback = FeedBack()
-    context = ProcessingContext(qgis_session)
-    context.setFeedback(feedback)
-
     pa = ProcessAlgorithm.find_algorithm('processes_test:testoptionvalue')
 
     print("\ntest_algorithms_option:description", pa.description().model_dump_json(indent=True))
@@ -66,13 +58,9 @@ def test_algorithms_option(qgis_session: ProcessingConfig, plugins: QgisPluginSe
     assert results['OUTPUT'] == "selection is 0"
 
 
-def test_algorithms_multioption(qgis_session: ProcessingConfig, plugins: QgisPluginService):
+def test_algorithms_multioption(feedback, context, plugins):
     """ Execute a multiple choice algorithm
     """
-    feedback = FeedBack()
-    context = ProcessingContext(qgis_session)
-    context.feedback = feedback
-
     pa = ProcessAlgorithm.find_algorithm('processes_test:testmultioptionvalue')
 
     print("\ntest_algorithms_multioption::description", pa.description().model_dump_json(indent=True))
@@ -270,3 +258,21 @@ def test_algorithms_selectfeatures(qgis_session, plugins, projects):
 
     output_layer = layers[0]
     assert output_layer.featureCount() == 2
+
+
+def test_algorithms_exception(qgis_session, plugins, projects):
+    """ Test Error in algorithm
+    """
+    feedback = FeedBack()
+    context = ProcessingContext(qgis_session)
+    context.setFeedback(feedback)
+
+    context.job_id = "test_algorithms_selectfeatures"
+    context.workdir.mkdir(exist_ok=True)
+
+    pa = ProcessAlgorithm.find_algorithm('processes_test:testraiseerror')
+
+    request = JobExecute(inputs={'PARAM1': 20})
+
+    with pytest.raises(runalg.RunProcessingException):
+        _ = pa.execute(request, feedback, context)

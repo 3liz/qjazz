@@ -4,10 +4,17 @@
 
 from pathlib import Path
 from types import ModuleType
-from typing import List
 
 from pydantic import BaseModel
-from typing_extensions import Any, Dict, Optional
+from typing_extensions import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+)
 
 try:
     # 3.11+
@@ -15,9 +22,11 @@ try:
 except ModuleNotFoundError:
     import tomli as toml
 
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsProcessingProvider
 
 from .. import logger
+
+BuiltinProviderSet = Set[Literal['grass', 'otb']]
 
 
 class ProcessesConfig(BaseModel):
@@ -41,6 +50,37 @@ class ProcessesLoader:
             if reg.providerById(ident):
                 self._providers.append(ident)
 
+    def load_builtin_providers(self, extras: BuiltinProviderSet) -> Sequence[QgsProcessingProvider]:
+        #
+        # Load builtins providers
+        # From /usr/share/qgis/python/plugins/processing/core/Processing.py
+        #
+        self._register = False
+        reg = QgsApplication.processingRegistry()
+
+        def _load_builtin(n: str) -> Optional[QgsProcessingProvider]:
+            p = None
+            try:
+                match n:
+                    case 'grass':
+                        logger.info("Registering builtin GRASS provider")
+                        from grassprovider.Grass7AlgorithmProvider import Grass7AlgorithmProvider
+                        p = Grass7AlgorithmProvider()
+                        reg.addProvider(p)
+                    case 'otb':
+                        logger.info("Registering builtin OTB provider")
+                        from otbprovider.OtbAlgorithmProvider import OtbAlgorithmProvider
+                        p = OtbAlgorithmProvider()
+                        reg.addProvider(p)
+                    case _:
+                        pass
+            except Exception:
+                pass
+
+            return p
+
+        return tuple(filter(None, (_load_builtin(n) for n in extras)))
+
     def __del__(self):
         # Ensure proper disconnection from QT slot
         reg = QgsApplication.processingRegistry()
@@ -51,7 +91,7 @@ class ProcessesLoader:
             to the registry
         """
         if self._register and _id not in self._discard:
-            logger.info("Registering processing provider: %s", _id)
+            logger.info("* Registering processing provider: %s", _id)
             self._providers.append(_id)
 
     def read_configuration(self, path: Path):
