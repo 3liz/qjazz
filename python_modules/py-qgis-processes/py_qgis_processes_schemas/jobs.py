@@ -26,8 +26,15 @@ class JobException(JsonModel):
     detail: Optional[str] = None
     instance: Optional[str] = None
 
+#
+# Note: the 'pending' state is not part of OGC standards,
+# It indicates that a job has been queued for processing
+# but not accepted by any worker.
+#
+
 
 JobStatusCode = Literal[
+    'pending',
     'accepted',
     'running',
     'successful',
@@ -41,6 +48,7 @@ class JobStatus(JsonModel):
 
         See /openapi/schemas/processes-core/statusInfo.yaml
     """
+    PENDING: ClassVar[str] = 'pending'
     ACCEPTED: ClassVar[str] = 'accepted'
     RUNNING: ClassVar[str] = 'running'
     SUCCESS: ClassVar[str] = 'successful'
@@ -57,13 +65,13 @@ class JobStatus(JsonModel):
     )
     status: JobStatusCode
     message: Optional[str] = None
-    created: Optional[datetime] = None
+    created: datetime
     started: Optional[datetime] = None
     finished: Optional[datetime] = None
     updated: Optional[datetime] = None
     progress: Optional[int] = Field(default=None, ge=0, le=100)
 
-    exception: JobException
+    exception: Optional[JobException] = None
 
     links: Sequence[Link] = ()
 

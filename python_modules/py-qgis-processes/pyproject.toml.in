@@ -17,6 +17,7 @@ dependencies = [
     "pydantic-extra-types",
     "celery>=5.3.6",
     "redis>=5.0.3",
+    "async-timeout; python_version<'3.11'"
     "click",
     "requests",
 ]

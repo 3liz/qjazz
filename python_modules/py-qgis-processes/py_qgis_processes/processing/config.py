@@ -1,7 +1,7 @@
 
 from pathlib import Path
 
-from pydantic import AfterValidator, DirectoryPath, Field, HttpUrl
+from pydantic import AfterValidator, DirectoryPath, Field
 from typing_extensions import (
     Annotated,
     Dict,
@@ -98,10 +98,15 @@ class ProcessingConfig(BaseConfig):
             "'GdalSpatialReference::SetFromUserInput()'"
         ),
     )
-    advertised_services_url: Optional[HttpUrl] = Field(
-        default=None,
+    advertised_services_url: str = Field(
+        default="ows:$jobId/$name",
         title="Advertised services urls",
-        description="Url used for  OGC services references.",
+        description="Url template used for  OGC services references.",
+    )
+    store_url: str = Field(
+        default="store:$jobId/$resource",
+        title="Storage url",
+        description="Url template for downloading resources",
     )
     raw_destination_input_sink: bool = Field(
         default=False,

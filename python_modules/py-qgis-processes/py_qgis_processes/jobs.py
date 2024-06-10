@@ -5,11 +5,16 @@ import os
 import sys
 
 from pathlib import Path
+from time import time
 from uuid import uuid4
 
+from celery.worker.control import inspect_command
+from pydantic import Field
 from typing_extensions import (
+    Dict,
     List,
     Optional,
+    cast,
 )
 
 from py_qgis_contrib.core import config, logger
@@ -17,161 +22,19 @@ from py_qgis_contrib.core.condition import (
     assert_postcondition,
     assert_precondition,
 )
-from py_qgis_contrib.core.qgis import (
-    show_all_versions,
-)
-from py_qgis_processes_schemas import (
-    InputValueError,
-    JsonDict,
-)
 
-from .celery import Job, JobContext, Worker
+from .celery import CeleryConfig, Job, JobContext, Worker
 from .context import FeedBack, QgisContext
 from .processing import (
     JobExecute,
     JobResults,
     ProcessAlgorithm,
+    ProcessDescription,
+    ProcessingConfig,
     ProcessingContext,
     ProcessSummary,
-    runalg,
 )
 
-
-class ProcessingWorker(Worker):
-    def __init__(self, **kwargs):
-
-        conf = load_configuration()
-        super().__init__(conf.worker, **kwargs)
-
-        self._job_context.update(processing_config=conf.processing)
-
-#
-# Create worker application
-#
-
-
-app = ProcessingWorker()
-
-
-#
-# Jobs
-#
-
-
-@app.job(name="versions", run_context=True)
-def env(ctx: JobContext, /) -> JsonDict:
-    from qgis.core import Qgis
-    return dict(
-        qgis_version_info=Qgis.versionInt(),
-        versions=list(show_all_versions()),
-    )
-
-
-@app.job(name="process_list", run_context=True)
-def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
-    """Return the list of processes
-    """
-    with QgisContext(ctx):
-        algs = ProcessAlgorithm.algorithms(include_deprecated=False)
-        return [alg.summary() for alg in algs]
-
-
-@app.job(name="process_validate")
-def validate_process_inputs(
-    self: Job,
-    ctx: JobContext,
-    /,
-    ident: str,
-    request: JobExecute,
-    project_path: Optional[str] = None,
-):
-    """Validate process inputs
-
-       Validate process inputs without executing
-    """
-    with QgisContext(ctx) as qgis_context:
-
-        alg = ProcessAlgorithm.find_algorithm(ident)
-        if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
-
-        project = qgis_context.project(project_path) if project_path else None
-        if not project and alg.require_project:
-            raise ValueError("Algorithm {ident} require project")
-
-        feedback = FeedBack(self.setprogress)
-        context = ProcessingContext(qgis_context.processing_config)
-        context.setFeedback(feedback)
-        context.store_url(ctx.store_url)
-        context.advertised_services_url(ctx.advertised_services_url)
-
-        if project:
-            context.setProject(project)
-
-        try:
-            alg.validate_execute_parameters(request, feedback, context)
-        except InputValueError as err:
-            raise ValueError(f"Input error: {err}, {err.json}") from None
-
-
-@app.job(name="process_execute", bind=True, run_context=True)
-def execute_process(
-    self: Job,
-    ctx: JobContext,
-    /,
-    ident: str,
-    request: JobExecute,
-    project_path: Optional[str] = None,
-) -> JobResults:
-    """Return the list of processes
-    """
-    with QgisContext(ctx) as qgis_context:
-
-        alg = ProcessAlgorithm.find_algorithm(ident)
-        if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
-
-        project = qgis_context.project(project_path) if project_path else None
-        if not project and alg.require_project:
-            raise ValueError("Algorithm {ident} require project")
-
-        feedback = FeedBack(self.setprogress)
-        context = ProcessingContext(qgis_context.processing_config)
-        context.setFeedback(feedback)
-
-        context.job_id = str(uuid4())
-        context.workdir.mkdir(parents=True, exist_ok=True)
-        context.store_url(ctx.store_url)
-        context.advertised_services_url(ctx.advertised_services_url)
-
-        if project:
-            context.setProject(project)
-        elif alg.require_project:
-            raise ValueError(f"{ident} require project")
-
-        try:
-            results = alg.execute(request, feedback, context)
-
-            # Write modified project
-            destination_project = context.destination_project
-            if destination_project and destination_project.isDirty():
-                logger.debug("Writing destination project")
-                assert_postcondition(
-                    destination_project.write(),
-                    f"Failed no save destination project {destination_project.fileName()}",
-                )
-
-            return results
-
-        except InputValueError as err:
-            raise ValueError(f"Input error: {err}, {err.json}") from None
-        except runalg.RunProcessingException as err:
-            raise ValueError(f"Execute error: {err}") from None
-
-
-#
-# Configuration helpers
-#
 
 def lookup_config_path() -> Path:
     """ Determine config path location
@@ -211,3 +74,186 @@ def load_configuration() -> config.Config:
     conf = config.confservice.conf
     logger.setup_log_handler(conf.logging.level)
     return conf
+
+
+#
+# Create worker application
+#
+
+@config.section('worker', field=...)
+class WorkerConfig(CeleryConfig):
+    service_name: str = Field(
+        title="Name of the service",
+        description=(
+            "Name used as location service name\n"
+            "for initializing Celery worker."
+        ),
+    )
+
+    title: str = Field(default="", title="Service title")
+    description: str = Field(default="", title="Service description")
+
+
+# Allow type validation
+class ConfigProto:
+    processing: ProcessingConfig
+    worker: WorkerConfig
+
+
+class ProcessingWorker(Worker):
+    def __init__(self, **kwargs) -> None:
+        from kombu import Queue
+
+        conf = cast(ConfigProto, load_configuration())
+
+        service_name = conf.worker.service_name
+        super().__init__(service_name, conf.worker, **kwargs)
+
+        # We want each service with its own queue and exchange
+        self.conf.task_default_queue = f"py-qgis.{service_name}"
+        self.conf.task_default_exchange = f"py-qgis.{service_name}"
+
+        self.conf.task_default_exchange_type = 'topic'
+        self.conf.task_default_routing_key = 'task.default'
+        self.conf.task_queues = {
+            Queue(f"py-qgis.{service_name}.Tasks", routing_key='task.#'),
+            Queue(f"py-qgis.{service_name}.Inventory", routing_key='processes.#'),
+        }
+
+        self._job_context.update(processing_config=conf.processing)
+        self._service_name = service_name
+        self._online_at = time()
+
+
+app = ProcessingWorker()
+
+
+# Inspect commands
+
+
+@inspect_command()
+def presence(_) -> Dict:
+    from qgis.core import Qgis, QgsCommandLineUtils
+    return {
+        'service': app._service_name,
+        'online_at': app._online_at,
+        'qgis_version_info': Qgis.versionInt(),
+        'versions': QgsCommandLineUtils.allVersions(),
+    }
+
+
+@inspect_command()
+def uptime(_) -> float:
+    return app._online_at
+
+#
+# Jobs
+#
+
+
+@app.job(name="process_list", run_context=True)
+def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
+    """Return the list of processes
+    """
+    with QgisContext(ctx):
+        algs = ProcessAlgorithm.algorithms(include_deprecated=False)
+        return [alg.summary() for alg in algs]
+
+
+@app.job(name="process_describe", run_context=True)
+def describe_process(
+    ctx: JobContext,
+    /,
+    ident: str,
+    project_path: Optional[str],
+) -> ProcessDescription | None:
+    """Return process description
+    """
+    with QgisContext(ctx) as qgis_context:
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg:
+            project = qgis_context.project(project_path) if project_path else None
+            return alg.description(project)
+        else:
+            return None
+
+
+@app.job(name="process_validate")
+def validate_process_inputs(
+    self: Job,
+    ctx: JobContext,
+    /,
+    ident: str,
+    request: JobExecute,
+    project_path: Optional[str] = None,
+):
+    """Validate process inputs
+
+       Validate process inputs without executing
+    """
+    with QgisContext(ctx) as qgis_context:
+
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg is None:
+            raise ValueError(f"Algorithm '{ident}' not found")
+
+        project = qgis_context.project(project_path) if project_path else None
+        if not project and alg.require_project:
+            raise ValueError(f"Algorithm {ident} require project")
+
+        feedback = FeedBack(self.setprogress)
+        context = ProcessingContext(qgis_context.processing_config)
+        context.setFeedback(feedback)
+        context.store_url(ctx.store_url)
+        context.advertised_services_url(ctx.advertised_services_url)
+
+        if project:
+            context.setProject(project)
+
+        alg.validate_execute_parameters(request, feedback, context)
+
+
+@app.job(name="process_execute", bind=True, run_context=True)
+def execute_process(
+    self: Job,
+    ctx: JobContext,
+    /,
+    ident: str,
+    request: JobExecute,
+    project_path: Optional[str] = None,
+) -> JobResults:
+    """Execute process
+    """
+
+    with QgisContext(ctx) as qgis_context:
+
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg is None:
+            raise ValueError(f"Algorithm '{ident}' not found")
+
+        project = qgis_context.project(project_path) if project_path else None
+        if not project and alg.require_project:
+            raise ValueError(f"Algorithm {ident} require project")
+
+        feedback = FeedBack(self.set_progress)
+        context = ProcessingContext(qgis_context.processing_config)
+        context.setFeedback(feedback)
+
+        context.job_id = str(uuid4())
+        context.workdir.mkdir(parents=True, exist_ok=True)
+
+        if project:
+            context.setProject(project)
+
+        results = alg.execute(request, feedback, context)
+
+        # Write modified project
+        destination_project = context.destination_project
+        if destination_project and destination_project.isDirty():
+            logger.debug("Writing destination project")
+            assert_postcondition(
+                destination_project.write(),
+                f"Failed no save destination project {destination_project.fileName()}",
+            )
+
+        return results

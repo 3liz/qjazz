@@ -108,6 +108,10 @@ class CeleryConfig(BaseConfig):
 
 
 class Celery(celery.Celery):
+    """ Celery application
+
+        See https://docs.celeryq.dev/en/stable/reference/celery.html#celery.Celery
+    """
 
     STATE_PENDING: ClassVar[str] = celery.states.PENDING
     STATE_FAILURE: ClassVar[str] = celery.states.FAILURE
@@ -202,7 +206,7 @@ class Celery(celery.Celery):
             )
             self.setup_security()
 
-    def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Dict:
+    def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Sequence[Dict]:
         """ Return active worker's run configs
         """
         return self.control.broadcast(

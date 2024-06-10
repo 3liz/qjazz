@@ -18,8 +18,7 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_iso8601, utc_now
 
-from ._celery import Celery
-from .config import WorkerConfig
+from ._celery import Celery, CeleryConfig
 from .runconfig import RunConfigSchema, create_job_run_config
 
 #
@@ -31,16 +30,12 @@ JobContext: TypeAlias = types.SimpleNamespace
 
 class Worker(Celery):
 
-    def __init__(self, conf: WorkerConfig, **kwargs):
+    def __init__(self, name: str, conf: CeleryConfig, **kwargs):
 
-        super().__init__(conf.service_name, conf, **kwargs)
+        super().__init__(name, conf, **kwargs)
 
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
-
-        # We want each service with its own queue and exchange
-        self.conf.task_default_queue = conf.service_name
-        self.conf.task_default_exchange = conf.service_name
 
         # Add the inspect command
         # See https://docs.celeryq.dev/en/stable/userguide/workers.html
@@ -104,7 +99,7 @@ class Job(celery.Task):
 
     RUN_CONFIGS: ClassVar[Dict[str, RunConfigSchema]] = {}
 
-    _worker_metadata: ClassVar[Dict] = {}
+    _worker_job_context: ClassVar[Dict] = {}
 
     # To be set in decorator
     run_context: bool = False
@@ -120,7 +115,6 @@ class Job(celery.Task):
         models, schema = create_job_run_config(self.__wrapped__)
 
         self.__config__ = models
-        self.__metadata__ = None
 
         Job.RUN_CONFIGS[self.name] = schema.model_dump(by_alias=True, mode='json')
 
@@ -138,7 +132,7 @@ class Job(celery.Task):
         else:
             args = ()
 
-        out = self.run(*args, **meta.__run_config__.dict())
+        out = self.run(*args, **meta.__run_config__.__dict__)
         # Return output as json compatible format
         return outputs.dump_python(out, mode='json', by_alias=True, exclude_none=True)
 
@@ -146,21 +140,20 @@ class Job(celery.Task):
         #
         # We expect the following as arguments:
         #
-        #  A '__metadata__' dictionary that hold metadata informations
-        #  for tasks.
+        #  A '__context__' dictionary that hold metadata informations
+        #  for tasks. This will be passed as JobContext to the task.
         #
         #  A '__meta__' entry that will
         #  add update infos stored in the backend into the 'kwargs' key.
         #
-        #  A '__run_config__' dictionary holding task arguments, they
-        #  will accesible a namespace with the 'metadata' attribute
+        #  A '__run_config__' dictionary holding task arguments
         #
         # Encode metadata into kwargs; they will be
         # stored in the backend
         # This is a workaround for adding extra metadata
         # the the stored backend data.
-        metadata = kwargs.pop('__metadata__', {})
-        metadata.update(self._worker_job_context)
+        context = kwargs.pop('__context__', {})
+        context.update(self._worker_job_context)
 
         meta = kwargs.pop('__meta__', {})
         meta.update(
@@ -182,7 +175,7 @@ class Job(celery.Task):
             inputs, _ = self.__config__
             meta.__run_config__ = inputs.model_validate(run_config)
             logger.debug("%s: run config: %s", task_id, meta.__run_config__)
-            meta.__context__ = JobContext(**metadata)
+            meta.__context__ = JobContext(**context)
             # Replace kw arguments by the run configuration
             if kwargs is not run_config:
                 kwargs.clear()

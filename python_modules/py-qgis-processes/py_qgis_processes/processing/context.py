@@ -31,8 +31,8 @@ class ProcessingContext(QgsProcessingContext):
         self._config = config or confservice.conf.processing
 
         self.job_id = "00000000-0000-0000-0000-000000000000"
-        self.store_url(f"./jobs/{self._job_id}/files/$resource")
-        self.advertised_services_url(f"./ows/{self._job_id}/$name")
+        self.store_url(self._config.store_url)
+        self.advertised_services_url(self._config.advertised_services_url)
 
     @property
     def job_id(self) -> str:
@@ -119,7 +119,7 @@ class ProcessingContext(QgsProcessingContext):
     def store_reference_url(self, resource: str) -> str:
         """ Return a proper reference url for the resource
         """
-        return self._store_url.substitute(resource=resource)
+        return self._store_url.substitute(jobId=self.job_id, resource=resource)
 
     def file_reference(self, path: Path) -> str:
         return self.store_reference_url(str(path.relative_to(self.workdir)))
@@ -133,10 +133,11 @@ class ProcessingContext(QgsProcessingContext):
     ) -> str:
         service = service or "WMS"
         request = request or "GetCapabilities"
-        url = (
-            f"{self._advertised_services_url.substitute(name=name)}"
-            f"?SERVICE={service}&REQUEST={request}"
+        advertised_services_url = self._advertised_services_url.substitute(
+            name=name,
+            jobId=self.job_id,
         )
+        url = f"{advertised_services_url}?SERVICE={service}&REQUEST={request}"
         if query:
             url = f"{url}&{query}"
 

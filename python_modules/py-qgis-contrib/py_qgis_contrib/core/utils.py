@@ -13,6 +13,10 @@ WEEKDAYS = [
 ]
 
 
+def to_utc_datetime(timestamp):
+    return datetime.fromtimestamp(timestamp).astimezone(timezone.utc)
+
+
 def to_rfc822(timestamp):
     """ Convert timestamp in seconds
         to rfc 822 Last-Modified HTTP format

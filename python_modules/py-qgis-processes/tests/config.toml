@@ -1,6 +1,7 @@
 
 [worker]
-service_name = "TestProcessingWorker"
+service_name = "Test"
+#concurrency = 1
 
 [processing]
 workdir = "$location/__workdir__"

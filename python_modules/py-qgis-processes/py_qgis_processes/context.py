@@ -21,6 +21,7 @@ from py_qgis_contrib.core.qgis import (
     QgisPluginService,
     init_qgis_application,
     init_qgis_processing,
+    qgis_initialized,
     show_qgis_settings,
 )
 
@@ -71,23 +72,21 @@ class QgisContext:
     """
     def __init__(self, ctx: JobContext):
         self._ctx = ctx
-        self._inited = False
         self._conf: ProcessingConfig = ctx.processing_config
+        self._setup()
 
-    def setup(self):
-        if not self._inited:
+    def _setup(self):
+        if not qgis_initialized():
             debug = logger.isEnabledFor(logger.LogLevel.DEBUG)
             if debug:
                 os.environ['QGIS_DEBUG'] = '1'
 
             init_qgis_application(settings=self._conf.settings())
-            self._inited = True
-
             if debug:
                 logger.debug(show_qgis_settings())  # noqa T201
 
     def __enter__(self) -> Self:
-        self.setup()
+        self.plugins
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -129,8 +128,10 @@ class QgisContext:
         # Check status
         md, status = cm.checkout(url)
         match status:
-            case Co.REMOVED | Co.NOTFOUND:
-                raise FileNotFoundError(f"Project {url} not found")
+            case Co.REMOVED:
+                raise FileNotFoundError(f"Project {url} was removed")
+            case Co.NOTFOUND:
+                raise FileNotFoundError(f"Project {url} does no exists")
             case _:
                 entry, _ = cm.update(md, status)  # type: ignore [arg-type]
                 project = entry.project

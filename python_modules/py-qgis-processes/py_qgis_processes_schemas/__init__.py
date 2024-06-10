@@ -47,3 +47,7 @@ from .models import (         # noqa F401
     RefOrQualifiedInput,
     remove_auto_title,
 )
+
+
+class RunProcessingException(Exception):
+    pass

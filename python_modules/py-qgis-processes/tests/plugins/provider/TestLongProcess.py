@@ -8,7 +8,7 @@ from qgis.core import QgsProcessingAlgorithm, QgsProcessingOutputString, QgsProc
 
 class TestLongProcess(QgsProcessingAlgorithm):
 
-    PARAM1 = 'PARAM1'
+    DELAY = 'DELAY'
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
@@ -32,17 +32,17 @@ class TestLongProcess(QgsProcessingAlgorithm):
 
             see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
-        self.addParameter(QgsProcessingParameterNumber(self.PARAM1, 'Parameter 1',
+        self.addParameter(QgsProcessingParameterNumber(self.DELAY, 'Delay',
                           type=QgsProcessingParameterNumber.Integer,
                           minValue=0, maxValue=999, defaultValue=10))
         self.addOutput(QgsProcessingOutputString(self.OUTPUT, "Output"))
 
     def processAlgorithm(self, parameters, context, feedback):
 
-        param1 = self.parameterAsInt(parameters, self.PARAM1, context)
+        delay = self.parameterAsInt(parameters, self.DELAY, context)
 
         for i in range(1, 11):
-            sleep(param1)
+            sleep(delay)
             feedback.setProgress(i * 10)
 
-        return {self.OUTPUT: "%s" % param1}
+        return {self.OUTPUT: f"Slept {delay * 10} seconds"}
