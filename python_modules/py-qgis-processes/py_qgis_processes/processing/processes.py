@@ -24,7 +24,12 @@ from qgis.core import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.qgis import QgisPluginService
-from py_qgis_processes_schemas import (
+
+from . import runalg
+from .context import ProcessingContext
+from .inputs import InputParameter, InputParameterDef
+from .outputs import OutputParameter, OutputParameterDef
+from .schemas import (
     InputValueError,
     JobExecute,
     JobResults,
@@ -34,11 +39,6 @@ from py_qgis_processes_schemas import (
     ProcessDescription,
     ProcessSummary,
 )
-
-from . import runalg
-from .context import ProcessingContext
-from .inputs import InputParameter, InputParameterDef
-from .outputs import OutputParameter, OutputParameterDef
 
 ProcessingAlgorithmFlag: TypeAlias   # type: ignore [valid-type]
 ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]

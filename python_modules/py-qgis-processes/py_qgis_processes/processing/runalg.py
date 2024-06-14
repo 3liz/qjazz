@@ -25,7 +25,8 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_processes_schemas import RunProcessingException
+
+from .schemas import RunProcessingException
 
 
 def validate_parameters(

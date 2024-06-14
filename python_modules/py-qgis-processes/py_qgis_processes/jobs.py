@@ -1,110 +1,46 @@
 #
 # Processing worker
 #
-import os
-import sys
 
-from pathlib import Path
 from time import time
-from uuid import uuid4
 
 from celery.worker.control import inspect_command
-from pydantic import Field
+from pydantic import TypeAdapter
 from typing_extensions import (
     Dict,
     List,
     Optional,
-    cast,
+    Sequence,
 )
 
-from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import (
     assert_postcondition,
-    assert_precondition,
 )
 
-from .celery import CeleryConfig, Job, JobContext, Worker
+from .celery import Job, JobContext, Worker
+from .config import load_configuration
 from .context import FeedBack, QgisContext
 from .processing import (
     JobExecute,
     JobResults,
     ProcessAlgorithm,
     ProcessDescription,
-    ProcessingConfig,
     ProcessingContext,
     ProcessSummary,
 )
-
-
-def lookup_config_path() -> Path:
-    """ Determine config path location
-    """
-    var = os.getenv('PY_QGIS_PROCESSES_WORKER_CONFIG')
-    if var:
-        # Path defined with environment MUST exists
-        p = Path(var).expanduser()
-        assert_precondition(p.exists(), f"File not found {p}")
-    else:
-        # Search in standards paths
-        for search in (
-            '/etc/py-qgis-processes/worker.toml',
-            '~/.py-qgis-processes/worker.toml',
-            '~/.config/py-qgis-processes/worker.toml',
-        ):
-            p = Path(search).expanduser()
-            if p.exists():
-                break
-        else:
-            raise RuntimeError("No configuration found")
-
-    print("=Reading configuration from:", p, file=sys.stderr, flush=True)  # noqa T201
-    return p
-
-
-def load_configuration() -> config.Config:
-    """ Load worker configuration
-    """
-    configpath = lookup_config_path()
-    cnf = config.read_config_toml(
-        configpath,
-        location=str(configpath.parent.absolute()),
-    )
-    config.confservice.validate(cnf)
-
-    conf = config.confservice.conf
-    logger.setup_log_handler(conf.logging.level)
-    return conf
-
+from .processing.schemas import LinkHttp
 
 #
 # Create worker application
 #
-
-@config.section('worker', field=...)
-class WorkerConfig(CeleryConfig):
-    service_name: str = Field(
-        title="Name of the service",
-        description=(
-            "Name used as location service name\n"
-            "for initializing Celery worker."
-        ),
-    )
-
-    title: str = Field(default="", title="Service title")
-    description: str = Field(default="", title="Service description")
-
-
-# Allow type validation
-class ConfigProto:
-    processing: ProcessingConfig
-    worker: WorkerConfig
 
 
 class ProcessingWorker(Worker):
     def __init__(self, **kwargs) -> None:
         from kombu import Queue
 
-        conf = cast(ConfigProto, load_configuration())
+        conf = load_configuration()
 
         service_name = conf.worker.service_name
         super().__init__(service_name, conf.worker, **kwargs)
@@ -121,7 +57,12 @@ class ProcessingWorker(Worker):
         }
 
         self._job_context.update(processing_config=conf.processing)
+
         self._service_name = service_name
+        self._service_title = conf.worker.title
+        self._service_description = conf.worker.description
+        self._service_links = conf.worker.links
+
         self._online_at = time()
 
 
@@ -130,21 +71,27 @@ app = ProcessingWorker()
 
 # Inspect commands
 
+LinkSequence = TypeAdapter(Sequence[LinkHttp])
+
 
 @inspect_command()
 def presence(_) -> Dict:
     from qgis.core import Qgis, QgsCommandLineUtils
     return {
         'service': app._service_name,
+        'title': app._service_title,
+        'description': app._service_description,
+        'links': LinkSequence.dump_python(
+            app._service_links,
+            mode='json',
+            by_alias=True,
+            exclude_none=True,
+        ),
         'online_at': app._online_at,
         'qgis_version_info': Qgis.versionInt(),
         'versions': QgsCommandLineUtils.allVersions(),
     }
 
-
-@inspect_command()
-def uptime(_) -> float:
-    return app._online_at
 
 #
 # Jobs
@@ -204,8 +151,6 @@ def validate_process_inputs(
         feedback = FeedBack(self.setprogress)
         context = ProcessingContext(qgis_context.processing_config)
         context.setFeedback(feedback)
-        context.store_url(ctx.store_url)
-        context.advertised_services_url(ctx.advertised_services_url)
 
         if project:
             context.setProject(project)
@@ -239,8 +184,14 @@ def execute_process(
         context = ProcessingContext(qgis_context.processing_config)
         context.setFeedback(feedback)
 
-        context.job_id = str(uuid4())
+        context.job_id = ctx.task_id
         context.workdir.mkdir(parents=True, exist_ok=True)
+
+        # Optional context attributes
+        try:
+            context.public_url = ctx.public_url
+        except AttributeError:
+            pass
 
         if project:
             context.setProject(project)

@@ -6,7 +6,9 @@ from time import time
 from celery.result import AsyncResult
 from pydantic import Field, JsonValue
 from typing_extensions import (
+    AsyncIterator,
     Dict,
+    Iterator,
     Mapping,
     Optional,
     Sequence,
@@ -17,21 +19,22 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import Config as BaseConfig
 from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
-from py_qgis_processes_schemas import (
+
+from . import registry
+from .celery import Celery, CeleryConfig
+from .processing.schemas import (
     InputValueError,  # noqa: F401
     JobExecute,
     JobResults,
     JobStatus,
     JsonDict,
     JsonModel,
+    LinkHttp,
     ProcessDescription,
     ProcessSummary,
     ProcessSummaryList,
     RunProcessingException,  # noqa: F401
 )
-
-from . import registry
-from .celery import Celery, CeleryConfig
 
 
 class ExecutorConfig(BaseConfig):
@@ -45,19 +48,13 @@ class ExecutorConfig(BaseConfig):
             "can wait on queue before beeing processed."
         ),
     )
-    task_routes: Dict[str, JsonValue] = Field(
-        default={},
-        title="Task routes",
-        description=(
-            "Task routes configuration;\n"
-            "follows the Celery automatic routing configuration syntax:\n"
-            "https://docs.celeryq.dev/en/stable/userguide/routing.html."
-        ),
-    )
 
 
 class PresenceDetails(JsonModel):
     service: str
+    title: str
+    description: str
+    links: Sequence[LinkHttp]
     online_at: float
     qgis_version_info: int
     versions: str
@@ -75,9 +72,6 @@ class Executor:
         self._expiration_timeout = conf.message_expiration_timeout
         self._result_expires = conf.celery.result_expires
 
-        if conf.task_routes:
-            self._celery.conf.task_routes = conf.task_routes
-
     def presences(self, destinations: Optional[Sequence[str]] = None) -> Dict[str, PresenceDetails]:
         """ Return presence info for online workers
         """
@@ -89,9 +83,17 @@ class Executor:
 
         return {k: PresenceDetails.model_validate(v) for row in data for k, v in row.items()}
 
+    def known_service(self, name: str) -> bool:
+        """ Check if service is known in uploaded presences
+        """
+        return name in self._services
+
     @property
-    def services(self) -> ServiceDict:
-        return self._services
+    def services(self) -> Iterator[PresenceDetails]:
+        """ Return uploaded services presences
+        """
+        for _, pr in self._services.values():
+            yield pr
 
     def get_services(self) -> ServiceDict:
         # Return services destinations (blocking)
@@ -303,12 +305,35 @@ class Executor:
     #
     # ==============================================
 
-    def _dismiss(self, job_id: str, services: ServiceDict) -> bool:
+    def _job_status_pending(self, ti: registry.TaskInfo) -> Optional[JobStatus]:
+        # Give a chance to pending state
+        # Check if pending message has not expired
+        st: JobStatus | None
+        if time() < ti.created + self._expiration_timeout:
+            st = JobStatus(
+                job_id=ti.job_id,
+                status=JobStatus.PENDING,
+                process_id=ti.process_id,
+                created=to_utc_datetime(ti.created),
+            )
+        else:
+            st = None
+        return st
+
+    def _dismiss(
+        self,
+        job_id: str,
+        services: ServiceDict,
+        realm: Optional[str] = None,
+    ) -> Optional[JobStatus]:
         # Dismiss job (blocking)
         # Check if job_id is registered
-        ti = registry.find_job(self._celery, job_id)
-        if ti and not ti.dismissed:
-            destinations = self.get_destinations(ti.service, services)
+        ti = registry.find_job(self._celery, job_id, realm=realm)
+        if not ti:
+            return None
+
+        destinations = self.get_destinations(ti.service, services)
+        if not ti.dismissed:
             # Revoke task
             registry.dismiss(self._celery, job_id)
             logger.info("Revoking (DISMISS) job %s", job_id)
@@ -318,45 +343,44 @@ class Executor:
                 terminate=True,
                 signal='SIGKILL',
             )
-        return ti is not None
 
-    async def dismiss(self, job_id: str) -> bool:
+        st = self._job_status(job_id, destinations)
+        return st or self._job_status_pending(ti)
+
+    async def dismiss(self, job_id: str, *, realm: Optional[str] = None) -> Optional[JobStatus]:
         """ Dismiss job
         """
-        return await asyncio.to_thread(self._dismiss, job_id, self._services)
+        return await asyncio.to_thread(
+            self._dismiss,
+            job_id,
+            self._services,
+            realm=realm,
+        )
 
-    async def job_status(
-        self,
-        job_id: str,
-        service: Optional[str] = None,
-    ) -> Optional[JobStatus]:
+    async def job_status(self, job_id: str, *, realm: Optional[str] = None) -> Optional[JobStatus]:
         """ Return job status
         """
         return await asyncio.to_thread(
             self._job_status_ext,
             job_id,
-            service and self.destinations(service),
+            self._services,
+            realm,
         )
 
     def _job_status_ext(
         self,
         job_id: str,
-        destinations: Optional[Sequence[str]] = None,
+        services: ServiceDict,
+        realm: Optional[str] = None,
     ) -> Optional[JobStatus]:
         # Return job status (blocking) with pending state check
+        ti = registry.find_job(self._celery, job_id, realm=realm)
+        if not ti:
+            return None
+
+        destinations = self.get_destinations(ti.service, services)
         st = self._job_status(job_id, destinations)
-        if not st:
-            # Give a chance to pending state
-            ti = registry.find_job(self._celery, job_id)
-            # Check if pending message has not expired
-            if ti and time() < ti.created + self._expiration_timeout:
-                st = JobStatus(
-                    job_id=job_id,
-                    status=JobStatus.PENDING,
-                    process_id=ti.process_id,
-                    created=to_utc_datetime(ti.created),
-                )
-        return st
+        return st or self._job_status_pending(ti)
 
     def _job_status(
         self,
@@ -455,17 +479,60 @@ class Executor:
     async def job_results(
         self,
         job_id: str,
+        *,
+        realm: Optional[str] = None,
     ) -> Optional[JobResults]:
         """ Return job results
         """
-        return await asyncio.to_thread(self._job_results, job_id)
+        return await asyncio.to_thread(self._job_results, job_id, realm)
 
-    def _job_results(self, job_id):
+    def _job_results(self, job_id: str, realm: Optional[str] = None) -> Optional[JobResults]:
         #
         # Return job results (blocking)
         #
+        if realm and not registry.find_key(self._celery, job_id, realm=realm):
+            return None
+
         state = self._celery.backend.get_task_meta(job_id)
         if state['status'] == Celery.STATE_SUCCESS:
             return state['result']
         else:
             return None
+
+    async def iter_jobs(
+        self,
+        service: Optional[str] = None,
+        *,
+        realm: Optional[str] = None,
+        cursor: int = 0,
+        limit: int = 100,
+    ) -> AsyncIterator[JobStatus]:
+        """ Iterate over job statuses
+        """
+        import queue
+        q: queue.Queue = queue.Queue()
+
+        destinations = service and self.destinations(service)
+
+        def _pull():
+            _, keys = registry.find_keys(service, realm=realm, cursor=cursor, count=limit)
+            for job_id, _, _ in keys:
+                st = self._job_status(job_id, destinations)
+                if not st:
+                    ti = registry.find_job(self._celery, job_id)
+                    st = ti and self._job_status_pending(ti)
+                if st:
+                    q.put(st)
+
+        pull_taks = asyncio.create_task(asyncio.to_thread(_pull))
+        while True:
+            try:
+                st = q.get(block=False)
+                yield st
+            except queue.Empty:
+                if pull_taks.done():
+                    break
+                await asyncio.sleep(0.1)
+            exc = pull_taks.exception()
+            if exc:
+                raise exc

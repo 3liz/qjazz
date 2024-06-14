@@ -89,7 +89,7 @@ def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
     """
     if isinstance(model, TypeAdapter):
         if not name:
-            raise ValueError("Missing 'name' for {type(model)}")
+            raise ValueError(f"Missing 'name' for {type(model)}")
     else:
         name = model.__name__
     _models.append((name, model))

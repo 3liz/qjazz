@@ -154,6 +154,7 @@ class Job(celery.Task):
         # the the stored backend data.
         context = kwargs.pop('__context__', {})
         context.update(self._worker_job_context)
+        context.update(task_id=task_id)
 
         meta = kwargs.pop('__meta__', {})
         meta.update(

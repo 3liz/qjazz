@@ -19,7 +19,8 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QVariant
 
-from py_qgis_processes_schemas import (
+from ..context import ProcessingContext
+from ..schemas import (
     InputDescription,
     JsonDict,
     Metadata,
@@ -27,9 +28,7 @@ from py_qgis_processes_schemas import (
     ValuePassing,
     remove_auto_title,
 )
-from py_qgis_processes_schemas.models import one_of
-
-from ..context import ProcessingContext
+from ..schemas.models import one_of
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 

@@ -11,3 +11,5 @@ from ._service import (  # noqa
     read_config_toml,
     section,
 )
+
+ConfigBase = Config

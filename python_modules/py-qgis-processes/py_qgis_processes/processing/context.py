@@ -30,6 +30,8 @@ class ProcessingContext(QgsProcessingContext):
         self._destination_project: Optional[QgsProject] = None
         self._config = config or confservice.conf.processing
 
+        self.public_url = ""
+
         self.job_id = "00000000-0000-0000-0000-000000000000"
         self.store_url(self._config.store_url)
         self.advertised_services_url(self._config.advertised_services_url)
@@ -119,7 +121,11 @@ class ProcessingContext(QgsProcessingContext):
     def store_reference_url(self, resource: str) -> str:
         """ Return a proper reference url for the resource
         """
-        return self._store_url.substitute(jobId=self.job_id, resource=resource)
+        return self._store_url.substitute(
+            resource=resource,
+            jobId=self.job_id,
+            public_url=self.public_url,
+        )
 
     def file_reference(self, path: Path) -> str:
         return self.store_reference_url(str(path.relative_to(self.workdir)))
@@ -136,6 +142,7 @@ class ProcessingContext(QgsProcessingContext):
         advertised_services_url = self._advertised_services_url.substitute(
             name=name,
             jobId=self.job_id,
+            public_url=self.public_url,
         )
         url = f"{advertised_services_url}?SERVICE={service}&REQUEST={request}"
         if query:

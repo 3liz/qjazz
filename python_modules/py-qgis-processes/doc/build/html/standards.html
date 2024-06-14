@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OGC standards implementation &mdash; py-qgis-processes ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=e556e3f7"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Indices and tables" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            py-qgis-processes
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">OGC standards implementation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#notes-on-schemas">Notes on schemas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#value-passing-and-transmission-mode">Value passing and transmission mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qualified-input-and-output-values">Qualified input and output values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multiple-media-types">Multiple media types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#formats">Formats</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#additional-formats">Additional formats</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">py-qgis-processes</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">OGC standards implementation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/standards.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ogc-standards-implementation">
+<h1>OGC standards implementation<a class="headerlink" href="#ogc-standards-implementation" title="Link to this heading"></a></h1>
+<p>The currrent implementation follow the schemas described in the <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/tree/master">actual unreleased version of the standard</a>.</p>
+<p>That means that it may not be compliant for most of actual OGC api compliance validators which
+are based on the version 1.0.0 of the standards.</p>
+<section id="notes-on-schemas">
+<h2>Notes on schemas<a class="headerlink" href="#notes-on-schemas" title="Link to this heading"></a></h2>
+<p>Inputs and outputs value description is described as json schemas. That is, the schema
+determines completely the syntax of the value.</p>
+<p>produced schemas are compliant to the following specifications</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://json-schema.org/draft/2020-12/release-notes">JSON Schema Draft 2020-12</a></p></li>
+<li><p><a class="reference external" href="https://github.com/OAI/OpenAPI-Specification">OpenAPI Specification v3.1.0</a></p></li>
+</ul>
+</section>
+<section id="value-passing-and-transmission-mode">
+<h2>Value passing and transmission mode<a class="headerlink" href="#value-passing-and-transmission-mode" title="Link to this heading"></a></h2>
+<p>The value passing method is bound to each input with the <code class="code docutils literal notranslate"><span class="pre">valuePassing</span></code> property.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">The current implementation does not allow client to specify the transmission mode for outputs.</div>
+<div class="line">That means that the <code class="code docutils literal notranslate"><span class="pre">transmissionMode</span></code> property is ignored in output specification in <cite>execute</cite>
+requests.</div>
+<div class="line">Instead each output individually requires to be passed either by value or by reference as
+as server-side decision.</div>
+</div>
+</div>
+<p>For informative purpose, a non-standard optional <code class="code docutils literal notranslate"><span class="pre">valuePassing</span></code> property may be added to the output description.</p>
+<p>In all cases, references use <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/common-core/link.yaml">links</a> as output value.</p>
+<p>Inlines output value are returned either directly as described by their schema or as qualified value.</p>
+</section>
+<section id="qualified-input-and-output-values">
+<h2>Qualified input and output values<a class="headerlink" href="#qualified-input-and-output-values" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/processes-core/qualifiedInputValue.yaml">Qualified values</a> are used for encoding non Json strings.</p>
+<p>For input values: a qualified value <strong>must</strong> be returned if the input schema has the <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/non_json_data#contentmediatype">contentMediaType</a> keyword.</p>
+<p>For output values: a qualified value <strong>will</strong> be returned if the output schema has the <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/non_json_data#contentmediatype">contentMediaType</a> keyword.</p>
+</section>
+<section id="multiple-media-types">
+<h2>Multiple media types<a class="headerlink" href="#multiple-media-types" title="Link to this heading"></a></h2>
+<p>Inputs and outputs may describe multiple media types an inputs and outputs in <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/combining#oneOf">oneOf</a> composite schema.</p>
+<p>Consider the following example for return a geometry:</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s2">&quot;oneOf&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;contentMediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;contentMediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/gml+xml&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;geojson-geometry&quot;</span>
+      <span class="s2">&quot;$ref&quot;</span><span class="p">:</span> <span class="s2">&quot;http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/geometryGeoJSON.yaml&quot;</span>
+    <span class="p">},</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>One possible response would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;.....&quot;</span>
+  <span class="s2">&quot;mediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that The geojson response <strong>must not</strong> be returned as qualified value since it is Json
+and not string;</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a case where the schema above cannot be used as-is for validating
+the response since the response would be an object and not a string and the
+<cite>oneOf</cite> compositor is ambiguous for the two first choices.</p>
+</div>
+</section>
+<section id="formats">
+<h2>Formats<a class="headerlink" href="#formats" title="Link to this heading"></a></h2>
+<p>In the example above we have used the keyword <code class="code docutils literal notranslate"><span class="pre">format</span></code> in the geojson schema description.</p>
+<p>The <code class="code docutils literal notranslate"><span class="pre">format</span></code> keyword is used for providing additonal semantic context that can aid
+the interpretetation and validation of process input or output in an <code class="code docutils literal notranslate"><span class="pre">execute</span></code> request.</p>
+<p>While the JsonSchema specification use the <code class="code docutils literal notranslate"><span class="pre">format</span></code> keyword for strings only, the OGC
+standards extend its usage to any object.</p>
+<p>Check the <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/string#format">built-in json schemas formats</a></p>
+<p>The OGC standards defines additional formats:</p>
+<dl class="field-list simple">
+<dt class="field-odd">geojson-feature-collection<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Indicates that the object is an instance of a GeoJSON feature collection</p>
+</dd>
+<dt class="field-even">geojson-feature<span class="colon">:</span></dt>
+<dd class="field-even"><p>Indicates that the object is an instance of a GeoJSON feature</p>
+</dd>
+<dt class="field-odd">geojson-geometry<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Indicates that the object is an instance of a GeoJSON geometry</p>
+</dd>
+<dt class="field-even">ogc-bbox<span class="colon">:</span></dt>
+<dd class="field-even"><p>Indicates that the object is an instance of an <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/processes-core/bbox.yaml">OGC bounding box</a></p>
+</dd>
+</dl>
+<section id="additional-formats">
+<h3>Additional formats<a class="headerlink" href="#additional-formats" title="Link to this heading"></a></h3>
+<p>According to JsonSchema specification, additional schema
+properties start with an <code class="code docutils literal notranslate"><span class="pre">x-*</span></code> prefix</p>
+<p>Additional OGC specific properties are prefixed with <code class="code docutils literal notranslate"><span class="pre">x-ogc-*</span></code>.</p>
+<p>Using <code class="code docutils literal notranslate"><span class="pre">x-ogc-*</span></code> is a OGC standart proposal described in <a class="reference external" href="https://github.com/opengeospatial/ogcapi-features/issues/838">https://github.com/opengeospatial/ogcapi-features/issues/838</a> for the <cite>features</cite> api.</p>
+<p>The following additional formats are used in Py-Qgis-Processes:</p>
+<dl class="field-list simple">
+<dt class="field-odd">x-ogc-crs<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Indicate that an string or object is a <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/common-geodata/crs.yaml">CRS definition</a></p>
+</dd>
+<dt class="field-even">x-range<span class="colon">:</span></dt>
+<dd class="field-even"><p>A 2-tuple of numbers indicating a inclusive range</p>
+</dd>
+<dt class="field-odd">x-range-exclude<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A 2-tuple of numbers indicating a exclusive range</p>
+</dd>
+<dt class="field-even">x-range-exclude-left<span class="colon">:</span></dt>
+<dd class="field-even"><p>2-tuple of numbers indicating a left exclusive range</p>
+</dd>
+<dt class="field-odd">x-range-exclude-right<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A 2-tuple of numbers indicating a right exclusive range</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Indices and tables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -5,11 +5,15 @@
 from dataclasses import dataclass
 from time import time
 
-from typing_extensions import Iterator, Mapping, Optional
-
-from py_qgis_processes_schemas import JobStatus
+from typing_extensions import (
+    Iterator,
+    Mapping,
+    Optional,
+    Tuple,
+)
 
 from .celery import Celery
+from .processing.schemas import JobStatus
 
 
 @dataclass
@@ -60,29 +64,47 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
 def find_job(
     app: Celery,
     job_id: str,
+    *,
+    realm: Optional[str] = None,
 ) -> Optional[TaskInfo]:
     """ Return single task info
     """
     client = app.backend.client
-    keys = client.keys(f"py-qgis::{job_id}::*")
+    keys = client.keys(f"py-qgis::{job_id}::*::{realm or '*'}")
     if keys:
         return _decode(client.hgetall(keys[0]))
     else:
         return None
 
 
-def find_all(
+def find_key(
+    app: Celery,
+    job_id: str,
+    *,
+    realm: Optional[str] = None,
+) -> Optional[Tuple[str, str, str]]:
+    client = app.backend.client
+    keys = client.keys(f"py-qgis::{job_id}::*::{realm or '*'}")
+    if keys:
+        return tuple(keys[0].split('::')[1:4])
+    else:
+        return None
+
+
+def find_keys(
     app: Celery,
     *,
     service: Optional[str] = None,
     realm: Optional[str] = None,
-) -> Iterator[TaskInfo]:
+    cursor: int = 0,
+    count: int = 100,  # Minimal count hint
+) -> Tuple[int, Iterator[Tuple[str, str, str]]]:
     """ Iterate over filtered task infos
     """
     client = app.backend.client
-    pattern = f"py-qgis::*::{service or '*'}::{ realm or '*'}"
-    for key in client.scan_iter(pattern):
-        yield _decode(client.hgetall(key))
+    pattern = f"py-qgis::*::{service or '*'}::{realm or '*'}"
+    cursor, keys = client.scan(cursor=cursor, match=pattern, count=count)
+    return cursor, (tuple(key.split("::")[1:4]) for key in keys)
 
 
 def dismiss(app: Celery, job_id: str) -> bool:

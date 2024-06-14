@@ -62,9 +62,8 @@ from qgis.core import (
     QgsProject,
 )
 
-from py_qgis_processes_schemas import InputValueError, JsonValue
-
 from ..context import ProcessingContext
+from ..schemas import InputValueError, JsonValue
 from .base import (
     InputParameter as InputParameterBase,
 )

@@ -120,7 +120,7 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         if a is None:  # hu ? no annotation
             continue
         match a.__name__:
-            case 'List' | 'Tuple' | 'Union':
+            case 'List' | 'Tuple' | 'Union' | 'Sequence':
                 deferred = defer(f"[[{section}.{name}]]", field, a.__args__[0])
             case 'Dict':
                 deferred = defer(f"[{section}.{name}.{{key}}]", field, a.__args__[1])
@@ -153,7 +153,7 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
         if _is_model(a):
             _print_model_doc(s, a)
             _dump_section(s, a, name, comment=field.annotation.__name__ == 'Optional')
-        elif a.__name__ == 'List':
+        elif a.__name__ in ('List', 'Sequence'):
             arg = a.__args__[0]
             # Only print base model arguments
             if _is_model(arg):

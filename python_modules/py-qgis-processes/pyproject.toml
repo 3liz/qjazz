@@ -17,6 +17,7 @@ dependencies = [
     "pydantic-extra-types",
     "celery>=5.3.6",
     "redis>=5.0.3",
+    "async-timeout; python_version<'3.11'",
     "click",
     "requests",
 ]
@@ -31,13 +32,12 @@ email = "dmarteau@3liz.org"
 
 [project.scripts]
 qgis-processes = "py_qgis_processes.processing.cli:main"
+qgis-processes-server = "py_qgis_processes.server.cli:main"
 
 [tool.setuptools.packages.find]
 include = [
     "py_qgis_processes", 
     "py_qgis_processes.*",
-    "py_qgis_processes_schemas", 
-    "py_qgis_processes_schemas.*", 
 ]
 
 [tool.ruff]

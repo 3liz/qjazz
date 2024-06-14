@@ -19,7 +19,8 @@ from py_qgis_contrib.core.config import (
     section,
 )
 from py_qgis_contrib.core.qgis import QgisPluginConfig
-from py_qgis_processes_schemas.ogc import WGS84
+
+from .schemas import WGS84
 
 
 def _validate_absolute_path(p: Path) -> Path:

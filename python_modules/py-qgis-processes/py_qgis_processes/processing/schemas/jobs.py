@@ -8,13 +8,13 @@ from pydantic import Field, JsonValue, TypeAdapter
 from typing_extensions import (
     ClassVar,
     Dict,
+    List,
     Literal,
     Optional,
-    Sequence,
     TypeAlias,
 )
 
-from .models import JsonModel, Link, OutputFormat
+from .models import JsonModel, LinkHttp, OutputFormat
 
 DateTime = TypeAdapter(datetime)
 
@@ -73,7 +73,7 @@ class JobStatus(JsonModel):
 
     exception: Optional[JobException] = None
 
-    links: Sequence[Link] = ()
+    links: List[LinkHttp] = Field([])
 
 
 class Output(JsonModel):

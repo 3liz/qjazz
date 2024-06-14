@@ -39,7 +39,8 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_processes_schemas import (
+
+from ..schemas import (
     WGS84,
     BoundingBox,
     Formats,
@@ -48,7 +49,6 @@ from py_qgis_processes_schemas import (
     OneOf,
     geojson,
 )
-
 from .base import (
     InputParameter,
     ParameterDefinition,
