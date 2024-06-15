@@ -6,8 +6,13 @@ from py_qgis_contrib.core import logger, qgis
 
 
 @pytest.fixture(scope='session')
-def plugindir(request):
-    return Path(request.config.rootdir.strpath) / 'plugins'
+def rootdir(request: pytest.FixtureRequest) -> Path:
+    return Path(request.config.rootdir.strpath)
+
+
+@pytest.fixture(scope='session')
+def plugindir(rootdir: Path) -> Path:
+    return rootdir / 'plugins'
 
 
 def pytest_collection_modifyitems(config, items):

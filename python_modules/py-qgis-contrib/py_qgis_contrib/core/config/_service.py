@@ -1,5 +1,5 @@
 #
-# Copyright 2018 3liz
+# Copyright 2024 3liz
 # Author David Marteau
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -18,33 +18,36 @@ Casing does not matter but uppercase have precedence
 Values are taken from multiple source according
 to the [`pydantic` module](https://docs.pydantic.dev/latest/usage/pydantic_settings/#field-value-priority)
 
+See also https://docs.pydantic.dev/latest/concepts/pydantic_settings
+
 Source searched for configuration values:
 
 1. Argument passed to configuration
 2. Environment variables starting with `conf_`
 3. Variables loaded from a dotenv (.env)
 4. Variables loaded from the Docker secrets directory (/run/secrets)
-5. he default field values
+5. The default field values
 
 """
 import os
+import sys
 
 from pathlib import Path
 from time import time
 
 from pydantic import (
     BaseModel,
-    Field,
     JsonValue,
-    PlainSerializer,
-    PlainValidator,
     ValidationError,
     create_model,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from typing_extensions import (
     IO,
-    Annotated,
     Any,
     Callable,
     Dict,
@@ -65,7 +68,7 @@ getenv = os.getenv
 ConfigError = ValidationError
 
 
-def dict_merge(dct, merge_dct):
+def dict_merge(dct: Dict, merge_dct: Dict, model: Optional[BaseModel]):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
@@ -73,10 +76,16 @@ def dict_merge(dct, merge_dct):
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
     :return: None
+
+    Note: take care that plain dict fields are NOT merget but replaced
+    like any other field wich is not a model.
     """
     for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):
-            dict_merge(dct[k], merge_dct[k])
+        if (k in model.__dict__ and isinstance(model.__dict__[k], BaseModel)) \
+            and (k in dct and isinstance(dct[k], dict)
+            and isinstance(v, dict)):
+
+            dict_merge(dct[k], merge_dct[k], model.__dict__[k])
         else:
             dct[k] = merge_dct[k]
 
@@ -97,29 +106,12 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str
 def read_config_toml(cfgfile: Path, **kwds) -> Dict:
     """ Read toml configuration from file
     """
-    # See https://github.com/python/mypy/issues/1155
-    try:
-        # Python 3.11+
-        import tomllib as toml  # type: ignore
-    except ModuleNotFoundError:
-        import tomli as toml
+    if sys.version_info < (3, 11):
+        from tomli import loads
+    else:
+        from tomllib import loads
 
-    return read_config(cfgfile, loads=toml.loads, **kwds)
-
-
-def read_config_json(cfgfile: Path, **kwds) -> Dict:
-    """ Read Json configuration from file
-    """
-    import json
-    return read_config(cfgfile, loads=json.loads, **kwds)
-
-
-def read_config_yaml(cfgfile: Path, **kwds) -> Dict:
-    """ Read Yaml configuration from file
-    """
-    from ruamel.yaml import YAML
-    yaml = YAML(typ='safe')
-    return read_config(cfgfile, loads=yaml.load, **kwds)
+    return read_config(cfgfile, loads=loads, **kwds)
 
 
 # Base classe for configuration models
@@ -149,9 +141,19 @@ class ConfigService:
         self._conf = None
         self._model_changed = True
         self._timestamp = 0
-        self._env_prefix = 'conf_'
-        self._default_confdir = None
         self._version = metadata.version('py_qgis_contrib')
+        self._baseconfig = None
+
+        self._model_config = SettingsConfigDict(
+            frozen=True,
+            extra='forbid',
+            env_nested_delimiter='__',
+            env_prefix='conf_',
+        )
+
+        secrets_dir = getenv('SETTINGS_SECRETS_DIR', '/run/secrets')
+        if Path(secrets_dir).exists():
+            self._model_config.update(secrets_dir=secrets_dir)
 
     def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
         def _model(model):
@@ -170,28 +172,32 @@ class ConfigService:
             **{name: _model(model) for name, model in self._configs.items()},
         )
 
+    def _init_base_settings(self) -> Type[BaseSettings]:
+        if not self._baseconfig:
+            class BaseConfig(BaseSettings):
+                model_config = self._model_config
+
+                @classmethod
+                def settings_customise_sources(
+                    cls,
+                    settings_cls: Type[BaseSettings],
+                    init_settings: PydanticBaseSettingsSource,
+                    env_settings: PydanticBaseSettingsSource,
+                    dotenv_settings: PydanticBaseSettingsSource,
+                    file_secret_settings: PydanticBaseSettingsSource,
+                ) -> Tuple[PydanticBaseSettingsSource, ...]:
+                    return (
+                        init_settings,
+                        env_settings,
+                        file_secret_settings,
+                    )
+
+            self._baseconfig = BaseConfig
+        return self._baseconfig
+
     def _create_model(self) -> BaseSettings:
         if self._model_changed or not self._model:
-
-            class BaseConfig(BaseSettings):
-                model_config = SettingsConfigDict(
-                    frozen=True,
-                    extra='forbid',
-                    env_nested_delimiter='__',
-                    env_prefix=self._env_prefix,
-                )
-
-                # XXX Use user dir
-                confdir: Annotated[
-                    Path,
-                    PlainValidator(lambda v: Path(v)),
-                    PlainSerializer(lambda x: str(x), return_type=str),
-                ] = Field(
-                    default=Path(self._default_confdir or os.getcwd()),
-                    title="Search path for configuration files",
-                )
-
-            self._model = self._create_base_model(BaseConfig)
+            self._model = self._create_base_model(self._init_base_settings())
             self._model_changed = False
 
         return self._model
@@ -204,17 +210,10 @@ class ConfigService:
     def last_modified(self) -> float:
         return self._timestamp
 
-    def validate(
-            self, obj: Dict,
-            default_confdir: Optional[Path] = None,
-            env_prefix: Optional[str] = None,
-    ):
+    def validate(self, obj: Dict):
         """ Validate the configuration against
             configuration models
         """
-        self._env_prefix = env_prefix or self._env_prefix
-        self._default_confdir = default_confdir or self._default_confdir
-
         _BaseConfig = self._create_model()
         _conf = _BaseConfig.model_validate(obj, strict=True)
 
@@ -227,9 +226,13 @@ class ConfigService:
         """ Update the configuration
         """
         if self._model_changed or obj:
-            data = self._conf.model_dump() if self._conf else {}
-            if obj:
-                dict_merge(data, obj)
+            if self._conf:
+                data = self._conf.model_dump()
+                if obj:
+                    dict_merge(data, obj, self._conf)
+            else:
+                data = obj or {}
+
             self.validate(data)
 
     def json_schema(self) -> Dict:
