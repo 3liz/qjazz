@@ -1,3 +1,5 @@
+import asyncio
+import signal
 import traceback
 
 from importlib.metadata import PackageNotFoundError, version
@@ -12,7 +14,6 @@ from typing_extensions import (
     Awaitable,
     Callable,
     Literal,
-    Mapping,
     Optional,
     TypeAlias,
 )
@@ -28,6 +29,7 @@ from py_qgis_contrib.core.config import (
 
 from ..executor import Executor, ExecutorConfig
 from .accesspolicy import AccessPolicyConfig, create_access_policy
+from .forwarded import Forwarded, ForwardedConfig
 from .handlers import Handler
 from .models import ErrorResponse, RequestHandler
 
@@ -46,28 +48,6 @@ SERVER_HEADER = f"Py-Qgis-Http-Processes {__version__}"
 DEFAULT_INTERFACE = ("127.0.0.1", 8340)
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
-
-
-class ProxyConfig(ConfigBase):
-    """Proxy Configuration"""
-    resolve_proxy_headers: bool = Field(
-        default=False,
-        title="Proxy headers",
-        description=(
-            "Enable proxy headers resolution.\n"
-            "Include support for 'Forwarded' headers\n"
-            "and 'X-Forwarded' hedaers if x_headers is \n"
-            "enabled."
-        ),
-    )
-    x_headers: bool = Field(
-        default=False,
-        title="Support for 'X-Forwarded' headers",
-    )
-    prefix_path: Optional[str] = Field(
-        default="",
-        title="Prefix path",
-    )
 
 
 @section('server')
@@ -96,7 +76,18 @@ class ServerConfig(ConfigBase):
             "this url."
         ),
     )
-    proxy: ProxyConfig = Field(default=ProxyConfig())
+    proxy: ForwardedConfig = Field(default=ForwardedConfig())
+
+    route_prefix: Optional[str] = Field(
+        default=None,
+        title="Route prefix",
+        description=(
+            "Prefix prepended to path.\n"
+            "Can be use for customizing path for proxy or\n"
+            "to add extra path parameters used in\n"
+            "conjonction with acces policy."
+        ),
+    )
 
     timeout: int = Field(5, title="Backend request timeout")
 
@@ -115,6 +106,7 @@ confservice.add_section("executor", ExecutorConfig)
 
 # Allow type validation
 class ConfigProto:
+    logging: logger.LoggingConfig
     server: ServerConfig
     executor: ExecutorConfig
     access_policy: AccessPolicyConfig
@@ -129,7 +121,6 @@ REQ_FORMAT = (
     "\t{agent}\t{referer}"
 )
 REQ_ID_FORMAT = "REQ-ID:{request_id}"
-RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_FORMAT
 
 
 class AccessLogger(AbstractAccessLogger):
@@ -210,10 +201,10 @@ def set_access_control_headers(
 
     return set_access_control_headers_  # typing: ignore [return-value]
 
+
 #
 #  Headers
 #
-
 
 async def set_server_headers(request: web.Request, response: web.StreamResponse):
     """ Set server headers
@@ -224,9 +215,12 @@ async def set_server_headers(request: web.Request, response: web.StreamResponse)
     if request_id:
         response.headers['X-Request-ID'] = request_id
 
+
 #
 # Log incoming request with request id
 #
+
+RREQ_FORMAT = "{ip}\t{method}\t{url}\t{agent}\t{referer}\t" + REQ_FORMAT
 
 
 @web.middleware
@@ -279,25 +273,46 @@ async def unhandled_exceptions(
             ).model_dump_json(),
         ) from None
 
+#
+# Server
+#
+
+
+Site: TypeAlias = web.TCPSite | web.UnixSite
+
+
+def create_site(http: ServerConfig, runner: web.AppRunner) -> Site:
+
+    ssl_context = http.ssl.create_ssl_server_context() if http.use_ssl else None
+
+    site: Site
+
+    match http.listen:
+        case (str(address), int(port)):
+            site = web.TCPSite(
+                runner,
+                host=address.strip('[]'),
+                port=port,
+                ssl_context=ssl_context,
+            )
+        case str(socket):
+            site = web.UnixSite(
+                runner,
+                socket[len('unix:'):],
+                ssl_context=ssl_context,
+            )
+
+    return site
+
 
 def create_app(conf: ConfigProto) -> web.Application:
 
-    middlewares = [
-        log_incoming_request,
-        unhandled_exceptions,
-    ]
-
-    # Executor
-    executor = Executor(conf.executor)
-
-    # Access policy
-    access_policy = create_access_policy(conf.access_policy, executor)
-    policy_middleware = access_policy.middleware()
-    if policy_middleware:
-        middlewares.append(policy_middleware)
-
     app = web.Application(
-        middlewares=middlewares,
+        middlewares=[
+            unhandled_exceptions,
+            log_incoming_request,
+            Forwarded(conf.server.proxy),
+        ],
         handler_args={
             'access_log_class': AccessLogger,
         },
@@ -309,39 +324,70 @@ def create_app(conf: ConfigProto) -> web.Application:
     # Default server headers
     app.on_response_prepare.append(set_server_headers)
 
+    # Executor
+    executor = Executor(conf.executor)
+
+    # Access policy
+    access_policy = create_access_policy(conf.access_policy, app, executor)
+
     # Handler
     handler = Handler(
         executor=executor,
         policy=access_policy,
         timeout=conf.server.timeout,
+        prefix=conf.server.route_prefix,
     )
 
     app.add_routes(handler.routes)
 
-    # See https://docs.aiohttp.org/en/stable/web_advanced.html#cleanup-context
-    # TODO app.cleanup_ctx(executor_context(executor))
+    async def executor_context(app: web.Application):
+        # Set up update service task
+        async def update_services():
+            while True:
+                try:
+                    logger.info("Updating services")
+                    await executor.update_services()
+                    await asyncio.sleep(600)
+                except Exception:
+                    logger.error("Failed to update services: %s", traceback.format_exc())
 
+        update_task = asyncio.create_task(update_services())
+
+        yield
+        logger.debug("Cancelling update task")
+        update_task.cancel()
+
+    app.cleanup_ctx.append(executor_context)
     return app
 
 
-def serve(conf: ConfigProto):
+async def _serve(conf: ConfigProto):
     """ Start the web server
     """
     app = create_app(conf)
 
-    http = conf.server
+    runner = web.AppRunner(app)
 
-    listen: Mapping
-    match http.listen:
-        case (str(address), int(port)):
-            listen = dict(host=address.strip('[]'), port=port)
-        case str(socket):
-            listen = dict(path=socket[len('unix:'):])
+    await runner.setup()
 
-    logger.info("Server listening at %s", format_interface(conf.server))
-    web.run_app(
-        app,
-        ssl_context=http.ssl.create_ssl_server_context() if http.use_ssl else None,
-        handle_signals=True,
-        **listen,
-    )
+    try:
+        site = create_site(conf.server, runner)
+
+        logger.info("Server listening at %s", format_interface(conf.server))
+        await site.start()
+
+        event = asyncio.Event()
+
+        loop = asyncio.get_running_loop()
+        loop.add_signal_handler(signal.SIGINT, event.set)
+        loop.add_signal_handler(signal.SIGTERM, event.set)
+
+        await event.wait()
+    finally:
+        await runner.cleanup()
+
+    logger.info("Server shutdown")
+
+
+def serve(conf: ConfigProto):
+    asyncio.run(_serve(conf))

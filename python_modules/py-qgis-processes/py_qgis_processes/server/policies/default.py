@@ -9,6 +9,7 @@ from typing_extensions import (
 from py_qgis_contrib.core.config import ConfigBase
 
 from ..accesspolicy import AccessPolicy
+from ..models import ErrorResponse
 
 #
 #  Default acces policy
@@ -69,9 +70,10 @@ class DefaultAccessPolicy(AccessPolicy):
                 for detail in self._executor.services:
                     service = detail.service
                     break
-
-        if not service:
-            raise ValueError("Cannot determine service")
+                else:
+                    raise ValueError("Cannot determine service")
+        elif not self._executor.known_service(service):
+            ErrorResponse.raises(web.HTTPBadRequest, "Service not known")
 
         return service
 

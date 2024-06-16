@@ -31,11 +31,6 @@ from py_qgis_contrib.core.condition import assert_postcondition
 
 from .config import ProcessingConfig
 
-if sys.version_info >= (3, 11):
-    import tomllib as toml
-else:
-    import tomli as toml   # noqa F401
-
 
 def load_configuration(
     configpath: Optional[Path],

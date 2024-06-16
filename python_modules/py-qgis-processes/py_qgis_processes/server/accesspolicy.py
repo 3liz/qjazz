@@ -9,11 +9,7 @@ from pydantic import (
     WithJsonSchema,
 )
 from typing_extensions import (
-    TYPE_CHECKING,
     Annotated,
-    Any,
-    Callable,
-    Coroutine,
     Dict,
     Optional,
     Type,
@@ -23,22 +19,6 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigBase, section
 
 from ..executor import Executor
-from .models import RequestHandler
-
-if TYPE_CHECKING:
-    from mypy_extensions import Arg
-    MiddleWare = Callable[
-        [
-            Arg(web.Request, 'request'),
-            Arg(RequestHandler, 'handler'),
-        ],
-        Coroutine[Any, Any, web.StreamResponse],
-    ]
-else:
-    MiddleWare = Callable[
-        [web.Request, RequestHandler],
-        Coroutine[Any, Any, web.StreamResponse],
-    ]
 
 
 @section("access_policy")
@@ -70,6 +50,9 @@ class AccessPolicy(ABC):
     Config: Type[ConfigBase] = NoConfig
 
     _executor: Executor
+
+    def setup(self, app: web.Application):
+        pass
 
     @abstractmethod
     def service_permission(self, request: web.Request, service: str) -> bool:
@@ -106,13 +89,12 @@ class AccessPolicy(ABC):
         """
         ...
 
-    def middleware(self) -> Optional[MiddleWare]:
-        """ Middleware factory
-        """
-        return None
 
-
-def create_access_policy(conf: AccessPolicyConfig, executor: Executor) -> AccessPolicy:
+def create_access_policy(
+    conf: AccessPolicyConfig,
+    app: web.Application,
+    executor: Executor,
+) -> AccessPolicy:
     """  Create access policy
     """
     logger.info("Creating access policy %s", str(conf.policy_class))
@@ -122,4 +104,7 @@ def create_access_policy(conf: AccessPolicyConfig, executor: Executor) -> Access
 
     instance = conf.policy_class(policy_conf)
     instance._executor = executor
+
+    instance.setup(app)
+
     return instance

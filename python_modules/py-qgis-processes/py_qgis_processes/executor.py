@@ -121,25 +121,6 @@ class Executor:
     def destinations(self, service: str) -> Optional[Sequence[str]]:
         return self.get_destinations(service, self._services)
 
-    def _processes(
-        self,
-        service: str,
-        timeout: Optional[float] = None,
-    ) -> Sequence[ProcessSummary]:
-        # List processes for service (blocking version)
-        res = self._celery.send_task(
-            f"{service}.process_list",
-            priority=100,
-            queue=f'py-qgis.{service}.Inventory',
-            routing_key='processes.list',
-            expires=timeout,
-        )
-
-        try:
-            return ProcessSummaryList.validate_python(res.get(timeout=timeout))
-        finally:
-            res.forget()
-
     def _describe(
         self,
         service: str,
@@ -185,6 +166,25 @@ class Executor:
             project,
             timeout,
         )
+
+    def _processes(
+        self,
+        service: str,
+        timeout: Optional[float] = None,
+    ) -> Sequence[ProcessSummary]:
+        # List processes for service (blocking version)
+        res = self._celery.send_task(
+            f"{service}.process_list",
+            priority=100,
+            queue=f'py-qgis.{service}.Inventory',
+            routing_key='processes.list',
+            expires=timeout,
+        )
+
+        try:
+            return ProcessSummaryList.validate_python(res.get(timeout=timeout))
+        finally:
+            res.forget()
 
     async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
         """ Return process description summary

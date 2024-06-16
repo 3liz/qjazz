@@ -18,23 +18,26 @@ class Handler(Services, Processes, Jobs):
         executor: Executor,
         policy: AccessPolicy,
         timeout: int,
+        prefix: Optional[str] = None,
     ):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
+        self._prefix = prefix or ""
 
     @property
     def routes(self) -> List[web.RouteDef]:
+        prefix = self._prefix
         return [
-            web.get("/processes/", self.list_processes, allow_head=False),
-            web.get("/processes", redirect('/processes/'), allow_head=False),
-            web.get("/processes/{Ident}", self.describe_process, allow_head=False),
-            web.post("/processes/{Ident}/execution", self.execute_process),
-            web.get("/jobs/", self.list_jobs, allow_head=False),
-            web.get("/jobs", redirect('/jobs/'), allow_head=False),
-            web.get("/jobs/{JobId}", self.job_status, allow_head=False),
-            web.delete("/jobs/{JobId}", self.dismiss_job),
-            web.get("/jobs/{JobId}/results", self.job_results, allow_head=False),
+            web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
+            web.get(f"{prefix}/processes", redirect(f'{prefix}/processes/'), allow_head=False),
+            web.get(f"{prefix}/processes/{{Ident}}", self.describe_process, allow_head=False),
+            web.post(f"{prefix}/processes/{{Ident}}/execution", self.execute_process),
+            web.get(f"{prefix}/jobs/", self.list_jobs, allow_head=False),
+            web.get(f"{prefix}/jobs", redirect(f'{prefix}/jobs/'), allow_head=False),
+            web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
+            web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
+            web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
         ]
 
     def format_path(
@@ -43,9 +46,6 @@ class Handler(Services, Processes, Jobs):
         path: str,
         service: Optional[str] = None,
     ) -> str:
-        prefix = request.get('prefix_path')
-        if prefix:
-            path = f"{prefix}{path}"
         return self._accesspolicy.format_path(request, path, service)
 
     def get_service(self, request: web.Request) -> str:

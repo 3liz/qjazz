@@ -16,7 +16,7 @@ from .. import swagger  # noqa F401
 from ..accesspolicy import AccessPolicy
 from ..jobrealm import JOB_REALM_HEADER, get_job_realm, job_realm  # noqa F401
 from ..models import ErrorResponse  # noqa F401
-from ..utils import Link, href, make_link, public_location, public_url  # noqa F401
+from ..utils import Link, href, make_link, public_url  # noqa F401
 
 swagger.model(JobExecute)
 swagger.model(JobStatus)

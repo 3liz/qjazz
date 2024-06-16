@@ -27,15 +27,8 @@ FilePathType = click.Path(
 )
 
 
-if sys.version_info >= (3, 11):
-    import tomllib as toml
-else:
-    import tomli as toml   # noqa F401
-
-
 def load_configuration(
     configpath: Optional[Path],
-    verbose: bool = False,
 ) -> config.Config:
     if configpath:
         cnf = config.read_config_toml(
@@ -46,8 +39,6 @@ def load_configuration(
         cnf = {}
 
     config.confservice.validate(cnf)
-    logger.setup_log_handler(logger.LogLevel.TRACE if verbose else logger.LogLevel.ERROR)
-
     return config.confservice.conf
 
 
@@ -76,7 +67,11 @@ def cli_commands(
 def run_server(ctx: click.Context):
     """ Run server
     """
-    conf = load_configuration(ctx.obj.configpath)
+    conf = cast(ConfigProto, load_configuration(ctx.obj.configpath))
+    logger.setup_log_handler(
+        logger.LogLevel.TRACE if ctx.obj.verbose else conf.logging.level,
+    )
+
     serve(cast(ConfigProto, conf))
 
 
