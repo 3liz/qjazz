@@ -348,7 +348,7 @@ def create_app(conf: ConfigProto) -> web.Application:
         # Set up update service task
         update_interval = conf.server.update_interval
         update_timeout = update_interval / 10.
-        
+
         async def update_cache():
             try:
                 logger.info("Updating services")
@@ -364,13 +364,13 @@ def create_app(conf: ConfigProto) -> web.Application:
                 await cache.update(executor, update_timeout)
             except Exception:
                 logger.error("Failed to update services: %s", traceback.format_exc())
- 
+
         async def periodic_update():
             while True:
                 await asyncio.sleep(update_interval)
                 await update_cache()
 
-        # Attempt to fill the cache before handling 
+        # Attempt to fill the cache before handling
         # any request
         await update_cache()
 
