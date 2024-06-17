@@ -26,7 +26,7 @@ class ForwardedConfig(ConfigBase):
     )
 
 
-def Forwarded(conf: ForwardedConfig) -> Callable:
+def forwarded(conf: ForwardedConfig) -> Callable:
 
     @web.middleware
     async def middleware(

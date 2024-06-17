@@ -8,6 +8,8 @@ from ._handlers import (
     Services,
 )
 from .accesspolicy import AccessPolicy
+from .cache import ProcessesCache
+from .models import ErrorResponse
 from .utils import redirect
 
 
@@ -18,16 +20,16 @@ class Handler(Services, Processes, Jobs):
         executor: Executor,
         policy: AccessPolicy,
         timeout: int,
-        prefix: Optional[str] = None,
+        cache: ProcessesCache,
     ):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
-        self._prefix = prefix or ""
+        self._cache = cache
 
     @property
     def routes(self) -> List[web.RouteDef]:
-        prefix = self._prefix
+        prefix = self._accesspolicy.prefix
         return [
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
             web.get(f"{prefix}/processes", redirect(f'{prefix}/processes/'), allow_head=False),
@@ -45,12 +47,16 @@ class Handler(Services, Processes, Jobs):
         request: web.Request,
         path: str,
         service: Optional[str] = None,
+        project: Optional[str] = None,
     ) -> str:
-        return self._accesspolicy.format_path(request, path, service)
+        return self._accesspolicy.format_path(request, path, service, project)
 
-    def get_service(self, request: web.Request) -> str:
-        """ Get service name from request """
+    def get_service(self, request: web.Request, raise_error: bool = True) -> str:
+        """ Get known service name from request """
         service = self._accesspolicy.get_service(request)
-        if not self._executor.known_service(service):
-            raise web.HTTPNotFound(reason=f"Unknown service {service}")
+        if raise_error and not self._executor.known_service(service):
+            ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not known")
         return service
+
+    def get_project(self, request: web.Request) -> Optional[str]:
+        return self._accesspolicy.get_project(request)

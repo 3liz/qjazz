@@ -93,8 +93,8 @@ def find_key(
 
 def find_keys(
     app: Celery,
-    *,
     service: Optional[str] = None,
+    *,
     realm: Optional[str] = None,
     cursor: int = 0,
     count: int = 100,  # Minimal count hint

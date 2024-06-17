@@ -79,11 +79,24 @@ class AccessPolicy(ABC):
         ...
 
     @abstractmethod
+    def get_project(self, request: web.Request) -> Optional[str]:
+        """ Return project for therequest
+        """
+        ...
+
+    @property
+    def prefix(self) -> str:
+        """ Return the prefix path
+        """
+        return ""
+
+    @abstractmethod
     def format_path(
         self,
         request: web.Request,
         path: str,
         service: Optional[str] = None,
+        project: Optional[str] = None,
     ) -> str:
         """ Format a path including service paths
         """

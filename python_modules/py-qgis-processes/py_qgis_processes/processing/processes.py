@@ -54,7 +54,7 @@ else:
 
     # NOTE: define only tested flags
     class _ProcessingAlgorithmFlag(Enum):
-        HideFromToolboox = QgsProcessingAlgorithm.FlagHideFromToolbox
+        HideFromToolbox = QgsProcessingAlgorithm.FlagHideFromToolbox
         CanCancel = QgsProcessingAlgorithm.FlagCanCancel
         KnownIssues = QgsProcessingAlgorithm.FlagKnownIssues
         NotAvailableInStandaloneTool = QgsProcessingAlgorithm.FlagNotAvailableInStandaloneTool
@@ -115,7 +115,7 @@ class ProcessAlgorithm:
     def hidden(cls, alg: QgsProcessingAlgorithm) -> bool:
         return cls._check_flags(
             alg,
-            ProcessingAlgorithmFlag.HideFromToolboox
+            ProcessingAlgorithmFlag.HideFromToolbox
             | ProcessingAlgorithmFlag.NotAvailableInStandaloneTool,
         )
 

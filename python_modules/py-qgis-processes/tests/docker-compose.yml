@@ -1,11 +1,24 @@
 
 # Minimal docker compose for running examples
 services:
+  worker:
+    image: 3liz/qgis-services:qgis-release-eager
+    working_dir: /opt/py-qgis/python_modules/py-qgis-processes
+    command: qgis-processes worker -C tests/worker-config.toml
+    volumes:
+    - { type: bind, source: "../../../", target: /opt/py-qgis }
+    profiles:
+    - worker
+    environment:
+      CONF_WORKER__BROKER_HOST: rabbitmq
+      CONF_WORKER__BACKEND_HOST: redis:6379/0
+    depends_on:
+    - rabbitmq 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "127.0.0.1:5672:5672"
+    - "127.0.0.1:5672:5672"
   redis:
     image: redis:6-alpine
     ports:
-      - "127.0.0.1:6379:6379"
+    - "127.0.0.1:6379:6379"

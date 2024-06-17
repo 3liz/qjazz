@@ -29,7 +29,8 @@ FilePathType = click.Path(
 
 def load_configuration(
     configpath: Optional[Path],
-) -> config.Config:
+) -> ConfigProto:
+
     if configpath:
         cnf = config.read_config_toml(
             configpath,
@@ -39,7 +40,7 @@ def load_configuration(
         cnf = {}
 
     config.confservice.validate(cnf)
-    return config.confservice.conf
+    return cast(ConfigProto, config.confservice.conf)
 
 
 @click.group()
@@ -47,7 +48,7 @@ def load_configuration(
     "--config", "-C", "configpath",
     help="Path to configuration file",
     type=FilePathType,
-    envvar="PY_QGIS_PROCESSES_CONFIG",
+    envvar="PY_QGIS_PROCESSES_SERVER_CONFIG",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Set verbose output")
 @click.pass_context
@@ -67,12 +68,12 @@ def cli_commands(
 def run_server(ctx: click.Context):
     """ Run server
     """
-    conf = cast(ConfigProto, load_configuration(ctx.obj.configpath))
+    conf = load_configuration(ctx.obj.configpath)
     logger.setup_log_handler(
         logger.LogLevel.TRACE if ctx.obj.verbose else conf.logging.level,
     )
 
-    serve(cast(ConfigProto, conf))
+    serve(conf)
 
 
 @cli_commands.command('config')

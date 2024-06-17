@@ -14,7 +14,7 @@ from typing_extensions import (
     Awaitable,
     Callable,
     Literal,
-    Optional,
+    Protocol,
     TypeAlias,
 )
 
@@ -29,7 +29,7 @@ from py_qgis_contrib.core.config import (
 
 from ..executor import Executor, ExecutorConfig
 from .accesspolicy import AccessPolicyConfig, create_access_policy
-from .forwarded import Forwarded, ForwardedConfig
+from .forwarded import ForwardedConfig, forwarded
 from .handlers import Handler
 from .models import ErrorResponse, RequestHandler
 
@@ -78,18 +78,14 @@ class ServerConfig(ConfigBase):
     )
     proxy: ForwardedConfig = Field(default=ForwardedConfig())
 
-    route_prefix: Optional[str] = Field(
-        default=None,
-        title="Route prefix",
-        description=(
-            "Prefix prepended to path.\n"
-            "Can be use for customizing path for proxy or\n"
-            "to add extra path parameters used in\n"
-            "conjonction with acces policy."
-        ),
+    update_interval: int = Field(
+        default=600,
+        gt=0,
+        title="Service update interval",
+        description="Interval in seconds between update of avaialable services",
     )
 
-    timeout: int = Field(5, title="Backend request timeout")
+    timeout: int = Field(5, gt=0, title="Backend request timeout")
 
 
 def format_interface(conf: ServerConfig) -> str:
@@ -105,11 +101,14 @@ confservice.add_section("executor", ExecutorConfig)
 
 
 # Allow type validation
-class ConfigProto:
+class ConfigProto(Protocol):
     logging: logger.LoggingConfig
     server: ServerConfig
     executor: ExecutorConfig
     access_policy: AccessPolicyConfig
+
+    def model_dump_json(self, *args, **kwargs) -> str:
+        ...
 
 #
 # Logging
@@ -307,11 +306,13 @@ def create_site(http: ServerConfig, runner: web.AppRunner) -> Site:
 
 def create_app(conf: ConfigProto) -> web.Application:
 
+    from .cache import ProcessesCache
+
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
             log_incoming_request,
-            Forwarded(conf.server.proxy),
+            forwarded(conf.server.proxy),
         ],
         handler_args={
             'access_log_class': AccessLogger,
@@ -330,28 +331,50 @@ def create_app(conf: ConfigProto) -> web.Application:
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
 
+    cache = ProcessesCache()
+
     # Handler
     handler = Handler(
         executor=executor,
         policy=access_policy,
         timeout=conf.server.timeout,
-        prefix=conf.server.route_prefix,
+        cache=cache,
     )
 
     app.add_routes(handler.routes)
 
     async def executor_context(app: web.Application):
-        # Set up update service task
-        async def update_services():
-            while True:
-                try:
-                    logger.info("Updating services")
-                    await executor.update_services()
-                    await asyncio.sleep(600)
-                except Exception:
-                    logger.error("Failed to update services: %s", traceback.format_exc())
 
-        update_task = asyncio.create_task(update_services())
+        # Set up update service task
+        update_interval = conf.server.update_interval
+        update_timeout = update_interval / 10.
+        
+        async def update_cache():
+            try:
+                logger.info("Updating services")
+                services = await executor.update_services()
+                if services:
+                    logger.info("Availables services: %s", tuple(services.keys()))
+                    if logger.isEnabledFor(logger.LogLevel.DEBUG):
+                        for _, d in services.values():
+                            logger.debug(d.model_dump_json(indent=4))
+                else:
+                    logger.warning("No services availables")
+                logger.info("Updating process cache")
+                await cache.update(executor, update_timeout)
+            except Exception:
+                logger.error("Failed to update services: %s", traceback.format_exc())
+ 
+        async def periodic_update():
+            while True:
+                await asyncio.sleep(update_interval)
+                await update_cache()
+
+        # Attempt to fill the cache before handling 
+        # any request
+        await update_cache()
+
+        update_task = asyncio.create_task(periodic_update())
 
         yield
         logger.debug("Cancelling update task")
@@ -383,7 +406,9 @@ async def _serve(conf: ConfigProto):
         loop.add_signal_handler(signal.SIGTERM, event.set)
 
         await event.wait()
+        logger.debug("Got signal")
     finally:
+        logger.debug("Runner cleanup")
         await runner.cleanup()
 
     logger.info("Server shutdown")

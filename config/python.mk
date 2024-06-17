@@ -50,5 +50,5 @@ ifndef TESTDIR
 test::
 else
 test:: lint typing security
-	cd $(TESTDIR) && pytest -v $(PYTEST_ARGS)
+	cd $(TESTDIR) && pytest -v 
 endif

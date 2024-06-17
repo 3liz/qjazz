@@ -18,16 +18,16 @@ from py_qgis_contrib.core.condition import (
 )
 
 from .celery import CeleryConfig
-from .processing import (
-    ProcessingConfig,
-)
+from .processing.config import ProcessingConfig
 from .processing.schemas import LinkHttp
+
+CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
 
 
 def lookup_config_path() -> Path:
     """ Determine config path location
     """
-    var = os.getenv('PY_QGIS_PROCESSES_WORKER_CONFIG')
+    var = os.getenv(CONFIG_ENV_PATH)
     if var:
         # Path defined with environment MUST exists
         p = Path(var).expanduser()

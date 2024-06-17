@@ -4,13 +4,17 @@ from pathlib import Path
 
 import pytest
 
+from aiohttp import web
+from aiohttp.test_utils import TestClient
+from typing_extensions import Callable
+
 from qgis.core import (
     QgsProcessingFeedback,
 )
 
 from py_qgis_cache import ProjectsConfig
 from py_qgis_contrib.core import qgis
-from py_qgis_processes.processing import (
+from py_qgis_processes.processing.prelude import (
     ProcessingConfig,
     ProcessingContext,
 )
@@ -188,3 +192,17 @@ def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
     plugin_service.load_plugins(qgis.PluginType.PROCESSING, None)
     plugin_service.register_as_service()
     return plugin_service
+
+
+@pytest.fixture(scope='module')
+def server_app(rootdir: Path) -> web.Application:
+    from py_qgis_processes.server import cli, server
+
+    return server.create_app(
+        cli.load_configuration(rootdir.joinpath('server-config.toml')),
+    )
+
+
+@pytest.fixture(scope='function')
+async def http_client(server_app: web.Application, aiohttp_client: Callable) -> TestClient:
+    return await aiohttp_client(server_app)

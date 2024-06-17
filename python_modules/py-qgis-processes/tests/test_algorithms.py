@@ -10,7 +10,7 @@ from qgis.core import (
     QgsProcessingUtils,
 )
 
-from py_qgis_processes.processing import (
+from py_qgis_processes.processing.prelude import (
     InputValueError,
     JobExecute,
     ProcessAlgorithm,

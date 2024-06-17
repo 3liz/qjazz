@@ -29,7 +29,7 @@ def make_link(
 def public_url(request: web.Request, path: str) -> str:
     """ Return the public base url
     """
-    return f"{request['pubilc_url']}{path}"
+    return f"{request['public_url']}{path}"
 
 
 def href(request: web.Request, path: str) -> str:

@@ -71,23 +71,33 @@ class DefaultAccessPolicy(AccessPolicy):
                     service = detail.service
                     break
                 else:
-                    raise ValueError("Cannot determine service")
-        elif not self._executor.known_service(service):
-            ErrorResponse.raises(web.HTTPBadRequest, "Service not known")
+                    raise ErrorResponse.raises(web.HTTPServiceUnavailable, "No service available")
 
         return service
+
+    def get_project(self, request: web.Request) -> Optional[str]:
+        """ Return the project path (map)
+        """
+        return request.query.get('map') or request.query.get('MAP')
 
     def format_path(
         self,
         request: web.Request,
         path: str,
         service: Optional[str] = None,
+        project: Optional[str] = None,
     ) -> str:
         """ Format a path including service paths
         """
         if service:
+            service = f"service={service}"
+        if project:
+            project = f"map={project}"
+
+        query = '&'.join(p for p in (service, project) if p)
+        if query:
             if path.rfind('?') != -1:
-                path = f"{path}&service={service}"
+                path = f"{path}{query}"
             else:
-                path = f"{path}?service={service}"
+                path = f"{path}?{query}"
         return path

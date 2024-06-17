@@ -2,14 +2,19 @@
 # Cache management operations
 #
 from multiprocessing.connection import Connection
-from time import time
 from urllib.parse import urlunsplit
 
 from typing_extensions import Optional, assert_never, cast
 
 from qgis.core import QgsMapLayer
 
-from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
+from py_qgis_cache import (
+    CacheEntry,
+    CacheManager,
+    CheckoutStatus,
+    ProjectMetadata,
+)
+from py_qgis_cache.extras import evict_by_popularity
 from py_qgis_contrib.core import logger
 
 from . import messages as _m
@@ -296,29 +301,8 @@ def evict_project_from_cache(cm: CacheManager) -> bool:
         Returns `true` if object has been evicted from the
         cache, `false` otherwise.
     """
-    # Evaluate an euristics based on last_hit timestamp
-    # and hits number
-    # This is simple model of cache frequency eviction.
-    # Such model is related to `hyperbolic policy`:
-    # https://www.usenix.org/system/files/conference/atc17/atc17-blankstein.pdf
-    # Where eviction scheme is based on popularity over a time period.
-    #
-    # Here we take the number of hits divided by the  lifetime period
-    # of the object in cache
-    #
-    # This should be ok as long the rate of insertion of new object is low
-    # which we assume is the case for this kind of resource.
-    now = time()
+    evicted = evict_by_popularity(cm)
+    if evicted:
+        logger.debug("Evicted '%s' from cache", evicted.uri)
 
-    candidate = min(
-        (e for e in cm.iter() if not e.pinned),
-        default=None,
-        key=lambda e: e.hits / (now - e.timestamp),
-    )
-
-    if not candidate:
-        return False
-
-    logger.debug("Evicting '%s' from cache", candidate.uri)
-    cm.update(candidate.md, Co.REMOVED)
-    return True
+    return bool(evicted)

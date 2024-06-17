@@ -14,6 +14,7 @@ from typing_extensions import (
 from qgis.core import QgsProcessingFeedback, QgsProject
 
 from py_qgis_cache import CacheManager
+from py_qgis_cache.extras import evict_by_popularity
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.componentmanager import FactoryNotFoundError
 from py_qgis_contrib.core.qgis import (
@@ -26,7 +27,7 @@ from py_qgis_contrib.core.qgis import (
 )
 
 from .celery import JobContext
-from .processing import ProcessingConfig
+from .processing.config import ProcessingConfig
 
 ProgressFun = Callable[[Optional[float], Optional[str]], None]
 
@@ -129,10 +130,17 @@ class QgisContext:
         md, status = cm.checkout(url)
         match status:
             case Co.REMOVED:
+                cm.update(md, status)  # type: ignore [arg-type]
                 raise FileNotFoundError(f"Project {url} was removed")
             case Co.NOTFOUND:
                 raise FileNotFoundError(f"Project {url} does no exists")
             case _:
+                if status == Co.NEW and len(cm) >= self._conf.max_cached_projects:
+                    # Evict project from cache
+                    evicted = evict_by_popularity(cm)
+                    if evicted:
+                        logger.debug("Evicted project from cache: %s", evicted.uri)
                 entry, _ = cm.update(md, status)  # type: ignore [arg-type]
+                entry.hit_me()
                 project = entry.project
         return project

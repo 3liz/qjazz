@@ -55,7 +55,7 @@ class PresenceDetails(JsonModel):
     title: str
     description: str
     links: Sequence[LinkHttp]
-    online_at: float
+    online_since: float
     qgis_version_info: int
     versions: str
 
@@ -71,6 +71,7 @@ class Executor:
         self._services: ServiceDict = {}
         self._expiration_timeout = conf.message_expiration_timeout
         self._result_expires = conf.celery.result_expires
+        self._last_updated = 0.
 
     def presences(self, destinations: Optional[Sequence[str]] = None) -> Dict[str, PresenceDetails]:
         """ Return presence info for online workers
@@ -111,7 +112,12 @@ class Executor:
             name.
         """
         self._services = await asyncio.to_thread(self.get_services)
+        self._last_updated = time()
         return self._services
+
+    @property
+    def last_updated(self):
+        return self._last_updated
 
     @classmethod
     def get_destinations(cls, service: str, services: ServiceDict) -> Optional[Sequence[str]]:
@@ -514,13 +520,13 @@ class Executor:
 
         destinations = service and self.destinations(service)
 
-        def _pull():
-            _, keys = registry.find_keys(service, realm=realm, cursor=cursor, count=limit)
+        def _pull() -> None:
+            _, keys = registry.find_keys(self._celery, service, realm=realm, cursor=cursor, count=limit)
             for job_id, _, _ in keys:
                 st = self._job_status(job_id, destinations)
                 if not st:
                     ti = registry.find_job(self._celery, job_id)
-                    st = ti and self._job_status_pending(ti)
+                    st = self._job_status_pending(ti) if ti else None
                 if st:
                     q.put(st)
 

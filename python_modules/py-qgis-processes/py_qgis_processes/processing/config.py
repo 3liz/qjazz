@@ -146,6 +146,16 @@ class ProcessingConfig(BaseConfig):
         description="SSL credentials to use for references inputs",
     )
 
+    max_cached_projects: int = Field(
+        default=10,
+        gt=0,
+        title="Project cache size",
+        description=(
+            "The maximum number of projects in cache by\n"
+            "process."
+        ),
+    )
+
     def settings(self) -> Dict[str, str]:
         """Configure qgis processing settings
         """

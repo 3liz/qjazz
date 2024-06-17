@@ -8,10 +8,17 @@ stop:
 	docker compose down -v
 
 
-APP:=py_qgis_processes.jobs
-
 LOGLEVEL:=info
 
-export PY_QGIS_PROCESSES_WORKER_CONFIG=$(CURDIR)/worker-config.toml
-run:
-	celery -A $(APP) worker -l $(LOGLEVEL) --hostname dev1@%h -Ofair $(CELERY_ARGS)
+PROCESSES_CONFIG=$(CURDIR)/worker-config.toml
+
+workdir:
+	@mkdir -p __workdir__
+
+run: workdir
+	pthon -m py_qgis_processes -C $(PROCESSES_CONFIG) -l $(LOGLEVEL)
+
+# Equivalent run using celery config
+export PY_QGIS_PROCESSES_CONFIG=$(PROCESSES_CONFIG)
+run-celery: workdir
+	celery -A py_qgis_processes.jobs  worker -l $(LOGLEVEL) --hostname dev1@%h -Ofair $(CELERY_ARGS)

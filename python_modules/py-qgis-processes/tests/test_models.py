@@ -6,7 +6,7 @@ from qgis.core import (
     QgsProcessingOutputLayerDefinition,
 )
 
-from py_qgis_processes.processing import (
+from py_qgis_processes.processing.prelude import (
     InputParameter,
     OutputParameter,
     ProcessingContext,

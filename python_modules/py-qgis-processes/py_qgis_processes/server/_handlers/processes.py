@@ -48,9 +48,11 @@ class Processes(HandlerProto):
                         schema:
                             $ref: '#/definitions/ProcessList'
         """
-        service = self.get_service(request)
-
-        processes = await self._executor.processes(service, self._timeout)
+        # Get service processes from cache
+        service = self.get_service(request, raise_error=False)
+        processes = self._cache.get(service)
+        if not processes:
+            ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not available")
 
         return web.Response(
             content_type="application/json",
@@ -95,12 +97,6 @@ class Processes(HandlerProto):
                 type: string
               required: true
               description: process identifier
-            - in: query
-              name: map
-              schema:
-                type: string
-              description: Target project name
-              required: false
         tags:
           - process
         responses:
@@ -114,9 +110,9 @@ class Processes(HandlerProto):
 
         """
         service = self.get_service(request)
+        project = self.get_project(request)
 
         process_id = request.match_info['Ident']
-        project = request.query.get('map')
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -133,8 +129,6 @@ class Processes(HandlerProto):
         if not td:
             return ErrorResponse.response(404, f"The process {process_id} does not exists")
 
-        query = f"?map={project}" if project else ""
-
         return web.Response(
             content_type="application/json",
             text=td.model_copy(
@@ -144,8 +138,9 @@ class Processes(HandlerProto):
                             request,
                             path=self.format_path(
                                 request,
-                                f"/processes/{process_id}{query}",
+                                f"/processes/{process_id}",
                                 service,
+                                project,
                             ),
                             rel="self",
                             title="Process description",
@@ -154,8 +149,9 @@ class Processes(HandlerProto):
                             request,
                             path=self.format_path(
                                 request,
-                                f"/processes/{process_id}/execution{query}",
+                                f"/processes/{process_id}/execution",
                                 service,
+                                project,
                             ),
                             rel="http://www.opengis.net/def/rel/ogc/1.0/processes]",
                             title="Execute process",
@@ -178,12 +174,6 @@ class Processes(HandlerProto):
                 type: string
               required: true
               description: Process  identifier
-            - in: query
-              name: map
-              schema:
-                type: string
-              description: Target project name
-              required: false
         tags:
           - process
         requestBody:
@@ -205,8 +195,9 @@ class Processes(HandlerProto):
                             $ref: '#/definitions/JobStatus'
         """
         service = self.get_service(request)
+        project = self.get_project(request)
+
         process_id = request.match_info['Ident']
-        project = request.query.get('map')
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -255,6 +246,7 @@ class Processes(HandlerProto):
                     request,
                     f"/processes/{job_status.process_id}/execution",
                     service,
+                    project,
                 ),
                 rel="self",
                 title="job execution",

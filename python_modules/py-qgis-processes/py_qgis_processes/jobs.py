@@ -21,7 +21,7 @@ from py_qgis_contrib.core.condition import (
 from .celery import Job, JobContext, Worker
 from .config import load_configuration
 from .context import FeedBack, QgisContext
-from .processing import (
+from .processing.prelude import (
     JobExecute,
     JobResults,
     ProcessAlgorithm,
@@ -43,6 +43,9 @@ class ProcessingWorker(Worker):
         conf = load_configuration()
 
         service_name = conf.worker.service_name
+
+        self.service_name = service_name
+
         super().__init__(service_name, conf.worker, **kwargs)
 
         # We want each service with its own queue and exchange
@@ -56,6 +59,9 @@ class ProcessingWorker(Worker):
             Queue(f"py-qgis.{service_name}.Inventory", routing_key='processes.#'),
         }
 
+        # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
+        self.conf.worker_prefetch_multiplier = 1
+
         self._job_context.update(processing_config=conf.processing)
 
         self._service_name = service_name
@@ -63,7 +69,7 @@ class ProcessingWorker(Worker):
         self._service_description = conf.worker.description
         self._service_links = conf.worker.links
 
-        self._online_at = time()
+        self._online_since = time()
 
 
 app = ProcessingWorker()
@@ -87,7 +93,7 @@ def presence(_) -> Dict:
             by_alias=True,
             exclude_none=True,
         ),
-        'online_at': app._online_at,
+        'online_since': app._online_since,
         'qgis_version_info': Qgis.versionInt(),
         'versions': QgsCommandLineUtils.allVersions(),
     }

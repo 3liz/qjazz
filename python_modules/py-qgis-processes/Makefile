@@ -7,5 +7,7 @@ PYTHON_PKG=py_qgis_processes
 
 TESTDIR=tests tests/plugins
 
+export PYTEST_ADDOPTS=-m "not services" 
+
 include $(topsrcdir)/config/rules.mk
 

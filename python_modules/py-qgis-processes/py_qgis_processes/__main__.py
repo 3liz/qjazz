@@ -1,0 +1,100 @@
+import os
+import socket
+
+from pathlib import Path
+
+import click
+
+PathType = click.Path(
+    exists=True,
+    readable=True,
+    dir_okay=False,
+    path_type=Path,
+)
+
+
+@click.group()
+def main():
+    pass
+
+
+@main.command('worker')
+@click.option(
+    "--queue",
+    "-Q",
+    type=click.Choice(('Tasks', 'Inventory', 'None')),
+    default='None',
+    help="Select the queue to use a runtime",
+)
+@click.option(
+    "--conf",
+    "-C",
+    "configpath",
+    type=PathType,
+    help="Path to configuration file",
+)
+@click.option(
+    "--loglevel",
+    "-l",
+    type=click.Choice(('error', 'warning', 'info', 'debug')),
+    default="info",
+    help="Log level",
+)
+def run_worker(
+    queue: str,
+    configpath: Path,
+    loglevel: str,
+):
+    """ Run processes worker
+    """
+    from .config import CONFIG_ENV_PATH
+    if configpath:
+        os.environ[CONFIG_ENV_PATH] = str(configpath)
+
+    from .jobs import app
+
+    service_name = app.service_name
+
+    kwargs: dict = {}
+    if queue != 'None':
+        kwargs.update(queues=[f"py-qgis.{service_name}.{queue}"])
+
+    worker = app.Worker(
+        hostname=f"{service_name}@{socket.gethostname()}",
+        loglevel=loglevel,
+        prefetch_multiplier=1,
+        optimization='fair',
+        **kwargs,
+    )
+
+    worker.start()
+
+
+@main.command('serve')
+@click.option(
+    "--conf",
+    "-C",
+    "configpath",
+    type=PathType,
+    help="Path to configuration file",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
+def run_server(
+    configpath: Path,
+    verbose: bool,
+):
+    """ Run server
+    """
+    from py_qgis_contrib.core import logger
+
+    from .server.cli import load_configuration, serve
+
+    conf = load_configuration(configpath)
+    logger.setup_log_handler(
+        logger.LogLevel.TRACE if verbose else conf.logging.level,
+    )
+
+    serve(conf)
+
+
+main()
