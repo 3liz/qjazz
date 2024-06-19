@@ -97,6 +97,8 @@ class AccessPolicy(ABC):
         path: str,
         service: Optional[str] = None,
         project: Optional[str] = None,
+        *,
+        query: Optional[str] = None,
     ) -> str:
         """ Format a path including service paths
         """

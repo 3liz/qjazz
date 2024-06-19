@@ -62,6 +62,10 @@ class ProcessingWorker(Worker):
         # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
         self.conf.worker_prefetch_multiplier = 1
 
+        # Logging
+        self.conf.worker_redirect_stdouts = False
+        self.conf.worker_hijack_root_logger = False
+
         self._job_context.update(processing_config=conf.processing)
 
         self._service_name = service_name
@@ -108,8 +112,9 @@ def presence(_) -> Dict:
 def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
     """Return the list of processes
     """
-    with QgisContext(ctx):
-        algs = ProcessAlgorithm.algorithms(include_deprecated=False)
+    with QgisContext(ctx) as qgis_context:
+        include_deprecated = qgis_context.processing_config.expose_deprecated_algorithms
+        algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
         return [alg.summary() for alg in algs]
 
 

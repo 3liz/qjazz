@@ -34,7 +34,7 @@ LOCAL_BACKEND = "localhost:6379/0"
 
 
 class CeleryConfig(BaseConfig):
-
+    """Celery configuration"""
     broker_host: str = Field(default=LOCAL_BROKER, title="Celery amqp broker host")
     broker_use_ssl: bool = False
     broker_ssl: Optional[SSLConfig] = None

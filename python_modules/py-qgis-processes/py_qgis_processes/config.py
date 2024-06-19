@@ -8,6 +8,7 @@ from pathlib import Path
 
 from pydantic import Field
 from typing_extensions import (
+    Optional,
     Sequence,
     cast,
 )
@@ -24,9 +25,10 @@ from .processing.schemas import LinkHttp
 CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
 
 
-def lookup_config_path() -> Path:
+def lookup_config_path() -> Optional[Path]:
     """ Determine config path location
     """
+    p: Optional[Path] = None
     var = os.getenv(CONFIG_ENV_PATH)
     if var:
         # Path defined with environment MUST exists
@@ -35,17 +37,13 @@ def lookup_config_path() -> Path:
     else:
         # Search in standards paths
         for search in (
-            '/etc/py-qgis-processes/worker.toml',
-            '~/.py-qgis-processes/worker.toml',
-            '~/.config/py-qgis-processes/worker.toml',
+            '/etc/py-qgis/processes/worker.toml',
+            '~/.py-qgis/processes/worker.toml',
+            '~/.config/py-qgis/processes/worker.toml',
         ):
             p = Path(search).expanduser()
             if p.exists():
                 break
-        else:
-            raise RuntimeError("No configuration found")
-
-    print("=Reading configuration from:", p, file=sys.stderr, flush=True)  # noqa T201
     return p
 
 
@@ -55,6 +53,11 @@ def lookup_config_path() -> Path:
 
 @config.section('worker', field=...)
 class WorkerConfig(CeleryConfig):
+    """
+    Worker configuration
+
+    Configure celery worker settings
+    """
     service_name: str = Field(
         title="Name of the service",
         description=(
@@ -80,14 +83,23 @@ def load_configuration() -> ConfigProto:
     """ Load worker configuration
     """
     configpath = lookup_config_path()
-    cnf = config.read_config_toml(
-        configpath,
-        location=str(configpath.parent.absolute()),
-    )
+    if configpath:
+        print("=Reading configuration from:", configpath, file=sys.stderr, flush=True)  # noqa T201
+
+        cnf = config.read_config_toml(
+            configpath,
+            location=str(configpath.parent.absolute()),
+        )
+    else:
+        cnf = {}
+
     config.confservice.validate(cnf)
 
     conf = config.confservice.conf
     logger.setup_log_handler(conf.logging.level)
+    # Do not propagate otherwise logging will echo
+    # to Celery logger
+    logger.logger().propagate = False
     return cast(ConfigProto, conf)
 
 

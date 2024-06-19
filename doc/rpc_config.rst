@@ -63,11 +63,13 @@ pressure too much then the worker will exit with an error condition.
 
 
 .. note::
-   | There is no mecanism for restarting dead processes in worker instance 
-     and performance can degrade quickly if the processes exit abnormally.
-   | Scaling and resilience are achieved in a much more effective way by using 
-     the scaling capabilities of Docker compose, swarm or other container orchestrator 
-     or even SystemD.
+   | The `worker.rescale_period` configuration setting allow to periodically restore the
+     initial number of worker. Nevertherless, if too many workers die in a short amount 
+     of time less that the rescale period the ressure can increase too much and the worker 
+     will exit.
+   | If this occurs, this is usually because there is something wrong with the treatment of 
+     the  qgis request that must be investigated.
+   | On production, Monitoring workers lifecycle may be useful to detect such situations.
 
 
 .. _rpc_configuration:

@@ -18,7 +18,13 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from pydantic import AfterValidator, Field, JsonValue, ValidationInfo
+from pydantic import (
+    AfterValidator,
+    DirectoryPath,
+    Field,
+    JsonValue,
+    ValidationInfo,
+)
 from typing_extensions import (
     Annotated,
     Any,
@@ -83,7 +89,7 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
 
 class QgisPluginConfig(config.Config):
     paths: Annotated[
-        List[Path],
+        List[DirectoryPath],
         AfterValidator(_validate_plugins_paths),
     ] = Field(
         default=[],
@@ -278,7 +284,6 @@ def find_plugins(
     """
     path = Path(path)
     for plugin in path.glob("*"):
-        logger.debug(f"Looking for plugin in '{plugin}'")
 
         if not plugin.is_dir():
             # Warn about dangling symlink
@@ -292,6 +297,8 @@ def find_plugins(
                     "mounting the target path in the container.",
                 )
             continue
+
+        logger.debug(f"Looking for plugin in '{plugin}'")
 
         metadata_file = plugin / 'metadata.txt'
         if not metadata_file.exists():

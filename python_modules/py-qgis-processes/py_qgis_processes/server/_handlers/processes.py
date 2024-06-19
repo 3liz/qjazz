@@ -51,8 +51,11 @@ class Processes(HandlerProto):
         # Get service processes from cache
         service = self.get_service(request, raise_error=False)
         processes = self._cache.get(service)
-        if not processes:
+        if processes is None:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not available")
+
+        def _process_filter(td: ProcessSummary) -> bool:
+            return self._accesspolicy.execute_permission(request, service, td.id_)
 
         return web.Response(
             content_type="application/json",
@@ -70,8 +73,7 @@ class Processes(HandlerProto):
                                 *td.links,
                             ],
                         ),
-                    ) for td in processes
-                    if self._accesspolicy.execute_permission(request, service, td.id_)
+                    ) for td in processes if _process_filter(td)
                 ],
                 links=[
                     make_link(

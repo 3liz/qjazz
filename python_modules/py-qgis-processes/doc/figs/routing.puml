@@ -1,0 +1,15 @@
+@startuml
+component [Messaging]
+component [Server] {
+  component server
+  HTTP - server
+  server -down- AccessPolicy
+}
+component [Worker\nService1] as S1
+component [Worker\nService2] as S2
+component [Worker\nService3] as S3
+AccessPolicy -down-> Messaging
+Messaging -down-> S1: Queue1
+Messaging -down-> S2: Queue2
+Messaging -down-> S3: Queue3
+@enduml

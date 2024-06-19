@@ -40,18 +40,18 @@ Metadata = Annotated[
 ]
 
 
+#
+# IO descriptions
+#
+# See openapi/schemas/processes-core
+#
+
 class DescriptionType(JsonModel):
     title: str = ""
     description: Optional[str] = NullField()
     keywords: Sequence[str] = ()
     metadata: Sequence[Metadata] = ()
 
-
-#
-# IO descriptions
-#
-# See openapi/schemas/processes-core
-#
 
 _NonZeroPositiveInt = Annotated[int, Field(gt=0)]
 _PositiveInt = Annotated[int, Field(ge=0)]

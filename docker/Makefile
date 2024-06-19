@@ -40,6 +40,7 @@ build: manifest requirements
 
 build-front:
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target front \
+		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDFRONTIMAGE) -t $(BUILDNAME):front-eager  -f Dockerfile  ..
 
 

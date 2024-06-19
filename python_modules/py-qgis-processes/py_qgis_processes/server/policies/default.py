@@ -86,6 +86,8 @@ class DefaultAccessPolicy(AccessPolicy):
         path: str,
         service: Optional[str] = None,
         project: Optional[str] = None,
+        *,
+        query: Optional[str] = None,
     ) -> str:
         """ Format a path including service paths
         """
@@ -94,10 +96,5 @@ class DefaultAccessPolicy(AccessPolicy):
         if project:
             project = f"map={project}"
 
-        query = '&'.join(p for p in (service, project) if p)
-        if query:
-            if path.rfind('?') != -1:
-                path = f"{path}{query}"
-            else:
-                path = f"{path}?{query}"
-        return path
+        query = '&'.join(p for p in (query, service, project) if p)
+        return f"{path}{query}"

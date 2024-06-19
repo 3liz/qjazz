@@ -13,6 +13,7 @@ from qgis.core import (
     QgsProcessingParameterAggregate,
     QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterAnnotationLayer,
+    QgsProcessingParameterAuthConfig,
     QgsProcessingParameterBand,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterColor,
@@ -105,6 +106,7 @@ from .layers import (
     ParameterVectorTileWriterLayers,
 )
 from .literal import (
+    ParameterAuthConfig,
     ParameterBool,
     ParameterColor,
     ParameterDatabaseSchema,
@@ -130,14 +132,15 @@ from .mesh import (
 
 # Type mapping
 
-QGIS_TYPES = MappingProxyType({
+InputTypes = MappingProxyType({
     QgsProcessingParameterAggregate.typeName(): ParameterAggregate,
     QgsProcessingParameterAlignRasterLayers.typeName(): ParameterAlignRasterLayers,
     QgsProcessingParameterAnnotationLayer.typeName(): ParameterAnnotationLayer,
+    QgsProcessingParameterAuthConfig.typeName(): ParameterAuthConfig,
     QgsProcessingParameterBand.typeName(): ParameterBand,
     QgsProcessingParameterBoolean.typeName(): ParameterBool,
     QgsProcessingParameterColor.typeName(): ParameterColor,
-    QgsProcessingParameterCoordinateOperation: ParameterCoordinateOperation,
+    QgsProcessingParameterCoordinateOperation.typeName(): ParameterCoordinateOperation,
     QgsProcessingParameterCrs.typeName(): ParameterCrs,
     QgsProcessingParameterDatabaseSchema.typeName(): ParameterDatabaseSchema,
     QgsProcessingParameterDatabaseTable.typeName(): ParameterDatabaseTable,
@@ -193,7 +196,7 @@ class _InputParameter:
 
     @classmethod
     def get(cls, param: ParameterDefinition) -> Type[InputParameterDef]:
-        Input = QGIS_TYPES.get(param.type())
+        Input = InputTypes.get(param.type())
         if Input is None:
             raise ValueError(f"Unsupported input parameter: {param}")
         return Input

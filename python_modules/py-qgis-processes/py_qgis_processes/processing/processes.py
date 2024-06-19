@@ -165,7 +165,7 @@ class ProcessAlgorithm:
             MetadataValue(role="QgisVersionInt", title="Qgis version int", value=Qgis.versionInt()),
             MetadataValue(role="Deprecated", title="Deprecated", value=self.deprecated),
             MetadataValue(role="KnownIssues", title="Known issues", value=self.known_issues),
-            MetadataValue(role="RequireProject", title="Require project", value=self.require_project),
+            MetadataValue(role="RequiresProject", title="Requires project", value=self.require_project),
         ]
 
         return description

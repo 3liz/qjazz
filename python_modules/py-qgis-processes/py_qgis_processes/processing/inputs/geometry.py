@@ -13,6 +13,7 @@ from typing_extensions import (
     Any,
     Dict,
     Iterator,
+    List,
     Optional,
     Sequence,
     TypeAlias,
@@ -25,6 +26,7 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsProcessingContext,
+    QgsProcessingParameterCoordinateOperation,
     QgsProcessingParameterCrs,
     QgsProcessingParameterExtent,
     QgsProcessingParameterGeometry,
@@ -37,6 +39,7 @@ from qgis.core import (
     QgsReferencedRectangle,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 
 from py_qgis_contrib.core import logger
 
@@ -51,6 +54,8 @@ from ..schemas import (
 )
 from .base import (
     InputParameter,
+    Metadata,
+    MetadataValue,
     ParameterDefinition,
     ProcessingContext,
 )
@@ -245,9 +250,60 @@ class ParameterCrs(InputParameter):
 # QgsProcessingParameterCoordinateOperation
 #
 
-class ParameterCoordinateOperation(ParameterCrs):
-    # Input is a coordinate reference system
-    pass
+class ParameterCoordinateOperation(InputParameter):
+    # Doc says that is should be evaluated as String
+    _ParameterType = str
+
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterCoordinateOperation) -> List[Metadata]:
+        md = super(ParameterCoordinateOperation, cls).metadata(param)
+
+        source_crs_param = param.sourceCrsParameterName()
+        if source_crs_param:
+            md.append(
+                MetadataValue(
+                    role="sourceCrsParameterName",
+                    value=source_crs_param,
+                ),
+            )
+
+        destination_crs_param = param.destinationCrsParameterName()
+        if source_crs_param:
+            md.append(
+                MetadataValue(
+                    role="destinationCrsParameterName",
+                    value=destination_crs_param,
+                ),
+            )
+
+        def to_string(v: QVariant) -> str|None:
+            if v.isValid():
+                match v.value():
+                    case QgsCoordinateReferenceSystem() as crs:
+                        return crs_to_ogc_urn(crs) if crs.isValid() else None
+                    case other:
+                        return str(other)
+            return None
+
+        dst_crs = to_string(param.destinationCrs())
+        if dst_crs:
+            md.append(
+                MetadataValue(
+                    role="staticDestinationCrs",
+                    value=dst_crs,
+                ),
+            )
+
+        src_crs = to_string(param.sourceCrs())
+        if src_crs:
+            md.append(
+                MetadataValue(
+                    role="staticSourceCrs",
+                    value=src_crs,
+                ),
+            )
+
+        return md
 
 
 #

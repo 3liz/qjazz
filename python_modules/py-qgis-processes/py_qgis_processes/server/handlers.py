@@ -48,8 +48,16 @@ class Handler(Services, Processes, Jobs):
         path: str,
         service: Optional[str] = None,
         project: Optional[str] = None,
+        *,
+        query: Optional[str] = None,
     ) -> str:
-        return self._accesspolicy.format_path(request, path, service, project)
+        return self._accesspolicy.format_path(
+            request,
+            path,
+            service,
+            project,
+            query=query,
+        )
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:
         """ Get known service name from request """

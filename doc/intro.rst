@@ -5,9 +5,9 @@
 Description
 ===========
 
-Py-qgis-server2 is a set of services for serving Qgis 3 server requests.
+Py-qgis-server is a set of services for serving Qgis 3.4+ server requests.
 
-The py-qgis-server2 setup is splitted in 3 different services: 
+The py-qgis-server setup is splitted in 3 different services: 
     
 - Services using gRCP protocols for running qgis servers processes
 - Middleware asynchronous HTTP proxy for routing requests to differents worker backends
@@ -39,7 +39,7 @@ Overview
 Features
 --------
 
-These services have been designed after experimenting with 
+These services have been designed after experimenting with version 1.x of 
 `py-qgis-server <https://https://github.com/3liz/py-qgis-server>`_ 
 on production infrastructure.
 
@@ -80,14 +80,13 @@ The simplest configuration for basic working installation is the following
 
 .. code-block:: yaml
 
-    version: "3.9"
     services:
       #
       # The worker service run the grpc service that run 
       # qgis server
       #
       qgis-rpc:
-        image: 3liz/qgis-services:ltr
+        image: 3liz/qgis-services:qgis-ltr
         environment:
           CONF_DISPLAY_XVFB: ON
           CONF_LOGGING__LEVEL: debug
@@ -104,7 +103,7 @@ The simplest configuration for basic working installation is the following
         # The web service communicate to (multiple) backends and route
         # request to the appropriate backend.
         #
-        image: 3liz/qgis-services:ltr
+        image: 3liz/qgis-services:qgis-ltr
         environment:
           CONF_LOGGING__LEVEL: debug
           CONF_BACKENDS__BASIC__TITLE: "Basic backends"
@@ -263,7 +262,7 @@ Installing from source
 
 It requires that Qgis and PyQgis python bindings are already
 installed.  The services will no run with Qgis version lower
-than 3.22.
+than 3.4.
 
 Module may be installed from source by installing all required
 modules::

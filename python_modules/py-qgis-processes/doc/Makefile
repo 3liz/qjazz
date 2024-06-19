@@ -28,11 +28,14 @@ clean:
 
 all: build main
 
-build::
+build: configs
+
+configs:
 	@mkdir -p ./configs
 	@echo "* Creating server configuration documentation"
 	@qgis-processes-server config --schema --format toml > ./configs/server.toml
 	$(PYTHON) -c "\
 from py_qgis_processes.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
+
 

@@ -8,36 +8,22 @@ Description
 |ProjectName| is an **draft** implementation of the `OGC Processes api <https://www.ogc.org/standard/ogcapi-processes/>`_ standards Open Geospatial Consortium based on the QGIS Processing API.
 
 This implementation allows you to expose and run on a server:
+
 * QGIS Processing models and scripts
-* QGIS plugins having a Processing provider according to their `metadata.txt` file
+* QGIS plugins having a Processing provider according to their ``metadata.txt`` file
+
+.. _server_features:
+
+Features
+--------
+
+- Asynchronous
+- Horizontally scalable 
+- Routing specifications
+- Handle schemas for all Qgis parameters 
+- OAPI compliant
 
 .. _server_requirements:
-
-
-The service is built on top of the  `Celery <https://github.com/celery/celery>`_  framework
-
-How it works
-------------
-
-.. code-block::
-
-   --------------                       --------------------
-   |            | *                   * |                  |
-   | Http       |<--------------------->| Celery Qgis      |
-   | frontend   |                       | processingworker |
-   |            |                       |                  |
-   --------------                       --------------------
-
-
-|ProjectName| allows you to deploy Celery workers executing Qgis processing algorithm.
-
-A |ProjectName| Celery  worker expose the following tasks:
-
-* TODO
-
-
-
-
 
 Requirements and limitations
 ----------------------------
@@ -46,73 +32,37 @@ Requirements and limitations
 - Windows not officially supported
 - Redis server
 - RabbitMQ server
+- Qgis 3.4+
 
-.. _server_features:
 
-Features
+Overview
 --------
 
-- Asynchronous requests and parallel tasks execution
-- Scalable
+|ProjectName| is built on top of the  `Celery <https://github.com/celery/celery>`_  framework.
 
-.. _server_installation:
+A |ProjectName| Celery **Worker** expose the necessary  tasks for
 
-
-Quick start
-===========
-
-First of all, you need Redis running instance and a RabbitMQ
-running instance (see).
-
-The |ProjectName| takes care of configuring Celery for using Redis and RabbitMQ so
-should never have to deal directly with the Celery setup.
-
-For more details, refer to  https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html and https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html 
-for how they are configured with Celery
+* Listing exposed Qgis algorithms as OGC processes
+* Returning process description
+* Executing a Qgis algorithm
 
 
-Run as Docker containers
-------------------------
+A |ProjectName| **Server** expose an OGC processes compliant api and handle messages and 
+results from the **Worker**.
 
 
+.. figure:: figs/overview.png
+   :align: center
 
-Running the server
-==================
-
-**pyqgiswps** [*options*]
-
-
-Options
--------
-
-.. program: pyqgiswps
-
-.. option:: -d, --debug
-
-    Force debug mode. This is the same as setting the :ref:`LOGGING_LEVEL <LOGGING_LEVEL>` option to ``DEBUG``
-
-.. option:: -c, --config path
-
-    Use the configuration file located at ``path``
-
-.. option:: --dump-config
-
-    Dump the configuration and exit
+   The simplest configuration
 
 
-All in one
-----------
+Running multiple workers and servers
+------------------------------------
 
-Run as single server instance.
-
-This mode of operation runs the front end and the worker together.
-
-
-Running multiple workers
-------------------------
-
-You may run frontend and workers as different services on different
-enviroments.
+Worker and servers and independant components and
+you may run any server and workers as different services on different
+environments.
 
 This enable running workers in different environments and infrastructure
 according to your requirements.
@@ -123,4 +73,164 @@ according to your requirements.
 * Some wokers may run on specific environments likes different Qgis versions
   or using specific libraries
 
+
+Services
+--------
+
+Each worker is bound to a *service* that represent a set of Qgis processing providers
+and Qgis projects.
+
+The **Server** route execution messages to specifice services: how routing is done depends
+on the select access policy from the configuration.
+
+The default access policy select the service from the ``service`` query parameter or take the first
+available service. Other acces policy will consider a pecific header and much more sophisticated 
+routing can be achieve by implementing custom access policy.
+
+Since we run `Celery <https://github.com/celery/celery>`_  behind the scene, there is no need
+to declare the services to the front end servers; once a worker is deployed, it will be known
+known to the servers after some time depending on the configured update interval.
+
+.. figure:: figs/routing.png
+   :align: center
+
+   A more complex configuration with multiple services
+
+   
+.. _quick_start:
+
+
+Quick start
+===========
+
+.. _docker_compose_setup:
+
+
+Docker compose setup
+--------------------
+
+This is the recommended way to install and run the services:
+
+The simplest configuration for basic working installation is the following
+
+.. code-block:: yaml
+
+    services:
+      worker:
+        image: 3liz/qgis-services:qgis-ltr
+        environment:
+          CONF_LOGGING__LEVEL: DEBUG
+          CONF_WORKER__SERVICE_NAME: "MyService"
+          CONF_WORKER__BROKER_HOST: rabbitmq
+          CONF_WORKER__BACKEND_HOST: redis:6379/0
+          CONF_PROCESSING__WORKDIR: /qgis-workdir
+          CONF_PROCESSING__PLUGINS__PATHS: >- 
+            ["/qgis-plugins"]
+          CONF_PROCESSING__PROJECTS__SEARCH_PATHS: >-
+            { 
+              "/":"/qgis-projects" 
+            }
+        depends_on:
+        - rabbitmq
+        volumes:
+        - { type: bind, source: "/path/to/workdir/", target: /qgis-workdir }
+        - { type: bind, source: "/path/to/plugins/", target: /qgis-plugins }
+        - { type: bind, source: "/path/to/projects", target: /qgis-projects }
+        command: ["qgis-processes", "worker"]
+      server:
+        image: 3liz/qgis-services:qgis-ltr
+        ports:
+        - 127.0.0.1:9080:9080
+        command: ["qgis-processes", "serve", "-v"]
+        environment:
+          CONF_SERVER__LISTEN: >-
+            ["0.0.0.0", 9080]
+          CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
+          CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
+      rabbitmq:
+        image: rabbitmq:3
+      redis:
+        image: redis:6-alpine
+
+
+Alternatively you may use a configuration file:
+
+.. code-block:: yaml
+
+    services:
+      worker:
+        image: 3liz/qgis-services:qgis-ltr
+        depends_on:
+        - rabbitmq
+        volumes:
+        - { type: bind, source: "/path/to/worker.toml", target: /worker.toml }
+        - { type: bind, source: "/path/to/workdir/", target: /qgis-workdir }
+        - { type: bind, source: "/path/to/plugins/", target: /qgis-plugins }
+        - { type: bind, source: "/path/to/projects", target: /qgis-projects }
+        command: ["qgis-processes", "worker", "-C", "/etc/worker.toml"]
+      server:
+        image: 3liz/qgis-services:qgis-ltr
+        ports:
+        - 127.0.0.1:9080:9080
+        command: ["qgis-processes", "serve", "-v"]
+        environment:
+          CONF_SERVER__LISTEN: >-
+            ["0.0.0.0", 9080]
+          CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
+          CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
+      rabbitmq:
+        image: rabbitmq:3
+      redis:
+        image: redis:6-alpine
+
+
+With the ``worker.toml`` configuration file:
+
+.. code-block:: toml
+
+    [worker]
+    service_name = "MyService"
+    backend_host = "redis:6379/0"
+    broker_host = "rabbitmq"
+
+    [processing]
+    workdir = "/qgis-workdir"
+    
+    [processing.plugins]
+    paths = ["/qgis-plugins"]
+
+    [processing.projects.search_paths]
+    '/' = "/qgis-projects"
+
+    
+The |ProjectName| applications take care of configuring Celery for using Redis and RabbitMQ so
+you usually do not have to deal directly with the Redis or RabbitMQ setup.
+
+For more details, refer to  https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html and https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html 
+for how they are configured with Celery
+
+
+Installing from source
+----------------------
+
+You can install directly from source by cloning the repsotory and
+running :code:`make install` for installing all python modules.
+
+Running the worker and the server is as simple as:
+
+.. code-block:: bash
+
+   qgis-processes worker -C <worker-configuration-file>
+
+and
+
+.. code-block:: bash
+
+   qgis-processes server -C <server-configuration-file>
+
+.. warning::
+
+   | You should always install the python modules in a python venv
+   | with the :code:`--system-site-packages` option so that you can
+     access pyQgis modules. 
 

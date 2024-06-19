@@ -41,7 +41,6 @@ RUN mkdir -p /opt/local/ \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-cli \
     && ln -s /opt/local/qgisserver/bin/qgis-processes \
-    && ln -s /opt/local/qgisserver/bin/qgis-processes-http \
     ${NULL}
 
 # Install qgis-plugin-manager
@@ -102,7 +101,7 @@ RUN cd /usr/local/bin \
     && ln -s /opt/local/qgisserver/bin/qgis-server-admin \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-cli \
-    && ln -s /opt/local/qgisserver/bin/qgis-processes-http \
+    && ln -s /opt/local/qgisserver/bin/qgis-processes \
     ${NULL}
 
 COPY docker/scripts/ /usr/local/bin/

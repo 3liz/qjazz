@@ -40,10 +40,12 @@ def main():
     default="info",
     help="Log level",
 )
+@click.option("--dump", is_flag=True, help="Dump config and exit")
 def run_worker(
     queue: str,
     configpath: Path,
     loglevel: str,
+    dump: bool,
 ):
     """ Run processes worker
     """
@@ -51,23 +53,31 @@ def run_worker(
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
-    from .jobs import app
+    if dump:
+        from pydantic import BaseModel
+        from typing_extensions import cast
 
-    service_name = app.service_name
+        from .config import load_configuration
+        conf = cast(BaseModel, load_configuration())
+        click.echo(conf.model_dump_json(indent=4))
+    else:
+        from .jobs import app
 
-    kwargs: dict = {}
-    if queue != 'None':
-        kwargs.update(queues=[f"py-qgis.{service_name}.{queue}"])
+        service_name = app.service_name
 
-    worker = app.Worker(
-        hostname=f"{service_name}@{socket.gethostname()}",
-        loglevel=loglevel,
-        prefetch_multiplier=1,
-        optimization='fair',
-        **kwargs,
-    )
+        kwargs: dict = {}
+        if queue != 'None':
+            kwargs.update(queues=[f"py-qgis.{service_name}.{queue}"])
 
-    worker.start()
+        worker = app.Worker(
+            hostname=f"{service_name}@{socket.gethostname()}",
+            loglevel=loglevel,
+            prefetch_multiplier=1,
+            optimization='fair',
+            **kwargs,
+        )
+
+        worker.start()
 
 
 @main.command('serve')

@@ -1,7 +1,12 @@
 
+from urllib.parse import urlencode
+
 from aiohttp import web
+from pydantic import Field, TypeAdapter, ValidationError
 from typing_extensions import (
+    Annotated,
     Sequence,
+    cast,
 )
 
 from .protos import (
@@ -9,6 +14,7 @@ from .protos import (
     HandlerProto,
     JobResultsAdapter,
     JobStatus,
+    JsonDict,
     Link,
     href,
     job_realm,
@@ -21,6 +27,10 @@ from .protos import (
 class JobList(swagger.JsonModel):
     jobs: Sequence[JobStatus]
     links: Sequence[Link]
+
+
+LimitParam = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
+PageParam = TypeAdapter(Annotated[int, Field(ge=0)])
 
 
 class Jobs(HandlerProto):
@@ -139,8 +149,16 @@ class Jobs(HandlerProto):
         # Allow passing service as query parameter
         service = request.query.get('service')
 
-        limit = request.query.get('limit', 10)
-        page = request.query.get('page', 0)
+        try:
+            limit = LimitParam.validate_python(request.query.get('limit', 10))
+            page = PageParam.validate_python(request.query.get('page', 0))
+        except ValidationError as err:
+            details = err.errors(include_context=False, include_url=False)
+            ErrorResponse.raises(
+                web.HTTPBadRequest,
+                message="Invalid parameter",
+                details=cast(JsonDict, details),
+            )
 
         # Filters
         process_ids = request.query.getall('processID', ())
@@ -162,19 +180,49 @@ class Jobs(HandlerProto):
 
                 yield st
 
+        jobs = [st async for st in filtered_jobs()]
+
+        params = {
+            'processID': process_ids,
+            'status': filtered_status,
+            'limit': limit,
+            'page': page or (),
+        }
+
+        links = [
+                make_link(
+                    request,
+                    path=self.format_path(request, "/jobs/", query=urlencode(params, doseq=True)),
+                    rel="self",
+                    title="Job list",
+                ),
+            ]
+
+        if len(jobs) >= limit:
+            params.update(page=page + 1)
+            links.append(
+                make_link(
+                    request,
+                    path=self.format_path(request, "/jobs/", query=urlencode(params, doseq=True)),
+                    rel="next",
+                    title="Job list",
+                ),
+            )
+
+        if page > 0:
+            params.update(page=page - 1)
+            links.append(
+                make_link(
+                    request,
+                    path=self.format_path(request, "/jobs/", query=urlencode(params, doseq=True)),
+                    rel="prev",
+                    title="Job list",
+                ),
+            )
+
         return web.Response(
             content_type="application/json",
-            text=JobList(
-                jobs=[st async for st in filtered_jobs()],
-                links=[
-                    make_link(
-                        request,
-                        path=self.format_path(request, "/jobs/"),
-                        rel="self",
-                        title="Job list",
-                    ),
-                ],
-            ).model_dump_json(),
+            text=JobList(jobs=jobs, links=links).model_dump_json(),
         )
 
     async def job_results(self, request: web.Request) -> web.Response:

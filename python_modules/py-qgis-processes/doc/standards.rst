@@ -1,5 +1,5 @@
-OGC standards implementation
-============================
+OGC standards
+=============
 
 The currrent implementation follow the schemas described in the `actual unreleased version of the standard <https://github.com/opengeospatial/ogcapi-processes/tree/master>`_.
 
@@ -36,6 +36,9 @@ In all cases, references use `links <https://github.com/opengeospatial/ogcapi-pr
 
 Inlines output value are returned either directly as described by their schema or as qualified value.
 
+
+.. _qualified_values:
+
 Qualified input and output values
 ---------------------------------
 
@@ -45,6 +48,8 @@ For input values: a qualified value **must** be returned if the input schema has
 
 For output values: a qualified value **will** be returned if the output schema has the `contentMediaType <https://json-schema.org/understanding-json-schema/reference/non_json_data#contentmediatype>`_ keyword.
 
+
+.. _media_types:
 
 Multiple media types
 --------------------
@@ -104,6 +109,8 @@ The OGC standards defines additional formats:
 :geojson-feature: Indicates that the object is an instance of a GeoJSON feature
 :geojson-geometry: Indicates that the object is an instance of a GeoJSON geometry 
 :ogc-bbox: Indicates that the object is an instance of an `OGC bounding box <https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/processes-core/bbox.yaml>`_
+
+.. _additional_formats:
 
 Additional formats
 ^^^^^^^^^^^^^^^^^^

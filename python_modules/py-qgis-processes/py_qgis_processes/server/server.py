@@ -3,6 +3,7 @@ import signal
 import traceback
 
 from importlib.metadata import PackageNotFoundError, version
+from textwrap import dedent as _D
 
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -45,7 +46,7 @@ SERVER_HEADER = f"Py-Qgis-Http-Processes {__version__}"
 # Configuration
 #
 
-DEFAULT_INTERFACE = ("127.0.0.1", 8340)
+DEFAULT_INTERFACE = ("127.0.0.1", 9080)
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 
@@ -68,21 +69,36 @@ class ServerConfig(ConfigBase):
     cross_origin: HttpCORS = Field(
         default='all',
         title="CORS origin",
-        description=(
-            "Allows to specify origin for CORS. If set 'all' will set\n"
-            "Access-Control-Allow-Origin to '*'; 'same-origin' return\n"
-            "the same value as the 'Origin' request header.\n"
-            "A url may may be specified, restricting allowed origin to\n"
-            "this url."
+        description=_D(
+            """
+            Allows to specify origin for CORS. If set 'all' will set
+            Access-Control-Allow-Origin to '*'; 'same-origin' return
+            the same value as the 'Origin' request header.
+            A url may may be specified, restricting allowed origin to
+            this url.
+            """,
         ),
     )
     proxy: ForwardedConfig = Field(default=ForwardedConfig())
 
     update_interval: int = Field(
-        default=600,
+        default=180,
         gt=0,
         title="Service update interval",
         description="Interval in seconds between update of avaialable services",
+    )
+
+    cache_grace_period: int = Field(
+        default=5,
+        title="Cache grace period",
+        description=_D(
+            """
+            Number of update for which cached service data may survive
+            loss of service availability.
+            Thus, cached data will survive `cache_grace_period * update_interal`
+            seconds in cache after the service is gone.
+            """,
+        ),
     )
 
     timeout: int = Field(5, gt=0, title="Backend request timeout")
@@ -331,7 +347,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
 
-    cache = ProcessesCache()
+    cache = ProcessesCache(conf.server.cache_grace_period)
 
     # Handler
     handler = Handler(
@@ -343,44 +359,7 @@ def create_app(conf: ConfigProto) -> web.Application:
 
     app.add_routes(handler.routes)
 
-    async def executor_context(app: web.Application):
-
-        # Set up update service task
-        update_interval = conf.server.update_interval
-        update_timeout = update_interval / 10.
-
-        async def update_cache():
-            try:
-                logger.info("Updating services")
-                services = await executor.update_services()
-                if services:
-                    logger.info("Availables services: %s", tuple(services.keys()))
-                    if logger.isEnabledFor(logger.LogLevel.DEBUG):
-                        for _, d in services.values():
-                            logger.debug(d.model_dump_json(indent=4))
-                else:
-                    logger.warning("No services availables")
-                logger.info("Updating process cache")
-                await cache.update(executor, update_timeout)
-            except Exception:
-                logger.error("Failed to update services: %s", traceback.format_exc())
-
-        async def periodic_update():
-            while True:
-                await asyncio.sleep(update_interval)
-                await update_cache()
-
-        # Attempt to fill the cache before handling
-        # any request
-        await update_cache()
-
-        update_task = asyncio.create_task(periodic_update())
-
-        yield
-        logger.debug("Cancelling update task")
-        update_task.cancel()
-
-    app.cleanup_ctx.append(executor_context)
+    app.cleanup_ctx.append(cache.cleanup_ctx(conf.server.update_interval, executor))
     return app
 
 

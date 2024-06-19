@@ -1,0 +1,14 @@
+@startuml
+component [Server]
+component [Worker]
+frame Messaging { 
+  [Redis]
+  [Amqp]
+}
+component [Worker]
+HTTP - Server
+Server <-down-> Redis
+Server <-> Amqp
+Redis <-down-> Worker
+Amqp <-> Worker
+@enduml

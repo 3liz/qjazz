@@ -1,10 +1,10 @@
 
-from .inputs import InputParameter         # noqa F401
-from .outputs import OutputParameter       # noqa F401
-from .config import ProcessingConfig       # noqa F401
-from .context import ProcessingContext     # noqa F401
-from .processes import ProcessAlgorithm    # noqa F401
-from .processes import (                   # noqa F401
+from . import runalg
+from .config import ProcessingConfig
+from .context import ProcessingContext
+from .inputs import InputParameter
+from .outputs import OutputParameter
+from .processes import (
     InputValueError,
     JobExecute,
     JobResults,
@@ -12,5 +12,4 @@ from .processes import (                   # noqa F401
     ProcessDescription,
     ProcessSummary,
 )
-from .runalg import RunProcessingException # noqa F401
-from . import runalg  # noqa F401
+from .runalg import RunProcessingException

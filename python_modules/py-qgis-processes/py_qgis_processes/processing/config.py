@@ -1,5 +1,6 @@
 
 from pathlib import Path
+from textwrap import dedent as _D
 
 from pydantic import AfterValidator, DirectoryPath, Field
 from typing_extensions import (
@@ -30,7 +31,7 @@ def _validate_absolute_path(p: Path) -> Path:
 
 
 # Processing job config section
-@section('processing')
+@section('processing', field=...)
 class ProcessingConfig(BaseConfig):
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
@@ -45,58 +46,78 @@ class ProcessingConfig(BaseConfig):
         DirectoryPath,
         AfterValidator(_validate_absolute_path),
     ] = Field(
-        default=Path().absolute(),   # Current path
         title="Working directory",
-        description=(
-            "Parent working directory where processes are executed.\n"
-            "Each processes will create a working directory for storing\n"
-            "result files and logs.\n"
-            "The default value is set to the current directory."
+        description=_D(
+            """
+            Parent working directory where processes are executed.
+            Each processes will create a working directory for storing
+            result files and logs.
+            """,
         ),
     )
     exposed_providers: List[str] = Field(
         default=['script', 'model'],
         title="Internal qgis providers exposed",
-        description=(
-            "List of exposed QGIS processing internal providers.\n"
-            "NOTE: It is not recommended exposing all providers like\n"
-            "`qgis` or `native`, instead provide your own wrapping\n"
-            "algorithm, script or model."
+        description=_D(
+            """
+            List of exposed QGIS processing internal providers.
+            NOTE: It is not recommended exposing all providers like
+            `qgis` or `native`, instead provide your own wrapping
+            algorithm, script or model.
+            """,
+        ),
+    )
+    expose_deprecated_algorithms: bool = Field(
+        default=True,
+        title="Expose deprecated algorithms",
+        description=_D(
+            """
+            Expose algorithm wich have the `Deprecated`
+            flag set.
+            """,
         ),
     )
     # XXX Must set in Settings `default-output-vector-layer-ext`
     default_vector_file_ext: Optional[str] = Field(
         default="fgb",
         title="Default vector file extension",
-        description=(
-            "Define the default vector file extensions for vector destination\n"
-            "parameters. If not specified, then the QGIS default value is used."
+        description=_D(
+            """
+            Define the default vector file extensions for vector destination
+            parameters. If not specified, then the QGIS default value is used.
+            """,
         ),
     )
     # XXX Must set in Settings `default-output-raster-layer-ext`
     default_raster_file_ext: Optional[str] = Field(
         default=None,
         title="Default vector file extension",
-        description=(
-            "Define the default raster file extensions for raster destination\n"
-            "parameters. If not specified, then the QGIS default value is used."
+        description=_D(
+            """
+            Define the default raster file extensions for raster destination
+            parameters. If not specified, then the QGIS default value is used.
+            """,
         ),
     )
     adjust_ellipsoid: bool = Field(
         default=False,
         title="Force ellipsoid imposed by the source project",
-        description=(
-            "Force the ellipsoid from the src project into the destination project.\n"
-            "This only apply if the src project has a valid CRS."
+        description=_D(
+            """
+            Force the ellipsoid from the src project into the destination project.
+            This only apply if the src project has a valid CRS.
+            """,
         ),
     )
     default_crs: str = Field(
         default=WGS84,
         title="Set default CRS",
-        description=(
-            "Set the CRS to use when no source map is specified.\n"
-            "For more details on supported formats see the GDAL method\n"
-            "'GdalSpatialReference::SetFromUserInput()'"
+        description=_D(
+            """
+            Set the CRS to use when no source map is specified.
+            For more details on supported formats see the GDAL method
+            'GdalSpatialReference::SetFromUserInput()'
+            """,
         ),
     )
     advertised_services_url: str = Field(
@@ -112,20 +133,24 @@ class ProcessingConfig(BaseConfig):
     raw_destination_input_sink: bool = Field(
         default=False,
         title="Use destination input as sink",
-        description=(
-            "Allow input value as sink for destination layers.\n"
-            "This allow value passed as input value to be interpreted as\n"
-            "path or uri sink definition. This enable passing any string\n"
-            "that QGIS may use a input source but without open options except for the\n"
-            "'layername=<name>' option.\n"
-            "NOTE: Running concurrent jobs with this option may result in unpredictable\n"
-            "behavior."
-            "For that reason it is considered as an UNSAFE OPTION and you should never enable\n"
-            "this option if you are exposing the service publicly.\n"
-            "\n"
-            "File path inputs prefixed with '/' will correspond to path located in the root\n"
-            "directory specified by the `raw_destination_root_path` option.\n"
-            "Otherwise, they will be stored in the job folder.\n"
+        description=_D(
+            """
+            Allow input value as sink for destination layers.
+            This allow value passed as input value to be interpreted as
+            path or uri sink definition. This enable passing any string
+            that QGIS may use a input source but without open options except for the
+            'layername=<name>' option.
+
+            NOTE: Running concurrent jobs with this option may result in unpredictable
+            behavior.
+
+            For that reason it is considered as an UNSAFE OPTION and you should never enable
+            this option if you are exposing the service publicly.
+
+            File path inputs prefixed with '/' will correspond to path located in the root
+            directory specified by the `raw_destination_root_path` option.
+            Otherwise, they will be stored in the job folder.
+            """,
         ),
     )
     raw_destination_root_path: Annotated[
@@ -134,10 +159,12 @@ class ProcessingConfig(BaseConfig):
     ] = Field(
         default=None,
         title="Raw destination root path",
-        description=(
-            "Specify the root directory for storing destination layers files when\n"
-            "the `raw_destination_input_sink` option is enabled.\n"
-            "If not specified, files will be stored in the job folder.\n"
+        description=_D(
+            """
+            Specify the root directory for storing destination layers files when
+            the `raw_destination_input_sink` option is enabled.
+            If not specified, files will be stored in the job folder.
+            """,
         ),
     )
     certificats: SSLConfig = Field(
@@ -150,10 +177,7 @@ class ProcessingConfig(BaseConfig):
         default=10,
         gt=0,
         title="Project cache size",
-        description=(
-            "The maximum number of projects in cache by\n"
-            "process."
-        ),
+        description="The maximum number of projects in cache by process.",
     )
 
     def settings(self) -> Dict[str, str]:
@@ -182,12 +206,14 @@ class ProcessingConfig(BaseConfig):
             logger.info("Models folders set to %s", scripts_folders)
             settings["Processing/Configuration/MODELS_FOLDER"] = models_folders
 
-        # Configure default extensions
+        # Configure default vector extensions
         if self.default_vector_file_ext:
             from qgis.core import QgsVectorFileWriter
             exts = QgsVectorFileWriter.supportedFormatExtensions()
             idx = exts.index(self.default_vector_file_ext)
             settings['qgis/configuration/default-output-vector-layer-ext'] = idx
+
+        # Configure default raster extensions
         if self.default_raster_file_ext:
             from qgis.core import QgsRasterFileWriter
             exts = QgsRasterFileWriter.supportedFormatExtensions()

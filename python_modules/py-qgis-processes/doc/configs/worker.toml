@@ -1,56 +1,69 @@
 
+
 [logging]
 level = "INFO"
 
+
 [processing]
-#
-# Projects configuration
-#
-# Projects and cache configuration
-#projects = strict_check=True trust_layer_metadata=False disable_getprint=False force_readonly_layers=False disable_advertised_urls=False search_paths={} allow_direct_path_resolution=True
-#
-# Plugin configuration
-#plugins = paths=[] install=None install_mode='external' enable_scripts=True extra_builtin_providers=set() plugin_manager=PosixPath('/usr/local/bin/qgis-plugin_manager')
 #
 # Working directory
 #
+# 
 # Parent working directory where processes are executed.
 # Each processes will create a working directory for storing
 # result files and logs.
-# The default value is set to the current directory.
-workdir = /home/david/qgis/python_modules/py-qgis-processes/doc
+# 
+#workdir =   	# Optional
 #
 # Internal qgis providers exposed
 #
+# 
 # List of exposed QGIS processing internal providers.
 # NOTE: It is not recommended exposing all providers like
 # `qgis` or `native`, instead provide your own wrapping
 # algorithm, script or model.
-exposed_providers = ['script', 'model']
+# 
+exposed_providers = ["script","model"]
+#
+# Expose deprecated algorithms
+#
+# 
+# Expose algorithm wich have the `Deprecated`
+# flag set.
+# 
+expose_deprecated_algorithms = true
 #
 # Default vector file extension
 #
+# 
 # Define the default vector file extensions for vector destination
 # parameters. If not specified, then the QGIS default value is used.
+# 
 default_vector_file_ext = "fgb"
 #
 # Default vector file extension
 #
+# 
 # Define the default raster file extensions for raster destination
 # parameters. If not specified, then the QGIS default value is used.
+# 
 #default_raster_file_ext =   	# Optional
 #
 # Force ellipsoid imposed by the source project
 #
+# 
 # Force the ellipsoid from the src project into the destination project.
 # This only apply if the src project has a valid CRS.
+# 
 adjust_ellipsoid = false
 #
 # Set default CRS
 #
+# 
 # Set the CRS to use when no source map is specified.
 # For more details on supported formats see the GDAL method
 # 'GdalSpatialReference::SetFromUserInput()'
+# 
 default_crs = "urn:ogc:def:crs:OGC:1.3:CRS84"
 #
 # Advertised services urls
@@ -65,13 +78,17 @@ store_url = "store:$jobId/$resource"
 #
 # Use destination input as sink
 #
+# 
 # Allow input value as sink for destination layers.
 # This allow value passed as input value to be interpreted as
 # path or uri sink definition. This enable passing any string
 # that QGIS may use a input source but without open options except for the
 # 'layername=<name>' option.
+# 
 # NOTE: Running concurrent jobs with this option may result in unpredictable
-# behavior.For that reason it is considered as an UNSAFE OPTION and you should never enable
+# behavior.
+# 
+# For that reason it is considered as an UNSAFE OPTION and you should never enable
 # this option if you are exposing the service publicly.
 # 
 # File path inputs prefixed with '/' will correspond to path located in the root
@@ -82,23 +99,24 @@ raw_destination_input_sink = false
 #
 # Raw destination root path
 #
+# 
 # Specify the root directory for storing destination layers files when
 # the `raw_destination_input_sink` option is enabled.
 # If not specified, files will be stored in the job folder.
 # 
 #raw_destination_root_path =   	# Optional
 #
-# SSL Certificates
+# Project cache size
 #
-# SSL credentials to use for references inputs
-#certificats = cafile=None certfile=None keyfile=None
+# The maximum number of projects in cache by process.
+max_cached_projects = 10
 
 #
 # Projects configuration
 #
 # Projects and cache configuration
 #
-#[processing.projects]
+[processing.projects]
 #
 # Enable strict checking
 #
@@ -106,7 +124,7 @@ raw_destination_input_sink = false
 # When enabled, Qgis projects with invalid layers will be dismissed.
 # Trying to access such a project will lead to a 'unprocessable Entity'
 # (422) HTTP error
-#strict_check = true
+strict_check = true
 #
 # Trust layer metadata
 #
@@ -115,7 +133,7 @@ raw_destination_input_sink = false
 # like primary key unicity, geometry type and
 # srid and by using estimated metadata on layer load.
 # Since QGIS 3.16
-#trust_layer_metadata = false
+trust_layer_metadata = false
 #
 # Disable GetPrint requests
 #
@@ -123,19 +141,19 @@ raw_destination_input_sink = false
 # Improves project read time if layouts are not required,
 # and allows projects to be safely read in background threads
 # (since print layouts are not thread safe).
-#disable_getprint = false
+disable_getprint = false
 #
 # Force read only mode
 #
 # Force layers to open in read only mode
-#force_readonly_layers = false
+force_readonly_layers = false
 #
 # Disable OWS advertised urls
 #
 # Disable ows urls defined in projects.
 # This may be necessary because Qgis projects
 # urls override proxy urls.
-#disable_advertised_urls = false
+disable_advertised_urls = false
 #
 # Scheme mapping definitions
 #
@@ -147,7 +165,7 @@ raw_destination_input_sink = false
 # This is handled by the default storage implementation for Qgis native
 # project storage. In case of custom QgsProjectStorage, if the scheme does not allow passing
 # project as path component, it is possible to specify a custom resolver function.
-#search_paths = {}
+search_paths = {}
 #
 # Allow direct path resolution
 #
@@ -155,12 +173,12 @@ raw_destination_input_sink = false
 # no matching from the search paths.
 # Uri are directly interpreted as valid Qgis project's path.
 # WARNING: allowing this may be a security vulnerabilty.
-#allow_direct_path_resolution = true
+allow_direct_path_resolution = true
 
 #
 # Plugin configuration
 #
-#[processing.plugins]
+[processing.plugins]
 #
 # Plugin paths
 #
@@ -169,7 +187,7 @@ raw_destination_input_sink = false
 # the 'install' list.
 # If the list is empty, the 'QGIS_PLUGINPATH'
 # variable will be checked.
-#paths = []
+paths = []
 #
 # Installable plugins
 #
@@ -188,31 +206,31 @@ raw_destination_input_sink = false
 # will be checked at startup. Otherwise,
 # Installation will be done from already available
 # plugins.
-#install_mode = "external"
+install_mode = "external"
 #
 # Enable processing scripts
 #
 # Enable publication of processing scripts
-#enable_scripts = true
+enable_scripts = true
 #
 # Extra builtins providers
 #
 # Load extra builtin processing providers
 # such as 'grass' and 'otb'.
-#extra_builtin_providers = set()
+extra_builtin_providers = []
 #
 # Path to plugin manager executable
 #
 # The absolute path to the qgis-plugin_manager executable
 # that will be used for installing plugin in automatic mode.
-#plugin_manager = /usr/local/bin/qgis-plugin_manager
+plugin_manager = "/usr/local/bin/qgis-plugin_manager"
 
 #
 # SSL Certificates
 #
 # SSL credentials to use for references inputs
 #
-#[processing.certificats]
+[processing.certificats]
 #
 # CA file
 #cafile =   	# Optional
@@ -227,18 +245,20 @@ raw_destination_input_sink = false
 # Path to the SSL certificat file
 #keyfile =   	# Optional
 
+
+# Worker configuration
+# 
+# Configure celery worker settings
+# 
 [worker]
 #
 # Celery amqp broker host
 broker_host = ""
 broker_use_ssl = false
-#broker_ssl =   	# Optional
 #
 # Celery redis backend host
 backend_host = "localhost:6379/0"
 backend_use_ssl = false
-#backend_ssl =   	# Optional
-#security =   	# Optional
 #
 # Task hard time limit in seconds.
 # The worker processing the task will be killed
@@ -277,19 +297,16 @@ result_expires = 86400
 #
 # Name used as location service name
 # for initializing Celery worker.
-service_name = 	# Required
+#service_name =   	# Optional
 #
 # Service short title
 title = ""
 #
 # Service description
 description = ""
-#
-# Service related links
-#links = []
 
 #
-#[worker.broker_ssl]
+[worker.broker_ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -305,7 +322,7 @@ description = ""
 #keyfile =   	# Optional
 
 #
-#[worker.backend_ssl]
+[worker.backend_ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -322,21 +339,21 @@ description = ""
 
 #
 # Message signing configuration
-#[worker.security]
-#cert_store = 	# Required
-#keyfile = 	# Required
-#certfile = 	# Required
+[worker.security]
+#cert_store =   	# Optional
+#keyfile =   	# Optional
+#certfile =   	# Optional
 
 #
 # Service related links
 #
-#[[worker.links]]
+[[worker.links]]
 #rel =   	# Optional
 #mime_type =   	# Optional
-#title = ""
+title = ""
 #description =   	# Optional
 #length =   	# Optional
-#templated = false
+templated = false
 #hreflang =   	# Optional
-#href = 	# Required
+#href =   	# Optional
 

@@ -7,7 +7,12 @@ Welcome to py-qgis-processes's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   intro
+   processing
+   configuration
+   jobrealm
    standards
+   parameters
 
 Indices and tables
 ==================

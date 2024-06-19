@@ -5,21 +5,21 @@ from uuid import uuid4
 
 from aiohttp import web
 from pydantic import Field, TypeAdapter, ValidationError
-from typing_extensions import Annotated, Optional
+from typing_extensions import Annotated, Optional, Sequence
 
 from py_qgis_contrib.core.config import ConfigBase, confservice, section
 
 from .models import ErrorResponse
 
-JOB_REALM_HEADER = 'X-Py-Qgis-Job-Realm'
+JOB_REALM_HEADER = 'X-Job-Realm'
 
 
 @section("job_realm")
 class JobRealmConfig(ConfigBase):
-    (
-        "Defining job realm allow filtering job's requests by a token that is\n"
-        "set by the client when requesting task execution (see description below)."
-    )
+    """
+    Defining job realm allow filtering job's requests by a token that is
+    set by the client when requesting task execution (see description below).
+    """
     enabled: bool = Field(
         default=False,
         title="Enable job realm header",
@@ -28,11 +28,11 @@ class JobRealmConfig(ConfigBase):
             "as a client identification token for retrieving jobs status and results."
         ),
     )
-    admin:  Optional[str] = Field(
-        default=None,
-        title="Admininistrator realm jobs token",
+    admin_tokens:  Sequence[str] = Field(
+        default=(),
+        title="Admininistrator realm jobs tokens",
         description=(
-            "A catch all token for listing and retrieve status and results\n"
+            "Define catch all tokens for listing and retrieve status and results\n"
             "for all jobs."
         ),
     )
@@ -72,7 +72,7 @@ def job_realm(request: web.Request) -> Optional[str]:
     """
     if confservice.conf.job_realm.enabled:
         realm = request.get(JOB_REALM_HEADER)
-        if not realm:
+        if not realm or realm not in confservice.conf.job_realm.admin:
             raise ErrorResponse.raises(web.HTTPUnauthorized, "Unauthorized")
     else:
         realm = None

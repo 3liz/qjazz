@@ -1,6 +1,8 @@
 import inspect
 import sys  # noqa
 
+from textwrap import dedent
+
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from typing_extensions import IO, Type
@@ -8,7 +10,8 @@ from typing_extensions import IO, Type
 from ..condition import assert_precondition
 
 #
-# Output valid TOML default configuration
+# Output valid TOML default configuration from 
+# pydantic schema
 #
 
 
@@ -40,17 +43,18 @@ def _field_default_repr(field: FieldInfo) -> str:
             return "true" if b else "false"
         case int(n) | float(n):
             return f"{n}"
-        case tuple(t):
+        case tuple(t) | set(t) | list(t):
             return f"[{','.join(_to_string(v) for v in t)}]"
+        case dict(t):
+            return f"{t}"
         case default:
-            if field.is_required():
-                return "\t# Required"
-            else:
-                return default
+            return f'"{default}"'
 
 
 def _print_field(s: IO, name: str, field: FieldInfo, comment: bool = False):
-    if field.default is None:
+    if field.is_required():
+        print(f"#{name} =   \t# Optional", file=s)
+    elif field.default is None:
         # Optional field
         print(f"#{name} =   \t# Optional", file=s)
     elif comment:
@@ -61,10 +65,9 @@ def _print_field(s: IO, name: str, field: FieldInfo, comment: bool = False):
 
 def _print_model_doc(s: IO, model: Type[BaseModel]):
     if model.__doc__:
-        doc = model.__doc__.strip('\n')
+        doc = dedent(model.__doc__.strip('\n'))
         for line in doc.split('\n'):
             print(f"# {line}", file=s)
-
 
 def _dump_model(s: IO, model: Type[BaseModel], section: str, comment: bool = False):
     """ Dump model as properties
@@ -130,15 +133,15 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         if not deferred:
             _print_field_doc(s, field)
             _print_field(s, name, field, comment=comment)
-        else:
-            _print_field_doc(s, field)
-            _print_field(s, name, field, comment=True)
+        # else:
+        #    _print_field_doc(s, field)
+        #    _print_field(s, name, field, comment=True)
 
     for model, name, field in _deferred:
         print(file=s)
         _print_field_doc(s, field)
         print("#", file=s)
-        _dump_model(s, model, name, comment=comment or not field.is_required())
+        _dump_model(s, model, name, comment=comment)
 
 
 def dump_model_toml(s: IO, model: Type[BaseModel]):
@@ -151,6 +154,7 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
             continue
         a = _unpack_arg(field.annotation)
         if _is_model(a):
+            print()
             _print_model_doc(s, a)
             _dump_section(s, a, name, comment=field.annotation.__name__ == 'Optional')
         elif a.__name__ in ('List', 'Sequence'):

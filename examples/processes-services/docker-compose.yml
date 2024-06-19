@@ -1,0 +1,34 @@
+services:
+  worker:
+    image: 3liz/qgis-services:qgis-ltr
+    environment:
+      CONF_LOGGING__LEVEL: DEBUG
+      CONF_WORKER__BROKER_HOST: rabbitmq
+      CONF_WORKER__BACKEND_HOST: redis:6379/0
+    depends_on:
+    - rabbitmq
+    working_dir: /conf
+    volumes:
+    - { type: bind, source: "./", target: /conf } 
+    - { type: bind, source: "../../", target: /src } 
+    command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
+  server:
+    image: 3liz/qgis-services:qgis-ltr
+    ports:
+    - 127.0.0.1:9080:9080
+    command: ["qgis-processes", "serve", "-v"]
+    environment:
+      CONF_SERVER__LISTEN: >- 
+        ["0.0.0.0", 9080]
+      CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
+      CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
+    depends_on:
+    - worker
+  rabbitmq:
+    image: rabbitmq:3
+    ports: 
+    - "127.0.0.1:5672:5672"
+  redis:
+    image: redis:6-alpine
+    ports:
+    - "127.0.0.1:6379:6379"

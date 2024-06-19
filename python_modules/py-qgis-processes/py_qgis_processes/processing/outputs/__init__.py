@@ -60,7 +60,7 @@ class UnsupportedOutput(OutputParameterBase):
 
 # Type mapping
 
-QGIS_TYPES = MappingProxyType({
+OutputTypes = MappingProxyType({
     QgsProcessingOutputBoolean.typeName(): OutputBoolean,
     QgsProcessingOutputConditionalBranch.typeName(): UnsupportedOutput,
     QgsProcessingOutputFile.typeName(): OutputFile,
@@ -88,7 +88,7 @@ class _OutputParameter:
 
     @classmethod
     def get(cls, out: OutputDefinition) -> Type[OutputParameterDef]:
-        Output = QGIS_TYPES.get(out.type())
+        Output = OutputTypes.get(out.type())
         if Output is None:
             raise ValueError(f"Unsupported input parameter: {out}")
         return Output

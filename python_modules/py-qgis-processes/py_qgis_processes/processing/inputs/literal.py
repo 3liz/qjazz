@@ -200,6 +200,16 @@ class ParameterDistance(ParameterNumber):
                         title=uom,
                     ),
                 )
+
+        parent_param = param.parentParameterName()
+        if parent_param:
+            md.append(
+                MetadataValue(
+                    role="parentParameterName",
+                    value=parent_param,
+                ),
+            )
+
         return md
 
 
@@ -394,6 +404,14 @@ class ParameterDatabaseTable(ParameterString):
 #
 
 class ParameterProviderConnection(ParameterString):
+    pass
+
+
+#
+#  QgsProcessingParameterAuthConfig
+#
+
+class ParameterAuthConfig(ParameterString):
     pass
 
 
