@@ -10,7 +10,7 @@ from typing_extensions import IO, Type
 from ..condition import assert_precondition
 
 #
-# Output valid TOML default configuration from 
+# Output valid TOML default configuration from
 # pydantic schema
 #
 
@@ -68,6 +68,7 @@ def _print_model_doc(s: IO, model: Type[BaseModel]):
         doc = dedent(model.__doc__.strip('\n'))
         for line in doc.split('\n'):
             print(f"# {line}", file=s)
+
 
 def _dump_model(s: IO, model: Type[BaseModel], section: str, comment: bool = False):
     """ Dump model as properties

@@ -35,10 +35,3 @@ allowing the client to select the type of input.
 
    Input with content media types should always be sent as `qualified values <:ref:qualified_values>`_.
 
-
-Inputs
-------
-
-
-Outputs
--------
