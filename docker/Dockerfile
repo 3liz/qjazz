@@ -67,7 +67,7 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 # =========
 # CI build
 # =========
-FROM qgis as ci_build
+FROM base as ci_build
 
 ARG PIP_OPTIONS
 

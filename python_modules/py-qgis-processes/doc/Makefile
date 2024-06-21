@@ -39,6 +39,6 @@ from py_qgis_processes.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
 
 deploy-ci:
-	$(FACTORY_SCRIPTS)/deploy-doc doc/build/html/ doc/doc/manifest
+	$(FACTORY_SCRIPTS)/deploy-doc doc/build/html/ doc/doc.manifest
 
 
