@@ -72,7 +72,6 @@ tag:
 	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version; \
 	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version_short; \
 	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$release_tag; \
-	docker tag $(BUILDFRONTIMAGE) $(REGISTRY_PREFIX)$(NAME):front; \
 	}
 
 push:
@@ -80,8 +79,6 @@ push:
 	docker push $(REGISTRY_URL)/$(NAME):$$version; \
 	docker push $(REGISTRY_URL)/$(NAME):$$version_short; \
 	docker push $(REGISTRY_URL)/$(NAME):$$release_tag; \
-	docker push $(BUILDFRONTIMAGE); \
-	docker push $(REGISTRY_URL)/$(NAME):front; \
 	}
 
 

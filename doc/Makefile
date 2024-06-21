@@ -3,6 +3,7 @@ PROJECT_NAME=py-qgis-server
 
 BUILDDIR=${shell pwd}/build
 
+# Ref: https://docs.readthedocs.io/en/stable/index.html#
 
 main: html
 

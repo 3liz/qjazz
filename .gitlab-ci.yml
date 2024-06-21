@@ -37,7 +37,7 @@ doc:
   script: 
     - make -C doc
     - $FACTORY_SCRIPTS/deploy-doc doc/build/html/ doc/doc.manifest
-    - make -C python-modules/py-qgis-processes/doc html deploy-ci
+    - make -C python_modules/py-qgis-processes/doc html deploy-ci
   tags:
     - factory-plain
   only:

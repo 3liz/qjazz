@@ -62,6 +62,7 @@ Worker configuration
 
 .. literalinclude:: configs/worker.toml
    :language: toml
+   :linenos:
 
 
 Server configuration
@@ -69,5 +70,5 @@ Server configuration
 
 .. literalinclude:: configs/server.toml
    :language: toml
-
+   :linenos:
 

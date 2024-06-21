@@ -60,6 +60,7 @@ class SSLConfig(Config):
     def create_ssl_context(self, purpose: ssl.Purpose) -> ssl.SSLContext:
         """ Used for validating server client side """
         ssl_context = ssl.create_default_context(
+            purpose=purpose,
             cafile=self.cafile.as_posix() if self.cafile else None,
         )
         if self.certfile and self.keyfile:
@@ -67,7 +68,7 @@ class SSLConfig(Config):
         return ssl_context
 
     def create_ssl_client_context(self) -> ssl.SSLContext:
-        """ Used server side """
+        """ Used client side """
         return self.create_ssl_context(ssl.Purpose.SERVER_AUTH)
 
     def create_ssl_server_context(self) -> ssl.SSLContext:
