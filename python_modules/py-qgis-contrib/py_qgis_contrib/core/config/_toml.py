@@ -53,7 +53,7 @@ def _field_default_repr(field: FieldInfo) -> str:
 
 def _print_field(s: IO, name: str, field: FieldInfo, comment: bool = False):
     if field.is_required():
-        print(f"#{name} =   \t# Optional", file=s)
+        print(f"#{name} =   \t# Required", file=s)
     elif field.default is None:
         # Optional field
         print(f"#{name} =   \t# Optional", file=s)

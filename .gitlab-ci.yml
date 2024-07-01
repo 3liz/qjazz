@@ -33,10 +33,12 @@ tests:release:
     QGIS_FLAVOR: release
 
 doc:
+  image: ${REGISTRY_URL}/factory-ci-runner:build-doc
   stage: doc
   script: 
+    - source ~/.bashrc
     - make -C doc
-    - $FACTORY_SCRIPTS/deploy-doc doc/build/html/ doc/doc.manifest
+    - deploy-doc doc/build/html/ doc/doc.manifest
     - make -C python_modules/py-qgis-processes/doc html deploy-ci
   tags:
     - factory-plain

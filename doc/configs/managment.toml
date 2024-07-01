@@ -1,60 +1,59 @@
 
+
 [logging]
 level = "INFO"
 
+
 [resolvers]
-#
-# List of Qgis pool backends
-#pools = []
 
 #
 # List of Qgis pool backends
 #
 # Resolver for DNS resolution that may resolve
 # to multiple ips.
-#[[resolvers.pools]]
+[[resolvers.pools]]
 #
 # Unique label
 #
 # Unique resolver label. The label must be compatible with an url path component.
-#label = 	# Required
+#label =   	# Required
 #
 # Must be set to 'dns'
-#type = 	# Required
+#type =   	# Required
 #
 # Host name
-#host = 	# Required
+#host =   	# Required
 #
 # Service port
-#port = 23456
+port = 23456
 #
 # Check for ipv6
-#ipv6 = false
+ipv6 = false
 #
 # Use ssl connection
-#use_ssl = false
+use_ssl = false
 #
 # SSL certificats
-#ssl = cafile=None certfile=None keyfile=None
+ssl = "cafile=None certfile=None keyfile=None"
 
 #
 # List of Qgis pool backends
 #
 # Resolver for socket resolution
-#[[resolvers.pools]]
+[[resolvers.pools]]
 #
 # Unique label
 #
 # Unique resolver label. The label must be compatible with an url path component.
-#label = 	# Required
+#label =   	# Required
 #
 # Must be set to 'socket'
-#type = 	# Required
-#address = 	# Required
-#use_ssl = false
+#type =   	# Required
+#address =   	# Required
+use_ssl = false
 #
 # SSL certificats
-#ssl = cafile=None certfile=None keyfile=None
+ssl = "cafile=None certfile=None keyfile=None"
 
 #
 # List of Qgis pool backends
@@ -62,21 +61,22 @@ level = "INFO"
 # Plugin resolver
 # 
 # Load resolver from entrypoint extension
-#[[resolvers.pools]]
+[[resolvers.pools]]
 #
 # Unique label
 #
 # Unique resolver label. The label must be compatible with an url path component.
-#label = 	# Required
+#label =   	# Required
 #
 # Must be set to 'plugin'
-#type = 	# Required
+#type =   	# Required
 #
 # Resolver name
-#name = 	# Required
+#name =   	# Required
 #
 # Resolver configuration options
-#options = 	# Required
+#options =   	# Required
+
 
 [http]
 #
@@ -85,9 +85,6 @@ listen = ["127.0.0.1",9871]
 #
 # Use ssl
 use_ssl = false
-#
-# SSL certificats
-#ssl = cafile=None certfile=None keyfile=None
 #
 # CORS origin
 #
@@ -109,7 +106,7 @@ auth_tokens = []
 #
 # SSL certificats
 #
-#[http.ssl]
+[http.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -124,11 +121,9 @@ auth_tokens = []
 # Path to the SSL certificat file
 #keyfile =   	# Optional
 
+
 # Remote configuration settings
 [config_url]
-#
-# SSL configuration
-#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -140,7 +135,7 @@ auth_tokens = []
 #
 # SSL configuration
 #
-#[config_url.ssl]
+[config_url.ssl]
 #
 # CA file
 #cafile =   	# Optional

@@ -1,12 +1,13 @@
 
+
 [logging]
 level = "INFO"
+
 
 # Bootstrap configuration from remote location.
 # The configuration is fetched from the remote url
 # at startup and override all local settings.
 [config_url]
-#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -16,7 +17,7 @@ level = "INFO"
 #url =   	# Optional
 
 #
-#[config_url.ssl]
+[config_url.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -45,7 +46,8 @@ level = "INFO"
 # i.e projects loaded through requests (using
 # 'load_project_on_request' option) will not be
 # restored.
-#restore_cache = restore_type='none'
+#restore_cache = "restore_type='none'"
+
 
 [worker]
 #
@@ -56,11 +58,6 @@ name = "default"
 #
 # Description for administrative purpose
 description = ""
-#
-# Projects configuration
-#
-# Projects and cache configuration
-#projects = strict_check=True trust_layer_metadata=False disable_getprint=False force_readonly_layers=False disable_advertised_urls=False search_paths={} allow_direct_path_resolution=True
 #
 # Max number of projects in cache
 #
@@ -88,16 +85,10 @@ load_project_on_request = true
 # management tools.
 reload_outdated_project_on_request = false
 #
-# Plugins configuration
-#plugins = paths=[] install=None install_mode='external' plugin_manager=PosixPath('/usr/local/bin/qgis-plugin_manager')
-#
 # Maximum chunk size
 #
 # Set the maximum chunk size for streamed responses.
 max_chunk_size = 1048576
-#
-# Interfaces to listen to
-#interfaces = [ListenConfig(listen=('[::]', 23456), use_ssl=False, ssl=SSLConfig(cafile=None, certfile=None, keyfile=None))]
 #
 # Max number of concurrent requests
 #
@@ -157,7 +148,7 @@ rescale_period = 5
 #
 # Projects and cache configuration
 #
-#[worker.projects]
+[worker.projects]
 #
 # Enable strict checking
 #
@@ -165,7 +156,7 @@ rescale_period = 5
 # When enabled, Qgis projects with invalid layers will be dismissed.
 # Trying to access such a project will lead to a 'unprocessable Entity'
 # (422) HTTP error
-#strict_check = true
+strict_check = true
 #
 # Trust layer metadata
 #
@@ -174,7 +165,7 @@ rescale_period = 5
 # like primary key unicity, geometry type and
 # srid and by using estimated metadata on layer load.
 # Since QGIS 3.16
-#trust_layer_metadata = false
+trust_layer_metadata = false
 #
 # Disable GetPrint requests
 #
@@ -182,19 +173,19 @@ rescale_period = 5
 # Improves project read time if layouts are not required,
 # and allows projects to be safely read in background threads
 # (since print layouts are not thread safe).
-#disable_getprint = false
+disable_getprint = false
 #
 # Force read only mode
 #
 # Force layers to open in read only mode
-#force_readonly_layers = false
+force_readonly_layers = false
 #
 # Disable OWS advertised urls
 #
 # Disable ows urls defined in projects.
 # This may be necessary because Qgis projects
 # urls override proxy urls.
-#disable_advertised_urls = false
+disable_advertised_urls = false
 #
 # Scheme mapping definitions
 #
@@ -206,7 +197,7 @@ rescale_period = 5
 # This is handled by the default storage implementation for Qgis native
 # project storage. In case of custom QgsProjectStorage, if the scheme does not allow passing
 # project as path component, it is possible to specify a custom resolver function.
-#search_paths = {}
+search_paths = {}
 #
 # Allow direct path resolution
 #
@@ -214,12 +205,12 @@ rescale_period = 5
 # no matching from the search paths.
 # Uri are directly interpreted as valid Qgis project's path.
 # WARNING: allowing this may be a security vulnerabilty.
-#allow_direct_path_resolution = true
+allow_direct_path_resolution = true
 
 #
 # Plugins configuration
 #
-#[worker.plugins]
+[worker.plugins]
 #
 # Plugin paths
 #
@@ -228,40 +219,51 @@ rescale_period = 5
 # the 'install' list.
 # If the list is empty, the 'QGIS_PLUGINPATH'
 # variable will be checked.
-#paths = []
+paths = []
 #
 # Installable plugins
 #
 # The list of installable plugins.
 # Note: if the plugin directory contains other plugins
 # plugins not in the list will NOT be loaded !
-# The Plugins will be unstalled at startup
+# The Plugins will be installed at startup
 # if the 'install_mode' is set to 'auto'.
 # Note that an empty list means what it is:
-# i.e, *no* plugins.
+# i.e, *no* installed plugins.
 #install =   	# Optional
 #
 # Plugin installation mode
 #
 # If set to 'auto', plugins installation
 # will be checked at startup. Otherwise,
-# Installation will be done from already installed
+# Installation will be done from already available
 # plugins.
-#install_mode = "external"
+install_mode = "external"
+#
+# Enable processing scripts
+#
+# Enable publication of processing scripts
+enable_scripts = true
+#
+# Extra builtins providers
+#
+# Load extra builtin processing providers
+# such as 'grass' and 'otb'.
+extra_builtin_providers = []
 #
 # Path to plugin manager executable
 #
 # The absolute path to the qgis-plugin_manager executable
 # that will be used for installing plugin in automatic mode.
-#plugin_manager = /usr/local/bin/qgis-plugin_manager
+plugin_manager = "/usr/local/bin/qgis-plugin_manager"
 
 #
 # Interfaces to listen to
 #
-#[[worker.interfaces]]
+[[worker.interfaces]]
 #
 # TCP:PORT interface or unix socket
-#listen = ["[::]",23456]
-#use_ssl = false
-#ssl = cafile=None certfile=None keyfile=None
+listen = ["[::]",23456]
+use_ssl = false
+ssl = "cafile=None certfile=None keyfile=None"
 

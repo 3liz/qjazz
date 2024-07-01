@@ -72,8 +72,10 @@ def job_realm(request: web.Request) -> Optional[str]:
     """
     if confservice.conf.job_realm.enabled:
         realm = request.get(JOB_REALM_HEADER)
-        if not realm or realm not in confservice.conf.job_realm.admin:
+        if not realm:
             raise ErrorResponse.raises(web.HTTPUnauthorized, "Unauthorized")
+        if realm in confservice.conf.job_realm.admin:
+            realm = None
     else:
         realm = None
     return realm

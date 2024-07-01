@@ -1,12 +1,13 @@
 
+
 [logging]
 level = "INFO"
+
 
 # Url for external configuration.
 # The configuration is fetched from the remote url
 # at startup and override all local settings.
 [config_url]
-#ssl = cafile=None certfile=None keyfile=None
 #
 # External configuration Url
 #
@@ -22,7 +23,7 @@ level = "INFO"
 user_agent = "py-qgis-server2 middleware 1.0.0.dev0"
 
 #
-#[config_url.ssl]
+[config_url.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -36,6 +37,7 @@ user_agent = "py-qgis-server2 middleware 1.0.0.dev0"
 #
 # Path to the SSL certificat file
 #keyfile =   	# Optional
+
 
 [http]
 #
@@ -45,9 +47,6 @@ listen = ["127.0.0.1",80]
 # Use ssl
 use_ssl = false
 #
-# SSL configuration
-#ssl = cafile=None certfile=None keyfile=None
-#
 # CORS origin
 #
 # Allows to specify origin for CORS. If set 'all' will set
@@ -66,7 +65,7 @@ proxy_conf = false
 #
 # SSL configuration
 #
-#[http.ssl]
+[http.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -81,6 +80,7 @@ proxy_conf = false
 # Path to the SSL certificat file
 #keyfile =   	# Optional
 
+
 [admin_server]
 #
 # Interfaces to listen to
@@ -88,9 +88,6 @@ listen = ["127.0.0.1",9876]
 #
 # Use ssl
 use_ssl = false
-#
-# SSL configuration
-#ssl = cafile=None certfile=None keyfile=None
 #
 # CORS origin
 #
@@ -110,7 +107,7 @@ proxy_conf = false
 #
 # SSL configuration
 #
-#[admin_server.ssl]
+[admin_server.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -144,10 +141,9 @@ proxy_conf = false
 #     
 #address = ["localhost",23456]
 #use_ssl = false
-#ssl = cafile=None certfile=None keyfile=None
 #
 # Route to service
-#route = 	# Required
+#route =   	# Required
 #
 # Request timeout
 #
@@ -160,10 +156,7 @@ proxy_conf = false
 #
 # Set the headers that will be forwarded to the Qgis server backend.
 # This may be useful if you have plugins that may deal with request headers.
-#forward_headers = ['x-qgis-*', 'x-lizmap-*']
-#
-# Api endpoints
-#api = []
+#forward_headers = ["x-qgis-*","x-lizmap-*"]
 #
 # Allow direct path resolution
 #
@@ -201,7 +194,7 @@ proxy_conf = false
 #[[backends.key.api]]
 #
 # Api endpoint
-#endpoint = 	# Required
+#endpoint =   	# Required
 #
 # Api name to delegate to
 #
@@ -216,15 +209,24 @@ proxy_conf = false
 #
 # Api description
 #description = ""
+#
+# Enable html in delegated endpoint
+#
+# Enable fetching html resources in delegated endpoints.
+# Enable this if the delegated api handle correctly html
+# template resource resolution in Qgis server when using
+# delegated api endpoint.
+#enable_html_delegate = false
 
 #
 # Metrics configuration
-#  Metric configuration
-#     
+
+# Metric configuration
+# 
 #[metrics]
 #
 # Metric type
-#name = 	# Required
+#name =   	# Required
 #
 # Meta key
 #meta_key = false
@@ -235,13 +237,13 @@ proxy_conf = false
 # This key is passed to monitoring backend.
 # If meta_key is true, the string is interpreted as a format string
 # with a 'META' dict parameter.
-#routing_key = 	# Required
+#routing_key =   	# Required
 #
 # Default routing key
 #routing_key_default =   	# Optional
 #
 # Backend configuration options
-#options = 	# Required
+#options =   	# Required
 
 #
 # Path to services configuration files

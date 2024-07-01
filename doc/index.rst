@@ -13,7 +13,8 @@ Welcome to py-qgis-server2's documentation!
    intro
    rpc_config
    proxy_config
-   managment 
+   managment
+   managment-api
 
 Indices and tables
 ==================

@@ -40,6 +40,6 @@ dump_worker_config() " > ./configs/worker.toml
 
 export CI_PROJECT_NAME=py-qgis-processes
 deploy-ci:
-	$(FACTORY_SCRIPTS)/deploy-doc build/html/ doc.manifest
+	deploy-doc build/html/ doc.manifest
 
 

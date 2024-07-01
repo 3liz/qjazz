@@ -11,6 +11,8 @@ types-toml
 types-requests
 sphinx
 sphinx-rtd-theme
+sphinxcontrib-httpdomain
+swagger-plugin-for-sphinx
 grpcio-tools
 pipdeptree
 bandit

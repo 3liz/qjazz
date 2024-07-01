@@ -1,7 +1,7 @@
 .. py-qgis-processes documentation master file
 
 Welcome to py-qgis-processes's documentation!
----==========================================
+=============================================
 
 .. toctree::
    :maxdepth: 2

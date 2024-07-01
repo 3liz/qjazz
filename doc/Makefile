@@ -36,8 +36,11 @@ build::
 	@qgis-server-http config --schema > ./specs/proxy-config.json
 	@echo "* Creating admin config schema specs"
 	@qgis-server-admin doc config  > ./specs/admin-config.json
-	@echo "* Creating admin openapi specs"
+	@echo "* Creating admin openapi specs (YAML)"
 	@qgis-server-admin doc openapi > ./specs/openapi-managment.json
+	@echo "* Creating admin openapi specs (JSON)"
+	@qgis-server-admin doc openapi --yaml > ./specs/openapi-managment.yml
+
 
 clean:
 	rm -r ${BUILDDIR}

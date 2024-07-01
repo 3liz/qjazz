@@ -62,13 +62,8 @@ From this you can use your own dashboard for managing your Qgis clusters.
 Api specification
 ^^^^^^^^^^^^^^^^^
 
-Check the full :download:`openapi specification <specs/openapi-managment.json>`.
-
-You may use the redoc tool to visualize it::
-
-    docker run --rm -p 8080:80 \
-      -v $(pwd)/doc/specs/openapi-managment.json:/usr/share/nginx/html/openapi.json \
-      -e SPEC_URL=openapi.json redocly/redoc
+See the :doc:`managment-api` 
+or download the :download:`Json specs <specs/openapi-managment.json>`.
 
 
 Configuration

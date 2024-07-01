@@ -190,13 +190,13 @@ class Jobs(HandlerProto):
         }
 
         links = [
-                make_link(
-                    request,
-                    path=self.format_path(request, "/jobs/", query=urlencode(params, doseq=True)),
-                    rel="self",
-                    title="Job list",
-                ),
-            ]
+            make_link(
+                request,
+                path=self.format_path(request, "/jobs/", query=urlencode(params, doseq=True)),
+                rel="self",
+                title="Job list",
+            ),
+        ]
 
         if len(jobs) >= limit:
             params.update(page=page + 1)
@@ -261,7 +261,7 @@ class Jobs(HandlerProto):
             return ErrorResponse.response(404, "No results", details={'jobId': job_id})
         return web.Response(
             content_type="application/json",
-            text=JobResultsAdapter.dump_json(results, by_alias=True, exclude_none=True).decode(),
+            body=JobResultsAdapter.dump_json(results, by_alias=True, exclude_none=True),
         )
 
     async def dismiss_job(self, request: web.Request) -> web.Response:
