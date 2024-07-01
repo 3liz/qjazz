@@ -38,7 +38,7 @@ class JobRealmConfig(ConfigBase):
     )
 
 
-RealmToken = TypeAdapter(
+RealmToken: TypeAdapter = TypeAdapter(
     Annotated[
        str,
        Field(min_length=8, pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_\-]+$"),

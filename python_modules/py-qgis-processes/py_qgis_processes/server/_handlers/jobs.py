@@ -29,8 +29,8 @@ class JobList(swagger.JsonModel):
     links: Sequence[Link]
 
 
-LimitParam = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
-PageParam = TypeAdapter(Annotated[int, Field(ge=0)])
+LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
+PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=0)])
 
 
 class Jobs(HandlerProto):

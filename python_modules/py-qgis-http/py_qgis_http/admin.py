@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from aiohttp import web
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from typing_extensions import List
 
 from py_qgis_contrib.core import logger
@@ -18,8 +18,10 @@ from .config import (
     load_include_config_files,
     read_config_toml,
 )
-from .models import ErrorResponse, JsonModel, JsonValueType, Link
+from .models import ErrorResponse, JsonModel, JsonValue, Link
 from .webutils import CORSHandler, make_link, public_location
+
+JsonValueAdapter: TypeAdapter = TypeAdapter(JsonValue)
 
 #
 # Backend managment handler
@@ -209,7 +211,7 @@ def config_route(
             """ Patch configuration with request content
             """
             try:
-                obj = JsonValueType.validate_json(await self.request.text())
+                obj = JsonValueAdapter.validate_json(await self.request.text())
                 confservice.update_config(obj)
 
                 level = logger.set_log_level()

@@ -189,7 +189,7 @@ class QualifiedInputValue(OutputFormat):
 # Create a typeadapter for Reference/Qualified input
 
 
-RefOrQualifiedInput = TypeAdapter(QualifiedInputValue | LinkReference)
+RefOrQualifiedInput: TypeAdapter = TypeAdapter(QualifiedInputValue | LinkReference)
 
 #
 # Mixin class for handling output format in

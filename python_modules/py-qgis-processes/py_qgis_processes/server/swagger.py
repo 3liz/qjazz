@@ -25,7 +25,7 @@ from ..processing.schemas import JsonModel
 OAPI_VERSION = "3.0.0"
 
 
-JsonAdapter = TypeAdapter(JsonValue)
+JsonAdapter: TypeAdapter = TypeAdapter(JsonValue)
 
 
 def dump_json(v: JsonValue) -> str:

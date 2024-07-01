@@ -3,12 +3,9 @@ from pydantic import (
     BaseModel,
     Field,
     JsonValue,
-    TypeAdapter,
     alias_generators,
 )
 from typing_extensions import Literal, Optional
-
-JsonValueType = TypeAdapter(JsonValue)
 
 model_json_properties = dict(
     alias_generator=alias_generators.to_camel,

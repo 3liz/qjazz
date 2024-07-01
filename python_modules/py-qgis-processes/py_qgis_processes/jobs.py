@@ -81,7 +81,7 @@ app = ProcessingWorker()
 
 # Inspect commands
 
-LinkSequence = TypeAdapter(Sequence[LinkHttp])
+LinkSequence: TypeAdapter = TypeAdapter(Sequence[LinkHttp])
 
 
 @inspect_command()

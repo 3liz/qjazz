@@ -133,7 +133,7 @@ def create_job_run_config(
     else:
         return_annotation = None
 
-    outputs = TypeAdapter(return_annotation or JsonValue)
+    outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue)
     output_schema = outputs.json_schema()
 
     return (inputs, outputs), RunConfigSchema(

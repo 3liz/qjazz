@@ -95,4 +95,4 @@ class ProcessDescription(ProcessSummary):
 
 
 # Adapter for process Summary list
-ProcessSummaryList = TypeAdapter(Sequence[ProcessSummary])
+ProcessSummaryList: TypeAdapter = TypeAdapter(Sequence[ProcessSummary])
