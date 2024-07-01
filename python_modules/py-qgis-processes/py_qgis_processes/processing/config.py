@@ -210,15 +210,21 @@ class ProcessingConfig(BaseConfig):
         if self.default_vector_file_ext:
             from qgis.core import QgsVectorFileWriter
             exts = QgsVectorFileWriter.supportedFormatExtensions()
-            idx = exts.index(self.default_vector_file_ext)
+            ext = self.default_vector_file_ext
+            idx = exts.index(ext)
             settings['qgis/configuration/default-output-vector-layer-ext'] = idx
+            settings['qgis/configuration/default-output-vector-ext'] = self.default_vector_file_ext
+            # Qgis > 33800
 
         # Configure default raster extensions
         if self.default_raster_file_ext:
             from qgis.core import QgsRasterFileWriter
             exts = QgsRasterFileWriter.supportedFormatExtensions()
-            idx = exts.index(self.default_raster_file_ext)
+            ext = self.default_raster_file_ext
+            idx = exts.index(ext)
             settings['qgis/configuration/default-output-raster-layer-ext'] = idx
+            settings['qgis/configuration/default-output-raster-ext'] = ext
+            # Qgis > 33800
 
         settings["Processing/Configuration/PREFER_FILENAME_AS_LAYER_NAME"] = "false"
         settings["qgis/configuration/prefer-filename-as-layer-name"] = "false"

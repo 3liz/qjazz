@@ -14,6 +14,7 @@ from qgis.core import (
     QgsProcessingParameterTinInputLayers,
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
+    QgsProcessingUtils,
 )
 
 from py_qgis_processes.processing.config import ProcessingConfig
@@ -104,6 +105,7 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     param = QgsProcessingParameterVectorDestination("VectorDestination")
 
+    assert QgsProcessingUtils.defaultVectorExtension()  == qgis_session.default_vector_file_ext
     assert param.defaultFileExtension() == qgis_session.default_vector_file_ext
 
     config = qgis_session

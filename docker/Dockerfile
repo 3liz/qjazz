@@ -7,9 +7,9 @@
 # Qgis platform
 # 
 
-FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} as base
-MAINTAINER David Marteau <david.marteau@3liz.com>
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} AS base
 LABEL Description="QGIS py-qgis services" Vendor="3liz.org"
+LABEL org.opencontainers.image.authors="David Marteau <david.marteau@3liz.com>"
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
@@ -67,7 +67,7 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 # =========
 # CI build
 # =========
-FROM base as ci_build
+FROM base AS ci_build
 
 ARG PIP_OPTIONS
 
@@ -81,7 +81,7 @@ RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
 # Server only installation (no-qgis)
 #
 
-FROM ubuntu:22.04 as front
+FROM ubuntu:22.04 AS front
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \

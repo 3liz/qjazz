@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from qgis.core import (
+    Qgis,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingUtils,
 )
@@ -120,7 +121,10 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     assert len(layers) == 1
 
     layer = layers[0]
-    print("\ntest_algorithms_copylayer::dataUrl", layer.dataUrl())
+    if Qgis.QGIS_VERSION_INT >= 33800:
+        print("\ntest_algorithms_copylayer::dataUrl", layer.serverProperties().dataUrl())
+    else:
+        print("\ntest_algorithms_copylayer::dataUrl", layer.dataUrl())
 
     source = Path(layer.source())
     assert source.is_relative_to(context.workdir)
@@ -175,15 +179,28 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     output_layer = layers[0]
     assert output_layer.featureCount() == srclayer.featureCount()
 
-    print(
-        "\ntest_algorithms_nativewrapper::dataUrl",
-        output_layer.dataUrl(),
-        output_layer.dataUrlFormat(),
-    )
+    if Qgis.QGIS_VERSION_INT >= 33800:
+        server_properties = output_layer.serverProperties()
+        print(
+            "\ntest_algorithms_nativewrapper::dataUrl",
+            server_properties.dataUrl(),
+            server_properties.dataUrlFormat(),
+        )
+    else:
+        print(
+            "\ntest_algorithms_nativewrapper::dataUrl",
+            output_layer.dataUrl(),
+            output_layer.dataUrlFormat(),
+        )
 
     default_ext = QgsProcessingUtils.defaultVectorExtension()
 
-    assert output_layer.dataUrlFormat() == mimetypes.types_map.get(f".{default_ext}")
+    if Qgis.QGIS_VERSION_INT >= 33800:
+        url_format = output_layer.serverProperties().dataUrlFormat()
+    else:
+        url_format = output_layer.dataUrlFormat()
+
+    assert url_format == mimetypes.types_map.get(f".{default_ext}")
 
     source = Path(output_layer.source())
     assert source.is_relative_to(context.workdir)
