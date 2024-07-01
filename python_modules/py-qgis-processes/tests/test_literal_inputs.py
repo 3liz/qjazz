@@ -209,7 +209,7 @@ def test_parameter_duration():
     assert schema['type'] == 'number'
 
     metadata = {m.role: m for m in inp.metadata(param)}
-    print("\ntest_parameter_scale::metadata", metadata)
+    print("\ntest_parameter_duration::metadata", metadata)
 
     assert metadata['ogcType'].href == ogc.OgcDataType['time']
 
@@ -218,12 +218,15 @@ def test_parameter_range():
 
     param = QgsProcessingParameterRange("Range")
 
+    assert param.dataType() == NumberParameterType.Integer
+
     inp = InputParameter(param)
 
     schema = inp.json_schema()
     print("\ntest_parameter_range::", schema)
     assert schema['type'] == 'array'
     assert schema['format'] == 'x-range'
+    assert schema['items']['type'] == 'integer'
     assert schema['maxLength'] == 2
     assert schema['minLength'] == 2
 
