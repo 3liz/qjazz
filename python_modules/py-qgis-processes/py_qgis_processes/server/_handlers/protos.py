@@ -22,6 +22,7 @@ from ..utils import Link, href, make_link, public_url
 
 swagger.model(JobExecute)
 swagger.model(JobStatus)
+swagger.model(ProcessDescription)
 
 
 JobResultsAdapter = TypeAdapter(JobResults)

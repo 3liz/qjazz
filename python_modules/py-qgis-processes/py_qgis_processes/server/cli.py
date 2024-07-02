@@ -109,5 +109,21 @@ def dump_config(
         echo(conf.model_dump_json(indent=4))
 
 
+@cli_commands.command('openapi')
+@click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
+def dump_swagger_doc(to_yaml: bool):
+    """  Output swagger api documentation
+    """
+    from .server import swagger_model
+
+    doc = swagger_model()
+    if to_yaml:
+        from ruamel.yaml import YAML
+        yaml = YAML()
+        yaml.dump(doc.model_dump(), sys.stdout)
+    else:
+        click.echo(doc.model_dump_json())
+
+
 def main():
     cli_commands()

@@ -12,6 +12,8 @@ from .cache import ProcessesCache
 from .models import ErrorResponse
 from .utils import redirect
 
+API_VERSION = "v1"
+
 
 class Handler(Services, Processes, Jobs):
 
@@ -19,8 +21,8 @@ class Handler(Services, Processes, Jobs):
         *,
         executor: Executor,
         policy: AccessPolicy,
-        timeout: int,
         cache: ProcessesCache,
+        timeout: int,
     ):
         self._executor = executor
         self._accesspolicy = policy
@@ -40,6 +42,8 @@ class Handler(Services, Processes, Jobs):
             web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
             web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
             web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
+            # Services
+            web.get("/services/", self.list_services, allow_head=False)      
         ]
 
     def format_path(

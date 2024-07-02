@@ -13,6 +13,7 @@ Welcome to py-qgis-processes's documentation!
    jobrealm
    standards
    parameters
+   openapi
 
 Indices and tables
 ==================

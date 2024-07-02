@@ -24,11 +24,13 @@ md:
 	sphinx-build -b markdown ./  ${BUILDDIR}/md
 
 clean:
-	rm -r ${BUILDDIR}
+	rm -rf ${BUILDDIR}
+
+.PHONY: build, configs, specs
 
 all: build main
 
-build: configs
+build: configs specs
 
 configs:
 	@mkdir -p ./configs
@@ -37,6 +39,12 @@ configs:
 	$(PYTHON) -c "\
 from py_qgis_processes.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
+
+
+specs: 
+	@mkdir -p ./specs
+	@echo "* Creating openapi specifications"
+	$(PYTHON) -m py_qgis_processes.server openapi --yaml > ./specs/openapi.yml
 
 export CI_PROJECT_NAME=py-qgis-processes
 deploy-ci:

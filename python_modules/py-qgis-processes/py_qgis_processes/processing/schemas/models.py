@@ -105,7 +105,7 @@ class JsonModel(BaseModel, **model_json_properties):
 
     @classmethod
     def model_json_schema(cls, *args, **kwargs) -> JsonDict:
-        schema = super(cls, cls).model_json_schema(*args, **kwargs)
+        schema = super(JsonModel, cls).model_json_schema(*args, **kwargs)
         remove_auto_title(schema)
         return schema
 

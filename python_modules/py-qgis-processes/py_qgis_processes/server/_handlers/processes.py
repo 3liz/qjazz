@@ -15,6 +15,7 @@ from .protos import (
     JobStatus,
     Link,
     ProcessSummary,
+    ProcessDescription,
     get_job_realm,
     href,
     make_link,
@@ -38,8 +39,8 @@ class Processes(HandlerProto):
             Returns the list of available for the
             given ServiceId
         tags:
-            - process
-        response:
+            - processes
+        responses:
             "200":
                 description: >
                     Returns the list of process summaries
@@ -100,7 +101,7 @@ class Processes(HandlerProto):
               required: true
               description: process identifier
         tags:
-          - process
+          - processes
         responses:
             "200":
                 description: >
@@ -177,7 +178,7 @@ class Processes(HandlerProto):
               required: true
               description: Process  identifier
         tags:
-          - process
+          - processes
         requestBody:
             required: true
             description: |-

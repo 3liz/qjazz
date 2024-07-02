@@ -190,7 +190,7 @@ Controlling what is exposed
 
 * Algorithms with the flag `Deprecated <https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag>`_  are controlled by the ``processing.expose_deprecated_algorithms`` setting.
 
-* Parameters with the flag `FlagHidden <https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag>`_ set wont be exposed in as input parameter in the process description.
+* Parameters with the flag `FlagHidden <https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag>`_ set wont be exposed as input parameter in the process description.
 
 
 

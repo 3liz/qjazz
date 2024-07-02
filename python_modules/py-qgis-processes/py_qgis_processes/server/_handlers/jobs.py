@@ -138,13 +138,13 @@ class Jobs(HandlerProto):
                 content:
                     application/json:
                         schema:
-                            $ref: '#/definitions/JobList
+                            $ref: '#/definitions/JobList'
             "404":
                 description: Jobs not found
                 content:
                     application/json:
                         schema:
-                            $ref: '#/definitions/ErrorResponse
+                            $ref: '#/definitions/ErrorResponse'
         """
         # Allow passing service as query parameter
         service = request.query.get('service')

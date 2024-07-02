@@ -9,14 +9,17 @@ from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 from pydantic import (
     AnyHttpUrl,
+    BaseModel,
     Field,
 )
 from typing_extensions import (
     Awaitable,
     Callable,
     Literal,
+    Optional,
     Protocol,
     TypeAlias,
+    cast,
 )
 
 from py_qgis_contrib.core import logger
@@ -29,9 +32,16 @@ from py_qgis_contrib.core.config import (
 )
 
 from ..executor import Executor, ExecutorConfig
-from .accesspolicy import AccessPolicyConfig, create_access_policy
+from . import swagger
+from .accesspolicy import (
+    AccessPolicy, 
+    AccessPolicyConfig, 
+    DummyAccessPolicy,
+    create_access_policy,
+)
+from .cache import ProcessesCache
 from .forwarded import ForwardedConfig, forwarded
-from .handlers import Handler
+from .handlers import API_VERSION, Handler
 from .models import ErrorResponse, RequestHandler
 
 try:
@@ -122,6 +132,7 @@ class ConfigProto(Protocol):
     server: ServerConfig
     executor: ExecutorConfig
     access_policy: AccessPolicyConfig
+    oapi: swagger.OapiConfig
 
     def model_dump_json(self, *args, **kwargs) -> str:
         ...
@@ -322,8 +333,6 @@ def create_site(http: ServerConfig, runner: web.AppRunner) -> Site:
 
 def create_app(conf: ConfigProto) -> web.Application:
 
-    from .cache import ProcessesCache
-
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
@@ -361,6 +370,34 @@ def create_app(conf: ConfigProto) -> web.Application:
 
     app.cleanup_ctx.append(cache.cleanup_ctx(conf.server.update_interval, executor))
     return app
+
+
+def _swagger_doc(app: web.Application, oapi: swagger.OapiConfig) -> swagger.OpenApiDocument:
+    return swagger.doc(
+        app,
+        api_version=API_VERSION,
+        tags=[
+            swagger.Tag(name="processes", description="Processes"),
+            swagger.Tag(name="jobs", description="Jobs"),
+            swagger.Tag(name="services", description="Services"),
+        ],
+        conf=oapi,
+    )
+
+
+def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
+    """ Return the swagger model
+        for the REST api
+    """
+    handler = Handler(
+        executor=cast(Executor, None),
+        policy=DummyAccessPolicy(),
+        cache=cast(ProcessesCache, None),
+        timeout=0,
+    )
+    app = web.Application()
+    app.add_routes(handler.routes)
+    return _swagger_doc(app, config.oapi if config else swagger.OapiConfig())
 
 
 async def _serve(conf: ConfigProto):

@@ -71,16 +71,16 @@ class Services(HandlerProto):
         summary: "Return availables services"
         description: >
             Returns a list of available services.
-            tags:
-                - services
-            response:
-                "200":
-                    description: >
-                        Returns the list of available services
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#definitions/ServicesResponse'
+        tags:
+            - services
+        responses:
+            "200":
+                description: >
+                    Returns the list of available services
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#definitions/ServicesResponse'
         """
         return web.Response(
             content_type="application/json",

@@ -105,6 +105,50 @@ class AccessPolicy(ABC):
         ...
 
 
+class DummyAccessPolicy(AccessPolicy):
+
+    def service_permission(self, request: web.Request, service: str) -> bool:
+        return False
+
+    def execute_permission(
+        self,
+        request: web.Request,
+        service: str,
+        process_id: str,
+        project: Optional[str] = None,
+    ) -> bool:
+        return False
+
+    def get_service(self, request: web.Request) -> str:
+        """ Return the defined service for the request
+        """
+        return ""
+
+    def get_project(self, request: web.Request) -> Optional[str]:
+        """ Return project for therequest
+        """
+        return None
+
+    @property
+    def prefix(self) -> str:
+        """ Return the prefix path
+        """
+        return ""
+
+    def format_path(
+        self,
+        request: web.Request,
+        path: str,
+        service: Optional[str] = None,
+        project: Optional[str] = None,
+        *,
+        query: Optional[str] = None,
+    ) -> str:
+        """ Format a path including service paths
+        """
+        raise NotImplementedError("Dummy policy")
+
+
 def create_access_policy(
     conf: AccessPolicyConfig,
     app: web.Application,

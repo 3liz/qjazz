@@ -276,7 +276,7 @@ class ParameterCoordinateOperation(InputParameter):
                 ),
             )
 
-        def to_string(v: QVariant) -> str|None:
+        def to_string(v: QVariant) -> str | None:
             if v.isValid():
                 match v.value():
                     case QgsCoordinateReferenceSystem() as crs:

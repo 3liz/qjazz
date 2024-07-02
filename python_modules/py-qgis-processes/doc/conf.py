@@ -20,6 +20,7 @@ release = '${PIN_VERSION}'
 extensions = [
     "sphinx_rtd_theme",
     "sphinxcontrib.httpdomain",
+    "swagger_plugin_for_sphinx",
 ]
 
 templates_path = ['_templates']
@@ -30,7 +31,9 @@ exclude_patterns = []
 
 #html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-html_static_path = []
+html_static_path = [
+    "specs/openapi.yml"
+]
 
 # Fix for read the doc
 # See https://github.com/readthedocs/readthedocs.org/issues/2569
@@ -41,3 +44,14 @@ ProjectName = "Py-Qgis-Processes"
 rst_epilog = f"""
 .. |ProjectName| replace:: {ProjectName}
 """
+
+# -- Swagger ---
+
+swagger = [
+    {
+        "name": "Py-Qgis-Processes API",
+        "page": "openapi",
+        "options" : { "url": "_static/openapi.yml" },
+    },
+]
+
