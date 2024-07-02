@@ -207,6 +207,18 @@ def test_parameter_crs(qgis_session):
 
 def test_parameter_extent(qgis_session):
 
+    param = QgsProcessingParameterExtent("Extent")
+
+    inp = InputParameter(param)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_crs::", schema)
+
+    assert schema['format'] == 'ogc-bbox'
+
+
+def test_parameter_extent_with_default(qgis_session):
+
     param = QgsProcessingParameterExtent(
         "Extent",
         defaultValue=QgsRectangle(15, 50, 16, 51),

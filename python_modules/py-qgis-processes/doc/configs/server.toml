@@ -4,6 +4,13 @@
 level = "INFO"
 
 
+# OAPI configuration
+# 
+[oapi]
+title = "Py-Qgis-Processes"
+description = "Publish Qgis processing algorithms as OGC api processes"
+
+
 # Configure access policy
 [access_policy]
 #
@@ -13,13 +20,6 @@ level = "INFO"
 # processes execution.
 policy_class = "py_qgis_processes.server.policies.DefaultAccessPolicy"
 config = {}
-
-
-# OAPI configuration
-# 
-[oapi]
-title = "Py-Qgis-Processes"
-description = "Publish Qgis processing algorithms as OGC api processes"
 
 
 # Defining job realm allow filtering job's requests by a token that is

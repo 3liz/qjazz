@@ -312,6 +312,8 @@ class ParameterCoordinateOperation(InputParameter):
 
 class ParameterExtent(InputParameter):
 
+    _ParameterType = BoundingBox(str)
+
     @classmethod
     def create_model(
         cls,
@@ -320,6 +322,8 @@ class ParameterExtent(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
+
+        _type = cls._ParameterType
 
         if not validation_only:
             default = field.pop('default', None)
@@ -355,8 +359,6 @@ class ParameterExtent(InputParameter):
                             ],
                         }).model_dump(mode='json', by_alias=True),
                     )
-        else:
-            _type = BoundingBox(str)
 
         return _type
 

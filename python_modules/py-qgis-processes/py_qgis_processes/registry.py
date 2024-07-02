@@ -104,7 +104,7 @@ def find_keys(
     client = app.backend.client
     pattern = f"py-qgis::*::{service or '*'}::{realm or '*'}"
     cursor, keys = client.scan(cursor=cursor, match=pattern, count=count)
-    return cursor, (tuple(key.split("::")[1:4]) for key in keys)
+    return cursor, (tuple(key.decode().split("::")[1:4]) for key in keys)
 
 
 def dismiss(app: Celery, job_id: str) -> bool:

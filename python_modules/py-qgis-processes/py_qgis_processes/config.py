@@ -48,8 +48,15 @@ def lookup_config_path() -> Optional[Path]:
 
 
 #
+# Processing configuration
+#
+
+config.confservice.add_section('processing', ProcessingConfig, field=...)
+
+#
 # Worker configuration
 #
+
 
 @config.section('worker', field=...)
 class WorkerConfig(CeleryConfig):

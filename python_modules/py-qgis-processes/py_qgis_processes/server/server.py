@@ -34,8 +34,7 @@ from py_qgis_contrib.core.config import (
 from ..executor import Executor, ExecutorConfig
 from . import swagger
 from .accesspolicy import (
-    AccessPolicy, 
-    AccessPolicyConfig, 
+    AccessPolicyConfig,
     DummyAccessPolicy,
     create_access_policy,
 )
@@ -368,6 +367,18 @@ def create_app(conf: ConfigProto) -> web.Application:
 
     app.add_routes(handler.routes)
 
+    # Create documentation model
+    doc = _swagger_doc(app, conf.oapi)
+
+    # Create router for the landing page
+    async def landing_page(request: web.Request) -> web.Response:
+        return web.Response(
+            content_type="application/json",
+            text=doc.model_dump_json(),
+        )
+    app.router.add_route('GET', '/', landing_page)
+
+    # Add executor context
     app.cleanup_ctx.append(cache.cleanup_ctx(conf.server.update_interval, executor))
     return app
 

@@ -13,7 +13,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/ProcessList'
-  /processes: {}
   /processes/{Ident}:
     get:
       summary: Get process description
@@ -114,7 +113,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/ErrorResponse'
-  /jobs: {}
   /jobs/{JobId}:
     get:
       summary: Get Job status

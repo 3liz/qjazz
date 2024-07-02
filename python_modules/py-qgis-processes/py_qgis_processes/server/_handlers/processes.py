@@ -15,7 +15,6 @@ from .protos import (
     JobStatus,
     Link,
     ProcessSummary,
-    ProcessDescription,
     get_job_realm,
     href,
     make_link,

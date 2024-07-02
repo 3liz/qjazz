@@ -43,7 +43,8 @@ class Handler(Services, Processes, Jobs):
             web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
             web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
             # Services
-            web.get("/services/", self.list_services, allow_head=False)      
+            web.get(f"{prefix}/services/", self.list_services, allow_head=False),
+            web.get(f"{prefix}/services", redirect(f'{prefix}/processes/'), allow_head=False),
         ]
 
     def format_path(
@@ -71,4 +72,13 @@ class Handler(Services, Processes, Jobs):
         return service
 
     def get_project(self, request: web.Request) -> Optional[str]:
-        return self._accesspolicy.get_project(request)
+        project = self._accesspolicy.get_project(request)
+        # Ensure that project starts with '/'
+        if project and not project.startswith('/'):
+            project = f"/{project}"
+        return project
+        if project and not project.startswith('/'):
+            project = f"/{project}"
+
+        if project and not project.startswith('/'):
+            project = f"/{project}"

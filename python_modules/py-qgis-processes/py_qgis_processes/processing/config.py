@@ -15,10 +15,7 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
     Config as BaseConfig,
 )
-from py_qgis_contrib.core.config import (
-    SSLConfig,
-    section,
-)
+from py_qgis_contrib.core.config import SSLConfig
 from py_qgis_contrib.core.qgis import QgisPluginConfig
 
 from .schemas import WGS84
@@ -31,7 +28,6 @@ def _validate_absolute_path(p: Path) -> Path:
 
 
 # Processing job config section
-@section('processing', field=...)
 class ProcessingConfig(BaseConfig):
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),

@@ -164,7 +164,8 @@ def paths(app: web.Application) -> Dict:
                 f"Yaml error for {route.handler.__qualname__}: {err}",
             ) from None
 
-        paths.setdefault(url, {}).update(methods)
+        if methods:
+            paths.setdefault(url, {}).update(methods)
     return paths
 
 

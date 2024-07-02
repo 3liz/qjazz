@@ -13,7 +13,7 @@ level = "INFO"
 # Each processes will create a working directory for storing
 # result files and logs.
 # 
-#workdir =   	# Optional
+#workdir =   	# Required
 #
 # Internal qgis providers exposed
 #
@@ -297,7 +297,7 @@ result_expires = 86400
 #
 # Name used as location service name
 # for initializing Celery worker.
-#service_name =   	# Optional
+#service_name =   	# Required
 #
 # Service short title
 title = ""
@@ -340,9 +340,9 @@ description = ""
 #
 # Message signing configuration
 [worker.security]
-#cert_store =   	# Optional
-#keyfile =   	# Optional
-#certfile =   	# Optional
+#cert_store =   	# Required
+#keyfile =   	# Required
+#certfile =   	# Required
 
 #
 # Service related links
@@ -355,5 +355,5 @@ title = ""
 #length =   	# Optional
 templated = false
 #hreflang =   	# Optional
-#href =   	# Optional
+#href =   	# Required
 

@@ -178,6 +178,17 @@ class Jobs(HandlerProto):
                 if filtered_status and st.status not in filtered_status:
                     continue
 
+                if st.status == st.SUCCESS:
+                    location = self.format_path(request, f"/jobs/{st.job_id}/results")
+                    st.links.append(
+                        make_link(
+                            request,
+                            path=location,
+                            rel="http://www.opengis.net/def/rel/ogc/1.0/results",
+                            title="Job results",
+                        ),
+                    )
+
                 yield st
 
         jobs = [st async for st in filtered_jobs()]

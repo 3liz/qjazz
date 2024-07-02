@@ -194,7 +194,7 @@ def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
     return plugin_service
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def server_app(rootdir: Path) -> web.Application:
     from py_qgis_processes.server import cli, server
 

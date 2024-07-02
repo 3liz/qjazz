@@ -26,7 +26,7 @@ md:
 clean:
 	rm -rf ${BUILDDIR}
 
-.PHONY: build, configs, specs
+.PHONY: build configs specs
 
 all: build main
 
@@ -35,7 +35,7 @@ build: configs specs
 configs:
 	@mkdir -p ./configs
 	@echo "* Creating server configuration documentation"
-	@qgis-processes-server config --schema --format toml > ./configs/server.toml
+	$(PYTHON) -m py_qgis_processes.server config --schema --format toml > ./configs/server.toml
 	$(PYTHON) -c "\
 from py_qgis_processes.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
