@@ -7,6 +7,7 @@
 import os
 import sys
 
+from pathlib import Path
 from typing import Dict, Iterator, Optional, no_type_check
 
 import qgis
@@ -46,10 +47,10 @@ def exit_qgis_application():
 @no_type_check
 def setup_qgis_application(
     *,
-    profile: Optional[str] = None,
+    settings: Optional[Dict] = None,
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
-) -> 'qgis.core.QgsApplication':
+) -> str:
     """ Start qgis application
 
          :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
@@ -65,9 +66,10 @@ def setup_qgis_application(
     setup_qgis_paths(qgis_prefix)
 
     from qgis.core import Qgis, QgsApplication
+    from qgis.PyQt.QtCore import QCoreApplication
 
-    if Qgis.QGIS_VERSION_INT < 30000:
-        raise RuntimeError(f"You need QGIS3 (found {Qgis.QGIS_VERSION_INT})")
+    if Qgis.QGIS_VERSION_INT < 33400:
+        raise RuntimeError(f"You need QGIS3.34 minimum (found {Qgis.QGIS_VERSION_INT})")
 
     logger.info("Starting Qgis application: %s", Qgis.QGIS_VERSION)
 
@@ -84,12 +86,20 @@ def setup_qgis_application(
     # does not do the job correctly
     os.environ['QGIS_PREFIX_PATH'] = qgis_prefix
 
+    # From qgis server
+    # Will enable us to read qgis setting file
+    QCoreApplication.setOrganizationName(QgsApplication.QGIS_ORGANIZATION_NAME)
+    QCoreApplication.setOrganizationDomain(QgsApplication.QGIS_ORGANIZATION_DOMAIN)
+    QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
+
+    # Initialize configuration settings
+    options_path = load_qgis_settings(settings)
+
     # XXX: note, setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
     qgis_application = QgsApplication(
         [],
         False,
-        profileFolder=profile or "",
         platformName="py-qgis-application",
     )
 
@@ -112,7 +122,7 @@ def setup_qgis_application(
 
     logger.info("Qgis application configured......")
 
-    return qgis_application
+    return options_path
 
 
 def install_logger_hook(logprefix: str) -> None:
@@ -136,47 +146,26 @@ def install_logger_hook(logprefix: str) -> None:
     messageLog.messageReceived.connect(writelogmessage)
 
 
+def set_qgis_settings(settings: Dict):
+    """ Set Qgis settings from dict
+    """
+    from qgis.core import QgsSettings
+    qgsettings = QgsSettings()
+    for k, v in settings.items():
+        qgsettings.setValue(k, v)
+
+
 def init_qgis_application(
     settings: Optional[Dict] = None,
-    *,
-    profile: Optional[str] = None,
 ):
-    setup_qgis_application(profile=profile)
-
-    from qgis.core import QgsApplication
-    from qgis.PyQt.QtCore import QCoreApplication
-
-    # From qgis server
-    # Will enable us to read qgis setting file
-    QCoreApplication.setOrganizationName(QgsApplication.QGIS_ORGANIZATION_NAME)
-    QCoreApplication.setOrganizationDomain(QgsApplication.QGIS_ORGANIZATION_DOMAIN)
-    QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
-
+    setup_qgis_application(settings=settings)
     qgis_application.initQgis()  # type: ignore [union-attr]
-
-    optpath = os.getenv('QGIS_OPTIONS_PATH') or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
-    if optpath:
-        # Log qgis settings
-        load_qgis_settings(optpath)
-
-    if settings:
-        # Initialize settings
-        from qgis.core import QgsSettings
-        qgsettings = QgsSettings()
-        for k, v in settings.items():
-            qgsettings.setValue(k, v)
 
 
 def init_qgis_processing() -> None:
     """ Initialize processing
     """
     from processing.core.Processing import Processing
-
-    # Update the network configuration
-    # XXX: At the time the settings are read, the networkmanager is already
-    # initialized, but with the wrong settings
-    set_proxy_configuration()
-
     Processing.initialize()
 
 
@@ -189,22 +178,48 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     server = QgsServer()
 
     # Update the network configuration
-    # XXX: At the time the settings are read, the neworkmanager is already
+    # XXX: At the time the settings are read, the networkmanager is already
     # initialized, but with the wrong settings
     set_proxy_configuration()
 
     return server
 
 
-def load_qgis_settings(optpath):
+def load_qgis_settings(settings: Optional[Dict]) -> str:
     """ Load qgis settings
     """
     from qgis.core import QgsSettings
     from qgis.PyQt.QtCore import QSettings
 
+    options_path = os.getenv('QGIS_CUSTOM_CONFIG_PATH')
+    if not options_path:
+        # Set config path in current directory
+        options_path = str(Path.cwd().joinpath('.py-qgis-settings'))
+        os.environ['QGIS_CUSTOM_CONFIG_PATH'] = options_path
+        os.environ['QGIS_OPTIONS_PATH'] = options_path
+
     QSettings.setDefaultFormat(QSettings.IniFormat)
-    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, optpath)
-    logger.info("Settings loaded from %s", QgsSettings().fileName())
+    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, options_path)
+
+    qgssettings = QgsSettings()
+    logger.info("Settings loaded from %s", qgssettings.fileName())
+
+    # Create a symbolic link to handle initialization with initQgis
+    # that always create profiles/default subdirectory.
+    # XXX It is not possible to set together 'platformaName' and 'profileFolder'
+    # if we call initQgis :-(
+    profile_folder = Path(options_path, "profiles")
+    profile_folder.mkdir(0o770, parents=True, exist_ok=True)
+    profile_folder = profile_folder.joinpath('default')
+    if not profile_folder.exists():
+        profile_folder.symlink_to('..')
+
+    if settings:
+        # Initialize custom parameters settings
+        for k, v in settings.items():
+            qgssettings.setValue(k, v)
+
+    return options_path
 
 
 def set_proxy_configuration() -> None:

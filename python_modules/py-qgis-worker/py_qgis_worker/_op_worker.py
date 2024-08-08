@@ -66,7 +66,7 @@ def setup_server(config: WorkerConfig) -> QgsServer:
     # Disable any cache strategy
     os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
 
-    server = init_qgis_server()
+    server = init_qgis_server(settings=config.qgis_settings)
     CacheManager.initialize_handlers()
 
     if logger.isEnabledFor(logger.LogLevel.DEBUG):

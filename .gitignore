@@ -8,3 +8,5 @@ ABOUT_CACHE.md
 
 /doc/build
 tmp
+
+.py-qgis-settings

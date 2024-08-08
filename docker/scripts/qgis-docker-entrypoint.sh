@@ -6,12 +6,17 @@ set -e
 export HOME=/home/qgis
 export QGIS_HOME=$HOME
 
+#
+# Copy Qgis configuration into the container so that
+# multiple instances don't mess with the same config
+#
 copy_qgis_configuration() {
     QGIS_CUSTOM_CONFIG_PATH=${QGIS_CUSTOM_CONFIG_PATH:-$QGIS_OPTIONS_PATH}
     if [[ -n $QGIS_CUSTOM_CONFIG_PATH ]]; then
         echo "Copying Qgis configuration: $QGIS_CUSTOM_CONFIG_PATH"
         cp -aRL $QGIS_CUSTOM_CONFIG_PATH/* $HOME/
     fi
+    # Qgis initialization rely on this
     export QGIS_CUSTOM_CONFIG_PATH=$HOME
     export QGIS_OPTIONS_PATH=$HOME
 }

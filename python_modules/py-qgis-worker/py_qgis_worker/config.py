@@ -1,5 +1,5 @@
-from pydantic import AnyHttpUrl, Field, Json
-from typing_extensions import List, Optional
+from pydantic import AnyHttpUrl, BeforeValidator, Field, Json
+from typing_extensions import Annotated, Dict, List, Optional
 
 from py_qgis_cache.config import ProjectsConfig
 from py_qgis_contrib.core import config, logger
@@ -23,6 +23,21 @@ class ListenConfig(config.Config):
 
 
 WORKER_SECTION = 'worker'
+
+
+def _validate_qgis_setting(value: str | bool | float | int) -> str:
+    match value:
+        case str():
+            return value
+        case float() | int():
+            return str(value)
+        case bool():
+            return "true" if value else "false"
+        case _:
+            raise ValueError(f"Unsupported type for '{value}' (found '{type(value)}')")
+
+
+QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
 
 
 class WorkerConfig(config.Config):
@@ -149,6 +164,16 @@ class WorkerConfig(config.Config):
             "Scaling will adjust the number of processes according \n"
             "to the configuration and dead processes will be replaced\n"
             "with new processes."
+        ),
+    )
+    qgis_settings: Dict[str, QgisSettingValue] = Field(
+        default={},
+        title="Qgis settings",
+        description=(
+            "Qgis settings override.\n"
+            "Use the syntax '<section>/<path>' for keys.\n"
+            "Not that values defined here will override those\n"
+            "from QGIS3.ini file."
         ),
     )
 

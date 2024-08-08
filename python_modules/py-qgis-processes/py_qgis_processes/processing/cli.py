@@ -115,19 +115,16 @@ FilePathType = click.Path(
     type=FilePathType,
     envvar="PY_QGIS_PROCESSES_CONFIG",
 )
-@click.option("--profile", help="Qgis profile to use")
 @click.option("--verbose", "-v", is_flag=True, help="Set verbose output")
 @click.pass_context
 def cli_commands(
     ctx: click.Context,
     configpath: Optional[Path],
-    profile: str,
     verbose: bool = False,
 ):
     ctx.obj = SimpleNamespace(
         configpath=configpath,
         verbose=verbose,
-        profile=profile,
     )
 
 

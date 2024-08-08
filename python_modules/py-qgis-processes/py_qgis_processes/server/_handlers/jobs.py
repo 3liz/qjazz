@@ -6,7 +6,6 @@ from pydantic import Field, TypeAdapter, ValidationError
 from typing_extensions import (
     Annotated,
     Sequence,
-    cast,
 )
 
 from .protos import (
@@ -14,7 +13,6 @@ from .protos import (
     HandlerProto,
     JobResultsAdapter,
     JobStatus,
-    JsonDict,
     Link,
     href,
     job_realm,
@@ -153,11 +151,9 @@ class Jobs(HandlerProto):
             limit = LimitParam.validate_python(request.query.get('limit', 10))
             page = PageParam.validate_python(request.query.get('page', 0))
         except ValidationError as err:
-            details = err.errors(include_context=False, include_url=False)
-            ErrorResponse.raises(
-                web.HTTPBadRequest,
-                message="Invalid parameter",
-                details=cast(JsonDict, details),
+            raise web.HTTPBadRequest(
+                content_type="application/json",
+                text=err.json(include_context=False, include_url=False),
             )
 
         # Filters
