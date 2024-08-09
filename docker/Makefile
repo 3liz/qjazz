@@ -19,7 +19,6 @@ QGIS_IMAGE=$(REGISTRY_PREFIX)qgis-platform:$(FLAVOR)
 BUILDNAME=$(REGISTRY_PREFIX)$(NAME)
 BUILDIMAGE=$(BUILDNAME):qgis-$(FLAVOR)-$(VERSION)
 
-BUILDFRONTIMAGE=$(BUILDNAME):front-$(VERSION)
 
 # CI build
 ifdef PYPISERVER
@@ -37,11 +36,6 @@ build: manifest requirements
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -t $(BUILDNAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
-
-build-front:
-	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target front \
-		--build-arg QGIS_VERSION=$(FLAVOR) \
-		-t $(BUILDFRONTIMAGE) -t $(BUILDNAME):front-eager  -f Dockerfile  ..
 
 
 MANIFEST=factory.manifest
@@ -69,16 +63,56 @@ deliver: tag push
 
 tag: 
 	{ set -e; source $(MANIFEST); \
-	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version; \
-	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$version_short; \
-	docker tag $(BUILDIMAGE) $(REGISTRY_PREFIX)$(NAME):$$release_tag; \
+	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version; \
+	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version_short; \
+	docker tag $(BUILDIMAGE) $(BUILDNAME):$$release_tag; \
 	}
 
 push:
 	{ set -e; source $(MANIFEST); \
-	docker push $(REGISTRY_URL)/$(NAME):$$version; \
-	docker push $(REGISTRY_URL)/$(NAME):$$version_short; \
-	docker push $(REGISTRY_URL)/$(NAME):$$release_tag; \
+	docker push $(BUILDNAME):$$version; \
+	docker push $(BUILDNAME):$$version_short; \
+	docker push $(BUILDNAME):$$release_tag; \
 	}
 
+# =============
+# Front build
+# =============
+
+BUILDFRONTIMAGE=$(BUILDNAME):front-$(VERSION)
+
+FRONT_BUILD_TARGET:=front
+
+build-front: front-manifest
+	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(FRONT_BUILD_TARGET) \
+		--build-arg QGIS_VERSION=$(FLAVOR) \
+		-t $(BUILDFRONTIMAGE) -t $(BUILDNAME):front-eager  -f Dockerfile  ..
+
+FRONT_MANIFEST=front.manifest
+
+front-manifest:
+	{ \
+	set -e; \
+	echo name=$(NAME) > $(FRONT_MANIFEST) && \
+    echo version=front-$(VERSION) >> $(FRONT_MANIFEST) && \
+    echo version_short=front-$(VERSION_SHORT) >> $(FRONT_MANIFEST) && \
+    echo release_tag=front-latest >> $(FRONT_MANIFEST) && \
+    echo buildid=$(BUILDID)   >> $(FRONT_MANIFEST) && \
+    echo commitid=$(COMMITID) >> $(FRONT_MANIFEST); }
+
+deliver-front: tag-front push-front
+
+tag-front:
+	{ set -e; source $(FRONT_MANIFEST); \
+	docker tag $(BUILDFRONTIMAGE) $(BUILDNAME):$$version; \
+	docker tag $(BUILDFRONTIMAGE) $(BUILDNAME):$$version_short; \
+	docker tag $(BUILDFRONTIMAGE) $(BUILDNAME):$$release_tag; \
+	}
+
+push-front:
+	{ set -e; source $(FRONT_MANIFEST); \
+	docker push $(BUILDNAME):$$version; \
+	docker push $(BUILDNAME):$$version_short; \
+	docker push $(BUILDNAME):$$release_tag; \
+	}
 

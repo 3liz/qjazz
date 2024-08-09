@@ -6,19 +6,19 @@
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=ci_build
+  - make -C docker build-front deliver-front FLAVOR=$QGIS_FLAVOR FRONT_BUILD_TARGET=ci_front
   environment:
     name: snap
   artifacts:
     paths:
     - "docker/factory.manifest"
+    - "docker/front.manifest"
   only:
     refs:
     - tags
     - main
   tags:
   - infrav3-dind
-  variables:
-    FACTORY_MANIFEST: "docker/factory.manifest"
 
 
 build-docker:release:
