@@ -206,7 +206,7 @@ def load_qgis_settings(settings: Optional[Dict]) -> str:
 
     # Create a symbolic link to handle initialization with initQgis
     # that always create profiles/default subdirectory.
-    # XXX It is not possible to set together 'platformaName' and 'profileFolder'
+    # XXX It is not possible to set together 'platformName' and 'profileFolder'
     # if we call initQgis :-(
     profile_folder = Path(options_path, "profiles")
     profile_folder.mkdir(0o770, parents=True, exist_ok=True)

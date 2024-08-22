@@ -17,7 +17,7 @@ deliver::
 	twine upload -r storage $(SDIST)/*
 
 lint::
-	@ruff check $(PYTHON_PKG) $(TESTDIR)
+	@ruff check  --output-format=concise  $(PYTHON_PKG) $(TESTDIR)
 
 lint-preview::
 	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
@@ -31,7 +31,7 @@ install::
 typing:: $(PYTHON_PKG)
 	$(MYPY) -p $<
 
-security::
+scan::
 	@bandit -r $(PYTHON_PKG)
 
 
@@ -49,6 +49,6 @@ requirements: $(REQUIREMENTS)
 ifndef TESTDIR
 test::
 else
-test:: lint typing security
+test:: lint typing scan
 	cd $(TESTDIR) && pytest -v 
 endif

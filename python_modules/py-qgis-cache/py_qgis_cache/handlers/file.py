@@ -17,7 +17,7 @@ from qgis.core import QgsProject
 
 from py_qgis_contrib.core import componentmanager, logger
 
-from ..common import IProtocolHandler, ProjectMetadata, Url
+from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..config import ProjectsConfig
 from ..storage import load_project_from_uri
 
@@ -39,7 +39,7 @@ def file_metadata(path: Path) -> ProjectMetadata:
 
 
 @componentmanager.register_factory('@3liz.org/cache/protocol-handler;1?scheme=file')
-class FileProtocolHandler(IProtocolHandler):
+class FileProtocolHandler(ProtocolHandler):
     """ Handle file protocol
     """
 

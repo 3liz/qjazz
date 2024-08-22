@@ -3,6 +3,7 @@
 #-------------
 
 .build-docker:
+  image: ${REGISTRY_URL}/factory-ci-runner:build-package
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=ci_build
@@ -18,8 +19,7 @@
     - tags
     - main
   tags:
-  - infrav3-dind
-
+  - factory-dind
 
 build-docker:release:
   extends: .build-docker

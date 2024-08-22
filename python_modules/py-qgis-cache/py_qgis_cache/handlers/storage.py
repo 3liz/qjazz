@@ -19,7 +19,7 @@ from qgis.core import QgsApplication, QgsProject, QgsProjectStorage
 from py_qgis_contrib.core import componentmanager, logger
 from py_qgis_contrib.core.condition import assert_precondition
 
-from ..common import IProtocolHandler, ProjectMetadata, Url
+from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..config import ProjectsConfig
 from ..storage import load_project_from_uri
 
@@ -129,7 +129,7 @@ def init_storage_handlers(confdir: Optional[Path]):
 #
 
 
-class QgisStorageProtocolHandler(IProtocolHandler):
+class QgisStorageProtocolHandler(ProtocolHandler):
     """ Handle postgres protocol
     """
     def __init__(

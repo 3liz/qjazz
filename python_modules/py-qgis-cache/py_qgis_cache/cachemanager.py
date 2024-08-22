@@ -68,7 +68,7 @@ from qgis.server import QgsServer
 from py_qgis_contrib.core import componentmanager, logger
 
 # Import default handlers for auto-registration
-from .common import IProtocolHandler, ProjectMetadata, Url
+from .common import ProjectMetadata, ProtocolHandler, Url
 from .config import ProjectsConfig, validate_url
 from .handlers import init_storage_handlers
 from .storage import StrictCheckingFailure, UnreadableResource
@@ -203,7 +203,7 @@ class CacheManager:
         else:
             raise ResourceNotAllowed(str(path))
 
-    def get_protocol_handler(self, scheme: str) -> IProtocolHandler:
+    def get_protocol_handler(self, scheme: str) -> ProtocolHandler:
         """ Find protocol handler for the given scheme
         """
         return componentmanager.get_service(
@@ -291,7 +291,7 @@ class CacheManager:
         self,
         md: ProjectMetadata,
         status: CheckoutStatus,
-        handler: Optional[IProtocolHandler] = None,
+        handler: Optional[ProtocolHandler] = None,
     ) -> Tuple[CacheEntry, CheckoutStatus]:
         """ Update cache entry according to status
 
@@ -335,7 +335,7 @@ class CacheManager:
     def _new_cache_entry(
         self,
         md: ProjectMetadata,
-        handler: IProtocolHandler,
+        handler: ProtocolHandler,
     ) -> CacheEntry:
         """ Create a new cache entry
         """

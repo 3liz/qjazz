@@ -13,20 +13,13 @@ from typing_extensions import (
     Sequence,
 )
 
-from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.condition import (
-    assert_postcondition,
-)
-
 from .celery import Job, JobContext, Worker
 from .config import load_configuration
 from .context import FeedBack, QgisContext
 from .processing.prelude import (
     JobExecute,
     JobResults,
-    ProcessAlgorithm,
     ProcessDescription,
-    ProcessingContext,
     ProcessSummary,
 )
 from .processing.schemas import LinkHttp
@@ -113,9 +106,7 @@ def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
     """Return the list of processes
     """
     with QgisContext(ctx) as qgis_context:
-        include_deprecated = qgis_context.processing_config.expose_deprecated_algorithms
-        algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
-        return [alg.summary() for alg in algs]
+        return qgis_context.processes
 
 
 @app.job(name="process_describe", run_context=True)
@@ -128,12 +119,7 @@ def describe_process(
     """Return process description
     """
     with QgisContext(ctx) as qgis_context:
-        alg = ProcessAlgorithm.find_algorithm(ident)
-        if alg:
-            project = qgis_context.project(project_path) if project_path else None
-            return alg.description(project)
-        else:
-            return None
+        return qgis_context.describe(ident, project_path)
 
 
 @app.job(name="process_validate")
@@ -150,23 +136,12 @@ def validate_process_inputs(
        Validate process inputs without executing
     """
     with QgisContext(ctx) as qgis_context:
-
-        alg = ProcessAlgorithm.find_algorithm(ident)
-        if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
-
-        project = qgis_context.project(project_path) if project_path else None
-        if not project and alg.require_project:
-            raise ValueError(f"Algorithm {ident} require project")
-
-        feedback = FeedBack(self.setprogress)
-        context = ProcessingContext(qgis_context.processing_config)
-        context.setFeedback(feedback)
-
-        if project:
-            context.setProject(project)
-
-        alg.validate_execute_parameters(request, feedback, context)
+        qgis_context.validate(
+            ident,
+            request,
+            feedback=FeedBack(self.setprogress),
+            project_path=project_path,
+        )
 
 
 @app.job(name="process_execute", bind=True, run_context=True)
@@ -183,39 +158,18 @@ def execute_process(
 
     with QgisContext(ctx) as qgis_context:
 
-        alg = ProcessAlgorithm.find_algorithm(ident)
-        if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
-
-        project = qgis_context.project(project_path) if project_path else None
-        if not project and alg.require_project:
-            raise ValueError(f"Algorithm {ident} require project")
-
-        feedback = FeedBack(self.set_progress)
-        context = ProcessingContext(qgis_context.processing_config)
-        context.setFeedback(feedback)
-
-        context.job_id = ctx.task_id
-        context.workdir.mkdir(parents=True, exist_ok=True)
-
         # Optional context attributes
+        public_url: str | None
         try:
-            context.public_url = ctx.public_url
+            public_url = ctx.public_url
         except AttributeError:
-            pass
+            public_url = None
 
-        if project:
-            context.setProject(project)
-
-        results = alg.execute(request, feedback, context)
-
-        # Write modified project
-        destination_project = context.destination_project
-        if destination_project and destination_project.isDirty():
-            logger.debug("Writing destination project")
-            assert_postcondition(
-                destination_project.write(),
-                f"Failed no save destination project {destination_project.fileName()}",
-            )
-
-        return results
+        return qgis_context.execute(
+            ctx.task_id,
+            ident,
+            request,
+            feedback=FeedBack(self.setprogress),
+            project_path=project_path,
+            public_url=public_url,
+        )

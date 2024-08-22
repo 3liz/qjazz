@@ -1,24 +1,18 @@
-
-# Minimal docker compose for running examples
+# Docker compose for running from source
 services:
   worker:
-    image: 3liz/qgis-services:qgis-release-eager
-    working_dir: /opt/py-qgis/python_modules/py-qgis-processes
-    command: qgis-processes worker -C tests/worker-config.toml
+    image: ${QGIS_IMAGE}
+    working_dir: /src/python_modules/py-qgis-processes
+    command: ${SRCDIR}/tests/run-worker.sh
     volumes:
-    - { type: bind, source: "../../../", target: /opt/py-qgis }
-    profiles:
-    - worker
+    - { type: bind, source: "../../../", target: /src }
+    - { type: bind, source: "./.local", target: /.local }
+    user: "${USER_ID}:${GROUP_ID}"
     environment:
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
-    depends_on:
-    - rabbitmq 
+    depends_on: [rabbitmq, redis]
   rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-    - "127.0.0.1:5672:5672"
+    image: rabbitmq:3
   redis:
     image: redis:6-alpine
-    ports:
-    - "127.0.0.1:6379:6379"

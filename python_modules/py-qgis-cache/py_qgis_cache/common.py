@@ -13,7 +13,11 @@ import urllib.parse
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from typing_extensions import Iterator, Optional, Union
+from typing_extensions import (
+    Iterator,
+    Optional,
+    Union,
+)
 
 from qgis.core import QgsProject
 
@@ -31,7 +35,7 @@ class ProjectMetadata:
     last_modified: int
 
 
-class IProtocolHandler(ABC):
+class ProtocolHandler(ABC):
     """ Abstract class for protocol handler
     """
 

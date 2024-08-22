@@ -56,6 +56,7 @@ manifest:
 
 # Merge requirement files
 requirements: $(REQUIREMENTS)
+	@echo "Merging requirements files"
 	@cat $$(ls -1 ../python_modules/*/$<) | sort | uniq > ./$<
 
 

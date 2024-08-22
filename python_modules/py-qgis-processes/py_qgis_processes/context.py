@@ -7,6 +7,7 @@ from functools import cached_property
 
 from typing_extensions import (
     Callable,
+    List,
     Optional,
     Self,
 )
@@ -17,6 +18,7 @@ from py_qgis_cache import CacheManager
 from py_qgis_cache.extras import evict_by_popularity
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.componentmanager import FactoryNotFoundError
+from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_contrib.core.qgis import (
     PluginType,
     QgisPluginService,
@@ -28,6 +30,14 @@ from py_qgis_contrib.core.qgis import (
 
 from .celery import JobContext
 from .processing.config import ProcessingConfig
+from .processing.prelude import (
+    JobExecute,
+    JobResults,
+    ProcessAlgorithm,
+    ProcessDescription,
+    ProcessingContext,
+    ProcessSummary,
+)
 
 ProgressFun = Callable[[Optional[float], Optional[str]], None]
 
@@ -144,3 +154,88 @@ class QgisContext:
                 entry.hit_me()
                 project = entry.project
         return project
+
+    @property
+    def processes(self) -> List[ProcessSummary]:
+        """ List proceses """
+        include_deprecated = self.processing_config.expose_deprecated_algorithms
+        algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
+        return [alg.summary() for alg in algs]
+
+    def describe(self, ident: str, project_path: Optional[str]) -> ProcessDescription | None:
+        """ Describe process """
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg:
+            project = self.project(project_path) if project_path else None
+            return alg.description(project)
+        else:
+            return None
+
+    def validate(
+        self,
+        ident: str,
+        request: JobExecute,
+        *,
+        feedback: QgsProcessingFeedback,
+        project_path: Optional[str] = None,
+    ):
+        """ validate process parameters """
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg is None:
+            raise ValueError(f"Algorithm '{ident}' not found")
+
+        project = self.project(project_path) if project_path else None
+        if not project and alg.require_project:
+            raise ValueError(f"Algorithm {ident} require project")
+
+        context = ProcessingContext(self.processing_config)
+        context.setFeedback(feedback)
+
+        if project:
+            context.setProject(project)
+
+        alg.validate_execute_parameters(request, feedback, context)
+
+    def execute(
+        self,
+        task_id: str,
+        ident: str,
+        request: JobExecute,
+        *,
+        feedback: QgsProcessingFeedback,
+        project_path: Optional[str] = None,
+        public_url: Optional[str] = None,
+    ) -> JobResults:
+        """ Execute process """
+        alg = ProcessAlgorithm.find_algorithm(ident)
+        if alg is None:
+            raise ValueError(f"Algorithm '{ident}' not found")
+
+        project = self.project(project_path) if project_path else None
+        if not project and alg.require_project:
+            raise ValueError(f"Algorithm {ident} require project")
+
+        context = ProcessingContext(self.processing_config)
+        context.setFeedback(feedback)
+        context.job_id = task_id
+
+        if public_url:
+            context.public_url = public_url
+
+        context.workdir.mkdir(parents=True, exist_ok=True)
+
+        if project:
+            context.setProject(project)
+
+        results = alg.execute(request, feedback, context)
+
+        # Write modified project
+        destination_project = context.destination_project
+        if destination_project and destination_project.isDirty():
+            logger.debug("Writing destination project")
+            assert_postcondition(
+                destination_project.write(),
+                f"Failed to save destination project {destination_project.fileName()}",
+            )
+
+        return results
