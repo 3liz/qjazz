@@ -9,7 +9,6 @@ from typing_extensions import (
     Callable,
     List,
     Optional,
-    Self,
 )
 
 from qgis.core import QgsProcessingFeedback, QgsProject
@@ -17,8 +16,7 @@ from qgis.core import QgsProcessingFeedback, QgsProject
 from py_qgis_cache import CacheManager
 from py_qgis_cache.extras import evict_by_popularity
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.componentmanager import FactoryNotFoundError
-from py_qgis_contrib.core.condition import assert_postcondition
+from py_qgis_contrib.core.condition import assert_postcondition, assert_precondition
 from py_qgis_contrib.core.qgis import (
     PluginType,
     QgisPluginService,
@@ -28,7 +26,6 @@ from py_qgis_contrib.core.qgis import (
     show_qgis_settings,
 )
 
-from .celery import JobContext
 from .processing.config import ProcessingConfig
 from .processing.prelude import (
     JobExecute,
@@ -81,27 +78,41 @@ class FeedBack(QgsProcessingFeedback):
 class QgisContext:
     """Qgis context initializer
     """
-    def __init__(self, ctx: JobContext):
-        self._ctx = ctx
-        self._conf: ProcessingConfig = ctx.processing_config
-        self._setup()
+    @classmethod
+    def setup(cls, conf: ProcessingConfig):
+        """ Initialize qgis """
 
-    def _setup(self):
-        if not qgis_initialized():
-            debug = logger.isEnabledFor(logger.LogLevel.DEBUG)
-            if debug:
-                os.environ['QGIS_DEBUG'] = '1'
+        debug = logger.isEnabledFor(logger.LogLevel.DEBUG)
+        if debug:
+            os.environ['QGIS_DEBUG'] = '1'
 
-            init_qgis_application(settings=self._conf.settings())
-            if debug:
-                logger.debug(show_qgis_settings())  # noqa T201
+        #
+        # Initialize Qgis application
+        #
+        init_qgis_application(settings=conf.settings())
+        if debug:
+            logger.debug(show_qgis_settings())  # noqa T201
 
-    def __enter__(self) -> Self:
-        self.plugins
-        return self
+        #
+        # Init Qgis processing and plugins
+        #
+        logger.info("Initializing qgis processing...")
+        init_qgis_processing()
+        plugin_s = QgisPluginService(conf.plugins)
+        plugin_s.load_plugins(PluginType.PROCESSING, None)
+        plugin_s.register_as_service()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        #
+        # Initialize cache manager
+        #
+        logger.info("Initializing cache manager...")
+        CacheManager.initialize_handlers()
+        cm = CacheManager(conf.projects)
+        cm.register_as_service()
+
+    def __init__(self, conf: ProcessingConfig):
+        assert_precondition(qgis_initialized(), "Qgis context must be intialized")
+        self._conf = conf
 
     @property
     def processing_config(self) -> ProcessingConfig:
@@ -109,25 +120,11 @@ class QgisContext:
 
     @cached_property
     def cache_manager(self) -> CacheManager:
-        try:
-            cm = CacheManager.get_service()
-        except FactoryNotFoundError:
-            CacheManager.initialize_handlers()
-            cm = CacheManager(self._conf.projects)
-            cm.register_as_service()
-        return cm
+        return CacheManager.get_service()
 
     @cached_property
     def plugins(self) -> QgisPluginService:
-        try:
-            plugin_s = QgisPluginService.get_service()
-        except FactoryNotFoundError:
-            init_qgis_processing()
-            # Load plugins
-            plugin_s = QgisPluginService(self._conf.plugins)
-            plugin_s.load_plugins(PluginType.PROCESSING, None)
-            plugin_s.register_as_service()
-        return plugin_s
+        return QgisPluginService.get_service()
 
     def project(self, path: str) -> QgsProject:
         from py_qgis_cache import CheckoutStatus as Co

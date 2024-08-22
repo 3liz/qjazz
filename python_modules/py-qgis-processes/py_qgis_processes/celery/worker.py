@@ -34,6 +34,8 @@ class Worker(Celery):
 
         super().__init__(name, conf, **kwargs)
 
+        self._job_class = Job
+
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
 
@@ -66,12 +68,11 @@ class Worker(Celery):
                 @app.job(name='echo', bind=True, run_context=True)
                 def main(self, ctx, /, *args, **kwargs):
                     return f"got customer id : {ctx.customer_id}"
-
         """
         return super().task(
             *args,
             name=f"{self.main}.{name}",
-            base=Job,
+            base=self._job_class,
             track_started=True,
             _worker_job_context=self._job_context,
             **kwargs,

@@ -195,12 +195,12 @@ class ProcessingConfig(BaseConfig):
 
         scripts_folders = ';'.join(str(p) for p in _folders('scripts'))
         if scripts_folders:
-            logger.info("Scripts folders set to %s", scripts_folders)
+            logger.debug("Scripts folders set to %s", scripts_folders)
             settings["Processing/Configuration/SCRIPTS_FOLDERS"] = scripts_folders
 
         models_folders = ';'.join(str(p) for p in _folders('models'))
         if models_folders:
-            logger.info("Models folders set to %s", scripts_folders)
+            logger.debug("Models folders set to %s", models_folders)
             settings["Processing/Configuration/MODELS_FOLDER"] = models_folders
 
         # Configure default vector extensions

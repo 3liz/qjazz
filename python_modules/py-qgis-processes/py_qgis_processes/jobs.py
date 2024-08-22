@@ -4,6 +4,7 @@
 
 from time import time
 
+from celery.signals import worker_process_init
 from celery.worker.control import inspect_command
 from pydantic import TypeAdapter
 from typing_extensions import (
@@ -28,9 +29,32 @@ from .processing.schemas import LinkHttp
 # Create worker application
 #
 
+# Called at process initialization
+# See https://docs.celeryq.dev/en/stable/userguide/signals.html#worker-process-init
+@worker_process_init.connect
+def init_qgis(*args, **kwargs):
+    """ Initialize Qgis context in each process
+    """
+    from py_qgis_contrib.core import config
+    conf = config.confservice.conf
+
+    QgisContext.setup(conf.processing)
+
+
+class QgisJob(Job):
+
+    def before_start(self, *args, **kwargs):
+        # Add qgis context in job context
+        self._worker_job_context.update(
+            qgis_context=QgisContext(self._worker_job_context['processing_config']),
+        )
+        super().before_start(*args, **kwargs)
+
 
 class ProcessingWorker(Worker):
+
     def __init__(self, **kwargs) -> None:
+
         from kombu import Queue
 
         conf = load_configuration()
@@ -40,6 +64,8 @@ class ProcessingWorker(Worker):
         self.service_name = service_name
 
         super().__init__(service_name, conf.worker, **kwargs)
+
+        self._job_class = QgisJob
 
         # We want each service with its own queue and exchange
         self.conf.task_default_queue = f"py-qgis.{service_name}"
@@ -65,7 +91,6 @@ class ProcessingWorker(Worker):
         self._service_title = conf.worker.title
         self._service_description = conf.worker.description
         self._service_links = conf.worker.links
-
         self._online_since = time()
 
 
@@ -105,8 +130,7 @@ def presence(_) -> Dict:
 def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
     """Return the list of processes
     """
-    with QgisContext(ctx) as qgis_context:
-        return qgis_context.processes
+    return ctx.qgis_context.processes
 
 
 @app.job(name="process_describe", run_context=True)
@@ -118,8 +142,7 @@ def describe_process(
 ) -> ProcessDescription | None:
     """Return process description
     """
-    with QgisContext(ctx) as qgis_context:
-        return qgis_context.describe(ident, project_path)
+    return ctx.qgis_context.describe(ident, project_path)
 
 
 @app.job(name="process_validate")
@@ -135,13 +158,12 @@ def validate_process_inputs(
 
        Validate process inputs without executing
     """
-    with QgisContext(ctx) as qgis_context:
-        qgis_context.validate(
-            ident,
-            request,
-            feedback=FeedBack(self.setprogress),
-            project_path=project_path,
-        )
+    ctx.qgis_context.validate(
+        ident,
+        request,
+        feedback=FeedBack(self.setprogress),
+        project_path=project_path,
+    )
 
 
 @app.job(name="process_execute", bind=True, run_context=True)
@@ -155,21 +177,18 @@ def execute_process(
 ) -> JobResults:
     """Execute process
     """
+    # Optional context attributes
+    public_url: str | None
+    try:
+        public_url = ctx.public_url
+    except AttributeError:
+        public_url = None
 
-    with QgisContext(ctx) as qgis_context:
-
-        # Optional context attributes
-        public_url: str | None
-        try:
-            public_url = ctx.public_url
-        except AttributeError:
-            public_url = None
-
-        return qgis_context.execute(
-            ctx.task_id,
-            ident,
-            request,
-            feedback=FeedBack(self.setprogress),
-            project_path=project_path,
-            public_url=public_url,
-        )
+    return ctx.qgis_context.execute(
+        ctx.task_id,
+        ident,
+        request,
+        feedback=FeedBack(self.setprogress),
+        project_path=project_path,
+        public_url=public_url,
+    )
