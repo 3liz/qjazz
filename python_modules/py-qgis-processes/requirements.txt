@@ -14,8 +14,8 @@ kombu==5.4.0
 prompt_toolkit==3.0.47
 pydantic-extra-types==2.9.0
 pydantic-settings==2.4.0
-pydantic==2.7.4
-pydantic_core==2.18.4
+pydantic==2.8.2
+pydantic_core==2.20.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 redis==5.0.8

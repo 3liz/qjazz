@@ -227,8 +227,8 @@ def test_parameter_range():
     assert schema['type'] == 'array'
     assert schema['format'] == 'x-range'
     assert schema['items']['type'] == 'integer'
-    assert schema['maxLength'] == 2
-    assert schema['minLength'] == 2
+    assert schema['maxItems'] == 2
+    assert schema['minItems'] == 2
 
 
 def test_parameter_datetime():
