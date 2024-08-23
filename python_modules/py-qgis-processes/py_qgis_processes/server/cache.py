@@ -11,6 +11,7 @@ from typing_extensions import (
     Dict,
     Optional,
     Sequence,
+    Set,
 )
 
 from py_qgis_contrib.core import logger
@@ -27,6 +28,7 @@ from ..executor import (
 class Entry:
     service: str
     data: Sequence[ProcessSummary]
+    idents: Set[str]
     updated: float
     grace: int  # Grace period
 
@@ -54,6 +56,7 @@ class ProcessesCache:
                 self._cache[d.service] = Entry(
                     service=d.service,
                     data=processes,
+                    idents=set(p.id_ for p in processes),
                     updated=time(),
                     grace=self._grace,
                 )
@@ -67,6 +70,10 @@ class ProcessesCache:
                 )
 
         await asyncio.gather(*(_update(d) for d in executor.services))
+
+    def exists(self, service: str, ident: str) -> bool:
+        entry = self._cache.get(service)
+        return entry is not None and ident in entry.idents
 
     def get(self, service: str) -> Optional[Sequence[ProcessSummary]]:
         entry = self._cache.get(service)

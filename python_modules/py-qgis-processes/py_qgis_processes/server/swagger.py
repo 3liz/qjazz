@@ -145,13 +145,13 @@ def paths(app: web.Application) -> Dict:
                 url = url_info.get("formatter")
 
             if not url:
-                # not url ?
+                # no url ?
                 continue
 
             if isclass(route.handler) and issubclass(route.handler, web.View):
                 for method_name in _get_method_names_for_handler(route):
                     method = getattr(route.handler, method_name)
-                    if method.__doc__ is not None:
+                    if method.__doc__:
                         methods[method_name] = yaml.load(method.__doc__)
             else:
                 try:

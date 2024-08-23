@@ -6,7 +6,6 @@ from time import time
 from celery.result import AsyncResult
 from pydantic import Field, JsonValue
 from typing_extensions import (
-    AsyncIterator,
     Dict,
     Iterator,
     Mapping,
@@ -505,40 +504,30 @@ class Executor:
         else:
             return None
 
-    async def iter_jobs(
+    async def jobs(
         self,
         service: Optional[str] = None,
         *,
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
-    ) -> AsyncIterator[JobStatus]:
+    ) -> Sequence[JobStatus]:
         """ Iterate over job statuses
         """
-        import queue
-        q: queue.Queue = queue.Queue()
-
         destinations = service and self.destinations(service)
 
-        def _pull() -> None:
+        def _pull() -> Sequence[JobStatus]:
             _, keys = registry.find_keys(self._celery, service, realm=realm, cursor=cursor, count=limit)
+
+            data = []
             for job_id, _, _ in keys:
                 st = self._job_status(job_id, destinations)
                 if not st:
                     ti = registry.find_job(self._celery, job_id)
                     st = self._job_status_pending(ti) if ti else None
                 if st:
-                    q.put(st)
+                    data.append(st)
 
-        pull_taks = asyncio.create_task(asyncio.to_thread(_pull))
-        while True:
-            try:
-                st = q.get(block=False)
-                yield st
-            except queue.Empty:
-                if pull_taks.done():
-                    break
-                await asyncio.sleep(0.1)
-            exc = pull_taks.exception()
-            if exc:
-                raise exc
+            return data
+
+        return await asyncio.to_thread(_pull)

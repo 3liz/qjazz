@@ -18,6 +18,7 @@ from typing_extensions import (
 )
 
 SERVICE_MATCH = re.compile(r'^application/x-ogc-(wms|wcs|wfs|wmts)')
+VERSION_MATCH = re.compile(r';\s+version=([^;\s]+)')
 
 
 @dataclass
@@ -35,6 +36,13 @@ class Format:
         """
         m = SERVICE_MATCH.match(media_type)
         return m.group(1).upper() if m else None
+
+    @staticmethod
+    def version(media_type: str) -> Optional[str]:
+        """ Extract ows  service version from media_type
+        """
+        m = VERSION_MATCH.match(media_type)
+        return m.group(1) if m else None
 
 
 class _Formats(NamedTuple):

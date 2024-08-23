@@ -18,6 +18,7 @@ from .celery import Job, JobContext, Worker
 from .config import load_configuration
 from .context import FeedBack, QgisContext
 from .processing.prelude import (
+    InputValueError,
     JobExecute,
     JobResults,
     ProcessDescription,
@@ -189,11 +190,14 @@ def execute_process(
     except AttributeError:
         public_url = None
 
-    return ctx.qgis_context.execute(
-        ctx.task_id,
-        ident,
-        request,
-        feedback=FeedBack(self.setprogress),
-        project_path=project_path,
-        public_url=public_url,
-    )
+    try:
+        return ctx.qgis_context.execute(
+            ctx.task_id,
+            ident,
+            request,
+            feedback=FeedBack(self.set_progress),
+            project_path=project_path,
+            public_url=public_url,
+        )
+    except InputValueError as err:
+        raise ValueError(f'{ "msg": "{err}", "details" : {err.json}}')

@@ -11,11 +11,10 @@ from py_qgis_contrib.core.config import ConfigBase
 from ..accesspolicy import AccessPolicy
 from ..models import ErrorResponse
 
+
 #
 #  Default acces policy
 #
-
-
 class DefaultAccessPolicyConfig(ConfigBase):
 
     service_order: Sequence[str] = Field(
@@ -63,11 +62,11 @@ class DefaultAccessPolicy(AccessPolicy):
         service = request.query.get('service')
         if not service:
             for service in self._service_order:
-                if self._executor.known_service(service):
+                if self.executor.known_service(service):
                     break
             else:
                 # Return the first available service
-                for detail in self._executor.services:
+                for detail in self.executor.services:
                     service = detail.service
                     break
                 else:

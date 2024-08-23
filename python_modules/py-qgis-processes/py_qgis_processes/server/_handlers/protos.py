@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aiohttp import web
 from pydantic import TypeAdapter
 from typing_extensions import Optional, Protocol
@@ -35,6 +37,7 @@ class HandlerProto(Protocol):
     _accesspolicy: AccessPolicy
     _timeout: int
     _cache: ProcessesCache
+    _staticpath: Path
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:
         ...

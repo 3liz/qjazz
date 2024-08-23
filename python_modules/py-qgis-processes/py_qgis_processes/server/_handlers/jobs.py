@@ -162,32 +162,36 @@ class Jobs(HandlerProto):
 
         realm = job_realm(request)
 
-        async def filtered_jobs():
-            async for st in self._executor.iter_jobs(
-                service,
-                realm=realm,
-                cursor=page,
-                limit=limit,
-            ):
-                if process_ids and not st.process_id not in process_ids:
-                    continue
-                if filtered_status and st.status not in filtered_status:
-                    continue
+        jobs = await self._executor.jobs(
+            service,
+            realm=realm,
+            cursor=page,
+            limit=limit,
+        )
 
-                if st.status == st.SUCCESS:
-                    location = self.format_path(request, f"/jobs/{st.job_id}/results")
-                    st.links.append(
-                        make_link(
-                            request,
-                            path=location,
-                            rel="http://www.opengis.net/def/rel/ogc/1.0/results",
-                            title="Job results",
-                        ),
-                    )
+        if process_ids or filtered_status:
+            def filtered_jobs():
+                for st in jobs:
+                    if process_ids and st.process_id not in process_ids:
+                        continue
+                    if filtered_status and st.status not in filtered_status:
+                        continue
 
-                yield st
+                    yield st
 
-        jobs = [st async for st in filtered_jobs()]
+            jobs = [st for st in filtered_jobs()]
+
+        for st in jobs:
+            if st.status == st.SUCCESS:
+                location = self.format_path(request, f"/jobs/{st.job_id}/results")
+                st.links.append(
+                    make_link(
+                        request,
+                        path=location,
+                        rel="http://www.opengis.net/def/rel/ogc/1.0/results",
+                        title="Job results",
+                    ),
+                )
 
         params = {
             'processID': process_ids,

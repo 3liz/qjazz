@@ -1,10 +1,8 @@
 from aiohttp import web
-from pydantic import JsonValue, ValidationError
+from pydantic import ValidationError
 from typing_extensions import (
-    List,
     Optional,
     Sequence,
-    cast,
 )
 
 from .protos import (
@@ -52,7 +50,7 @@ class Processes(HandlerProto):
         service = self.get_service(request, raise_error=False)
         processes = self._cache.get(service)
         if processes is None:
-            ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not available")
+            ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
 
         def _process_filter(td: ProcessSummary) -> bool:
             return self._accesspolicy.execute_permission(request, service, td.id_)
@@ -109,12 +107,14 @@ class Processes(HandlerProto):
                     application/json:
                         schema:
                             $ref: '#/definitions/ProcessDescription'
-
         """
         service = self.get_service(request)
         project = self.get_project(request)
 
         process_id = request.match_info['Ident']
+
+        if not self._cache.exists(service, process_id):
+            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} is not available")
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -129,7 +129,7 @@ class Processes(HandlerProto):
             ErrorResponse.raises(web.HTTPGatewayTimeout, "Worker busy")
 
         if not td:
-            return ErrorResponse.response(404, f"The process {process_id} does not exists")
+            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} not available")
 
         return web.Response(
             content_type="application/json",
@@ -201,22 +201,17 @@ class Processes(HandlerProto):
 
         process_id = request.match_info['Ident']
 
+        if not self._cache.exists(service, process_id):
+            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} is not available")
+
         self.check_process_permission(request, service, process_id, project)
 
         try:
             execute_request = JobExecute.model_validate_json(await request.text())
         except ValidationError as err:
-            ErrorResponse.raises(
-                web.HTTPBadRequest,
-                message="Invalid body",
-                details=cast(
-                    List[JsonValue],
-                    err.errors(
-                        include_url=False,
-                        include_context=False,
-                        include_input=False,
-                    ),
-                ),
+            raise web.HTTPBadRequest(
+                content_type="application/json",
+                text=err.json(include_context=False, include_url=False),
             )
 
         # Set job realm

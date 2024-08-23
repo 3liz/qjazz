@@ -134,6 +134,8 @@ class ProcessingContext(QgsProcessingContext):
         self,
         name: str,
         service: Optional[str],
+        *,
+        version: Optional[str] = None,
         request: Optional[str] = None,
         query: Optional[str] = None,
     ) -> str:
@@ -145,6 +147,8 @@ class ProcessingContext(QgsProcessingContext):
             public_url=self.public_url,
         )
         url = f"{advertised_services_url}?SERVICE={service}&REQUEST={request}"
+        if version:
+            url = f"{url}&VERSION={version}"
         if query:
             url = f"{url}&{query}"
 
@@ -155,12 +159,14 @@ class ProcessingContext(QgsProcessingContext):
         *,
         service: Optional[str],
         request: Optional[str] = None,
+        version: Optional[str] = None,
         query: Optional[str] = None,
     ) -> str:
         assert_precondition(self._destination_project is not None, "Destination project required")
         return self._ows_reference(
             Path(cast(QgsProject, self._destination_project).fileName()).stem,
             service,
-            request,
-            query,
+            version=version,
+            request=request,
+            query=query,
         )

@@ -106,6 +106,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 
         reference_url = context.ows_reference(
             service=Format.service(media_type),
+            version=Format.version(media_type),
             query=urlencode((('LAYERS', name),), quote_via=quote),
         )
 

@@ -46,6 +46,10 @@ up: env
 run: up
 	docker compose logs -f worker
 
+# Restart worker
+restart: 
+	docker compose up -d --force-recreate worker
+
 # Equivalent run using celery config
 export PY_QGIS_PROCESSES_CONFIG=$(CURDIR)/worker-config.toml
 run-celery: workdir

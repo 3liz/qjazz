@@ -39,7 +39,8 @@ include = [
 [tool.ruff]
 extend = "../../config/ruff.toml"
 extend-exclude = [
-    "tests/plugins/"
+    "tests/plugins/",
+    "tests/clienttests/",
 ] 
 
 [tool.ruff.lint.per-file-ignores]

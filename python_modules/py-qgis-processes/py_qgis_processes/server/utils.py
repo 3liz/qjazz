@@ -1,7 +1,5 @@
 from aiohttp import web
-from typing_extensions import (
-    Optional,
-)
+from typing_extensions import Optional
 
 from ..processing.schemas import LinkHttp
 
@@ -40,6 +38,17 @@ def redirect(path):
     """ Helper for creating redirect handler
     """
     async def _redirect(request):  # noqa RUF029
+        raise web.HTTPFound(path)
+
+    return _redirect
+
+
+def redirect_trailing_slash():
+    """ Redirect with a trailing slash
+    """
+    async def _redirect(request):  # noqa RUF029
+        qs = request.query_string
+        path = f"{request.path}/?{qs}" if qs else f"{request.path}/"
         raise web.HTTPFound(path)
 
     return _redirect

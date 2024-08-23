@@ -1,5 +1,5 @@
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from aiohttp import web
 from pydantic import (
@@ -12,10 +12,13 @@ from typing_extensions import (
     Annotated,
     Dict,
     Optional,
+    Protocol,
     Type,
+    runtime_checkable,
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_contrib.core.config import ConfigBase, section
 
 from ..executor import Executor
@@ -45,14 +48,18 @@ class NoConfig(ConfigBase):
     pass
 
 
-class AccessPolicy(ABC):
+# Enable type checking from Protocol
+# This allows for validating AccessPolicy instances
+
+@runtime_checkable
+class AccessPolicy(Protocol):
 
     Config: Type[ConfigBase] = NoConfig
 
-    _executor: Executor
+    executor: Executor
 
     def setup(self, app: web.Application):
-        pass
+        return
 
     @abstractmethod
     def service_permission(self, request: web.Request, service: str) -> bool:
@@ -106,6 +113,8 @@ class AccessPolicy(ABC):
 
 
 class DummyAccessPolicy(AccessPolicy):
+
+    executor: Executor
 
     def service_permission(self, request: web.Request, service: str) -> bool:
         return False
@@ -162,8 +171,11 @@ def create_access_policy(
     policy_conf = policy_class.Config.model_validate(conf.config)
 
     instance = conf.policy_class(policy_conf)
-    instance._executor = executor
-
+    assert_postcondition(
+        isinstance(instance, AccessPolicy),
+        f"{instance} does no supports AccessPolicy protocol",
+    )
+    instance.executor = executor
     instance.setup(app)
 
     return instance
