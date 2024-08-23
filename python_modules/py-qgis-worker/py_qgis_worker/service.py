@@ -424,10 +424,10 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 yield _new_cache_info(resp)
 
                 self._restore.update(resp)
+
     #
     # Drop project
     #
-
     async def DropProject(
         self,
         request: api_pb2.CheckoutRequest,

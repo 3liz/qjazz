@@ -5,7 +5,7 @@
 Description
 ===========
 
-Py-qgis-server is a set of services for serving Qgis 3.4+ server requests.
+Py-qgis-server is a set of services for serving Qgis 3.34+ server requests.
 
 The py-qgis-server setup is splitted in 3 different services: 
     
@@ -117,7 +117,7 @@ Run the stack with::
 
     docker compose up -d
 
-From here, open your navigator at http://localhost/my_project?SERVICE=WMS&REQUEST=GetCapabilities
+From here, open your navigator at http://localhost/basic/my_project?SERVICE=WMS&REQUEST=GetCapabilities
 in order to get the WMS Capabilities if your project is wms-enabled.
 
 See the working example in `examples/basic`
@@ -190,6 +190,14 @@ All services use configuration file in `toml <https://toml.io/en/>`_  format by 
 but json and yaml may also be used.
 
 
+Using configuration file
+------------------------
+
+You may specify a configuration file with the `--conf` or `-C` option::
+        
+    qgis-server-rpc  serve -C path/to/config/file.toml
+
+
 Using environment variables
 ---------------------------
 
@@ -245,6 +253,7 @@ instance::
         > qgis-server-cli config set '{ "logging": { "level": "trace" }}'
 
 Configuration fragments must be in json format.
+
 
 Remote configuration
 --------------------

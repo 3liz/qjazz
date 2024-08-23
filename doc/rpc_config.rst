@@ -220,7 +220,33 @@ There is several restoration types:
             | The list is saved on disk in a tmp directory and restored when the instance restart.
    * :http: The list is downloaded from http remote url, it can be considired as a static configuration
             and no update is done. 
+   * :https: Same as `http` with SSL configuration
    * :none: No restoration
+
+
+.. code-block:: toml
+    
+   # Cache restoration configuration
+   [restore_cache]
+   restore_type = "none" # one of "tmp", "http", "https" or "none"
+   # External cache url  if the restore_type is "http" or "https"
+   url = "https://..."
+
+   # SSL configuration for https restoration type
+   [restore_cache.ssl]
+   # CA file
+   #cafile =   	# Optional
+   #
+   # SSL/TLS  key
+   #
+   # Path to the SSL key file
+   #certfile =   	# Optional
+   #
+   # SSL/TLS Certificat
+   #
+   # Path to the SSL certificat file
+   #keyfile =   	# Optional
+
 
 .. note::
 

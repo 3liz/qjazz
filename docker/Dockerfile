@@ -33,7 +33,6 @@ RUN mkdir -p /opt/local/ \
         -e /python_modules/py-qgis-worker \
         -e /python_modules/py-qgis-admin \
         -e /python_modules/py-qgis-http \
-        -e /python_modules/py-qgis-html \
         -e /python_modules/py-qgis-processes \
         -e /python_modules/py-qgis-scripts \
     && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \

@@ -250,9 +250,9 @@ class _Cache:
 
     async def put_cache(self, request):
         """
-        summary: "Update projects for cache"
+        summary: "Pull/Update projects in cache for backend"
         description: >
-            Update projects for backend's cache
+            Update requested projects for backend's cache
         parameters:
           - in: path
             name: Id
@@ -263,6 +263,7 @@ class _Cache:
         tags:
           - pools.cache
         requestBody:
+            desccription: The list of projects to pull/update
             required: true
             content:
                 application/json:
@@ -319,7 +320,7 @@ class _Cache:
         """
         summary: "Clear cache"
         description: >
-            Clear cache for all backends
+            Clear cache for backends
         parameters:
           - in: path
             name: Id

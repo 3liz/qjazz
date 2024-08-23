@@ -244,8 +244,8 @@ paths:
               schema:
                 $ref: '#/definitions/ErrorResponse'
     put:
-      summary: Update projects for cache
-      description: "Update projects for backend's cache\n"
+      summary: Pull/Update projects in cache for backend
+      description: "Update requested projects for backend's cache\n"
       parameters:
       - in: path
         name: Id
@@ -256,6 +256,7 @@ paths:
       tags:
       - pools.cache
       requestBody:
+        desccription: The list of projects to pull/update
         required: true
         content:
           application/json:
@@ -282,7 +283,7 @@ paths:
                 $ref: '#/definitions/ErrorResponse'
     delete:
       summary: Clear cache
-      description: "Clear cache for all backends\n"
+      description: "Clear cache for backends\n"
       parameters:
       - in: path
         name: Id
@@ -364,7 +365,7 @@ paths:
         name: uri
         schema:
           type: str
-        description: The project uri
+        description: The project uri/path
       tags:
       - pools.cache.project
       responses:
@@ -408,7 +409,7 @@ paths:
         name: uri
         schema:
           type: str
-        description: The project uri
+        description: The project uri/path
       tags:
       - pools.cache.project
       responses:

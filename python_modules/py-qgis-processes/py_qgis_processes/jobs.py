@@ -40,7 +40,6 @@ def init_qgis(*args, **kwargs):
 
     QgisContext.setup(conf.processing)
 
-
 class QgisJob(Job):
 
     def before_start(self, *args, **kwargs):
@@ -68,6 +67,9 @@ class ProcessingWorker(Worker):
         self._job_class = QgisJob
 
         # We want each service with its own queue and exchange
+        # The queue used can be configured as running options"
+        # This allows to use dedicated workers for inventory
+        # and/or processes tasks.
         self.conf.task_default_queue = f"py-qgis.{service_name}"
         self.conf.task_default_exchange = f"py-qgis.{service_name}"
 

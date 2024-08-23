@@ -6,6 +6,7 @@ from typing_extensions import Dict, List
 from .. import swagger
 from ..errors import ServiceNotAvailable
 from ..models import CacheItemPool
+from ._cache import cache_content_response
 from .utils import _http_error
 
 
@@ -125,7 +126,7 @@ class _Projects:
             name: uri
             schema:
                 type: str
-            description: The project uri
+            description: The project uri/path
         tags:
           - pools.cache.project
         responses:
@@ -192,7 +193,7 @@ class _Projects:
             name: uri
             schema:
                 type: str
-            description: The project uri
+            description: The project uri/path
         tags:
           - pools.cache.project
         responses:
@@ -237,6 +238,77 @@ class _Projects:
             return web.Response(
                 content_type="application/json",
                 text=ProjectInfo.model_validate(response).model_dump_json(),
+            )
+        except ServiceNotAvailable:
+            _http_error(
+                web.HTTPBadGateway,
+                f"No backends availables for pool '{pool.label}'",
+            )
+
+    async def put_project(self, request):
+        """
+        summary: "Pull/Update single project in cache for backend"
+        description: >
+            Update requested project for backend's cache
+        parameters:
+          - in: path
+            name: Id
+            schema:
+                type: string
+            required: true
+            description: Identifier for the backend
+          - in: query
+            name: uri
+            schema:
+                type: str
+            description: The project uri/path
+        tags:
+          - pools.cache.project
+        responses:
+            "200":
+                description: >
+                    Returns project's cache content
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/CacheContentResponse'
+            "400":
+                description: >
+                    Missing uri in query string
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
+            "404":
+                description: >
+                    The requested backends does not exists
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
+            "502":
+                description: >
+                    Backends are unavailables
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
+       """
+        pool = self._pool(request)
+        try:
+            uri = request.query['uri']
+        except KeyError:
+            _http_error(web.HTTPBadRequest, message="Missing project's uri")
+
+        try:
+            response = await pool.pull_projects(uri)
+            return web.Response(
+                content_type="application/json",
+                text=cache_content_response(
+                    request,
+                    pool.label,
+                    response,
+                ),
             )
         except ServiceNotAvailable:
             _http_error(

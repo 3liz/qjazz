@@ -97,3 +97,6 @@ def _http_error(
             details=details,
         ).model_dump_json(),
     )
+
+
+# Models utils
