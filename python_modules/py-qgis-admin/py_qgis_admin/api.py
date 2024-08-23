@@ -42,16 +42,20 @@ class Handlers(
             # Config
             web.get(f'/{API_VERSION}/pools/{{Id}}/config', self.get_pool_config, allow_head=False),
             web.put(f'/{API_VERSION}/pools/{{Id}}/config', self.put_pool_config),
+
             # Cache
             web.get(f'/{API_VERSION}/pools/{{Id}}/catalog', self.get_catalog, allow_head=False),
             web.get(f'/{API_VERSION}/pools/{{Id}}/cache', self.get_cache, allow_head=False),
             web.patch(f'/{API_VERSION}/pools/{{Id}}/cache', self.patch_cache),
             web.put(f'/{API_VERSION}/pools/{{Id}}/cache', self.put_cache),
             web.delete(f'/{API_VERSION}/pools/{{Id}}/cache', self.delete_cache),
+
             # Project
             web.get(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.get_project, allow_head=False),
             web.delete(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.delete_project),
+            web.put(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.put_project),
             web.get(f'/{API_VERSION}/pools/{{Id}}/cache/project/info', self.get_project_info, allow_head=False),
+
             # Plugins
             web.get(f'/{API_VERSION}/pools/{{Id}}/plugins', self.get_plugins, allow_head=False),
 

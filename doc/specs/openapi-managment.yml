@@ -393,6 +393,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/ErrorResponse'
+    put:
+      summary: Pull/Update single project in cache for backend
+      description: "Update requested project for backend's cache\n"
+      parameters:
+      - in: path
+        name: Id
+        schema:
+          type: string
+        required: true
+        description: Identifier for the backend
+      - in: query
+        name: uri
+        schema:
+          type: str
+        description: The project uri/path
+      tags:
+      - pools.cache.project
+      responses:
+        '200':
+          description: "Returns project's cache content\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/CacheContentResponse'
+        '400':
+          description: "Missing uri in query string\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: "The requested backends does not exists\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
+        '502':
+          description: "Backends are unavailables\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
   /v1/pools/{Id}/cache/project/info:
     get:
       summary: Get project's infos

@@ -39,7 +39,8 @@ html_static_path = [
 master_doc = 'index'
 
 # -- Swagger ---
-
+# Note: for reading swagger doc one must use http server:
+# ex  'python -m http.server doc/build'
 swagger = [
     {
         "name": "Managment API",

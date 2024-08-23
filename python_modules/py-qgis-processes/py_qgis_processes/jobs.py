@@ -31,6 +31,8 @@ from .processing.schemas import LinkHttp
 
 # Called at process initialization
 # See https://docs.celeryq.dev/en/stable/userguide/signals.html#worker-process-init
+
+
 @worker_process_init.connect
 def init_qgis(*args, **kwargs):
     """ Initialize Qgis context in each process
@@ -39,6 +41,7 @@ def init_qgis(*args, **kwargs):
     conf = config.confservice.conf
 
     QgisContext.setup(conf.processing)
+
 
 class QgisJob(Job):
 
