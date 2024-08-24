@@ -9,6 +9,56 @@
 
 PROCESSES = new Map()
 
+var current_page = 1
+var page_limit=10
+
+/* 
+ *  Pagination
+ */
+
+function get_current_page_limit() {
+    page_limit = document.getElementById('page-limit').value
+}
+
+
+async function on_page_limit_change(el) {
+    page_limit = el.value
+    await get_status(true)
+}
+
+async function next_page() {
+    current_page = current_page + 1
+    console.log("Current page is " + current_page)
+    await get_status(true)
+}
+
+async function prev_page() {
+    current_page = current_page - 1
+    console.log("Current page is " + current_page)
+    await get_status(true)
+}
+
+function update_pagination(links) {
+    // Check for rel 'next' link
+    let el_next = document.getElementById('next-page')
+    let el_prev = document.getElementById('previous-page')
+    let disableNext = true
+    let disablePrev = true
+    for (let res of links) {
+        if (res.rel == 'next') {
+            disableNext = false
+        }
+        if (res.rel == 'prev') {
+            disablePrev = false
+        }
+    }
+    el_next.classList.toggle("disabled", disableNext)
+    el_prev.classList.toggle("disabled", disablePrev)
+
+}
+
+///////////////////////////////////
+
 
 function get_pr_status( pr_data ) {
     // Return the status of
@@ -250,7 +300,7 @@ async function refresh_details() {
 
 async function get_status(sort=false) {
     console.log("Refreshing status")
-    let response = await fetch('../jobs/', { 
+    let response = await fetch(`../jobs/?limit=${page_limit}&page=${current_page}`, { 
         credentials: 'same-origin'
     })
     if (! response.ok) {
@@ -277,11 +327,14 @@ async function get_status(sort=false) {
     }
     PROCESSES = newMap
     update_summary()
+    update_pagination(data['links'])
 }
 
 
 async function run_dashboard()
 {
+    get_current_page_limit()
+
     // XXX Retrieve job's realm
     await get_status(true)
     setInterval( get_status, 5000 )

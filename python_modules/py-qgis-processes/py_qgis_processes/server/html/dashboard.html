@@ -53,6 +53,19 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarCollapse">
         <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+              <label for="page-count" class="nav-link">Items per page</label>
+          </li>
+          <li class="nav-item active"/>
+              <select name="page-count" id="page-limit" class="form-select"
+                onchange="on_page_limit_change(this)"  
+              >
+                  <option value=10 selected>10</option>
+                  <option value=20>20</option>
+                  <option value=50>50</option>
+                  <option value=100>100</option>
+              </select>
+          </li>
           <!--
           <li class="nav-item active">
             <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
@@ -85,6 +98,18 @@
       </div>
 
     </div>
+
+    <nav aria-label="...">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled" id="previous-page">
+                <a class="page-link" href="#" onclick="prev_page()">Previous</a>
+            </li>
+            <li class="page-item disabled" id="next-page">
+                <a class="page-link" href="#" onclick="next_page()">Next</a>
+            </li>
+        </ul>
+    </nav>
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="jquery.slim.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
