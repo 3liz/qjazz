@@ -217,7 +217,7 @@ class Processes(HandlerProto):
         # Set job realm
         realm = get_job_realm(request)
 
-        job_status = await self._executor.execute(
+        job_status, _ = await self._executor.execute(
             service,
             process_id,
             request=execute_request,

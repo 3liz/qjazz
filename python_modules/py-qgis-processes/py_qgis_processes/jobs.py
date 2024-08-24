@@ -71,9 +71,14 @@ class ProcessingWorker(Worker):
         self._job_class = QgisJob
 
         # We want each service with its own queue and exchange
-        # The queue used can be configured as running options"
+        # The queue used can be configured as running options
+        # with '-Q <queue>' option.
         # This allows to use dedicated workers for inventory
-        # and/or processes tasks.
+        # and/or processes tasks (see also how to configure manual
+        # routing for tasks).
+        #
+        # See https://docs.celeryq.dev/en/stable/userguide/routing.html
+        # for task routing
         self.conf.task_default_queue = f"py-qgis.{service_name}"
         self.conf.task_default_exchange = f"py-qgis.{service_name}"
 

@@ -43,9 +43,11 @@ function set_label( el, name, value ) {
 
 
 function update_progressbar( el, value ) {
-    let progress = el.querySelector('[name=pr-progress] .progress-bar')
-    progress.setAttribute('aria-valuenow', value )
-    progress.style.width = value+'%'
+    if (value !== undefined) {
+        let progress = el.querySelector('[name=pr-progress] .progress-bar')
+        progress.setAttribute('aria-valuenow', value )
+        progress.style.width = value+'%'
+    }
 }
 
 
@@ -99,6 +101,8 @@ function update_process( pr_data ) {
     } else {
         add_process( pr_data )
     }
+    // See https://getbootstrap.com/docs/5.0/components/tooltips/#example-enable-tooltips-everywhere
+    // For jquery alternative
     $('[data-toggle="tooltip"]').tooltip();
 }
 
@@ -278,7 +282,7 @@ async function get_status(sort=false) {
 
 async function run_dashboard()
 {
-    // Retrieve job's realm
+    // XXX Retrieve job's realm
     await get_status(true)
     setInterval( get_status, 5000 )
 }

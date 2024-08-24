@@ -96,15 +96,13 @@ def find_keys(
     service: Optional[str] = None,
     *,
     realm: Optional[str] = None,
-    cursor: int = 0,
-    count: int = 100,  # Minimal count hint
-) -> Tuple[int, Iterator[Tuple[str, str, str]]]:
+) -> Iterator[Tuple[str, str, str]]:
     """ Iterate over filtered task infos
     """
     client = app.backend.client
     pattern = f"py-qgis::*::{service or '*'}::{realm or '*'}"
-    cursor, keys = client.scan(cursor=cursor, match=pattern, count=count)
-    return cursor, (tuple(key.decode().split("::")[1:4]) for key in keys)
+    keys = client.scan_iter(match=pattern)
+    return (tuple(key.decode().split("::")[1:4]) for key in keys)
 
 
 def dismiss(app: Celery, job_id: str) -> bool:

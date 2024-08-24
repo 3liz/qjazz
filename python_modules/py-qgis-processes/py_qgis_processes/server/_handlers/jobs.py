@@ -28,7 +28,7 @@ class JobList(swagger.JsonModel):
 
 
 LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
-PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=0)])
+PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
 
 
 class Jobs(HandlerProto):
@@ -149,7 +149,7 @@ class Jobs(HandlerProto):
 
         try:
             limit = LimitParam.validate_python(request.query.get('limit', 10))
-            page = PageParam.validate_python(request.query.get('page', 0))
+            page = PageParam.validate_python(request.query.get('page', 1))
         except ValidationError as err:
             raise web.HTTPBadRequest(
                 content_type="application/json",
@@ -165,7 +165,7 @@ class Jobs(HandlerProto):
         jobs = await self._executor.jobs(
             service,
             realm=realm,
-            cursor=page,
+            cursor= (page-1) * limit,
             limit=limit,
         )
 
@@ -220,7 +220,7 @@ class Jobs(HandlerProto):
                 ),
             )
 
-        if page > 0:
+        if page > 1:
             params.update(page=page - 1)
             links.append(
                 make_link(
