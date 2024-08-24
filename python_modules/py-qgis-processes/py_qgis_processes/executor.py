@@ -363,7 +363,13 @@ class Executor:
             realm=realm,
         )
 
-    async def job_status(self, job_id: str, *, realm: Optional[str] = None) -> Optional[JobStatus]:
+    async def job_status(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+        with_details: bool = False,
+    ) -> Optional[JobStatus]:
         """ Return job status
         """
         return await asyncio.to_thread(
@@ -371,6 +377,7 @@ class Executor:
             job_id,
             self._services,
             realm,
+            with_details,
         )
 
     def _job_status_ext(
@@ -378,6 +385,7 @@ class Executor:
         job_id: str,
         services: ServiceDict,
         realm: Optional[str] = None,
+        with_details: bool = False,
     ) -> Optional[JobStatus]:
         # Return job status (blocking) with pending state check
         ti = registry.find_job(self._celery, job_id, realm=realm)
@@ -385,13 +393,14 @@ class Executor:
             return None
 
         destinations = self.get_destinations(ti.service, services)
-        st = self._job_status(job_id, destinations)
+        st = self._job_status(job_id, destinations, with_details)
         return st or self._job_status_pending(ti)
 
     def _job_status(
         self,
         job_id: str,
         destinations: Optional[Sequence[str]] = None,
+        with_details: bool = False,
     ) -> Optional[JobStatus]:
         # Return job status (blocking)
         #
@@ -402,8 +411,8 @@ class Executor:
 
         finished = None
         progress = None
-        message = None
         updated = None
+        message = ""
 
         match state['status']:
             case Celery.STATE_PENDING:
@@ -448,7 +457,9 @@ class Executor:
                 # Unhandled state
                 raise RuntimeError(f"Unhandled celery task state: {unknown_state}")
 
-        meta = state['kwargs'].get('__meta__', {})
+        # Get task arguments
+        run_config = state['kwargs']
+        meta = run_config.pop('__meta__', {})
 
         return JobStatus(
             job_id=job_id,
@@ -460,6 +471,7 @@ class Executor:
             updated=updated,
             progress=progress,
             message=message,
+            run_config=run_config if with_details else None,
         )
 
     def _query_task(

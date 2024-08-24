@@ -6,6 +6,7 @@ from pydantic import Field, TypeAdapter, ValidationError
 from typing_extensions import (
     Annotated,
     Sequence,
+    TypeVar,
 )
 
 from .protos import (
@@ -29,6 +30,20 @@ class JobList(swagger.JsonModel):
 
 LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
 PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
+BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
+
+T = TypeVar("T")
+
+
+def validate_param(adapter: TypeAdapter, request: web.Request, name: str, default: T) -> T:
+    try:
+        return adapter.validate_python(request.query.get(name, default))
+    except ValidationError as err:
+        raise web.HTTPBadRequest(
+            content_type="application/json",
+            text=err.json(include_context=False, include_url=False),
+        )
+
 
 
 class Jobs(HandlerProto):
@@ -64,7 +79,12 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info['JobId']
 
-        job_status = await self._executor.job_status(job_id, realm=job_realm(request))
+        job_status = await self._executor.job_status(
+            job_id,
+            realm=job_realm(request),
+            with_details=validate_param(BoolParam, request, 'details', False),
+        )
+
         if not job_status:
             return ErrorResponse.response(404, message=job_id)
 
@@ -147,14 +167,8 @@ class Jobs(HandlerProto):
         # Allow passing service as query parameter
         service = request.query.get('service')
 
-        try:
-            limit = LimitParam.validate_python(request.query.get('limit', 10))
-            page = PageParam.validate_python(request.query.get('page', 1))
-        except ValidationError as err:
-            raise web.HTTPBadRequest(
-                content_type="application/json",
-                text=err.json(include_context=False, include_url=False),
-            )
+        limit = validate_param(LimitParam, request, 'limit', 10)
+        page = validate_param(PageParam, request, 'page', 1)
 
         # Filters
         process_ids = request.query.getall('processID', ())

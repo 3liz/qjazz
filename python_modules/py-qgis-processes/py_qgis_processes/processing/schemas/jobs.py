@@ -75,6 +75,9 @@ class JobStatus(JsonModel):
 
     links: List[LinkHttp] = Field([])
 
+    # Run configuraton
+    run_config: Optional[JsonValue] = None
+
 
 class Output(JsonModel):
     format: OutputFormat
