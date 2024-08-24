@@ -112,6 +112,8 @@ class ServerConfig(ConfigBase):
 
     timeout: int = Field(5, gt=0, title="Backend request timeout")
 
+    enable_ui: bool = Field(True, title="Enable Web UI")
+
 
 def format_interface(conf: ServerConfig) -> str:
     match conf.listen:
@@ -362,6 +364,7 @@ def create_app(conf: ConfigProto) -> web.Application:
         executor=executor,
         policy=access_policy,
         timeout=conf.server.timeout,
+        enable_ui=conf.server.enable_ui,
         cache=cache,
     )
 
@@ -405,6 +408,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
         policy=DummyAccessPolicy(),
         cache=cast(ProcessesCache, None),
         timeout=0,
+        enable_ui=False,
     )
     app = web.Application()
     app.add_routes(handler.routes)

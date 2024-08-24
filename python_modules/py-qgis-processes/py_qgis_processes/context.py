@@ -3,7 +3,9 @@
 #
 import os
 
+from contextlib import contextmanager
 from functools import cached_property
+from pathlib import Path
 
 from typing_extensions import (
     Callable,
@@ -219,12 +221,14 @@ class QgisContext:
         if public_url:
             context.public_url = public_url
 
-        context.workdir.mkdir(parents=True, exist_ok=True)
+        workdir = context.workdir
+        workdir.mkdir(parents=True, exist_ok=True)
 
         if project:
             context.setProject(project)
 
-        results = alg.execute(request, feedback, context)
+        with chdir(workdir), logger.logfile(workdir, 'processing'), memlog(task_id):
+            results = alg.execute(request, feedback, context)
 
         # Write modified project
         destination_project = context.destination_project
@@ -236,3 +240,32 @@ class QgisContext:
             )
 
         return results
+
+
+#
+# Utils
+#
+
+
+@contextmanager
+def chdir(workdir: Path):
+    # XXX Python 3.11 use `contextlib.chdir`
+    curdir = os.getcwd()
+    os.chdir(workdir)
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+
+
+@contextmanager
+def memlog(task_id: str):
+    import psutil
+    process = psutil.Process(os.getpid())
+    rss = process.memory_info().rss
+    mb = 1024 * 1024.0
+    try:
+        yield
+    finally:
+        _leaked = (process.memory_info().rss - rss) / mb
+        logger.info("Task %s leaked %.3f Mb", task_id, _leaked)

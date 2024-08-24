@@ -8,11 +8,11 @@
 """ Logger
 """
 import logging
-import os
 import sys
 
 from contextlib import contextmanager
 from enum import Enum
+from pathlib import Path
 
 from pydantic import Field, PlainSerializer, PlainValidator, WithJsonSchema
 from typing_extensions import Annotated, Optional
@@ -87,10 +87,10 @@ def setup_log_handler(
 
 
 @contextmanager
-def logfile_context(workdir: str, basename: str):
-    """ Add a temporary file handler
+def logfile(workdir: Path, basename: str):
+    """ Temporary logging to file
     """
-    logfile = os.path.join(workdir, "%s.log" % basename)
+    logfile = workdir.joinpath(f"{basename}.log")
     channel = logging.FileHandler(logfile)
     formatter = logging.Formatter(FORMATSTR)
     channel.setFormatter(formatter)

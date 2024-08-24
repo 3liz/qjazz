@@ -28,10 +28,12 @@ class Handler(Services, Processes, Jobs, WebUI):
         policy: AccessPolicy,
         cache: ProcessesCache,
         timeout: int,
+        enable_ui: bool,
     ):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
+        self._enable_ui = enable_ui
         self._cache = cache
 
         self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
@@ -39,8 +41,8 @@ class Handler(Services, Processes, Jobs, WebUI):
     @property
     def routes(self) -> List[web.RouteDef]:
         prefix = self._accesspolicy.prefix
-        return [
-            # Services
+        _routes = [
+            # Processes
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
             web.get(f"{prefix}/processes", redirect_trailing_slash(), allow_head=False),
             web.get(f"{prefix}/processes/{{Ident}}", self.describe_process, allow_head=False),
@@ -49,27 +51,41 @@ class Handler(Services, Processes, Jobs, WebUI):
             # Jobs
             web.get(f"{prefix}/jobs/", self.list_jobs, allow_head=False),
             web.get(f"{prefix}/jobs", redirect_trailing_slash(), allow_head=False),
-
-            web.get(f"{prefix}/jobs.html", redirect_trailing_slash(), allow_head=False),
-            web.get(f"{prefix}/jobs.html/{{Path:.*}}", self.ui_dashboard, allow_head=False),
-            web.get(
-                rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}",
-                redirect_trailing_slash(),
-                allow_head=False,
-            ),
-            web.get(
-                rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}/{{Path:.*}}",
-                self.ui_jobdetails,
-                allow_head=False,
-            ),
-
-            web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
-            web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
-            web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
-
-            web.get(f"{prefix}/services/", self.list_services, allow_head=False),
-            web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),
         ]
+
+        if self._enable_ui:
+            _routes.extend(
+                (
+                    # Jobs UI
+                    web.get(f"{prefix}/jobs.html", redirect_trailing_slash(), allow_head=False),
+                    web.get(f"{prefix}/jobs.html/{{Path:.*}}", self.ui_dashboard, allow_head=False),
+                    web.get(
+                        rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}",
+                        redirect_trailing_slash(),
+                        allow_head=False,
+                    ),
+                    web.get(
+                        rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}/{{Path:.*}}",
+                        self.ui_jobdetails,
+                        allow_head=False,
+                    ),
+                ),
+            )
+
+        _routes.extend(
+            (
+                # Jobs
+                web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
+                web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
+                web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
+
+                # Services
+                web.get(f"{prefix}/services/", self.list_services, allow_head=False),
+                web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),
+            ),
+        )
+
+        return _routes
 
     def format_path(
         self,
