@@ -214,7 +214,7 @@ function show_details( pr_data ) {
 
 async function get_details_status(uuid) {
     console.log("Refreshing status: " + uuid)
-    let response = await fetch('../' + uuid, { 
+    let response = await fetch(`../${uuid}?details=y`, { 
         credentials: 'same-origin'
     })
     if (! response.ok) {
@@ -222,9 +222,9 @@ async function get_details_status(uuid) {
     }    
     let pr_data = await response.json()
     show_details(pr_data)
-    refresh_store(pr_data.jobId)
-    refresh_log(pr_data.jobId)
-    refresh_inputs(pr_data.jobId)
+    //refresh_store(pr_data.jobId)
+    //refresh_log(pr_data.jobId)
+    refresh_inputs(pr_data.runConfig)
 }
 
 
@@ -273,17 +273,10 @@ async function refresh_log( uuid ) {
 }
 
 
-async function refresh_inputs( uuid ) {
-    console.log("Refreshing inputs: " + uuid)
-    let response = await fetch('../' + uuid + '?key=inputs', { 
-        credentials: 'same-origin'
-    })
-    if (! response.ok) {
-        return
-    }
-    let data = await response.json()
+function refresh_inputs( data ) {
     data = JSON.stringify(data, undefined, 2)
-    el   = document.getElementById('pane-inputs')
+    console.log(data)
+    el = document.getElementById('pane-inputs')
     set_label( el, 'inputs-content' , data )
 }
 
