@@ -36,11 +36,7 @@ def test_execute_clipbyextent(host):
         json=content,
     )
     print(rv.text)
-    assert rv.status_code == 201
+    assert rv.status_code == 200
 
-    # XXX Wait the result
-    #resp = rv.json()
-    #assert resp['OUTPUT']['type'] == "application/x-ogc-wms; version=1.3.0"
-
-
-
+    resp = rv.json()
+    assert resp['OUTPUT']['type'] == "application/x-ogc-wms; version=1.3.0"

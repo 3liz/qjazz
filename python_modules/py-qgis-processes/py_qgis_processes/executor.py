@@ -201,7 +201,7 @@ class Executor:
             timeout,
         )
 
-    def _execute(
+    def _execute_task(
         self,
         service: str,
         task: str,
@@ -239,7 +239,9 @@ class Executor:
         project: Optional[str] = None,
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
-    ) -> Tuple[JobStatus, AsyncResult]:
+        execute_async: bool = False,
+        timeout: Optional[float] = None,
+    ) -> Tuple[JobStatus, JobResults | None]:
         """ Send an execute request
 
             Returns the job status.
@@ -252,7 +254,7 @@ class Executor:
             'process_id': ident,
         }
 
-        result = self._execute(
+        result = self._execute_task(
             service,
             "process_execute",
             run_config=dict(
@@ -267,24 +269,41 @@ class Executor:
 
         job_id = result.id
 
-        status = await asyncio.to_thread(
-            self._job_status,
-            job_id,
-            self.destinations(service),
-        )
-        if not status:
-            # Return default PENDING state
-            status = JobStatus(
-                job_id=job_id,
-                status=JobStatus.PENDING,
-                process_id=ident,
-                created=created,
-            )
+        #
+        # Allow returning JobResults
+        # If timeout occurs, fallback to JobStatus
+        #
+        def _get_status() -> Tuple[JobStatus | None, JobResults | None]:
+            _alift = execute_async
+            st = None
+            if not _alift:
+                try:
+                    res = result.get(timeout=timeout)
+                except TimeoutError:
+                    # Timeout occurs, returns async result (JobStatus)
+                    _alift = True
+            if _alift:
+                res = None
+                st = self._job_status(job_id, self.destinations(service))
+            return st, res
 
-        # Register pending task info
-        registry.register(self._celery, service, realm, status, self._result_expires)
+        (status, results) = (None, None)
+        try:
+            status, results = await asyncio.to_thread(_get_status)
+        finally:
+            if not status:
+                # Return default PENDING state
+                status = JobStatus(
+                    job_id=job_id,
+                    status=JobStatus.PENDING,
+                    process_id=ident,
+                    created=created,
+                )
 
-        return (status, result)
+            # Register pending task info
+            registry.register(self._celery, service, realm, status, self._result_expires)
+
+        return status, results
 
     # ==============================================
     #
@@ -535,7 +554,7 @@ class Executor:
         def _pull() -> Sequence[JobStatus]:
             keys = registry.find_keys(self._celery, service, realm=realm)
             data = []
-            for job_id, _, _ in itertools.islice(keys, cursor, cursor+limit):
+            for job_id, _, _ in itertools.islice(keys, cursor, cursor + limit):
                 st = self._job_status(job_id, destinations)
                 if not st:
                     ti = registry.find_job(self._celery, job_id)

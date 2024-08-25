@@ -45,7 +45,6 @@ def validate_param(adapter: TypeAdapter, request: web.Request, name: str, defaul
         )
 
 
-
 class Jobs(HandlerProto):
 
     async def job_status(self, request: web.Request) -> web.Response:
@@ -179,7 +178,7 @@ class Jobs(HandlerProto):
         jobs = await self._executor.jobs(
             service,
             realm=realm,
-            cursor= (page-1) * limit,
+            cursor=(page - 1) * limit,
             limit=limit,
         )
 

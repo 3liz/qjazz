@@ -49,7 +49,7 @@ def test_executetimeout(host, data):
     rv = requests.post(
         (
             f"{host}/processes/processes_test:testlongprocess/execution"
-            f"?map=france/france_parts&timeout=3"
+            f"?map=france/france_parts"
         )
     )
     assert rv.status_code == 504

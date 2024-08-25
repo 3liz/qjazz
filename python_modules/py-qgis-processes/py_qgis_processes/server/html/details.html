@@ -47,11 +47,11 @@
     <div class="container" status="done">
 
        <div class="d-flex justify-content-between">
-            <h2 class="sub-header data-label" id="lbl-identifier"></h2>
+            <h2 class="sub-header data-label" id="lbl-processId"></h2>
             <button type="button" class="btn btn-primary btn-small" id="refresh-btn" 
                 onclick="refresh_details()">Refresh</button>
        </div>
-       <span class="sub-header data-label" id="lbl-uuid"></span>
+       <span class="sub-header data-label" id="lbl-jobId"></span>
        <a id="pr-raw-link">(json)</a>
 
        <ul class="nav nav-tabs">
@@ -99,11 +99,6 @@
                   <div class="col-2 text-right">Message:</div>
                   <div class="col-4 data-label" id="lbl-message" data-value=""></div> 
               </div>
-              <div class="row row-details">
-                  <div class="col-2 text-right">Map:</div>
-                  <div class="col-4 data-label" id="lbl-map" data-value=""></div>
-              </div>
- 
            </div>
            <div class="tab-pane container pr-details-pane" id="pane-store">
                <table class="table" id="store-table">

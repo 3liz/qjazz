@@ -1,3 +1,6 @@
+
+import re
+
 from aiohttp import web
 from pydantic import ValidationError
 from typing_extensions import (
@@ -10,6 +13,7 @@ from .protos import (
     ErrorResponse,
     HandlerProto,
     JobExecute,
+    JobResultsAdapter,
     JobStatus,
     Link,
     ProcessSummary,
@@ -214,10 +218,13 @@ class Processes(HandlerProto):
                 text=err.json(include_context=False, include_url=False),
             )
 
+        # Get execute preferences
+        prefer = ExecutePrefs(request)
+
         # Set job realm
         realm = get_job_realm(request)
 
-        job_status, _ = await self._executor.execute(
+        job_status, result = await self._executor.execute(
             service,
             process_id,
             request=execute_request,
@@ -226,7 +233,21 @@ class Processes(HandlerProto):
                 public_url=public_url(request, ""),
             ),
             realm=realm,
+            execute_async=prefer.execute_async and prefer.wait is None,
+            timeout=prefer.wait or self._timeout,
         )
+
+        # In case synchronous response is requeste
+        # return result if available
+        if result is not None:
+            return web.Response(
+                status=200,
+                headers={JOB_REALM_HEADER: realm} if realm else None,
+                content_type="application/json",
+                body=JobResultsAdapter.dump_json(result, by_alias=True, exclude_none=True),
+            )
+
+        # Otherwise fallback to asynchronous response
 
         location = self.format_path(request, f"/jobs/{job_status.job_id}")
 
@@ -292,3 +313,30 @@ class Processes(HandlerProto):
                 web.HTTPUnauthorized,
                 "You are not allowed to access this process",
             )
+
+
+#
+# Handle HTTP Prefer header
+#
+
+WAIT_PARAM = re.compile(r',\s*wait=(\d+)\s*')
+
+
+class ExecutePrefs:
+
+    execute_async: bool = False
+    wait: Optional[int] = None
+
+    def __init__(self, request: web.Request):
+        """ Get execution preferences from 'Prefer' header
+
+            See https://webconcepts.info/concepts/http-preference/
+            See https://docs.ogc.org/is/18-062r2/18-062r2.html#toc32
+        """
+        for prefer in request.headers.getall('Prefer', ()):
+            for pref in (p.strip().lower() for p in prefer.split(';')):
+                if pref.startswith('respond-async'):
+                    self.execute_async = True
+                    m = WAIT_PARAM.fullmatch(pref[13:])
+                    if m:
+                        self.wait = min(int(m.groups()[0]), 20)

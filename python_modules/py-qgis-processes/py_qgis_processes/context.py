@@ -52,7 +52,10 @@ class FeedBack(QgsProcessingFeedback):
         self.progressChanged.connect(self._on_progress_changed)
 
     def __del__(self):
-        self.progressChanged.disconnect(self._on_progress_changed)
+        try:
+            self.progressChanged.disconnect(self._on_progress_changed)
+        except Exception as err:
+            logger.warn("%s", err)
 
     def _on_progress_changed(self, progress: float):
         self._progress_fun(progress, self._progress_msg)
