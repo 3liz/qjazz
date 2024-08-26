@@ -1,6 +1,8 @@
 
 import re
 
+import celery.exceptions
+
 from aiohttp import web
 from pydantic import ValidationError
 from typing_extensions import (
@@ -8,15 +10,19 @@ from typing_extensions import (
     Sequence,
 )
 
+from py_qgis_contrib.core import logger
+
 from .protos import (
     JOB_REALM_HEADER,
     ErrorResponse,
     HandlerProto,
+    InputValueError,
     JobExecute,
     JobResultsAdapter,
     JobStatus,
     Link,
     ProcessSummary,
+    RunProcessingException,
     get_job_realm,
     href,
     make_link,
@@ -213,6 +219,7 @@ class Processes(HandlerProto):
         try:
             execute_request = JobExecute.model_validate_json(await request.text())
         except ValidationError as err:
+            logger.error("Invalid request: %s", err)
             raise web.HTTPBadRequest(
                 content_type="application/json",
                 text=err.json(include_context=False, include_url=False),
@@ -224,7 +231,7 @@ class Processes(HandlerProto):
         # Set job realm
         realm = get_job_realm(request)
 
-        job_status, result = await self._executor.execute(
+        result = await self._executor.execute(
             service,
             process_id,
             request=execute_request,
@@ -233,21 +240,55 @@ class Processes(HandlerProto):
                 public_url=public_url(request, ""),
             ),
             realm=realm,
-            execute_async=prefer.execute_async and prefer.wait is None,
-            timeout=prefer.wait or self._timeout,
+            # Set the pending timeout to the wait preference
+            pending_timeout=prefer.wait,
         )
 
-        # In case synchronous response is requeste
-        # return result if available
-        if result is not None:
-            return web.Response(
-                status=200,
-                headers={JOB_REALM_HEADER: realm} if realm else None,
-                content_type="application/json",
-                body=JobResultsAdapter.dump_json(result, by_alias=True, exclude_none=True),
-            )
+        if not prefer.execute_async or (prefer.execute_async and prefer.wait is not None):
+            try:
+                job_result = await result.get(prefer.wait or self._timeout)
+                return web.Response(
+                    status=200,
+                    headers={JOB_REALM_HEADER: realm} if realm else None,
+                    content_type="application/json",
+                    body=JobResultsAdapter.dump_json(job_result, by_alias=True, exclude_none=True),
+                )
+            except celery.exceptions.TimeoutError:
+                # If wait is set then fallback to asynchronous response
+                if not prefer.execute_async:
+                    logger.error("Synchronous request timeout")
+                    # Dismiss task
+                    job_status = await self._executor.dismiss(result.job_id)
+                    raise web.HTTPGatewayTimeout(
+                        content_type="application/json",
+                        text=job_status.model_dump_json() if job_status else "{}",
+                    )
+                else:
+                    logger.warning(
+                        "Synchronous request timeout: "
+                        "falling back to async response.",
+                    )
+            #
+            # Handle parameter error as
+            # bad request (400)
+            #
+            except InputValueError as err:
+                logger.error("Input value error %s", err)
+                raise web.HTTPBadRequest(
+                    content_type="application/json",
+                    text=str(err),
+                )
+            #
+            # Processing exception
+            #
+            except RunProcessingException as err:
+                logger.error("Processing exception [job: %s]: %s", result.job_id, err)
+                raise web.HTTPInternalServerError(
+                    content_type="application/json",
+                    text=f'{ "message": "Internal processing error" }',
+                )
 
-        # Otherwise fallback to asynchronous response
+        job_status = await result.status()
 
         location = self.format_path(request, f"/jobs/{job_status.job_id}")
 
@@ -319,7 +360,7 @@ class Processes(HandlerProto):
 # Handle HTTP Prefer header
 #
 
-WAIT_PARAM = re.compile(r',\s*wait=(\d+)\s*')
+WAIT_PARAM = re.compile(r',?\s*wait=(\d+)\s*')
 
 
 class ExecutePrefs:
@@ -335,8 +376,12 @@ class ExecutePrefs:
         """
         for prefer in request.headers.getall('Prefer', ()):
             for pref in (p.strip().lower() for p in prefer.split(';')):
+                if self.wait is None and pref.startswith('wait'):
+                    m = WAIT_PARAM.fullmatch(pref)
+                    if m:
+                        self.wait = int(m.groups()[0])
                 if pref.startswith('respond-async'):
                     self.execute_async = True
                     m = WAIT_PARAM.fullmatch(pref[13:])
                     if m:
-                        self.wait = min(int(m.groups()[0]), 20)
+                        self.wait = int(m.groups()[0])

@@ -11,14 +11,12 @@ from pydantic import (
     ValidationError,
     alias_generators,
 )
-from pydantic_core import ErrorDetails
 from typing_extensions import (
     Annotated,
     Dict,
     Literal,
     Optional,
     Self,
-    Sequence,
     Type,
     TypeAlias,
     TypeVar,
@@ -241,28 +239,14 @@ class InputValueError(Exception):
     def __init__(
         self,
         msg: str,
-        validation_details: Optional[ValidationError] = None,
+        details: Optional[ValidationError] = None,
     ):
-        super().__init__(msg)
-        self._details = validation_details
-
-    @property
-    def errors(self) -> Sequence[ErrorDetails]:
-        """ Return error details
-        """
-        return (self._details and self._details.errors(
-            include_url=False,
-            include_context=False,
-            include_input=False,
-        )) or ()
-
-    @property
-    def json(self) -> str:
-        """ Return errors as json string
-        """
-        return (self._details and self._details.json(
-            include_url=False,
-            include_context=False,
-            include_input=False,
-            indent=4,
-        )) or "null"
+        if details:
+            text = details.json(
+                include_url=False,
+                include_context=False,
+                include_input=False,
+            )
+            super().__init__(f'{{ "message"; "{msg}", "details": {text} }}')
+        else:
+            super().__init__(msg)

@@ -229,7 +229,7 @@ class _InputParameter:
             try:
                 return inp.value(v, context)
             except ValidationError as e:
-                raise InputValueError(f"{inp.name}: Validation error", e) from None
+                raise InputValueError(f"'{inp.name}' parameter error", e)
 
         return {i.name: _value(i) for i in inputs}
 

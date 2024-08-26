@@ -440,7 +440,7 @@ def execute_processes(
                 )
 
     except InputValueError as err:
-        abort_with_error(ctx, f"Input error: {err}, {err.json}")
+        abort_with_error(ctx, f"Input error: {err}")
     except runalg.RunProcessingException as err:
         abort_with_error(ctx, f"Execute error: {err}")
 

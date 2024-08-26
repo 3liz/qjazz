@@ -68,11 +68,17 @@ function get_pr_status( pr_data ) {
     if (pr_data.status == 'successful') {
         return 'done'
     }
+    if (pr_data.status == 'pending') {
+        return 'pending'
+    }
     if (pr_data.status == 'accepted') {
         return 'wait'
     }
     if (pr_data.status == 'running') {
         return 'run'        
+    }
+    if (pr_data.status == 'dismissed') {
+        return 'dismiss'        
     }
     return 'none';
 }

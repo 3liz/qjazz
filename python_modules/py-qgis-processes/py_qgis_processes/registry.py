@@ -24,6 +24,7 @@ class TaskInfo:
     realm: Optional[str]
     process_id: str
     dismissed: int
+    pending_timeout: int
 
 
 def register(
@@ -32,6 +33,7 @@ def register(
     realm: Optional[str],
     status: JobStatus,
     expires: int,
+    pending_timeout: int,
 ):
     key = f"py-qgis::{status.job_id}::{service}::{realm}"
 
@@ -45,6 +47,7 @@ def register(
             realm=realm or "",
             process_id=status.process_id,
             dismissed=0,
+            pending_timeout=pending_timeout,
         ),
     )
     client.expireat(key, int(time()) + expires)
@@ -58,6 +61,7 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
         realm=m[b'realm'].decode(),
         process_id=m[b'process_id'].decode(),
         dismissed=int(m[b'dismissed']),
+        pending_timeout=int(m[b'pending_timeout']),
     )
 
 

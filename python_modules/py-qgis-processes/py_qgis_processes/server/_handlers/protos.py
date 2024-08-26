@@ -14,6 +14,7 @@ from ...executor import (
     PresenceDetails,
     ProcessDescription,
     ProcessSummary,
+    RunProcessingException,
 )
 from .. import swagger
 from ..accesspolicy import AccessPolicy

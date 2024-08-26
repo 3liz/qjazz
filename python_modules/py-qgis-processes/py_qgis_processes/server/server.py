@@ -110,7 +110,7 @@ class ServerConfig(ConfigBase):
         ),
     )
 
-    timeout: int = Field(5, gt=0, title="Backend request timeout")
+    timeout: int = Field(20, gt=0, title="Backend request timeout")
 
     enable_ui: bool = Field(True, title="Enable Web UI")
 

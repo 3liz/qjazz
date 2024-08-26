@@ -21,6 +21,9 @@ workdir:
 	@mkdir -p __workdir__
 
 
+clean:
+	rm -r __workdir__/*
+
 FLAVOR:=release
 
 env: workdir

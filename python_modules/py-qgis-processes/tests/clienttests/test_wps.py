@@ -7,13 +7,40 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 
+def _execute_process(host: str, *, respond_async: bool):
+    """ Execute a process and return its status json
+    """
+    headers = {}
+    if respond_async:
+        headers.update(Prefer="respond-async")
+
+    resp = requests.post(
+        (
+            f"{host}/processes/processes_test:testcopylayer/execution"
+            f"?map=france/france_parts"
+        ),
+        json={
+            "inputs": {
+                "INPUT": "france_parts",
+                "OUTPUT": "france_parts2",
+            }
+        },
+        headers=headers,
+    )
+
+    expected = 201 if respond_async else 200
+
+    assert resp.status_code == expected
+    return resp.json()
+
+
 def test_describeprocess(host):
     """ Test describe process """
     rv = requests.get(f"{host}/processes/processes_test:testcopylayer")
     assert rv.status_code == 200
 
 
-def test_executeprocess(host):
+def test_executeprocess_async(host):
     """  Test execute process """
     rv = requests.post(
         (
@@ -25,8 +52,10 @@ def test_executeprocess(host):
                 "INPUT": "france_parts",
                 "OUTPUT": "france_parts2",
             }
-        }
+        },
+        headers={'Prefer':'respond-async'}
     )
+
     assert rv.status_code == 201
 
 
@@ -41,7 +70,6 @@ def test_unknownprocess(host):
     )
 
     assert rv.status_code == 403
-    resp = Response(rv)
 
 
 def test_executetimeout(host, data):
@@ -50,8 +78,12 @@ def test_executetimeout(host, data):
         (
             f"{host}/processes/processes_test:testlongprocess/execution"
             f"?map=france/france_parts"
-        )
+        ),
+        json={ "inputs": { "DELAY": 1 }},
+        headers={"Prefer": "wait=3"},
     )
+
+    print(rv.text)
     assert rv.status_code == 504
 
 
@@ -59,111 +91,82 @@ def test_executedelete(host, data):
     """ Test delete process
     """
     # Execute a process
-    uuid = _execute_process(host)
+    status= _execute_process(host, respond_async=True)
 
-    # Get the status and make sure is 200
-    rv = requests.get(host + f"/status/{uuid}?SERVICE=WPS")
-    assert rv.status_code == 200
-    assert rv.json()['status'].get('uuid') == uuid
+    job_id = status['jobId']
 
     # Delete the response
-    rv = requests.delete(host + f"/status/{uuid}?SERVICE=WPS")
+    rv = requests.delete(f"{host}/jobs/{job_id}")
     assert rv.status_code == 200
 
-    # Get the status and make sure is 404
-    rv = requests.get(host + f"/status/{uuid}?SERVICE=WPS")
-    assert rv.status_code == 404
-
-
-def test_proxy_status_url(host):
-    """ Test that status url has correct host
-    """
-    # Execute a process
-    uuid = _execute_process(host)
-
-    proxy_loc = 'http://test.proxy.loc:8080/'
-
-    # Get the status and make sure is 200
-    rv = requests.get(host + f"/status/{uuid}?SERVICE=WPS",
-            headers={'X-Forwarded-Url': proxy_loc})
+    sleep(2)
+    # Get the status and make sure is dismissed
+    rv = requests.get(f"{host}/jobs/{job_id}")
     assert rv.status_code == 200
-
-    st = rv.json()['status']
-
-    # Parse the host url
-    status_url = urlparse(st['status_url'])
-    assert "{0.scheme}://{0.netloc}/".format(status_url) == proxy_loc
+    assert rv.json()['status'] == "dismissed"
 
 
 def test_handleprocesserror_sync(host, data):
     """  Test execute error """
-    rv = requests.get(
-        host + (
-            "/ows/?SERVICE=WPS"
-            "&Request=Execute"
-            "&Identifier=pyqgiswps_test:testraiseerror"
-            "&Version=1.0.0"
-            "&MAP=france_parts&DATAINPUTS=PARAM1=1&TIMEOUT=3"
-        ),
+    rv = requests.post(
+        f"{host}/processes/processes_test:testraiseerror/execution",
+        json={ "inputs": { "PARAM1": 1 }},
+        headers={ 'Prefer': "wait=3" },
     )
     assert rv.status_code == 500
 
 
 def test_handleprocesserror_async(host, data):
     """  Test execute error """
-    rv = requests.get(
-        host + (
-            "/ows/?SERVICE=WPS"
-            "&Request=Execute"
-            "&Identifier=pyqgiswps_test:testraiseerror"
-            "&Version=1.0.0"
-            "&MAP=france_parts&DATAINPUTS=PARAM1=1&TIMEOUT=3"
-            "&StoreExecuteResponse=true"
-        ),
+    rv = requests.post(
+        f"{host}/processes/processes_test:testraiseerror/execution",
+        json={ "inputs": { "PARAM1": 1 }},
+        headers={ 'Prefer': "respond-async" },
     )
-    resp = Response(rv)
-    assert resp.status_code == 200
+    assert rv.status_code == 201
 
-    # Get the status url
-    status_url = resp.xpath_attr('/wps:ExecuteResponse', 'statusLocation')
-    # Get the uuid
-    q = parse_qs(urlparse(status_url).query)
-    assert 'uuid' in q
-    uuid = q['uuid'][0]
+    job_id = rv.json()['jobId']
 
-    sleep(3)
-
-    # Get the status and make sure is 200
-    rv = requests.get(host + f"/status/{uuid}")
+    sleep(2)
+    # Get the status and make sure is failed
+    rv = requests.get(f"{host}/jobs/{job_id}")
     assert rv.status_code == 200
-
-    data = rv.json()
-    assert data['status']['status'] == 'ERROR_STATUS'
+    assert rv.json()['status'] == "failed"
 
 
 def test_enum_parameters(host):
     """ Test parameter enums
     """
-    rv = requests.get(
-        host + (
-            "/ows/?SERVICE=WPS"
-            "&Request=Execute"
-            "&Identifier=pyqgiswps_test:testmultioptionvalue"
-            "&Version=1.0.0"
-            "&MAP=france_parts&DATAINPUTS=INPUT=value2"
-        ),
+    rv = requests.post(
+        f"{host}/processes/processes_test:testmultioptionvalue/execution",
+        json={ "inputs": { "INPUT": ["value2"] }},
     )
+    print(rv.text)
     assert rv.status_code == 200
 
     # Get result
-    resp = Response(rv)
-    assert resp.xpath_text(
-        '//wps:ProcessOutputs/wps:Output/wps:Data/wps:LiteralData',
-    ) == 'selection is 1'
+    resp = rv.json()
+    assert resp['OUTPUT'] == 'selection is 1'
 
+def test_badparameter_sync(host):
+    """ Test parameter enums
+    """
+    rv = requests.post(
+        f"{host}/processes/processes_test:testmultioptionvalue/execution",
+        json={ "inputs": { "INPUT": "badparam" }},
 
-# def test_slowprogress( host, data ):
-#    """  Test execute timeout """
-#    rv = requests.get(host+("?SERVICE=WPS&Request=Execute&Identifier=pyqgiswps_test:testlongprocess&Version=1.0.0"
-#                               "&MAP=france_parts&DATAINPUTS=PARAM1=2"))
-#    assert rv.status_code == 200
+    )
+    print(rv.text)
+    assert rv.status_code == 400
+
+def test_badparameter_async(host):
+    """ Test parameter enums
+    """
+    rv = requests.post(
+        f"{host}/processes/processes_test:testmultioptionvalue/execution",
+        json={ "inputs": { "INPUT": "badparam" }},
+        headers={'Prefer': 'respond-async' },
+
+    )
+    print(rv.text)
+    assert rv.status_code == 201

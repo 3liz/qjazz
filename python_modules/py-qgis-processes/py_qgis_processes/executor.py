@@ -2,11 +2,16 @@
 import asyncio
 import itertools
 
+from dataclasses import dataclass
+from functools import partial
+from textwrap import dedent as _D
 from time import time
 
 from celery.result import AsyncResult
 from pydantic import Field, JsonValue
 from typing_extensions import (
+    Awaitable,
+    Callable,
     Dict,
     Iterator,
     Mapping,
@@ -23,7 +28,7 @@ from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 from . import registry
 from .celery import Celery, CeleryConfig
 from .processing.schemas import (
-    InputValueError,  # noqa: F401
+    InputValueError,
     JobExecute,
     JobResults,
     JobStatus,
@@ -33,7 +38,7 @@ from .processing.schemas import (
     ProcessDescription,
     ProcessSummary,
     ProcessSummaryList,
-    RunProcessingException,  # noqa: F401
+    RunProcessingException,
 )
 
 
@@ -43,9 +48,12 @@ class ExecutorConfig(BaseConfig):
     message_expiration_timeout: int = Field(
         default=600,
         title="Message expiration timeout",
-        description=(
-            "The amount of time an execution message"
-            "can wait on queue before beeing processed."
+        description=_D(
+            """
+            The amount of time an execution message
+            can wait on queue before beeing processed
+            with asynchronous response.
+            """,
         ),
     )
 
@@ -63,13 +71,20 @@ class PresenceDetails(JsonModel):
 ServiceDict = Dict[str, Tuple[Sequence[str], PresenceDetails]]
 
 
+@dataclass
+class Result:
+    job_id: str
+    get: Callable[[int], Awaitable[JobResults]]
+    status: Callable[[], Awaitable[JobStatus]]
+
+
 class Executor:
 
     def __init__(self, conf: Optional[ExecutorConfig] = None, *, name: Optional[str] = None):
         conf = conf or ExecutorConfig()
         self._celery = Celery(name, conf.celery)
         self._services: ServiceDict = {}
-        self._expiration_timeout = conf.message_expiration_timeout
+        self._pending_expiration_timeout = conf.message_expiration_timeout
         self._result_expires = conf.celery.result_expires
         self._last_updated = 0.
 
@@ -132,7 +147,7 @@ class Executor:
         service: str,
         ident: str,
         project: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
         # Retrieve process description (blocking version)
         res = self._celery.send_task(
@@ -161,7 +176,7 @@ class Executor:
         ident: str,
         *,
         project: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
         """ Return process description
         """
@@ -239,12 +254,11 @@ class Executor:
         project: Optional[str] = None,
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
-        execute_async: bool = False,
-        timeout: Optional[float] = None,
-    ) -> Tuple[JobStatus, JobResults | None]:
+        pending_timeout: Optional[int] = None,
+    ) -> Result:
         """ Send an execute request
 
-            Returns the job status.
+            Returns a 'Result' object
         """
         created = utc_now()
         meta = {
@@ -253,6 +267,10 @@ class Executor:
             'service': service,
             'process_id': ident,
         }
+
+        # In synchronous mode, set the pending timeout
+        # the the passed value of fallback to default
+        pending_timeout = pending_timeout or self._pending_expiration_timeout
 
         result = self._execute_task(
             service,
@@ -263,47 +281,41 @@ class Executor:
                 project_path=project,
             ),
             meta=meta,
-            expiration_timeout=self._expiration_timeout,
+            expiration_timeout=pending_timeout,
             context=context,
         )
 
         job_id = result.id
 
-        #
-        # Allow returning JobResults
-        # If timeout occurs, fallback to JobStatus
-        #
-        def _get_status() -> Tuple[JobStatus | None, JobResults | None]:
-            _alift = execute_async
-            st = None
-            if not _alift:
-                try:
-                    res = result.get(timeout=timeout)
-                except TimeoutError:
-                    # Timeout occurs, returns async result (JobStatus)
-                    _alift = True
-            if _alift:
-                res = None
-                st = self._job_status(job_id, self.destinations(service))
-            return st, res
+        # create PENDING default state
+        status = JobStatus(
+            job_id=job_id,
+            status=JobStatus.PENDING,
+            process_id=ident,
+            created=created,
+        )
 
-        (status, results) = (None, None)
-        try:
-            status, results = await asyncio.to_thread(_get_status)
-        finally:
-            if not status:
-                # Return default PENDING state
-                status = JobStatus(
-                    job_id=job_id,
-                    status=JobStatus.PENDING,
-                    process_id=ident,
-                    created=created,
-                )
+        # Register pending task info
+        registry.register(
+            self._celery,
+            service,
+            realm,
+            status,
+            self._result_expires,
+            pending_timeout,
+        )
 
-            # Register pending task info
-            registry.register(self._celery, service, realm, status, self._result_expires)
+        def _get_status() -> JobStatus:
+            return self._job_status(job_id, self.destinations(service)) or status
 
-        return status, results
+        def _get_result(timeout: Optional[int] = None) -> JobResults:
+            return result.get(timeout=timeout)
+
+        return Result(
+            job_id=job_id,
+            get=partial(asyncio.to_thread, _get_result),
+            status=partial(asyncio.to_thread, _get_status),
+        )
 
     # ==============================================
     #
@@ -334,7 +346,7 @@ class Executor:
         # Give a chance to pending state
         # Check if pending message has not expired
         st: JobStatus | None
-        if time() < ti.created + self._expiration_timeout:
+        if time() < ti.created + ti.pending_timeout:
             st = JobStatus(
                 job_id=ti.job_id,
                 status=JobStatus.PENDING,
@@ -451,20 +463,29 @@ class Executor:
                 state['kwargs'] = request['kwargs']
             case Celery.STATE_STARTED:
                 status = JobStatus.RUNNING
-                message = "Started"
+                message = "Task started"
             case Celery.STATE_FAILURE:
                 status = JobStatus.FAILED
                 # Result contains the python exception raised
-                message = str(state['result'])
+                match state['result']:
+                    case InputValueError() as err:
+                        message = str(err)
+                    case RunProcessingException() as err:
+                        message = "Internal processing error"
+                    case Exception():
+                        message = "Internal worker error"
+                    case msg:
+                        message = msg
                 finished = state['date_done']
                 progress = 100
             case Celery.STATE_SUCCESS:
                 status = JobStatus.SUCCESS
                 finished = state['date_done']
-                message = "Success"
+                message = "Task finished"
                 progress = 100
             case Celery.STATE_REVOKED:
-                message = "Dismissed"
+                finished = state['date_done']
+                message = "Task dismissed"
                 status = JobStatus.DISMISSED
             case Celery.STATE_UPDATED:
                 result = state['result']
@@ -477,8 +498,8 @@ class Executor:
                 raise RuntimeError(f"Unhandled celery task state: {unknown_state}")
 
         # Get task arguments
-        run_config = state['kwargs']
-        meta = run_config.pop('__meta__', {})
+        kwargs = state['kwargs']
+        meta = kwargs.get('__meta__', {})
 
         return JobStatus(
             job_id=job_id,
@@ -490,7 +511,7 @@ class Executor:
             updated=updated,
             progress=progress,
             message=message,
-            run_config=run_config if with_details else None,
+            run_config=kwargs.get('__run_config__') if with_details else None,
         )
 
     def _query_task(

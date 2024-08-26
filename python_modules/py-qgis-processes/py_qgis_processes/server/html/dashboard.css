@@ -125,6 +125,40 @@ body {
     display: inline-block
 }
 
+/* status dismissed */
+[status="dismiss"] .pr-st-box {
+  background-color: rgb(200,0,0);
+}
+
+[status="dismiss"] .finish-label {
+    display: block;
+}
+ 
+[status="dismiss"] .pr-st-btn {
+  background-color: white;
+  mask-image: url("octicons/lib/svg/stop.svg");
+  mask-repeat: no-repeat;
+  mask-size: 1em;
+  margin-top: 15px;
+  display: inline-block;
+  vertical-align: top;
+  width: 1.5em;
+  height: 1.5em;
+  -webkit-mask-image: url("octicons/lib/svg/stop.svg");
+  -webkit-mask-repeat:  no-repeat;
+  -webkit-mask-size: 1em;
+}
+
+[status="dismiss"] .pr-trash-btn:hover {
+    cursor:pointer;
+    opacity: 1.0;
+}
+
+[status="dismiss"] .pr-trash-btn {
+    display: inline-block
+}
+
+
 /* status ok */
 [status="done"] .pr-st-box {
   background-color: rgb(0,220,0);
@@ -181,6 +215,30 @@ body {
   width: 1.5em;
   height: 1.5em;
   -webkit-mask-image: url("octicons/lib/svg/issue-opened.svg");
+  -webkit-mask-repeat:  no-repeat;
+  -webkit-mask-size: 1em;
+}
+
+/* status pending */
+[status="pending"] .pr-st-box {
+  background-color: rgb(220,220,220);
+}
+
+[status="pending"] [name="start-date"]::after {
+  content: "pending";
+}
+
+[status="pending"] .pr-st-btn {
+  background-color: white;
+  mask-image: url("octicons/lib/svg/clock.svg");
+  mask-repeat: no-repeat;
+  mask-size: 1em;
+  margin-top: 15px;
+  display: inline-block;
+  vertical-align: top;
+  width: 1.5em;
+  height: 1.5em;
+  -webkit-mask-image: url("octicons/lib/svg/clock.svg");
   -webkit-mask-repeat:  no-repeat;
   -webkit-mask-size: 1em;
 }
