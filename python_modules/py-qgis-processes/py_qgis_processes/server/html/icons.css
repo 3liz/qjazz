@@ -28,6 +28,7 @@
   -webkit-mask-image: url("octicons/lib/svg/trashcan.svg");
 }
 
+
 .icon[disabled="true"] {
   opacity: 0.2;
 }

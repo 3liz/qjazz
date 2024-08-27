@@ -11,7 +11,7 @@ start:
 	docker compose up -d
 
 stop:
-	docker compose down -v
+	docker compose down -v --remove-orphans
 
 
 LOGLEVEL:=info
@@ -37,9 +37,6 @@ env: workdir
 		SRCDIR=/src/python_modules/py-qgis-processes
 		EOF
 	cat .env
-
-stop:
-	docker compose down -v --remove-orphans
 
 up: env
 	docker compose up -d -V --quiet-pull --remove-orphans \

@@ -50,7 +50,7 @@ class CeleryConfig(BaseConfig):
 
     task_time_limit: int = Field(
         default=3600,
-        gt=0,
+        gt=60,
         description=(
             "Task hard time limit in seconds.\n"
             "The worker processing the task will be killed\n"
@@ -59,13 +59,13 @@ class CeleryConfig(BaseConfig):
     )
 
     task_time_grace_period: int = Field(
-        default=300,
+        default=60,
         ge=0,
         description=(
             "Grace period to add to the 'task_time_limit'\n"
             "value.\n"
             "The SoftTimeLimitExceeded exception will be raised\n"
-            "when the 'task_time_limit+task_time_grace_period' is exceeded."
+            "when the 'task_time_limit' is exceeded."
         ),
     )
 
@@ -148,7 +148,7 @@ class Celery(celery.Celery):
         self.conf.task_time_limit = conf.task_time_limit + conf.task_time_grace_period
         self.conf.task_soft_time_limit = conf.task_time_limit
 
-        # Send a sent event so that tasx can be tracked
+        # Send a sent event so that tasks can be tracked
         # before beeing consumed by a worker
         self.conf.task_send_sent_event = True
 

@@ -165,11 +165,15 @@ function update_process( pr_data ) {
 
 async function delete_process( uuid, dontask = false) {
    if(confirm(`Are you sure to delete results:\n${ uuid } ?`)) {
+        pr = document.getElementById(uuid)
+        st = pr.getAttribute("status")
+        if (st == "run") { pr.setAttribute("cancelling", "true") }
         response = await fetch("../jobs/"+uuid, {
             credentials: 'same-origin',
             method: 'DELETE'
         })
-       // Remove element
+       if (st == "run" && ! response.ok) { return
+       }
        pr = document.getElementById(uuid)
        if (pr) {
            pr.remove()

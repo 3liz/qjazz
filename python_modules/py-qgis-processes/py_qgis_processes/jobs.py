@@ -1,10 +1,15 @@
 #
 # Processing worker
 #
+import shutil
 
 from time import time
 
-from celery.signals import worker_process_init
+import redis
+
+from celery.signals import (
+    worker_process_init,
+)
 from celery.worker.control import inspect_command
 from pydantic import TypeAdapter
 from typing_extensions import (
@@ -14,9 +19,14 @@ from typing_extensions import (
     Sequence,
 )
 
+from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_precondition
+
+from . import registry
 from .celery import Job, JobContext, Worker
 from .config import load_configuration
 from .context import FeedBack, QgisContext
+from .exceptions import DismissedTaskError
 from .processing.prelude import (
     JobExecute,
     JobResults,
@@ -45,12 +55,24 @@ def init_qgis(*args, **kwargs):
 
 class QgisJob(Job):
 
-    def before_start(self, *args, **kwargs):
+    def before_start(self, task_id, args, kwargs):
         # Add qgis context in job context
         self._worker_job_context.update(
             qgis_context=QgisContext(self._worker_job_context['processing_config']),
         )
-        super().before_start(*args, **kwargs)
+        super().before_start(task_id, args, kwargs)
+
+
+class QgisProcessJob(QgisJob):
+
+    def before_start(self, task_id, args, kwargs):
+        # Check if task is not dismissed while
+        # being pending
+        ti = registry.find_job(app, task_id)
+        logger.debug("Processing task info %s", ti)
+        if not ti or ti.dismissed:
+            raise DismissedTaskError(task_id)
+        super().before_start(task_id, args, kwargs)
 
 
 class ProcessingWorker(Worker):
@@ -66,8 +88,6 @@ class ProcessingWorker(Worker):
         self.service_name = service_name
 
         super().__init__(service_name, conf.worker, **kwargs)
-
-        self._job_class = QgisJob
 
         # We want each service with its own queue and exchange
         # The queue used can be configured as running options
@@ -95,6 +115,8 @@ class ProcessingWorker(Worker):
         self.conf.worker_redirect_stdouts = False
         self.conf.worker_hijack_root_logger = False
 
+        self._workdir = conf.processing.workdir
+
         self._job_context.update(processing_config=conf.processing)
 
         self._service_name = service_name
@@ -103,11 +125,24 @@ class ProcessingWorker(Worker):
         self._service_links = conf.worker.links
         self._online_since = time()
 
+    def lock(self, name: str, timeout: int = 20) -> redis.lock.Lock:
+        # Create a redis lock for handling race conditions
+        # with multiple workers
+        # See https://redis-py-doc.readthedocs.io/en/master/#redis.Redis.lock
+        # The lock will hold only for 20s
+        # so operation using the lock should not exceed this duration.
+        return self.backend.client.lock(
+            f"py-qgis-lock:{self.service_name}:{name}",
+            blocking_timeout=0,
+            timeout=timeout,
+        )
+
 
 app = ProcessingWorker()
 
-
+#
 # Inspect commands
+#
 
 LinkSequence: TypeAdapter = TypeAdapter(Sequence[LinkHttp])
 
@@ -128,22 +163,41 @@ def presence(_) -> Dict:
         'online_since': app._online_since,
         'qgis_version_info': Qgis.versionInt(),
         'versions': QgsCommandLineUtils.allVersions(),
+        'result_expires': app.conf.result_expires,
     }
 
 
-#
-# Jobs
-#
+@inspect_command(
+    args=[('jobs', list[str])],
+)
+def cleanup(_, jobs: Sequence[str]):
+    """Clean job data
+    """
+    try:
+        with app.lock("cleanup"):
+            workdir = app._workdir
+            for job_id in jobs:
+                jobdir = workdir.joinpath(job_id)
+                try:
+                    if not jobdir.exists():
+                        continue
+                    logger.info("%s: Removing response directory", job_id)
+                    assert_precondition(jobdir.is_dir())
+                    shutil.rmtree(jobdir)
+                except Exception as err:
+                    logger.error("Unable to remove directory '%s': %s", jobdir, err)
+    except Exception as err:
+        logger.warning("Cleanup: cannot acquire lock: %s", err)
 
 
-@app.job(name="process_list", run_context=True)
+@app.job(name="process_list", run_context=True, base=QgisJob)
 def list_processes(ctx: JobContext, /) -> List[ProcessSummary]:
     """Return the list of processes
     """
     return ctx.qgis_context.processes
 
 
-@app.job(name="process_describe", run_context=True)
+@app.job(name="process_describe", run_context=True, base=QgisJob)
 def describe_process(
     ctx: JobContext,
     /,
@@ -155,7 +209,7 @@ def describe_process(
     return ctx.qgis_context.describe(ident, project_path)
 
 
-@app.job(name="process_validate")
+@app.job(name="process_validate", base=QgisJob)
 def validate_process_inputs(
     self: Job,
     ctx: JobContext,
@@ -176,7 +230,7 @@ def validate_process_inputs(
     )
 
 
-@app.job(name="process_execute", bind=True, run_context=True)
+@app.job(name="process_execute", bind=True, run_context=True, base=QgisProcessJob)
 def execute_process(
     self: Job,
     ctx: JobContext,

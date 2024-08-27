@@ -1,5 +1,7 @@
 """ Test WPS service
 """
+import os
+import pytest
 
 from time import sleep
 from urllib.parse import parse_qs, urlparse
@@ -85,6 +87,22 @@ def test_executetimeout(host, data):
 
     print(rv.text)
     assert rv.status_code == 504
+
+
+@pytest.mark.skipif(os.getenv('TEST_MODE') != 'runall', reason="Test too long")
+def test_verylongprocess(host, data):
+    """  Test execute a very long process (30s) """
+    rv = requests.post(
+        (
+            f"{host}/processes/processes_test:testlongprocess/execution"
+            f"?map=france/france_parts"
+        ),
+        json={ "inputs": { "DELAY": 3 }},
+        headers={"Prefer": "respond-async"},
+    )
+
+    print(rv.text)
+    assert rv.status_code == 201
 
 
 def test_executedelete(host, data):

@@ -75,8 +75,15 @@ class JobStatus(JsonModel):
 
     links: List[LinkHttp] = Field([])
 
+    #
+    # Extra
+    #
+
     # Run configuraton
     run_config: Optional[JsonValue] = None
+
+    # Expiration timestamp
+    expires_at: Optional[datetime] = None
 
 
 class Output(JsonModel):

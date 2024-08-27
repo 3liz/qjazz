@@ -5,6 +5,7 @@ import os
 import sys
 
 from pathlib import Path
+from textwrap import dedent as _D
 
 from pydantic import Field
 from typing_extensions import (
@@ -67,13 +68,18 @@ class WorkerConfig(CeleryConfig):
     """
     service_name: str = Field(
         title="Name of the service",
-        description=(
-            "Name used as location service name\n"
-            "for initializing Celery worker."
+        description=_D(
+            """
+            Name used as location service name
+            for initializing Celery worker.
+            """,
         ),
     )
+
     title: str = Field("", title="Service short title")
+
     description: str = Field("", title="Service description")
+
     links: Sequence[LinkHttp] = Field(
         default=(),
         title="Service related links",

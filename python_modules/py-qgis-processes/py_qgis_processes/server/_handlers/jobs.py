@@ -35,7 +35,7 @@ BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
 T = TypeVar("T")
 
 
-def validate_param(adapter: TypeAdapter, request: web.Request, name: str, default: T) -> T:
+def validate_param(adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
     try:
         return adapter.validate_python(request.query.get(name, default))
     except ValidationError as err:
@@ -85,7 +85,7 @@ class Jobs(HandlerProto):
         )
 
         if not job_status:
-            return ErrorResponse.response(404, message=job_id)
+            return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
 
         location = self.format_path(request, f"/jobs/{job_id}")
         job_status.links.append(
@@ -164,6 +164,7 @@ class Jobs(HandlerProto):
                             $ref: '#/definitions/ErrorResponse'
         """
         # Allow passing service as query parameter
+        # Otherwise returns all jobs for all services
         service = request.query.get('service')
 
         limit = validate_param(LimitParam, request, 'limit', 10)

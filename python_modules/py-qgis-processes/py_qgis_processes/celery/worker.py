@@ -34,8 +34,6 @@ class Worker(Celery):
 
         super().__init__(name, conf, **kwargs)
 
-        self._job_class = Job
-
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
 
@@ -69,10 +67,11 @@ class Worker(Celery):
                 def main(self, ctx, /, *args, **kwargs):
                     return f"got customer id : {ctx.customer_id}"
         """
+        base = kwargs.pop('base', Job)
         return super().task(
             *args,
             name=f"{self.main}.{name}",
-            base=self._job_class,
+            base=base,
             track_started=True,
             _worker_job_context=self._job_context,
             **kwargs,
@@ -153,6 +152,7 @@ class Job(celery.Task):
         # stored in the backend
         # This is a workaround for adding extra metadata
         # the the stored backend data.
+
         context = kwargs.pop('__context__', {})
         context.update(self._worker_job_context)
         context.update(task_id=task_id)

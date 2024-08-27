@@ -3,7 +3,6 @@
 # by id/service/realm/
 #
 from dataclasses import dataclass
-from time import time
 
 from typing_extensions import (
     Iterator,
@@ -25,6 +24,7 @@ class TaskInfo:
     process_id: str
     dismissed: int
     pending_timeout: int
+    expires_at: int
 
 
 def register(
@@ -32,7 +32,7 @@ def register(
     service: str,
     realm: Optional[str],
     status: JobStatus,
-    expires: int,
+    expires_at: int,
     pending_timeout: int,
 ):
     key = f"py-qgis::{status.job_id}::{service}::{realm}"
@@ -48,9 +48,9 @@ def register(
             process_id=status.process_id,
             dismissed=0,
             pending_timeout=pending_timeout,
+            expires_at=expires_at,
         ),
     )
-    client.expireat(key, int(time()) + expires)
 
 
 def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
@@ -62,6 +62,7 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
         process_id=m[b'process_id'].decode(),
         dismissed=int(m[b'dismissed']),
         pending_timeout=int(m[b'pending_timeout']),
+        expires_at=int(m[b'expires_at']),
     )
 
 
