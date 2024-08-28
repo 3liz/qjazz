@@ -4,6 +4,8 @@
 #
 from dataclasses import dataclass
 
+import redis
+
 from typing_extensions import (
     Iterator,
     Mapping,
@@ -24,7 +26,13 @@ class TaskInfo:
     process_id: str
     dismissed: int
     pending_timeout: int
-    expires_at: int
+    expires: int
+
+    def expiration_upper_bound(self) -> int:
+        """ Return the upper bound for the expiration
+            time
+        """
+        return self.created + self.expires + self.pending_timeout
 
 
 def register(
@@ -32,7 +40,7 @@ def register(
     service: str,
     realm: Optional[str],
     status: JobStatus,
-    expires_at: int,
+    expires: int,
     pending_timeout: int,
 ):
     key = f"py-qgis::{status.job_id}::{service}::{realm}"
@@ -48,7 +56,7 @@ def register(
             process_id=status.process_id,
             dismissed=0,
             pending_timeout=pending_timeout,
-            expires_at=expires_at,
+            expires=expires,
         ),
     )
 
@@ -62,7 +70,7 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
         process_id=m[b'process_id'].decode(),
         dismissed=int(m[b'dismissed']),
         pending_timeout=int(m[b'pending_timeout']),
-        expires_at=int(m[b'expires_at']),
+        expires=int(m[b'expires']),
     )
 
 
@@ -110,26 +118,55 @@ def find_keys(
     return (tuple(key.decode().split("::")[1:4]) for key in keys)
 
 
-def dismiss(app: Celery, job_id: str) -> bool:
+def iter_jobs(
+    app: Celery,
+    service: Optional[str] = None,
+    *,
+    realm: Optional[str] = None,
+) -> Iterator[TaskInfo]:
+
+    client = app.backend.client
+    pattern = f"py-qgis::*::{service or '*'}::{realm or '*'}"
+    keys = client.scan_iter(match=pattern)
+    for key in keys:
+        yield _decode(client.hgetall(key))
+
+
+def dismiss(app: Celery, job_id: str, reset: bool = False) -> bool:
     """ Set state to 'dismissed'
     """
     client = app.backend.client
     keys = client.keys(f"py-qgis::{job_id}::*")
     if keys:
-        client.hset(keys[0], 'dismissed', 1)
+        client.hset(keys[0], 'dismissed', 0 if reset else 1)
         return True
     else:
         return False
 
 
-def delete(app: Celery, job_id: str) -> Optional[TaskInfo]:
+def delete(app: Celery, job_id: str) -> int:
     """ Delete task info
     """
     client = app.backend.client
     keys = client.keys(f"py-qgis::{job_id}::*")
     if keys:
-        data = client.hgetall(keys[0])
-        client.delete(keys[0])
-        return _decode(data)
+        client.delete(*keys)
+        return 1
     else:
-        return None
+        return 0
+
+
+def lock(
+    app: Celery,
+    name: str,
+    timeout: Optional[int],
+    expires: int = 20,
+) -> redis.lock.Lock:
+    """ Return a redis Lock
+    """
+    return app.backend.client.lock(
+        f"lock:{name}",
+        blocking_timeout=timeout,
+        timeout=expires,
+        sleep=1,
+    )

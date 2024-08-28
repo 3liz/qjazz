@@ -110,6 +110,18 @@ class ServerConfig(ConfigBase):
         ),
     )
 
+    cleanup_interval: int = Field(
+        default=3600,
+        ge=300,
+        title="Cleanup interval",
+        description=_D(
+            """
+            Interval is seconds between two cleanup of expired jobs.
+            The minimun is 300s (5mn)
+            """,
+        ),
+    )
+
     timeout: int = Field(20, gt=0, title="Backend request timeout")
 
     enable_ui: bool = Field(True, title="Enable Web UI")
@@ -382,7 +394,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     app.router.add_route('GET', '/', landing_page)
 
     # Add executor context
-    app.cleanup_ctx.append(cache.cleanup_ctx(conf.server.update_interval, executor))
+    app.cleanup_ctx.append(cache.cleanup_ctx(conf.server, executor))
     return app
 
 

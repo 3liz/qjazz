@@ -10,6 +10,7 @@ from typing_extensions import (
     Callable,
     Dict,
     Optional,
+    Protocol,
     Sequence,
     Set,
 )
@@ -33,6 +34,11 @@ class Entry:
     grace: int  # Grace period
 
 
+class CleanupConfProto(Protocol):
+    cleanup_interval: int
+    update_interval: int
+
+
 class ProcessesCache:
 
     def __init__(self, grace: int) -> None:
@@ -52,7 +58,7 @@ class ProcessesCache:
         async def _update(d: PresenceDetails):
             try:
                 processes = await executor.processes(d.service, timeout)
-                logger.debug("* Fetched %s processes from service %s", len(processes), d.service)
+                logger.info("* Fetched %s processes from service %s", len(processes), d.service)
                 self._cache[d.service] = Entry(
                     service=d.service,
                     data=processes,
@@ -90,9 +96,12 @@ class ProcessesCache:
 
     def cleanup_ctx(
         self,
-        update_interval: float,
+        conf: CleanupConfProto,
         executor: Executor,
     ) -> Callable[[web.Application], AsyncGenerator[None, None]]:
+
+        update_interval = conf.update_interval
+        cleanup_interval = conf.cleanup_interval
 
         async def ctx(app: web.Application):
 
@@ -122,6 +131,7 @@ class ProcessesCache:
             #
 
             async def update_cache(ok: bool):
+                logger.debug("# Starting update task with interval of %s s", update_interval)
                 interval = update_interval if ok else 2
                 while True:
                     await asyncio.sleep(interval)
@@ -132,6 +142,19 @@ class ProcessesCache:
                         continue
                     interval = min(2 * interval, update_interval)
 
+            #
+            # Cleanup expired jobs
+            #
+
+            async def cleanup_jobs():
+                logger.debug("# Starting cleanup task with interval of %s s", cleanup_interval)
+                while True:
+                    await asyncio.sleep(cleanup_interval)
+                    try:
+                        await executor.cleanup_expired_jobs()
+                    except Exception:
+                        logger.error("Failed to cleanup jobs: %s",  traceback.format_exc())
+
             # Attempt to fill the cache before handling
             # any request (needed for tests
             ok = await update_services()
@@ -139,10 +162,12 @@ class ProcessesCache:
                 await self.update(executor, update_timeout)
 
             update_task = asyncio.create_task(update_cache(ok))
+            cleanup_task = asyncio.create_task(cleanup_jobs())
 
             yield
-            logger.debug("Cancelling update task")
+            logger.debug("# Cancelling cache tasks")
             update_task.cancel()
+            cleanup_task.cancel()
 
         return ctx
 

@@ -15,6 +15,7 @@ from typing_extensions import (
     Callable,
     Dict,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -32,6 +33,7 @@ from . import registry
 from .celery import Celery, CeleryConfig
 from .exceptions import DismissedTaskError, ServiceNotAvailable
 from .processing.schemas import (
+    DateTime,
     InputValueError,
     JobExecute,
     JobResults,
@@ -268,21 +270,25 @@ class Executor:
         """
         _, service_details = self._services[service]
 
-        # Get the expiration time
-        expires_at = int(time() + service_details.result_expires)
-
-        created = utc_now()
+        # Get the  expiration time
+        expires = service_details.result_expires
 
         # In synchronous mode, set the pending timeout
         # the the passed value of fallback to default
         pending_timeout = pending_timeout or self._pending_expiration_timeout
+
+        if pending_timeout > expires:
+            # XXX Pending timeout must be lower than expiration timeout
+            pending_timeout = expires
+
+        created = utc_now()
 
         meta = {
             'created': created.isoformat(timespec="milliseconds"),
             'realm': realm,
             'service': service,
             'process_id': ident,
-            'expires_at': to_utc_datetime(expires_at),
+            'expires': expires,
         }
 
         result = self._execute_task(
@@ -314,7 +320,7 @@ class Executor:
             service,
             realm,
             status,
-            expires_at,
+            expires,
             pending_timeout,
         )
 
@@ -360,11 +366,10 @@ class Executor:
         # Check if pending message has not expired
         st: JobStatus | None
         now_ts = time()
-        if now_ts < ti.created + ti.pending_timeout:
 
-            # Do not return dismissed/expired pending jobs
-            if ti.dismissed or now_ts >= ti.expires_at:
-                return None
+        # NOTE: We expect the expiration timeout beeing larger than the pending
+        # timeout
+        if not ti.dismissed and now_ts < ti.created + ti.pending_timeout:
 
             st = JobStatus(
                 job_id=ti.job_id,
@@ -373,36 +378,98 @@ class Executor:
                 created=to_utc_datetime(ti.created),
             )
         else:
+            # Job has expired/dismissed
             st = None
         return st
+
+    def _cleanup_expired_jobs(self, services: ServiceDict, *, timeout: int) -> int:
+        """ Clean all expired jobs (blocking)
+        """
+        # Lock across multiple server instance
+        total = 0
+
+        logger.trace("=_cleanup_expired_jobs")
+
+        with registry.lock(self._celery, "lock:server:cleanup", timeout=1):
+
+            expired: Dict[str, List[registry.TaskInfo]] = {}
+
+            now_ts = time()
+            # Collect all expired tasks by services
+            for ti in registry.iter_jobs(self._celery):
+                if ti.expiration_upper_bound() < now_ts:
+                    expired.setdefault(ti.service, []).append(ti)
+
+            for s, jobs in expired.items():
+                # Check that the service is available
+
+                destinations = self.get_destinations(s, services)
+                if destinations:
+                    # Send a cleanup command
+                    logger.debug("Cleaning %s jobs in service %s", len(jobs), s)
+                    self._celery.control.broadcast(
+                        'cleanup',
+                        arguments={'jobs': [ti.job_id for ti in jobs]},
+                        reply=True,
+                        destination=(destinations[0],),
+                        timeout=timeout,
+                    )
+                else:
+                    logger.warning(f"No destinations for service {s}")
+
+                removed = 0
+                for ti in jobs:
+                    removed += registry.delete(self._celery, ti.job_id)
+                logger.info("Removed %s jobs from service '%s'", removed, s)
+                total += removed
+
+            if not total:
+                logger.debug("# No expired jobs")
+
+        return total
+
+    async def cleanup_expired_jobs(self, *, timeout: int = 60) -> int:
+        """ Clean all expired jobs
+        """
+        return await asyncio.to_thread(
+            self._cleanup_expired_jobs,
+            self._services,
+            timeout=timeout,
+        )
 
     def _dismiss(
         self,
         job_id: str,
         services: ServiceDict,
         realm: Optional[str],
-        timeout: int,
+        timeout: int = 20,
     ) -> Optional[JobStatus]:
         # Dismiss job (blocking)
 
-        # Check if job_id is registered
-        ti = registry.find_job(self._celery, job_id, realm=realm)
-        if not ti:
-            return None
+        # Lock accross multiple server instance
+        with registry.lock(self._celery, f"job:{job_id}", timeout=timeout):
 
-        # Do not dismiss twice
-        if ti.dismissed:
-            raise DismissedTaskError(ti.job_id)
+            # Check if job_id is registered
+            ti = registry.find_job(self._celery, job_id, realm=realm)
+            if not ti:
+                return None
 
-        service = ti.service
+            # Do not dismiss twice
+            if ti.dismissed:
+                raise DismissedTaskError(ti.job_id)
 
-        logger.trace("=_dismiss:%s:%s", job_id, ti)
+            service = ti.service
 
-        # Get job status
-        destinations = self.get_destinations(service, services)
-        # XXX Check that services are online (test for presence)
-        if not destinations:
-            raise ServiceNotAvailable(service)
+            # Get job status
+            destinations = self.get_destinations(service, services)
+            # XXX Check that services are online (test for presence)
+            if not destinations:
+                raise ServiceNotAvailable(service)
+
+            logger.trace("=_dismiss:%s:%s", job_id, ti)
+
+            # Mark item as dismissed
+            registry.dismiss(self._celery, job_id)
 
         class _S(IntEnum):
             PENDING = 1
@@ -415,8 +482,11 @@ class Executor:
                 # Retrieve scheduled jobs
                 st, request = self._query_task(job_id, destinations)
                 if not request:
-                    if ti.expires_at > time():
-                        status = _S.DONE if ti.expires_at > time() else _S.PENDING
+                    now_ts = time()
+                    if now_ts < ti.created + ti.pending_timeout:
+                        status = _S.PENDING
+                    else:
+                        status = _S.DONE  # job has expired
                 else:
                     match st, request:
                         case "active" | "scheduled" | "reserved":
@@ -436,59 +506,60 @@ class Executor:
 
         logger.info("%s: dismissing job with status %s", job_id, status)
 
-        match status:
-            case _S.ACTIVE:
-                # Job is revokable
-                rv = self._celery.control.revoke(
-                    job_id,
-                    destination=destinations,
-                    terminate=True,
-                    signal='SIGKILL',
+        try:
+            match status:
+                case _S.ACTIVE:
+                    # Job is revokable
+                    rv = self._celery.control.revoke(
+                        job_id,
+                        destination=destinations,
+                        terminate=True,
+                        signal='SIGKILL',
+                        reply=True,
+                        timeout=timeout,
+                    )
+                    logger.trace("=Revoke returned: %s", rv)
+                    # Check the state status:
+                    state = self._celery.backend.get_task_meta(job_id)
+                    assert_postcondition(state['status'] == Celery.STATE_REVOKED)
+                    cleanup = True
+                case _S.DONE:
+                    # Job is not revokable but assets still
+                    # exists
+                    cleanup = True
+                case _S.PENDING:
+                    # Job is no revoked and assets do not exist
+                    cleanup = False
+                case _ as unreachable:
+                    assert_never(unreachable)
+
+            if cleanup:
+                self._celery.backend.forget(job_id)
+                # Send a cleanup task
+                # The worker will delete the registre entry
+                # on success
+                self._celery.control.broadcast(
+                    'cleanup',
+                    arguments={'jobs': [job_id]},
                     reply=True,
+                    destination=(destinations[0],),
                     timeout=timeout,
                 )
-                logger.trace("=Revoke returned: %s", rv)
-                # Check the state status:
-                state = self._celery.backend.get_task_meta(job_id)
-                assert_postcondition(state['status'] == Celery.STATE_REVOKED)
-                cleanup = True
-            case _S.DONE:
-                # Job is not revokable but assets still
-                # exists
-                cleanup = True
-            case _S.PENDING:
-                # Job is no revoked and assets do not exist
-                cleanup = False
-            case _ as unreachable:
-                assert_never(unreachable)
 
-        # Mark item as dismissed
-        # The cleanup task will remove the task
-        # from the registry
-        registry.dismiss(self._celery, job_id)
+            # Delete registry entry
+            registry.delete(self._celery, job_id)
 
-        if cleanup:
-            self._celery.backend.forget(job_id)
-            # Send a cleanup task
-            # The worker will delete the registre entry
-            # on success
-            self._celery.control.broadcast(
-                'cleanup',
-                arguments={'jobs': [job_id]},
-                reply=True,
-                destination=(destinations[0],),
-                timeout=timeout,
+            return JobStatus(
+                job_id=ti.job_id,
+                status=JobStatus.DISMISSED,
+                process_id=ti.process_id,
+                created=to_utc_datetime(ti.created),
             )
-
-        # Delete registry entry
-        registry.delete(self._celery, job_id)
-
-        return JobStatus(
-            job_id=ti.job_id,
-            status=JobStatus.DISMISSED,
-            process_id=ti.process_id,
-            created=to_utc_datetime(ti.created),
-        )
+        except Exception:
+            logger.error(f"Failed to dismiss job {job_id}")
+            # Reset dismissed state
+            registry.dismiss(self._celery, job_id, reset=True)
+            raise
 
     async def dismiss(
         self,
@@ -621,10 +692,12 @@ class Executor:
 
         details: Dict = {}
         if with_details:
-            details.update(
-                run_config=kwargs.get('request'),
-                expires_at=meta['expires_at'],
-            )
+            details.update(run_config=kwargs.get('request'))
+            if finished:
+                end_at = DateTime.validate_python(finished).timestamp()
+                details.update(
+                    expires_at=to_utc_datetime(meta['expires'] + end_at),
+                )
 
         return JobStatus(
             job_id=job_id,
@@ -706,10 +779,10 @@ class Executor:
             data = []
             destinations = service and self.get_destinations(service, services)
             for job_id, _, _ in itertools.islice(keys, cursor, cursor + limit):
-                # Get job task info for expired jobs
+                # Get job task info for expired jobs (max value guessing)
                 # wich is much faster than checking job status first
                 ti = registry.find_job(self._celery, job_id)
-                if not ti or ti.expires_at < now_ts:
+                if not ti or ti.expiration_upper_bound() < now_ts:
                     continue
 
                 if not service:

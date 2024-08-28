@@ -132,7 +132,7 @@ class ProcessingWorker(Worker):
         # The lock will hold only for 20s
         # so operation using the lock should not exceed this duration.
         return self.backend.client.lock(
-            f"py-qgis-lock:{self.service_name}:{name}",
+            f"lock:{self.service_name}:{name}",
             blocking_timeout=0,
             timeout=timeout,
         )
