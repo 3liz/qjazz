@@ -12,3 +12,5 @@ tmp
 .py-qgis-settings
 
 __output__
+
+*.swp

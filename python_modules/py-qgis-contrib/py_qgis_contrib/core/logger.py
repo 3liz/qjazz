@@ -97,6 +97,9 @@ def logfile(workdir: Path, basename: str):
     LOGGER.addHandler(channel)
     try:
         yield
+    except Exception as err:
+        LOGGER.error("Unhandled exception: %s", err)
+        raise
     finally:
         LOGGER.removeHandler(channel)
         channel.close()

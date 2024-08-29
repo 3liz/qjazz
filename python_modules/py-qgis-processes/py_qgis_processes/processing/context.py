@@ -1,7 +1,6 @@
 #
 #
 #
-import sys
 
 from pathlib import Path
 from string import Template
@@ -31,6 +30,7 @@ class ProcessingContext(QgsProcessingContext):
         self._config = config or confservice.conf.processing
 
         self.public_url = ""
+        self.files: set[str] = set()
 
         self.job_id = "00000000-0000-0000-0000-000000000000"
         self.store_url(self._config.store_url)
@@ -47,23 +47,15 @@ class ProcessingContext(QgsProcessingContext):
         # Initialize temporaryFolder with workdir
         self.setTemporaryFolder(str(self._workdir))
 
-    def advertised_services_url(self, url: str):
+    def advertised_services_url(self, url: Template):
         """ Set advertised_services_url template
         """
-        _advertised_services_url = Template(url)
-        if sys.version_info >= (3, 11) and not _advertised_services_url.is_valid():
-            raise ValueError(f"Invalid advertised services url template: {url}")
+        self._advertised_services_url = url
 
-        self._advertised_services_url = _advertised_services_url
-
-    def store_url(self, url: str):
+    def store_url(self, url: Template):
         """ Set store_url template
         """
-        _store_url = Template(url)
-        if sys.version_info >= (3, 11) and not _store_url.is_valid():
-            raise ValueError(f"Invalid store url template: {url}")
-
-        self._store_url = _store_url
+        self._store_url = url
 
     @property
     def config(self) -> ProcessingConfig:
@@ -128,7 +120,9 @@ class ProcessingContext(QgsProcessingContext):
         )
 
     def file_reference(self, path: Path) -> str:
-        return self.store_reference_url(str(path.relative_to(self.workdir)))
+        basename = str(path.relative_to(self.workdir))
+        self.files.add(basename)
+        return self.store_reference_url(basename)
 
     def _ows_reference(
         self,

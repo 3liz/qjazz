@@ -79,6 +79,17 @@ class Handler(Services, Processes, Jobs, WebUI):
                 web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
                 web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
 
+                # Log
+                web.get(f"{prefix}/jobs/{{JobId}}/log", self.job_log, allow_head=False),
+
+                # Files
+                web.get(
+                    f"{prefix}/jobs/{{JobId}}/files",
+                    redirect_trailing_slash(),
+                    allow_head=False,
+                ),
+                web.get(f"{prefix}/jobs/{{JobId}}/files/", self.job_files, allow_head=False),
+
                 # Services
                 web.get(f"{prefix}/services/", self.list_services, allow_head=False),
                 web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),

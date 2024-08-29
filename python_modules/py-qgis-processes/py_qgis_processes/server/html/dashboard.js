@@ -120,7 +120,7 @@ function add_process( pr_data ) {
     // Alg identifier 
     let link = set_label( pr, 'alg-name', pr_data.processId)
  
-    link.setAttribute('href', '../jobs/' + pr_data.jobId + '.html')
+    link.setAttribute('href', `../jobs/${ pr_data.jobId }.html`)
 
     // Get the start-date label
     set_label( pr, 'start-date' , format_iso_date(pr_data.created))
@@ -168,7 +168,7 @@ async function delete_process( uuid, dontask = false) {
         pr = document.getElementById(uuid)
         st = pr.getAttribute("status")
         if (st == "run") { pr.setAttribute("cancelling", "true") }
-        response = await fetch("../jobs/"+uuid, {
+        response = await fetch(`../jobs/${ uuid }`, {
             credentials: 'same-origin',
             method: 'DELETE'
         })
@@ -232,8 +232,8 @@ async function get_details_status(uuid) {
     }    
     let pr_data = await response.json()
     show_details(pr_data)
-    //refresh_store(pr_data.jobId)
-    //refresh_log(pr_data.jobId)
+    refresh_store(pr_data.jobId)
+    refresh_log(pr_data.jobId)
     refresh_inputs(pr_data.runConfig)
 }
 
@@ -249,7 +249,7 @@ async function refresh_store( uuid ) {
         return
     }
     data = await response.json()
-    for (let res of data['links']) {
+    for (let res of data['files']) {
          insert_resource_details(res)
     }
 }
@@ -260,10 +260,10 @@ function insert_resource_details( res ) {
     let fragment = t.content.cloneNode(true)
     // Update attributes
     let tr = fragment.firstElementChild
-    set_label( tr, 'f-name', res.name).setAttribute('href', res.href)
+    set_label( tr, 'f-name', res.title).setAttribute('href', res.href)
     // Get the start-date label
     set_label(tr, 'f-type' , 'file')
-    set_label(tr, 'f-size' , res.display_size)
+    set_label(tr, 'f-size' , res.displaySize)
     // Insert it
     document.getElementById("store-table-body").appendChild(fragment)
 }
@@ -271,21 +271,20 @@ function insert_resource_details( res ) {
 
 async function refresh_log( uuid ) {
     console.log("Refreshing log: " + uuid)
-    let response = await fetch('../' + uuid + '/logs', { 
+    let response = await fetch('../' + uuid + '/log', { 
         credentials: 'same-origin'
     })
     if (! response.ok) {
         return
     }
-    let data = await response.text()
+    let data = await response.json()
     el = document.getElementById('pane-log')
-    set_label( el, 'log-content' , data )
+    set_label( el, 'log-content' , data.log )
 }
 
 
 function refresh_inputs( data ) {
     data = JSON.stringify(data, undefined, 2)
-    console.log(data)
     el = document.getElementById('pane-inputs')
     set_label( el, 'inputs-content' , data )
 }

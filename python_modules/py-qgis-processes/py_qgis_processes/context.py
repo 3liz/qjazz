@@ -83,6 +83,9 @@ class FeedBack(QgsProcessingFeedback):
 class QgisContext:
     """Qgis context initializer
     """
+
+    PUBLISHED_FILES = ".files"
+
     @classmethod
     def setup(cls, conf: ProcessingConfig):
         """ Initialize qgis """
@@ -232,6 +235,11 @@ class QgisContext:
 
         with chdir(workdir), logger.logfile(workdir, 'processing'), memlog(task_id):
             results = alg.execute(request, feedback, context)
+
+        # Save list of published files
+        with workdir.joinpath(self.PUBLISHED_FILES).open('w') as files:
+            for file in context.files:
+                print(file, file=files)
 
         # Write modified project
         destination_project = context.destination_project

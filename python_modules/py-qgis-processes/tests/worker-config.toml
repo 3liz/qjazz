@@ -6,10 +6,10 @@ level = "debug"
 service_name = "Test"
 title="Test service"
 description="""
-    Qgis service running test algorithms
+Qgis service running test algorithms
 """
 concurrency = 1
-result_expires = 300
+result_expires = 900
 
 [processing]
 workdir = "$location/__workdir__"

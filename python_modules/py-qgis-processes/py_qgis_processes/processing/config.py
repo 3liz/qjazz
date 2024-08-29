@@ -1,8 +1,17 @@
+import sys
 
 from pathlib import Path
+from string import Template
 from textwrap import dedent as _D
 
-from pydantic import AfterValidator, DirectoryPath, Field
+from pydantic import (
+    AfterValidator,
+    DirectoryPath,
+    Field,
+    PlainSerializer,
+    PlainValidator,
+    WithJsonSchema,
+)
 from typing_extensions import (
     Annotated,
     Dict,
@@ -25,6 +34,21 @@ def _validate_absolute_path(p: Path) -> Path:
     if not p.is_absolute():
         raise ValueError(f"Path {p} must be absolute")
     return p
+
+
+def _validate_template(s: str | Template) -> Template:
+    _t = Template(s) if not isinstance(s, Template) else s
+    if sys.version_info >= (3, 11) and not _t.is_valid():
+        raise ValueError(f"Invalid template: {s}")
+    return _t
+
+
+TemplateStr = Annotated[
+    Template,
+    PlainValidator(_validate_template),
+    PlainSerializer(lambda t: t.template, return_type=str),
+    WithJsonSchema({'type': 'str'}),
+]
 
 
 # Processing job config section
@@ -116,13 +140,15 @@ class ProcessingConfig(BaseConfig):
             """,
         ),
     )
-    advertised_services_url: str = Field(
-        default="ows:$jobId/$name",
+    advertised_services_url: TemplateStr = Field(
+        default=Template("ows:$jobId/$name"),
+        validate_default=True,
         title="Advertised services urls",
         description="Url template used for  OGC services references.",
     )
-    store_url: str = Field(
-        default="store:$jobId/$resource",
+    store_url: TemplateStr = Field(
+        default=Template("store:$jobId/$resource"),
+        validate_default=True,
         title="Storage url",
         description="Url template for downloading resources",
     )

@@ -6,3 +6,7 @@ class DismissedTaskError(Exception):
 
 class ServiceNotAvailable(Exception):
     pass
+
+
+class UnreachableDestination(Exception):
+    pass

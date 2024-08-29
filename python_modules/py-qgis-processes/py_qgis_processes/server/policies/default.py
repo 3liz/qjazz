@@ -96,4 +96,4 @@ class DefaultAccessPolicy(AccessPolicy):
             project = f"map={project}"
 
         query = '&'.join(p for p in (query, service, project) if p)
-        return f"{path}?{query}"
+        return f"{path}?{query}" if query else path

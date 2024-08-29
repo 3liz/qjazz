@@ -4,6 +4,7 @@
 import sys
 
 from pathlib import Path
+from string import Template
 from types import SimpleNamespace
 
 import click
@@ -396,7 +397,7 @@ def execute_processes(
 
     context.job_id = jobid
     context.workdir.mkdir(parents=True, exist_ok=True)
-    context.store_url(str(context.workdir.joinpath('$resource')))
+    context.store_url(Template(str(context.workdir.joinpath('$resource'))))
 
     if project:
         context.setProject(project)

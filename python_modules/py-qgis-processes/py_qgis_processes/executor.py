@@ -31,7 +31,12 @@ from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 
 from . import registry
 from .celery import Celery, CeleryConfig
-from .exceptions import DismissedTaskError, ServiceNotAvailable
+from .exceptions import (
+    DismissedTaskError,
+    ServiceNotAvailable,
+    UnreachableDestination,
+)
+from .models import ProcessFiles, ProcessLog, WorkerPresence
 from .processing.schemas import (
     DateTime,
     InputValueError,
@@ -39,8 +44,6 @@ from .processing.schemas import (
     JobResults,
     JobStatus,
     JsonDict,
-    JsonModel,
-    LinkHttp,
     ProcessDescription,
     ProcessSummary,
     ProcessSummaryList,
@@ -64,16 +67,7 @@ class ExecutorConfig(BaseConfig):
     )
 
 
-class PresenceDetails(JsonModel):
-    service: str
-    title: str
-    description: str
-    links: Sequence[LinkHttp]
-    online_since: float
-    qgis_version_info: int
-    versions: str
-    result_expires: int
-
+PresenceDetails = WorkerPresence
 
 ServiceDict = Dict[str, Tuple[Sequence[str], PresenceDetails]]
 
@@ -407,11 +401,10 @@ class Executor:
                 if destinations:
                     # Send a cleanup command
                     logger.debug("Cleaning %s jobs in service %s", len(jobs), s)
-                    self._celery.control.broadcast(
+                    self.command(
                         'cleanup',
                         arguments={'jobs': [ti.job_id for ti in jobs]},
-                        reply=True,
-                        destination=(destinations[0],),
+                        destination=destinations,
                         timeout=timeout,
                     )
                 else:
@@ -536,15 +529,15 @@ class Executor:
             if cleanup:
                 self._celery.backend.forget(job_id)
                 # Send a cleanup task
-                # The worker will delete the registre entry
-                # on success
-                self._celery.control.broadcast(
+                rv = self._celery.control.broadcast(
                     'cleanup',
                     arguments={'jobs': [job_id]},
                     reply=True,
                     destination=(destinations[0],),
                     timeout=timeout,
                 )
+                if not rv:
+                    raise TimeoutError(f"Unreachable service: {destinations[0]}")
 
             # Delete registry entry
             registry.delete(self._celery, job_id)
@@ -759,6 +752,14 @@ class Executor:
         else:
             return None
 
+    def scan_jobs(
+        self,
+        service: Optional[str] = None,
+        realm: Optional[str] = None,
+    ) -> Iterator[Tuple[str, str, str]]:
+        """ Iterate over all registered jobs """
+        return registry.find_keys(self._celery, service=service, realm=realm)
+
     async def jobs(
         self,
         service: Optional[str] = None,
@@ -774,26 +775,153 @@ class Executor:
 
         now_ts = time()
 
-        def _pull() -> Sequence[JobStatus]:
-            keys = registry.find_keys(self._celery, service, realm=realm)
-            data = []
-            destinations = service and self.get_destinations(service, services)
-            for job_id, _, _ in itertools.islice(keys, cursor, cursor + limit):
-                # Get job task info for expired jobs (max value guessing)
-                # wich is much faster than checking job status first
-                ti = registry.find_job(self._celery, job_id)
-                if not ti or ti.expiration_upper_bound() < now_ts:
-                    continue
+        def _jobs() -> Sequence[JobStatus]:
 
-                if not service:
-                    destinations = self.get_destinations(ti.service, services)
+            def _pull() -> Iterator[JobStatus]:
+                destinations = service and self.get_destinations(service, services)
+                for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
+                    # Get job task info for expired jobs (max value guessing)
+                    # wich is much faster than checking job status first
+                    ti = registry.find_job(self._celery, job_id)
+                    if not ti or ti.expiration_upper_bound() < now_ts:
+                        continue
 
-                st = self._job_status(job_id, destinations)
-                if not st:
-                    st = self._job_status_pending(ti)
-                if st:
-                    data.append(st)
+                    if not service:
+                        destinations = self.get_destinations(ti.service, services)
 
-            return data
+                    st = self._job_status(ti.job_id, destinations)
+                    if not st:
+                        st = self._job_status_pending(ti)
+                    if st:
+                        yield st
 
-        return await asyncio.to_thread(_pull)
+            return list(itertools.islice(_pull(), cursor, cursor + limit))
+
+        return await asyncio.to_thread(_jobs)
+
+    def command(
+        self,
+        name: str,
+        *,
+        broadcast: bool = False,
+        reply: bool = True,
+        destination: Sequence[str],
+        **kwargs,
+    ) -> JsonValue:
+        """ Send an inspect command to one or more service instances """
+        if not broadcast:
+            destination = (destination[0],)
+
+        resp = self._celery.control.broadcast(
+            name,
+            destination=destination,
+            reply=reply,
+            **kwargs,
+        )
+
+        logger.trace("=_command '%s': %s", name, resp)
+
+        if reply and not resp:
+            raise UnreachableDestination(f"{destination}")
+
+        if not broadcast:
+            return next(iter(resp[0].values()))
+        else:
+            return dict(next(iter(r.items())) for r in resp)
+
+    def _log_details(
+        self,
+        job_id: str,
+        services: ServiceDict,
+        *,
+        timeout: int,
+        realm: Optional[str] = None,
+    ) -> Optional[ProcessLog]:
+        """ Return process execution logs (blocking) """
+        ti = registry.find_job(self._celery, job_id, realm=realm)
+        if not ti:
+            return None
+
+        destinations = self.get_destinations(ti.service, services)
+        # XXX Check that services are online (test for presence)
+        if not destinations:
+            raise ServiceNotAvailable(ti.service)
+
+        response = self.command(
+            'process_logs',
+            arguments={'job_id': job_id},
+            destination=destinations,
+            timeout=timeout,
+        )
+
+        match response:
+            case {"error": msg}:
+                raise RuntimeError(f"Command 'process_log' failed with msg: {msg}")
+            case _:
+                return ProcessLog.model_validate(response)
+
+    async def log_details(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+        timeout: int = 20,
+    ) -> Optional[ProcessLog]:
+        """ Return process execution logs """
+        return await asyncio.to_thread(
+            self._log_details,
+            job_id,
+            self._services,
+            realm=realm,
+            timeout=timeout,
+        )
+
+    def _files(
+        self,
+        job_id: str,
+        services: ServiceDict,
+        *,
+        public_url: Optional[str],
+        timeout: int,
+        realm: Optional[str] = None,
+    ) -> Optional[ProcessFiles]:
+        """ Return process execution files (blocking) """
+        ti = registry.find_job(self._celery, job_id, realm=realm)
+        if not ti:
+            return None
+
+        destinations = self.get_destinations(ti.service, services)
+        # XXX Check that services are online (test for presence)
+        if not destinations:
+            raise ServiceNotAvailable(ti.service)
+
+        response = self.command(
+            'process_files',
+            arguments={'job_id': job_id, 'public_url': public_url},
+            destination=destinations,
+            timeout=timeout,
+        )
+
+        match response:
+            case {"error": msg}:
+                raise RuntimeError(f"Command 'process_files' failed with msg: {msg}")
+            case _:
+                return ProcessFiles.model_validate(response)
+
+    async def files(
+        self,
+        job_id: str,
+        *,
+        public_url: Optional[str] = None,
+        realm: Optional[str] = None,
+        timeout: int = 20,
+    ) -> Optional[ProcessFiles]:
+        """ Return process execution files """
+        return await asyncio.to_thread(
+            self._files,
+            job_id,
+            self._services,
+            public_url=public_url,
+            realm=realm,
+            timeout=timeout,
+        )

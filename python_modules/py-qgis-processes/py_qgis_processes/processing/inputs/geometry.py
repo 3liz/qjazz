@@ -130,7 +130,7 @@ class ParameterGeometry(InputParameter):
 
         # Check for qualified input
         match inp:
-            case {'value': str(value), 'mediaType': media_type, **_rest}:
+            case {'value': str(value), 'mediaType': media_type}:
                 match media_type:
                     case Formats.WKT.media_type:
                         geom = wkt_to_geometry(value)

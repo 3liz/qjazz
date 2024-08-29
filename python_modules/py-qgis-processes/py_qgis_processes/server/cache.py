@@ -153,7 +153,7 @@ class ProcessesCache:
                     try:
                         await executor.cleanup_expired_jobs()
                     except Exception:
-                        logger.error("Failed to cleanup jobs: %s",  traceback.format_exc())
+                        logger.error("Failed to cleanup jobs: %s", traceback.format_exc())
 
             # Attempt to fill the cache before handling
             # any request (needed for tests

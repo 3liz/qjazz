@@ -13,6 +13,7 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 
 from .protos import (
+    JOB_ID_HEADER,
     JOB_REALM_HEADER,
     ErrorResponse,
     HandlerProto,
@@ -247,9 +248,12 @@ class Processes(HandlerProto):
         if not prefer.execute_async or (prefer.execute_async and prefer.wait is not None):
             try:
                 job_result = await result.get(prefer.wait or self._timeout)
+                headers = {JOB_ID_HEADER: result.job_id}
+                if realm:
+                    headers[JOB_REALM_HEADER] = realm
                 return web.Response(
                     status=200,
-                    headers={JOB_REALM_HEADER: realm} if realm else None,
+                    headers=headers,
                     content_type="application/json",
                     body=JobResultsAdapter.dump_json(job_result, by_alias=True, exclude_none=True),
                 )
@@ -283,9 +287,10 @@ class Processes(HandlerProto):
             #
             except RunProcessingException as err:
                 logger.error("Processing exception [job: %s]: %s", result.job_id, err)
-                raise web.HTTPInternalServerError(
-                    content_type="application/json",
-                    text=f'{ "message": "Internal processing error" }',
+                return ErrorResponse.response(
+                    status=500,
+                    message="Internal processing error",
+                    details={"jobId": result.job_id},
                 )
 
         job_status = await result.status()

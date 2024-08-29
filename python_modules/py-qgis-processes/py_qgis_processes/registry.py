@@ -160,7 +160,7 @@ def lock(
     app: Celery,
     name: str,
     timeout: Optional[int],
-    expires: int = 20,
+    expires: Optional[int] = None,
 ) -> redis.lock.Lock:
     """ Return a redis Lock
     """

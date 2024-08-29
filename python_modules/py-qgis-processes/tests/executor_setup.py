@@ -1,21 +1,21 @@
 #
-# Executor setup to use with
-# the test docker stack
+# Executor prelude to use with `ipython -i executor_setup.py`
 #
-# Assume that the ENV_NETWORK is set to `test-py-qgis-processes_default`
-#
-#
+import asyncio
+
+from py_qgis_contrib.core import config, logger
 from py_qgis_processes.executor import (
-    CeleryConfig,
     Executor,
     ExecutorConfig,
 )
 
-executor = Executor(
-    ExecutorConfig(
-        celery=CeleryConfig(
-            broker_host='rabbitmq',
-            backend_host='redis:6379/0',
-        ),
-    ),
-)
+config.confservice.add_section('executor', ExecutorConfig)
+
+logger.setup_log_handler()
+
+
+def get_executor(update: bool = True) -> Executor:
+    ex = Executor(config.confservice.conf.executor)
+    services = asyncio.run(ex.update_services())
+    print(services)
+    return ex

@@ -1,6 +1,7 @@
 #
 # Processing worker
 #
+import mimetypes
 import shutil
 
 from time import time
@@ -11,9 +12,9 @@ from celery.signals import (
     worker_process_init,
 )
 from celery.worker.control import inspect_command
-from pydantic import TypeAdapter
 from typing_extensions import (
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -21,19 +22,25 @@ from typing_extensions import (
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
+from py_qgis_contrib.core.utils import to_utc_datetime
 
 from . import registry
 from .celery import Job, JobContext, Worker
 from .config import load_configuration
 from .context import FeedBack, QgisContext
 from .exceptions import DismissedTaskError
+from .models import (
+    ProcessFilesVersion,
+    ProcessLogVersion,
+    WorkerPresenceVersion,
+)
 from .processing.prelude import (
     JobExecute,
     JobResults,
     ProcessDescription,
     ProcessSummary,
 )
-from .processing.schemas import LinkHttp
+from .processing.schemas import Link
 
 #
 # Create worker application
@@ -116,6 +123,7 @@ class ProcessingWorker(Worker):
         self.conf.worker_hijack_root_logger = False
 
         self._workdir = conf.processing.workdir
+        self._store_url = conf.processing.store_url
 
         self._job_context.update(processing_config=conf.processing)
 
@@ -137,6 +145,15 @@ class ProcessingWorker(Worker):
             timeout=timeout,
         )
 
+    def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
+        """ Return a proper reference url for the resource
+        """
+        return self._store_url.substitute(
+            resource=resource,
+            jobId=job_id,
+            public_url=public_url or "",
+        )
+
 
 app = ProcessingWorker()
 
@@ -144,27 +161,20 @@ app = ProcessingWorker()
 # Inspect commands
 #
 
-LinkSequence: TypeAdapter = TypeAdapter(Sequence[LinkHttp])
-
 
 @inspect_command()
 def presence(_) -> Dict:
     from qgis.core import Qgis, QgsCommandLineUtils
-    return {
-        'service': app._service_name,
-        'title': app._service_title,
-        'description': app._service_description,
-        'links': LinkSequence.dump_python(
-            app._service_links,
-            mode='json',
-            by_alias=True,
-            exclude_none=True,
-        ),
-        'online_since': app._online_since,
-        'qgis_version_info': Qgis.versionInt(),
-        'versions': QgsCommandLineUtils.allVersions(),
-        'result_expires': app.conf.result_expires,
-    }
+    return WorkerPresenceVersion(
+        service=app._service_name,
+        title=app._service_title,
+        description=app._service_description,
+        links=app._service_links,
+        online_since=app._online_since,
+        qgis_version_info=Qgis.versionInt(),
+        versions=QgsCommandLineUtils.allVersions(),
+        result_expires=app.conf.result_expires,
+    ).model_dump()
 
 
 @inspect_command(
@@ -188,6 +198,59 @@ def cleanup(_, jobs: Sequence[str]):
                     logger.error("Unable to remove directory '%s': %s", jobdir, err)
     except Exception as err:
         logger.warning("Cleanup: cannot acquire lock: %s", err)
+
+
+@inspect_command(
+    args=[('job_id', str)],
+)
+def process_logs(_, job_id: str) -> Dict:
+    """Return job log
+    """
+    logfile = app._workdir.joinpath(job_id, "processing.log")
+    if not logfile.exists():
+        text = "No log available"
+    else:
+        with logfile.open() as f:
+            text = f.read()
+
+    return ProcessLogVersion(timestamp=to_utc_datetime(time()), log=text).model_dump()
+
+
+@inspect_command(
+    args=[('job_id', str, 'public_url', str)],
+)
+def process_files(_, job_id: str, public_url: str | None) -> Dict:
+    """Returns job execution files"""
+
+    workdir = app._workdir.joinpath(job_id)
+
+    def _make_links(files: Iterator[str]) -> Iterator[Link]:
+        for name in files:
+            file = workdir.joinpath(name)
+            if not file.is_file():
+                continue
+
+            content_type = mimetypes.types_map.get(file.suffix)
+            size = file.stat().st_size
+            yield Link(
+                href=app.store_reference_url(job_id, name, public_url),
+                mime_type=content_type,
+                length=size,
+                title=name,
+            )
+
+    files = workdir.joinpath(QgisContext.PUBLISHED_FILES)
+    if files.exists():
+        with files.open() as f:
+            links = tuple(_make_links(name.strip() for name in f.readlines()))
+    else:
+        links = ()
+
+    return ProcessFilesVersion(links=links).model_dump()
+
+#
+# Job tasks
+#
 
 
 @app.job(name="process_list", run_context=True, base=QgisJob)

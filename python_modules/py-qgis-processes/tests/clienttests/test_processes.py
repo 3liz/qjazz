@@ -33,7 +33,13 @@ def _execute_process(host: str, *, respond_async: bool):
     expected = 201 if respond_async else 200
 
     assert resp.status_code == expected
-    return resp.json()
+    data = resp.json()
+
+    # In sync response, job id is passed in header
+    if not respond_async:
+        data['jobId'] = resp.headers['X-Job-Id']
+
+    return data
 
 
 def test_describeprocess(host):
@@ -59,6 +65,26 @@ def test_executeprocess_async(host):
     )
 
     assert rv.status_code == 201
+
+
+def test_executeprocess_sync(host):
+    """  Test execute process """
+
+    result = _execute_process(host, respond_async=False)
+
+    job_id = result['jobId']
+
+    # Get log
+    rv = requests.get(f"{host}/jobs/{job_id}/log")
+    print("\n", rv.text)
+    assert rv.status_code == 200
+    assert len(rv.json()['log']) > 0
+
+    # Get files
+    rv = requests.get(f"{host}/jobs/{job_id}/files")
+    print("\n", rv.text)
+    assert rv.status_code == 200
+    assert len(rv.json()['files']) > 0
 
 
 def test_unknownprocess(host):
@@ -115,13 +141,14 @@ def test_executedelete(host, data):
 
     # Delete the response
     rv = requests.delete(f"{host}/jobs/{job_id}")
+    print("\n", rv.text)
     assert rv.status_code == 200
 
     sleep(2)
     # Get the status and make sure is dismissed
     rv = requests.get(f"{host}/jobs/{job_id}")
-    assert rv.status_code == 200
-    assert rv.json()['status'] == "dismissed"
+    print("\n",rv.text)
+    assert rv.status_code == 404
 
 
 def test_handleprocesserror_sync(host, data):
@@ -131,7 +158,11 @@ def test_handleprocesserror_sync(host, data):
         json={ "inputs": { "PARAM1": 1 }},
         headers={ 'Prefer': "wait=3" },
     )
+    print("\n", rv.text) 
+    print("\n", rv.headers) 
     assert rv.status_code == 500
+    assert rv.headers['Content-Type'].startswith("application/json")
+    assert "jobId" in rv.json()['details']
 
 
 def test_handleprocesserror_async(host, data):
@@ -188,3 +219,6 @@ def test_badparameter_async(host):
     )
     print(rv.text)
     assert rv.status_code == 201
+
+
+
