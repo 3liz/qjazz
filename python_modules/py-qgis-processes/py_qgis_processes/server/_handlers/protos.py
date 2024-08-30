@@ -4,7 +4,10 @@ from aiohttp import web
 from pydantic import TypeAdapter
 from typing_extensions import Optional, Protocol
 
-from ...executor import (
+from .. import swagger
+from ..accesspolicy import AccessPolicy
+from ..cache import ProcessesCache
+from ..executor import (
     Executor,
     InputValueError,
     JobExecute,
@@ -18,9 +21,6 @@ from ...executor import (
     ProcessSummary,
     RunProcessingException,
 )
-from .. import swagger
-from ..accesspolicy import AccessPolicy
-from ..cache import ProcessesCache
 from ..jobrealm import JOB_REALM_HEADER, get_job_realm, job_realm
 from ..models import ErrorResponse
 from ..utils import Link, href, make_link, public_url

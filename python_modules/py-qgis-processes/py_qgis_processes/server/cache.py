@@ -17,7 +17,7 @@ from typing_extensions import (
 
 from py_qgis_contrib.core import logger
 
-from ..executor import (
+from .executor import (
     Executor,
     PresenceDetails,
     ProcessSummary,

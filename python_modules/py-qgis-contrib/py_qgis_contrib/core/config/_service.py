@@ -146,7 +146,7 @@ class ConfigService:
 
         self._model_config = SettingsConfigDict(
             frozen=True,
-            extra='allow',
+            extra='ignore',
             env_nested_delimiter='__',
             env_prefix='conf_',
         )

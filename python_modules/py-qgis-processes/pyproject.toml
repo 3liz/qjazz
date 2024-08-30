@@ -41,6 +41,7 @@ extend = "../../config/ruff.toml"
 extend-exclude = [
     "tests/plugins/",
     "tests/clienttests/",
+    "py_qgis_processes/control/",
 ] 
 
 [tool.ruff.lint.per-file-ignores]

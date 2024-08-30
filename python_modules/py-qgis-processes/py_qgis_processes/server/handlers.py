@@ -4,7 +4,6 @@ from pathlib import Path
 from aiohttp import web
 from typing_extensions import List, Optional
 
-from ..executor import Executor
 from ._handlers import (
     Jobs,
     Processes,
@@ -13,6 +12,7 @@ from ._handlers import (
 )
 from .accesspolicy import AccessPolicy
 from .cache import ProcessesCache
+from .executor import Executor
 from .models import ErrorResponse
 from .utils import redirect_trailing_slash
 

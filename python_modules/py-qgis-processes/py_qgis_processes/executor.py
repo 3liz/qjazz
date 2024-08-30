@@ -1,17 +1,14 @@
 
-import asyncio
 import itertools
 
 from dataclasses import dataclass
 from enum import IntEnum
-from functools import partial
 from textwrap import dedent as _D
 from time import time
 
 from celery.result import AsyncResult
 from pydantic import Field, JsonValue
 from typing_extensions import (
-    Awaitable,
     Callable,
     Dict,
     Iterator,
@@ -72,14 +69,7 @@ PresenceDetails = WorkerPresence
 ServiceDict = Dict[str, Tuple[Sequence[str], PresenceDetails]]
 
 
-@dataclass
-class Result:
-    job_id: str
-    get: Callable[[int], Awaitable[JobResults]]
-    status: Callable[[], Awaitable[JobStatus]]
-
-
-class Executor:
+class _ExecutorBase:
 
     def __init__(self, conf: Optional[ExecutorConfig] = None, *, name: Optional[str] = None):
         conf = conf or ExecutorConfig()
@@ -121,17 +111,6 @@ class Executor:
             cast(list, dests).append(dest)
         return {k: (tuple(dests), pr) for k, (dests, pr) in services.items()}
 
-    async def update_services(self) -> ServiceDict:
-        """ Update services destinations
-
-            Collapse presence details under unique service
-            name.
-        """
-        self._services = await asyncio.to_thread(self.get_services)
-        logger.trace("=update_services %s", self._services)
-        self._last_updated = time()
-        return self._services
-
     @property
     def last_updated(self):
         return self._last_updated
@@ -148,6 +127,7 @@ class Executor:
         self,
         service: str,
         ident: str,
+        *,
         project: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
@@ -172,24 +152,6 @@ class Executor:
         finally:
             res.forget()
 
-    async def describe(
-        self,
-        service: str,
-        ident: str,
-        *,
-        project: Optional[str] = None,
-        timeout: Optional[int] = None,
-    ) -> Optional[ProcessDescription]:
-        """ Return process description
-        """
-        return await asyncio.to_thread(
-            self._describe,
-            service,
-            ident,
-            project,
-            timeout,
-        )
-
     def _processes(
         self,
         service: str,
@@ -208,15 +170,6 @@ class Executor:
             return ProcessSummaryList.validate_python(res.get(timeout=timeout))
         finally:
             res.forget()
-
-    async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
-        """ Return process description summary
-        """
-        return await asyncio.to_thread(
-            self._processes,
-            service,
-            timeout,
-        )
 
     def _execute_task(
         self,
@@ -247,7 +200,7 @@ class Executor:
             },
         )
 
-    async def execute(
+    def _execute(
         self,
         service: str,
         ident: str,
@@ -257,10 +210,15 @@ class Executor:
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
-    ) -> Result:
+    ) -> Tuple[
+        str,
+        Callable[[int | None], JobResults],
+        Callable[[], JobStatus],
+    ]:
         """ Send an execute request
 
-            Returns a 'Result' object
+            Returns a synchronous or asynchronous  'Result' object
+            depending on the `sync` parameter.
         """
         _, service_details = self._services[service]
 
@@ -324,11 +282,7 @@ class Executor:
         def _get_result(timeout: Optional[int] = None) -> JobResults:
             return result.get(timeout=timeout)
 
-        return Result(
-            job_id=job_id,
-            get=partial(asyncio.to_thread, _get_result),
-            status=partial(asyncio.to_thread, _get_status),
-        )
+        return (job_id, _get_result, _get_status)
 
     # ==============================================
     #
@@ -420,15 +374,6 @@ class Executor:
                 logger.debug("# No expired jobs")
 
         return total
-
-    async def cleanup_expired_jobs(self, *, timeout: int = 60) -> int:
-        """ Clean all expired jobs
-        """
-        return await asyncio.to_thread(
-            self._cleanup_expired_jobs,
-            self._services,
-            timeout=timeout,
-        )
 
     def _dismiss(
         self,
@@ -553,40 +498,6 @@ class Executor:
             # Reset dismissed state
             registry.dismiss(self._celery, job_id, reset=True)
             raise
-
-    async def dismiss(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        timeout: int = 20,
-    ) -> Optional[JobStatus]:
-        """ Delete job
-        """
-        return await asyncio.to_thread(
-            self._dismiss,
-            job_id,
-            self._services,
-            realm=realm,
-            timeout=timeout,
-        )
-
-    async def job_status(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        with_details: bool = False,
-    ) -> Optional[JobStatus]:
-        """ Return job status
-        """
-        return await asyncio.to_thread(
-            self._job_status_ext,
-            job_id,
-            self._services,
-            realm,
-            with_details,
-        )
 
     def _job_status_ext(
         self,
@@ -729,17 +640,7 @@ class Executor:
                 raise ValueError(f"Invalid format for query task infos: {result}")
         return result
 
-    async def job_results(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-    ) -> Optional[JobResults]:
-        """ Return job results
-        """
-        return await asyncio.to_thread(self._job_results, job_id, realm)
-
-    def _job_results(self, job_id: str, realm: Optional[str] = None) -> Optional[JobResults]:
+    def _job_results(self, job_id: str, *, realm: Optional[str] = None) -> Optional[JobResults]:
         #
         # Return job results (blocking)
         #
@@ -760,44 +661,38 @@ class Executor:
         """ Iterate over all registered jobs """
         return registry.find_keys(self._celery, service=service, realm=realm)
 
-    async def jobs(
+    def _jobs(
         self,
-        service: Optional[str] = None,
+        services: ServiceDict,
         *,
+        service: Optional[str] = None,
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
     ) -> Sequence[JobStatus]:
         """ Iterate over job statuses
         """
-        # Dereference services for use in thread
-        services = self._services
-
         now_ts = time()
 
-        def _jobs() -> Sequence[JobStatus]:
+        def _pull() -> Iterator[JobStatus]:
+            destinations = service and self.get_destinations(service, services)
+            for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
+                # Get job task info for expired jobs (max value guessing)
+                # wich is much faster than checking job status first
+                ti = registry.find_job(self._celery, job_id)
+                if not ti or ti.expiration_upper_bound() < now_ts:
+                    continue
 
-            def _pull() -> Iterator[JobStatus]:
-                destinations = service and self.get_destinations(service, services)
-                for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
-                    # Get job task info for expired jobs (max value guessing)
-                    # wich is much faster than checking job status first
-                    ti = registry.find_job(self._celery, job_id)
-                    if not ti or ti.expiration_upper_bound() < now_ts:
-                        continue
+                if not service:
+                    destinations = self.get_destinations(ti.service, services)
 
-                    if not service:
-                        destinations = self.get_destinations(ti.service, services)
+                st = self._job_status(ti.job_id, destinations)
+                if not st:
+                    st = self._job_status_pending(ti)
+                if st:
+                    yield st
 
-                    st = self._job_status(ti.job_id, destinations)
-                    if not st:
-                        st = self._job_status_pending(ti)
-                    if st:
-                        yield st
-
-            return list(itertools.islice(_pull(), cursor, cursor + limit))
-
-        return await asyncio.to_thread(_jobs)
+        return list(itertools.islice(_pull(), cursor, cursor + limit))
 
     def command(
         self,
@@ -860,22 +755,6 @@ class Executor:
             case _:
                 return ProcessLog.model_validate(response)
 
-    async def log_details(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        timeout: int = 20,
-    ) -> Optional[ProcessLog]:
-        """ Return process execution logs """
-        return await asyncio.to_thread(
-            self._log_details,
-            job_id,
-            self._services,
-            realm=realm,
-            timeout=timeout,
-        )
-
     def _files(
         self,
         job_id: str,
@@ -908,7 +787,126 @@ class Executor:
             case _:
                 return ProcessFiles.model_validate(response)
 
-    async def files(
+
+# =============================
+# Executor; Synchronous version
+# =============================
+
+@dataclass
+class Result:
+    job_id: str
+    get: Callable[[int | None], JobResults]
+    status: Callable[[], JobStatus]
+
+
+class Executor(_ExecutorBase):
+
+    def update_services(self) -> ServiceDict:
+        """ Update services destinations
+
+            Collapse presence details under unique service
+            name.
+        """
+        self._services = self.get_services()
+        logger.trace("=update_services %s", self._services)
+        self._last_updated = time()
+        return self._services
+
+    describe = _ExecutorBase._describe
+    processes = _ExecutorBase._processes
+
+    def execute(
+        self,
+        service: str,
+        ident: str,
+        request: JobExecute,
+        *,
+        project: Optional[str] = None,
+        context: Optional[JsonDict] = None,
+        realm: Optional[str] = None,
+        pending_timeout: Optional[int] = None,
+    ) -> Result:
+
+        job_id, _get_result, _get_status = self._execute(
+            service,
+            ident,
+            request,
+            project=project,
+            context=context,
+            realm=realm,
+            pending_timeout=pending_timeout,
+        )
+        return Result(job_id=job_id, get=_get_result, status=_get_status)
+
+    def cleanup_expired_jobs(self, *, timeout: int = 60) -> int:
+        """ Clean all expired jobs """
+        return self._cleanup_expired_jobs(self._services, timeout=timeout )
+
+    def dismiss(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+        timeout: int = 20,
+    ) -> Optional[JobStatus]:
+        """ Delete job """
+        return self._dismiss(
+            job_id,
+            self._services,
+            realm=realm,
+            timeout=timeout,
+        )
+
+    def job_status(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+        with_details: bool = False,
+    ) -> Optional[JobStatus]:
+        """ Return job status """
+        return self._job_status_ext(
+            job_id,
+            self._services,
+            realm,
+            with_details,
+        )
+
+    job_results = _ExecutorBase._job_results
+
+    def jobs(
+        self,
+        service: Optional[str] = None,
+        *,
+        realm: Optional[str] = None,
+        cursor: int = 0,
+        limit: int = 100,
+    ) -> Sequence[JobStatus]:
+        """ Iterate over job statuses """
+        return self._jobs(
+            self._services,
+            service=service,
+            realm=realm,
+            cursor=cursor,
+            limit=limit,
+        )
+
+    def log_details(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+        timeout: int = 20,
+    ) -> Optional[ProcessLog]:
+        """ Return process execution logs """
+        return self._log_details(
+            job_id,
+            self._services,
+            realm=realm,
+            timeout=timeout,
+        )
+
+    def files(
         self,
         job_id: str,
         *,
@@ -917,8 +915,7 @@ class Executor:
         timeout: int = 20,
     ) -> Optional[ProcessFiles]:
         """ Return process execution files """
-        return await asyncio.to_thread(
-            self._files,
+        return self._files(
             job_id,
             self._services,
             public_url=public_url,

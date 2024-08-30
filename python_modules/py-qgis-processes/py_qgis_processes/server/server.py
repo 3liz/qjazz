@@ -31,7 +31,6 @@ from py_qgis_contrib.core.config import (
     section,
 )
 
-from ..executor import Executor, ExecutorConfig
 from . import swagger
 from .accesspolicy import (
     AccessPolicyConfig,
@@ -39,6 +38,7 @@ from .accesspolicy import (
     create_access_policy,
 )
 from .cache import ProcessesCache
+from .executor import Executor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, Handler
 from .models import ErrorResponse, RequestHandler
