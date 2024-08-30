@@ -3,13 +3,14 @@
 level = "debug"
 
 [worker]
-service_name = "Test"
+#service_name = "Test"
 title="Test service"
 description="""
 Qgis service running test algorithms
 """
 concurrency = 1
 result_expires = 900
+cleanup_interval = 300
 
 [processing]
 workdir = "$location/__workdir__"

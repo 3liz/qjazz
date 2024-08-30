@@ -85,6 +85,7 @@ class QgisContext:
     """
 
     PUBLISHED_FILES = ".files"
+    EXPIRE_FILE = ".job-expire"
 
     @classmethod
     def setup(cls, conf: ProcessingConfig):
@@ -118,8 +119,9 @@ class QgisContext:
         cm = CacheManager(conf.projects)
         cm.register_as_service()
 
-    def __init__(self, conf: ProcessingConfig):
+    def __init__(self, conf: ProcessingConfig, with_expiration: bool = False):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")
+        self._with_expiration = with_expiration
         self._conf = conf
 
     @property
@@ -228,7 +230,10 @@ class QgisContext:
             context.public_url = public_url
 
         workdir = context.workdir
-        workdir.mkdir(parents=True, exist_ok=True)
+        workdir.mkdir(parents=True, exist_ok=not self._with_expiration)
+        if self._with_expiration:
+            # Create a sentiner .job-expire file
+            workdir.joinpath(self.EXPIRE_FILE).open('a').close()
 
         if project:
             context.setProject(project)

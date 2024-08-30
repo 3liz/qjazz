@@ -28,12 +28,6 @@ class TaskInfo:
     pending_timeout: int
     expires: int
 
-    def expiration_upper_bound(self) -> int:
-        """ Return the upper bound for the expiration
-            time
-        """
-        return self.created + self.expires + self.pending_timeout
-
 
 def register(
     app: Celery,
@@ -45,12 +39,14 @@ def register(
 ):
     key = f"py-qgis::{status.job_id}::{service}::{realm}"
 
+    created = int(status.created.timestamp())
+
     client = app.backend.client
     client.hset(
         key,
         mapping=dict(
             job_id=status.job_id,
-            created=int(status.created.timestamp()),
+            created=created,
             service=service,
             realm=realm or "",
             process_id=status.process_id,
@@ -59,6 +55,9 @@ def register(
             expires=expires,
         ),
     )
+    expiration_ts = created + expires + pending_timeout
+    # Set expiration upper bound
+    client.expireat(key, expiration_ts)
 
 
 def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
@@ -170,3 +169,9 @@ def lock(
         timeout=expires,
         sleep=1,
     )
+
+
+def exists(app: Celery, job_id: str) -> bool:
+    """ Check if a job is registred
+    """
+    return bool(app.backend.client.keys(f"py-qgis::{job_id}::*"))

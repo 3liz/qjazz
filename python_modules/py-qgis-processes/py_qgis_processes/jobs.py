@@ -4,12 +4,15 @@
 import mimetypes
 import shutil
 
+from threading import Event, Thread
 from time import time
 
 import redis
 
 from celery.signals import (
     worker_process_init,
+    worker_ready,
+    worker_shutdown,
 )
 from celery.worker.control import inspect_command
 from typing_extensions import (
@@ -43,7 +46,7 @@ from .processing.prelude import (
 from .processing.schemas import Link
 
 #
-# Create worker application
+#  Signals
 #
 
 # Called at process initialization
@@ -60,12 +63,136 @@ def init_qgis(*args, **kwargs):
     QgisContext.setup(conf.processing)
 
 
+@worker_ready.connect
+def on_worker_ready(*args, **kwargs):
+    app.on_worker_ready()
+
+
+@worker_shutdown.connect
+def on_worker_shutdown(*args, **kwargs):
+    app.on_worker_shutdown()
+
+
+#
+# Control commands
+#
+
+
+@inspect_command()
+def presence(_) -> Dict:
+    """Returns informations about the service
+    """
+    from qgis.core import Qgis, QgsCommandLineUtils
+    return WorkerPresenceVersion(
+        service=app._service_name,
+        title=app._service_title,
+        description=app._service_description,
+        links=app._service_links,
+        online_since=app._online_since,
+        qgis_version_info=Qgis.versionInt(),
+        versions=QgsCommandLineUtils.allVersions(),
+        result_expires=app.conf.result_expires,
+    ).model_dump()
+
+
+@inspect_command()
+def cleanup(_):
+    """Run cleanup task
+    """
+    app.cleanup_expired_jobs()
+
+
+@inspect_command(
+    args=[('jobs', list[str])],
+)
+def dismiss_job(_, jobs: Sequence[str]):
+    """Clean job data
+    """
+    try:
+        lock = app.lock("cleanup")
+        if lock.locked():
+            logger.info("Cleanup command already locked, aborting")
+            return
+
+        with lock:
+            workdir = app._workdir
+            for job_id in jobs:
+                jobdir = workdir.joinpath(job_id)
+                try:
+                    if not jobdir.exists():
+                        continue
+                    logger.info("%s: Removing response directory", job_id)
+                    assert_precondition(jobdir.is_dir())
+                    shutil.rmtree(jobdir)
+                except Exception as err:
+                    logger.error("Unable to remove directory '%s': %s", jobdir, err)
+    except Exception as err:
+        logger.warning("Cleanup: cannot acquire lock: %s", err)
+
+
+@inspect_command(
+    args=[('job_id', str)],
+)
+def job_log(_, job_id: str) -> Dict:
+    """Return job log
+    """
+    logfile = app._workdir.joinpath(job_id, "processing.log")
+    if not logfile.exists():
+        text = "No log available"
+    else:
+        with logfile.open() as f:
+            text = f.read()
+
+    return ProcessLogVersion(timestamp=to_utc_datetime(time()), log=text).model_dump()
+
+
+@inspect_command(
+    args=[('job_id', str, 'public_url', str)],
+)
+def job_files(_, job_id: str, public_url: str | None) -> Dict:
+    """Returns job execution files"""
+
+    workdir = app._workdir.joinpath(job_id)
+
+    def _make_links(files: Iterator[str]) -> Iterator[Link]:
+        for name in files:
+            file = workdir.joinpath(name)
+            if not file.is_file():
+                continue
+
+            content_type = mimetypes.types_map.get(file.suffix)
+            size = file.stat().st_size
+            yield Link(
+                href=app.store_reference_url(job_id, name, public_url),
+                mime_type=content_type,
+                length=size,
+                title=name,
+            )
+
+    files = workdir.joinpath(QgisContext.PUBLISHED_FILES)
+    if files.exists():
+        with files.open() as f:
+            links = tuple(_make_links(name.strip() for name in f.readlines()))
+    else:
+        links = ()
+
+    return ProcessFilesVersion(links=links).model_dump()
+
+
+#
+# Worker
+#
+
+
 class QgisJob(Job):
 
     def before_start(self, task_id, args, kwargs):
         # Add qgis context in job context
         self._worker_job_context.update(
-            qgis_context=QgisContext(self._worker_job_context['processing_config']),
+            qgis_context=QgisContext(
+                self._worker_job_context['processing_config'],
+                with_expiration=True,
+            ),
         )
         super().before_start(task_id, args, kwargs)
 
@@ -91,8 +218,6 @@ class ProcessingWorker(Worker):
         conf = load_configuration()
 
         service_name = conf.worker.service_name
-
-        self.service_name = service_name
 
         super().__init__(service_name, conf.worker, **kwargs)
 
@@ -130,22 +255,36 @@ class ProcessingWorker(Worker):
 
         self._job_context.update(processing_config=conf.processing)
 
+        def cleanup_task():
+            logger.info("Cleanup task started")
+            while not self._cleanup_event.wait(self._cleanup_interval):
+                self.cleanup_expired_jobs()
+            logger.info("Cleanup task stopped")
+
+        self._cleanup_interval = conf.worker.cleanup_interval
+        self._cleanup_event = Event()
+        self._cleanup_task = Thread(target=cleanup_task)
+
         self._service_name = service_name
         self._service_title = conf.worker.title
         self._service_description = conf.worker.description
         self._service_links = conf.worker.links
         self._online_since = time()
 
-    def lock(self, name: str, timeout: int = 20) -> redis.lock.Lock:
+    @property
+    def service_name(self) -> str:
+        return self._service_name
+
+    def lock(self, name: str) -> redis.lock.Lock:
         # Create a redis lock for handling race conditions
         # with multiple workers
         # See https://redis-py-doc.readthedocs.io/en/master/#redis.Redis.lock
         # The lock will hold only for 20s
         # so operation using the lock should not exceed this duration.
         return self.backend.client.lock(
-            f"lock:{self.service_name}:{name}",
-            blocking_timeout=0,
-            timeout=timeout,
+            f"lock:{self._service_name}:{name}",
+            blocking_timeout=0,  # Do not block
+            timeout=60,  # Hold lock 1mn max
         )
 
     def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
@@ -157,99 +296,40 @@ class ProcessingWorker(Worker):
             public_url=public_url or "",
         )
 
+    def cleanup_expired_jobs(self) -> None:
+        """ Cleanup all expired jobs
+        """
+        lock = app.lock("cleanup-batch")
+        if lock.locked():
+            logger.info("Cleanup task already locked, aborting")
+            return
+
+        with lock:
+            logger.info("Running cleanup task")
+            # Search for expirable jobs resources
+            for p in app._workdir.glob("*/.job-expire"):
+                jobdir = p.parent
+                job_id = jobdir.name
+                if registry.exists(self, job_id):
+                    continue
+                try:
+                    logger.info("=== Cleaning jobs resource: %s", job_id)
+                    shutil.rmtree(jobdir)
+                except Exception as err:
+                    logger.error("Failed to remove directory '%s': %s", jobdir, err)
+
+    def on_worker_ready(self) -> None:
+        # Launch periodic cleanup task
+        self._cleanup_task.start()
+
+    def on_worker_shutdown(self) -> None:
+        # Stop cleanup scheduler
+        self._cleanup_event.set()
+        self._cleanup_task.join(timeout=5.0)
+
 
 app = ProcessingWorker()
 
-#
-# Inspect commands
-#
-
-
-@inspect_command()
-def presence(_) -> Dict:
-    from qgis.core import Qgis, QgsCommandLineUtils
-    return WorkerPresenceVersion(
-        service=app._service_name,
-        title=app._service_title,
-        description=app._service_description,
-        links=app._service_links,
-        online_since=app._online_since,
-        qgis_version_info=Qgis.versionInt(),
-        versions=QgsCommandLineUtils.allVersions(),
-        result_expires=app.conf.result_expires,
-    ).model_dump()
-
-
-@inspect_command(
-    args=[('jobs', list[str])],
-)
-def cleanup(_, jobs: Sequence[str]):
-    """Clean job data
-    """
-    try:
-        with app.lock("cleanup"):
-            workdir = app._workdir
-            for job_id in jobs:
-                jobdir = workdir.joinpath(job_id)
-                try:
-                    if not jobdir.exists():
-                        continue
-                    logger.info("%s: Removing response directory", job_id)
-                    assert_precondition(jobdir.is_dir())
-                    shutil.rmtree(jobdir)
-                except Exception as err:
-                    logger.error("Unable to remove directory '%s': %s", jobdir, err)
-    except Exception as err:
-        logger.warning("Cleanup: cannot acquire lock: %s", err)
-
-
-@inspect_command(
-    args=[('job_id', str)],
-)
-def process_logs(_, job_id: str) -> Dict:
-    """Return job log
-    """
-    logfile = app._workdir.joinpath(job_id, "processing.log")
-    if not logfile.exists():
-        text = "No log available"
-    else:
-        with logfile.open() as f:
-            text = f.read()
-
-    return ProcessLogVersion(timestamp=to_utc_datetime(time()), log=text).model_dump()
-
-
-@inspect_command(
-    args=[('job_id', str, 'public_url', str)],
-)
-def process_files(_, job_id: str, public_url: str | None) -> Dict:
-    """Returns job execution files"""
-
-    workdir = app._workdir.joinpath(job_id)
-
-    def _make_links(files: Iterator[str]) -> Iterator[Link]:
-        for name in files:
-            file = workdir.joinpath(name)
-            if not file.is_file():
-                continue
-
-            content_type = mimetypes.types_map.get(file.suffix)
-            size = file.stat().st_size
-            yield Link(
-                href=app.store_reference_url(job_id, name, public_url),
-                mime_type=content_type,
-                length=size,
-                title=name,
-            )
-
-    files = workdir.joinpath(QgisContext.PUBLISHED_FILES)
-    if files.exists():
-        with files.open() as f:
-            links = tuple(_make_links(name.strip() for name in f.readlines()))
-    else:
-        links = ()
-
-    return ProcessFilesVersion(links=links).model_dump()
 
 #
 # Job tasks

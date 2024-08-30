@@ -112,15 +112,6 @@ class Executor(_ExecutorBase):
             status=partial(asyncio.to_thread, _get_status),
         )
 
-    async def cleanup_expired_jobs(self, *, timeout: int = 60) -> int:
-        """ Clean all expired jobs
-        """
-        return await asyncio.to_thread(
-            self._cleanup_expired_jobs,
-            self._services,
-            timeout=timeout,
-        )
-
     async def dismiss(
         self,
         job_id: str,

@@ -85,6 +85,18 @@ class WorkerConfig(CeleryConfig):
         title="Service related links",
     )
 
+    cleanup_interval: int = Field(
+        default=3600,
+        ge=300,
+        title="Cleanup interval",
+        description=_D(
+            """
+            Interval is seconds between two cleanup of expired jobs.
+            The minimun is 300s (5mn)
+            """,
+        ),
+    )
+
 
 # Allow type validation
 class ConfigProto:

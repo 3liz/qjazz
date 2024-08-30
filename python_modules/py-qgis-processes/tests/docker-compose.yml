@@ -1,5 +1,6 @@
 # Docker compose for running from source
 services:
+  
   worker:
     image: ${QGIS_IMAGE}
     working_dir: /src/python_modules/py-qgis-processes
@@ -9,10 +10,33 @@ services:
     - { type: bind, source: "./.local", target: /.local }
     user: "${USER_ID}:${GROUP_ID}"
     environment:
+      CONF_WORKER__SERVICE_NAME: "Test"
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
     depends_on: [rabbitmq, redis]
+
+  web:
+    image: ${QGIS_IMAGE}
+    working_dir: /src/python_modules/py-qgis-processes
+    command: ${SRCDIR}/tests/run-server.sh
+    volumes:
+    - { type: bind, source: "../../../", target: /src }
+    - { type: bind, source: "./.local", target: /.local }
+    user: "${USER_ID}:${GROUP_ID}"
+    environment:
+      CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
+      CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
+      CONF_SERVER__LISTEN: |
+        ["0.0.0.0", 4000]
+    depends_on: [rabbitmq, redis, worker]
+    profiles: 
+    - web
+    expose: [4000]
+    ports:
+      - 127.0.0.1:${WEB_PORT}:4000 
+
   rabbitmq:
     image: rabbitmq:3
+
   redis:
     image: redis:6-alpine

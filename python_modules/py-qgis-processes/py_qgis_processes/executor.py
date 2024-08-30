@@ -12,7 +12,6 @@ from typing_extensions import (
     Callable,
     Dict,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -112,7 +111,7 @@ class _ExecutorBase:
         return {k: (tuple(dests), pr) for k, (dests, pr) in services.items()}
 
     @property
-    def last_updated(self):
+    def last_updated(self) -> float:
         return self._last_updated
 
     @classmethod
@@ -330,51 +329,6 @@ class _ExecutorBase:
             st = None
         return st
 
-    def _cleanup_expired_jobs(self, services: ServiceDict, *, timeout: int) -> int:
-        """ Clean all expired jobs (blocking)
-        """
-        # Lock across multiple server instance
-        total = 0
-
-        logger.trace("=_cleanup_expired_jobs")
-
-        with registry.lock(self._celery, "lock:server:cleanup", timeout=1):
-
-            expired: Dict[str, List[registry.TaskInfo]] = {}
-
-            now_ts = time()
-            # Collect all expired tasks by services
-            for ti in registry.iter_jobs(self._celery):
-                if ti.expiration_upper_bound() < now_ts:
-                    expired.setdefault(ti.service, []).append(ti)
-
-            for s, jobs in expired.items():
-                # Check that the service is available
-
-                destinations = self.get_destinations(s, services)
-                if destinations:
-                    # Send a cleanup command
-                    logger.debug("Cleaning %s jobs in service %s", len(jobs), s)
-                    self.command(
-                        'cleanup',
-                        arguments={'jobs': [ti.job_id for ti in jobs]},
-                        destination=destinations,
-                        timeout=timeout,
-                    )
-                else:
-                    logger.warning(f"No destinations for service {s}")
-
-                removed = 0
-                for ti in jobs:
-                    removed += registry.delete(self._celery, ti.job_id)
-                logger.info("Removed %s jobs from service '%s'", removed, s)
-                total += removed
-
-            if not total:
-                logger.debug("# No expired jobs")
-
-        return total
-
     def _dismiss(
         self,
         job_id: str,
@@ -471,21 +425,19 @@ class _ExecutorBase:
                 case _ as unreachable:
                     assert_never(unreachable)
 
+            # Delete registry entry
+            registry.delete(self._celery, job_id)
+
             if cleanup:
                 self._celery.backend.forget(job_id)
                 # Send a cleanup task
-                rv = self._celery.control.broadcast(
-                    'cleanup',
+                self._celery.control.broadcast(
+                    'dismiss_job',
                     arguments={'jobs': [job_id]},
                     reply=True,
                     destination=(destinations[0],),
                     timeout=timeout,
                 )
-                if not rv:
-                    raise TimeoutError(f"Unreachable service: {destinations[0]}")
-
-            # Delete registry entry
-            registry.delete(self._celery, job_id)
 
             return JobStatus(
                 job_id=ti.job_id,
@@ -672,15 +624,13 @@ class _ExecutorBase:
     ) -> Sequence[JobStatus]:
         """ Iterate over job statuses
         """
-        now_ts = time()
-
         def _pull() -> Iterator[JobStatus]:
             destinations = service and self.get_destinations(service, services)
             for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
-                # Get job task info for expired jobs (max value guessing)
+                # Get job task info
                 # wich is much faster than checking job status first
                 ti = registry.find_job(self._celery, job_id)
-                if not ti or ti.expiration_upper_bound() < now_ts:
+                if not ti:
                     continue
 
                 if not service:
@@ -743,7 +693,7 @@ class _ExecutorBase:
             raise ServiceNotAvailable(ti.service)
 
         response = self.command(
-            'process_logs',
+            'job_log',
             arguments={'job_id': job_id},
             destination=destinations,
             timeout=timeout,
@@ -775,7 +725,7 @@ class _ExecutorBase:
             raise ServiceNotAvailable(ti.service)
 
         response = self.command(
-            'process_files',
+            'job_files',
             arguments={'job_id': job_id, 'public_url': public_url},
             destination=destinations,
             timeout=timeout,
@@ -786,6 +736,16 @@ class _ExecutorBase:
                 raise RuntimeError(f"Command 'process_files' failed with msg: {msg}")
             case _:
                 return ProcessFiles.model_validate(response)
+
+    def restart_pool(self, service: str, *, reply: bool = True) -> JsonValue:
+        """ Restart worker pool
+        """
+        destinations = self.destinations(service)
+        # XXX Check that services are online (test for presence)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+
+        return self.command('pool_restart', destination=destinations, reply=reply)
 
 
 # =============================
@@ -837,10 +797,6 @@ class Executor(_ExecutorBase):
             pending_timeout=pending_timeout,
         )
         return Result(job_id=job_id, get=_get_result, status=_get_status)
-
-    def cleanup_expired_jobs(self, *, timeout: int = 60) -> int:
-        """ Clean all expired jobs """
-        return self._cleanup_expired_jobs(self._services, timeout=timeout )
 
     def dismiss(
         self,

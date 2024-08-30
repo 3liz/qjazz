@@ -262,7 +262,7 @@ function insert_resource_details( res ) {
     let tr = fragment.firstElementChild
     set_label( tr, 'f-name', res.title).setAttribute('href', res.href)
     // Get the start-date label
-    set_label(tr, 'f-type' , 'file')
+    set_label(tr, 'f-type' , res.type)
     set_label(tr, 'f-size' , res.displaySize)
     // Insert it
     document.getElementById("store-table-body").appendChild(fragment)

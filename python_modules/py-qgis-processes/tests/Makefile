@@ -26,6 +26,8 @@ clean:
 
 FLAVOR:=release
 
+WEB_PORT:=4100
+
 env: workdir
 	@mkdir -p .local
 	echo "Creating environment file for docker-compose"
@@ -35,22 +37,27 @@ env: workdir
 		QGIS_IMAGE=3liz/qgis-platform:$(FLAVOR)
 		COMPOSE_PROJECT_NAME=test-py-qgis-processes
 		SRCDIR=/src/python_modules/py-qgis-processes
+		WEB_PORT=$(WEB_PORT)
 		EOF
 	cat .env
 
 up: env
-	docker compose up -d -V --quiet-pull --remove-orphans \
+	docker compose $(COMPOSE_OPTS) up -d -V --quiet-pull --remove-orphans \
 		--force-recreate
 
 # Run test stack
 run: up
 	docker compose logs -f worker
 
+run-all: export COMPOSE_OPTS=--profile web
+run-all: up
+	docker compose logs -f web
+
 # Restart worker
 restart: 
 	docker compose up -d --force-recreate worker
 
 # Equivalent run using celery config
-export PY_QGIS_PROCESSES_CONFIG=$(CURDIR)/worker-config.toml
+run-celery: export PY_QGIS_PROCESSES_CONFIG=$(CURDIR)/worker-config.toml
 run-celery: workdir
 	celery -A py_qgis_processes.jobs  worker -l $(LOGLEVEL) --hostname dev1@%h -Ofair $(CELERY_ARGS)

@@ -11,8 +11,11 @@ export PIP_CACHE_DIR=/.local/.pipcache
 PIP="$VENV_PATH/bin/pip"
 PIP_INSTALL="$VENV_PATH/bin/pip install -U --upgrade-strategy=eager"
 
-echo "-- Creating virtual env"
-python3 -m venv --system-site-package $VENV_PATH
+if [ ! -e $VENV_PATH ]; then
+    echo "-- Creating virtual env"
+    python3 -m venv --system-site-package $VENV_PATH
+fi
+
 
 echo "-- Installing packages"
 $PIP_INSTALL -q pip setuptools wheel

@@ -110,18 +110,6 @@ class ServerConfig(ConfigBase):
         ),
     )
 
-    cleanup_interval: int = Field(
-        default=3600,
-        ge=300,
-        title="Cleanup interval",
-        description=_D(
-            """
-            Interval is seconds between two cleanup of expired jobs.
-            The minimun is 300s (5mn)
-            """,
-        ),
-    )
-
     timeout: int = Field(20, gt=0, title="Backend request timeout")
 
     enable_ui: bool = Field(True, title="Enable Web UI")

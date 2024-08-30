@@ -54,7 +54,7 @@ class FileLink(LinkAny):
         return cls(
             href=link.href,
             length=size,
-            mime_types=link.mime_type,
+            mime_type=link.mime_type,
             title=link.title,
             display_size=ByteSize(size).human_readable(decimal=True),
         )

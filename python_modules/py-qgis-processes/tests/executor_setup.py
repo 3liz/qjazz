@@ -1,11 +1,12 @@
 #
 # Executor prelude to use with `ipython -i executor_setup.py`
 #
-import asyncio
 
 from py_qgis_contrib.core import config, logger
 from py_qgis_processes.executor import (
-    Executor,
+    Executor as _Executor,
+)
+from py_qgis_processes.executor import (
     ExecutorConfig,
 )
 
@@ -14,8 +15,5 @@ config.confservice.add_section('executor', ExecutorConfig)
 logger.setup_log_handler()
 
 
-def get_executor(update: bool = True) -> Executor:
-    ex = Executor(config.confservice.conf.executor)
-    services = asyncio.run(ex.update_services())
-    print(services)
-    return ex
+def Executor() -> _Executor:
+    return _Executor(config.confservice.conf.executor)
