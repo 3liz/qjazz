@@ -74,8 +74,19 @@ update_interval = 180
 # 
 cache_grace_period = 5
 #
+# Cleanup interval
+#
+# 
+# Interval is seconds between two cleanup of expired jobs.
+# The minimun is 300s (5mn)
+# 
+cleanup_interval = 3600
+#
 # Backend request timeout
-timeout = 5
+timeout = 20
+#
+# Enable Web UI
+enable_ui = true
 
 #
 # SSL configuration
@@ -115,7 +126,11 @@ allow_x_headers = false
 #
 # Message expiration timeout
 #
-# The amount of time an execution messagecan wait on queue before beeing processed.
+# 
+# The amount of time an execution message
+# can wait on queue before beeing processed
+# with asynchronous response.
+# 
 message_expiration_timeout = 600
 
 #
@@ -141,8 +156,8 @@ task_time_limit = 3600
 # Grace period to add to the 'task_time_limit'
 # value.
 # The SoftTimeLimitExceeded exception will be raised
-# when the 'task_time_limit+task_time_grace_period' is exceeded.
-task_time_grace_period = 300
+# when the 'task_time_limit' is exceeded.
+task_time_grace_period = 60
 #
 # Time (in seconds), for when after stored task tombstones will
 # be deleted

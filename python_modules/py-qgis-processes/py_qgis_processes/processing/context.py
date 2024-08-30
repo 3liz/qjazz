@@ -119,9 +119,10 @@ class ProcessingContext(QgsProcessingContext):
             public_url=self.public_url,
         )
 
-    def file_reference(self, path: Path) -> str:
+    def file_reference(self, path: Path, append_to_files: bool = True) -> str:
         basename = str(path.relative_to(self.workdir))
-        self.files.add(basename)
+        if append_to_files:
+            self.files.add(basename)
         return self.store_reference_url(basename)
 
     def _ows_reference(

@@ -122,6 +122,9 @@ class ProcessingWorker(Worker):
         self.conf.worker_redirect_stdouts = False
         self.conf.worker_hijack_root_logger = False
 
+        # Allow worker to restart pool
+        self.conf.worker_pool_restarts = True
+
         self._workdir = conf.processing.workdir
         self._store_url = conf.processing.store_url
 

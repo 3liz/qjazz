@@ -268,8 +268,8 @@ task_time_limit = 3600
 # Grace period to add to the 'task_time_limit'
 # value.
 # The SoftTimeLimitExceeded exception will be raised
-# when the 'task_time_limit+task_time_grace_period' is exceeded.
-task_time_grace_period = 300
+# when the 'task_time_limit' is exceeded.
+task_time_grace_period = 60
 #
 # Time (in seconds), for when after stored task tombstones will
 # be deleted
@@ -295,8 +295,10 @@ result_expires = 86400
 #
 # Name of the service
 #
+# 
 # Name used as location service name
 # for initializing Celery worker.
+# 
 #service_name =   	# Required
 #
 # Service short title

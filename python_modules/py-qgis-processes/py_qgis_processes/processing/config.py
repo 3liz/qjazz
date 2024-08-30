@@ -43,8 +43,13 @@ def _validate_template(s: str | Template) -> Template:
     return _t
 
 
+class _Template(Template):
+    def __str__(self) -> str:
+        return self.template
+
+
 TemplateStr = Annotated[
-    Template,
+    _Template,
     PlainValidator(_validate_template),
     PlainSerializer(lambda t: t.template, return_type=str),
     WithJsonSchema({'type': 'str'}),
@@ -141,13 +146,13 @@ class ProcessingConfig(BaseConfig):
         ),
     )
     advertised_services_url: TemplateStr = Field(
-        default=Template("ows:$jobId/$name"),
+        default=_Template("ows:$jobId/$name"),
         validate_default=True,
         title="Advertised services urls",
         description="Url template used for  OGC services references.",
     )
     store_url: TemplateStr = Field(
-        default=Template("store:$jobId/$resource"),
+        default=_Template("store:$jobId/$resource"),
         validate_default=True,
         title="Storage url",
         description="Url template for downloading resources",

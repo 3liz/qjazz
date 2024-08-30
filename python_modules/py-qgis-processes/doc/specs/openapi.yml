@@ -190,6 +190,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/ErrorResponse'
+  /jobs/{JobId}/log:
+    get:
+      summary: Get Job process execution log
+      description: "Returns the job processe execution log\n"
+      parameters:
+      - in: path
+        name: JobId
+        schema:
+          type: string
+        required: true
+        description: Job id
+      tags:
+      - jobs
+      responses:
+        '200':
+          description: "Job log\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/LogResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
+  /jobs/{JobId}/files/:
+    get:
+      summary: Get Job process execution files
+      description: "Returns the job processe execution files\n"
+      parameters:
+      - in: path
+        name: JobId
+        schema:
+          type: string
+        required: true
+        description: Job id
+      tags:
+      - jobs
+      responses:
+        '200':
+          description: "Job log\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/FilesResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
   /services/:
     get:
       summary: Return availables services
@@ -257,25 +309,13 @@ definitions:
       type:
         type: string
       title:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
+        type: string
       status:
-        anyOf:
-        - type: integer
-        - type: 'null'
-        default:
+        type: integer
       detail:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
+        type: string
       instance:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
+        type: string
     required:
     - type
     type: object
@@ -311,11 +351,8 @@ definitions:
         title: Job ID
         type: string
       processId:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
         title: Process ID
+        type: string
       type:
         const: process
         default: process
@@ -333,48 +370,35 @@ definitions:
         - dismissed
         type: string
       message:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
+        type: string
       created:
         format: date-time
         type: string
       started:
-        anyOf:
-        - format: date-time
-          type: string
-        - type: 'null'
-        default:
+        format: date-time
+        type: string
       finished:
-        anyOf:
-        - format: date-time
-          type: string
-        - type: 'null'
-        default:
+        format: date-time
+        type: string
       updated:
-        anyOf:
-        - format: date-time
-          type: string
-        - type: 'null'
-        default:
+        format: date-time
+        type: string
       progress:
-        anyOf:
-        - maximum: 100
-          minimum: 0
-          type: integer
-        - type: 'null'
-        default:
+        maximum: 100
+        minimum: 0
+        type: integer
       exception:
-        anyOf:
-        - $ref: '#/definitions/JobException'
-        - type: 'null'
-        default:
+        $ref: '#/definitions/JobException'
       links:
         default: []
         items:
           $ref: '#/definitions/LinkHttp'
         type: array
+      runConfig:
+        $ref: '#/definitions/JsonValue'
+      expiresAt:
+        format: date-time
+        type: string
     required:
     - jobId
     - status
@@ -668,6 +692,65 @@ definitions:
     - jobs
     - links
     title: JobList
+    type: object
+  LogResponse:
+    properties:
+      timestamp:
+        format: date-time
+        type: string
+      log:
+        type: string
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - timestamp
+    - log
+    - links
+    title: LogResponse
+    type: object
+  FileLink:
+    properties:
+      rel:
+        type: string
+      mimeType:
+        type: string
+      title:
+        default: ''
+        type: string
+      description:
+        type: string
+      length:
+        type: integer
+      templated:
+        default: false
+        type: boolean
+      hreflang:
+        type: string
+      href:
+        format: uri-reference
+        type: string
+      displaySize:
+        type: string
+    required:
+    - href
+    - displaySize
+    type: object
+  FilesResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/FileLink'
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - files
+    - links
+    title: FilesResponse
     type: object
 tags:
 - description: Processes

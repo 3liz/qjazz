@@ -40,6 +40,7 @@ from ..schemas import (
     BoundingBox,
     InputValueError,
     JsonModel,
+    Null,
     NullField,
     OutputFormatDefinition,
 )
@@ -727,13 +728,13 @@ class ParameterBand(InputParameter):
 class AggregateItem(BaseModel, extra='allow'):
     name: str
     type_: str = Field(alias='type')
-    type_name: Optional[str] = NullField()
-    sub_type: Optional[int] = NullField()
+    type_name: Optional[str] = Null
+    sub_type: Optional[int] = Null
     input_: str = Field(alias='input')
     aggregate: str
-    length: Optional[int] = NullField()
-    precision: Optional[int] = NullField()
-    delimiter: Optional[str] = NullField()
+    length: Optional[int] = Null
+    precision: Optional[int] = Null
+    delimiter: Optional[str] = Null
 
 
 class ParameterAggregate(InputParameter):

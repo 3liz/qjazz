@@ -14,17 +14,23 @@ from typing_extensions import (
     TypeAlias,
 )
 
-from .models import JsonModel, LinkHttp, OutputFormat
+from .models import (
+    JsonModel,
+    LinkHttp,
+    Null,
+    NullField,
+    OutputFormat,
+)
 
 DateTime = TypeAdapter(datetime)
 
 
 class JobException(JsonModel):
     type_: str = Field(alias='type')
-    title: Optional[str] = None
-    status: Optional[int] = None
-    detail: Optional[str] = None
-    instance: Optional[str] = None
+    title: Optional[str] = Null
+    status: Optional[int] = Null
+    detail: Optional[str] = Null
+    instance: Optional[str] = Null
 
 #
 # Note: the 'pending' state is not part of OGC standards,
@@ -57,21 +63,21 @@ class JobStatus(JsonModel):
 
     # Attributes
     job_id: str = Field(title="Job ID")
-    process_id: Optional[str] = Field(default=None, title="Process ID")
+    process_id: Optional[str] = NullField(title="Process ID")
     process_type: Literal['process'] = Field(
         title="Job type",
         default="process",
         alias='type',
     )
     status: JobStatusCode
-    message: Optional[str] = None
+    message: Optional[str] = Null
     created: datetime
-    started: Optional[datetime] = None
-    finished: Optional[datetime] = None
-    updated: Optional[datetime] = None
-    progress: Optional[int] = Field(default=None, ge=0, le=100)
+    started: Optional[datetime] = Null
+    finished: Optional[datetime] = Null
+    updated: Optional[datetime] = Null
+    progress: Optional[int] = NullField(ge=0, le=100)
 
-    exception: Optional[JobException] = None
+    exception: Optional[JobException] = Null
 
     links: List[LinkHttp] = Field([])
 
@@ -80,10 +86,10 @@ class JobStatus(JsonModel):
     #
 
     # Run configuraton
-    run_config: Optional[JsonValue] = None
+    run_config: Optional[JsonValue] = Null
 
     # Expiration timestamp
-    expires_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = Null
 
 
 class Output(JsonModel):
