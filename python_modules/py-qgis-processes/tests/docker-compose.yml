@@ -14,7 +14,8 @@ services:
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
     depends_on: [rabbitmq, redis]
-
+    profiles:
+    - worker
   web:
     image: ${QGIS_IMAGE}
     working_dir: /src/python_modules/py-qgis-processes

@@ -46,10 +46,11 @@ up: env
 		--force-recreate
 
 # Run test stack
+run-all: export COMPOSE_OPTS=--profile worker
 run: up
 	docker compose logs -f worker
 
-run-all: export COMPOSE_OPTS=--profile web
+run-all: export COMPOSE_OPTS=--profile web --profile worker
 run-all: up
 	docker compose logs -f web
 

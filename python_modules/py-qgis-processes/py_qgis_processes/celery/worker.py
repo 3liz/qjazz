@@ -1,16 +1,26 @@
+
+import inspect
 import types
 
 import celery
 import celery.states
 
 from pydantic import (
+    BaseModel,
+    JsonValue,
+    TypeAdapter,
     ValidationError,
+    create_model,
 )
 from typing_extensions import (
     Any,
+    Callable,
     ClassVar,
     Dict,
+    Iterator,
     Optional,
+    Tuple,
+    Type,
     TypeAlias,
 )
 
@@ -19,7 +29,6 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.utils import to_iso8601, utc_now
 
 from ._celery import Celery, CeleryConfig
-from .runconfig import RunConfigSchema, create_job_run_config
 
 #
 #  Worker
@@ -36,12 +45,6 @@ class Worker(Celery):
 
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
-
-        # Add the inspect command
-        # See https://docs.celeryq.dev/en/stable/userguide/workers.html
-        # #writing-your-own-remote-control-commands
-        from celery.worker.control import inspect_command
-        inspect_command()(_run_configs)
 
         self._job_context: Dict[str, Any] = {}
 
@@ -78,13 +81,6 @@ class Worker(Celery):
         )
 
 
-# Add our broadcast inspect command
-# for returning run configs in a format nicer
-# then the 'registered' inspect command
-def _run_configs(_) -> Dict:
-    return Job.RUN_CONFIGS.copy()
-
-
 # Create a dict class on wich we can
 # add attributes
 class _Dict(dict):
@@ -96,8 +92,6 @@ class _Dict(dict):
 #
 
 class Job(celery.Task):
-
-    RUN_CONFIGS: ClassVar[Dict[str, RunConfigSchema]] = {}
 
     _worker_job_context: ClassVar[Dict] = {}
 
@@ -111,12 +105,7 @@ class Job(celery.Task):
         # run config schema
 
         self.typing = False  # Disable argument type checking
-
-        models, schema = create_job_run_config(self.__wrapped__)
-
-        self.__config__ = models
-
-        Job.RUN_CONFIGS[self.name] = schema.model_dump(by_alias=True, mode='json')
+        self.__config__ = create_job_run_config(self.__wrapped__)
 
     def __call__(self, *args, **kwargs):
         #
@@ -151,7 +140,7 @@ class Job(celery.Task):
         # Encode metadata into kwargs; they will be
         # stored in the backend
         # This is a workaround for adding extra metadata
-        # the the stored backend data.
+        # with the stored backend data.
 
         context = kwargs.pop('__context__', {})
         context.update(self._worker_job_context)
@@ -210,3 +199,56 @@ class Job(celery.Task):
                 updated=to_iso8601(utc_now()),
             ),
         )
+
+
+#
+# Run configs
+#
+
+class RunConfig(BaseModel, frozen=True, extra='ignore'):
+    """Base config model for tasks
+    """
+    pass
+
+
+def create_job_run_config(wrapped: Callable) -> Tuple[Type[RunConfig], TypeAdapter]:
+    """ Build a RunConfig from fonction signature
+    """
+    s = inspect.signature(wrapped)
+    qualname = wrapped.__qualname__
+
+    def _models() -> Iterator[Tuple[str, Any]]:
+        for p in s.parameters.values():
+            match p.kind:
+                case p.POSITIONAL_ONLY | p.VAR_POSITIONAL | p.VAR_KEYWORD:
+                    continue
+                case p.POSITIONAL_OR_KEYWORD | p.KEYWORD_ONLY:
+                    if p.annotation is inspect.Signature.empty:
+                        raise TypeError(
+                            "Missing annotation for argument "
+                            f"{p.name} in job {qualname}",
+                        )
+                    has_default = p.default is not inspect.Signature.empty
+                    yield p.name, (
+                        p.annotation,
+                        p.default if has_default else ...,
+                    )
+
+    _inputs = {name: model for name, model in _models()}
+
+    # Inputs
+    inputs = create_model(
+        "_RunConfig",
+        __base__=RunConfig,
+        **_inputs,
+    )
+
+    # Outputs
+    if s.return_annotation is not inspect.Signature.empty:
+        return_annotation = s.return_annotation
+    else:
+        return_annotation = None
+
+    outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue)
+
+    return (inputs, outputs)
