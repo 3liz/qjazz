@@ -20,11 +20,9 @@ from typing_extensions import (
     Iterator,
     List,
     Optional,
-    Sequence,
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.utils import to_utc_datetime
 
 from . import registry
@@ -100,34 +98,6 @@ def cleanup(_):
     """Run cleanup task
     """
     app.cleanup_expired_jobs()
-
-
-@inspect_command(
-    args=[('jobs', list[str])],
-)
-def dismiss_job(_, jobs: Sequence[str]):
-    """Clean job data
-    """
-    try:
-        lock = app.lock("cleanup")
-        if lock.locked():
-            logger.info("Cleanup command already locked, aborting")
-            return
-
-        with lock:
-            workdir = app._workdir
-            for job_id in jobs:
-                jobdir = workdir.joinpath(job_id)
-                try:
-                    if not jobdir.exists():
-                        continue
-                    logger.info("%s: Removing response directory", job_id)
-                    assert_precondition(jobdir.is_dir())
-                    shutil.rmtree(jobdir)
-                except Exception as err:
-                    logger.error("Unable to remove directory '%s': %s", jobdir, err)
-    except Exception as err:
-        logger.warning("Cleanup: cannot acquire lock: %s", err)
 
 
 @inspect_command(

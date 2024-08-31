@@ -414,30 +414,15 @@ class _ExecutorBase:
                     # Check the state status:
                     state = self._celery.backend.get_task_meta(job_id)
                     assert_postcondition(state['status'] == Celery.STATE_REVOKED)
-                    cleanup = True
-                case _S.DONE:
-                    # Job is not revokable but assets still
-                    # exists
-                    cleanup = True
-                case _S.PENDING:
-                    # Job is no revoked and assets do not exist
-                    cleanup = False
+                case _S.DONE | _S.PENDING:
+                    # Job is not revokable
+                    pass
                 case _ as unreachable:
                     assert_never(unreachable)
 
             # Delete registry entry
+            # and let the worker do the cleanup
             registry.delete(self._celery, job_id)
-
-            if cleanup:
-                self._celery.backend.forget(job_id)
-                # Send a cleanup task
-                self._celery.control.broadcast(
-                    'dismiss_job',
-                    arguments={'jobs': [job_id]},
-                    reply=True,
-                    destination=(destinations[0],),
-                    timeout=timeout,
-                )
 
             return JobStatus(
                 job_id=ti.job_id,
