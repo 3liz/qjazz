@@ -38,6 +38,7 @@ from time import time
 from pydantic import (
     BaseModel,
     JsonValue,
+    TypeAdapter,
     ValidationError,
     create_model,
 )
@@ -136,6 +137,10 @@ class ConfigService:
 
         from importlib import metadata
 
+        self._trace_output = TypeAdapter(bool).validate_python(
+            os.getenv('PY_QGIS_CONFSERVICE_TRACE', 'no'),
+        )
+
         self._configs = {}
         self._model = None
         self._conf = None
@@ -154,6 +159,11 @@ class ConfigService:
         secrets_dir = getenv('SETTINGS_SECRETS_DIR', '/run/secrets')
         if Path(secrets_dir).exists():
             self._model_config.update(secrets_dir=secrets_dir)
+
+    def _trace(self, *args):
+        if self._trace_output:
+            print("==CONFSERVICE:",  *args, file=sys.stderr, flush=True)  # noqa T201
+
 
     def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
         def _model(model):
@@ -253,6 +263,7 @@ class ConfigService:
         field: Any = CreateDefault,  # noqa ANN401
         replace: bool = False,
     ):
+        self._trace("Adding section:", name)
         if not replace and name in self._configs:
             raise SectionExists(name)
         self._configs[name] = (model,) if field is CreateDefault else (model, field)

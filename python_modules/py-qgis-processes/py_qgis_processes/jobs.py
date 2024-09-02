@@ -4,7 +4,7 @@
 import mimetypes
 import shutil
 
-from threading import Event, Thread
+from functools import cached_property
 from time import time
 
 import redis
@@ -14,8 +14,9 @@ from celery.signals import (
     worker_ready,
     worker_shutdown,
 )
-from celery.worker.control import inspect_command
+from celery.worker.control import control_command, inspect_command
 from typing_extensions import (
+    Callable,
     Dict,
     Iterator,
     List,
@@ -35,6 +36,7 @@ from .models import (
     ProcessLogVersion,
     WorkerPresenceVersion,
 )
+from .processing.config import ProcessingConfig
 from .processing.prelude import (
     JobExecute,
     JobResults,
@@ -42,6 +44,8 @@ from .processing.prelude import (
     ProcessSummary,
 )
 from .processing.schemas import Link
+from .utils.threads import Event, PeriodicTask
+from .utils.watch import WatchFile
 
 #
 #  Signals
@@ -55,10 +59,7 @@ from .processing.schemas import Link
 def init_qgis(*args, **kwargs):
     """ Initialize Qgis context in each process
     """
-    from py_qgis_contrib.core import config
-    conf = config.confservice.conf
-
-    QgisContext.setup(conf.processing)
+    QgisContext.setup(app.processing_config)
 
 
 @worker_ready.connect
@@ -93,7 +94,7 @@ def presence(_) -> Dict:
     ).model_dump()
 
 
-@inspect_command()
+@control_command()
 def cleanup(_):
     """Run cleanup task
     """
@@ -225,6 +226,9 @@ class ProcessingWorker(Worker):
 
         self._job_context.update(processing_config=conf.processing)
 
+        #
+        # Init cleanup task
+        #
         def cleanup_task():
             logger.info("Cleanup task started")
             while not self._cleanup_event.wait(self._cleanup_interval):
@@ -232,8 +236,8 @@ class ProcessingWorker(Worker):
             logger.info("Cleanup task stopped")
 
         self._cleanup_interval = conf.worker.cleanup_interval
-        self._cleanup_event = Event()
-        self._cleanup_task = Thread(target=cleanup_task)
+        self._shutdown_event = Event()
+        self._periodic_tasks: List[PeriodicTask] = []
 
         self._service_name = service_name
         self._service_title = conf.worker.title
@@ -241,9 +245,29 @@ class ProcessingWorker(Worker):
         self._service_links = conf.worker.links
         self._online_since = time()
 
+        self.add_periodic_task("cleanup", self.cleanup_expired_jobs, self._cleanup_interval)
+
+        if conf.worker.reload_monitor:
+            watch = WatchFile(conf.worker.reload_monitor, self.reload_processes)
+            self.add_periodic_task("reload", watch, 5.)
+
+    def add_periodic_task(self, name: str, target: Callable[[], None], timeout: float):
+        self._periodic_tasks.append(
+            PeriodicTask(name, target, timeout, event=self._shutdown_event),
+        )
+
+    @property
+    def processing_config(self) -> ProcessingConfig:
+        return self._job_context['processing_config']
+
     @property
     def service_name(self) -> str:
         return self._service_name
+
+    @cached_property
+    def worker_hostname(self) -> str:
+        import socket
+        return f"{self._service_name}@{socket.gethostname()}"
 
     def lock(self, name: str) -> redis.lock.Lock:
         # Create a redis lock for handling race conditions
@@ -269,33 +293,39 @@ class ProcessingWorker(Worker):
     def cleanup_expired_jobs(self) -> None:
         """ Cleanup all expired jobs
         """
-        lock = app.lock("cleanup-batch")
-        if lock.locked():
-            logger.info("Cleanup task already locked, aborting")
-            return
+        try:
+            with app.lock("cleanup-batch"):
+                logger.info("Running cleanup task")
+                # Search for expirable jobs resources
+                for p in app._workdir.glob("*/.job-expire"):
+                    jobdir = p.parent
+                    job_id = jobdir.name
+                    if registry.exists(self, job_id):
+                        continue
+                    try:
+                        logger.info("=== Cleaning jobs resource: %s", job_id)
+                        shutil.rmtree(jobdir)
+                    except Exception as err:
+                        logger.error("Failed to remove directory '%s': %s", jobdir, err)
+        except redis.lock.LockError:
+            pass
 
-        with lock:
-            logger.info("Running cleanup task")
-            # Search for expirable jobs resources
-            for p in app._workdir.glob("*/.job-expire"):
-                jobdir = p.parent
-                job_id = jobdir.name
-                if registry.exists(self, job_id):
-                    continue
-                try:
-                    logger.info("=== Cleaning jobs resource: %s", job_id)
-                    shutil.rmtree(jobdir)
-                except Exception as err:
-                    logger.error("Failed to remove directory '%s': %s", jobdir, err)
+    def reload_processes(self) -> None:
+        """ Reload processes """
+        # Send control command to ourself
+        self.control.pool_restart(destination=(self.worker_hostname,))
 
     def on_worker_ready(self) -> None:
         # Launch periodic cleanup task
-        self._cleanup_task.start()
+        for task in self._periodic_tasks:
+            task.start()
 
     def on_worker_shutdown(self) -> None:
         # Stop cleanup scheduler
-        self._cleanup_event.set()
-        self._cleanup_task.join(timeout=5.0)
+        self._worker_handle = None
+        self._shutdown_event.set()
+        for task in self._periodic_tasks:
+            task.join(timeout=5.0)
 
 
 app = ProcessingWorker()

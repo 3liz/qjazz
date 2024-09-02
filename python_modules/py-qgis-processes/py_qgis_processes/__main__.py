@@ -1,5 +1,4 @@
 import os
-import socket
 
 from pathlib import Path
 
@@ -70,7 +69,7 @@ def run_worker(
             kwargs.update(queues=[f"py-qgis.{service_name}.{queue}"])
 
         worker = app.Worker(
-            hostname=f"{service_name}@{socket.gethostname()}",
+            hostname=app.worker_hostname,
             loglevel=loglevel,
             prefetch_multiplier=1,
             optimization='fair',
@@ -97,7 +96,7 @@ def run_server(
     """
     from py_qgis_contrib.core import logger
 
-    from .server.cli import load_configuration, serve
+    from .server import load_configuration, serve
 
     conf = load_configuration(configpath)
     logger.setup_log_handler(

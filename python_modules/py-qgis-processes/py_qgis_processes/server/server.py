@@ -3,6 +3,7 @@ import signal
 import traceback
 
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from textwrap import dedent as _D
 
 from aiohttp import web
@@ -28,6 +29,7 @@ from py_qgis_contrib.core.config import (
     NetInterface,
     SSLConfig,
     confservice,
+    read_config_toml,
     section,
 )
 
@@ -137,6 +139,24 @@ class ConfigProto(Protocol):
 
     def model_dump_json(self, *args, **kwargs) -> str:
         ...
+
+
+# Configuration loader helper
+def load_configuration(
+    configpath: Optional[Path],
+) -> ConfigProto:
+
+    if configpath:
+        cnf = read_config_toml(
+            configpath,
+            location=str(configpath.parent.absolute()),
+        )
+    else:
+        cnf = {}
+
+    confservice.validate(cnf)
+    return cast(ConfigProto, confservice.conf)
+
 
 #
 # Logging

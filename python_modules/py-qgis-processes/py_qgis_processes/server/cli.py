@@ -10,14 +10,11 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from typing_extensions import (
-    Optional,
-    cast,
-)
+from typing_extensions import Optional
 
 from py_qgis_contrib.core import config, logger
 
-from .server import ConfigProto, serve
+from .server import load_configuration, serve
 
 FilePathType = click.Path(
     exists=True,
@@ -25,22 +22,6 @@ FilePathType = click.Path(
     dir_okay=False,
     path_type=Path,
 )
-
-
-def load_configuration(
-    configpath: Optional[Path],
-) -> ConfigProto:
-
-    if configpath:
-        cnf = config.read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute()),
-        )
-    else:
-        cnf = {}
-
-    config.confservice.validate(cnf)
-    return cast(ConfigProto, config.confservice.conf)
 
 
 @click.group()

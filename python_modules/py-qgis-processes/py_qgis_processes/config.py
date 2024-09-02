@@ -97,6 +97,19 @@ class WorkerConfig(CeleryConfig):
         ),
     )
 
+    reload_monitor: Optional[Path] = Field(
+        default=None,
+        title="Reload watch file",
+        description=_D(
+            """
+            The file to watch for reloading processing plugins.
+            When the the modified time of the file is changed, processing
+            providers are reloaded.
+            The restart is graceful, all running jobs are terminated normally.
+            """,
+        ),
+    )
+
 
 # Allow type validation
 class ConfigProto:

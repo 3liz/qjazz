@@ -11,6 +11,8 @@ Qgis service running test algorithms
 concurrency = 1
 result_expires = 900
 cleanup_interval = 300
+reload_monitor = "$location/.reloadmon"
+
 
 [processing]
 workdir = "$location/__workdir__"
