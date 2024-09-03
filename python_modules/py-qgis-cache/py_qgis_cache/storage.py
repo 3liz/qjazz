@@ -42,34 +42,31 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
     """
     logger.debug("Reading Qgis project '%s'", uri)
 
-    version_int = Qgis.QGIS_VERSION_INT
+    #version_int = Qgis.QGIS_VERSION_INT
 
     # see https://github.com/qgis/QGIS/pull/49266
-    if version_int < 32601:
-        project = QgsProject()
-        readflags = QgsProject.ReadFlags()
-        if config.trust_layer_metadata:
-            readflags |= QgsProject.FlagTrustLayerMetadata
-        if config.disable_getprint:
-            readflags |= QgsProject.FlagDontLoadLayouts
-    else:
-        project = QgsProject(capabilities=Qgis.ProjectCapabilities())
-        readflags = Qgis.ProjectReadFlags()
-        if config.trust_layer_metadata:
-            readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata
-        if config.disable_getprint:
-            readflags |= Qgis.ProjectReadFlag.DontLoadLayouts
-
-    if version_int >= 32800 and config.force_readonly_layers:
+    project = QgsProject(capabilities=Qgis.ProjectCapabilities())
+    readflags = Qgis.ProjectReadFlags()
+    if config.trust_layer_metadata:
+        readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata
+    if config.disable_getprint:
+        readflags |= Qgis.ProjectReadFlag.DontLoadLayouts
+    if config.force_readonly_layers:
         readflags |= Qgis.ProjectReadFlag.ForceReadOnlyLayers
+    if config.dont_resolve_layers:
+        readflags |= Qgis.ProjectReadFlag.DontResolveLayers
 
     # Handle bad layers
-    badlayerh = BadLayerHandler()
-    project.setBadLayerHandler(badlayerh)
+    if config.strict_check:
+        badlayerh = BadLayerHandler()
+        project.setBadLayerHandler(badlayerh)
+    else:
+        badlayerh = None
+
     if not project.read(uri, readflags):
         raise UnreadableResource(uri)
 
-    if config.strict_check and not badlayerh.validateLayers(project):
+    if badlayerh and not badlayerh.validateLayers(project):
         raise StrictCheckingFailure(uri)
 
     if config.disable_advertised_urls:

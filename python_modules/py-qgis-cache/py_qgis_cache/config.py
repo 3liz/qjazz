@@ -88,6 +88,15 @@ class ProjectsConfig(config.Config):
         title="Force read only mode",
         description="Force layers to open in read only mode",
     )
+    dont_resolve_layers: bool = Field(
+        default=False,
+        title="Don't resolve layer paths",
+        description=(
+            "Don't load any layer content\n"
+            "Improve loading time when actual layer data is\n"
+            "not required."
+        ),
+    )
     disable_advertised_urls: bool = Field(
         default=False,
         title="Disable OWS advertised urls",

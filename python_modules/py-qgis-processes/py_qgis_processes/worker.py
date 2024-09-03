@@ -39,6 +39,7 @@ from .schemas import Link
 from .utils.threads import Event, PeriodicTask
 from .utils.watch import WatchFile
 
+
 #
 #  Signals
 #
@@ -100,7 +101,7 @@ def job_log(_, job_id: str) -> Dict:
 
 
 @inspect_command(
-    args=[('job_id', str, 'public_url', str)],
+    args=[('job_id', str), ('public_url', str)],
 )
 def job_files(_, job_id: str, public_url: str | None) -> Dict:
     """Returns job execution files"""
@@ -284,6 +285,8 @@ class QgisWorker(Worker):
         """ Reload processes """
         # Send control command to ourself
         self.control.pool_restart(destination=(self.worker_hostname,))
+        if self.on_reload_callback:
+            self.on_reload_callback()
 
     def on_worker_ready(self) -> None:
         # Launch periodic cleanup task

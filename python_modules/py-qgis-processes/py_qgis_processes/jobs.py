@@ -4,6 +4,7 @@
 
 from celery.signals import worker_process_init
 from typing_extensions import (
+    Dict,
     List,
     Optional,
 )
@@ -17,7 +18,34 @@ from .schemas import (
     ProcessDescription,
     ProcessSummary,
 )
-from .worker import QgisJob, QgisProcessJob, app
+from .worker import (
+    QgisJob, 
+    QgisProcessJob,
+    QgisWorker,
+    app, 
+    inspect_command,
+)
+
+#
+#
+#
+
+
+def get_processes_list(app: QgisWorker) -> Dict:
+    #
+    def _get_process_list(q: mp.Queue) -> Dict:
+        QgisContext.setup_processing(app.processing_config)
+        ctx=QgisContext(app.processing_config)
+        q.put(ctx.processes)
+
+    q = mp.Queue()
+    p = mp.Process(target=_get_processes, args=(q,))
+    def _processes(app: QgisWorker)
+    p = Process(target=_processes)
+    p.start()
+
+app.on_reload_callback = get_processes_list
+
 
 #
 #  Signals
@@ -32,6 +60,25 @@ def init_qgis(*args, **kwargs):
     """ Initialize Qgis context in each process
     """
     QgisContext.setup_processing(app.processing_config)
+
+#
+# Inspect commands
+#
+
+INVENTORY_TIMEOUT=5.
+
+@inspect_command()
+def list_processes(_) -> Dict:
+    """Return processes list
+    """
+
+@inspect_command(
+    args=[('ident', str), ('project_path', str)],
+)
+def describe_process(_, ident: str, project_path: str | None) -> Dict:
+    """Return process description
+    """
+  
 
 #
 # Processing tasks
