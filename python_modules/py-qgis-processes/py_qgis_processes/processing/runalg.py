@@ -25,8 +25,7 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
-
-from .schemas import RunProcessingException
+from py_qgis_processes.schemas import RunProcessException
 
 
 def validate_parameters(
@@ -43,7 +42,7 @@ def validate_parameters(
         msg = f"Processing parameters error:\n{msg}"
         feedback.reportError(msg)
         if abort_on_error:
-            raise RunProcessingException(msg)
+            raise RunProcessException(msg)
         else:
             return False
 
@@ -83,10 +82,10 @@ def execute(
             logger.error(f"Algorithm {alg.id()} returned ok={ok}")
     except QgsProcessingException as err:
         # Note: QgsProcessingException exception add stack trace in its message
-        raise RunProcessingException(f"Algorithm failed with error {err}") from None
+        raise RunProcessException(f"Algorithm failed with error {err}") from None
     except Exception as err:
         logger.error(traceback.format_exc())
-        raise RunProcessingException(f"Algorithm failed with error {err}") from None
+        raise RunProcessException(f"Algorithm failed with error {err}") from None
 
     # From https://github.com/qgis/QGIS/blob/master/python/plugins/processing/core/Processing.py
     for outdef in alg.outputDefinitions():

@@ -24,7 +24,7 @@ from qgis.core import (
     QgsProject,
 )
 
-from .schemas import (
+from py_qgis_processes.schemas import (
     Format,
     mimetypes,
 )

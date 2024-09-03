@@ -12,11 +12,9 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-contrib==${PIN_VERSION}",
+    "py-qgis-contrib[celery]==${PIN_VERSION}",
     "py-qgis-cache==${PIN_VERSION}",
     "pydantic-extra-types",
-    "celery>=5.3.6",
-    "redis>=5.0.3",
     "async-timeout; python_version<'3.11'",
     "click",
     "requests",

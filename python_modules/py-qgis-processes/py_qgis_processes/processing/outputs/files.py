@@ -24,8 +24,7 @@ from qgis.core import (
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_postcondition
-
-from ..schemas import (
+from py_qgis_processes.schemas import (
     AnyFormat,
     Format,
     InputValueError,
@@ -37,6 +36,7 @@ from ..schemas import (
     OutputFormatDefinition,
     ValuePassing,
 )
+
 from ..utils import output_file_formats
 from .base import (
     InputParameterDef,

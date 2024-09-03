@@ -20,7 +20,7 @@ from typing_extensions import (
 
 from py_qgis_contrib.core.config import ConfigBase, section
 
-from ..processing.schemas import JsonModel
+from ..schemas import JsonModel
 
 OAPI_VERSION = "3.0.0"
 

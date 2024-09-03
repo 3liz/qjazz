@@ -22,9 +22,7 @@ from typing_extensions import (
 from qgis.core import QgsProject
 
 from py_qgis_contrib.core import logger
-
-from ..config import ProcessingConfig
-from ..schemas import (
+from py_qgis_processes.schemas import (
     Formats,
     InputValueError,
     LinkReference,
@@ -37,6 +35,8 @@ from ..schemas import (
     RefOrQualifiedInput,
     ValuePassing,
 )
+
+from ..config import ProcessingConfig
 from ..utils import (
     ProcessingFileParameterBehavior,
     output_file_formats,

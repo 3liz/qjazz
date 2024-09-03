@@ -9,7 +9,7 @@ from py_qgis_processes.executor import (
     ExecutorConfig,
 )
 
-    
+
 def read_configuration():
     config.confservice.add_section('executor', ExecutorConfig)
 
@@ -22,20 +22,22 @@ def init() -> Executor:
     executor.update_services()
     return executor
 
+
 @click.group()
 def main():
     pass
+
 
 @main.command('services')
 def list_services():
     pass
 
+
 @main.command('restart')
 def restart_pool():
     pass
 
+
 @main.command('shutdown')
 def shutdown_worker():
     pass
-
-

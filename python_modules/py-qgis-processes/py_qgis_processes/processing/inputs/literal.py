@@ -33,7 +33,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtGui import QColor
 
-from ..schemas import (
+from py_qgis_processes.schemas import (
     InputValueError,
     Metadata,
     MetadataLink,
@@ -41,6 +41,7 @@ from ..schemas import (
     OgcDataType,
     ogc,
 )
+
 from .base import (
     InputParameter,
     ProcessingContext,

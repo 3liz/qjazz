@@ -15,13 +15,13 @@ from typing_extensions import (
 )
 
 from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core.celery import CeleryConfig
 from py_qgis_contrib.core.condition import (
     assert_precondition,
 )
+from py_qgis_processes.schemas import LinkHttp
 
-from .celery import CeleryConfig
 from .processing.config import ProcessingConfig
-from .processing.schemas import LinkHttp
 
 CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
 

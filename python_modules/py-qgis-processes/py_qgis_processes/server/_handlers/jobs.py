@@ -12,7 +12,7 @@ from typing_extensions import (
     cast,
 )
 
-from ...processing.schemas import Link as LinkAny
+from ...schemas import Link as LinkAny
 from .protos import (
     ErrorResponse,
     HandlerProto,

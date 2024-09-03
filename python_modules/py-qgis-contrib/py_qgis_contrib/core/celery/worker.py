@@ -2,6 +2,8 @@
 import inspect
 import types
 
+from functools import cached_property
+
 import celery
 import celery.states
 
@@ -46,7 +48,38 @@ class Worker(Celery):
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
 
+        self._name = name
         self._job_context: Dict[str, Any] = {}
+
+        # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
+        self.conf.worker_prefetch_multiplier = 1
+
+        # Logging
+        self.conf.worker_redirect_stdouts = False
+        self.conf.worker_hijack_root_logger = False
+
+        self._autoscale = conf.autoscale
+
+    @cached_property
+    def worker_hostname(self) -> str:
+        import socket
+        return f"{self._name}@{socket.gethostname()}"
+
+    def start_worker(self, **kwargs) -> None:
+        """ Start the worker
+        """
+        if self._autoscale:
+            # Activate autoscale
+            kwargs.update(autoscale=(max(self.autoscale), min(self.autoscale)))
+
+        worker = self.Worker(
+            hostname=self.worker_hostname,
+            prefetch_multiplier=1,
+            optimization='fair',
+            **kwargs,
+        )
+
+        worker.start()
 
     def job(
         self,

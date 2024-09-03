@@ -1,7 +1,7 @@
 from aiohttp import web
 from typing_extensions import Optional
 
-from ..processing.schemas import LinkHttp
+from ..schemas import LinkHttp
 
 Link = LinkHttp
 

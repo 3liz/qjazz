@@ -88,7 +88,7 @@ class QgisContext:
     EXPIRE_FILE = ".job-expire"
 
     @classmethod
-    def setup(cls, conf: ProcessingConfig):
+    def setup_processing(cls, conf: ProcessingConfig):
         """ Initialize qgis """
 
         debug = logger.isEnabledFor(logger.LogLevel.DEBUG)

@@ -34,8 +34,7 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
-
-from ..schemas import (
+from py_qgis_processes.schemas import (
     WGS84,
     BoundingBox,
     InputValueError,
@@ -44,6 +43,7 @@ from ..schemas import (
     NullField,
     OutputFormatDefinition,
 )
+
 from ..utils import (
     ProcessingSourceType,
     compatible_layers,

@@ -51,5 +51,5 @@ from .models import (         # noqa F401
 )
 
 
-class RunProcessingException(Exception):
+class RunProcessException(Exception):
     pass

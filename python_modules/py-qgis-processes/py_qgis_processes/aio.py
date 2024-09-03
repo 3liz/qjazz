@@ -27,7 +27,7 @@ from .executor import (  # noqa F401
     ProcessFiles,
     ProcessLog,
     ProcessSummary,
-    RunProcessingException,
+    RunProcessException,
     ServiceDict,
     _ExecutorBase,
 )

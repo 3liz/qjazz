@@ -24,12 +24,7 @@ from qgis.core import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.qgis import QgisPluginService
-
-from . import runalg
-from .context import ProcessingContext
-from .inputs import InputParameter, InputParameterDef
-from .outputs import OutputParameter, OutputParameterDef
-from .schemas import (
+from py_qgis_processes.schemas import (
     InputValueError,
     JobExecute,
     JobResults,
@@ -39,6 +34,11 @@ from .schemas import (
     ProcessDescription,
     ProcessSummary,
 )
+
+from . import runalg
+from .context import ProcessingContext
+from .inputs import InputParameter, InputParameterDef
+from .outputs import OutputParameter, OutputParameterDef
 
 ProcessingAlgorithmFlag: TypeAlias   # type: ignore [valid-type]
 ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]
@@ -267,7 +267,7 @@ class ProcessAlgorithm:
 
         for o in outputs:
             if o.name not in results:
-                raise runalg.RunProcessingException(
+                raise runalg.RunProcessException(
                     f"Incomplete output for algorithm {self.ident}: {o.name}",
                 )
 

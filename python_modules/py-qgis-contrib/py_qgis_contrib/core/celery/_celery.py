@@ -5,12 +5,14 @@ from pydantic import (
     DirectoryPath,
     Field,
     FilePath,
+    NonNegativeInt,
 )
 from typing_extensions import (
     ClassVar,
     Dict,
     Optional,
     Sequence,
+    Tuple,
 )
 
 from py_qgis_contrib.core.config import (
@@ -104,6 +106,13 @@ class CeleryConfig(BaseConfig):
             "that may be consumed by a worker before it will\n"
             "be replaced by a new worker."
         ),
+    )
+
+    # Enable autoscaling
+    autoscale: Optional[Tuple[NonNegativeInt, NonNegativeInt]] = Field(
+        default=None,
+        title="Autoscale",
+        description="Activate concurrency autoscaling",
     )
 
 

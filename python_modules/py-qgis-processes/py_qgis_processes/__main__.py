@@ -68,15 +68,10 @@ def run_worker(
         if queue != 'None':
             kwargs.update(queues=[f"py-qgis.{service_name}.{queue}"])
 
-        worker = app.Worker(
-            hostname=app.worker_hostname,
+        app.start_worker(
             loglevel=loglevel,
-            prefetch_multiplier=1,
-            optimization='fair',
             **kwargs,
         )
-
-        worker.start()
 
 
 @main.command('serve')

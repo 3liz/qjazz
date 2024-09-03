@@ -13,8 +13,9 @@ from typing_extensions import (
     Tuple,
 )
 
-from .celery import Celery
-from .processing.schemas import JobStatus
+from py_qgis_contrib.core.celery import Celery
+
+from .schemas import JobStatus
 
 
 @dataclass

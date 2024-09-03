@@ -22,10 +22,7 @@ from qgis.core import (
 )
 
 from py_qgis_contrib.core import logger
-
-from ..context import ProcessingContext
-from ..inputs import InputParameterDef
-from ..schemas import (
+from py_qgis_processes.schemas import (
     Format,
     InputValueError,
     JsonDict,
@@ -37,7 +34,10 @@ from ..schemas import (
     ValuePassing,
     remove_auto_title,
 )
-from ..schemas.models import one_of
+from py_qgis_processes.schemas.models import one_of
+
+from ..context import ProcessingContext
+from ..inputs import InputParameterDef
 
 OutputDefinition = TypeVar('OutputDefinition', bound=QgsProcessingOutputDefinition)
 

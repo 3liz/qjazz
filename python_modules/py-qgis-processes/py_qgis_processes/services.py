@@ -10,12 +10,9 @@ from typing_extensions import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.celery import Celery, CeleryConfig
 
-from .celery import Celery, CeleryConfig
-from .exceptions import (
-    ServiceNotAvailable,
-    UnreachableDestination,
-)
+from .exceptions import UnreachableDestination
 from .models import WorkerPresence
 
 PresenceDetails = WorkerPresence
@@ -107,13 +104,3 @@ class _Services:
             return next(iter(resp[0].values()))
         else:
             return dict(next(iter(r.items())) for r in resp)
-
-    def restart_pool(self, service: str, *, reply: bool = True) -> JsonValue:
-        """ Restart worker pool
-        """
-        destinations = self.destinations(service)
-        # XXX Check that services are online (test for presence)
-        if not destinations:
-            raise ServiceNotAvailable(service)
-
-        return self._celery.contral.pool_restart(destination=destinations, reply=reply)

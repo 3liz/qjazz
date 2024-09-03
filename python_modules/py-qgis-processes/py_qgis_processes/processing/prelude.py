@@ -12,4 +12,4 @@ from .processes import (
     ProcessDescription,
     ProcessSummary,
 )
-from .runalg import RunProcessingException
+from .runalg import RunProcessException

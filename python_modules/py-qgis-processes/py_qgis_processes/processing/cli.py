@@ -258,7 +258,7 @@ def list_processes(
     )
 
     if json_format:
-        from .schemas import ProcessSummaryList
+        from py_qgis_processes.schemas import ProcessSummaryList
         body = ProcessSummaryList.dump_json(
             [alg.summary() for alg in algs],
             by_alias=True,
@@ -321,15 +321,16 @@ def execute_processes(
 ):
     """ Execute process IDENT
     """
+    from py_qgis_processes.schemas import (
+        InputValueError,
+        JobExecute,
+        JsonDict,
+    )
+
     from .processes import (
         ProcessAlgorithm,
         ProcessingContext,
         runalg,
-    )
-    from .schemas import (
-        InputValueError,
-        JobExecute,
-        JsonDict,
     )
 
     #
@@ -442,7 +443,7 @@ def execute_processes(
 
     except InputValueError as err:
         abort_with_error(ctx, f"Input error: {err}")
-    except runalg.RunProcessingException as err:
+    except runalg.RunProcessException as err:
         abort_with_error(ctx, f"Execute error: {err}")
 
 

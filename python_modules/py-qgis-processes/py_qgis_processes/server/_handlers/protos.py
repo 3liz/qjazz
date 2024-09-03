@@ -19,7 +19,7 @@ from ..executor import (
     ProcessFiles,
     ProcessLog,
     ProcessSummary,
-    RunProcessingException,
+    RunProcessException,
 )
 from ..jobrealm import JOB_REALM_HEADER, get_job_realm, job_realm
 from ..models import ErrorResponse

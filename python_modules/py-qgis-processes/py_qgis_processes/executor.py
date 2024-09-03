@@ -20,18 +20,18 @@ from typing_extensions import (
 )
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.celery import Celery, CeleryConfig
 from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_contrib.core.config import Config as BaseConfig
 from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 
 from . import registry
-from .celery import Celery, CeleryConfig
 from .exceptions import (
     DismissedTaskError,
     ServiceNotAvailable,
 )
 from .models import ProcessFiles, ProcessLog
-from .processing.schemas import (
+from .schemas import (
     DateTime,
     InputValueError,
     JobExecute,
@@ -41,7 +41,7 @@ from .processing.schemas import (
     ProcessDescription,
     ProcessSummary,
     ProcessSummaryList,
-    RunProcessingException,
+    RunProcessException,
 )
 
 # Reexport
@@ -461,7 +461,7 @@ class _ExecutorBase(_Services):
                         # Attempt to run a dismissed task
                         message = "Dismissed task"
                         status = JobStatus.DISMISSED
-                    case RunProcessingException() as err:
+                    case RunProcessException() as err:
                         message = "Internal processing error"
                     case Exception():
                         message = "Internal worker error"

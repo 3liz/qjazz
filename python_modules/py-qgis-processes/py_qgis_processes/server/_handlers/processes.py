@@ -23,7 +23,7 @@ from .protos import (
     JobStatus,
     Link,
     ProcessSummary,
-    RunProcessingException,
+    RunProcessException,
     get_job_realm,
     href,
     make_link,
@@ -285,7 +285,7 @@ class Processes(HandlerProto):
             #
             # Processing exception
             #
-            except RunProcessingException as err:
+            except RunProcessException as err:
                 logger.error("Processing exception [job: %s]: %s", result.job_id, err)
                 return ErrorResponse.response(
                     status=500,
