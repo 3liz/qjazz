@@ -13,7 +13,7 @@ from py_qgis_processes.processing.outputs import (
     OutputFile,
     OutputParameter,
 )
-from py_qgis_processes.processing.schemas import InputValueError
+from py_qgis_processes.schemas import InputValueError
 
 
 def test_output_file(qgis_session: ProcessingConfig):

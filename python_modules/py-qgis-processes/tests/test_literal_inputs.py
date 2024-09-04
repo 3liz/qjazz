@@ -23,7 +23,7 @@ from qgis.core import (
 from py_qgis_processes.processing.inputs import InputParameter
 from py_qgis_processes.processing.inputs.datetime import DateTimeParameterDataType
 from py_qgis_processes.processing.inputs.literal import NumberParameterType
-from py_qgis_processes.processing.schemas import ogc
+from py_qgis_processes.schemas import ogc
 
 
 def meta(seq, s):

@@ -1,12 +1,23 @@
 
-
-class DismissedTaskError(Exception):
+class ProcessesException(Exception):
     pass
 
 
-class ServiceNotAvailable(Exception):
+class DismissedTaskError(ProcessesException):
     pass
 
 
-class UnreachableDestination(Exception):
+class ServiceNotAvailable(ProcessesException):
+    pass
+
+
+class UnreachableDestination(ProcessesException):
+    pass
+
+
+class ProcessNotFound(ProcessesException):
+    pass
+
+
+class ProjectRequired(ProcessesException):
     pass

@@ -42,7 +42,7 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
     """
     logger.debug("Reading Qgis project '%s'", uri)
 
-    #version_int = Qgis.QGIS_VERSION_INT
+    # version_int = Qgis.QGIS_VERSION_INT
 
     # see https://github.com/qgis/QGIS/pull/49266
     project = QgsProject(capabilities=Qgis.ProjectCapabilities())
@@ -57,7 +57,7 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
         readflags |= Qgis.ProjectReadFlag.DontResolveLayers
 
     # Handle bad layers
-    if config.strict_check:
+    if not config.dont_resolve_layers:
         badlayerh = BadLayerHandler()
         project.setBadLayerHandler(badlayerh)
     else:
@@ -66,8 +66,9 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
     if not project.read(uri, readflags):
         raise UnreadableResource(uri)
 
-    if badlayerh and not badlayerh.validateLayers(project):
-        raise StrictCheckingFailure(uri)
+    if badlayerh and not config.ignore_bad_layers:
+        if  not badlayerh.validateLayers(project):
+            raise StrictCheckingFailure(uri)
 
     if config.disable_advertised_urls:
         remove_advertised_urls(project)

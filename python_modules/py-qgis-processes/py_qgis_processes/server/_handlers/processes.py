@@ -22,7 +22,9 @@ from .protos import (
     JobResultsAdapter,
     JobStatus,
     Link,
+    ProcessNotFound,
     ProcessSummary,
+    ProjectRequired,
     RunProcessException,
     get_job_realm,
     href,
@@ -59,8 +61,9 @@ class Processes(HandlerProto):
         """
         # Get service processes from cache
         service = self.get_service(request, raise_error=False)
-        processes = self._cache.get(service)
-        if processes is None:
+        try:
+            processes = await self._executor.processes(service, timeout=self._timeout)
+        except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
 
         def _process_filter(td: ProcessSummary) -> bool:
@@ -124,9 +127,6 @@ class Processes(HandlerProto):
 
         process_id = request.match_info['Ident']
 
-        if not self._cache.exists(service, process_id):
-            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} is not available")
-
         self.check_process_permission(request, service, process_id, project)
 
         try:
@@ -136,8 +136,8 @@ class Processes(HandlerProto):
                 project=project,
                 timeout=self._timeout,
             )
-        except TimeoutError:
-            ErrorResponse.raises(web.HTTPGatewayTimeout, "Worker busy")
+        except celery.exceptions.TimeoutError:
+            ErrorResponse.raises(web.HTTPServiceUnavailable, f"Service {service} is not available")
 
         if not td:
             ErrorResponse.raises(web.HTTPForbidden, f"{process_id} not available")
@@ -211,9 +211,6 @@ class Processes(HandlerProto):
         project = self.get_project(request)
 
         process_id = request.match_info['Ident']
-
-        if not self._cache.exists(service, process_id):
-            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} is not available")
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -290,6 +287,26 @@ class Processes(HandlerProto):
                 return ErrorResponse.response(
                     status=500,
                     message="Internal processing error",
+                    details={"jobId": result.job_id},
+                )
+            #
+            # Process not found
+            #
+            except ProcessNotFound as err:
+                logger.error("Process exception [job: %s]: %s", result.job_id, err)
+                ErrorResponse.raises(
+                    web.HTTPForbidden,
+                    f"{process_id} is not available",
+                    details={"jobId": result.job_id},
+                )
+            #
+            # Project is required
+            #
+            except ProjectRequired as err:
+                logger.error("Process exception [job: %s]: %s", result.job_id, err)
+                ErrorResponse.raises(
+                    web.HTTPBadRequest,
+                    f"{process_id} require a project",
                     details={"jobId": result.job_id},
                 )
 

@@ -39,7 +39,7 @@ from .accesspolicy import (
     DummyAccessPolicy,
     create_access_policy,
 )
-from .cache import ProcessesCache
+from .cache import ServiceCache
 from .executor import Executor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, Handler
@@ -97,19 +97,6 @@ class ServerConfig(ConfigBase):
         gt=0,
         title="Service update interval",
         description="Interval in seconds between update of avaialable services",
-    )
-
-    cache_grace_period: int = Field(
-        default=5,
-        title="Cache grace period",
-        description=_D(
-            """
-            Number of update for which cached service data may survive
-            loss of service availability.
-            Thus, cached data will survive `cache_grace_period * update_interal`
-            seconds in cache after the service is gone.
-            """,
-        ),
     )
 
     timeout: int = Field(20, gt=0, title="Backend request timeout")
@@ -377,7 +364,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
 
-    cache = ProcessesCache(conf.server.cache_grace_period)
+    cache = ServiceCache()
 
     # Handler
     handler = Handler(
@@ -385,7 +372,6 @@ def create_app(conf: ConfigProto) -> web.Application:
         policy=access_policy,
         timeout=conf.server.timeout,
         enable_ui=conf.server.enable_ui,
-        cache=cache,
     )
 
     app.add_routes(handler.routes)
@@ -426,7 +412,6 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     handler = Handler(
         executor=cast(Executor, None),
         policy=DummyAccessPolicy(),
-        cache=cast(ProcessesCache, None),
         timeout=0,
         enable_ui=False,
     )

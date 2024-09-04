@@ -4,9 +4,12 @@ from aiohttp import web
 from pydantic import TypeAdapter
 from typing_extensions import Optional, Protocol
 
+from ...exceptions import (
+    ProcessNotFound,
+    ProjectRequired,
+)
 from .. import swagger
 from ..accesspolicy import AccessPolicy
-from ..cache import ProcessesCache
 from ..executor import (
     Executor,
     InputValueError,
@@ -41,7 +44,6 @@ class HandlerProto(Protocol):
     _executor: Executor
     _accesspolicy: AccessPolicy
     _timeout: int
-    _cache: ProcessesCache
     _staticpath: Path
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:

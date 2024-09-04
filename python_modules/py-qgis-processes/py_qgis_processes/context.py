@@ -28,6 +28,10 @@ from py_qgis_contrib.core.qgis import (
     show_qgis_settings,
 )
 
+from .exceptions import (
+    ProcessNotFound,
+    ProjectRequired,
+)
 from .processing.config import ProcessingConfig
 from .processing.prelude import (
     JobExecute,
@@ -189,11 +193,11 @@ class QgisContext:
         """ validate process parameters """
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
+            raise ProcessNotFound(f"Algorithm '{ident}' not found")
 
         project = self.project(project_path) if project_path else None
         if not project and alg.require_project:
-            raise ValueError(f"Algorithm {ident} require project")
+            raise ProjectRequired(f"Algorithm {ident} require project")
 
         context = ProcessingContext(self.processing_config)
         context.setFeedback(feedback)
@@ -216,11 +220,12 @@ class QgisContext:
         """ Execute process """
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
-            raise ValueError(f"Algorithm '{ident}' not found")
+            raise ProcessNotFound(f"Algorithm '{ident}' not found")
 
         project = self.project(project_path) if project_path else None
         if not project and alg.require_project:
-            raise ValueError(f"Algorithm {ident} require project")
+            # FIXME return appropriate exception
+            raise ProjectRequired(f"Algorithm {ident} require project")
 
         context = ProcessingContext(self.processing_config)
         context.setFeedback(feedback)

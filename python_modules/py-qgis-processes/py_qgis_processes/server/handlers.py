@@ -11,7 +11,6 @@ from ._handlers import (
     WebUI,
 )
 from .accesspolicy import AccessPolicy
-from .cache import ProcessesCache
 from .executor import Executor
 from .models import ErrorResponse
 from .utils import redirect_trailing_slash
@@ -26,7 +25,6 @@ class Handler(Services, Processes, Jobs, WebUI):
         *,
         executor: Executor,
         policy: AccessPolicy,
-        cache: ProcessesCache,
         timeout: int,
         enable_ui: bool,
     ):
@@ -34,7 +32,6 @@ class Handler(Services, Processes, Jobs, WebUI):
         self._accesspolicy = policy
         self._timeout = timeout
         self._enable_ui = enable_ui
-        self._cache = cache
 
         self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
 

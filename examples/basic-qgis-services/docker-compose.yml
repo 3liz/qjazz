@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   qgis-rpc:
     image: 3liz/qgis-services:qgis-ltr

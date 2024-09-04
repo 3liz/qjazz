@@ -291,5 +291,5 @@ def test_algorithms_exception(qgis_session, plugins, projects):
 
     request = JobExecute(inputs={'PARAM1': 20})
 
-    with pytest.raises(runalg.RunProcessingException):
+    with pytest.raises(runalg.RunProcessException):
         _ = pa.execute(request, feedback, context)

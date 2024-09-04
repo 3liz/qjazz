@@ -3,8 +3,8 @@ import pytest
 
 from pydantic import TypeAdapter, ValidationError
 
-from py_qgis_processes.processing.schemas import geojson
-from py_qgis_processes.processing.schemas.geojson import (
+from py_qgis_processes.schemas import geojson
+from py_qgis_processes.schemas.geojson import (
     Geometry,
     LineString,
     MultiLineString,

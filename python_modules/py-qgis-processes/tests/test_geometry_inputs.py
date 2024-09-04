@@ -18,7 +18,7 @@ from qgis.core import (
 )
 
 from py_qgis_processes.processing.inputs import InputParameter
-from py_qgis_processes.processing.schemas import (
+from py_qgis_processes.schemas import (
     Formats,
     InputValueError,
     QualifiedInputValue,

@@ -4,7 +4,7 @@ import pytest
 
 from aiohttp.test_utils import TestClient
 
-from py_qgis_processes.processing.schemas import (
+from py_qgis_processes.schemas import (
     JobStatus,
     ProcessDescription,
 )

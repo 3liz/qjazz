@@ -14,6 +14,7 @@ from celery.signals import (
 )
 from celery.worker.control import control_command, inspect_command
 from typing_extensions import (
+    Any,
     Callable,
     Dict,
     Iterator,
@@ -38,7 +39,6 @@ from .processing.config import ProcessingConfig
 from .schemas import Link
 from .utils.threads import Event, PeriodicTask
 from .utils.watch import WatchFile
-
 
 #
 #  Signals
@@ -147,7 +147,7 @@ class QgisJob(Job):
                 self._worker_job_context['processing_config'],
                 with_expiration=True,
             ),
-        )
+            )
         super().before_start(task_id, args, kwargs)
 
 
@@ -167,8 +167,6 @@ class QgisWorker(Worker):
 
     def __init__(self, **kwargs) -> None:
 
-        from kombu import Queue
-
         conf = load_configuration()
 
         service_name = conf.worker.service_name
@@ -186,13 +184,6 @@ class QgisWorker(Worker):
         # for task routing
         self.conf.task_default_queue = f"py-qgis.{service_name}"
         self.conf.task_default_exchange = f"py-qgis.{service_name}"
-
-        self.conf.task_default_exchange_type = 'topic'
-        self.conf.task_default_routing_key = 'task.default'
-        self.conf.task_queues = {
-            Queue(f"py-qgis.{service_name}.Tasks", routing_key='task.#'),
-            Queue(f"py-qgis.{service_name}.Inventory", routing_key='processes.#'),
-        }
 
         # Allow worker to restart pool
         self.conf.worker_pool_restarts = True
@@ -220,6 +211,8 @@ class QgisWorker(Worker):
         self._service_description = conf.worker.description
         self._service_links = conf.worker.links
         self._online_since = time()
+
+        self.processes_cache: Any = None
 
         self.add_periodic_task("cleanup", self.cleanup_expired_jobs, self._cleanup_interval)
 
@@ -283,10 +276,15 @@ class QgisWorker(Worker):
 
     def reload_processes(self) -> None:
         """ Reload processes """
+        destinations = (self.worker_hostname,)
         # Send control command to ourself
+        if self.processes_cache:
+            self.control.broadcast(
+                "reload_processes_cache",
+                destination=destinations,
+                reply=True,
+            )
         self.control.pool_restart(destination=(self.worker_hostname,))
-        if self.on_reload_callback:
-            self.on_reload_callback()
 
     def on_worker_ready(self) -> None:
         # Launch periodic cleanup task

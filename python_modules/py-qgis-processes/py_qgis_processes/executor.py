@@ -28,6 +28,7 @@ from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 from . import registry
 from .exceptions import (
     DismissedTaskError,
+    ProcessesException,
     ServiceNotAvailable,
 )
 from .models import ProcessFiles, ProcessLog
@@ -85,51 +86,36 @@ class _ExecutorBase(_Services):
 
     def _describe(
         self,
-        service: str,
+        destinations: Sequence[str],
         ident: str,
         *,
         project: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
+
         # Retrieve process description (blocking version)
-        res = self._celery.send_task(
-            f"{service}.process_describe",
-            priority=100,
-            queue=f'py-qgis.{service}.Inventory',
-            routing_key='processes.describe',
-            expires=timeout,
-            kwargs={
-                '__run_config__':  {
-                    'ident': ident,
-                    'project_path': project,
-                },
-            },
+        res = self.command(
+            "describe_process",
+            destination=destinations,
+            arguments={'ident': ident, 'project_path': project},
+            timeout=timeout,
         )
 
-        try:
-            body = res.get(timeout=timeout)
-            return body and ProcessDescription.model_validate(body)
-        finally:
-            res.forget()
+        return ProcessDescription.model_validate(res) if res else None
 
     def _processes(
         self,
-        service: str,
+        destinations: Sequence[str],
         timeout: Optional[float] = None,
     ) -> Sequence[ProcessSummary]:
         # List processes for service (blocking version)
-        res = self._celery.send_task(
-            f"{service}.process_list",
-            priority=100,
-            queue=f'py-qgis.{service}.Inventory',
-            routing_key='processes.list',
-            expires=timeout,
+        res = self.command(
+            "list_processes",
+            destination=destinations,
+            timeout=timeout,
         )
 
-        try:
-            return ProcessSummaryList.validate_python(res.get(timeout=timeout))
-        finally:
-            res.forget()
+        return ProcessSummaryList.validate_python(res)
 
     def _execute_task(
         self,
@@ -150,8 +136,7 @@ class _ExecutorBase(_Services):
         return self._celery.send_task(
             f"{service}.{task}",
             priority=priority,
-            queue=f'py-qgis.{service}.Tasks',
-            routing_key="task.execute",
+            queue=f'py-qgis.{service}',
             expires=expiration_timeout,
             kwargs={
                 '__meta__': meta,
@@ -461,8 +446,10 @@ class _ExecutorBase(_Services):
                         # Attempt to run a dismissed task
                         message = "Dismissed task"
                         status = JobStatus.DISMISSED
-                    case RunProcessException() as err:
+                    case RunProcessException():
                         message = "Internal processing error"
+                    case ProcessesException() as err:
+                        message = str(err)
                     case Exception():
                         message = "Internal worker error"
                     case msg:
@@ -678,8 +665,35 @@ class Executor(_ExecutorBase):
         self._last_updated = time()
         return self._services
 
-    describe = _ExecutorBase._describe
-    processes = _ExecutorBase._processes
+    def describe(
+        self,
+        service: str,
+        ident: str,
+        *,
+        project: Optional[str] = None,
+        timeout: Optional[int] = None,
+    ) -> Optional[ProcessDescription]:
+        """ Return process description
+        """
+        destinations = self.destinations(service)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+
+        return self._describe(
+            destinations,
+            ident,
+            project=project,
+            timeout=timeout,
+        )
+
+    def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
+        """ Return process description summary
+        """
+        destinations = self.destinations(service)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+
+        return self._processes(destinations, timeout)
 
     def execute(
         self,

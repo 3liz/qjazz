@@ -1,6 +1,7 @@
 """ Command line client
     For running processinc algorithms
 """
+import os
 import sys
 
 from pathlib import Path
@@ -19,6 +20,8 @@ from typing_extensions import (
     Any,
     NoReturn,
     Optional,
+    Protocol,
+    cast,
 )
 
 from qgis.core import (
@@ -32,11 +35,17 @@ from py_qgis_contrib.core.condition import assert_postcondition
 
 from .config import ProcessingConfig
 
+config.confservice.add_section('processing', ProcessingConfig, field=...)
+
+
+class ConfigProto(Protocol):
+    processing: ProcessingConfig
+
 
 def load_configuration(
     configpath: Optional[Path],
     verbose: bool = False,
-) -> config.Config:
+) -> ConfigProto:
     if configpath:
         cnf = config.read_config_toml(
             configpath,
@@ -165,7 +174,7 @@ def dump_config(
                 config.confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
-        echo(conf.model_dump_json(indent=4))
+        echo(cast(config.Config, conf).model_dump_json(indent=4))
 
 
 #
@@ -179,7 +188,7 @@ def processing_plugins(
 ):
     """ List loaded plugins
     """
-    conf: Any = load_configuration(ctx.obj.configpath)
+    conf = load_configuration(ctx.obj.configpath)
     plugins = init_qgis(conf.processing, use_projects=False)
 
     for p in plugins.plugins:
@@ -203,7 +212,7 @@ def processing_providers(
 ):
     """ List (published) providers
     """
-    conf: Any = load_configuration(ctx.obj.configpath)
+    conf = load_configuration(ctx.obj.configpath)
     plugins = init_qgis(conf.processing, use_projects=False)
 
     if all_providers:
@@ -249,7 +258,7 @@ def list_processes(
     """
     from .processes import ProcessAlgorithm
 
-    conf: Any = load_configuration(ctx.obj.configpath)
+    conf = load_configuration(ctx.obj.configpath)
     init_qgis(conf.processing)
 
     algs = ProcessAlgorithm.algorithms(
@@ -281,17 +290,26 @@ def list_processes(
 @processes_commands.command("describe")
 @click.argument("ident")
 @click.option("--project", "project_path", help="Path to project")
+@click.option("--dont-resolve-layers", is_flag=True, help="Dont resolve layers")
 @click.pass_context
 def describe_processes(
     ctx: click.Context,
     ident: str,
     project_path: str,
+    dont_resolve_layers: bool,
 ):
     """ Describe process IDENT
     """
     from .processes import ProcessAlgorithm
 
-    conf: Any = load_configuration(ctx.obj.configpath)
+    if dont_resolve_layers:
+        # This will work only if the setting is not defined in the configuration
+        os.environ['CONF_PROCESSING__PROJECTS__DONT_RESOLVE_LAYERS'] = 'yes'
+
+    conf = load_configuration(ctx.obj.configpath)
+    if dont_resolve_layers and not conf.processing.projects.dont_resolve_layers:
+        echo(style("Bad layers will be resolved", fg="yellow"), err=True)
+
     init_qgis(conf.processing)
 
     alg = ProcessAlgorithm.find_algorithm(ident)
@@ -379,7 +397,7 @@ def execute_processes(
         from uuid import uuid4
         jobid = str(uuid4())
 
-    conf: Any = load_configuration(ctx.obj.configpath)
+    conf = load_configuration(ctx.obj.configpath)
     init_qgis(conf.processing)
 
     #

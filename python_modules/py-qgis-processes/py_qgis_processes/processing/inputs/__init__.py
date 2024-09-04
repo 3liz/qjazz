@@ -1,6 +1,5 @@
 from types import MappingProxyType
 
-from py_qgis_processes.schemas import InputValueError, JsonValue
 from pydantic import ValidationError
 from typing_extensions import (
     Any,
@@ -63,6 +62,8 @@ from qgis.core import (
     QgsProcessingParameterVectorTileWriterLayers,
     QgsProject,
 )
+
+from py_qgis_processes.schemas import InputValueError, JsonValue
 
 from ..context import ProcessingContext
 from .base import (

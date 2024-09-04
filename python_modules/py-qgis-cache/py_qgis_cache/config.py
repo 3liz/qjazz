@@ -43,16 +43,6 @@ def _qgis_env_flag_validator(name: str) -> Callable[[bool, ValidationInfo], bool
 
 
 class ProjectsConfig(config.Config):
-    strict_check: bool = Field(
-        default=True,
-        title="Enable strict checking",
-        description=(
-            "Activate strict checking of project layers.\n"
-            "When enabled, Qgis projects with invalid layers will be dismissed.\n"
-            "Trying to access such a project will lead to a 'unprocessable Entity'\n"
-            "(422) HTTP error"
-        ),
-    )
     trust_layer_metadata: Annotated[
         bool,
         AfterValidator(_qgis_env_flag_validator('QGIS_TRUST_LAYER_METADATA')),
@@ -87,6 +77,19 @@ class ProjectsConfig(config.Config):
         default=False,
         title="Force read only mode",
         description="Force layers to open in read only mode",
+    )
+    ignore_bad_layers: Annotated[
+        bool,
+        AfterValidator(_qgis_env_flag_validator('QGIS_SERVER_IGNORE_BAD_LAYERS')),
+    ] = Field(
+        default=False,
+        title="Ignore bad layers",
+        description=(
+            "Allow projects to be loaded with event if it contains\n"
+            "layers that cannot be loaded\n"
+            "Note that the 'dont_resolve_layers flag' trigger automatically\n"
+            "this option."
+        ),
     )
     dont_resolve_layers: bool = Field(
         default=False,

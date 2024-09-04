@@ -100,6 +100,9 @@ class _Services:
         if reply and not resp:
             raise UnreachableDestination(f"{destination}")
 
+        if not reply:
+            return None
+
         if not broadcast:
             return next(iter(resp[0].values()))
         else:

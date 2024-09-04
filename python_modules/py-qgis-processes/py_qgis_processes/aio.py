@@ -29,6 +29,7 @@ from .executor import (  # noqa F401
     ProcessSummary,
     RunProcessException,
     ServiceDict,
+    ServiceNotAvailable,
     _ExecutorBase,
 )
 
@@ -63,9 +64,13 @@ class Executor(_ExecutorBase):
     ) -> Optional[ProcessDescription]:
         """ Return process description
         """
+        destinations = self.destinations(service)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+
         return await asyncio.to_thread(
             self._describe,
-            service,
+            destinations,
             ident,
             project=project,
             timeout=timeout,
@@ -74,9 +79,13 @@ class Executor(_ExecutorBase):
     async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
         """ Return process description summary
         """
+        destinations = self.destinations(service)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+
         return await asyncio.to_thread(
             self._processes,
-            service,
+            destinations,
             timeout,
         )
 
