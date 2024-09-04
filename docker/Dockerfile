@@ -75,10 +75,7 @@ FROM base AS ci_build
 ARG PIP_OPTIONS
 
 RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
-    "py-amqp-client>=2.0.0" \
-    && /opt/local/qgisserver/bin/pip install --no-cache-dir \
-        -e /python_modules/py-qgis-metrics
-
+    "py-amqp-client>=2.0.0"
 
 #
 # Server only installation (no-qgis)

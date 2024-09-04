@@ -2,14 +2,17 @@
 """
 import os
 
+from aiohttp import web
 from amqpclient.aio import AsyncPublisher
 from pika import PlainCredentials
-from pydantic import BaseModel, Field, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import List, Optional, Self, Type
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings
+from typing_extensions import List, Optional
 
 from py_qgis_contrib.core import logger
-from py_qgis_http.metrics import Data, Metrics
+
+from ..channel import Channel
+from ._metrics import Data, Metrics
 
 
 class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
@@ -63,7 +66,7 @@ class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
                     creds = PlainCredentials(self.user, passwd)
                     break
         return creds
-        
+
     routing_key: str = Field(
         title="Routing key",
         description=(
@@ -78,8 +81,6 @@ class AmqpMetrics(Metrics):
     Config = AmqpConfig
 
     def __init__(self, conf: AmqpConfig):
-        # Validate the options
-        conf = AmqpConfig.model_validate(options)
 
         kwargs = {}
 
@@ -87,6 +88,8 @@ class AmqpMetrics(Metrics):
         if credentials:
             kwargs['credentials'] = credentials
 
+        self._routing_key = conf.routing_key
+        self._exchange = conf.exchange
         self._client = AsyncPublisher(
             host=conf.host,
             port=conf.port,
@@ -99,13 +102,13 @@ class AmqpMetrics(Metrics):
         logger.info("AMQP:  connection to server '%s'  (port: %s)", conf.host, conf.port)
 
     async def setup(self) -> None:
-        await self._client.connect(exchange=conf.exchange, exchange_type='topic')
+        await self._client.connect(exchange=self._exchange, exchange_type='topic')
         logger.info("AMQP metrics initialized.")
 
-    async def emit(request: web.Request, chan: Channel, data: Data):
+    async def emit(self, request: web.Request, chan: Channel, data: Data):
         self._client.publish(
             data.dump_json(),
-            routing_key=self.routing_key,
+            routing_key=self._routing_key,
             expiration=3000,
             content_type="application/json",
             content_encoding="utf-8",
@@ -115,11 +118,3 @@ class AmqpMetrics(Metrics):
         if self._client:
             self._client.close()
             self._client = None
-
-
-# Entry point registration
-def register(cm):
-    cm.register_service(
-        f"{METRICS_HANDLER_CONTRACTID}?name=amqp",
-        AmqpMetrics(),
-    )
