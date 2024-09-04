@@ -12,7 +12,6 @@ from grpc_health.v1 import (
 )
 from typing_extensions import (
     Callable,
-    Dict,
     Iterable,
     Iterator,
     Literal,
@@ -56,9 +55,6 @@ class Channel:
         self._status: ChannelStatus = "notset"
 
         self._posix_route = self._conf.route.as_posix()
-        self._meta = {
-            'ROUTE': '.'.join(self._conf.route.parts[1:]),
-        }
 
         def _read_if(f):
             if f:
@@ -90,10 +86,6 @@ class Channel:
     @property
     def in_use(self) -> bool:
         return self._usecount > 0
-
-    @property
-    def meta(self) -> Dict[str, str]:
-        return self._meta
 
     @property
     def address(self) -> str:

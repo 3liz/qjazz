@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import List, Optional, Self, Type
 
 from py_qgis_contrib.core import logger
-from py_qgis_http.metrics import METRICS_HANDLER_CONTRACTID, Data, Metrics
+from py_qgis_http.metrics import Data, Metrics
 
 
 class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
@@ -64,14 +64,20 @@ class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
                     break
         return creds
         
+    routing_key: str = Field(
+        title="Routing key",
+        description=(
+            "The routing key for the metric message\n"
+            "This key is passed to monitoring backend.\n"
+        ),
+    )
+
 
 class AmqpMetrics(Metrics):
 
-    def __init__(self):
-        self._client = None
-        self._exchange = None
+    Config = AmqpConfig
 
-    async def initialize(self, **options) -> Self:
+    def __init__(self, conf: AmqpConfig):
         # Validate the options
         conf = AmqpConfig.model_validate(options)
 
@@ -81,7 +87,7 @@ class AmqpMetrics(Metrics):
         if credentials:
             kwargs['credentials'] = credentials
 
-        client = AsyncPublisher(
+        self._client = AsyncPublisher(
             host=conf.host,
             port=conf.port,
             virtual_host=conf.vhost,
@@ -90,18 +96,16 @@ class AmqpMetrics(Metrics):
             **kwargs,
         )
 
-        logger.info("AMQP: Opening connection to server '%s'  (port: %s)", conf.host, conf.port)
-        await client.connect(exchange=conf.exchange, exchange_type='topic')
+        logger.info("AMQP:  connection to server '%s'  (port: %s)", conf.host, conf.port)
 
-        self._client = client
+    async def setup(self) -> None:
+        await self._client.connect(exchange=conf.exchange, exchange_type='topic')
         logger.info("AMQP metrics initialized.")
 
-        return self
-
-    async def emit(self, key: str, data: Data) -> None:
+    async def emit(request: web.Request, chan: Channel, data: Data):
         self._client.publish(
             data.dump_json(),
-            routing_key=key,
+            routing_key=self.routing_key,
             expiration=3000,
             content_type="application/json",
             content_encoding="utf-8",

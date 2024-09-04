@@ -3,18 +3,47 @@
     Metric's exporter connectors must
     implement this class.
 """
-import os
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Dict, Mapping, Optional, Self
+from aiohttp import web
+from pydantic import (
+    BaseModel,
+    Field,
+    ImportString,
+    JsonValue,
+    WithJsonSchema,
+)
+from typing_extensions import (
+    Annotated,
+    Dict,
+    Optional,
+    Protocol,
+    Type,
+    runtime_checkable,
+)
 
-from py_qgis_contrib.core import componentmanager as cm
-from py_qgis_contrib.core import config
+from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.condition import assert_postcondition
+from py_qgis_contrib.core.config import ConfigBase
 
-METRICS_HANDLER_ENTRYPOINTS = '3liz.org.map.metrics.handler'
-METRICS_HANDLER_CONTRACTID = '@3liz.org/map/metrics/handler;1'
+from .channel import Channel
+
+
+class MetricsConfig(ConfigBase):
+    metrics_class: Annotated[
+        ImportString,
+        WithJsonSchema({'type': 'string'}),
+        Field(
+            default=None,
+            title="Metric module",
+            description=(
+                "The module implementing request metrics"
+            ),
+        ),
+    ]
+
+    config: Dict[str, JsonValue] = Field({})
 
 
 class Data(BaseModel, frozen=True):
@@ -31,68 +60,39 @@ class Data(BaseModel, frozen=True):
         return self.model_dump_json()
 
 
-class Metrics(ABC):
+class NoConfig(BaseModel):
+    pass
+
+
+@runtime_checkable
+class Metrics(Protocol):
+
+    Config: Type[BaseModel] = NoConfig
 
     @abstractmethod
-    async def initialize(**options) -> Self:
+    async def setup(self) -> None:
         ...
 
     @abstractmethod
-    async def emit(self, key: str, data: Data) -> None:
+    async def emit(self, request: web.Request, chan: Channel, data: Data):
         ...
 
     @abstractmethod
     async def close(self) -> None:
         ...
 
-#
-# Model for arbitrary Metric configuration
-#
 
+def create_metrics(conf: MetricsConfig) -> Metrics:
 
-class MetricConfig(config.Config):
-    """ Metric configuration
-    """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str = Field(title="Metric type")
-    meta_key: bool = Field(default=False, title="Meta key")
-    routing_key: str = Field(
-        title="Routing key",
-        description=(
-            "The routing key for the metric message\n"
-            "This key is passed to monitoring backend.\n"
-            "If meta_key is true, the string is interpreted as a format string\n"
-            "with a 'META' dict parameter."
-        ),
-        examples=['{META[field1]}.{META[field2]}'],
+    logger.info("Creating metrics %s", str(conf.metrics_class))
+
+    metrics_class = conf.metrics_class
+    metrics_conf = metrics_class.Config.model_validate(conf.config)
+
+    instance = metrics_class(metrics_conf)
+    assert_postcondition(
+        isinstance(instance, Metrics),
+        f"{instance} does not supports Metrics protocol",
     )
-    routing_key_default: Optional[str] = Field(
-        default=None,
-        title="Default routing key",
-    )
-    options: dict = Field(title="Backend configuration options")
 
-    def routing_key_meta(self, meta: Dict[str, str], headers: Mapping[str, str]) -> Optional[str]:
-        """ Returns the routing_key.
-            Performs the meta interpolation if needed.
-        """
-        try:
-            return self.routing_key.format(
-                META=meta,
-                HDRS=headers,
-                ENV=os.environ,
-            ) if self.meta_key else self.routing_key
-        except KeyError:
-            return self.routing_key_default
-
-    async def load_service(self) -> Metrics:
-        """ Load entrypoint for metrics handler given by 'name'
-
-            raises: cm.FactoryNotFoundError|cm.EntryPointNotFoundError
-        """
-        cm.load_entrypoint(METRICS_HANDLER_ENTRYPOINTS, self.name)
-
-        # Initialize the service
-        return await cm.get_service(
-            f"{METRICS_HANDLER_CONTRACTID}?name={self.name}",
-        ).initialize(**self.options)
+    return instance

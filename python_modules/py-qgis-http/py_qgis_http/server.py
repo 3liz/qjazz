@@ -24,13 +24,12 @@ from py_qgis_contrib.core.config import Config
 
 from . import metrics
 from .admin import backends_list_route, backends_route, config_route
-from .channel import Channel
 from .channels import Channels
 from .config import (
     AdminHttpConfig,
     HttpConfig,
     HttpCORS,
-    MetricConfig,
+    MetricsConfig,
 )
 from .handlers import api_handler, ows_handler
 from .models import ErrorResponse
@@ -227,21 +226,11 @@ class _Router:
         self._router = DefaultRouter()
         self._update_routes()
 
-    async def set_metrics(self, metrics_conf: MetricConfig) -> metrics.Metrics:
+    async def set_metrics(self, metrics_conf: MetricsConfig) -> metrics.Metrics:
         """ Initialize metrics service
-            if requested
         """
-        metrics_service = await metrics_conf.load_service()
-
-        async def _collect(request: web.Request, chan: Channel, data: metrics.Data):
-            routing_key = metrics_conf.routing_key_meta(
-                meta=chan.meta,
-                headers=request.headers,
-            )
-            if routing_key:
-                await metrics_service.emit(routing_key, data)
-
-        self._collect = _collect
+        metrics_service = metrics.create_metrics(metrics_conf)
+        self._collect = metrics_service.emit
         return metrics_service
 
     def _update_routes(self) -> None:
@@ -373,7 +362,7 @@ async def start_site(conf: HttpConfig, runner: web.AppRunner) -> Site:
 @asynccontextmanager
 async def setup_ogc_server(
     conf: HttpConfig,
-    metrics_conf: Optional[MetricConfig],
+    metrics_conf: Optional[MetricsConfig],
     channels: Channels,
 ) -> AsyncGenerator[web.AppRunner, None]:
 

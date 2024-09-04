@@ -170,7 +170,7 @@ def create_access_policy(
     policy_class = conf.policy_class
     policy_conf = policy_class.Config.model_validate(conf.config)
 
-    instance = conf.policy_class(policy_conf)
+    instance = policy_class(policy_conf)
     assert_postcondition(
         isinstance(instance, AccessPolicy),
         f"{instance} does no supports AccessPolicy protocol",

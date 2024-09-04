@@ -18,9 +18,6 @@ dependencies = [
 ]
 version = "1.0.0.dev0"
 
-[project.entry-points.'3liz.org.map.metrics.handler']
-amqp = 'py_qgis_metrics.amqp:register'
-
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
