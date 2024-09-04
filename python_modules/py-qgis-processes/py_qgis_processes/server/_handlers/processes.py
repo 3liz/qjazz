@@ -66,33 +66,33 @@ class Processes(HandlerProto):
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
 
-        def _process_filter(td: ProcessSummary) -> bool:
-            return self._accesspolicy.execute_permission(request, service, td.id_)
+        def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
+            if self._accesspolicy.execute_permission(request, service, td.id_):
+                td.links=[
+                    make_link(
+                        request,
+                        path=self.format_path(request, f"/processes/{td.id_}", service),
+                        rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
+                        title="Process description",
+                    ),
+                    *td.links,
+                ]
+                return td
+            else:
+                return None
 
         return web.Response(
             content_type="application/json",
             text=ProcessList(
-                processes=[
-                    td.model_copy(
-                        update=dict(
-                            links=[
-                                make_link(
-                                    request,
-                                    path=self.format_path(request, f"/processes/{td.id_}", service),
-                                    rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
-                                    title="Process description",
-                                ),
-                                *td.links,
-                            ],
-                        ),
-                    ) for td in processes if _process_filter(td)
-                ],
+                processes=list(
+                    filter(None, (_process_filter(td) for td in processes)),
+                ),
                 links=[
                     make_link(
                         request,
-                        path=self.format_path(request, "/jobs/", service),
+                        path=self.format_path(request, "/processes/", service),
                         rel="self",
-                        title="Job list",
+                        title="Processes list",
                     ),
                 ],
             ).model_dump_json(),
