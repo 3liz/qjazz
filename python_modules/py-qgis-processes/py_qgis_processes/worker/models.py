@@ -7,7 +7,7 @@ from typing_extensions import (
     Sequence,
 )
 
-from .schemas import JsonModel, Link, LinkHttp
+from ..schemas import JsonModel, Link, LinkHttp
 
 LinkSequence: TypeAdapter = TypeAdapter(Sequence[LinkHttp])
 

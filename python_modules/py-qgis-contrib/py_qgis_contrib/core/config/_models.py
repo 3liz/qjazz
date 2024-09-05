@@ -1,8 +1,17 @@
 """ Configuration common definitions
 """
 import ssl
+import string
+import sys
 
-from pydantic import AfterValidator, Field, FilePath
+from pydantic import (
+    AfterValidator,
+    Field,
+    FilePath,
+    PlainSerializer,
+    PlainValidator,
+    WithJsonSchema,
+)
 from typing_extensions import Annotated, Optional, Tuple
 
 from ._service import Config
@@ -10,6 +19,8 @@ from ._service import Config
 __all__ = [
     'NetInterface',
     'SSLConfig',
+    'Template',
+    'TemplateStr',
 ]
 
 
@@ -74,3 +85,27 @@ class SSLConfig(Config):
     def create_ssl_server_context(self) -> ssl.SSLContext:
         """ Used server side """
         return self.create_ssl_context(ssl.Purpose.CLIENT_AUTH)
+
+#
+# Template
+#
+
+
+class Template(string.Template):
+    def __str__(self) -> str:
+        return self.template
+
+
+def _validate_template(s: str | Template) -> Template:
+    _t = Template(s) if not isinstance(s, Template) else s
+    if sys.version_info >= (3, 11) and not _t.is_valid():
+        raise ValueError(f"Invalid template: {s}")
+    return _t
+
+
+TemplateStr = Annotated[
+        Template,
+        PlainValidator(_validate_template),
+        PlainSerializer(lambda t: t.template, return_type=str),
+        WithJsonSchema({'type': 'str'}),
+        ]

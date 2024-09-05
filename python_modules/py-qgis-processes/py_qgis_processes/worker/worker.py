@@ -28,17 +28,17 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.celery import Job, Worker
 from py_qgis_contrib.core.utils import to_utc_datetime
 
-from .. import registry
-from ..exceptions import DismissedTaskError
-from ..models import (
+from ..processing.config import ProcessingConfig
+from ..schemas import Link
+from . import registry
+from .config import load_configuration
+from .context import QgisContext, store_reference_url
+from .exceptions import DismissedTaskError
+from .models import (
     ProcessFilesVersion,
     ProcessLogVersion,
     WorkerPresenceVersion,
 )
-from ..processing.config import ProcessingConfig
-from ..schemas import Link
-from .config import load_configuration
-from .context import QgisContext
 from .threads import Event, PeriodicTask
 from .watch import WatchFile
 
@@ -138,8 +138,7 @@ class QgisWorker(Worker):
 
         self._workdir = conf.processing.workdir
         self._store_url = conf.processing.store_url
-
-        self._job_context.update(processing_config=conf.processing)
+        self._processing_config = conf.processing
 
         #
         # Init cleanup task
@@ -175,7 +174,7 @@ class QgisWorker(Worker):
 
     @property
     def processing_config(self) -> ProcessingConfig:
-        return self._job_context['processing_config']
+        return self._processing_config
 
     @property
     def service_name(self) -> str:
@@ -196,10 +195,11 @@ class QgisWorker(Worker):
     def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
         """ Return a proper reference url for the resource
         """
-        return self._store_url.substitute(
-            resource=resource,
-            jobId=job_id,
-            public_url=public_url or "",
+        return store_reference_url(
+            self._processing_config.store_url,
+            job_id,
+            resource,
+            public_url,
         )
 
     def cleanup_expired_jobs(self) -> None:
@@ -287,6 +287,9 @@ class QgisWorker(Worker):
 
         return ProcessFilesVersion(links=links)
 
+    def create_context(self) -> QgisContext:
+        return QgisContext(self.processing_config)
+
 
 #
 # Qgis jobs
@@ -297,12 +300,7 @@ class QgisJob(Job):
 
     def before_start(self, task_id, args, kwargs):
         # Add qgis context in job context
-        self._worker_job_context.update(
-            qgis_context=QgisContext(
-                self._worker_job_context['processing_config'],
-                with_expiration=True,
-            ),
-        )
+        self._worker_job_context.update(qgis_context=self.app.create_context())
         super().before_start(task_id, args, kwargs)
 
 

@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import TypeAdapter
 from typing_extensions import Optional, Protocol
 
-from ...exceptions import (
+from ...worker.exceptions import (
     ProcessNotFound,
     ProjectRequired,
 )

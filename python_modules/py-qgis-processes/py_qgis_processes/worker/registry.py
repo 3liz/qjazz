@@ -15,7 +15,7 @@ from typing_extensions import (
 
 from py_qgis_contrib.core.celery import Celery
 
-from .schemas import JobStatus
+from ..schemas import JobStatus
 
 
 @dataclass

@@ -26,14 +26,6 @@ from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_contrib.core.config import Config as BaseConfig
 from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 
-from . import registry
-from .exceptions import (
-    DismissedTaskError,
-    ProcessesException,
-    ServiceNotAvailable,
-    UnreachableDestination,
-)
-from .models import ProcessFiles, ProcessLog, WorkerPresence
 from .schemas import (
     DateTime,
     InputValueError,
@@ -46,6 +38,14 @@ from .schemas import (
     ProcessSummaryList,
     RunProcessException,
 )
+from .worker import registry
+from .worker.exceptions import (
+    DismissedTaskError,
+    ProcessesException,
+    ServiceNotAvailable,
+    UnreachableDestination,
+)
+from .worker.models import ProcessFiles, ProcessLog, WorkerPresence
 
 
 class ExecutorConfig(BaseConfig):

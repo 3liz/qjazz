@@ -164,7 +164,6 @@ class ConfigService:
         if self._trace_output:
             print("==CONFSERVICE:",  *args, file=sys.stderr, flush=True)  # noqa T201
 
-
     def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
         def _model(model):
             assert_precondition(isinstance(model, Tuple))

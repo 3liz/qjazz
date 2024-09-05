@@ -47,7 +47,7 @@ def exit_qgis_application():
 @no_type_check
 def setup_qgis_application(
     *,
-    settings: Optional[Dict] = None,
+    settings: Optional[Dict[str, str]] = None,
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
 ) -> str:
@@ -146,7 +146,7 @@ def install_logger_hook(logprefix: str) -> None:
     messageLog.messageReceived.connect(writelogmessage)
 
 
-def set_qgis_settings(settings: Dict):
+def set_qgis_settings(settings: Dict[str, str]):
     """ Set Qgis settings from dict
     """
     from qgis.core import QgsSettings
@@ -156,7 +156,7 @@ def set_qgis_settings(settings: Dict):
 
 
 def init_qgis_application(
-    settings: Optional[Dict] = None,
+    settings: Optional[Dict[str, str]] = None,
 ):
     setup_qgis_application(settings=settings)
     qgis_application.initQgis()  # type: ignore [union-attr]
@@ -185,7 +185,7 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     return server
 
 
-def load_qgis_settings(settings: Optional[Dict]) -> str:
+def load_qgis_settings(settings: Optional[Dict[str, str]]) -> str:
     """ Load qgis settings
     """
     from qgis.core import QgsSettings

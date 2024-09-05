@@ -23,14 +23,13 @@ from .schemas import (
     ProcessSummary,
     ProcessSummaryList,
 )
-from .worker import (
-    FeedBack,
-    QgisContext,
+from .worker.config import lookup_config_path
+from .worker.prelude import (
     QgisJob,
     QgisProcessJob,
     QgisWorker,
 )
-from .worker.config import lookup_config_path
+from .worker.processing import FeedBack, QgisContext
 
 #
 #  Processes cache
@@ -39,19 +38,18 @@ from .worker.config import lookup_config_path
 
 class ProcessCache:
 
-    Command = (
-        f'{sys.executable}',
-        '-m',
-        'py_qgis_processes.processing',
-        '-C',
-        f'{lookup_config_path()}',
-        'process',
-    )
-
     def __init__(self) -> None:
         self._descriptions: Dict[str, ProcessDescription] = {}
         self._processes: List[ProcessSummary] = []
         self._known_processes: set[str] = set()
+        self._command = (
+            f'{sys.executable}',
+            '-m',
+            'py_qgis_processes.processing',
+            '-C',
+            f'{lookup_config_path()}',
+            'process',
+        )
 
     @property
     def processes(self) -> Dict:
@@ -70,7 +68,7 @@ class ProcessCache:
 
             logger.info("Getting process description for %s, project=%s", ident, project)
 
-            arguments = [*self.Command, 'describe', ident]
+            arguments = [*self._command, 'describe', ident]
             if project:
                 arguments.extend(('--project', project, '--dont-resolve-layers'))
 
@@ -88,7 +86,7 @@ class ProcessCache:
         """
         logger.info("Updating processes cache")
 
-        p = subprocess.run([*self.Command, 'list', '--json'], capture_output=True)  # nosec
+        p = subprocess.run([*self._command, 'list', '--json'], capture_output=True)  # nosec
         p.check_returncode()
 
         self._processes = ProcessSummaryList.validate_json(p.stdout)
@@ -158,6 +156,9 @@ class QgisProcessingWorker(QgisWorker):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.processes_cache = ProcessCache()
+
+    def create_context(self) -> QgisContext:
+        return QgisContext(self.processing_config)
 
 
 app = QgisProcessingWorker()
