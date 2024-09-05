@@ -68,7 +68,7 @@ class Processes(HandlerProto):
 
         def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
             if self._accesspolicy.execute_permission(request, service, td.id_):
-                td.links=[
+                td.links = [
                     make_link(
                         request,
                         path=self.format_path(request, f"/processes/{td.id_}", service),

@@ -28,12 +28,12 @@ from py_qgis_contrib.core.qgis import (
     show_qgis_settings,
 )
 
-from .exceptions import (
+from ..exceptions import (
     ProcessNotFound,
     ProjectRequired,
 )
-from .processing.config import ProcessingConfig
-from .processing.prelude import (
+from ..processing.config import ProcessingConfig
+from ..processing.prelude import (
     JobExecute,
     JobResults,
     ProcessAlgorithm,
@@ -104,7 +104,7 @@ class QgisContext:
         #
         init_qgis_application(settings=conf.settings())
         if debug:
-            logger.debug(show_qgis_settings())  # noqa T201
+            logger.debug(show_qgis_settings())
 
         #
         # Init Qgis processing and plugins

@@ -6,6 +6,7 @@ import subprocess  # nosec
 import sys
 
 from celery.signals import worker_process_init, worker_ready
+from celery.worker.control import control_command, inspect_command
 from typing_extensions import (
     Dict,
     List,
@@ -15,8 +16,6 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.celery import Job, JobContext
 
-from .config import lookup_config_path
-from .context import FeedBack, QgisContext
 from .schemas import (
     JobExecute,
     JobResults,
@@ -25,12 +24,13 @@ from .schemas import (
     ProcessSummaryList,
 )
 from .worker import (
+    FeedBack,
+    QgisContext,
     QgisJob,
     QgisProcessJob,
-    app,
-    control_command,
-    inspect_command,
+    QgisWorker,
 )
+from .worker.config import lookup_config_path
 
 #
 #  Processes cache
@@ -98,11 +98,6 @@ class ProcessCache:
 
         return self._processes
 
-
-# Enable cache reload command
-app.processes_cache = ProcessCache()
-
-
 #
 #  Signals
 #
@@ -151,6 +146,21 @@ def describe_process(_, ident: str, project_path: str | None) -> Dict | None:
     """Return process description
     """
     return app.processes_cache.describe(ident, project_path)
+
+
+#
+# Qgis Worker
+#
+
+
+class QgisProcessingWorker(QgisWorker):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.processes_cache = ProcessCache()
+
+
+app = QgisProcessingWorker()
 
 #
 # Processing tasks

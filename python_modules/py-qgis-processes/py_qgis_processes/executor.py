@@ -17,6 +17,7 @@ from typing_extensions import (
     Sequence,
     Tuple,
     assert_never,
+    cast,
 )
 
 from py_qgis_contrib.core import logger
@@ -30,8 +31,9 @@ from .exceptions import (
     DismissedTaskError,
     ProcessesException,
     ServiceNotAvailable,
+    UnreachableDestination,
 )
-from .models import ProcessFiles, ProcessLog
+from .models import ProcessFiles, ProcessLog, WorkerPresence
 from .schemas import (
     DateTime,
     InputValueError,
@@ -43,13 +45,6 @@ from .schemas import (
     ProcessSummary,
     ProcessSummaryList,
     RunProcessException,
-)
-
-# Reexport
-from .services import (
-    PresenceDetails,  # noqa F401
-    ServiceDict,
-    _Services,
 )
 
 
@@ -69,20 +64,134 @@ class ExecutorConfig(BaseConfig):
     )
 
 
+PresenceDetails = WorkerPresence
+
+ServiceDict = Dict[str, Tuple[Sequence[str], PresenceDetails]]
+
+
 #
 # Process executor
 #
 
-class _ExecutorBase(_Services):
+class _ExecutorBase:
 
     def __init__(self, conf: Optional[ExecutorConfig] = None, *, name: Optional[str] = None):
 
         conf = conf or ExecutorConfig()
 
-        super().__init__(conf.celery, name=name)
+        self._celery = Celery(name, conf.celery)
+        self._services: ServiceDict = {}
+        self._last_updated = 0.
 
         self._pending_expiration_timeout = conf.message_expiration_timeout
         self._default_result_expires = conf.celery.result_expires
+
+    def presences(self, destinations: Optional[Sequence[str]] = None) -> Dict[str, PresenceDetails]:
+        """ Return presence info for online workers
+        """
+        data = self._celery.control.broadcast(
+            'presence',
+            reply=True,
+            destination=destinations,
+        )
+
+        return {k: PresenceDetails.model_validate(v) for row in data for k, v in row.items()}
+
+    def known_service(self, name: str) -> bool:
+        """ Check if service is known in uploaded presences
+        """
+        return name in self._services
+
+    @property
+    def services(self) -> Iterator[PresenceDetails]:
+        """ Return uploaded services presences
+        """
+        for _, pr in self._services.values():
+            yield pr
+
+    def get_services(self) -> ServiceDict:
+        # Return services destinations (blocking)
+        presences = self.presences()
+        services: ServiceDict = {}
+        for dest, pr in presences.items():
+            dests, _ = services.setdefault(pr.service, ([], pr))
+            cast(list, dests).append(dest)
+        return {k: (tuple(dests), pr) for k, (dests, pr) in services.items()}
+
+    @property
+    def last_updated(self) -> float:
+        return self._last_updated
+
+    @classmethod
+    def get_destinations(cls, service: str, services: ServiceDict) -> Optional[Sequence[str]]:
+        item = services.get(service)
+        return item and item[0]
+
+    def destinations(self, service: str) -> Optional[Sequence[str]]:
+        return self.get_destinations(service, self._services)
+
+    def command(
+        self,
+        name: str,
+        *,
+        broadcast: bool = False,
+        reply: bool = True,
+        destination: Sequence[str],
+        **kwargs,
+    ) -> JsonValue:
+        """ Send an inspect command to one or more service instances """
+        if not broadcast:
+            destination = (destination[0],)
+
+        resp = self._celery.control.broadcast(
+            name,
+            destination=destination,
+            reply=reply,
+            **kwargs,
+        )
+
+        logger.trace("=_command '%s': %s", name, resp)
+
+        if reply and not resp:
+            raise UnreachableDestination(f"{destination}")
+
+        if not reply:
+            return None
+
+        if not broadcast:
+            return next(iter(resp[0].values()))
+        else:
+            return dict(next(iter(r.items())) for r in resp)
+
+    #
+    # Control commands
+    #
+
+    def _dests(self, service: str) -> Sequence[str]:
+        dests = self.destinations(service)
+        if not dests:
+            raise ServiceNotAvailable(service)
+        return dests
+
+    def restart_pool(self, service: str, *, reply: bool = True) -> JsonValue:
+        """ Restart worker pool
+        """
+        return self._celery.control.pool_restart(
+            destination=self._dests(service),
+            reply=reply,
+        )
+
+    def ping(self, service: str, timeout: float = 1.) -> JsonValue:
+        """ Ping service workers
+        """
+        return self._celery.control.ping(self._dests(service), timeout=timeout)
+
+    def shutdown(self, service: str, **kwargs) -> JsonValue:
+        return self._celery.control.shutdown(self._dests(service), **kwargs)
+
+    #
+    # Processes
+    #
 
     def _describe(
         self,

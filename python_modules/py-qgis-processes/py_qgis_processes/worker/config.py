@@ -21,7 +21,7 @@ from py_qgis_contrib.core.condition import (
 )
 from py_qgis_processes.schemas import LinkHttp
 
-from .processing.config import ProcessingConfig
+from ..processing.config import ProcessingConfig
 
 CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
 

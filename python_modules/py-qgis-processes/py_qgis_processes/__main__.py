@@ -48,7 +48,7 @@ def run_worker(
 ):
     """ Run processes worker
     """
-    from .config import CONFIG_ENV_PATH
+    from .worker.config import CONFIG_ENV_PATH
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
@@ -56,11 +56,11 @@ def run_worker(
         from pydantic import BaseModel
         from typing_extensions import cast
 
-        from .config import load_configuration
+        from .worker.config import load_configuration
         conf = cast(BaseModel, load_configuration())
         click.echo(conf.model_dump_json(indent=4))
     else:
-        from .jobs import app
+        from .processing_jobs import app
 
         service_name = app.service_name
 
