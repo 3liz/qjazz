@@ -20,16 +20,13 @@ dependencies = [
     "grpcio-tools",
     "grpcio-health-checking",
     "click",
+    "dnspython",
+    "jsondiff",
 ]
 version = "1.0.0.dev0"
 
 [project.optional-dependencies]
 amqp = ["py-amqp-client>=2.0.0"]
-admin = [
-    "docker",
-    "dnspython",
-    "jsondiff",
-]
 
 [[project.authors]]
 name = "David Marteau"

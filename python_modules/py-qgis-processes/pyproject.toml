@@ -15,7 +15,6 @@ dependencies = [
     "py-qgis-contrib[celery]==1.0.0.dev0",
     "py-qgis-cache==1.0.0.dev0",
     "pydantic-extra-types",
-    "redis>=5.0.3",
     "async-timeout; python_version<'3.11'",
     "click",
     "requests",
