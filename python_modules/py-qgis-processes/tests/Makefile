@@ -11,7 +11,7 @@ start:
 	docker compose up -d
 
 stop:
-	docker compose --profile=web --profile=woker down -v --remove-orphans
+	docker compose --profile=web --profile=worker down -v --remove-orphans
 
 
 LOGLEVEL:=info

@@ -12,8 +12,7 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "py-qgis-worker==1.0.0.dev0",
-    "py-qgis-admin==1.0.0.dev0",
+    "py-qgis-server==1.0.0.dev0",
 ]
 version = "1.0.0.dev0"
 

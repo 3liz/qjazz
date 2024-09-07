@@ -24,7 +24,7 @@ from ..executor import (
     ProcessSummary,
     RunProcessException,
 )
-from ..jobrealm import JOB_REALM_HEADER, get_job_realm, job_realm
+from ..jobrealm import JOB_REALM_HEADER, JobRealmConfig
 from ..models import ErrorResponse
 from ..utils import Link, href, make_link, public_url
 
@@ -45,6 +45,7 @@ class HandlerProto(Protocol):
     _accesspolicy: AccessPolicy
     _timeout: int
     _staticpath: Path
+    _jobrealm: JobRealmConfig
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:
         ...

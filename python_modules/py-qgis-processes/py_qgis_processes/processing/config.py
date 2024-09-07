@@ -17,8 +17,7 @@ from typing_extensions import (
 
 from py_qgis_cache import ProjectsConfig
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import Config as BaseConfig
-from py_qgis_contrib.core.config import SSLConfig, Template, TemplateStr
+from py_qgis_contrib.core.config import ConfigBase, SSLConfig, Template, TemplateStr
 from py_qgis_contrib.core.qgis import QgisPluginConfig
 from py_qgis_processes.schemas import WGS84
 
@@ -45,7 +44,7 @@ QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
 
 
 # Processing job config section
-class ProcessingConfig(BaseConfig):
+class ProcessingConfig(ConfigBase):
     projects: ProjectsConfig = Field(
             default=ProjectsConfig(),
             title="Projects configuration",

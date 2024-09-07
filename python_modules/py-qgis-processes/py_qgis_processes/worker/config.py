@@ -49,15 +49,8 @@ def lookup_config_path() -> Optional[Path]:
 
 
 #
-# Processing configuration
-#
-
-config.confservice.add_section('processing', ProcessingConfig, field=...)
-
-#
 # Worker configuration
 #
-
 
 @config.section('worker', field=...)
 class WorkerConfig(CeleryConfig):
@@ -117,6 +110,15 @@ class ConfigProto:
     worker: WorkerConfig
 
 
+confservice = config.ConfBuilder()
+
+#
+# Add processing configuration
+#
+
+confservice.add_section('processing', ProcessingConfig, field=...)
+
+
 def load_configuration() -> ConfigProto:
     """ Load worker configuration
     """
@@ -131,9 +133,9 @@ def load_configuration() -> ConfigProto:
     else:
         cnf = {}
 
-    config.confservice.validate(cnf)
+    confservice.validate(cnf)
 
-    conf = config.confservice.conf
+    conf = confservice.conf
     logger.setup_log_handler(conf.logging.level)
     # Do not propagate otherwise logging will echo
     # to Celery logger

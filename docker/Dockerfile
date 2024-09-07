@@ -30,9 +30,7 @@ RUN mkdir -p /opt/local/ \
     && /opt/local/qgisserver/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/py-qgis-contrib \
         -e /python_modules/py-qgis-cache \
-        -e /python_modules/py-qgis-worker \
-        -e /python_modules/py-qgis-admin \
-        -e /python_modules/py-qgis-http \
+        -e /python_modules/py-qgis-server \
         -e /python_modules/py-qgis-processes \
         -e /python_modules/py-qgis-scripts \
     && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \

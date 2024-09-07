@@ -22,7 +22,6 @@ from .protos import (
     ProcessFiles,
     ProcessLog,
     href,
-    job_realm,
     make_link,
     swagger,
 )
@@ -125,7 +124,7 @@ class Jobs(HandlerProto):
 
         job_status = await self._executor.job_status(
             job_id,
-            realm=job_realm(request),
+            realm=self._jobrealm.job_realm(request),
             with_details=validate_param(BoolParam, request, 'details', False),
         )
 
@@ -219,7 +218,7 @@ class Jobs(HandlerProto):
         process_ids = request.query.getall('processID', ())
         filtered_status = request.query.getall('status', ())
 
-        realm = job_realm(request)
+        realm = self._jobrealm.job_realm(request)
 
         jobs = await self._executor.jobs(
             service,
@@ -326,7 +325,7 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info['JobId']
 
-        results = await self._executor.job_results(job_id, realm=job_realm(request))
+        results = await self._executor.job_results(job_id, realm=self._jobrealm.job_realm(request))
         if not results:
             return ErrorResponse.response(404, "No results", details={'jobId': job_id})
         return web.Response(
@@ -365,7 +364,7 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info['JobId']
 
-        st = await self._executor.dismiss(job_id, realm=job_realm(request))
+        st = await self._executor.dismiss(job_id, realm=self._jobrealm.job_realm(request))
         if not st:
             return ErrorResponse.response(404, "Job not found", details={'jobId': job_id})
 
@@ -407,7 +406,7 @@ class Jobs(HandlerProto):
 
         log_d = await self._executor.log_details(
             job_id,
-            realm=job_realm(request),
+            realm=self._jobrealm.job_realm(request),
             timeout=self._timeout,
         )
 
@@ -464,7 +463,7 @@ class Jobs(HandlerProto):
 
         files = await self._executor.files(
             job_id,
-            realm=job_realm(request),
+            realm=self._jobrealm.job_realm(request),
             timeout=self._timeout,
         )
 

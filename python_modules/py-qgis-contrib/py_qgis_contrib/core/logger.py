@@ -45,7 +45,7 @@ def _validate_log_level(v: str | LogLevel) -> LogLevel:
 
 
 @config.section('logging')
-class LoggingConfig(config.Config):
+class LoggingConfig(config.ConfigBase):
     level: Annotated[
         LogLevel,
         PlainValidator(_validate_log_level),
@@ -58,16 +58,16 @@ class LoggingConfig(config.Config):
     ]
 
 
-def set_log_level(log_level: Optional[LogLevel] = None) -> LogLevel:
+def set_log_level(log_level: LogLevel) -> LogLevel:
     """ Set the log level
     """
-    log_level = log_level or config.confservice.conf.logging.level
+    log_level = log_level
     LOGGER.setLevel(log_level.value)
     return log_level
 
 
 def setup_log_handler(
-    log_level: Optional[LogLevel] = None,
+    log_level: LogLevel = LogLevel.INFO,
     channel: Optional[logging.Handler] = None,
 ) -> LogLevel:
     """ Initialize log handler with the given log level

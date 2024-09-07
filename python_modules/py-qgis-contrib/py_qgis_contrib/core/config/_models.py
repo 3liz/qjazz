@@ -14,7 +14,7 @@ from pydantic import (
 )
 from typing_extensions import Annotated, Optional, Tuple
 
-from ._service import Config
+from ._service import ConfigBase
 
 __all__ = [
     'NetInterface',
@@ -48,7 +48,7 @@ NetInterface = Annotated[
 # SSL configuration
 #
 
-class SSLConfig(Config):
+class SSLConfig(ConfigBase):
     cafile: Optional[FilePath] = Field(
         default=None,
         title="CA file",

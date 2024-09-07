@@ -2,7 +2,7 @@
 SDIST=dist
 
 configure::
-	@echo "Configuring $(PYTHON_PKG)"
+	@echo "Configuring $$(basename $$(pwd))"
 	@sed -e 's/$${PIN_VERSION}/$(VERSION)/g' pyproject.toml.in > pyproject.toml
 
 dist::
@@ -29,10 +29,10 @@ install::
 	pip install -U --upgrade-strategy=eager -e .
 
 typing:: $(PYTHON_PKG)
-	$(MYPY) -p $<
+	$(MYPY) $(foreach pkg,$^,-p $(pkg))
 
 scan::
-	@bandit -r $(PYTHON_PKG)
+	bandit -r $(PYTHON_PKG)
 
 
 .PHONY: $(REQUIREMENTS)

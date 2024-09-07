@@ -16,7 +16,6 @@ from qgis.core import (
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
-from py_qgis_contrib.core.config import confservice
 
 from .config import ProcessingConfig
 from .utils import get_valid_filename
@@ -27,7 +26,7 @@ class ProcessingContext(QgsProcessingContext):
     def __init__(self, config: Optional[ProcessingConfig] = None):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
-        self._config = config or confservice.conf.processing
+        self._config = config or ProcessingConfig(workdir=Path())
 
         self.public_url = ""
         self.files: set[str] = set()

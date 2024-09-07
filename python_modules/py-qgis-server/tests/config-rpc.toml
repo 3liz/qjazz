@@ -1,0 +1,20 @@
+[logging]
+level = "debug"
+
+[worker]
+name = "Test"
+shutdown_grace_period = 5
+
+[worker.plugins]
+paths = ['$location/plugins']
+
+[worker.projects]
+trust_layer_metadata = true
+disable_getprint = true
+force_readonly_layers = true
+
+[worker.projects.search_paths]
+'/tests' = "$location/data/samples"
+'/france' = "$location/data/france_parts"
+'/montpellier' = "$location/data/montpellier"
+ 

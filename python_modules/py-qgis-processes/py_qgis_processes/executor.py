@@ -23,7 +23,7 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.celery import Celery, CeleryConfig
 from py_qgis_contrib.core.condition import assert_postcondition
-from py_qgis_contrib.core.config import Config as BaseConfig
+from py_qgis_contrib.core.config import ConfigBase
 from py_qgis_contrib.core.utils import to_utc_datetime, utc_now
 
 from .schemas import (
@@ -48,7 +48,7 @@ from .worker.exceptions import (
 from .worker.models import ProcessFiles, ProcessLog, WorkerPresence
 
 
-class ExecutorConfig(BaseConfig):
+class ExecutorConfig(ConfigBase):
     celery: CeleryConfig = CeleryConfig()
 
     message_expiration_timeout: int = Field(

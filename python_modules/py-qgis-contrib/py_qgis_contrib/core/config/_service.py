@@ -32,6 +32,7 @@ Source searched for configuration values:
 import os
 import sys
 
+from importlib import metadata
 from pathlib import Path
 from time import time
 
@@ -51,15 +52,17 @@ from typing_extensions import (
     IO,
     Any,
     Callable,
+    ClassVar,
     Dict,
+    Generic,
     Optional,
     Tuple,
     Type,
     TypeAlias,
+    TypeVar,
     assert_never,
 )
 
-from .. import componentmanager
 from ..condition import assert_precondition
 
 # Shortcut
@@ -116,7 +119,7 @@ def read_config_toml(cfgfile: Path, **kwds) -> Dict:
 
 
 # Base classe for configuration models
-class Config(BaseModel, frozen=True, extra='forbid'):
+class ConfigBase(BaseModel, frozen=True, extra='forbid'):
     pass
 
 
@@ -124,47 +127,70 @@ class SectionExists(ValueError):
     pass
 
 
-CONFIG_SERVICE_CONTRACTID = '@3liz.org/config-service;1'
-
-
 CreateDefault = object()
 
+config_version = metadata.version('py_qgis_contrib')
 
-@componentmanager.register_factory(CONFIG_SERVICE_CONTRACTID)
-class ConfigService:
+
+#
+# The base model for the config settings
+#
+class ConfigSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        frozen=True,
+        extra='ignore',
+        env_nested_delimiter='__',
+        env_prefix='conf_',
+        secrets_dir=getenv('SETTINGS_SECRETS_DIR', '/run/secrets'),
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            file_secret_settings,
+        )
+
+
+class ConfBuilder:
+    #
+    # Allow incrementally build configuration
+    # It may be used together weth the config proxy
+    # in order to propagate modification of the configuration
+    #
+
+    _global_sections: ClassVar[Dict] = {}
+
+    _trace_output = TypeAdapter(bool).validate_python(
+        os.getenv('PY_QGIS_CONFSERVICE_TRACE', 'no'),
+    )
 
     def __init__(self):
 
-        from importlib import metadata
-
-        self._trace_output = TypeAdapter(bool).validate_python(
-            os.getenv('PY_QGIS_CONFSERVICE_TRACE', 'no'),
-        )
-
-        self._configs = {}
+        self._sections = self._global_sections.copy()
         self._model = None
         self._conf = None
         self._model_changed = True
         self._timestamp = 0
-        self._version = metadata.version('py_qgis_contrib')
-        self._baseconfig = None
 
-        self._model_config = SettingsConfigDict(
-            frozen=True,
-            extra='ignore',
-            env_nested_delimiter='__',
-            env_prefix='conf_',
-        )
+    @property
+    def version(self):
+        return config_version
 
-        secrets_dir = getenv('SETTINGS_SECRETS_DIR', '/run/secrets')
-        if Path(secrets_dir).exists():
-            self._model_config.update(secrets_dir=secrets_dir)
+    @classmethod
+    def _trace(cls, *args):
+        if cls._trace_output:
+            print("==CONFSERVICE:", *args, file=sys.stderr, flush=True)  # noqa T201
 
-    def _trace(self, *args):
-        if self._trace_output:
-            print("==CONFSERVICE:",  *args, file=sys.stderr, flush=True)  # noqa T201
-
-    def _create_base_model(self, base: Type[BaseModel]) -> Type[BaseModel]:
+    def _create_base_model(self) -> Type[BaseModel]:
         def _model(model):
             assert_precondition(isinstance(model, Tuple))
             match model:
@@ -177,61 +203,35 @@ class ConfigService:
 
         return create_model(
             "_BaseConfig",
-            __base__=base,
-            **{name: _model(model) for name, model in self._configs.items()},
+            __base__=ConfigSettings,
+            **{name: _model(model) for name, model in self._sections.items()},
         )
 
-    def _init_base_settings(self) -> Type[BaseSettings]:
-        if not self._baseconfig:
-            class BaseConfig(BaseSettings):
-                model_config = self._model_config
-
-                @classmethod
-                def settings_customise_sources(
-                    cls,
-                    settings_cls: Type[BaseSettings],
-                    init_settings: PydanticBaseSettingsSource,
-                    env_settings: PydanticBaseSettingsSource,
-                    dotenv_settings: PydanticBaseSettingsSource,
-                    file_secret_settings: PydanticBaseSettingsSource,
-                ) -> Tuple[PydanticBaseSettingsSource, ...]:
-                    return (
-                        init_settings,
-                        env_settings,
-                        file_secret_settings,
-                    )
-
-            self._baseconfig = BaseConfig
-        return self._baseconfig
-
-    def _create_model(self) -> BaseSettings:
+    def _get_model(self) -> Type[ConfigSettings]:
         if self._model_changed or not self._model:
-            self._model = self._create_base_model(self._init_base_settings())
+            self._model = self._create_base_model()
             self._model_changed = False
 
         return self._model
 
     @property
-    def version(self):
-        return self._version
-
-    @property
     def last_modified(self) -> float:
         return self._timestamp
 
-    def validate(self, obj: Dict):
+    def validate(self, obj: Dict) -> ConfigSettings:
         """ Validate the configuration against
             configuration models
         """
-        _BaseConfig = self._create_model()
+        _BaseConfig = self._get_model()
         _conf = _BaseConfig.model_validate(obj, strict=True)
 
         self._conf = _conf
         # Update timestamp so that we can check update in
         # proxy
         self._timestamp = time()
+        return _conf
 
-    def update_config(self, obj: Optional[Dict] = None):
+    def update_config(self, obj: Optional[Dict] = None) -> ConfigSettings:
         """ Update the configuration
         """
         if self._model_changed or obj:
@@ -243,17 +243,17 @@ class ConfigService:
                 data = obj or {}
 
             self.validate(data)
+        return self._conf
 
-    def json_schema(self) -> Dict:
-        return self._create_base_model(BaseSettings).model_json_schema()
+    def json_schema(self) -> Dict[str, Any]:
+        return self._get_model().model_json_schema()
 
     def dump_toml_schema(self, s: IO):
         """ Dump the configuration as
             toml 'schema' for documentation purpose
         """
         from . import _toml
-        model = self._create_base_model(BaseSettings)
-        _toml.dump_model_toml(s, model)
+        _toml.dump_model_toml(s, self._get_model())
 
     def add_section(
         self,
@@ -263,9 +263,9 @@ class ConfigService:
         replace: bool = False,
     ):
         self._trace("Adding section:", name)
-        if not replace and name in self._configs:
+        if not replace and name in self._sections:
             raise SectionExists(name)
-        self._configs[name] = (model,) if field is CreateDefault else (model, field)
+        self._sections[name] = (model,) if field is CreateDefault else (model, field)
         self._model_changed = True
 
     @property
@@ -274,25 +274,30 @@ class ConfigService:
         return self._conf
 
 
-confservice = componentmanager.get_service(CONFIG_SERVICE_CONTRACTID)
-
+#
+# Config service
+#
 
 def section(
     name: str,
-    instance: Optional[ConfigService] = None,
     *,
     field: Any = CreateDefault,  # noqa ANN401
-) -> Callable[[Type[Config]], Type[Config]]:
+) -> Callable:
     """ Decorator for config section definition
 
-        @config.section("server")
-        class ServerConfig(config.Config):
-            model_config = SettingsConfigDict(env_prefix='conf_server_')
-    """
-    service = instance or confservice
+        Store section that will be initialized with builder
+        instance
 
-    def wrapper(model: Type[Config]) -> Type[Config]:
-        service.add_section(name, model, field)
+        @config.section("server")
+        class ServerConfig(config.ConfigBase):
+            ...
+    """
+    ConfBuilder._trace("Adding section:", name)
+    if name in ConfBuilder._global_sections:
+        raise SectionExists(name)
+
+    def wrapper(model):
+        ConfBuilder._global_sections[name] = (model,) if field is CreateDefault else (model, field)
         return model
     return wrapper
 
@@ -301,7 +306,10 @@ def section(
 # Config Proxy
 #
 
-class ConfigProxy:
+T = TypeVar('T', bound=ConfigBase)
+
+
+class ConfigProxy(Generic[T]):
     """ Proxy to sub configuration
 
         Give access to sub-configuration from the confservice.
@@ -318,15 +326,16 @@ class ConfigProxy:
 
     def __init__(
             self,
+            builder: ConfBuilder,
             configpath: str,
-            _confservice: Optional[ConfigService] = None,
-            _default: Optional[Config] = None,
+            *,
+            default: Optional[T] = None,
     ):
         self._timestamp = -1
-        self._confservice = _confservice or confservice
+        self._builder = builder
         self._configpath = configpath
-        if _default:
-            self._conf = _default
+        if default:
+            self._conf = default
         else:
             self.__update()
 
@@ -335,16 +344,20 @@ class ConfigProxy:
         return self._timestamp
 
     @property
-    def service(self) -> ConfigService:
-        return self._confservice
+    def builder(self) -> ConfBuilder:
+        return self._builder
+
+    @property
+    def service(self) -> ConfBuilder:
+        return self._builder
 
     def model_dump_json(self) -> str:
         return self.__update().model_dump_json()
 
-    def __update(self) -> Config:
-        if self._confservice._timestamp > self._timestamp:
-            self._timestamp = self._confservice._timestamp
-            self._conf = self._confservice.conf
+    def __update(self) -> ConfigBase:
+        if self._builder._timestamp > self._timestamp:
+            self._timestamp = self._builder._timestamp
+            self._conf = self._builder.conf
             for attr in self._configpath.split('.'):
                 if attr:
                     self._conf = getattr(self._conf, attr)
@@ -353,11 +366,11 @@ class ConfigProxy:
 
     def __getattr__(self, name):
         attr = getattr(self.__update(), name)
-        if isinstance(attr, Config):
+        if isinstance(attr, ConfigBase):
             # Wrap Config instance in ConfigProxy
             attr = ConfigProxy(
+                self._builder,
                 self._configpath + '.' + name,
-                self._confservice,
-                _default=attr,
+                default=attr,
             )
         return attr

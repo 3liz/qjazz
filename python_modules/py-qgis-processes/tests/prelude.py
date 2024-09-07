@@ -13,13 +13,14 @@ from py_qgis_processes.executor import (
     ExecutorConfig,
 )
 
-config.confservice.add_section('executor', ExecutorConfig)
+confservice = config.ConfBuilder()
+confservice.add_section('executor', ExecutorConfig)
 
-logger.setup_log_handler()
+logger.setup_log_handler(confservice.conf.logging.level)
 
 
 def Executor() -> _Executor:
-    return _Executor(config.confservice.conf.executor)
+    return _Executor(confservice.conf.executor)
 
 
 # Set config path for worker

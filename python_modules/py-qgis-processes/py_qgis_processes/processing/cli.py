@@ -35,7 +35,9 @@ from py_qgis_contrib.core.condition import assert_postcondition
 
 from .config import ProcessingConfig
 
-config.confservice.add_section('processing', ProcessingConfig, field=...)
+confservice = config.ConfBuilder()
+
+confservice.add_section('processing', ProcessingConfig, field=...)
 
 
 class ConfigProto(Protocol):
@@ -54,10 +56,10 @@ def load_configuration(
     else:
         cnf = {}
 
-    config.confservice.validate(cnf)
+    confservice.validate(cnf)
     logger.setup_log_handler(logger.LogLevel.TRACE if verbose else logger.LogLevel.ERROR)
 
-    return config.confservice.conf
+    return confservice.conf
 
 
 def init_qgis(
@@ -163,18 +165,23 @@ def dump_config(
     if schema:
         match out_format:
             case 'json':
-                json_schema = config.confservice.json_schema()
-                echo(TypeAdapter(JsonValue).dump_json(json_schema, indent=4))
+                json_schema = confservice.json_schema()
+                echo(
+                    TypeAdapter(JsonValue).dump_json(
+                        json_schema,  # type: ignore [arg-type]
+                        indent=4,
+                    ),
+                )
             case 'yaml':
                 from ruamel.yaml import YAML
-                json_schema = config.confservice.json_schema()
+                json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
             case 'toml':
-                config.confservice.dump_toml_schema(sys.stdout)
+                confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
-        echo(cast(config.Config, conf).model_dump_json(indent=4))
+        echo(cast(config.ConfigBase, conf).model_dump_json(indent=4))
 
 
 #

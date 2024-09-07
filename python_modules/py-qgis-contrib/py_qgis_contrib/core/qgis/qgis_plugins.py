@@ -87,7 +87,7 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
     return paths
 
 
-class QgisPluginConfig(config.Config):
+class QgisPluginConfig(config.ConfigBase):
     paths: Annotated[
         List[DirectoryPath],
         AfterValidator(_validate_plugins_paths),

@@ -16,14 +16,12 @@ from typing_extensions import (
 )
 
 from py_qgis_contrib.core.config import (
-    Config as BaseConfig,
-)
-from py_qgis_contrib.core.config import (
+    ConfigBase,
     SSLConfig,
 )
 
 
-class SecurityConfig(BaseConfig):
+class SecurityConfig(ConfigBase):
     """Message signing configuration"""
     cert_store: DirectoryPath
     keyfile:  FilePath
@@ -35,7 +33,7 @@ LOCAL_BROKER = ""
 LOCAL_BACKEND = "localhost:6379/0"
 
 
-class CeleryConfig(BaseConfig):
+class CeleryConfig(ConfigBase):
     """Celery configuration"""
     broker_host: str = Field(default=LOCAL_BROKER, title="Celery amqp broker host")
     broker_use_ssl: bool = False

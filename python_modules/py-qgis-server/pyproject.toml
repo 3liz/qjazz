@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-qgis-server"
+description = "Cloud ready Qgis server services"
+requires-python = ">= 3.10"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX",
+]
+dependencies = [
+    "py-qgis-contrib==1.0.0.dev0",
+    "py-qgis-cache==1.0.0.dev0",
+    "aiohttp",
+    "grpcio",
+    "grpcio-tools",
+    "grpcio-health-checking",
+    "click",
+]
+version = "1.0.0.dev0"
+
+[project.optional-dependencies]
+amqp = ["py-amqp-client>=2.0.0"]
+admin = [
+    "docker",
+    "dnspython",
+    "jsondiff",
+]
+
+[[project.authors]]
+name = "David Marteau"
+email = "dmarteau@3liz.org"
+
+[tool.setuptools.packages.find]
+include = [
+    "py_qgis_http", 
+    "py_qgis_http.*", 
+    "py_qgis_rpc",
+    "py_qgis_rpc.*",
+    "py_qgis_admin",
+    "py_qgis_admin.*",
+]
+
+[tool.autopep8]
+exclude = "*_pb2.py, *_pb2_grpc.py"
+
+[tool.ruff]
+extend = "../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+"py_qgis_http/config.py" = ["T201"]

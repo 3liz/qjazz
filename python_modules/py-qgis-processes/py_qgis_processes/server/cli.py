@@ -12,9 +12,9 @@ from pydantic import (
 )
 from typing_extensions import Optional
 
-from py_qgis_contrib.core import config, logger
+from py_qgis_contrib.core import logger
 
-from .server import load_configuration, serve
+from .server import confservice, load_configuration, serve
 
 FilePathType = click.Path(
     exists=True,
@@ -76,15 +76,20 @@ def dump_config(
     if schema:
         match out_format:
             case 'json':
-                json_schema = config.confservice.json_schema()
-                echo(TypeAdapter(JsonValue).dump_json(json_schema, indent=4))
+                json_schema = confservice.json_schema()
+                echo(
+                    TypeAdapter(JsonValue).dump_json(
+                        json_schema,  # type: ignore [arg-type]
+                        indent=4,
+                    ),
+                )
             case 'yaml':
                 from ruamel.yaml import YAML
-                json_schema = config.confservice.json_schema()
+                json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
             case 'toml':
-                config.confservice.dump_toml_schema(sys.stdout)
+                confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
         echo(conf.model_dump_json(indent=4))

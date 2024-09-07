@@ -12,6 +12,7 @@ from ._handlers import (
 )
 from .accesspolicy import AccessPolicy
 from .executor import Executor
+from .jobrealm import JobRealmConfig
 from .models import ErrorResponse
 from .utils import redirect_trailing_slash
 
@@ -27,11 +28,13 @@ class Handler(Services, Processes, Jobs, WebUI):
         policy: AccessPolicy,
         timeout: int,
         enable_ui: bool,
+        jobrealm: JobRealmConfig,
     ):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
         self._enable_ui = enable_ui
+        self._jobrealm = jobrealm
 
         self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
 

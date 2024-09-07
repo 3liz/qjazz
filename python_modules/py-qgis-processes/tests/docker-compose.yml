@@ -18,7 +18,6 @@ services:
     - worker
   web:
     image: ${QGIS_IMAGE}
-    working_dir: /src/python_modules/py-qgis-processes
     command: ${SRCDIR}/tests/run-server.sh
     volumes:
     - { type: bind, source: "../../../", target: /src }

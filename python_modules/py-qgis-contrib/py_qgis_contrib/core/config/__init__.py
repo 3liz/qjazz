@@ -1,14 +1,13 @@
 
 from ._models import *  # noqa
-from ._service import (  # noqa
-    Config,
+from ._service import (  # noqa F401
+    ConfBuilder,
+    ConfigBase,
     ConfigError,
     ConfigProxy,
-    ConfigService,
     SectionExists,
-    confservice,
+    config_version,
     read_config_toml,
     section,
 )
 
-ConfigBase = Config

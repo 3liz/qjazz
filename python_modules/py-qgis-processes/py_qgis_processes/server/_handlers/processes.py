@@ -26,7 +26,6 @@ from .protos import (
     ProcessSummary,
     ProjectRequired,
     RunProcessException,
-    get_job_realm,
     href,
     make_link,
     public_url,
@@ -227,7 +226,7 @@ class Processes(HandlerProto):
         prefer = ExecutePrefs(request)
 
         # Set job realm
-        realm = get_job_realm(request)
+        realm = self._jobrealm.get_job_realm(request)
 
         result = self._executor.execute(
             service,

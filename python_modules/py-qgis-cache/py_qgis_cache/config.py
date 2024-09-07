@@ -42,7 +42,7 @@ def _qgis_env_flag_validator(name: str) -> Callable[[bool, ValidationInfo], bool
     return validator
 
 
-class ProjectsConfig(config.Config):
+class ProjectsConfig(config.ConfigBase):
     trust_layer_metadata: Annotated[
         bool,
         AfterValidator(_qgis_env_flag_validator('QGIS_TRUST_LAYER_METADATA')),

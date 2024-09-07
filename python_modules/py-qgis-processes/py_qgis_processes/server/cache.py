@@ -31,7 +31,9 @@ class Entry:
 
 
 class CleanupConfProto(Protocol):
-    update_interval: int
+    @property
+    def update_interval(self) -> int:
+        ...
 
 
 class ServiceCache:

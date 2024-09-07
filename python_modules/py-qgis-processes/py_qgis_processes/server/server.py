@@ -25,10 +25,10 @@ from typing_extensions import (
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import (
+    ConfBuilder,
     ConfigBase,
     NetInterface,
     SSLConfig,
-    confservice,
     read_config_toml,
     section,
 )
@@ -43,6 +43,7 @@ from .cache import ServiceCache
 from .executor import Executor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, Handler
+from .jobrealm import JobRealmConfig
 from .models import ErrorResponse, RequestHandler
 
 try:
@@ -112,6 +113,8 @@ def format_interface(conf: ServerConfig) -> str:
             return str(socket)
 
 
+confservice = ConfBuilder()
+
 # Add ExecutorConfig section
 confservice.add_section("executor", ExecutorConfig)
 
@@ -123,6 +126,7 @@ class ConfigProto(Protocol):
     executor: ExecutorConfig
     access_policy: AccessPolicyConfig
     oapi: swagger.OapiConfig
+    job_realm: JobRealmConfig
 
     def model_dump_json(self, *args, **kwargs) -> str:
         ...
@@ -372,6 +376,7 @@ def create_app(conf: ConfigProto) -> web.Application:
         policy=access_policy,
         timeout=conf.server.timeout,
         enable_ui=conf.server.enable_ui,
+        jobrealm=conf.job_realm,
     )
 
     app.add_routes(handler.routes)
@@ -414,6 +419,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
         policy=DummyAccessPolicy(),
         timeout=0,
         enable_ui=False,
+        jobrealm=cast(JobRealmConfig, None),
     )
     app = web.Application()
     app.add_routes(handler.routes)
