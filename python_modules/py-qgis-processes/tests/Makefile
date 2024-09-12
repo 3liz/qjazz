@@ -29,8 +29,7 @@ FLAVOR:=release
 WEB_PORT:=4100
 
 env: workdir
-	@mkdir -p .local
-	echo "Creating environment file for docker-compose"
+	@mkdir -p $(DOCKER_COMPOSE)Creating environment file for docker-compose"
 	cat <<-EOF > .env
 		USER_ID=$(shell id -u)
 		GROUP_ID=$(shell id -g)
@@ -45,18 +44,20 @@ up: env
 	docker compose $(COMPOSE_OPTS) up -d -V --quiet-pull --remove-orphans \
 		--force-recreate
 
+DOCKER_COMPOSE:=docker compose
+
 # Run test stack
 run-all: export COMPOSE_OPTS=--profile worker
 run: up
-	docker compose logs -f worker
+	$(DOCKER_COMPOSE) logs -f worker
 
 run-all: export COMPOSE_OPTS=--profile web --profile worker
 run-all: up
-	docker compose logs -f web
+	$(DOCKER_COMPOSE) logs -f web
 
 # Restart worker
 restart: 
-	docker compose up -d --force-recreate worker
+	$(DOCKER_COMPOSE) up -d --force-recreate worker
 
 # Equivalent run using celery config
 run-celery: export PY_QGIS_PROCESSES_CONFIG=$(CURDIR)/worker-config.toml

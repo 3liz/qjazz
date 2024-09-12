@@ -3,6 +3,8 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
+OPTIONAL_DEPENDENCIES=celery
+
 PYTHON_PKG=py_qgis_contrib
 
 TESTDIR=tests

@@ -36,7 +36,7 @@ services:
       - 127.0.0.1:${WEB_PORT}:4000 
 
   rabbitmq:
-    image: rabbitmq:3
+    image: rabbitmq:3-alpine
 
   redis:
     image: redis:6-alpine

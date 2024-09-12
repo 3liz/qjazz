@@ -128,8 +128,3 @@ class Handler(Services, Processes, Jobs, WebUI):
         if project and not project.startswith('/'):
             project = f"/{project}"
         return project
-        if project and not project.startswith('/'):
-            project = f"/{project}"
-
-        if project and not project.startswith('/'):
-            project = f"/{project}"

@@ -1,6 +1,7 @@
 __pycache__
 ABOUT_CACHE.md
 .ipython
+.cache
 
 *.egg-info
 /.activate
