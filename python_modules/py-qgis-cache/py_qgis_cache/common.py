@@ -10,13 +10,15 @@
 """
 import urllib.parse
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 
 from typing_extensions import (
     Iterator,
     Optional,
+    Protocol,
     Union,
+    runtime_checkable,
 )
 
 from qgis.core import QgsProject
@@ -35,8 +37,9 @@ class ProjectMetadata:
     last_modified: int
 
 
-class ProtocolHandler(ABC):
-    """ Abstract class for protocol handler
+@runtime_checkable
+class ProtocolHandler(Protocol):
+    """ Protocol class for protocol handler
     """
 
     @abstractmethod
@@ -63,7 +66,7 @@ class ProtocolHandler(ABC):
 
     @abstractmethod
     def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
-        """ Return project metadate
+        """ Return project metadata
         """
 
     @abstractmethod

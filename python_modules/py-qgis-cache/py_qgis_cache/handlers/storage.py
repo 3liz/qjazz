@@ -119,7 +119,7 @@ def register_handlers(resolvers: Optional[Dict[str, ResolverFactory]] = None):
         )
 
 
-def init_storage_handlers(confdir: Optional[Path]):
+def init_storage_handlers():
     """ Initialize storage handlers from resolver file
     """
     register_handlers()

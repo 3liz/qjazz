@@ -70,7 +70,7 @@ from py_qgis_contrib.core import componentmanager, logger
 # Import default handlers for auto-registration
 from .common import ProjectMetadata, ProtocolHandler, Url
 from .config import ProjectsConfig, validate_url
-from .handlers import init_storage_handlers
+from .handlers import HandlerConfig, init_storage_handlers, register_protocol_handler
 from .storage import StrictCheckingFailure, UnreadableResource
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
@@ -128,9 +128,6 @@ class CheckoutStatus(Enum):
     UPDATED = 5
 
 
-PROTOCOL_HANDLER_ENTRYPOINTS = '3liz.org.cache.protocol_handler.1'
-
-
 class CacheManager:
     """ Handle Qgis project cache
     """
@@ -139,11 +136,12 @@ class CacheManager:
     UnreadableResource = UnreadableResource
 
     @classmethod
-    def initialize_handlers(cls: Type[Self], confdir: Optional[Path] = None):
+    def initialize_handlers(cls: Type[Self], configs: Dict[str, HandlerConfig] = {}):
         # Register Qgis storage handlers
-        init_storage_handlers(confdir)
+        init_storage_handlers()
         # Load protocol handlers
-        componentmanager.register_entrypoints(PROTOCOL_HANDLER_ENTRYPOINTS)
+        for scheme, conf in configs.items():
+            register_protocol_handler(scheme, conf)
 
     def __init__(
             self,

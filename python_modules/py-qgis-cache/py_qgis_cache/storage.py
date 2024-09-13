@@ -67,7 +67,7 @@ def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
         raise UnreadableResource(uri)
 
     if badlayerh and not config.ignore_bad_layers:
-        if  not badlayerh.validateLayers(project):
+        if not badlayerh.validateLayers(project):
             raise StrictCheckingFailure(uri)
 
     if config.disable_advertised_urls:
