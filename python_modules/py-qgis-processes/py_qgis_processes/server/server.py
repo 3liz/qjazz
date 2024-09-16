@@ -45,6 +45,7 @@ from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, Handler
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse, RequestHandler
+from .storage import StorageConfig
 
 try:
     __version__ = version('py_qgis_processes')
@@ -118,6 +119,9 @@ confservice = ConfBuilder()
 # Add ExecutorConfig section
 confservice.add_section("executor", ExecutorConfig)
 
+# Add StorageConfig section
+confservice.add_section("storage", StorageConfig)
+
 
 # Allow type validation
 class ConfigProto(Protocol):
@@ -127,6 +131,7 @@ class ConfigProto(Protocol):
     access_policy: AccessPolicyConfig
     oapi: swagger.OapiConfig
     job_realm: JobRealmConfig
+    storage: StorageConfig
 
     def model_dump_json(self, *args, **kwargs) -> str:
         ...
@@ -377,6 +382,7 @@ def create_app(conf: ConfigProto) -> web.Application:
         timeout=conf.server.timeout,
         enable_ui=conf.server.enable_ui,
         jobrealm=conf.job_realm,
+        storage=conf.storage,
     )
 
     app.add_routes(handler.routes)
@@ -420,6 +426,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
         timeout=0,
         enable_ui=False,
         jobrealm=cast(JobRealmConfig, None),
+        storage=cast(StorageConfig, None),
     )
     app = web.Application()
     app.add_routes(handler.routes)

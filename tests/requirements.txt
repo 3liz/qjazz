@@ -9,6 +9,7 @@ types-psutil
 types-PyYAML
 types-toml
 types-requests
+types-aiofiles
 sphinx
 sphinx-rtd-theme
 sphinxcontrib-httpdomain

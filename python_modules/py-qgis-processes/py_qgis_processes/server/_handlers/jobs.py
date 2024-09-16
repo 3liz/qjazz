@@ -3,23 +3,20 @@ from datetime import datetime
 from urllib.parse import urlencode
 
 from aiohttp import web
-from pydantic import ByteSize, Field, TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 from typing_extensions import (
     Annotated,
     Self,
     Sequence,
     TypeVar,
-    cast,
 )
 
-from ...schemas import Link as LinkAny
 from .protos import (
     ErrorResponse,
     HandlerProto,
     JobResultsAdapter,
     JobStatus,
     Link,
-    ProcessFiles,
     ProcessLog,
     href,
     make_link,
@@ -42,34 +39,6 @@ class LogResponse(swagger.JsonModel):
     @classmethod
     def from_details(cls, details: ProcessLog, links: Sequence[Link]) -> Self:
         return cls(timestamp=details.timestamp, log=details.log, links=links)
-
-
-class FileLink(LinkAny):
-    display_size: str
-
-    @classmethod
-    def from_link(cls, link: LinkAny) -> Self:
-        size = cast(int, link.length)
-        return cls(
-            href=link.href,
-            length=size,
-            mime_type=link.mime_type,
-            title=link.title,
-            display_size=ByteSize(size).human_readable(decimal=True),
-        )
-
-
-@swagger.model
-class FilesResponse(swagger.JsonModel):
-    files: Sequence[FileLink]
-    links: Sequence[Link]
-
-    @classmethod
-    def from_files(cls, files: ProcessFiles, links: Sequence[Link]) -> Self:
-        return cls(
-            links=links,
-            files=[FileLink.from_link(link) for link in files.links],
-        )
 
 
 LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
@@ -419,63 +388,6 @@ class Jobs(HandlerProto):
             content_type="application/json",
             text=LogResponse.from_details(
                 details=log_d,
-                links=[
-                    make_link(
-                        request,
-                        path=location,
-                        rel="self",
-                        title="Job execution log",
-                    ),
-                ],
-            ).model_dump_json(),
-        )
-
-    async def job_files(self, request: web.Request) -> web.Response:
-        """
-        summary: Get Job process execution files
-        description: |
-            Returns the job processe execution files
-        parameters:
-            - in: path
-              name: JobId
-              schema:
-                type: string
-              required: true
-              description: Job id
-        tags:
-          - jobs
-        responses:
-            "200":
-                description: >
-                    Job log
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/definitions/FilesResponse'
-            "404":
-                description: Job not found
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/definitions/ErrorResponse'
-        """
-        job_id = request.match_info['JobId']
-
-        files = await self._executor.files(
-            job_id,
-            realm=self._jobrealm.job_realm(request),
-            timeout=self._timeout,
-        )
-
-        if not files:
-            return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
-
-        location = self.format_path(request, f"/jobs/{job_id}/files")
-
-        return web.Response(
-            content_type="application/json",
-            text=FilesResponse.from_files(
-                files=files,
                 links=[
                     make_link(
                         request,

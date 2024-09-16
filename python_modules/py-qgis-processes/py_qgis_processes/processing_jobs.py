@@ -205,7 +205,7 @@ def execute_process(
     except AttributeError:
         public_url = None
 
-    return ctx.qgis_context.execute(
+    result, _ = ctx.qgis_context.execute(
         ctx.task_id,
         ident,
         request,
@@ -213,3 +213,8 @@ def execute_process(
         project_path=project_path,
         public_url=public_url,
     )
+
+    # Move files to store
+    self.app.store_files(ctx.task_id, public_url)
+
+    return result

@@ -4,11 +4,13 @@
 import mimetypes
 import shutil
 
+from itertools import chain
 from time import time
 
 import redis
 
 from celery.signals import (
+    worker_before_create_process,
     worker_ready,
     worker_shutdown,
 )
@@ -16,12 +18,14 @@ from celery.worker.control import (
     control_command,
     inspect_command,
 )
+from pydantic import TypeAdapter
 from typing_extensions import (
     Any,
     Callable,
     Iterator,
     List,
     Optional,
+    Sequence,
 )
 
 from py_qgis_contrib.core import logger
@@ -29,18 +33,23 @@ from py_qgis_contrib.core.celery import Job, Worker
 from py_qgis_contrib.core.utils import to_utc_datetime
 
 from ..processing.config import ProcessingConfig
-from ..schemas import Link
 from . import registry
 from .config import load_configuration
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
 from .models import (
+    Link,
     ProcessFilesVersion,
     ProcessLogVersion,
     WorkerPresenceVersion,
 )
 from .threads import Event, PeriodicTask
 from .watch import WatchFile
+
+LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
+
+
+FILE_LINKS = 'links.json'
 
 #
 #  Signals
@@ -56,6 +65,10 @@ def on_worker_ready(sender, *args, **kwargs):
 def on_worker_shutdown(sender, *args, **kwargs):
     sender.app.on_worker_shutdown()
 
+
+@worker_before_create_process.connect
+def on_worker_before_create_process(sender, *args, **kwargs):
+    sender.app._store.before_create_process()
 
 #
 # Control commands
@@ -106,6 +119,20 @@ def job_files(state, job_id, public_url):
     return state.consumer.app.job_files(job_id, public_url).model_dump()
 
 
+@inspect_command(
+    args=[('job_id', str), ('resource', str), ('expiration', int)],
+)
+def download_url(state, job_id, resource, expiration):
+    try:
+        return state.consumer.app.download_url(
+            job_id,
+            resource,
+            expiration,
+        ).model_dump()
+    except FileNotFoundError as err:
+        logger.error(err)
+        return None
+
 #
 # Worker
 #
@@ -139,6 +166,8 @@ class QgisWorker(Worker):
         self._workdir = conf.processing.workdir
         self._store_url = conf.processing.store_url
         self._processing_config = conf.processing
+
+        self._storage = conf.storage.create_instance()
 
         #
         # Init cleanup task
@@ -196,7 +225,7 @@ class QgisWorker(Worker):
         """ Return a proper reference url for the resource
         """
         return store_reference_url(
-            self._processing_config.store_url,
+            self._store_url,
             job_id,
             resource,
             public_url,
@@ -214,11 +243,15 @@ class QgisWorker(Worker):
                     job_id = jobdir.name
                     if registry.exists(self, job_id):
                         continue
+
+                    logger.info("=== Cleaning jobs resource: %s", job_id)
+                    self._storage.remove(job_id, workdir=self._workdir)
+
                     try:
-                        logger.info("=== Cleaning jobs resource: %s", job_id)
                         shutil.rmtree(jobdir)
                     except Exception as err:
                         logger.error("Failed to remove directory '%s': %s", jobdir, err)
+
         except redis.lock.LockError:
             pass
 
@@ -260,32 +293,76 @@ class QgisWorker(Worker):
 
     def job_files(self, job_id: str, public_url: str | None) -> ProcessFilesVersion:
         """Returns job execution files"""
+        p = self._workdir.joinpath(job_id, FILE_LINKS)
+        if p.exists():
+            with p.open() as f:
+                links = LinkSequence.validate_json(f.read())
 
-        workdir = self._workdir.joinpath(job_id)
+            # Update reference according to the given public_url
+            def update_ref(link: Link) -> Link:
+                ref = self.store_reference_url(job_id, link.title, public_url)
+                return link.model_copy(update={'ref': ref})
 
-        def _make_links(files: Iterator[str]) -> Iterator[Link]:
-            for name in files:
-                file = workdir.joinpath(name)
-                if not file.is_file():
+            files = ProcessFilesVersion(links=tuple(update_ref(link) for link in links))
+        else:
+            files = ProcessFilesVersion(links=())
+
+        return files
+
+    def download_url(self, job_id: str, resource: str, expiration: int) -> Link:
+        """ Returns a temporary download url
+        """
+        return self._storage.download_url(
+            job_id,
+            resource,
+            workdir=self._workdir,
+            expires=expiration,
+        )
+
+    def store_files(self, job_id: str, public_url: str):
+        """ Move files to storage
+        """
+        jobdir = self._workdir.joinpath(job_id)
+        files = tuple(QgisContext.published_files(jobdir))
+
+        # Write the downloadables file links
+        def _make_links() -> Iterator[Link]:
+            for p in files:
+                # Drop non-relative files to current
+                # workdir since we don't know how to
+                # download them
+                if not p.is_relative_to(jobdir):
                     continue
 
-                content_type = mimetypes.types_map.get(file.suffix)
-                size = file.stat().st_size
+                name = str(p.relative_to(jobdir))
+                content_type = mimetypes.types_map.get(p.suffix)
+                size = p.stat().st_size
                 yield Link(
                     href=self.store_reference_url(job_id, name, public_url),
-                    mime_type=content_type,
+                    mime_type=content_type or "application/octet-stream",
                     length=size,
                     title=name,
                 )
 
-        files = workdir.joinpath(QgisContext.PUBLISHED_FILES)
-        if files.exists():
-            with files.open() as f:
-                links = tuple(_make_links(name.strip() for name in f.readlines()))
-        else:
-            links = ()
+        with jobdir.joinpath(FILE_LINKS).open('w') as f:
+            f.write(LinkSequence.dump_json(tuple(_make_links())).decode())
 
-        return ProcessFilesVersion(links=links)
+        #
+        # Import published files and auxiliary files
+        #
+        self._storage.move_files(
+            job_id,
+            workdir=self._workdir,
+            files=chain(
+                files,
+                jobdir.glob('**/*.zip'),
+                jobdir.glob('**/*.qgs'),
+                jobdir.glob('**/*.qgz'),
+                jobdir.glob('**/*.qml'),
+                jobdir.glob('**/*.sld'),
+                jobdir.glob('**/*.db'),
+            ),
+        )
 
     def create_context(self) -> QgisContext:
         return QgisContext(self.processing_config)

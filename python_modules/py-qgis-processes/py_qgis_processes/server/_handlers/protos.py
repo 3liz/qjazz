@@ -26,6 +26,7 @@ from ..executor import (
 )
 from ..jobrealm import JOB_REALM_HEADER, JobRealmConfig
 from ..models import ErrorResponse
+from ..storage import StorageConfig
 from ..utils import Link, href, make_link, public_url
 
 JOB_ID_HEADER = "X-Job-Id"
@@ -46,6 +47,7 @@ class HandlerProto(Protocol):
     _timeout: int
     _staticpath: Path
     _jobrealm: JobRealmConfig
+    _storage: StorageConfig
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:
         ...

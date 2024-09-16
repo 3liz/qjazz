@@ -8,10 +8,11 @@ from typing_extensions import (
     Callable,
     List,
     Optional,
+    Tuple,
     cast,
 )
 
-from qgis.core import QgsProcessingFeedback
+from qgis.core import QgsProcessingFeedback, QgsProject
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_postcondition
@@ -160,7 +161,7 @@ class QgisContext(QgisContextBase):
         feedback: QgsProcessingFeedback,
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
-    ) -> JobResults:
+    ) -> Tuple[JobResults, Optional[QgsProject]]:
         """ Execute process """
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
@@ -181,7 +182,7 @@ class QgisContext(QgisContextBase):
         workdir = context.workdir
         workdir.mkdir(parents=True, exist_ok=not self._with_expiration)
         if self._with_expiration:
-            # Create a sentiner .job-expire file
+            # Create a sentinel .job-expire file
             workdir.joinpath(self.EXPIRE_FILE).open('a').close()
 
         if project:
@@ -193,7 +194,7 @@ class QgisContext(QgisContextBase):
         # Save list of published files
         with workdir.joinpath(self.PUBLISHED_FILES).open('w') as files:
             for file in context.files:
-                print(file, file=files)
+                print(file, file=files)  # noqa T201
 
         # Write modified project
         destination_project = context.destination_project
@@ -204,4 +205,4 @@ class QgisContext(QgisContextBase):
                 f"Failed to save destination project {destination_project.fileName()}",
             )
 
-        return results
+        return results, destination_project

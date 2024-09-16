@@ -96,7 +96,7 @@ class ProcessingContext(QgsProcessingContext):
 
         # Set project filename
         filename = get_valid_filename(name)
-        destination_project.setFileName(f"{self.workdir.joinpath(filename)}.qgs")
+        destination_project.setFileName(f"{self.workdir.joinpath(filename)}.qgz")
 
         # Store files as relative path
         destination_project.setFilePathStorage(Qgis.FilePathType.Relative)

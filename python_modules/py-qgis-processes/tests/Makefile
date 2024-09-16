@@ -11,7 +11,7 @@ start:
 	docker compose up -d
 
 stop:
-	docker compose --profile=web --profile=worker down -v --remove-orphans
+	docker compose --profile=all down -v --remove-orphans
 
 
 LOGLEVEL:=info
@@ -51,7 +51,7 @@ run-all: export COMPOSE_OPTS=--profile worker
 run: up
 	$(DOCKER_COMPOSE) logs -f worker
 
-run-all: export COMPOSE_OPTS=--profile web --profile worker
+run-all: export COMPOSE_OPTS=--profile all
 run-all: up
 	$(DOCKER_COMPOSE) logs -f web
 

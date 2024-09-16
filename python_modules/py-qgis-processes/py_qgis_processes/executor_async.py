@@ -22,6 +22,7 @@ from .executor import (  # noqa F401
     JobResults,
     JobStatus,
     JsonDict,
+    Link,
     PresenceDetails,
     ProcessDescription,
     ProcessFiles,
@@ -216,4 +217,24 @@ class Executor(_ExecutorBase):
             public_url=public_url,
             realm=realm,
             timeout=timeout,
+        )
+
+    async def download_url(
+        self,
+        job_id: str,
+        *,
+        resource: str,
+        timeout: int,
+        expiration: int,
+        realm: Optional[str] = None,
+    ) -> Optional[Link]:
+        """ Return download url """
+        return await asyncio.to_thread(
+            self._download_url,
+            job_id,
+            self._services,
+            resource=resource,
+            expiration=expiration,
+            timeout=timeout,
+            realm=realm,
         )

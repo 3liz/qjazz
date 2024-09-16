@@ -5,6 +5,7 @@ from ._service import (  # noqa F401
     ConfigBase,
     ConfigError,
     ConfigProxy,
+    ConfigSettings,
     SectionExists,
     config_version,
     read_config_toml,

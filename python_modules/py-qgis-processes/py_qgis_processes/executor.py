@@ -3,6 +3,7 @@ import itertools
 
 from dataclasses import dataclass
 from enum import IntEnum
+from random import randint
 from textwrap import dedent as _D
 from time import time
 
@@ -45,7 +46,7 @@ from .worker.exceptions import (
     ServiceNotAvailable,
     UnreachableDestination,
 )
-from .worker.models import ProcessFiles, ProcessLog, WorkerPresence
+from .worker.models import Link, ProcessFiles, ProcessLog, WorkerPresence
 
 
 class ExecutorConfig(ConfigBase):
@@ -141,7 +142,10 @@ class _ExecutorBase:
     ) -> JsonValue:
         """ Send an inspect command to one or more service instances """
         if not broadcast:
-            destination = (destination[0],)
+            # Pick a destination randomly, so that we can
+            # use all availables workers
+            index = randint(0, len(destination) - 1)
+            destination = (destination[index],)
 
         resp = self._celery.control.broadcast(
             name,
@@ -150,7 +154,7 @@ class _ExecutorBase:
             **kwargs,
         )
 
-        logger.trace("=_command '%s': %s", name, resp)
+        logger.trace("=command '%s': %s", name, resp)
 
         if reply and not resp:
             raise UnreachableDestination(f"{destination}")
@@ -749,6 +753,41 @@ class _ExecutorBase:
             case _:
                 return ProcessFiles.model_validate(response)
 
+    def _download_url(
+        self,
+        job_id: str,
+        services: ServiceDict,
+        *,
+        resource: str,
+        timeout: int,
+        expiration: int,
+        realm: Optional[str] = None,
+    ) -> Optional[Link]:
+        """ Return download_url (blocking) """
+        ti = registry.find_job(self._celery, job_id, realm=realm)
+        if not ti:
+            return None
+
+        destinations = self.get_destinations(ti.service, services)
+        # XXX Check that services are online (test for presence)
+        if not destinations:
+            raise ServiceNotAvailable(ti.service)
+
+        response = self.command(
+            'download_url',
+            arguments={'job_id': job_id, 'resource': resource, 'expiration': expiration},
+            destination=destinations,
+            timeout=timeout,
+        )
+
+        match response:
+            case {"error": msg}:
+                raise RuntimeError(f"Command 'process_files' failed with msg: {msg}")
+            case None:
+                return None
+            case _:
+                return Link.model_validate(response)
+
 
 # =============================
 # Executor; Synchronous version
@@ -906,4 +945,23 @@ class Executor(_ExecutorBase):
             public_url=public_url,
             realm=realm,
             timeout=timeout,
+        )
+
+    def download_url(
+        self,
+        job_id: str,
+        *,
+        resource: str,
+        timeout: int,
+        expiration: int,
+        realm: Optional[str] = None,
+    ) -> Optional[Link]:
+        """ Return download url """
+        return self._download_url(
+            job_id,
+            self._services,
+            resource=resource,
+            expiration=expiration,
+            timeout=timeout,
+            realm=realm,
         )

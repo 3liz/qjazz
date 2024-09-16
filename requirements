@@ -23,14 +23,12 @@ def packages():
     yield project['project']['name']
     if not optional_dependencies:
         return 
+    print("Optional dependencies", optional_dependencies, file=sys.stderr)
     for option in options:
         dependencies=optional_dependencies.get(option)
+        print("==", option, dependencies, file=sys.stderr)
         if dependencies:
             for dep in dependencies:
                 yield re.match(r"^([^\>\=\<\s]*)", dep).groups()[0]
 
 print(",".join(f'{dep}' for dep in packages()))
-
-
-
-

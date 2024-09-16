@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from string import Template
 
-from typing_extensions import Optional
+from typing_extensions import Iterator, Optional
 
 from qgis.core import QgsProject
 from qgis.server import QgsServer
@@ -71,6 +71,18 @@ class QgisContext:
         CacheManager.initialize_handlers()
         cm = CacheManager(conf.projects)
         cm.register_as_service()
+
+    @classmethod
+    def published_files(cls, jobdir: Path) -> Iterator[Path]:
+        published = jobdir.joinpath(QgisContext.PUBLISHED_FILES)
+        if published.exists():
+            with published.open() as f:
+                files = (n for n in (name.strip() for name in f.readlines()) if n)
+                for file in files:
+                    p = jobdir.joinpath(file)
+                    if not p.is_file():
+                        continue
+                    yield p
 
     def __init__(self, conf: ProcessingConfig):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")

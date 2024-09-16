@@ -252,7 +252,7 @@ def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer:
             kwargs.update(cert=(str(ssl.certfile), str(ssl.keyfile)))
 
     resp = requests.request(method, href, headers=headers, stream=True, **kwargs)
-    if resp.status_code != 200:
+    if resp.status_code not in (200, 206):
         raise InputValueError("Reference request error: ({resp.status_code}) {resp.text}")
 
     part_size = 1024 * 64

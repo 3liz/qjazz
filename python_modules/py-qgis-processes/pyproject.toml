@@ -18,11 +18,13 @@ dependencies = [
     "async-timeout; python_version<'3.11'",
     "click",
     "requests",
+    "aiofiles",
 ]
 version = "1.0.0.dev0"
 
 [project.optional-dependencies]
 server = ["aiohttp"]
+minio = ["minio"]
 
 [[project.authors]]
 name = "David Marteau"

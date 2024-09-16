@@ -22,6 +22,7 @@ from py_qgis_contrib.core.condition import (
 from py_qgis_processes.schemas import LinkHttp
 
 from ..processing.config import ProcessingConfig
+from .storage import StorageConfig
 
 CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
 
@@ -108,15 +109,17 @@ class WorkerConfig(CeleryConfig):
 class ConfigProto:
     processing: ProcessingConfig
     worker: WorkerConfig
+    storage: StorageConfig
 
 
 confservice = config.ConfBuilder()
 
 #
-# Add processing configuration
+# Add processing/storage configuration
 #
 
 confservice.add_section('processing', ProcessingConfig, field=...)
+confservice.add_section('storage', StorageConfig)
 
 
 def load_configuration() -> ConfigProto:

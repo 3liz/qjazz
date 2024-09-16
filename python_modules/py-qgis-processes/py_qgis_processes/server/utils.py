@@ -1,5 +1,11 @@
+import ssl
+
+import aiohttp
+
 from aiohttp import web
 from typing_extensions import Optional
+
+from py_qgis_contrib.core import logger
 
 from ..schemas import LinkHttp
 
@@ -52,3 +58,23 @@ def redirect_trailing_slash():
         raise web.HTTPFound(path)
 
     return _redirect
+
+
+async def stream_from(
+    href: str,
+    response: web.StreamResponse,
+    chunksize: int,
+    ssl_context: ssl.SSLContext | bool = False,
+):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(href, ssl=ssl_context) as resp:
+            if resp.status not in (200, 206):
+                logger.error("Connection to '%s' returned %s", href, resp.status)
+                raise web.HTTPBadGateway()
+
+                try:
+                    async for chunk in resp.content.iter_chunked(chunksize):
+                        await response.write(chunk)
+                except OSError as err:
+                    logger.error("Connection cancelled: %s", err)
+                    raise

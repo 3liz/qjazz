@@ -8,19 +8,21 @@ from ._handlers import (
     Jobs,
     Processes,
     Services,
+    Storage,
     WebUI,
 )
 from .accesspolicy import AccessPolicy
 from .executor import Executor
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse
+from .storage import StorageConfig
 from .utils import redirect_trailing_slash
 
 API_VERSION = "v1"
 PAGKAGE_NAME = "py_qgis_processes"
 
 
-class Handler(Services, Processes, Jobs, WebUI):
+class Handler(Services, Processes, Jobs, WebUI, Storage):
 
     def __init__(self,
         *,
@@ -29,12 +31,14 @@ class Handler(Services, Processes, Jobs, WebUI):
         timeout: int,
         enable_ui: bool,
         jobrealm: JobRealmConfig,
+        storage: StorageConfig,
     ):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
         self._enable_ui = enable_ui
         self._jobrealm = jobrealm
+        self._storage = storage
 
         self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
 
@@ -89,6 +93,7 @@ class Handler(Services, Processes, Jobs, WebUI):
                     allow_head=False,
                 ),
                 web.get(f"{prefix}/jobs/{{JobId}}/files/", self.job_files, allow_head=False),
+                web.get(f"{prefix}/jobs/{{JobId}}/files/{{Resource:.+}}", self.job_download),
 
                 # Services
                 web.get(f"{prefix}/services/", self.list_services, allow_head=False),

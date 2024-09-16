@@ -40,9 +40,9 @@ scan::
 # Output frozen requirements
 requirements: $(REQUIREMENTS)
 	@echo "Optional dependencies: $(OPTIONAL_DEPENDENCIES)"
-	@pipdeptree -p "$$($(DEPTH)/requirements $(OPTIONAL_DEPENDENCIES))" -f \
-		| sed "s/^[ \t]*//" | sed "/^\-e .*/d" \
-		| sort | uniq > $<
+	pipdeptree -l -p $$($(DEPTH)/requirements $(OPTIONAL_DEPENDENCIES)) -f \
+	| sed "s/^[ \t]*//" | sed "/^\-e .*/d" \
+	| sort | uniq > $<
 	@echo "Requirements written in $<"
 
 
