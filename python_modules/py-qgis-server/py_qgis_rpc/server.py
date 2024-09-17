@@ -14,18 +14,18 @@ from typing_extensions import Optional
 from py_qgis_contrib.core import logger
 
 from ._grpc import api_pb2_grpc
-from .restore import create_restore_object
+from .pool import WorkerPool
+from .restore import Restore
 from .service import QgisAdmin, QgisServer
 
 
-async def serve(pool):
+async def serve(pool: WorkerPool, restore: Restore):
     """ Run server from pool
     """
     # Init pool queue
     await pool.initialize()
 
     # Restore cache if needed
-    restore = create_restore_object()
     await restore.restore(pool)
 
     server = grpc.aio.server()
@@ -48,14 +48,17 @@ async def serve(pool):
         match iface.listen:
             case (addr, port):
                 listen_addr = f"{addr}:{port}"
-            case socket:
+            case str(socket):
                 listen_addr = socket
 
         if iface.use_ssl:
             # Load certificates
-            def _read_if(f: Path) -> Optional[bytes]:
-                with f.open('rb') as fp:
-                    return fp.read()
+            def _read_if(f: Optional[Path]) -> Optional[bytes]:
+                if f:
+                    with f.open('rb') as fp:
+                        return fp.read()
+                else:
+                    return None
 
             ssl = iface.ssl
 

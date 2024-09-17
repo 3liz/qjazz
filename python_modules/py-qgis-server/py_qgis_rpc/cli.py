@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from typing_extensions import Any, Optional
+from typing_extensions import Optional
 
 from py_qgis_contrib.core import config, logger
 
@@ -132,17 +132,22 @@ def serve_grpc(configpath: Optional[Path]):
     """
     import multiprocessing as mp
 
+    from .restore import create_restore_object
+
     mp.set_start_method('forkserver')
 
-    conf: Any = load_configuration(configpath)
+    conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
     conf.worker.plugins.do_install()
 
     pool = WorkerPool(conf.worker)
     pool.start()
+
+    restore = create_restore_object(conf.restore_cache)
+
     try:
-        asyncio.run(serve(pool))
+        asyncio.run(serve(pool, restore))
     finally:
         pool.terminate_and_join()
         logger.info("Server shutdown")

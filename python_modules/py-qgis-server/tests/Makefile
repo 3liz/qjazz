@@ -17,7 +17,7 @@ FLAVOR:=release
 
 WEB_PORT:=4100
 
-env: workdir
+env:
 	@mkdir -p .local
 	echo "Creating environment file for docker-compose"
 	cat <<-EOF > .env
@@ -27,6 +27,7 @@ env: workdir
 		COMPOSE_PROJECT_NAME=test-py-qgis-server
 		SRCDIR=/src/python_modules/py-qgis-server
 		WEB_PORT=$(WEB_PORT)
+		DEPTH=$(DEPTH)
 		EOF
 	cat .env
 

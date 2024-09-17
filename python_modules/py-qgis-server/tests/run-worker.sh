@@ -22,9 +22,9 @@ $PIP_INSTALL -q pip setuptools wheel
 $PIP_INSTALL -q --prefer-binary -r /src/docker/requirements.txt
 
 $PIP install --no-deps \
-    -e /src//python_modules/py-qgis-contrib   \
-    -e /src/python_modules/py-qgis-cache      \
+    -e /src/python_modules/py-qgis-contrib \
+    -e /src/python_modules/py-qgis-cache   \
     -e .
 
 
-exec $VENV_PATH/bin/python -m py_qgis_rpc -C tests/rpc-config.toml
+exec $VENV_PATH/bin/python -m py_qgis_rpc serve -C tests/config-rpc.toml
