@@ -68,7 +68,8 @@ class QgisContext:
         # Initialize cache manager
         #
         logger.info("Initializing cache manager...")
-        CacheManager.initialize_handlers()
+
+        CacheManager.initialize_handlers(conf.projects)
         cm = CacheManager(conf.projects)
         cm.register_as_service()
 
@@ -149,7 +150,7 @@ class QgisServerContext:
         if debug:
             logger.debug(show_qgis_settings())
 
-        CacheManager.initialize_handlers()
+        CacheManager.initialize_handlers(conf.projects)
         cm = CacheManager(conf.projects)
         cm.register_as_service()
 

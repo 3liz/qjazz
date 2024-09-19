@@ -6,12 +6,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from .config import HandlerConfig, register_protocol_handler
-from .file import *  # noqa: F403
-from .storage import init_storage_handlers
+from .config import HandlerConfig, register_protocol_handler  # noqa F401
 
-__all__ = [
-    'HandlerConfig',
-    'init_storage_handlers',
-    'register_protocol_handler',
-]
+
+def register_default_handlers():
+    from .file import FileProtocolHandler     # noqa F401
+    from .postgresql import PostgresHandler   # noqa F401
+    from .geopackage import GeoPackageHandler # noqa F401 
+    pass

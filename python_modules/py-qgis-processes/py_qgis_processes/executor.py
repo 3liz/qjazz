@@ -144,7 +144,7 @@ class _ExecutorBase:
         if not broadcast:
             # Pick a destination randomly, so that we can
             # use all availables workers
-            index = randint(0, len(destination) - 1)
+            index = randint(0, len(destination) - 1)  # nosec B311
             destination = (destination[index],)
 
         resp = self._celery.control.broadcast(

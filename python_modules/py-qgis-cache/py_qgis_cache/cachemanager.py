@@ -10,9 +10,7 @@
 
     Usage example
     ```
-    CacheManager.initialize_handlers()
-
-    cm = CacheManager()
+    cm = CacheManager(conf)
     # Resolve location
     url = cm.resolve_path("/my/project")
 
@@ -58,7 +56,6 @@ from typing_extensions import (
     Optional,
     Self,
     Tuple,
-    Type,
     assert_never,
 )
 
@@ -70,14 +67,17 @@ from py_qgis_contrib.core import componentmanager, logger
 # Import default handlers for auto-registration
 from .common import ProjectMetadata, ProtocolHandler, Url
 from .config import ProjectsConfig, validate_url
-from .handlers import HandlerConfig, init_storage_handlers, register_protocol_handler
-from .storage import StrictCheckingFailure, UnreadableResource
+from .errors import (
+    ResourceNotAllowed,
+    StrictCheckingFailure,
+    UnreadableResource,
+)
+from .handlers import (
+    register_default_handlers,
+    register_protocol_handler,
+)
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
-
-
-class ResourceNotAllowed(Exception):
-    pass
 
 
 @dataclass(frozen=True)
@@ -136,12 +136,33 @@ class CacheManager:
     UnreadableResource = UnreadableResource
 
     @classmethod
-    def initialize_handlers(cls: Type[Self], configs: Dict[str, HandlerConfig] = {}):
-        # Register Qgis storage handlers
-        init_storage_handlers()
-        # Load protocol handlers
-        for scheme, conf in configs.items():
+    def initialize_handlers(cls, config: ProjectsConfig):
+        """ Register handlers to component manager
+        """
+        register_default_handlers()
+        for scheme, conf in config.handlers.items():
             register_protocol_handler(scheme, conf)
+
+        # Validate rooturls
+        for _, rooturl in config.search_paths.items():
+            handler = cls.get_protocol_handler(rooturl.scheme)
+            handler.validate_rooturl(rooturl)
+
+    @classmethod
+    def get_service(cls) -> Self:
+        """ Return cache manager as a service.
+            This require that register_as_service has been called
+            in the current context
+        """
+        return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
+
+    @classmethod
+    def get_protocol_handler(cls, scheme: str) -> ProtocolHandler:
+        """ Find protocol handler for the given scheme
+        """
+        return componentmanager.get_service(
+            f'@3liz.org/cache/protocol-handler;1?scheme={scheme}',
+        )
 
     def __init__(
             self,
@@ -156,14 +177,6 @@ class CacheManager:
 
     def register_as_service(self):
         componentmanager.register_service(CACHE_MANAGER_CONTRACTID, self)
-
-    @classmethod
-    def get_service(cls: Type[Self]) -> Self:
-        """ Return cache manager as a service.
-            This require that register_as_service has been called
-            in the current context
-        """
-        return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
 
     @property
     def conf(self) -> ProjectsConfig:
@@ -186,13 +199,26 @@ class CacheManager:
             unresolved path are passed 'as is' and will
             be directly interpreted by the protocol handler
             corresponding to the url's scheme.
+
+            If the root url have '{path}' template pattern in the query
+            the it will be replaced by the relative path from the input.
+
+            Otherwise it will simply be appended to the root url path.
         """
         path = Path(path)
         # Find matching path
         for location, rooturl in self.conf.search_paths.items():
             if path.is_relative_to(location):
                 path = path.relative_to(location)
-                url = rooturl._replace(path=str(Path(rooturl.path, path)))
+
+                # Check for {path} template in rooturl
+                query = rooturl.query.format(path=path)
+                if query != rooturl.query:
+                    url = rooturl._replace(query=query)
+                else:
+                    # Simply append path to the rooturl path
+                    url = rooturl._replace(path=str(Path(rooturl.path, path)))
+
                 return url
 
         if allow_direct or self.conf.allow_direct_path_resolution:
@@ -200,13 +226,6 @@ class CacheManager:
             return validate_url(str(path))
         else:
             raise ResourceNotAllowed(str(path))
-
-    def get_protocol_handler(self, scheme: str) -> ProtocolHandler:
-        """ Find protocol handler for the given scheme
-        """
-        return componentmanager.get_service(
-            f'@3liz.org/cache/protocol-handler;1?scheme={scheme}',
-        )
 
     def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
         """ Collect projects metadata from search paths

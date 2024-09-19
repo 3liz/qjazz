@@ -7,6 +7,7 @@ from ._service import (  # noqa F401
     ConfigProxy,
     ConfigSettings,
     SectionExists,
+    SettingsConfigDict,
     config_version,
     read_config_toml,
     section,

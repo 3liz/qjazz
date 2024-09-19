@@ -67,7 +67,8 @@ def setup_server(conf: WorkerConfig) -> QgsServer:
     os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
 
     server = init_qgis_server(settings=conf.qgis_settings)
-    CacheManager.initialize_handlers()
+
+    CacheManager.initialize_handlers(projects)
 
     if logger.isEnabledFor(logger.LogLevel.DEBUG):
         print(show_qgis_settings())  # noqa T201
@@ -90,12 +91,12 @@ def worker_env() -> JsonValue:
 
 
 def qgis_server_run(
-        server: QgsServer,
-        conn: Connection,
-        conf: WorkerConfig,
-        event: EventClass,
-        name: str = "",
-        reporting: bool = True,
+    server: QgsServer,
+    conn: Connection,
+    conf: WorkerConfig,
+    event: EventClass,
+    name: str = "",
+    reporting: bool = True,
 ):
     """ Run Qgis server and process incoming requests
     """
@@ -165,7 +166,7 @@ def qgis_server_run(
                     _m.send_reply(conn, None)
                     break
                 # --------------------
-                # Cache managment
+                # Cache management
                 # --------------------
                 case _m.MsgType.CHECKOUT_PROJECT:
                     _op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)

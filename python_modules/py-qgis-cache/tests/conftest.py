@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from py_qgis_cache import ProjectsConfig
+from py_qgis_cache import CacheManager, ProjectsConfig
 
 
 @pytest.fixture(scope='session')
@@ -16,7 +16,7 @@ def data(request):
 def config(data):
     """ Setup configuration
     """
-    return ProjectsConfig(
+    conf = ProjectsConfig(
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
@@ -25,16 +25,17 @@ def config(data):
             '/france': f'{data}/france_parts/',
             '/montpellier': f'{data}/montpellier/',
             '/database': 'postgresql://?service=py-qgis',
+            '/mydb': 'postgresql://user@myddb?dbname=foo&project={path}',
         },
     )
+    CacheManager.initialize_handlers(conf)
+    return conf
 
 
 def pytest_sessionstart(session):
     try:
         from py_qgis_contrib.core import qgis
         qgis.init_qgis_application()
-        from py_qgis_cache import CacheManager
-        CacheManager.initialize_handlers()
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)
 

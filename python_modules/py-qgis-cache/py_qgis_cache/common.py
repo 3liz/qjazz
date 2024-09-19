@@ -23,7 +23,7 @@ from typing_extensions import (
 
 from qgis.core import QgsProject
 
-from .config import ProjectsConfig
+from .storage import ProjectLoaderConfig
 
 Url = urllib.parse.SplitResult
 
@@ -41,6 +41,11 @@ class ProjectMetadata:
 class ProtocolHandler(Protocol):
     """ Protocol class for protocol handler
     """
+    @abstractmethod
+    def validate_rooturl(self, rooturl: Url):
+        """ Validate the rooturl format
+        """
+        ...
 
     @abstractmethod
     def resolve_uri(self, url: Url) -> str:
@@ -70,7 +75,7 @@ class ProtocolHandler(Protocol):
         """
 
     @abstractmethod
-    def project(self, md: ProjectMetadata, config: ProjectsConfig) -> QgsProject:
+    def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """ Return project associated with metadata
         """
 

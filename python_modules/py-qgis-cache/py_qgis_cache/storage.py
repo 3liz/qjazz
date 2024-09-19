@@ -3,22 +3,29 @@
 # all rights reserved
 """ Handle Qgis storage metadata
 """
+from typing_extensions import Protocol
+
 from qgis.core import Qgis, QgsProject, QgsProjectBadLayerHandler
 from qgis.server import QgsServerProjectUtils
 
 from py_qgis_contrib.core import logger
 
-from .config import ProjectsConfig
+from .errors import StrictCheckingFailure, UnreadableResource
 
 
-class StrictCheckingFailure(Exception):
-    pass
-
-
-class UnreadableResource(Exception):
-    """ Indicates that the  ressource exists but is not readable
-    """
-    pass
+class ProjectLoaderConfig(Protocol):
+    @property
+    def trust_layer_metadata(self) -> bool: ...
+    @property
+    def disable_getprint(self) -> bool: ...
+    @property
+    def force_readonly_layers(self) -> bool: ...
+    @property
+    def dont_resolve_layers(self) -> bool: ...
+    @property
+    def disable_advertised_urls(self) -> bool: ...
+    @property
+    def ignore_bad_layers(self) -> bool: ...
 
 
 def remove_advertised_urls(project: QgsProject) -> None:
@@ -34,7 +41,7 @@ def remove_advertised_urls(project: QgsProject) -> None:
     project.writeEntry("WMTSUrl", "/", "")
 
 
-def load_project_from_uri(uri: str, config: ProjectsConfig) -> QgsProject:
+def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
     """ Read project from uri
 
         May be used by protocol-handlers to instanciate project

@@ -80,7 +80,7 @@ def init_qgis(
     if use_projects:
         from py_qgis_cache import CacheManager
 
-        CacheManager.initialize_handlers()
+        CacheManager.initialize_handlers(processing_config.projects)
 
         cm = CacheManager(processing_config.projects)
         cm.register_as_service()

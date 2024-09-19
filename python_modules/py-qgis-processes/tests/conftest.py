@@ -150,7 +150,7 @@ def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> 
 def cache_manager(cache_config, qgis_session):
     from py_qgis_cache import CacheManager
 
-    CacheManager.initialize_handlers()
+    CacheManager.initialize_handlers(cache_config)
     return CacheManager(cache_config)
 
 

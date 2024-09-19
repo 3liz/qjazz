@@ -18,13 +18,10 @@ from qgis.core import QgsProject
 from py_qgis_contrib.core import componentmanager, logger
 
 from ..common import ProjectMetadata, ProtocolHandler, Url
-from ..config import ProjectsConfig
-from ..storage import load_project_from_uri
+from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 # Allowed files suffix for projects
 PROJECT_SFX = ('.qgs', '.qgz')
-
-__all__ = []  # type: ignore
 
 
 def file_metadata(path: Path) -> ProjectMetadata:
@@ -62,6 +59,11 @@ class FileProtocolHandler(ProtocolHandler):
 
         return path
 
+    def validate_rooturl(self, rooturl: Url):
+        """ Validate the rooturl format
+        """
+        pass
+
     def resolve_uri(self, uri: Url) -> str:
         """ Override
         """
@@ -86,7 +88,7 @@ class FileProtocolHandler(ProtocolHandler):
             raise FileNotFoundError(str(path))
         return file_metadata(path)
 
-    def project(self, md: ProjectMetadata, config: ProjectsConfig) -> QgsProject:
+    def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """ Override
         """
         return load_project_from_uri(md.uri, config)

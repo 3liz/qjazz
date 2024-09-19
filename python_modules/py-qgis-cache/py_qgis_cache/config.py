@@ -1,12 +1,14 @@
 import os
 
-from urllib.parse import SplitResult, urlsplit, urlunsplit
+from textwrap import dedent as _D
+from urllib.parse import SplitResult, urlsplit
 
 from pydantic import (
     AfterValidator,
     Field,
     PlainSerializer,
     PlainValidator,
+    TypeAdapter,
     ValidationInfo,
     WithJsonSchema,
 )
@@ -14,9 +16,13 @@ from typing_extensions import Annotated, Callable, Dict
 
 from py_qgis_contrib.core import config
 
+from .handlers import HandlerConfig
+
+Bool = TypeAdapter(bool)
+
 
 def _getenv_bool(varname: str) -> bool:
-    return os.getenv(varname, 'no').lower() in ('1', 'yes', 'true')
+    return Bool.validate_python(os.getenv(varname, 'no'))
 
 
 def validate_url(v: str) -> SplitResult:
@@ -31,7 +37,7 @@ def validate_url(v: str) -> SplitResult:
 Url = Annotated[
     SplitResult,
     PlainValidator(validate_url),
-    PlainSerializer(lambda x: f'{urlunsplit(x)}', return_type=str),
+    PlainSerializer(lambda x: x.geturl(), return_type=str),
     WithJsonSchema({'type': 'str'}),
 ]
 
@@ -133,4 +139,29 @@ class ProjectsConfig(config.ConfigBase):
             "Uri are directly interpreted as valid Qgis project's path.\n"
             "WARNING: allowing this may be a security vulnerabilty."
         ),
+    )
+
+    handlers: Dict[str, HandlerConfig] = Field(
+        {},
+        title="Project storage Handler configurations",
+        description=(
+            "Configure storage handlers.\n"
+            "The name will be used as scheme for project's search path\n"
+            "configuration."
+        ),
+        examples=[
+            _D(
+                """
+                [projects.search_paths]
+                "/public/location1/" = "postgres1://?dbname=mydatabase1"
+                "/public/location2/" = "postgres1://?dbname=mydatabase2"
+
+                [projects.handlers.postgres1]
+                handler_class = py_qgis_cache.handlers.postgresql.PostgresHandler
+
+                [projects.handlers.postgres1.config]
+                uri = "postgresql://user@host/?schema=myschema"
+                """,
+            ),
+        ],
     )
