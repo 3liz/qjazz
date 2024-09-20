@@ -111,7 +111,7 @@ def read_config_toml(cfgfile: Path, **kwds) -> Dict:
     """ Read toml configuration from file
     """
     if sys.version_info < (3, 11):
-        from tomli import loads
+        from tomli import loads  # type: ignore
     else:
         from tomllib import loads
 

@@ -144,7 +144,9 @@ class CacheManager:
             register_protocol_handler(scheme, conf)
 
         # Validate rooturls
-        for _, rooturl in config.search_paths.items():
+        for path, rooturl in config.search_paths.items():
+            if logger.is_enabled_for(logger.LogLevel.DEBUG):
+                logger.debug("Validating cache root url '%s' (path: '%s')", rooturl.geturl(), path)
             handler = cls.get_protocol_handler(rooturl.scheme)
             handler.validate_rooturl(rooturl)
 

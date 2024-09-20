@@ -1,6 +1,7 @@
 #
 # Handle processing plugins
 #
+import sys
 import traceback
 
 from pathlib import Path
@@ -17,11 +18,10 @@ from typing_extensions import (
     Set,
 )
 
-try:
-    # 3.11+
-    import tomllib as toml  # type: ignore
-except ModuleNotFoundError:
-    import tomli as toml
+if sys.version_info < (3, 11):
+    import tomli as toml  # type: ignore
+else:
+    import tomllib as toml
 
 from qgis.core import QgsApplication, QgsProcessingProvider
 

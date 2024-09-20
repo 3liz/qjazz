@@ -18,6 +18,7 @@ from qgis.core import QgsProject
 from py_qgis_contrib.core import componentmanager, logger
 
 from ..common import ProjectMetadata, ProtocolHandler, Url
+from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 # Allowed files suffix for projects
@@ -62,7 +63,8 @@ class FileProtocolHandler(ProtocolHandler):
     def validate_rooturl(self, rooturl: Url):
         """ Validate the rooturl format
         """
-        pass
+        if not Path(rooturl.path).exists():
+            raise InvalidCacheRootUrl(f"{rooturl.path} does not exists")
 
     def resolve_uri(self, uri: Url) -> str:
         """ Override

@@ -12,4 +12,3 @@ from ._service import (  # noqa F401
     read_config_toml,
     section,
 )
-

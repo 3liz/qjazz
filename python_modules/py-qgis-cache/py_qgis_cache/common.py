@@ -17,7 +17,6 @@ from typing_extensions import (
     Iterator,
     Optional,
     Protocol,
-    Union,
     runtime_checkable,
 )
 
@@ -70,7 +69,7 @@ class ProtocolHandler(Protocol):
         """
 
     @abstractmethod
-    def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
+    def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """ Return project metadata
         """
 

@@ -15,6 +15,7 @@ from pydantic import (
 )
 from typing_extensions import (
     Annotated,
+    Any,
     Dict,
     Self,
 )
@@ -26,17 +27,17 @@ from ..common import ProtocolHandler
 
 
 class HandlerConfig(ConfigBase):
-    handler_class: Annotated[
+    handler: Annotated[
         ImportString,
         WithJsonSchema({'type': 'string'}),
         Field(validate_default=True),
     ]
-    config: Dict[str, JsonValue] = Field({})
+    config: Dict[str, Any] = Field({})
 
     @model_validator(mode='after')
     def validate_config(self) -> Self:
 
-        klass = self.handler_class
+        klass = self.handler
 
         if not issubclass(klass, ProtocolHandler):
             raise ValueError(f"{klass} does not suppport ProtocolHandler protocol")
@@ -49,15 +50,15 @@ class HandlerConfig(ConfigBase):
 
     def create_instance(self) -> ProtocolHandler:
         if self._handler_conf:
-            return self.handler_class(self._handler_conf)
+            return self.handler(self._handler_conf)
         else:
-            return self.handler_class()
+            return self.handler()
 
 
 def register_protocol_handler(scheme: str, conf: HandlerConfig):
     """ Import and initialize protocol handler
     """
-    logger.info("Cache: Initalizing protocol handler [%s]: %s", scheme, str(conf.handler_class))
+    logger.info("Cache: Initalizing protocol handler [%s]: %s", scheme, str(conf.handler))
 
     # Register instance as a service
     componentmanager.gComponentManager.register_service(

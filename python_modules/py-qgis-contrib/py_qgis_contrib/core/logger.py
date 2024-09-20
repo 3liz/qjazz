@@ -9,6 +9,7 @@
 """
 import logging
 import sys
+import warnings
 
 from contextlib import contextmanager
 from enum import Enum
@@ -131,7 +132,13 @@ def log_rreq(msg, *args, **kwargs):
     LOGGER.log(LogLevel.RREQ.value, msg, *args, **kwargs)
 
 
+# XXX deprecated
 def isEnabledFor(level: LogLevel) -> bool:
+    warnings.warn("This method is deprecated, use 'is_enabled_for' instead.")
+    return LOGGER.isEnabledFor(level.value)
+
+
+def is_enabled_for(level: LogLevel) -> bool:
     return LOGGER.isEnabledFor(level.value)
 
 
