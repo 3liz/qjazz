@@ -60,7 +60,7 @@ class FileProtocolHandler(ProtocolHandler):
 
         return path
 
-    def validate_rooturl(self, rooturl: Url):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
         """ Validate the rooturl format
         """
         if not Path(rooturl.path).exists():

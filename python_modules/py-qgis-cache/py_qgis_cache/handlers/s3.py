@@ -1,7 +1,23 @@
-""" Handle projects stored on
-    S3 compatible object storage
+"""
+Handle projects stored on S3 compatible object storage
 
-    Urls must be of the form s3://bucket/[prefix/]{path}
+Urls must be of the form s3://bucket/[prefix/]{path}
+
+Limitations:
+
+- With Gdal < 3.6 (Ubuntu 22.04), only one configuration is allowed
+  since we cannot set a per prefix configuration.
+
+- Per prefix configuration use the bucket/path as discriminating key, because of
+  this is not possible to use the same bucket/path with two distinct
+  configuration.
+
+- Layers must be gdal /vsiXXX/ compatible - i.e, provider must be gdal or ogr
+  Other layers must be downloaded locally.
+
+- Projects must be created with the `force_readonly_layers` option.
+
+- Not thread safe
 """
 import os
 
@@ -18,7 +34,6 @@ from typing_extensions import (
     Dict,
     Iterator,
     Optional,
-    Set,
     cast,
 )
 
@@ -34,7 +49,6 @@ from py_qgis_contrib.core.config import (
 from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
-
 
 gdal_version_info = tuple(int(n) for n in __gdal_version__.split('.'))
 
@@ -100,9 +114,14 @@ class S3ProtocolHandler(ProtocolHandler):
         self._tmpdirs: Dict[str, TemporaryDirectory] = {}
         self._configured = False
 
-    def validate_rooturl(self, rooturl: Url):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
         """ Validate the rooturl format
         """
+        if not config.force_readonly_layers:
+            raise InvalidCacheRootUrl(
+                "S3 handler does not support writable layers, use force_readonly_layers=True",
+            )
+
         # Check that the bucket exists
         bucket = rooturl.hostname
         prefix = rooturl.path.strip('/')
@@ -121,7 +140,7 @@ class S3ProtocolHandler(ProtocolHandler):
 
         if gdal_version_info >= (3, 6):
             from osgeo.gdal import SetPathSpecificOption
-            
+
             key = f"/vsis3/{bucket}/{prefix}" if prefix else f"/vsis3/{bucket}"
 
             logger.debug("Adding S3 configuration for prefix %s", key)
@@ -137,7 +156,7 @@ class S3ProtocolHandler(ProtocolHandler):
             SetPathSpecificOption(key, 'AWS_HTTPS', 'YES' if self._conf.secure else 'NO')
         elif not self._configured:
             from osgeo.gdal import SetConfigOption
-            
+
             logger.warning("GDAL version is < 3.6")
             logger.warning("VSIS3 options connot be set on a per-prefix basis")
             logger.warning("Only one s3 configuration is allowed")
@@ -213,15 +232,11 @@ class S3ProtocolHandler(ProtocolHandler):
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """ Return project associated with metadata
         """
+        assert_precondition(not config.force_readonly_layers)
+
         uri = urlsplit(md.uri)
         bucket_name = uri.hostname
         object_name = uri.path
-
-        tmpdir = TemporaryDirectory(
-            prefix="s3_",
-            dir=self._download_dir,
-            ignore_cleanup_errors=True,
-        )
 
         assert_precondition(bucket_name is not None)
         bucket_name = cast(str, bucket_name)
@@ -243,6 +258,12 @@ class S3ProtocolHandler(ProtocolHandler):
                 pass
 
         object_path = PurePosixPath(bucket_name, object_name.strip('/'))
+
+        tmpdir = TemporaryDirectory(
+            prefix="s3_",
+            dir=self._download_dir,
+            ignore_cleanup_errors=True,
+        )
 
         basename = object_path.name
         filename = Path(tmpdir.name).joinpath(basename)

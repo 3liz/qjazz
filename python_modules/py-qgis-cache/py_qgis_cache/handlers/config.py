@@ -9,7 +9,6 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
-    JsonValue,
     WithJsonSchema,
     model_validator,
 )

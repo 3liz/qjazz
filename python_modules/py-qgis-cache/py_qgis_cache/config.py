@@ -80,7 +80,7 @@ class ProjectsConfig(config.ConfigBase):
         bool,
         AfterValidator(_qgis_env_flag_validator('QGIS_SERVER_FORCE_READONLY_LAYERS')),
     ] = Field(
-        default=False,
+        default=True,
         title="Force read only mode",
         description="Force layers to open in read only mode",
     )

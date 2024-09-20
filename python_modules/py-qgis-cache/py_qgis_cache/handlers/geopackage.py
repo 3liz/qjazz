@@ -18,7 +18,7 @@ from py_qgis_contrib.core.config import (
 
 from ..common import Url
 from ..errors import InvalidCacheRootUrl
-from .storage import QgisStorageProtocolHandler
+from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
 
 def _parameters(url: Url) -> Dict[str, str]:
@@ -46,7 +46,7 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
         if conf:
             self._path = conf.path
 
-    def validate_rooturl(self, rooturl: Url):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
 
         if rooturl.path and self._path:
             raise InvalidCacheRootUrl(

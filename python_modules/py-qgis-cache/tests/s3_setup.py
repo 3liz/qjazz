@@ -1,5 +1,4 @@
 
-from pathlib import Path
 
 from py_qgis_cache import CacheManager, ProjectsConfig
 from py_qgis_contrib.core import logger
@@ -11,7 +10,7 @@ init_qgis_application()
 
 projects = ProjectsConfig(
     force_readonly_layers=True,
-    search_paths={ "/": "s3://test" },
+    search_paths={"/": "s3://test"},
     handlers={
         "s3": {
             "handler": "py_qgis_cache.handlers.s3.S3ProtocolHandler",

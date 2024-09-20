@@ -148,7 +148,7 @@ class CacheManager:
             if logger.is_enabled_for(logger.LogLevel.DEBUG):
                 logger.debug("Validating cache root url '%s' (path: '%s')", rooturl.geturl(), path)
             handler = cls.get_protocol_handler(rooturl.scheme)
-            handler.validate_rooturl(rooturl)
+            handler.validate_rooturl(rooturl, config)
 
     @classmethod
     def get_service(cls) -> Self:

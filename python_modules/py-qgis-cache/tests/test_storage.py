@@ -46,4 +46,4 @@ def test_storage_geopackage(data, config):
 
     with pytest.raises(errors.InvalidCacheRootUrl):
         handler = CacheManager.get_protocol_handler('geopackage')
-        handler.validate_rooturl(conf.search_paths['/mygpkg'])
+        handler.validate_rooturl(conf.search_paths['/mygpkg'], config)

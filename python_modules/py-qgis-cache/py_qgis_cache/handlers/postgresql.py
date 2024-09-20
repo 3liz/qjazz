@@ -18,7 +18,7 @@ from py_qgis_contrib.core.config import (
 
 from ..common import Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
-from .storage import QgisStorageProtocolHandler
+from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
 
 def _parameters(url: Url | UrlBase) -> Dict[str, str]:
@@ -61,7 +61,7 @@ class PostgresHandler(QgisStorageProtocolHandler):
         self._uri = urlsplit(str(conf.uri))
         self._query = _parameters(self._uri)
 
-    def validate_rooturl(self, rooturl: Url):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
         if rooturl.netloc and self._uri.netloc:
             raise InvalidCacheRootUrl(
                 f"Netloc redefiniton in postgresql root url configuration: {rooturl.geturl()}",
