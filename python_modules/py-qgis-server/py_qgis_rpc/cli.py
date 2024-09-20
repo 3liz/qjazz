@@ -31,7 +31,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProto:
     try:
         confservice.validate(cnf)
         # Load external configuration if requested
-        config_url = confservice.conf.config_url
+        config_url = confservice.conf.worker_config_url
         if config_url.is_set():
             click.echo(
                 f"** Loading initial configuration from <{config_url.url}> **",
@@ -150,7 +150,7 @@ def serve_grpc(configpath: Optional[Path]):
         asyncio.run(serve(pool, restore))
     finally:
         pool.terminate_and_join()
-        logger.info("Server shutdown")
+        logger.info("Worker shutdown")
 
 
 def main():

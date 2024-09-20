@@ -94,7 +94,7 @@ def backends_list_route(
                 allow_headers="Authorization",
             )
 
-    return web.view('/backends', BackendListView)
+    return web.view('/backends/', BackendListView)
 
 
 def backends_route(
@@ -236,7 +236,7 @@ def config_route(
             """
             # If remote url is defined, load configuration
             # from it
-            config_url = cast(ConfigProto, confservice.conf).config_url
+            config_url = cast(ConfigProto, confservice.conf).http_config_url
             try:
                 if config_url.is_set():
                     await config_url.load_configuration()

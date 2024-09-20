@@ -101,7 +101,7 @@ class Handlers(
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        cnf = confservice.conf.config_url
+        cnf = confservice.conf.admin_config_url
         if await cnf.load_configuration():
 
             # Update log level

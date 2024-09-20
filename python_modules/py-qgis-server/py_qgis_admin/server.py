@@ -7,15 +7,13 @@ from pydantic import (
     BaseModel,
 )
 from typing_extensions import (
-    Any,
     Dict,
     Optional,
     cast,
-    no_type_check,
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigBase, ConfigProxy
+from py_qgis_contrib.core.config import ConfigProxy
 
 from . import swagger
 from .api import API_VERSION, ErrorResponse, Handlers
@@ -182,8 +180,6 @@ def swagger_model() -> BaseModel:
 def create_app(conf: ConfigProto) -> web.Application:
     """ Create a web application
     """
-    conf = cast(Any, conf)
-
     service = Service(
         cast(
             ResolverConfig,
@@ -206,7 +202,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     )
 
     app.on_response_prepare.append(
-        set_access_control_headers(conf.http.cross_origin),
+        set_access_control_headers(conf.admin_http.cross_origin),
     )
 
     # Routing
@@ -226,23 +222,27 @@ def create_app(conf: ConfigProto) -> web.Application:
     return app
 
 
-@no_type_check
-def serve(conf: ConfigBase):
+def serve(conf: ConfigProto):
     """ Start the web server
     """
     app = create_app(conf)
-    app['config'] = conf.http
 
-    match conf.http.listen:
-        case (address, port):
+    http = conf.admin_http
+
+    app['config'] = http
+
+    listen: Dict
+
+    match http.listen:
+        case (str(address), port):
             listen = dict(host=address.strip('[]'), port=port)
         case socket:
             listen = dict(path=socket[len('unix:'):])
 
-    logger.info(f"Server listening at {conf.http.format_interface()}")
+    logger.info(f"Server listening at {http.format_interface()}")
     web.run_app(
         app,
-        ssl_context=conf.http.ssl.create_ssl_server_context() if conf.http.use_ssl else None,
+        ssl_context=http.ssl.create_ssl_server_context() if http.use_ssl else None,
         handle_signals=True,
         **listen,
     )

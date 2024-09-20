@@ -243,7 +243,7 @@ ENV_CONFIGFILE = "PY_QGIS_WORKER_CONFIGFILE"
 
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
-    config_url: ConfigUrl
+    worker_config_url: ConfigUrl
     worker: WorkerConfig
     restore_cache: CacheRestoreConfig
 
@@ -254,7 +254,7 @@ class ConfigProto(Protocol):
 confservice = config.ConfBuilder()
 
 confservice.add_section("worker", WorkerConfig)
-confservice.add_section("config_url", ConfigUrl)
+confservice.add_section("worker_config_url", ConfigUrl)
 confservice.add_section("restore_cache", ConfigUrl)
 
 WORKER_SECTION = "worker"

@@ -1,21 +1,20 @@
 """ Send metrics through amqp messages
 """
-import os
 
 from aiohttp import web
 from amqpclient.aio import AsyncPublisher
 from pika import PlainCredentials
 from pydantic import Field, SecretStr
-from pydantic_settings import BaseSettings
 from typing_extensions import List, Optional
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import ConfigSettings
 
 from ..channel import Channel
 from ._metrics import Data, Metrics
 
 
-class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
+class AMQPOptions(ConfigSettings, env_prefix='AMQP_'):
 
     host: str | List[str]
     port: int = Field(default=5672)
@@ -28,44 +27,16 @@ class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
     )
     password: Optional[SecretStr] = Field(
         default=None,
-        description=(
-            "If not set, look in the file given by the environment variable "
-            "`AMQPPASSFILE`. The file must be structured with each line formatted "
-            "as: `<vhost|*>:<user|*>:<password>`."
-        ),
+        title="Password",
     )
 
     def get_credentials(self) -> Optional[PlainCredentials]:
         """ Get credentials  from configuration
         """
-        if not self.user:
-            # No user, don't bother
-            return None
-
-        if self.password is not None:
+        if self.user and self.password is not None:
             return PlainCredentials(self.user, self.password.get_secret_value())
 
-        creds: Optional[PlainCredentials] = None
-
-        # Read credential from AMQPPASSFILE if it exists
-        passfile = os.getenv("AMQPPASSFILE")
-        if not (passfile and os.path.exists(passfile)):
-            logger.warning("AMQPASSFILE is set but file does not exists.")
-            return None
-
-        logger.debug("Using AMQP passfile: %s", passfile)
-        with open(passfile) as fp:
-            for line in fp.readlines():
-                creds = line.strip()
-                if not creds or creds.startswith('#'):
-                    continue
-                # Check matching vhost and user
-                cr_vhost, cr_user, passwd = creds.split(':')
-                if cr_vhost in ('*', self.vhost) and cr_user in ('*', self.user):
-                    logger.info("Found password for  user '%s' on vhost '%s'", self.user, self.vhost)
-                    creds = PlainCredentials(self.user, passwd)
-                    break
-        return creds
+        return None
 
     routing_key: str = Field(
         title="Routing key",
@@ -76,11 +47,11 @@ class AmqpConfig(BaseSettings, env_prefix='AMQP_'):
     )
 
 
-class AmqpMetrics(Metrics):
+class AMQPMetrics(Metrics):
 
-    Config = AmqpConfig
+    Options = AMQPOptions
 
-    def __init__(self, conf: AmqpConfig):
+    def __init__(self, conf: AMQPOptions):
 
         kwargs = {}
 

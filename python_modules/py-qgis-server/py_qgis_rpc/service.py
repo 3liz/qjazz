@@ -654,8 +654,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         try:
             # If remote url is defined, load configuration
             # from it
-            if confservice.conf.config_url.is_set():
-                obj = await confservice.conf.config_url.load_configuration()
+            if confservice.conf.worker_config_url.is_set():
+                obj = await confservice.conf.worker_config_url.load_configuration()
             elif ENV_CONFIGFILE in os.environ:
                 # Fallback to configfile (if any)
                 configpath = Path(os.environ[ENV_CONFIGFILE])

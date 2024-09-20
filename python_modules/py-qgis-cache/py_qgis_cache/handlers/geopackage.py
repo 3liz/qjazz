@@ -11,10 +11,7 @@ from typing_extensions import Dict, Optional
 
 from py_qgis_contrib.core import componentmanager
 from py_qgis_contrib.core.condition import assert_postcondition
-from py_qgis_contrib.core.config import (
-    ConfigSettings,
-    SettingsConfigDict,
-)
+from py_qgis_contrib.core.config import ConfigSettings
 
 from ..common import Url
 from ..errors import InvalidCacheRootUrl
@@ -25,11 +22,9 @@ def _parameters(url: Url) -> Dict[str, str]:
     return dict(parse_qsl(url.query))
 
 
-class GeopackageHandlerConfig(ConfigSettings):
+class GeopackageHandlerConfig(ConfigSettings, env_prefix="conf_storage_geopackage_"):
     """ Geopackage handler settings
     """
-    model_config = SettingsConfigDict(env_prefix="conf_storage_geopackage_")
-
     path: FilePath = Field(title="Path to geopackage")
 
 

@@ -35,7 +35,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
     try:
         confservice.validate(cnf)
         # Load external configuration if requested
-        asyncio.run(confservice.conf.config_url.load_configuration())
+        asyncio.run(confservice.conf.admin_config_url.load_configuration())
         if verbose:
             click.echo(confservice.conf.model_dump_json(indent=4))
     except config.ConfigError as err:

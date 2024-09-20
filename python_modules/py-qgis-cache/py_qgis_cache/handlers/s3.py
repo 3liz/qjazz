@@ -29,7 +29,7 @@ from urllib.parse import urlsplit
 
 from minio import Minio, S3Error
 from osgeo.gdal import __version__ as __gdal_version__
-from pydantic import DirectoryPath, FilePath
+from pydantic import DirectoryPath, FilePath, SecretStr
 from typing_extensions import (
     Dict,
     Iterator,
@@ -41,10 +41,7 @@ from qgis.core import QgsPathResolver, QgsProject
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
-from py_qgis_contrib.core.config import (
-    ConfigSettings,
-    SettingsConfigDict,
-)
+from py_qgis_contrib.core.config import ConfigSettings
 
 from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl
@@ -74,13 +71,11 @@ def s3_storage_preprocessor(prefix: str):
         QgsPathResolver.removePathPreprocessor(ident)
 
 
-class S3HandlerConfig(ConfigSettings):
-
-    model_config = SettingsConfigDict(env_prefix="conf_storage_s3_")
+class S3HandlerConfig(ConfigSettings, env_prefix="conf_storage_s3_"):
 
     endpoint: str
     access_key: str
-    secret_key: str
+    secret_key: SecretStr
     region: Optional[str] = None
     # SSL configuration
     cafile: Optional[FilePath] = None
@@ -104,7 +99,7 @@ class S3ProtocolHandler(ProtocolHandler):
         self._client = Minio(
             conf.endpoint,
             access_key=conf.access_key,
-            secret_key=conf.secret_key,
+            secret_key=conf.secret_key.get_secret_value(),
             secure=conf.secure,
             cert_check=conf.check_cert,
             region=conf.region,
@@ -134,9 +129,7 @@ class S3ProtocolHandler(ProtocolHandler):
                 ),
             )
         if not self._client.bucket_exists(bucket):
-            raise InvalidCacheRootUrl(
-                f"S3 Bucket '{bucket}' does not exists on target {self._conf.endpoint}",
-            )
+            logger.warning(f"S3 Bucket '{bucket}' does not exists on target {self._conf.endpoint}")
 
         if gdal_version_info >= (3, 6):
             from osgeo.gdal import SetPathSpecificOption
@@ -145,12 +138,14 @@ class S3ProtocolHandler(ProtocolHandler):
 
             logger.debug("Adding S3 configuration for prefix %s", key)
 
+            secret_key = self._conf.secret_key.get_secret_value()
+
             # XXX Require GDAL 3.6+
             # See https://gdal.org/en/latest/user/virtual_file_systems.html#vsis3-aws-s3-files
             # for options
             SetPathSpecificOption(key, 'AWS_S3_ENDPOINT', self._conf.endpoint)
             SetPathSpecificOption(key, 'AWS_ACCESS_KEY_ID', self._conf.access_key)
-            SetPathSpecificOption(key, 'AWS_SECRET_ACCESS_KEY', self._conf.secret_key)
+            SetPathSpecificOption(key, 'AWS_SECRET_ACCESS_KEY', secret_key)
             SetPathSpecificOption(key, 'AWS_REGION', self._conf.region)
             SetPathSpecificOption(key, 'AWS_VIRTUAL_HOSTING', 'FALSE')
             SetPathSpecificOption(key, 'AWS_HTTPS', 'YES' if self._conf.secure else 'NO')
@@ -161,9 +156,11 @@ class S3ProtocolHandler(ProtocolHandler):
             logger.warning("VSIS3 options connot be set on a per-prefix basis")
             logger.warning("Only one s3 configuration is allowed")
 
+            secret_key = self._conf.secret_key.get_secret_value()
+            
             SetConfigOption('AWS_S3_ENDPOINT', self._conf.endpoint)
             SetConfigOption('AWS_ACCESS_KEY_ID', self._conf.access_key)
-            SetConfigOption('AWS_SECRET_ACCESS_KEY', self._conf.secret_key)
+            SetConfigOption('AWS_SECRET_ACCESS_KEY', secret_key)
             SetConfigOption('AWS_REGION', self._conf.region)
             SetConfigOption('AWS_VIRTUAL_HOSTING', 'FALSE')
             SetConfigOption('AWS_HTTPS', 'YES' if self._conf.secure else 'NO')
@@ -213,10 +210,15 @@ class S3ProtocolHandler(ProtocolHandler):
         try:
             stat = self._client.stat_object(bucket_name, object_name)
         except S3Error as err:
-            if err.code == "NoSuchKey":
-                raise FileNotFoundError(url.geturl())
-            else:
-                raise
+            match err.code:
+                case "NoSuchBucket":
+                    uri = url.geturl()
+                    logger.error("S3 operation failed for '%s': %s", uri, err.message)
+                    raise FileNotFoundError(uri) from None
+                case "NoSuchKey":
+                    raise FileNotFoundError(url.geturl()) from None
+                case _:
+                    raise
 
         assert_precondition(stat.last_modified is not None)
         last_modified = cast(datetime, stat.last_modified)

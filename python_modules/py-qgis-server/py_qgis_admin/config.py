@@ -114,16 +114,16 @@ class ConfigUrl(ConfigBase):
 
 
 class ConfigProto(Protocol):
-    config_url: ConfigUrl
-    http: HttpConfig
+    admin_config_url: ConfigUrl
+    admin_http: HttpConfig
     resolvers: ResolverConfig
 
 
 confservice = ConfBuilder()
 
-confservice.add_section('http', ConfigUrl)
+confservice.add_section('admin_http', ConfigUrl)
+confservice.add_section('admin_config_url', ConfigUrl)
 confservice.add_section('resolvers', ResolverConfig)
-confservice.add_section('config_url', ConfigUrl)
 
 
 RESOLVERS_SECTION = 'resolvers'

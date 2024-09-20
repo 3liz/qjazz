@@ -213,6 +213,12 @@ async def json_exception(request, handler):
 # Router
 #
 
+def redirect(path: str) -> Callable[[web.Request], Awaitable]:
+    async def _redirect(request):
+        raise web.HTTPFound(path)
+    return _redirect
+
+
 class _Router:
 
     def __init__(self, channels: Channels, conf: HttpConfig):
@@ -228,7 +234,7 @@ class _Router:
     async def set_metrics(self, metrics_conf: MetricsConfig) -> metrics.Metrics:
         """ Initialize metrics service
         """
-        metrics_service = metrics.create_metrics(metrics_conf)
+        metrics_service = metrics_conf.create_instance()
         self._collect = metrics_service.emit
         return metrics_service
 
@@ -431,6 +437,7 @@ async def setup_adm_server(
             backends_route(channels, cors_options_handler),
             backends_list_route(channels, cors_options_handler),
             config_route(channels, cors_options_handler),
+            web.get('/backends', redirect('/backends/')),
         ],
     )
 

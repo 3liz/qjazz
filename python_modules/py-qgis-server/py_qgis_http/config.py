@@ -152,7 +152,7 @@ BACKENDS_SECTION = 'backends'
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
     http: HttpConfig
-    config_url: ConfigUrl
+    http_config_url: ConfigUrl
     admin_server: AdminHttpConfig
     metrics: Optional[MetricsConfig]
     backends: Dict[str, BackendConfig]
@@ -168,8 +168,8 @@ def create_config() -> ConfBuilder:
 
     # Add the `[http]` configuration section
     builder.add_section('http', HttpConfig)
+    builder.add_section("http_config_url", ConfigUrl)
     builder.add_section('admin_server', AdminHttpConfig)
-    builder.add_section("config_url", ConfigUrl)
 
     # Add the `[backends]` configuration section
     builder.add_section(
@@ -261,9 +261,13 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
 
         # Load external configuration if requested
         # Do not load includes if configuration is remote
-        if conf.config_url.is_set():
-            print(f"** Loading initial config from {conf.config_url.url} **", file=sys.stderr, flush=True)
-            asyncio.run(conf.config_url.load_configuration(confservice))
+        if conf.http_config_url.is_set():
+            print(
+                f"** Loading initial config from {conf.http_config_url.url} **",
+                file=sys.stderr,
+                flush=True,
+            )
+            asyncio.run(conf.http_config_url.load_configuration(confservice))
             conf = cast(ConfigProto, confservice.conf)
         elif conf.includes:
             includes = conf.includes

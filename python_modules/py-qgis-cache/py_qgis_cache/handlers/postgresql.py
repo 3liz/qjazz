@@ -11,10 +11,7 @@ from pydantic.networks import Url as UrlBase
 from typing_extensions import Annotated, Dict, Optional
 
 from py_qgis_contrib.core import componentmanager
-from py_qgis_contrib.core.config import (
-    ConfigSettings,
-    SettingsConfigDict,
-)
+from py_qgis_contrib.core.config import ConfigSettings
 
 from ..common import Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
@@ -31,7 +28,7 @@ PostgresURL = Annotated[
 ]
 
 
-class PostgresHandlerConfig(ConfigSettings):
+class PostgresHandlerConfig(ConfigSettings, env_prefix="conf_storage_postgres_"):
     """ Postgres handler settings
 
         Qgis takes postgres project storage uri as
@@ -39,8 +36,6 @@ class PostgresHandlerConfig(ConfigSettings):
 
         Enable database or/and project being specified from path
     """
-    model_config = SettingsConfigDict(env_prefix="conf_storage_postgres_")
-
     uri: PostgresURL = Field(
         title="Base postgresql uri",
         description="The base uri as QGIS postgres storage uri",

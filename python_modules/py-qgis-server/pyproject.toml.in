@@ -27,6 +27,7 @@ version = "${PIN_VERSION}"
 
 [project.optional-dependencies]
 amqp = ["py-amqp-client>=2.0.0"]
+minio = ['minio']
 
 [[project.authors]]
 name = "David Marteau"

@@ -18,7 +18,7 @@ endpoint = "wfs3"
 name = "Features OGC Api (WFS3)"
 
 [metrics]
-name = "amqp"
+name = "py_qgis_http.metrics.amqp.AMQPMetrics"
 routing_key = "local.amqp.tests"
 
 [metrics.options]

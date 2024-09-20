@@ -11,39 +11,23 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
-    JsonValue,
     WithJsonSchema,
+    model_validator,
 )
 from typing_extensions import (
     Annotated,
+    Any,
     Dict,
     Optional,
     Protocol,
-    Type,
+    Self,
     runtime_checkable,
 )
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.condition import assert_postcondition
 from py_qgis_contrib.core.config import ConfigBase
 
 from ..channel import Channel
-
-
-class MetricsConfig(ConfigBase):
-    metrics_class: Annotated[
-        ImportString,
-        WithJsonSchema({'type': 'string'}),
-        Field(
-            default=None,
-            title="Metric module",
-            description=(
-                "The module implementing request metrics"
-            ),
-        ),
-    ]
-
-    config: Dict[str, JsonValue] = Field({})
 
 
 class Data(BaseModel, frozen=True):
@@ -60,14 +44,8 @@ class Data(BaseModel, frozen=True):
         return self.model_dump_json()
 
 
-class NoConfig(BaseModel):
-    pass
-
-
 @runtime_checkable
 class Metrics(Protocol):
-
-    Config: Type[BaseModel] = NoConfig
 
     @abstractmethod
     async def setup(self) -> None:
@@ -82,17 +60,37 @@ class Metrics(Protocol):
         ...
 
 
-def create_metrics(conf: MetricsConfig) -> Metrics:
+class MetricsConfig(ConfigBase):
+    name: Annotated[
+        ImportString,
+        WithJsonSchema({'type': 'string'}),
+        Field(
+            default=None,
+            title="Metric module",
+            description=(
+                "The module implementing request metrics"
+            ),
+        ),
+    ]
 
-    logger.info("Creating metrics %s", str(conf.metrics_class))
+    options: Dict[str, Any] = Field({})
 
-    metrics_class = conf.metrics_class
-    metrics_conf = metrics_class.Config.model_validate(conf.config)
+    @model_validator(mode='after')
+    def validate_options(self) -> Self:
+        klass = self.name
 
-    instance = metrics_class(metrics_conf)
-    assert_postcondition(
-        isinstance(instance, Metrics),
-        f"{instance} does not supports Metrics protocol",
-    )
+        if not issubclass(klass, Metrics):
+            raise ValueError(f"{klass} does not support Metrics protocol")
 
-    return instance
+        self._metrics_options: BaseModel | None = None
+        if hasattr(klass, 'Options') and issubclass(klass.Options, BaseModel):
+            self._metrics_options = klass.Options.model_validate(self.options)
+
+        return self
+
+    def create_instance(self) -> Metrics:
+        logger.info("Creating metrics %s", str(self.name))
+        if self._metrics_options:
+            return self.name(self._metrics_options)
+        else:
+            return self.name()
