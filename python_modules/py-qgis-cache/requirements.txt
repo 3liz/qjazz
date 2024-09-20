@@ -3,5 +3,4 @@ pydantic-settings==2.5.2
 pydantic==2.8.2
 pydantic_core==2.20.1
 python-dotenv==1.0.1
-tomli==2.0.1
 typing_extensions==4.12.2

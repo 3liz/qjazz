@@ -10,6 +10,8 @@ TESTDIR=tests tests/plugins
 
 OPTIONAL_DEPENDENCIES=server minio
 
+INSTALL_DEPENDENCIES=[server,minio]
+
 export PYTEST_ADDOPTS=-m "not services" 
 
 include $(topsrcdir)/config/rules.mk

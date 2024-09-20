@@ -157,7 +157,7 @@ class S3ProtocolHandler(ProtocolHandler):
             logger.warning("Only one s3 configuration is allowed")
 
             secret_key = self._conf.secret_key.get_secret_value()
-            
+
             SetConfigOption('AWS_S3_ENDPOINT', self._conf.endpoint)
             SetConfigOption('AWS_ACCESS_KEY_ID', self._conf.access_key)
             SetConfigOption('AWS_SECRET_ACCESS_KEY', secret_key)

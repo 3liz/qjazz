@@ -18,7 +18,7 @@ projects = ProjectsConfig(
         "s3": {
             "handler": "py_qgis_cache.handlers.s3.S3ProtocolHandler",
             "config": dict(
-                #endpoint="localhost:9000",
+                # endpoint="localhost:9000",
                 access_key="minioadmin",
                 secret_key="minioadmin",
                 secure=False,

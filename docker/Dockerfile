@@ -79,7 +79,7 @@ RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
 # Server only installation (no-qgis)
 #
 
-FROM ubuntu:22.04 AS front
+FROM ubuntu:24.04 AS front
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \

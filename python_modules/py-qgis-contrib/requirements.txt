@@ -1,13 +1,12 @@
 amqp==5.2.0
 annotated-types==0.7.0
-async-timeout==4.0.3
 billiard==4.2.0
 celery==5.4.0
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
 click==8.1.7
-kombu==5.4.1
+kombu==5.4.2
 prompt_toolkit==3.0.47
 pydantic-settings==2.5.2
 pydantic==2.8.2
@@ -16,7 +15,6 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 redis==5.0.8
 six
-tomli==2.0.1
 typing_extensions==4.12.2
 tzdata==2024.1
 vine==5.1.0

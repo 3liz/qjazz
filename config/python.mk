@@ -26,7 +26,7 @@ lint-fix::
 	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
 
 install::
-	pip install -U --upgrade-strategy=eager -e .
+	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
 typing:: $(PYTHON_PKG)
 	$(MYPY) $(foreach pkg,$^,-p $(pkg))

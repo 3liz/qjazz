@@ -3,6 +3,10 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
+OPTIONAL_DEPENDENCIES=minio
+
+INSTALL_DEPENDENCIES=[minio]
+
 PYTHON_PKG= \
 	py_qgis_rpc   \
 	py_qgis_http  \
