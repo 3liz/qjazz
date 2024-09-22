@@ -59,6 +59,10 @@ RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis &
 # Allow us to run Xvfb when the container runs with '-u' option
 RUN chmod u+s /usr/bin/Xvfb
 
+ENV CONF_SERVER__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
+
 EXPOSE 23456 9080 9443 9876
 
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
@@ -104,7 +108,11 @@ RUN cd /usr/local/bin \
 
 COPY docker/scripts/ /usr/local/bin/
 
-EXPOSE 9443 9080 9876
+ENV CONF_SERVER__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
+
+EXPOSE 9443 9080 9876 9880
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 

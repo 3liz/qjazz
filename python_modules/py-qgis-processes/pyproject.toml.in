@@ -19,6 +19,7 @@ dependencies = [
     "click",
     "requests",
     "aiofiles",
+    "ruamel.yaml",
 ]
 version = "${PIN_VERSION}"
 

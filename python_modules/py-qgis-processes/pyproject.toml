@@ -19,6 +19,7 @@ dependencies = [
     "click",
     "requests",
     "aiofiles",
+    "ruamel.yaml",
 ]
 version = "1.0.0.dev0"
 

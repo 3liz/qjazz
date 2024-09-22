@@ -1,4 +1,5 @@
 services:
+
   worker:
     image: 3liz/qgis-services:qgis-ltr
     environment:
@@ -12,6 +13,7 @@ services:
     - { type: bind, source: "./", target: /conf } 
     - { type: bind, source: "../../", target: /src } 
     command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
+  
   server:
     image: 3liz/qgis-services:qgis-ltr
     ports:

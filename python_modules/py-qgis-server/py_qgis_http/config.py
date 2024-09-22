@@ -29,7 +29,7 @@ from py_qgis_contrib.core.config import (
 from .metrics import MetricsConfig
 from .resolver import BackendConfig
 
-DEFAULT_INTERFACE = ("127.0.0.1", 80)
+DEFAULT_INTERFACE = ("127.0.0.1", 9080)
 
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
@@ -153,7 +153,7 @@ class ConfigProto(Protocol):
     logging: logger.LoggingConfig
     http: HttpConfig
     http_config_url: ConfigUrl
-    admin_server: AdminHttpConfig
+    admin_http: AdminHttpConfig
     metrics: Optional[MetricsConfig]
     backends: Dict[str, BackendConfig]
     includes: Optional[str]
@@ -169,7 +169,7 @@ def create_config() -> ConfBuilder:
     # Add the `[http]` configuration section
     builder.add_section('http', HttpConfig)
     builder.add_section("http_config_url", ConfigUrl)
-    builder.add_section('admin_server', AdminHttpConfig)
+    builder.add_section('admin_http', AdminHttpConfig)
 
     # Add the `[backends]` configuration section
     builder.add_section(

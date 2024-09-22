@@ -1,0 +1,69 @@
+services:
+
+  #
+  # Processes stack
+  #
+
+  processes-worker:
+    image: 3liz/qgis-services:qgis-ltr
+    environment:
+      CONF_LOGGING__LEVEL: DEBUG
+      CONF_WORKER__BROKER_HOST: rabbitmq
+      CONF_WORKER__BACKEND_HOST: redis:6379/0
+      CONF_PROCESSING_ADVERTISED_SERVICES_URL: "http://localhost:9180/$$jobId/$$name"
+    depends_on:
+    - rabbitmq
+    - redis
+    working_dir: /conf
+    volumes:
+    - { type: bind, source: "./", target: /conf } 
+    - { type: bind, source: "../../", target: /src } 
+    command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
+  
+  processes-server:
+    image: 3liz/qgis-services:qgis-ltr
+    ports:
+    - 127.0.0.1:9080:9080
+    command: ["qgis-processes", "serve", "-v"]
+    environment:
+      CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
+      CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
+    depends_on:
+    - rabbitmq
+    - redis
+
+  rabbitmq:
+    image: rabbitmq:3
+  redis:
+    image: redis:6-alpine
+
+  #
+  # Map server stack
+  #
+ 
+  qgis-rpc:
+    image: 3liz/qgis-services:qgis-ltr
+    environment:
+      CONF_DISPLAY_XVFB: ON
+      CONF_LOGGING__LEVEL: debug
+      CONF_WORKER__NAME: worker
+      CONF_WORKER__PROJECTS__SEARCH_PATHS: >-
+        { 
+          "/": "/workdir"
+        }
+    volumes:
+    - { type: bind, source: "./__workdir__", target: /workdir } 
+    command: ["qgis-server-rpc", "serve"]
+
+  map:
+    image: 3liz/qgis-services:qgis-ltr
+    environment:
+      CONF_LOGGING__LEVEL: debug
+      CONF_BACKENDS__jOBS__TITLE: "Jobs backends"
+      CONF_BACKENDS__JOBS__ADDRESS: "tcp://qgis-rpc"
+      CONF_BACKENDS__JOBS__ROUTE: "/results"
+    ports:
+    - 127.0.0.1:9180:9080
+    - 127.0.0.1:9876:9876
+    command: ["qgis-server-http", "serve"]
+

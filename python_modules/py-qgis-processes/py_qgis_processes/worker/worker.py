@@ -30,6 +30,7 @@ from typing_extensions import (
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.celery import Job, Worker
+from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.utils import to_utc_datetime
 
 from ..processing.config import ProcessingConfig
@@ -43,6 +44,7 @@ from .models import (
     ProcessLogVersion,
     WorkerPresenceVersion,
 )
+from .storage import Storage
 from .threads import Event, PeriodicTask
 from .watch import WatchFile
 
@@ -68,7 +70,9 @@ def on_worker_shutdown(sender, *args, **kwargs):
 
 @worker_before_create_process.connect
 def on_worker_before_create_process(sender, *args, **kwargs):
-    sender.app._store.before_create_process()
+    # XXX We don't have access to app from 'sender' object
+    QgisWorker._storage.before_create_process()
+
 
 #
 # Control commands
@@ -140,6 +144,8 @@ def download_url(state, job_id, resource, expiration):
 
 class QgisWorker(Worker):
 
+    _storage: Storage
+
     def __init__(self, **kwargs) -> None:
 
         conf = load_configuration()
@@ -167,7 +173,8 @@ class QgisWorker(Worker):
         self._store_url = conf.processing.store_url
         self._processing_config = conf.processing
 
-        self._storage = conf.storage.create_instance()
+        assert_precondition(not hasattr(QgisWorker, '_storage'))
+        QgisWorker._storage = conf.storage.create_instance()
 
         #
         # Init cleanup task

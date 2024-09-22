@@ -456,10 +456,10 @@ async def serve(conf: ConfigProto):
     await channels.init_channels()
 
     async with setup_ogc_server(conf.http, conf.metrics, channels) as ogc_runner:
-        async with setup_adm_server(conf.admin_server, channels) as adm_runner:
+        async with setup_adm_server(conf.admin_http, channels) as adm_runner:
 
             _ogc_site: Site = await start_site(conf.http, ogc_runner)
-            _adm_site: Site = await start_site(conf.admin_server, adm_runner)
+            _adm_site: Site = await start_site(conf.admin_http, adm_runner)
 
             event = asyncio.Event()
 

@@ -1,0 +1,23 @@
+
+[worker]
+service_name = "Example1"
+concurrency = 4
+
+[processing]
+workdir = "$location/__workdir__"
+
+[processing.plugins]
+paths = ["/src/tests/plugins/processes"]
+
+[processing.projects]
+trust_layer_metadata = true
+disable_getprint = true
+force_readonly_layers = true
+
+[processing.projects.search_paths]
+'/samples' = "/src/tests/data/samples/"
+'/france' = "/src/tests/data/france_parts/"
+'/montpellier' = "/src/tests/data/montpellier/"
+'/database' = "postgresql://?service=py-qgis"
+
+
