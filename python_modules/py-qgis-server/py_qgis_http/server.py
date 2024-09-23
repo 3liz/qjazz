@@ -83,24 +83,6 @@ class AccessLogger(AbstractAccessLogger):
         logger.log_req(fmt)
 
 
-def log_rrequest(request: web.Request):
-    """ Log incoming request
-    """
-    agent = request.headers.get('User-Agent', "")
-    referer = request.headers.get('Referer', "")
-
-    fmt = RREQ_FORMAT.format(
-        ip=request.remote,
-        method=request.method,
-        url=request.path,
-        referer=referer,
-        agent=agent,
-        request_id=request.get('request_id', ""),
-    )
-
-    logger.log_rreq(fmt)
-
-
 #
 # CORS
 #
@@ -175,7 +157,21 @@ async def log_incoming_request(request, handler):
     request_id = request.headers.get('X-Request-ID', "")
     if request_id:
         request['request_id'] = request_id
-        log_rrequest(request)
+
+        agent = request.headers.get('User-Agent', "")
+        referer = request.headers.get('Referer', "")
+
+        fmt = RREQ_FORMAT.format(
+            ip=request.remote,
+            method=request.method,
+            url=request.path,
+            referer=referer,
+            agent=agent,
+            request_id=request.get('request_id', ""),
+        )
+
+        logger.log_rreq(fmt)
+
     return await handler(request)
 
 
@@ -183,7 +179,11 @@ async def log_incoming_request(request, handler):
 async def unhandled_exceptions(request, handler):
     try:
         return await handler(request)
-    except web.HTTPException:
+    except web.HTTPException as e:
+        logger.debug("Exception: %s: %s", e, e.headers)
+        if not e.content_type.startswith('application/json'):
+            e.content_type = "application/json"
+            e.text = ErrorResponse(message=e.reason).model_dump_json()
         raise
     except Exception:
         logger.critical(f"Error handling request:\n{traceback.format_exc()}")
@@ -193,20 +193,6 @@ async def unhandled_exceptions(request, handler):
                 message="Internal server error",
             ).model_dump_json(),
         ) from None
-
-
-@web.middleware
-async def json_exception(request, handler):
-    try:
-        return await handler(request)
-    except web.HTTPException as e:
-        headers = e.headers
-        headers['Content-Type'] = "application/json"
-        return web.Response(
-            status=e.status,
-            text=ErrorResponse(message=e.reason).model_dump_json(),
-            headers=headers,
-        )
 
 
 #
@@ -262,6 +248,8 @@ class _Router:
                 for route in routes:
                     if path.is_relative_to(route):
                         return route
+
+                logger.error("No routes found for %s", path)
 
         self._routes = routes
         self._routable_class = _Routable
@@ -419,7 +407,6 @@ async def setup_adm_server(
     app = web.Application(
         middlewares=[
             log_incoming_request,
-            json_exception,
             unhandled_exceptions,
         ],
         handler_args={

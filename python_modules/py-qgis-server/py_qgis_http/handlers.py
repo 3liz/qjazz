@@ -249,15 +249,21 @@ async def ows_handler(
 
             status, headers = get_response_headers(await stream.initial_metadata())
             response = web.StreamResponse(status=status, headers=headers)
+            # XXX: Get the first chunk before preparing the request
+            # so we trigger the grcp error.
+            # Otherwise this will send an invalid chunked responsea
+            streamit = aiter(stream)
+            chunk = await anext(streamit)
             await response.prepare(request)
 
-            async for chunk in stream:
-                try:
+            try:
+                await response.write(chunk.chunk)
+                async for chunk in streamit:
                     await response.write(chunk.chunk)
-                except OSError as err:
-                    stream.cancel()
-                    logger.error("Connection cancelled: %s", err)
-                    raise
+            except OSError as err:
+                stream.cancel()
+                logger.error("Connection cancelled: %s", err)
+                raise
 
             await response.write_eof()
 
@@ -342,19 +348,25 @@ async def api_handler(
 
             status, headers = get_response_headers(await stream.initial_metadata())
             response = web.StreamResponse(status=status, headers=headers)
-            await response.prepare(request)
 
             if request.method == 'HEAD':
                 stream.cancel()
+                await response.write_eof()
                 return response
 
-            async for chunk in stream:
-                try:
+            # See above
+            streamit = aiter(stream)
+            chunk = await anext(streamit)
+            await response.prepare(request)
+
+            try:
+                await response.write(chunk.chunk)
+                async for chunk in streamit:
                     await response.write(chunk.chunk)
-                except OSError as err:
-                    stream.cancel()
-                    logger.error("Connection cancelled: %s", err)
-                    raise
+            except OSError as err:
+                stream.cancel()
+                logger.error("Connection cancelled: %s", err)
+                raise
 
             await response.write_eof()
 

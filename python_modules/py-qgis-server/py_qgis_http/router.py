@@ -101,7 +101,9 @@ class DefaultRouter(RouterBase):
             # OWS project
             if not project:
                 # Check project in the path
-                project = request.path.removeprefix(route)
+                project = request.path
+                if route != '/':
+                    project = project.removeprefix(route)
 
             logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)

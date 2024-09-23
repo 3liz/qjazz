@@ -68,7 +68,8 @@ def _default_plugin_path() -> Path:
         or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
         or os.getenv('QGIS_HOME')
         or Path.home().joinpath('.qgis-server'),
-    ) / 'plugins'
+        'plugins',
+    )
 
 
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
@@ -139,7 +140,7 @@ class QgisPluginConfig(config.ConfigBase):
         ),
     )
     plugin_manager: Path = Field(
-        default=Path("/usr/local/bin/qgis-plugin_manager"),
+        default=Path("/usr/local/bin/qgis-plugin-manager"),
         title="Path to plugin manager executable",
         description=(
             "The absolute path to the qgis-plugin_manager executable\n"
@@ -378,7 +379,9 @@ def install_plugins(conf: QgisPluginConfig):
 
     assert_precondition(conf.plugin_manager.is_absolute())
 
-    install_path = _default_plugin_path()
+    logger.info("Installing plugins")
+
+    install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
     def _run(*args):

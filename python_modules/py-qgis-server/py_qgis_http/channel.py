@@ -223,6 +223,7 @@ class Channel:
                 rpcerr.code(),
                 rpcerr.details(),
             )
+
             match rpcerr.code():
                 case grpc.StatusCode.NOT_FOUND:
                     raise web.HTTPNotFound()
