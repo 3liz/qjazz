@@ -35,7 +35,7 @@ BUILD_TARGET:=base
 build: manifest requirements
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
-		-t $(BUILDIMAGE) -t $(BUILDNAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
+		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
 
 
 MANIFEST=factory.manifest
@@ -87,7 +87,7 @@ FRONT_BUILD_TARGET:=front
 build-front: front-manifest
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(FRONT_BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
-		-t $(BUILDFRONTIMAGE) -t $(BUILDNAME):front-eager  -f Dockerfile  ..
+		-t $(BUILDFRONTIMAGE) -t 3liz/$(NAME):front-eager  -f Dockerfile  ..
 
 FRONT_MANIFEST=front.manifest
 
@@ -117,3 +117,8 @@ push-front:
 	docker push $(BUILDNAME):$$release_tag; \
 	}
 
+#
+# Push eager to docker-hub
+#
+push-eager:
+	docker push 3liz/$(NAME):qgis-$(FLAVOR)-eager

@@ -8,6 +8,8 @@
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=ci_build
   - make -C docker build-front deliver-front FLAVOR=$QGIS_FLAVOR FRONT_BUILD_TARGET=ci_front
+  - cat $DOCKERPASS | docker login -u 3liz --password-stdin
+  - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:
     name: snap
   artifacts:
