@@ -7,8 +7,10 @@
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     Field,
     ImportString,
+    TypeAdapter,
     WithJsonSchema,
     model_validator,
 )
@@ -25,13 +27,25 @@ from py_qgis_contrib.core.config import ConfigBase
 from ..common import ProtocolHandler
 
 
+def _parse_config_options(val: str | Dict[str, Any]) -> Dict[str, Any]:
+    if isinstance(val, str):
+        val = TypeAdapter(Dict[str, Any]).validate_json(val)
+    return val
+
+
+HandlerConfigOptions = Annotated[
+    Dict[str, Any],
+    BeforeValidator(_parse_config_options),
+]
+
+
 class HandlerConfig(ConfigBase):
     handler: Annotated[
         ImportString,
         WithJsonSchema({'type': 'string'}),
         Field(validate_default=True),
     ]
-    config: Dict[str, Any] = Field({})
+    config: HandlerConfigOptions = Field({})
 
     @model_validator(mode='after')
     def validate_config(self) -> Self:

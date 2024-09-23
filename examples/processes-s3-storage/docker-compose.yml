@@ -3,14 +3,20 @@ services:
   #
   # Processes stack
   #
-
   processes-worker:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qgis-services:qgis-release-eager
     environment:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
       CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9180/results/$$jobId/$$name"
+      CONF_STORAGE__STORAGE_CLASS: py_qgis_processes.worker.storages.s3.S3Storage
+      # Note: this may be set in the config file:
+      CONF_S3_ENDPOINT: "minio:9000"
+      CONF_S3_ACCESS_KEY: minioadmin
+      CONF_S3_SECRET_KEY: minioadmin
+      CONF_S3_BUCKET_NAME: examples
+      CONF_S3_SECURE: no
     depends_on:
     - rabbitmq
     - redis
@@ -21,7 +27,7 @@ services:
     command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
   
   processes-server:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qgis-services:qgis-release-eager
     ports:
     - 127.0.0.1:9080:9080
     command: ["qgis-processes", "serve", "-v"]
@@ -40,23 +46,33 @@ services:
   #
   # Map server stack
   #
- 
   qgis-rpc:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qgis-services:qgis-release-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_LOGGING__LEVEL: debug
       CONF_WORKER__NAME: worker
+      # Configure search to s3 'example' bucket
       CONF_WORKER__PROJECTS__SEARCH_PATHS: >-
         { 
-          "/": "/workdir"
+          "/": "s3://examples"
+        }
+      # Define a 's3' protocol handler
+      # Note: configuration fragments can be stored in secret files
+      CONF_WORKER__PROJECTS__HANDLERS__S3__HANDLER: "py_qgis_cache.handlers.s3.S3ProtocolHandler"
+      CONF_WORKER__PROJECTS__HANDLERS__S3__CONFIG: >-
+        {
+          "endpoint": "minio:9000",
+          "access_key": "minioadmin",
+          "secret_key": "minioadmin",
+          "secure": false
         }
     volumes:
     - { type: bind, source: "./__workdir__", target: /workdir } 
     command: ["qgis-server-rpc", "serve"]
 
   map:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qgis-services:qgis-release-eager
     environment:
       CONF_LOGGING__LEVEL: debug
       CONF_BACKENDS__jOBS__TITLE: "Jobs backends"
@@ -67,3 +83,12 @@ services:
     - 127.0.0.1:9876:9876
     command: ["qgis-server-http", "serve"]
 
+  #
+  # Minio service for s3 storage
+  #
+  minio:
+    image: minio/minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+    - 127.0.0.1:9000:9000
+    - 127.0.0.1:9001:9001

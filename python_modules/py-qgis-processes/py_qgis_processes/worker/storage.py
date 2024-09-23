@@ -6,12 +6,12 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
-    JsonValue,
     WithJsonSchema,
     model_validator,
 )
 from typing_extensions import (
     Annotated,
+    Any,
     Dict,
     Iterator,
     Optional,
@@ -84,7 +84,7 @@ class StorageConfig(ConfigBase):
             ),
         ),
     ]
-    config: Dict[str, JsonValue] = Field({})
+    config: Dict[str, Any] = Field({})
 
     @model_validator(mode='after')
     def validate_config(self) -> Self:

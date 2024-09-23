@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   qgis-rpc:
-    image: 3liz/qgis-services:qgis-ltr
+    image: 3liz/qgis-services:qgis-ltr-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_CONFIG_URL__URL: "http://config-server/qgis-rpc.json"

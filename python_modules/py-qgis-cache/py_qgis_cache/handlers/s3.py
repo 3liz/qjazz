@@ -49,9 +49,12 @@ from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 if Qgis.QGIS_VERSION_INT < 33800:
     import warnings
-    warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()}")
+    warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})")
 
 gdal_version_info = tuple(int(n) for n in __gdal_version__.split('.'))
+
+# Allowed files suffix for projects
+PROJECT_SFX = '.qgz'
 
 
 @contextmanager
@@ -75,7 +78,7 @@ def s3_storage_preprocessor(prefix: str):
         QgsPathResolver.removePathPreprocessor(ident)
 
 
-class S3HandlerConfig(ConfigSettings, env_prefix="conf_storage_s3_"):
+class S3HandlerConfig(ConfigSettings):
 
     endpoint: str
     access_key: str
@@ -212,6 +215,8 @@ class S3ProtocolHandler(ProtocolHandler):
         bucket_name = cast(str, bucket_name)
 
         try:
+            if not object_name.endswith(PROJECT_SFX):
+                object_name = f"{object_name}{PROJECT_SFX}"
             stat = self._client.stat_object(bucket_name, object_name)
         except S3Error as err:
             match err.code:
@@ -228,7 +233,7 @@ class S3ProtocolHandler(ProtocolHandler):
         last_modified = cast(datetime, stat.last_modified)
 
         return ProjectMetadata(
-            uri=url.geturl(),
+            uri=url._replace(path=object_name).geturl(),
             name=PurePosixPath(url.path).stem,
             scheme=url.scheme,
             storage="s3",
@@ -239,7 +244,7 @@ class S3ProtocolHandler(ProtocolHandler):
         """ Return project associated with metadata
         """
         assert_precondition(Qgis.QGIS_VERSION_INT >= 33800, "Qgis 3.38+ required")
-        assert_precondition(not config.force_readonly_layers)
+        assert_precondition(config.force_readonly_layers)
 
         uri = urlsplit(md.uri)
         bucket_name = uri.hostname
@@ -303,7 +308,7 @@ class S3ProtocolHandler(ProtocolHandler):
 
             path = PurePosixPath(obj.object_name)
 
-            if path.suffix in ('.qgs', '.qgz'):
+            if path.suffix == '.qgz':
 
                 assert_precondition(obj.last_modified is not None)
                 last_modified = cast(datetime, obj.last_modified)

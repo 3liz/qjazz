@@ -1,7 +1,7 @@
 services:
 
   worker:
-    image: 3liz/qgis-services:qgis-ltr
+    image: 3liz/qgis-services:qgis-ltr-eager
     environment:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
@@ -15,7 +15,7 @@ services:
     command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
   
   server:
-    image: 3liz/qgis-services:qgis-ltr
+    image: 3liz/qgis-services:qgis-ltr-eager
     ports:
     - 127.0.0.1:9080:9080
     command: ["qgis-processes", "serve", "-v"]

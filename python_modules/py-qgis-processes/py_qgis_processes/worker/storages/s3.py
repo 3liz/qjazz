@@ -12,7 +12,7 @@ from pathlib import Path
 from minio import Minio, commonconfig
 from minio.deleteobjects import DeleteObject
 from minio.lifecycleconfig import Expiration, LifecycleConfig, Rule
-from pydantic import Field, FilePath
+from pydantic import Field, FilePath, SecretStr
 from typing_extensions import (
     Iterator,
     Optional,
@@ -24,24 +24,24 @@ from py_qgis_contrib.core.config import ConfigSettings
 from ..models import Link
 
 
-class S3Config(ConfigSettings):
-    s3_endpoint: str
-    s3_access_key: str
-    s3_secret_key: str
-    s3_region: Optional[str] = None
+class S3Config(ConfigSettings, env_prefix="conf_s3_"):
+    endpoint: str
+    access_key: str
+    secret_key: SecretStr
+    region: Optional[str] = None
 
-    s3_cafile: Optional[FilePath] = None
-    s3_secure: bool = True
-    s3_check_cert: bool = True
+    cafile: Optional[FilePath] = None
+    secure: bool = True
+    check_cert: bool = True
 
-    s3_bucket_name: str = Field(title="Bucket name")
-    s3_create_bucket: bool = Field(
+    bucket_name: str = Field(title="Bucket name")
+    create_bucket: bool = Field(
         True,
         title="Create bucket",
         description="Create bucket if it does not exists",
     )
 
-    s3_expiration_days: int = Field(
+    expiration_days: int = Field(
         default=1,
         ge=1,
         title="Expiration days",
@@ -53,18 +53,18 @@ def _create_bucket(client: Minio, conf: S3Config):
     """ Create the storage bucket
     """
     # Create the bucket for the service
-    if not client.bucket_exists(conf.s3_bucket_name):
-        logger.info("[S3] Creating bucket '%s' on '%s'", conf.s3_bucket_name, conf.s3_endpoint)
-        client.make_bucket(conf.s3_bucket_name, location=conf.s3_region)
+    if not client.bucket_exists(conf.bucket_name):
+        logger.info("[S3] Creating bucket '%s' on '%s'", conf.bucket_name, conf.endpoint)
+        client.make_bucket(conf.bucket_name, location=conf.region)
         client.set_bucket_lifecycle(
-            conf.s3_bucket_name,
+            conf.bucket_name,
             config=LifecycleConfig(
                 [
                     Rule(
                         commonconfig.ENABLED,
                         rule_filter=commonconfig.Filter(prefix=""),
                         rule_id="global_expiration_rule",
-                        expiration=Expiration(days=conf.s3_expiration_days),
+                        expiration=Expiration(days=conf.expiration_days),
                     ),
                 ],
             ),
@@ -81,28 +81,28 @@ class S3Storage:
         self._conf = conf
         self._client: Minio | None = None
 
-        if self._conf.s3_create_bucket:
+        if self._conf.create_bucket:
             _create_bucket(self.client, self._conf)
 
     @property
     def bucket(self) -> str:
-        return self._conf.s3_bucket_name
+        return self._conf.bucket_name
 
     @property
     def client(self) -> Minio:
         """ Lazily create client
         """
         if not self._client:
-            if self._conf.s3_cafile:
-                os.environ["SSL_CERT_FILE"] = str(self._conf.s3_cafile)
+            if self._conf.cafile:
+                os.environ["SSL_CERT_FILE"] = str(self._conf.cafile)
 
             self._client = Minio(
-                self._conf.s3_endpoint,
-                access_key=self._conf.s3_access_key,
-                secret_key=self._conf.s3_secret_key,
-                secure=self._conf.s3_secure,
-                cert_check=self._conf.s3_check_cert,
-                region=self._conf.s3_region,
+                self._conf.endpoint,
+                access_key=self._conf.access_key,
+                secret_key=self._conf.secret_key.get_secret_value(),
+                secure=self._conf.secure,
+                cert_check=self._conf.check_cert,
+                region=self._conf.region,
             )
         return self._client
 

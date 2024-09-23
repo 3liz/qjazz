@@ -226,4 +226,3 @@ class QgisContext(QgisContextBase):
 
         for lid in _layers_for(LayerType.Vector):
             project.writeEntry("WFSLayersPrecision", "/" + lid, 6)
-
