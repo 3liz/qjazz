@@ -37,7 +37,7 @@ from typing_extensions import (
     cast,
 )
 
-from qgis.core import QgsPathResolver, QgsProject
+from qgis.core import Qgis, QgsPathResolver, QgsProject
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
@@ -46,6 +46,10 @@ from py_qgis_contrib.core.config import ConfigSettings
 from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
+
+if Qgis.QGIS_VERSION_INT < 33800:
+    import warnings
+    warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()}")
 
 gdal_version_info = tuple(int(n) for n in __gdal_version__.split('.'))
 
@@ -234,6 +238,7 @@ class S3ProtocolHandler(ProtocolHandler):
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """ Return project associated with metadata
         """
+        assert_precondition(Qgis.QGIS_VERSION_INT >= 33800, "Qgis 3.38+ required")
         assert_precondition(not config.force_readonly_layers)
 
         uri = urlsplit(md.uri)

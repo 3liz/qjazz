@@ -29,7 +29,8 @@ FLAVOR:=release
 WEB_PORT:=4100
 
 env: workdir
-	@mkdir -p $(DOCKER_COMPOSE)Creating environment file for docker-compose"
+	@echo "Creating environment file for docker-compose"
+	mkdir -p .local
 	cat <<-EOF > .env
 		USER_ID=$(shell id -u)
 		GROUP_ID=$(shell id -g)
@@ -47,7 +48,7 @@ up: env
 DOCKER_COMPOSE:=docker compose
 
 # Run test stack
-run-all: export COMPOSE_OPTS=--profile worker
+run: export COMPOSE_OPTS=--profile worker
 run: up
 	$(DOCKER_COMPOSE) logs -f worker
 

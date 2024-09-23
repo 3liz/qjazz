@@ -20,17 +20,12 @@ stages:
   tags:   
     - factory
 
-tests:ltr: 
+tests:
   extends: .tests
-  variables:
-    QGIS_FLAVOR: ltr
-
-tests:release: 
-  extends: .tests
-  needs:    
-    - "tests:ltr"
-  variables:
-    QGIS_FLAVOR: release
+  resource_group: py_qgis_server2_tests
+  parallel:
+    matrix:
+    - QGIS_FLAVOR: ['ltr', 'release']
 
 doc:
   image: ${REGISTRY_URL}/factory-ci-runner:build-doc

@@ -6,13 +6,15 @@ from functools import cached_property
 
 from typing_extensions import (
     Callable,
+    Iterator,
     List,
     Optional,
     Tuple,
+    Type,
     cast,
 )
 
-from qgis.core import QgsProcessingFeedback, QgsProject
+from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_postcondition
@@ -199,6 +201,9 @@ class QgisContext(QgisContextBase):
         # Write modified project
         destination_project = context.destination_project
         if destination_project and destination_project.isDirty():
+
+            self.publish_layers(destination_project)
+
             logger.debug("Writing destination project")
             assert_postcondition(
                 destination_project.write(),
@@ -206,3 +211,19 @@ class QgisContext(QgisContextBase):
             )
 
         return results, destination_project
+
+    def publish_layers(self, project: QgsProject):
+        """ Publish layers """
+
+        LayerType: Type = Qgis.LayerType
+
+        def _layers_for(layertype: LayerType) -> Iterator[str]:  # type: ignore [valid-type]
+            return (lid for lid, lyr in project.mapLayers().items() if lyr.type() == layertype)
+
+        # Publishing vector layers in WFS and raster layers in WCS
+        project.writeEntry("WFSLayers", "/", list(_layers_for(LayerType.Vector)))
+        project.writeEntry("WCSLayers", "/", list(_layers_for(LayerType.Raster)))
+
+        for lid in _layers_for(LayerType.Vector):
+            project.writeEntry("WFSLayersPrecision", "/" + lid, 6)
+

@@ -149,6 +149,8 @@ class QgisWorker(Worker):
     def __init__(self, **kwargs) -> None:
 
         conf = load_configuration()
+        if logger.is_enabled_for(logger.LogLevel.DEBUG):
+            logger.debug("== Worker configuration ==\n%s", conf.model_dump_json(indent=4))
 
         service_name = conf.worker.service_name
 

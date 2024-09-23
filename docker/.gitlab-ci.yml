@@ -21,13 +21,8 @@
   tags:
   - factory-dind
 
-build-docker:release:
+build-docker:
   extends: .build-docker
-  variables:
-    QGIS_FLAVOR: release
-
-build-docker:ltr:
-  extends: .build-docker
-  variables:
-    QGIS_FLAVOR: ltr
-
+  parallel:
+    matrix:
+    - QGIS_FLAVOR: ['ltr', 'release']

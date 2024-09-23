@@ -10,6 +10,7 @@ from textwrap import dedent as _D
 from pydantic import Field
 from typing_extensions import (
     Optional,
+    Protocol,
     Sequence,
     cast,
 )
@@ -106,10 +107,13 @@ class WorkerConfig(CeleryConfig):
 
 
 # Allow type validation
-class ConfigProto:
+class ConfigProto(Protocol):
     processing: ProcessingConfig
     worker: WorkerConfig
     storage: StorageConfig
+
+    def model_dump_json(*args, **kwargs) -> str:
+        ...
 
 
 confservice = config.ConfBuilder()

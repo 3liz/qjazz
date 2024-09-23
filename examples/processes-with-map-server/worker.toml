@@ -2,6 +2,8 @@
 [worker]
 service_name = "Example1"
 concurrency = 4
+result_expires = 900
+cleanup_interval = 300
 
 [processing]
 workdir = "$location/__workdir__"

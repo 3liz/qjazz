@@ -10,7 +10,7 @@ services:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
-      CONF_PROCESSING_ADVERTISED_SERVICES_URL: "http://localhost:9180/$$jobId/$$name"
+      CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9180/results/$$jobId/$$name"
     depends_on:
     - rabbitmq
     - redis

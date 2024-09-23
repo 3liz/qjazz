@@ -102,10 +102,10 @@ class ProcessingContext(QgsProcessingContext):
         destination_project.setFilePathStorage(Qgis.FilePathType.Relative)
 
         # Write advertised URLs
-        destination_project.writeEntry('WMSUrl', '/', self._ows_reference(name, "WMS"))
-        destination_project.writeEntry('WCSUrl', '/', self._ows_reference(name, "WCS"))
-        destination_project.writeEntry('WFSUrl', '/', self._ows_reference(name, "WFS"))
-        destination_project.writeEntry('WMTSUrl', '/', self._ows_reference(name, "WMTS"))
+        destination_project.writeEntry('WMSUrl', '/', self._ows_reference(filename, "WMS"))
+        destination_project.writeEntry('WCSUrl', '/', self._ows_reference(filename, "WCS"))
+        destination_project.writeEntry('WFSUrl', '/', self._ows_reference(filename, "WFS"))
+        destination_project.writeEntry('WMTSUrl', '/', self._ows_reference(filename, "WMTS"))
 
         return destination_project
 
