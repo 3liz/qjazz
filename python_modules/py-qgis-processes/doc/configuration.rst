@@ -3,13 +3,15 @@
 Configuration Settings
 ======================
 
-Configuration can be done either by using a `toml <https://toml.io/en/>`_ configuration file or
-with environnement variable.
+Configuration can be done either by using a `toml <https://toml.io/en/>`_ configuration file,
+environnement variable or secret files.
+
+The configuration framework is based on the [pydantic settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/?query=Settings) package which provides strong validation for configuration
+data.
+
 
 Environment variables
 ---------------------
-
-All configuration values may be overriden by environment variables.
 
 The mapping of configuration values follows the following pattern:
 
@@ -53,8 +55,27 @@ Example:
         CONF_PROCESSING__PLUGINS__PATHS='["/qgis-plugins"]'
         CONF_PROCESSING__PROJECTS__SEARCH_PATHS: '{"/":"/qgis-projects"}'
  
-        
 
+Secret files
+------------
+
+Instead of using exposed environment variables or configuration files, 
+values may be stored in files that contains a single value and where the name of 
+the file is the configuration.
+
+A common usecase is to allow for storing sensitive values in Docker encrypted
+secret files.
+
+        
+Configuration precedence
+------------------------
+
+Configuration precedence is (by decreasing priority):
+
+- Configuration file
+- Environment variables
+- Secret files
+- Default values
 
 
 Worker configuration

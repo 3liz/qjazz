@@ -11,7 +11,7 @@ Input/output layer mapping
 With QGIS desktop , QGIS processing algorithms usually apply on a QGIS source project and computed layers are displayed in the same context as the source project.
 
 |ProjectName| works the same way: a qgis project will be used as a source of input layers.
-The difference is that, when an algorithm runs, it creates a qgis project file associated 
+The difference is that, when an algorithm runs, it creates a qgis destination project associated 
 to the current task and register computed layers to it.
 
 The created project may be used as OWS/WFS3 source with QGIS Server.
@@ -29,7 +29,7 @@ Source project
 --------------
 
 Process parameters may be associated with a source project using the ``map`` query param. 
-If a `map` parameters is given when doing a describe` requests, allowed values 
+If a `map` parameters is given when doing a `describe` requests, allowed values 
 for input layers will be taken from the qgis source project according the type 
 of the input layers.
 

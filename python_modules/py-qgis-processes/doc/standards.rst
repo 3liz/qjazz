@@ -1,15 +1,15 @@
-OGC standards
-=============
+Compliance to OGC standards
+===========================
 
 The currrent implementation follow the schemas described in the `actual unreleased version of the standard <https://github.com/opengeospatial/ogcapi-processes/tree/master>`_.
 
 That means that it may not be compliant for most of actual OGC api compliance validators which
-are based on the version 1.0.0 of the standards.
+are strictly based on the version 1.0.0 of the standards.
      
 Notes on schemas
 ----------------
 
-Inputs and outputs value description is described as json schemas. That is, the schema
+Inputs and outputs value descriptions are described as json schemas. That is, the schema
 determines completely the syntax of the value. 
 
 produced schemas are compliant to the following specifications
@@ -95,8 +95,8 @@ Formats
 In the example above we have used the keyword :code:`format` in the geojson schema description.
 
 
-The :code:`format` keyword is used for providing additonal semantic context that can aid
-the interpretetation and validation of process input or output in an :code:`execute` request.
+The :code:`format` keyword is used for providing additonal semantic context that can help
+the interpretation and validation of process input or output in an :code:`execute` request.
 
 While the JsonSchema specification use the :code:`format` keyword for strings only, the OGC
 standards extend its usage to any object.
@@ -129,4 +129,4 @@ The following additional formats are used in |ProjectName|:
 :x-range-exclude: A 2-tuple of numbers indicating a exclusive range
 :x-range-exclude-left: 2-tuple of numbers indicating a left exclusive range
 :x-range-exclude-right: A 2-tuple of numbers indicating a right exclusive range
-:x-feature-source: A source name with optional attributs for selecting features
+:x-feature-source: A source name with optional attributes for selecting features

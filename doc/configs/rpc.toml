@@ -4,51 +4,6 @@
 level = "INFO"
 
 
-# Bootstrap configuration from remote location.
-# The configuration is fetched from the remote url
-# at startup and override all local settings.
-[config_url]
-#
-# External configuration Url
-#
-# Url to external configuration.
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-#url =   	# Optional
-
-#
-[config_url.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
-
-#
-# Restore stored cached projets at startup.
-# Note that only projects loaded explicitely with
-# the admin api or from url are candidate for restoration.
-# i.e projects loaded through requests (using
-# 'load_project_on_request' option) will not be
-# restored.
-#
-# Restore stored cached projets at startup.
-# Note that only projects loaded explicitely with
-# the admin api or from url are candidate for restoration.
-# i.e projects loaded through requests (using
-# 'load_project_on_request' option) will not be
-# restored.
-#restore_cache = "restore_type='none'"
-
-
 [worker]
 #
 # Name of the worker instance
@@ -158,14 +113,6 @@ qgis_settings = {}
 #
 [worker.projects]
 #
-# Enable strict checking
-#
-# Activate strict checking of project layers.
-# When enabled, Qgis projects with invalid layers will be dismissed.
-# Trying to access such a project will lead to a 'unprocessable Entity'
-# (422) HTTP error
-strict_check = true
-#
 # Trust layer metadata
 #
 # Trust layer metadata.
@@ -186,7 +133,22 @@ disable_getprint = false
 # Force read only mode
 #
 # Force layers to open in read only mode
-force_readonly_layers = false
+force_readonly_layers = true
+#
+# Ignore bad layers
+#
+# Allow projects to be loaded with event if it contains
+# layers that cannot be loaded
+# Note that the 'dont_resolve_layers flag' trigger automatically
+# this option.
+ignore_bad_layers = false
+#
+# Don't resolve layer paths
+#
+# Don't load any layer content
+# Improve loading time when actual layer data is
+# not required.
+dont_resolve_layers = false
 #
 # Disable OWS advertised urls
 #
@@ -214,6 +176,13 @@ search_paths = {}
 # Uri are directly interpreted as valid Qgis project's path.
 # WARNING: allowing this may be a security vulnerabilty.
 allow_direct_path_resolution = true
+#
+# Project storage Handler configurations
+#
+# Configure storage handlers.
+# The name will be used as scheme for project's search path
+# configuration.
+handlers = {}
 
 #
 # Plugins configuration
@@ -274,4 +243,62 @@ plugin_manager = "/usr/local/bin/qgis-plugin_manager"
 listen = ["[::]",23456]
 use_ssl = false
 ssl = "cafile=None certfile=None keyfile=None"
+
+
+# Bootstrap configuration from remote location.
+# The configuration is fetched from the remote url
+# at startup and override all local settings.
+[worker_config_url]
+#
+# External configuration Url
+#
+# Url to external configuration.
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+#url =   	# Optional
+
+#
+[worker_config_url.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
+
+
+# Bootstrap configuration from remote location.
+# The configuration is fetched from the remote url
+# at startup and override all local settings.
+[restore_cache]
+#
+# External configuration Url
+#
+# Url to external configuration.
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+#url =   	# Optional
+
+#
+[restore_cache.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
 

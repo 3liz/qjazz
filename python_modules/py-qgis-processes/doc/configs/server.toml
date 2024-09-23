@@ -64,24 +64,6 @@ cross_origin = "all"
 # Interval in seconds between update of avaialable services
 update_interval = 180
 #
-# Cache grace period
-#
-# 
-# Number of update for which cached service data may survive
-# loss of service availability.
-# Thus, cached data will survive `cache_grace_period * update_interal`
-# seconds in cache after the service is gone.
-# 
-cache_grace_period = 5
-#
-# Cleanup interval
-#
-# 
-# Interval is seconds between two cleanup of expired jobs.
-# The minimun is 300s (5mn)
-# 
-cleanup_interval = 3600
-#
 # Backend request timeout
 timeout = 20
 #
@@ -180,4 +162,48 @@ result_expires = 86400
 # that may be consumed by a worker before it will
 # be replaced by a new worker.
 #max_memory_per_child =   	# Optional
+#
+# Autoscale
+#
+# Activate concurrency autoscaling
+#autoscale =   	# Optional
+
+
+# The storage configuration is used for configuring the
+# connections to storage backends used by workers.
+# 
+[storage]
+#
+# Allow only secure downloads
+#
+# Only TLS encrypted downloads are allowed
+allow_insecure_connection = true
+#
+# Download chunksize
+chunksize = 65536
+#
+# Download url expiration
+#
+# Download url expiration in seconds
+download_url_expiration = 3600
+
+#
+# TLS certifificats
+#
+# Certificats required for TLS downloads connections
+#
+[storage.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
 

@@ -29,10 +29,10 @@ Requirements and limitations
 ----------------------------
 
 - Python 3.10+ only
-- Windows not officially supported
+- Windows not officially supported (may work ...or not)
 - Redis server
 - RabbitMQ server
-- Qgis 3.4+
+- Qgis 3.34+
 
 
 Overview
@@ -77,11 +77,11 @@ according to your requirements.
 Services
 --------
 
-Each worker is bound to a *service* that represent a set of Qgis processing providers
+Each worker is bound to a *service* that represents a set of Qgis processing providers
 and Qgis projects.
 
-The **Server** route execution messages to specifice services: how routing is done depends
-on the select access policy from the configuration.
+The **Server** route execution messages to specific services: how routing is done depends
+on the selected access policy from the configuration.
 
 The default access policy select the service from the ``service`` query parameter or take the first
 available service. Other acces policy will consider a pecific header and much more sophisticated 
@@ -213,7 +213,7 @@ for how they are configured with Celery
 Installing from source
 ----------------------
 
-You can install directly from source by cloning the repsotory and
+You can install directly from source by cloning the reposittory and
 running :code:`make install` for installing all python modules.
 
 Running the worker and the server is as simple as:
@@ -232,5 +232,5 @@ and
 
    | You should always install the python modules in a python venv
    | with the :code:`--system-site-packages` option so that you can
-     access pyQgis modules. 
+     access PyQGIS modules. 
 

@@ -37,7 +37,7 @@ configs:
 	@echo "* Creating server configuration documentation"
 	$(PYTHON) -m py_qgis_processes.server config --schema --format toml > ./configs/server.toml
 	$(PYTHON) -c "\
-from py_qgis_processes.config import dump_worker_config; \
+from py_qgis_processes.worker.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
 
 

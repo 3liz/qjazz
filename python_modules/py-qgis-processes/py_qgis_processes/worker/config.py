@@ -150,7 +150,7 @@ def load_configuration() -> ConfigProto:
     return cast(ConfigProto, conf)
 
 
-def dump_worker_config():
+def dump_worker_config() -> None:
     """Dump configuration as toml configuration file
     """
-    config.confservice.dump_toml_schema(sys.stdout)
+    confservice.dump_toml_schema(sys.stdout)

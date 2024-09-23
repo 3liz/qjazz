@@ -4,13 +4,74 @@
 level = "INFO"
 
 
+# Remote configuration settings
+[admin_http]
+#
+# External configuration Url
+#
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+# Note that this overrides all local settings.
+#url =   	# Optional
+
+#
+# SSL configuration
+#
+[admin_http.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
+
+
+# Remote configuration settings
+[admin_config_url]
+#
+# External configuration Url
+#
+# The server will issue a GET method against this url at startup.
+# The method should returns a valid configuration fragment.
+# Note that this overrides all local settings.
+#url =   	# Optional
+
+#
+# SSL configuration
+#
+[admin_config_url.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
+
+
 [resolvers]
 
 #
 # List of Qgis pool backends
 #
+# DNS resolver config
+# 
 # Resolver for DNS resolution that may resolve
 # to multiple ips.
+# 
 [[resolvers.pools]]
 #
 # Unique label
@@ -54,99 +115,4 @@ use_ssl = false
 #
 # SSL certificats
 ssl = "cafile=None certfile=None keyfile=None"
-
-#
-# List of Qgis pool backends
-#
-# Plugin resolver
-# 
-# Load resolver from entrypoint extension
-[[resolvers.pools]]
-#
-# Unique label
-#
-# Unique resolver label. The label must be compatible with an url path component.
-#label =   	# Required
-#
-# Must be set to 'plugin'
-#type =   	# Required
-#
-# Resolver name
-#name =   	# Required
-#
-# Resolver configuration options
-#options =   	# Required
-
-
-[http]
-#
-# Interfaces to listen to
-listen = ["127.0.0.1",9871]
-#
-# Use ssl
-use_ssl = false
-#
-# CORS origin
-#
-# Allows to specify origin for CORS. If set 'all' will set
-# Access-Control-Allow-Origin to '*'; 'same-origin' return
-# the same value as the 'Origin' request header.
-# An url may may be specified, restricting allowed origin to this url.
-cross_origin = "all"
-#
-# Enable proxy_configuration
-#
-# Indicates that the server is behind a reverse proxy.
-# This enable handling of forwarded proxy headers
-proxy_conf = false
-#
-# List of authorized tokens
-auth_tokens = []
-
-#
-# SSL certificats
-#
-[http.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
-
-
-# Remote configuration settings
-[config_url]
-#
-# External configuration Url
-#
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-# Note that this overrides all local settings.
-#url =   	# Optional
-
-#
-# SSL configuration
-#
-[config_url.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
 

@@ -242,6 +242,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/ErrorResponse'
+  /jobs/{JobId}/files/{Resource}:
+    head:
+      summary: Get Job process execution files
+      description: "Returns the job processe execution files\n"
+      parameters:
+      - in: path
+        name: JobId
+        schema:
+          type: string
+        required: true
+        description: Job id
+      - in: path
+        name: Resource
+        schema:
+          type: string
+        required: true
+        description: Resource path
+      tags:
+      - jobs
+      responses:
+        '200':
+          description: "Job log\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/FilesResponse'
+        '404':
+          description: Job or resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
+    get:
+      summary: Get Job process execution files
+      description: "Returns the job processe execution files\n"
+      parameters:
+      - in: path
+        name: JobId
+        schema:
+          type: string
+        required: true
+        description: Job id
+      - in: path
+        name: Resource
+        schema:
+          type: string
+        required: true
+        description: Resource path
+      tags:
+      - jobs
+      responses:
+        '200':
+          description: "Job log\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/FilesResponse'
+        '404':
+          description: Job or resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
   /services/:
     get:
       summary: Return availables services

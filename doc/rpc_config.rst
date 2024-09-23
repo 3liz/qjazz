@@ -7,7 +7,7 @@ Qgis RPC services
 RPC services runs qgis server processes and expose `gRPC <https://grpc.io/>`_ interfaces.
 for requesting and managing the Qgis processes.
 
-The unit of Qgis services is a *worker* wihch is a running instance
+The unit of Qgis services is a *worker* which is a running instance
 of a gRPC service.  
 
 Workers are grouped by *pools* that share the exact same configuration.

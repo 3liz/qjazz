@@ -4,14 +4,14 @@ Job access
 ==========
 
 In production environment where multiple users may run jobs, it may be desirable
-that jobs can be accessed by those who executed them.
+that jobs can be accessed only by those who executed them.
 
 .. note::
 
     This has not be confused with access control to execution of processes which is handled
     by *access policies*.
 
-Limiting access to jobs  may be enforced by using realm token associated to jobs.
+Limiting access to jobs may be enforced by using realm token associated to jobs.
 
 When a job is created a token (a *realm*) may be associated to with it: this token
 will be required used in subsequent requests  for accessing job's status and results 
@@ -25,7 +25,7 @@ Using realm token
 
 By default, when a job is created, a realm token is created and associated to the job.
 
-This token is either defined implicitly by creating a unique uuid and returning the value
+This token is either defined implicitly by creating a unique *uuid* and returning the value
 in the ``X-Job-Realm`` header of the execution response or set explicitly using the same header
 in the request.
 
