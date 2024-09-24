@@ -75,6 +75,7 @@ def _default_plugin_path() -> Path:
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
     if not paths:
         path_env = os.getenv("QGIS_PLUGINPATH")
+        print("QGIS_PLUGINPATH", path_env)
         if path_env:
             paths = [Path(p) for p in path_env.split(":")]
     paths.append(_default_plugin_path())
@@ -94,6 +95,7 @@ class QgisPluginConfig(config.ConfigBase):
         AfterValidator(_validate_plugins_paths),
     ] = Field(
         default=[],
+        validate_default=True,
         title="Plugin paths",
         description=(
             "The list of search paths for plugins.\n"

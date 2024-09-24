@@ -82,7 +82,7 @@ if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
 
  # RUN Xvfb in the background
  echo "Running Xvfb"
- nohup /usr/bin/Xvfb $XVFB_ARGS &
+ nohup /usr/bin/Xvfb $XVFB_ARGS >/tmp/xvfb.log 2>&1 &
  export DISPLAY=":99"
 fi
 

@@ -102,14 +102,14 @@ def handle_api_request(
     # Rebuild URL for Qgis server
     if msg.delegate:
         # Delegate URL
-        url = f"{msg.url.rstrip('/')}{ROOT_DELEGATE}/{msg.path.lstrip('/')}"
+        url = f"{msg.url.removesuffix('/')}{ROOT_DELEGATE}/{msg.path.removeprefix('/')}"
         # Pass api name as header
         # to api delegate
         headers['x-qgis-api'] = msg.name
     else:
         url = msg.url
         if msg.path:
-            url = f"{url.rstrip('/')}/{msg.path.lstrip('/')}"
+            url = f"{url.removesuffix('/')}/{msg.path.removeprefix('/')}"
 
     if msg.options:
         url += f"?{msg.options}"

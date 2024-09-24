@@ -139,6 +139,9 @@ def serve_grpc(configpath: Optional[Path]):
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
+        logger.debug("== Qgis RPC configuration ==\n%s", conf.model_dump_json(indent=4))
+
     conf.worker.plugins.do_install()
 
     pool = WorkerPool(conf.worker)
