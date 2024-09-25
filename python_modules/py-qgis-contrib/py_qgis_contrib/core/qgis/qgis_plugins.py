@@ -20,7 +20,6 @@ from pathlib import Path
 
 from pydantic import (
     AfterValidator,
-    DirectoryPath,
     Field,
     JsonValue,
     ValidationInfo,
@@ -75,7 +74,6 @@ def _default_plugin_path() -> Path:
 def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
     if not paths:
         path_env = os.getenv("QGIS_PLUGINPATH")
-        print("QGIS_PLUGINPATH", path_env)
         if path_env:
             paths = [Path(p) for p in path_env.split(":")]
     paths.append(_default_plugin_path())
@@ -91,7 +89,7 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
 
 class QgisPluginConfig(config.ConfigBase):
     paths: Annotated[
-        List[DirectoryPath],
+        List[Path],
         AfterValidator(_validate_plugins_paths),
     ] = Field(
         default=[],

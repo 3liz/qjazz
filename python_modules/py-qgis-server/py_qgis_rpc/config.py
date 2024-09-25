@@ -1,4 +1,4 @@
-from pydantic import AnyHttpUrl, BeforeValidator, Field, Json
+from pydantic import AnyHttpUrl, BeforeValidator, Field, JsonValue
 from typing_extensions import (
     Annotated,
     Dict,
@@ -207,7 +207,7 @@ class ConfigUrl(config.ConfigBase):
     def is_set(self) -> bool:
         return self.url is not None
 
-    async def load_configuration(self) -> Optional[Json]:
+    async def load_configuration(self) -> Optional[JsonValue]:
         """ Load remote configuration and return the Json
             object
         """

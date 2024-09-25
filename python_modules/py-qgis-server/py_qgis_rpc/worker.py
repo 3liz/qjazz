@@ -6,7 +6,7 @@ from functools import cached_property
 from typing_extensions import AsyncIterator, Dict, Optional, Tuple, cast
 
 from py_qgis_contrib.core import logger
-from py_qgis_contrib.core.config import ConfigProxy, SectionExists
+from py_qgis_contrib.core.config import ConfigProxy
 
 from . import _op_worker
 from . import messages as _m
@@ -86,12 +86,9 @@ class Worker(mp.Process):
     def run(self) -> None:
         """ Override """
         logger.setup_log_handler(self._loglevel)
-        # Setup configuration
-        try:
-            confservice.add_section(WORKER_SECTION, WorkerConfig, ...)
-        except SectionExists:
-            pass
+
         confservice.validate({WORKER_SECTION: self._worker_conf})
+
         # Create proxy for allow update
         self._worker_conf = cast(WorkerConfig, ConfigProxy(confservice, WORKER_SECTION))
         server = _op_worker.setup_server(self._worker_conf)
