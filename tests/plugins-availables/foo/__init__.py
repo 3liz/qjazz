@@ -1,3 +1,5 @@
+
+import sys
 from qgis.core import Qgis, QgsMessageLog
 
 
@@ -14,6 +16,8 @@ class Foo:
     def __init__(self, iface):
         QgsMessageLog.logMessage("SUCCESS - plugin foo  initialized")
 
-
+        # Test that module is marked
+        pkg = sys.modules['foo']
+        assert pkg._is_py_qgis_server
 
     
