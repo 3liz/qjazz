@@ -250,7 +250,7 @@ class QgisPluginService:
                     # Mark packace as loaded by py_qgis_server
                     # allow plugins to check if it has been
                     # loaded by py-qgis-server
-                    package._is_py_qgis_server = True  # type: ignore [attr-defined]
+                    package._is_py_qgis_server2 = True  # type: ignore [attr-defined]
 
                     # Initialize the plugin
                     match plugin_type:

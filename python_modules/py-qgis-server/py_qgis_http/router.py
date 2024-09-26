@@ -60,6 +60,9 @@ class RouterBase(ABC):
 # 3. A `X-Qgis-Project` Header, the project will not appears in returned url's
 #
 
+def get_ows_param(key: str, args: Mapping[str, str]) -> Optional[str]:
+    return args.get(key) or args.get(key.lower())
+
 
 class DefaultRouter(RouterBase):
     """
@@ -91,13 +94,17 @@ class DefaultRouter(RouterBase):
         args = await self.arguments(request)
 
         # Get the project
-        map_arg = _decode('MAP', args.get('MAP', ''))
+        map_arg = get_ows_param('MAP', args)
         if map_arg:
-            project = unquote_plus(map_arg)
+            project = unquote_plus(_decode('MAP', map_arg))
         else:
             project = request.headers.get('X-Qgis-Project')
 
-        if args.get('SERVICE') is not None:
+        # Ensure that project path start with a '/'
+        if project and not project.startswith('/'):
+            project = f"/{project}"
+
+        if get_ows_param('SERVICE', args) is not None:
             # OWS project
             if not project:
                 # Check project in the path
@@ -108,29 +115,11 @@ class DefaultRouter(RouterBase):
             logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)
         else:
-            # Check project in request path
-            path = request.path.removeprefix(route)
+            # Get api path
+            # expecting {route}/{api}/{api_path}
+            head = request.path.removeprefix(route)
 
-            head, sep, tail = path.partition('/_/')
-            if tail:
-                # Handle {:project}/_/{:api_path} scheme
-                if project:
-                    # If the project is already defined with MAP or
-                    # header: redirect to the project's location
-                    logger.warning(
-                        "Project's redefinition in url %s: sending redirection",
-                        request.url,
-                    )
-                    raise web.HTTPFound(f"{route}{project}/_/{tail}")
-                project = f"{head}"
-                api, _, api_path = tail.partition('/')
-            elif head and not sep:
-                # Handle {:api_path} scheme
-                api, _, api_path = head.partition('/')
-            else:
-                # Invalid path ending with '/_/'
-                raise web.HTTPBadRequest(reason="Missing api specification")
-
+            api, _, api_path = head.partition('/')
             if api_path:
                 api_path = f"/{api_path}"
 

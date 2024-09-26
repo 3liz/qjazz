@@ -138,18 +138,6 @@ async def collect_metrics(
     )
 
 
-async def get_arguments(request: web.Request) -> Dict[str, str]:
-    """ Retrieve argument either from body if GET method or
-        from body
-    """
-    args: Mapping
-    if request.method == 'GET':
-        args = request.query
-    elif request.content_type.startswith('application/x-www-form-urlencoded') or \
-         request.content_type.startswith('multipart/form-data'):
-        args = await request.post()
-
-    return {k: _decode(k, v) for k, v in args.items()}
 #
 # OWS
 #
@@ -214,7 +202,7 @@ async def ows_handler(
             allow_headers=ALLOW_OWS_HEADERS,
         )
 
-    arguments = await get_arguments(request)
+    arguments = await get_ows_arguments(request)
 
     ows_service = arguments.pop('SERVICE', "")
     ows_request = arguments.pop('REQUEST', "")
@@ -291,9 +279,23 @@ async def ows_handler(
             )
 
 
+async def get_ows_arguments(request: web.Request) -> Dict[str, str]:
+    """ Retrieve argument either from body if GET method or
+        from body
+    """
+    args: Mapping
+    if request.method == 'GET':
+        args = request.query
+    elif request.content_type.startswith('application/x-www-form-urlencoded') or \
+         request.content_type.startswith('multipart/form-data'):
+        args = await request.post()
+
+    return {k.upper(): _decode(k, v) for k, v in args.items()}
+
 #
 # API
 #
+
 
 ALLOW_API_METHODS = "GET, POST, PUT, HEAD, PATCH, OPTIONS"
 ALLOW_API_HEADERS = "Authorization"
