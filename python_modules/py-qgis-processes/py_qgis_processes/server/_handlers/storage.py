@@ -177,10 +177,10 @@ class Storage(HandlerProto):
             return web.Response(content_type=link.mime_type, headers=headers)
 
         response = web.StreamResponse(headers=headers)
-        await response.prepare(request)
 
         url = AnyUrl(link.href)
 
+        logger.debug("Streaming data from %s", link.href)
         match url.scheme:
             case 'file':
                 import aiofiles
@@ -188,11 +188,13 @@ class Storage(HandlerProto):
                 path = Path(str(url.path))
                 assert_precondition(path.is_file())
                 try:
+                    await response.prepare(request)
                     async with aiofiles.open(path, mode='+rb') as fh:
                         chunk = await fh.read(self._storage.chunksize)
                         while chunk:
                             await response.write(chunk)
                             chunk = await fh.read(self._storage.chunksize)
+                    await response.write_eof()
                 except OSError as err:
                     logger.error("Connection cancelled: %s", err)
                     raise
@@ -200,10 +202,11 @@ class Storage(HandlerProto):
                 if not self._storage.allow_insecure_connection:
                     logger.error("Storage service '%s' returned unauthorized insecure protocol")
                     raise web.HTTPForbidden()
-                await stream_from(link.href, response, self._storage.chunksize)
+                await stream_from(link.href, request, response, self._storage.chunksize)
             case 'https':
                 await stream_from(
                     link.href,
+                    request,
                     response,
                     self._storage.chunksize,
                     self._storage.ssl.create_ssl_client_context(),
@@ -212,5 +215,4 @@ class Storage(HandlerProto):
                 logger.error("Unsupported storage url scheme %s", url.scheme)
                 raise web.HTTPBadGateway()
 
-        await response.write_eof()
         return response

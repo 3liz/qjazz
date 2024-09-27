@@ -10,7 +10,7 @@ import json
 
 
 def test_execute_clipbyextent(host):
-    """  Test execute process with KV arguments """
+    """  Test execute process """
 
     ident = "processes_test:testcliprasterlayer"
     content = {
@@ -40,3 +40,16 @@ def test_execute_clipbyextent(host):
 
     resp = rv.json()
     assert resp['OUTPUT']['type'] == "application/x-ogc-wms; version=1.3.0"
+
+    href = resp['OUTPUT']['href']
+    print("\n::test_execute_clipbyextent::OUTPUT::href", href)
+
+    job_id = rv.headers['X-Job-Id']
+
+    # Get the HEAD
+    rv = requests.head(f"{host}/jobs/{job_id}/files/OUTPUT.tif")
+    assert rv.status_code == 200
+    print("\n::test_execute_clipbyextent::HEAD::headers", rv.headers)
+
+    assert rv.headers['Content-Type'] == "image/tiff"
+    

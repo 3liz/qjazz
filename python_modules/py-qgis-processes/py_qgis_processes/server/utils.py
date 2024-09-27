@@ -62,6 +62,7 @@ def redirect_trailing_slash():
 
 async def stream_from(
     href: str,
+    request: web.Request,
     response: web.StreamResponse,
     chunksize: int,
     ssl_context: ssl.SSLContext | bool = False,
@@ -71,10 +72,11 @@ async def stream_from(
             if resp.status not in (200, 206):
                 logger.error("Connection to '%s' returned %s", href, resp.status)
                 raise web.HTTPBadGateway()
-
-                try:
-                    async for chunk in resp.content.iter_chunked(chunksize):
-                        await response.write(chunk)
-                except OSError as err:
-                    logger.error("Connection cancelled: %s", err)
-                    raise
+            try:
+                await response.prepare(request)
+                async for chunk in resp.content.iter_chunked(chunksize):
+                    await response.write(chunk)
+                await response.write_eof()
+            except OSError as err:
+                logger.error("Connection cancelled: %s", err)
+                raise
