@@ -68,7 +68,7 @@ def _validate_route(r: str) -> PurePosixPath:
     if not r.startswith('/'):
         raise ValueError("Route must starts with a '/'")
     if r != '/':
-       r = r.removesuffix('/')
+        r = r.removesuffix('/')
     return PurePosixPath(r)
 
 

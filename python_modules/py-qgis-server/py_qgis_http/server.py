@@ -32,7 +32,7 @@ from .config import (
 )
 from .handlers import api_handler, ows_handler
 from .models import ErrorResponse
-from .router import DefaultRouter
+from .router import RouterConfig
 
 try:
     __version__ = version('py_qgis_http')
@@ -207,14 +207,14 @@ def redirect(path: str) -> Callable[[web.Request], Awaitable]:
 
 class _Router:
 
-    def __init__(self, channels: Channels, conf: HttpConfig):
+    def __init__(self, channels: Channels, conf: RouterConfig):
         self.channels = channels
 
         self._collect: Optional[Callable] = None
 
         # Set router
         self._channels_last_modified = 0.
-        self._router = DefaultRouter()
+        self._router = conf.create_instance()
         self._update_routes()
 
     async def set_metrics(self, metrics_conf: MetricsConfig) -> metrics.Metrics:
@@ -354,8 +354,7 @@ async def start_site(conf: HttpConfig, runner: web.AppRunner) -> Site:
 
 @asynccontextmanager
 async def setup_ogc_server(
-    conf: HttpConfig,
-    metrics_conf: Optional[MetricsConfig],
+    conf: ConfigProto,
     channels: Channels,
 ) -> AsyncGenerator[web.AppRunner, None]:
 
@@ -370,20 +369,20 @@ async def setup_ogc_server(
     )
 
     # CORS support
-    app.on_response_prepare.append(set_access_control_headers(conf.cross_origin))
+    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin))
     app.on_response_prepare.append(set_server_headers)
 
-    router = _Router(channels, conf)
+    router = _Router(channels, conf.router)
 
     metrics_service = None
-    if metrics_conf:
-        metrics_service = await router.set_metrics(metrics_conf)
+    if conf.metrics:
+        metrics_service = await router.set_metrics(conf.metrics)
 
         async def close_service(app: web.Application):
             await metrics_service.close()
         app.on_cleanup.append(close_service)
 
-    router = _Router(channels, conf)
+    router = _Router(channels, conf.router)
 
     app.router.add_route('*', "/{tail:.*}", router.do_route)
 
@@ -442,7 +441,7 @@ async def serve(conf: ConfigProto):
     channels = Channels(conf)
     await channels.init_channels()
 
-    async with setup_ogc_server(conf.http, conf.metrics, channels) as ogc_runner:
+    async with setup_ogc_server(conf, channels) as ogc_runner:
         async with setup_adm_server(conf.admin_http, channels) as adm_runner:
 
             _ogc_site: Site = await start_site(conf.http, ogc_runner)

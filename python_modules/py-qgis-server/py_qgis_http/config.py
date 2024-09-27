@@ -28,6 +28,7 @@ from py_qgis_contrib.core.config import (
 
 from .metrics import MetricsConfig
 from .resolver import BackendConfig
+from .router import RouterConfig
 
 DEFAULT_INTERFACE = ("127.0.0.1", 9080)
 
@@ -154,6 +155,7 @@ class ConfigProto(Protocol):
     http: HttpConfig
     http_config_url: ConfigUrl
     admin_http: AdminHttpConfig
+    router: RouterConfig
     metrics: Optional[MetricsConfig]
     backends: Dict[str, BackendConfig]
     includes: Optional[str]
@@ -170,6 +172,8 @@ def create_config() -> ConfBuilder:
     builder.add_section('http', HttpConfig)
     builder.add_section("http_config_url", ConfigUrl)
     builder.add_section('admin_http', AdminHttpConfig)
+
+    builder.add_section('router', RouterConfig)
 
     # Add the `[backends]` configuration section
     builder.add_section(

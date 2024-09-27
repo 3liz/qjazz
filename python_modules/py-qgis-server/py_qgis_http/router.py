@@ -1,11 +1,31 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 from urllib.parse import unquote_plus
 
 from aiohttp import web
-from typing_extensions import Awaitable, Mapping, Optional, Protocol
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    Field,
+    ImportString,
+    TypeAdapter,
+    WithJsonSchema,
+    model_validator,
+)
+from typing_extensions import (
+    Annotated,
+    Any,
+    Awaitable,
+    Dict,
+    Mapping,
+    Optional,
+    Protocol,
+    Self,
+    runtime_checkable,
+)
 
 from py_qgis_contrib.core import logger
+from py_qgis_contrib.core.config import ConfigBase
 
 from .webutils import _decode
 
@@ -31,7 +51,8 @@ class Route:
     path: str = '/'  # API path
 
 
-class RouterBase(ABC):
+@runtime_checkable
+class RouterBase(Protocol):
 
     @abstractmethod
     def route(self, routable: Routable) -> Awaitable[Route]:
@@ -50,13 +71,65 @@ class RouterBase(ABC):
 
 
 #
+#  Router configuration
+#
+
+def _parse_config_options(val: str | Dict[str, Any]) -> Dict[str, Any]:
+    if isinstance(val, str):
+        val = TypeAdapter(Dict[str, Any]).validate_json(val)
+    return val
+
+
+RouterConfigOptions = Annotated[
+    Dict[str, Any],
+    BeforeValidator(_parse_config_options),
+]
+
+
+class RouterConfig(ConfigBase):
+    router_class: Annotated[
+        ImportString,
+        WithJsonSchema({'type': 'string'}),
+        Field(
+            default="py_qgis_http.router.DefaultRouter",
+            validate_default=True,
+            title="The router class",
+            description=(
+                "The router class allow for defining routing rules\n"
+                "from the request url."
+            ),
+        ),
+        ]
+    config: RouterConfigOptions = Field({}, title="Router configuration")
+
+    @model_validator(mode='after')
+    def validate_config(self) -> Self:
+
+        klass = self.router_class
+
+        if not issubclass(klass, RouterBase):
+            raise ValueError(f"{klass} does not suppport ProtocolHandler protocol")
+
+        self._router_conf: BaseModel | None = None
+        if hasattr(klass, 'Config') and issubclass(klass.Config, BaseModel):
+            self._handler_conf = klass.Config.model_validate(self.config)
+
+        return self
+
+    def create_instance(self) -> RouterBase:
+        if self._router_conf:
+            return self.router_class(self._handler_conf)
+        else:
+            return self.router_class()
+
+
+#
 # The default router
 #
 # A project may be specified by (in precedence order):
 #
-# 1. A path element followed by `/_/`, the path element will be included
-#    in the returned urls
-# 2. A `MAP` query argument: the `MAP` will be part of the returned urls
+# 1. As last part of the path with OWS urls only.
+# 2. With a `MAP` query argument: the `MAP` will be part of the returned urls
 # 3. A `X-Qgis-Project` Header, the project will not appears in returned url's
 #
 
@@ -76,8 +149,7 @@ class DefaultRouter(RouterBase):
        If the project is not defined as `MAP` parameter
        or as `X-Qgis-Project` header, we take the relative path from
        the route in the request path.
-    * `<channel_route>/(?:<project_path>/_/)(<api_path>)` is routed
-       as API request
+    * Any other urls are routed as {route}/{api_endpoint}/
     """
     async def route(self, routable: Routable) -> Route:
         # Get the route from the request path
