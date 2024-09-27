@@ -53,7 +53,7 @@ def setup_server(conf: WorkerConfig) -> QgsServer:
     """ Setup Qgis server and plugins
     """
     # Enable qgis server debug verbosity
-    if logger.isEnabledFor(logger.LogLevel.DEBUG):
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
         os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'
         os.environ['QGIS_DEBUG'] = '1'
 
@@ -70,7 +70,7 @@ def setup_server(conf: WorkerConfig) -> QgsServer:
 
     CacheManager.initialize_handlers(projects)
 
-    if logger.isEnabledFor(logger.LogLevel.DEBUG):
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
         print(show_qgis_settings())  # noqa T201
 
     return server
@@ -223,7 +223,7 @@ def qgis_server_run(
         finally:
             if not event.is_set():
                 _t_end = time()
-                if logger.isEnabledFor(logger.LogLevel.TRACE):
+                if logger.is_enabled_for(logger.LogLevel.TRACE):
                     logger.trace(
                         "%s\t%s\tResponse time: %d ms",
                         name,

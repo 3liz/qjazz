@@ -97,7 +97,7 @@ class ServiceCache:
 def _log_services(services: ServiceDict):
     logger.info("Availables services: %s", tuple(services.keys()))
 
-    if logger.isEnabledFor(logger.LogLevel.DEBUG):
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
 
         def _format(dests, details):
             return f"{dests}\n{details.model_dump_json(indent=4)}"

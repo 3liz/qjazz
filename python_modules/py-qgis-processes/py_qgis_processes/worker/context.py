@@ -53,7 +53,7 @@ class QgisContext:
     def setup(cls, conf: ProcessingConfig):
         """ Initialize qgis """
 
-        debug = logger.isEnabledFor(logger.LogLevel.DEBUG)
+        debug = logger.is_enabled_for(logger.LogLevel.DEBUG)
         if debug:
             os.environ['QGIS_DEBUG'] = '1'
 
@@ -131,7 +131,7 @@ class QgisServerContext:
     @classmethod
     def setup(cls, conf: ProcessingConfig):
 
-        debug = logger.isEnabledFor(logger.LogLevel.DEBUG)
+        debug = logger.is_enabled_for(logger.LogLevel.DEBUG)
         # Enable qgis server debug verbosity
         if debug:
             os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'

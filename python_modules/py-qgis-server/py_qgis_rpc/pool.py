@@ -272,7 +272,7 @@ class WorkerPool:
         try:
             self._count += 1
             # Wait for available worker
-            if logger.isEnabledFor(logger.LogLevel.TRACE):
+            if logger.is_enabled_for(logger.LogLevel.TRACE):
                 logger.trace(
                     "POOL: get_worker: Available workers=%s, waiting requests=%s",
                     self._avails.qsize(),
