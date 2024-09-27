@@ -59,7 +59,7 @@ SERVER_HEADER = f"Py-Qgis-Http-Processes {__version__}"
 # Configuration
 #
 
-DEFAULT_INTERFACE = ("127.0.0.1", 9080)
+DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 

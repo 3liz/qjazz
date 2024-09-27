@@ -29,7 +29,7 @@ services:
   processes-server:
     image: 3liz/qgis-services:qgis-release-eager
     ports:
-    - 127.0.0.1:9080:9080
+    - 127.0.0.1:9180:9180
     command: ["qgis-processes", "serve", "-v"]
     environment:
       CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
@@ -79,7 +79,7 @@ services:
       CONF_BACKENDS__JOBS__ADDRESS: "tcp://qgis-rpc"
       CONF_BACKENDS__JOBS__ROUTE: "/results"
     ports:
-    - 127.0.0.1:9180:9080
+    - 127.0.0.1:9080:9080
     - 127.0.0.1:9876:9876
     command: ["qgis-server-http", "serve"]
 

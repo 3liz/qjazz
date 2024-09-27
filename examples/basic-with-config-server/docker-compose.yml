@@ -15,7 +15,7 @@ services:
     environment:
       CONF_CONFIG_URL__URL: "http://config-server/web.json"
     ports:
-    - 80:80
+    - 127.0.0.1:9080:9080
     command: ["qgis-server-http", "serve"]
 
   # The configuration server 

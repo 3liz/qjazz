@@ -18,8 +18,13 @@ services:
       CONF_LOGGING__LEVEL: trace
       CONF_BACKENDS__BASIC__TITLE: "Basic backends"
       CONF_BACKENDS__BASIC__ADDRESS: "tcp://qgis-rpc"
-      CONF_BACKENDS__BASIC__ROUTE: "/basic"    
+      CONF_BACKENDS__BASIC__ROUTE: "/"  
+      # publish the wfs3 api endpoint 
+      CONF_BACKENDS__BASIC__API: >- 
+          [
+            {"endpoint": "wfs3", "name": "Features OGC Api (WFS3)"}
+          ]
     ports:
-    - 80:80
+    - 127.0.0.1:9080:9080
     command: ["qgis-server-http", "serve"]
 

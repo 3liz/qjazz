@@ -108,11 +108,11 @@ RUN cd /usr/local/bin \
 
 COPY docker/scripts/ /usr/local/bin/
 
-ENV CONF_SERVER__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_SERVER__LISTEN='["0.0.0.0", 9180]'
 ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
 ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 
-EXPOSE 9443 9080 9876 9880
+EXPOSE 9443 9080 9180 9876 9871
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
