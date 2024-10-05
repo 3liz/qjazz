@@ -136,12 +136,12 @@ class ProcessAlgorithm:
         return self._deprecated(self._alg)
 
     @cached_property
-    def _description(self):
+    def _description(self) -> ProcessDescription:
 
         alg = self._alg
 
         description = ProcessDescription(
-            id_=alg.id(),
+            id_=alg.id(),  # type: ignore [call-arg]
             title=alg.displayName(),
             description=alg.shortDescription(),
             version="",

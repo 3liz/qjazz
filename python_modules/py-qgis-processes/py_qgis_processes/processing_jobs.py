@@ -2,99 +2,30 @@
 # Processing jobs
 #
 
-import subprocess  # nosec
-import sys
 
 from celery.signals import worker_process_init, worker_ready
 from celery.worker.control import control_command, inspect_command
 from typing_extensions import (
     Dict,
-    List,
     Optional,
 )
 
-from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.celery import Job, JobContext
 
 from .schemas import (
     JobExecute,
     JobResults,
-    ProcessDescription,
-    ProcessSummary,
-    ProcessSummaryList,
 )
-from .worker.config import lookup_config_path
 from .worker.prelude import (
     QgisJob,
     QgisProcessJob,
     QgisWorker,
 )
-from .worker.processing import FeedBack, QgisContext
-
-#
-#  Processes cache
-#
-
-
-class ProcessCache:
-
-    def __init__(self) -> None:
-        self._descriptions: Dict[str, ProcessDescription] = {}
-        self._processes: List[ProcessSummary] = []
-        self._known_processes: set[str] = set()
-        self._command = (
-            f'{sys.executable}',
-            '-m',
-            'py_qgis_processes.processing',
-            '-C',
-            f'{lookup_config_path()}',
-            'process',
-        )
-
-    @property
-    def processes(self) -> Dict:
-        return ProcessSummaryList.dump_python(self._processes, mode='json', exclude_none=True)
-
-    def describe(self, ident: str, project: Optional[str]) -> Dict | None:
-        """ Return process description
-        """
-        if ident not in self._known_processes:
-            return None
-
-        key = f'{ident}@{project}'
-
-        description = self._descriptions.get(key)
-        if not description:
-
-            logger.info("Getting process description for %s, project=%s", ident, project)
-
-            arguments = [*self._command, 'describe', ident]
-            if project:
-                arguments.extend(('--project', project, '--dont-resolve-layers'))
-
-            p = subprocess.run(arguments, capture_output=True)  # nosec
-            p.check_returncode()
-
-            description = ProcessDescription.model_validate_json(p.stdout)
-
-            self._descriptions[key] = description
-
-        return description.model_dump(mode='json', exclude_none=True)
-
-    def update(self) -> List[ProcessSummary]:
-        """ Update process summary list
-        """
-        logger.info("Updating processes cache")
-
-        p = subprocess.run([*self._command, 'list', '--json'], capture_output=True)  # nosec
-        p.check_returncode()
-
-        self._processes = ProcessSummaryList.validate_json(p.stdout)
-        self._descriptions.clear()
-
-        self._known_processes = {p.id_ for p in self._processes}
-
-        return self._processes
+from .worker.processing import (
+    FeedBack,
+    ProcessingCache,
+    QgisContext,
+)
 
 #
 #  Signals
@@ -155,10 +86,15 @@ class QgisProcessingWorker(QgisWorker):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.processes_cache = ProcessCache()
+        self.processes_cache = ProcessingCache(self.processing_config)
+        self.processes_cache.start()
 
     def create_context(self) -> QgisContext:
         return QgisContext(self.processing_config)
+
+    def on_worker_shutdown(self) -> None:
+        self.processes_cache.stop()
+        super().on_worker_shutdown()
 
 
 app = QgisProcessingWorker()

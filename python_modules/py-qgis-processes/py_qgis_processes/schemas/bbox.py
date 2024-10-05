@@ -13,10 +13,10 @@ from typing_extensions import (
 from .models import JsonModel, OneOf
 from .ogc import WGS84
 
-Coordinates2D = Annotated[Sequence[float], Len(min_length=4, max_length=4)]
-Coordinates3D = Annotated[Sequence[float], Len(min_length=6, max_length=6)]
+Extent2D = Annotated[Sequence[float], Len(min_length=4, max_length=4)]
+Extent3D = Annotated[Sequence[float], Len(min_length=6, max_length=6)]
 
-BboxCoordinates = OneOf[Coordinates2D | Coordinates3D]
+BboxCoordinates = OneOf[Extent2D | Extent3D]
 
 
 # OGC bounding box definition

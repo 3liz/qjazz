@@ -8,6 +8,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    PrivateAttr,
     TypeAdapter,
     ValidationInfo,
     WithJsonSchema,
@@ -97,15 +98,17 @@ class ProjectsConfig(config.ConfigBase):
             "this option."
         ),
     )
-    dont_resolve_layers: bool = Field(
-        default=False,
-        title="Don't resolve layer paths",
-        description=(
-            "Don't load any layer content\n"
-            "Improve loading time when actual layer data is\n"
-            "not required."
-        ),
-    )
+
+    # Don't resolve layer paths
+    # Don't load any layer content
+    # Improve loading time when actual layer data is
+    # not required.
+    _dont_resolve_layers: bool = PrivateAttr(default=False)
+
+    @property
+    def dont_resolve_layers(self) -> bool:
+        return self._dont_resolve_layers
+
     disable_advertised_urls: bool = Field(
         default=False,
         title="Disable OWS advertised urls",

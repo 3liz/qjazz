@@ -47,6 +47,7 @@ from py_qgis_processes.schemas import (
 from ..utils import (
     ProcessingSourceType,
     compatible_layers,
+    compatible_vector_layers,
     get_valid_filename,
     raw_destination_sink,
 )
@@ -133,7 +134,12 @@ class ParameterMultipleLayers(ParameterMapLayer):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type = super(ParameterMultipleLayers, cls).create_model(param, field, project, validation_only)
+        _type = super(ParameterMultipleLayers, cls).create_model(
+            param,
+            field,
+            project,
+            validation_only,
+        )
 
         min_number = param.minimumNumberInputs()
         if min_number > 0:
@@ -153,7 +159,7 @@ class ParameterVectorLayer(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return QgsProcessingUtils.compatibleVectorLayers(project, param.dataTypes())
+        return compatible_vector_layers(project, param.dataTypes())
 
 
 #

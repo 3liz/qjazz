@@ -103,7 +103,10 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str
         content = f.read()
         if kwds:
             from string import Template
-            content = Template(content).substitute(kwds)
+            content = Template(content).substitute(
+                kwds,
+                location=str(cfgfile.parent.absolute()),
+            )
         return loads(content)
 
 

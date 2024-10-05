@@ -123,7 +123,7 @@ class QgisContext:
         return project
 
 
-class QgisServerContext:
+class QgisServerContext(QgisContext):
     """Qgis server context initializer
     """
     server: QgsServer

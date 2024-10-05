@@ -17,7 +17,7 @@ services:
   server:
     image: 3liz/qgis-services:qgis-ltr-eager
     ports:
-    - 127.0.0.1:9180:9180
+    - 127.0.0.1:9180:9080
     command: ["qgis-processes", "serve", "-v"]
     environment:
       CONF_SERVER__LISTEN: >- 

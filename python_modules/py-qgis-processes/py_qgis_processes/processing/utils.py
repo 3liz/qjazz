@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from typing_extensions import (
-    Iterable,
+    Iterator,
     Optional,
     Sequence,
     Tuple,
@@ -16,12 +16,17 @@ from typing_extensions import (
 
 from qgis.core import (
     Qgis,
+    QgsAnnotationLayer,
     QgsMapLayer,
+    QgsMeshLayer,
+    QgsPointCloudLayer,
     QgsProcessing,
     QgsProcessingDestinationParameter,
     QgsProcessingParameterFileDestination,
-    QgsProcessingUtils,
     QgsProject,
+    QgsRasterLayer,
+    QgsVectorLayer,
+    QgsVectorTileLayer,
 )
 
 from py_qgis_processes.schemas import (
@@ -65,25 +70,58 @@ else:
 #
 # Utils
 #
+
+#
+#  Note we do not use QgsProcessingUtils.compatibleXXX methods
+#  since we want to able to use invalid layers from project
+#  loaded with 'dont_resolve_layers' option.
+
+def is_compatible_vector_layer(
+    layer: QgsVectorLayer,
+    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+) -> bool:
+    _PT = ProcessingSourceType
+
+    return not dtypes \
+        or (_PT.VectorPoint.value in dtypes and layer.geometryType() == Qgis.GeometryType.Point) \
+        or (_PT.VectorLine.value in dtypes and layer.geometryType() == Qgis.GeometryType.Line) \
+        or (_PT.VectorPolygon.value in dtypes and layer.geometryType() == Qgis.GeometryType.Polygon) \
+        or (_PT.VectorAnyGeometry.value in dtypes and layer.isSpatial()) \
+        or _PT.Vector.value in dtypes
+
+
+def compatible_vector_layers(
+    project: QgsProject,
+    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+) -> Iterator[QgsMapLayer]:
+    for layer in project.mapLayers().values():
+        if isinstance(layer, QgsVectorLayer) and is_compatible_vector_layer(layer, dtypes):
+            yield layer
+
+
+# TODO Add plugin and tiled scene layers
+
 def compatible_layers(
     project: QgsProject,
     dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
-) -> Iterable[QgsMapLayer]:
+) -> Iterator[QgsMapLayer]:
     if dtypes:
-        layers = QgsProcessingUtils.compatibleVectorLayers(project, dtypes)
-        if ProcessingSourceType.Raster in dtypes:
-            layers.extend(QgsProcessingUtils.compatibleRasterLayers(project))
-        if ProcessingSourceType.Mesh in dtypes:
-            layers.extend(QgsProcessingUtils.compatibleMeshLayers(project))
-        if ProcessingSourceType.Annotation in dtypes:
-            layers.extend(QgsProcessingUtils.compatibleAnnotationLayers(project))
-        if ProcessingSourceType.VectorTile in dtypes:
-            layers.extend(QgsProcessingUtils.compatibleVectoTileLayers(project))
-        if ProcessingSourceType.PointCloud in dtypes:
-            layers.extend(QgsProcessingUtils.compatiblePointCloudLayers(project))
-        return layers
+        for layer in project.mapLayers().values():
+            match layer:
+                case QgsVectorLayer() if is_compatible_vector_layer(layer, dtypes):
+                    yield layer
+                case QgsRasterLayer() if ProcessingSourceType.Raster.value in dtypes:
+                    yield layer
+                case QgsMeshLayer() if ProcessingSourceType.Mesh.value in dtypes:
+                    yield layer
+                case QgsAnnotationLayer() if ProcessingSourceType.Annotation.value in dtypes:
+                    yield layer
+                case QgsVectorTileLayer() if ProcessingSourceType.VectorTile.value in dtypes:
+                    yield layer
+                case QgsPointCloudLayer() if ProcessingSourceType.PointCloud in dtypes:
+                    yield layer
     else:
-        return QgsProcessingUtils.compatibleLayers(project)
+        yield from project.mapLayers().values()
 
 
 def get_valid_filename(s: str) -> str:

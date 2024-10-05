@@ -35,6 +35,8 @@ email = "dmarteau@3liz.org"
 include = [
     "py_qgis_processes", 
     "py_qgis_processes.*",
+    "py_qgis_printserver",
+    "py_qgis_printserver.*",
 ]
 
 [tool.ruff]

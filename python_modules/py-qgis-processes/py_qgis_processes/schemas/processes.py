@@ -11,6 +11,7 @@ from pydantic import (
 from typing_extensions import (
     Annotated,
     Dict,
+    List,
     Literal,
     Optional,
     Sequence,
@@ -91,7 +92,7 @@ class ProcessSummary(DescriptionType):
         'async-execute',
         'dismiss',
     )
-    links: Sequence[LinkHttp] = Field(default=[])
+    links: List[LinkHttp] = Field(default=[])
 
 
 class ProcessDescription(ProcessSummary):

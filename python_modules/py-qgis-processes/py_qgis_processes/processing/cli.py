@@ -1,7 +1,6 @@
 """ Command line client
     For running processinc algorithms
 """
-import os
 import sys
 
 from pathlib import Path
@@ -309,13 +308,9 @@ def describe_processes(
     """
     from .processes import ProcessAlgorithm
 
-    if dont_resolve_layers:
-        # This will work only if the setting is not defined in the configuration
-        os.environ['CONF_PROCESSING__PROJECTS__DONT_RESOLVE_LAYERS'] = 'yes'
-
     conf = load_configuration(ctx.obj.configpath)
-    if dont_resolve_layers and not conf.processing.projects.dont_resolve_layers:
-        echo(style("Bad layers will be resolved", fg="yellow"), err=True)
+    if dont_resolve_layers:
+        conf.processing.projects._dont_resolve_layers = True
 
     init_qgis(conf.processing)
 

@@ -396,7 +396,7 @@ class QgisProcessJob(QgisJob):
         # Check if task is not dismissed while
         # being pending
         ti = registry.find_job(self.app, task_id)
-        logger.debug("Processing task info %s", ti)
+        logger.debug("Job task info %s", ti)
         if not ti or ti.dismissed:
             raise DismissedTaskError(task_id)
         super().before_start(task_id, args, kwargs)

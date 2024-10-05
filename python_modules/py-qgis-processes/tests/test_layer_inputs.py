@@ -51,15 +51,19 @@ def test_parameter_layer_maplayer():
     print("\ntest_parameter_layer_maplayer::", schema)
 
 
-def test_parameter_layer_vectorlayer():
+def test_parameter_layer_vectorlayer(projects):
+
+    project = projects.get('/france/france_parts')
 
     param = QgsProcessingParameterVectorLayer("VectorLayer")
 
-    inp = InputParameter(param)
+    inp = InputParameter(param, project)
     assert isinstance(inp, ParameterVectorLayer)
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectorlayer::", schema)
+
+    assert 'france_parts' in schema['enum']
 
 
 def test_parameter_layer_rasterlayer():

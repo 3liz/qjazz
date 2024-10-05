@@ -33,6 +33,7 @@ from ..processing.prelude import (
     ProcessingContext,
     ProcessSummary,
 )
+from .cache import ProcessCache
 from .context import QgisContext as QgisContextBase
 from .context import execute_context
 from .exceptions import (
@@ -226,3 +227,27 @@ class QgisContext(QgisContextBase):
 
         for lid in _layers_for(LayerType.Vector):
             project.writeEntry("WFSLayersPrecision", "/" + lid, 6)
+
+
+#
+#  Processes cache
+#
+
+class ProcessingCache(ProcessCache):
+
+    def initialize(self):
+        self.processing_config.projects._dont_resolve_layers = True
+        QgisContext.setup_processing(self.processing_config)
+
+    @cached_property
+    def context(self) -> QgisContext:
+        return QgisContext(self.processing_config)
+
+    def _describe(self, ident: str, project: Optional[str]) -> ProcessDescription:
+        description = self.context.describe(ident, project)
+        if not description:
+            raise ValueError(f"No description found for algorithm {ident}")
+        return description
+
+    def _update(self) -> List[ProcessSummary]:
+        return self.context.processes

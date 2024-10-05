@@ -10,11 +10,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 from typing_extensions import (
-    Dict,
-    Literal,
     Optional,
     Sequence,
-    TypeAlias,
 )
 
 from qgis.core import (
@@ -30,7 +27,6 @@ from py_qgis_processes.schemas import (
     InputValueError,
     JsonDict,
     Link,
-    NullField,
     Output,
     OutputFormat,
     OutputFormatDefinition,
@@ -181,26 +177,6 @@ class OutputHtml(OutputFile):
     ) -> Sequence[Format]:
 
         return (cls._OutputFormat,)
-
-    @classmethod
-    def create_model(
-        cls,
-        outp: OutputDefinition,
-        field: Dict,
-        alg: Optional[QgsProcessingAlgorithm],
-    ) -> TypeAlias:
-
-        output_formats = cls.get_output_formats(outp, alg)
-
-        class _Ref(Link):
-            mime_type: Optional[  # type: ignore [valid-type]
-                Literal[tuple(output_formats)]
-            ] = NullField(
-                serialization_alias="type",
-                json_schema_extra={"readOnly": True},
-            )
-
-        return _Ref
 
     def output(self, value: str, context: Optional[ProcessingContext] = None) -> JsonValue:
 

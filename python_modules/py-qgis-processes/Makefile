@@ -3,8 +3,11 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
+PYTHON_PKG= \
+	py_qgis_processes   \
+	py_qgis_printserver \
+	$(NULL)
 
-PYTHON_PKG=py_qgis_processes
 
 TESTDIR=tests tests/plugins
 

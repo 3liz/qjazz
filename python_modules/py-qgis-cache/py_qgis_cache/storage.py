@@ -68,6 +68,7 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
         badlayerh = BadLayerHandler()
         project.setBadLayerHandler(badlayerh)
     else:
+        logger.debug("Disabled layer's resolution for '%s'", uri)
         badlayerh = None
 
     if not project.read(uri, readflags):
