@@ -143,10 +143,7 @@ def load_configuration(
 ) -> ConfigProto:
 
     if configpath:
-        cnf = read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute()),
-        )
+        cnf = read_config_toml(configpath)
     else:
         cnf = {}
 

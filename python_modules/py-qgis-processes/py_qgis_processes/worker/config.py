@@ -133,10 +133,7 @@ def load_configuration() -> ConfigProto:
     if configpath:
         print("=Reading configuration from:", configpath, file=sys.stderr, flush=True)  # noqa T201
 
-        cnf = config.read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute()),
-        )
+        cnf = config.read_config_toml(configpath)
     else:
         cnf = {}
 

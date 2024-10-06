@@ -20,10 +20,7 @@ from .server import serve
 #
 def load_configuration(configpath: Optional[Path]) -> ConfigProto:
     if configpath:
-        cnf = config.read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute()),
-        )
+        cnf = config.read_config_toml(configpath)
         # Needed when reloading configuration
         os.environ[ENV_CONFIGFILE] = configpath.as_posix()
     else:

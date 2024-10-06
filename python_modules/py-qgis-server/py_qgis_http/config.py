@@ -253,10 +253,7 @@ def load_include_config_files(includes: str, conf: ConfigProto):
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> ConfigProto:
 
     if configpath:
-        cnf = read_config_toml(
-            configpath,
-            location=str(configpath.parent.absolute()),
-        )
+        cnf = read_config_toml(configpath)
         os.environ[ENV_CONFIGFILE] = configpath.as_posix()
     else:
         cnf = {}

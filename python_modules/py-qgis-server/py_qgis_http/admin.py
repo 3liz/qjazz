@@ -244,10 +244,7 @@ def config_route(
                     # Fallback to configfile (if any)
                     configpath = Path(os.environ[ENV_CONFIGFILE])
                     logger.info("** Reloading config from %s **", configpath)
-                    obj = read_config_toml(
-                        configpath,
-                        location=str(configpath.parent.absolute()),
-                    )
+                    obj = read_config_toml(configpath)
                     conf = confservice.update_config(obj)
                     if conf.includes:
                         # Includes must be relative to config file
