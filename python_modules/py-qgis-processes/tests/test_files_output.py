@@ -13,7 +13,7 @@ from py_qgis_processes.processing.outputs import (
     OutputFile,
     OutputParameter,
 )
-from py_qgis_processes.schemas import InputValueError
+from py_qgis_processes.schemas import InputValueError, Output
 
 
 def test_output_file(qgis_session: ProcessingConfig):
@@ -46,8 +46,14 @@ def test_output_file(qgis_session: ProcessingConfig):
 
     # Invalid format should raise InputValueError
     with pytest.raises(InputValueError):
-        output.validate_output({'format': {"mediaType": "application/xml"}}, param)
+        output.validate_output(
+            Output.model_validate({'format': {"mediaType": "application/xml"}}),
+            param,
+        )
 
-    output.validate_output({'format': {"mediaType": "application/json"}}, param)
+    output.validate_output(
+        Output.model_validate({'format': {"mediaType": "application/json"}}),
+        param,
+    )
     assert output.output_extension == '.json'
     assert param.output_extension == '.json'

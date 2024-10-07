@@ -10,7 +10,6 @@ from typing_extensions import (
     Sequence,
     Tuple,
     TypeAlias,
-    cast,
 )
 
 from qgis.core import (
@@ -28,7 +27,6 @@ from py_qgis_processes.schemas import (
     InputValueError,
     JobExecute,
     JobResults,
-    JsonDict,
     LinkHttp,
     MetadataValue,
     ProcessDescription,
@@ -228,10 +226,7 @@ class ProcessAlgorithm:
             out = request.outputs.get(o.name)
             if out:
                 inputdef = o.input_definition
-                o.validate_output(
-                    cast(JsonDict, out),
-                    inputdef and inputs.get(inputdef.name()),
-                )
+                o.validate_output(out, inputdef and inputs.get(inputdef.name()))
 
         # Convert inputs to parameters
         parameters = InputParameter.parameters(inputs.values(), request.inputs, context)
@@ -253,7 +248,7 @@ class ProcessAlgorithm:
         )
 
         # Create a destination project
-        # Note: Destination project must be created *before"
+        # Note: Destination project must be created *before*
         # evaluating parameters.
         if not context.destination_project:
             context.destination_project = context.create_project(self.ident)

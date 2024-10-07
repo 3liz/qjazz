@@ -14,6 +14,7 @@ from typing_extensions import (
     Dict,
     Literal,
     Optional,
+    Protocol,
     Self,
     Type,
     TypeAlias,
@@ -75,6 +76,12 @@ class LinkReference(LinkHttp):
     body: Optional[str] = Null
 
 
+class MediaTypeProtocol(Protocol):
+    @property
+    def media_type(self) -> str:
+        ...
+
+
 def MediaType(
     _type: Type,
     media_type: str,
@@ -98,7 +105,7 @@ class OutputFormat(JsonModel):
     schema_: Optional[AnyUrl | JsonDict] = NullField(alias="schema")
 
     def __eq__(self, other: object) -> bool:
-        return self.media_type == cast(Self, other).media_type
+        return self.media_type == cast(MediaTypeProtocol, other).media_type
 
 
 class QualifiedInputValue(OutputFormat):

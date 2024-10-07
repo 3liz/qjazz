@@ -3,10 +3,8 @@
 #
 
 
-from celery.signals import worker_process_init, worker_ready
-from celery.worker.control import control_command, inspect_command
+from celery.signals import worker_process_init
 from typing_extensions import (
-    Dict,
     Optional,
 )
 
@@ -17,14 +15,15 @@ from .schemas import (
     JobResults,
 )
 from .worker.prelude import (
+    Feedback,
+    ProcessCacheProto,
     QgisJob,
     QgisProcessJob,
     QgisWorker,
 )
 from .worker.processing import (
-    FeedBack,
     ProcessingCache,
-    QgisContext,
+    QgisProcessingContext,
 )
 
 #
@@ -39,43 +38,7 @@ from .worker.processing import (
 def init_qgis(*args, **kwargs):
     """ Initialize Qgis context in each process
     """
-    QgisContext.setup_processing(app.processing_config)
-
-
-@worker_ready.connect
-def on_worker_ready(*args, **kwargs):
-    app.processes_cache.update()
-
-
-#
-# Control commands
-#
-
-@control_command()
-def reload_processes_cache(_):
-    """ Reload the processes cache
-    """
-    app.processes_cache.update()
-
-
-#
-# Inspect commands
-#
-@inspect_command()
-def list_processes(_) -> Dict:
-    """Return processes list
-    """
-    return app.processes_cache.processes
-
-
-@inspect_command(
-    args=[('ident', str), ('project_path', str)],
-)
-def describe_process(_, ident: str, project_path: str | None) -> Dict | None:
-    """Return process description
-    """
-    return app.processes_cache.describe(ident, project_path)
-
+    QgisProcessingContext.setup_processing(app.processing_config)
 
 #
 # Qgis Worker
@@ -84,17 +47,13 @@ def describe_process(_, ident: str, project_path: str | None) -> Dict | None:
 
 class QgisProcessingWorker(QgisWorker):
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.processes_cache = ProcessingCache(self.processing_config)
-        self.processes_cache.start()
+    def create_context(self) -> QgisProcessingContext:
+        return QgisProcessingContext(self.processing_config)
 
-    def create_context(self) -> QgisContext:
-        return QgisContext(self.processing_config)
-
-    def on_worker_shutdown(self) -> None:
-        self.processes_cache.stop()
-        super().on_worker_shutdown()
+    def create_processes_cache(self) -> Optional[ProcessCacheProto]:
+        processes_cache = ProcessingCache(self.processing_config)
+        processes_cache.start()
+        return processes_cache
 
 
 app = QgisProcessingWorker()
@@ -118,7 +77,7 @@ def validate_process_inputs(
     ctx.qgis_context.validate(
         ident,
         request,
-        feedback=FeedBack(self.setprogress),
+        feedback=Feedback(self.setprogress),
         project_path=project_path,
     )
 
@@ -145,7 +104,7 @@ def execute_process(
         ctx.task_id,
         ident,
         request,
-        feedback=FeedBack(self.set_progress),
+        feedback=Feedback(self.set_progress),
         project_path=project_path,
         public_url=public_url,
     )

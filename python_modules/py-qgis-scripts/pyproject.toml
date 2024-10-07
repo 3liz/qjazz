@@ -22,6 +22,7 @@ qgis-server-cli = "py_qgis_rpc.client.__main__:main"
 qgis-server-admin = "py_qgis_admin.cli:main"
 qgis-server-http = "py_qgis_http.cli:main"
 qgis-processes = "py_qgis_processes.__main__:main"
+qgis-printserver = "py_qgis_printserver.__main__:main"
 
 [[project.authors]]
 name = "David Marteau"

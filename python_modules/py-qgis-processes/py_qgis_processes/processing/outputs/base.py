@@ -169,7 +169,7 @@ class OutputParameter(Generic[T]):
     def format_definition(self) -> Optional[OutputFormatDefinition]:
         return self if isinstance(self, OutputFormatDefinition) else None
 
-    def validate_output(self, out: JsonDict, param: Optional[InputParameterDef] = None):
+    def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
         """ Validate output json declaration
 
             Note that output declaration for processes/execute command
@@ -177,7 +177,7 @@ class OutputParameter(Generic[T]):
         """
         if isinstance(self, OutputFormatDefinition):
             try:
-                self.output_format = Output.model_validate(out).format
+                self.output_format = out.format
             except ValidationError:
                 logger.error(traceback.format_exc())
                 raise InputValueError(f"{self._out.name()}: Invalid format definition")

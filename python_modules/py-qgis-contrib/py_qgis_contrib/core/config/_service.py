@@ -97,16 +97,16 @@ def dict_merge(dct: Dict, merge_dct: Dict, model: Optional[BaseModel]):
 def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str, JsonValue]:
     """ Generic config reader
     """
+    from string import Template
+    
     cfgfile = Path(cfgfile)
     # Load the toml file
     with cfgfile.open() as f:
         content = f.read()
-        if kwds:
-            from string import Template
-            content = Template(content).substitute(
-                kwds,
-                location=str(cfgfile.parent.absolute()),
-            )
+        content = Template(content).substitute(
+            location=str(cfgfile.parent.absolute()),
+            **kwds,
+        )
         return loads(content)
 
 

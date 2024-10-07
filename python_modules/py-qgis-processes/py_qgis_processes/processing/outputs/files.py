@@ -85,7 +85,7 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
         else:
             return ()
 
-    def validate_output(self, out: JsonDict, param: Optional[InputParameterDef] = None):
+    def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
         """ Override
         """
         super().validate_output(out, param)
@@ -160,9 +160,9 @@ class OutputHtml(OutputFile):
     def initialize(self):
         self.output_format = OutputFormat(media_type=self._OutputFormat.media_type)
 
-    def validate_output(self, out: JsonDict, param: Optional[InputParameterDef] = None):
+    def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
         try:
-            output_format = Output.model_validate(out).format
+            output_format = out.format
             if output_format != self.output_format:
                 raise InputValueError(f"{self._out.name()}: invalid format '{self.output_format}'")
         except ValidationError:

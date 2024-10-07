@@ -57,7 +57,7 @@ run-all: up
 	$(DOCKER_COMPOSE) logs -f web
 
 # Restart worker
-restart: 
+restart-worker: 
 	$(DOCKER_COMPOSE) up -d --force-recreate worker
 
 # Equivalent run using celery config

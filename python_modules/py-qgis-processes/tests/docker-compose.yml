@@ -1,10 +1,10 @@
 # Docker compose for running from source
 services:
-  
+
+  #
+  # Worker local storage configuration
+  #
   worker:
-    #
-    # Worker local storage configuration
-    #
     image: ${QGIS_IMAGE}
     working_dir: /src/python_modules/py-qgis-processes
     command: ${SRCDIR}/tests/run-worker.sh
@@ -44,6 +44,25 @@ services:
     depends_on: [rabbitmq, redis, minio]
     profiles:
     - s3
+    - all
+  #
+  # Print server local storage configuration
+  #
+  print:
+    image: ${QGIS_IMAGE}
+    working_dir: /src/python_modules/py-qgis-processes
+    command: ${SRCDIR}/tests/run-printserver.sh
+    volumes:
+    - { type: bind, source: "../../../", target: /src }
+    - { type: bind, source: "./.local", target: /.local }
+    user: "${USER_ID}:${GROUP_ID}"
+    environment:
+      CONF_WORKER__SERVICE_NAME: "Print"
+      CONF_WORKER__BROKER_HOST: rabbitmq
+      CONF_WORKER__BACKEND_HOST: redis:6379/0
+    depends_on: [rabbitmq, redis]
+    profiles:
+    - print
     - all 
   web:
     image: ${QGIS_IMAGE}

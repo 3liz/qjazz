@@ -49,19 +49,23 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
     """
     logger.debug("Reading Qgis project '%s'", uri)
 
-    # version_int = Qgis.QGIS_VERSION_INT
-
     # see https://github.com/qgis/QGIS/pull/49266
     project = QgsProject(capabilities=Qgis.ProjectCapabilities())
+ 
     readflags = Qgis.ProjectReadFlags()
-    if config.trust_layer_metadata:
-        readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata
-    if config.disable_getprint:
-        readflags |= Qgis.ProjectReadFlag.DontLoadLayouts
-    if config.force_readonly_layers:
-        readflags |= Qgis.ProjectReadFlag.ForceReadOnlyLayers
     if config.dont_resolve_layers:
+        # Activate all optimisation flags
+        readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata
+        readflags |= Qgis.ProjectReadFlag.DontLoadLayouts
+        readflags |= Qgis.ProjectReadFlag.ForceReadOnlyLayers
         readflags |= Qgis.ProjectReadFlag.DontResolveLayers
+    else:
+        if config.trust_layer_metadata:
+            readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata
+        if config.disable_getprint:
+            readflags |= Qgis.ProjectReadFlag.DontLoadLayouts
+        if config.force_readonly_layers:
+            readflags |= Qgis.ProjectReadFlag.ForceReadOnlyLayers
 
     # Handle bad layers
     if not config.dont_resolve_layers:

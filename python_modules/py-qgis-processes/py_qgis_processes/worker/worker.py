@@ -20,12 +20,13 @@ from celery.worker.control import (
 )
 from pydantic import TypeAdapter
 from typing_extensions import (
-    Any,
     Callable,
+    Dict,
     Iterator,
     List,
     Optional,
     Sequence,
+    cast,
 )
 
 from py_qgis_contrib.core import logger
@@ -35,6 +36,7 @@ from py_qgis_contrib.core.utils import to_utc_datetime
 
 from ..processing.config import ProcessingConfig
 from . import registry
+from .cache import ProcessCacheProto
 from .config import load_configuration
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
@@ -78,12 +80,44 @@ def on_worker_before_create_process(sender, *args, **kwargs):
 # Control commands
 #
 
+@control_command()
+def reload_processes_cache(_state):
+    """ Reload the processes cache
+    """
+    app = cast(QgisWorker, _state.consumer.app)
+    if app.processes_cache:
+        app.processes_cache.update()
+
 
 @inspect_command()
-def presence(state):
+def list_processes(_state) -> Dict:
+    """Return processes list
+    """
+    app = cast(QgisWorker, _state.consumer.app)
+    if app.processes_cache:
+        return app.processes_cache.processes
+    else:
+        return {}
+
+
+@inspect_command(
+    args=[('ident', str), ('project_path', str)],
+)
+def describe_process(_state, ident: str, project_path: str | None) -> Dict | None:
+    """Return process description
+    """
+    app = cast(QgisWorker, _state.consumer.app)
+    if app.processes_cache:
+        return app.processes_cache.describe(ident, project_path)
+    else:
+        return None
+
+
+@inspect_command()
+def presence(_state) -> Dict:
     """Returns informations about the service
     """
-    app = state.consumer.app
+    app = cast(QgisWorker, _state.consumer.app)
 
     from qgis.core import Qgis, QgsCommandLineUtils
     return WorkerPresenceVersion(
@@ -102,7 +136,8 @@ def presence(state):
 def cleanup(state):
     """Run cleanup task
     """
-    state.consumer.app.cleanup_expired_jobs()
+    app = cast(QgisWorker, state.consumer.app)
+    app.cleanup_expired_jobs()
 
 
 @inspect_command(
@@ -111,7 +146,8 @@ def cleanup(state):
 def job_log(state, job_id):
     """Return job log
     """
-    return state.consumer.app.job_log(job_id).model_dump()
+    app = cast(QgisWorker, state.consumer.app)
+    return app.job_log(job_id).model_dump()
 
 
 @inspect_command(
@@ -120,7 +156,8 @@ def job_log(state, job_id):
 def job_files(state, job_id, public_url):
     """Returns job execution files
     """
-    return state.consumer.app.job_files(job_id, public_url).model_dump()
+    app = cast(QgisWorker, state.consumer.app)
+    return app.job_files(job_id, public_url).model_dump()
 
 
 @inspect_command(
@@ -128,7 +165,8 @@ def job_files(state, job_id, public_url):
 )
 def download_url(state, job_id, resource, expiration):
     try:
-        return state.consumer.app.download_url(
+        app = cast(QgisWorker, state.consumer.app)
+        return app.download_url(
             job_id,
             resource,
             expiration,
@@ -197,7 +235,7 @@ class QgisWorker(Worker):
         self._service_links = conf.worker.links
         self._online_since = time()
 
-        self.processes_cache: Any = None
+        self.processes_cache = self.create_processes_cache()
 
         self.add_periodic_task("cleanup", self.cleanup_expired_jobs, self._cleanup_interval)
 
@@ -280,8 +318,14 @@ class QgisWorker(Worker):
         # Launch periodic cleanup task
         for task in self._periodic_tasks:
             task.start()
+        # Start process cache
+        if self.processes_cache:
+            self.processes_cache.update()
 
     def on_worker_shutdown(self) -> None:
+        # Stop proccess cache
+        if self.processes_cache:
+            self.processes_cache.stop()
         # Stop cleanup scheduler
         self._worker_handle = None
         self._shutdown_event.set()
@@ -375,6 +419,9 @@ class QgisWorker(Worker):
 
     def create_context(self) -> QgisContext:
         return QgisContext(self.processing_config)
+
+    def create_processes_cache(self) -> Optional[ProcessCacheProto]:
+        return None
 
 
 #

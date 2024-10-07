@@ -1,8 +1,6 @@
 
 from celery.signals import worker_process_init
-from celery.worker.control import inspect_command
 from typing_extensions import (
-    Dict,
     Optional,
 )
 
@@ -11,13 +9,17 @@ from py_qgis_processes.schemas import (
     JobExecute,
     JobResults,
 )
-from py_qgis_processes.worker.context import (
-    QgisServerContext,
-)
 from py_qgis_processes.worker.prelude import (
+    Feedback,
+    ProcessCacheProto,
     QgisContext,
     QgisProcessJob,
     QgisWorker,
+)
+
+from .context import (
+    PrintServerCache,
+    QgisPrintServerContext,
 )
 
 
@@ -25,43 +27,25 @@ from py_qgis_processes.worker.prelude import (
 def init_qgis(*args, **kwargs):
     """ Initialize Qgis context in each process
     """
-    QgisServerContext.setup(app.processing_config)
+    QgisPrintServerContext.setup(app.processing_config)
 
-
-# Inspect commands
-#
-@inspect_command()
-def list_processes(_) -> Dict:
-    """Return processes list
-    """
-    # TODO
-    return {}
-
-
-@inspect_command(
-    args=[('ident', str), ('project_path', str)],
-)
-def describe_process(_, ident: str, project_path: str | None) -> Dict | None:
-    """Return process description
-    """
-    # TODO
-    return None
 
 #
 # Qgis Worker
 #
 
-
-class QgisPrinterWorker(QgisWorker):
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+class QgisPrintServerWorker(QgisWorker):
 
     def create_context(self) -> QgisContext:
-        return QgisServerContext(self.processing_config)
+        return QgisPrintServerContext(self.processing_config)
+
+    def create_processes_cache(self) -> Optional[ProcessCacheProto]:
+        processes_cache = PrintServerCache(self.processing_config)
+        processes_cache.start()
+        return processes_cache
 
 
-app = QgisPrinterWorker()
+app = QgisPrintServerWorker()
 
 
 @app.job(name="process_execute", bind=True, run_context=True, base=QgisProcessJob)
@@ -76,13 +60,21 @@ def execute_process(
     """Execute process
     """
     # Optional context attributes
-    """
     public_url: str | None
     try:
         public_url = ctx.public_url
     except AttributeError:
         public_url = None
-    """
-    # TODO
-    # ctx.qgis_context
-    return {}
+
+    result, _ = ctx.qgis_context.execute(
+        ctx.task_id,
+        ident,
+        request,
+        features=Feedback(self.set_progress),
+        project_path=project_path,
+        public_url=public_url,
+    )
+
+    self.app.store_files(ctx.task_id, public_url)
+
+    return result

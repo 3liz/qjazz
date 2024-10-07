@@ -1,6 +1,7 @@
 
 from collections.abc import Sequence
 from textwrap import dedent as _D
+from urllib.parse import urlencode
 
 from pydantic import (
     Field,
@@ -19,12 +20,23 @@ from typing_extensions import (
     cast,
 )
 
-from qgis.core import Qgis, QgsProject
-from qgis.server import QgsServerProjectUtils
+from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
+from qgis.server import (
+    QgsServer,
+    QgsServerProjectUtils,
+    QgsServerRequest,
+)
 
+from py_qgis_contrib.core.condition import assert_precondition
+from py_qgis_processes.processing.prelude import (
+    ProcessingContext,
+)
 from py_qgis_processes.schemas import (
     Format,
     InputDescription,
+    InputValueError,
+    JobExecute,
+    JobResults,
     JsonModel,
     Link,
     MetadataValue,
@@ -32,9 +44,11 @@ from py_qgis_processes.schemas import (
     OutputDescription,
     ProcessDescription,
     ProcessSummary,
+    RunProcessException,
 )
 from py_qgis_processes.schemas.bbox import Extent2D
 
+from .file import QgsServerFileResponse
 from .models import model_description
 
 # Getprint specifications
@@ -120,7 +134,7 @@ class MapOptions(JsonModel):
         ),
     )
     rotation: Optional[float] = NullField(
-        tile="Rotation",
+        title="Rotation",
         description="This parameter specifies the map rotation in degrees.",
     )
     grid_interval_x: Optional[int] = NullField(
@@ -145,7 +159,7 @@ class MapOptions(JsonModel):
     layers: Optional[Sequence[str]] = NullField(title="Layers")
     styles: Optional[Sequence[str]] = NullField(title="Styles")
 
-    def to_query_params(self, name: str) -> Iterator[str]:
+    def to_query_params(self, name: str) -> Iterator[Tuple[str, str]]:
         for field, val in self.dict().items():
             match val:
                 case None:
@@ -157,11 +171,18 @@ class MapOptions(JsonModel):
                 case _:
                     pass
 
-            yield f"{name}:{field.upper()}={val}"
+            yield f"{name}:{field.upper()}", val
 
 
 OpacityValue = Annotated[int, Field(ge=0, le=255)]
 FeatureId = Annotated[int, Field(gt=0)]
+
+
+#
+# GetPrint Parameters
+#
+
+OWS_GETPRINT_VERSION = "1.3.0"
 
 
 class GetPrintParameters(JsonModel):
@@ -233,26 +254,26 @@ class GetPrintParameters(JsonModel):
         description="Allow specify layout item options",
     )
 
-    def to_query_params(self) -> Iterator[str]:
-        yield f"TEMPLATE={self.template}"
-        yield f"CRS={self.crs}"
+    def to_query_params(self) -> Iterator[Tuple[str, str]]:
+        yield "TEMPLATE", self.template
+        yield "CRS", self.crs
         if self.format_options:
-            yield f"FORMAT_OPTIONS={self.format_options.to_query_param()}"
+            yield "FORMAT_OPTIONS", self.format_options.to_query_param()
         if self.atlas_pk:
-            yield f"ATLAS_PK={self.atlas_pk}"
+            yield "ATLAS_PK", self.atlas_pk
         if self.styles:
-            yield f"STYLES={_comma_separated_list(self.styles)}"
+            yield "STYLES", _comma_separated_list(self.styles)
         if self.transparent is not None:
-            yield f"TRANSPARENT={_to_bool_param(self.transparent)}"
+            yield "TRANSPARENT", _to_bool_param(self.transparent)
         if self.opacities:
-            yield f"OPACITIES={_comma_separated_list(self.opacities)}"
+            yield "OPACITIES", _comma_separated_list(self.opacities)
         if self.selection:
             val = ';'.join(
                 f"{k}:{_comma_separated_list(ids)}" for k, ids in self.selection.items()
             )
-            yield f"SELECTION={val}"
+            yield "SELECTION", val
         if self.layers:
-            yield f"LAYERS={_comma_separated_list(self.layers)}"
+            yield "LAYERS", _comma_separated_list(self.layers)
         if self.map_options:
             for name, opts in self.map_options.items():
                 yield from opts.to_query_params(name)
@@ -264,6 +285,10 @@ def get_wms_layers(project: QgsProject) -> Sequence[str]:
         layer.name() for layer in project.mapLayers().values() if layer.name() not in restricted_layers
     )
 
+
+#
+# GetPrint Process
+#
 
 class GetPrintProcess:
 
@@ -374,3 +399,58 @@ class GetPrintProcess:
                 outputs={"output": cls.output()},
             ),
         )
+
+    @classmethod
+    def parameters(cls, request: JobExecute) -> Iterator[Tuple[str, str]]:
+
+        output = request.outputs.get('output')
+        if not output:
+            raise InputValueError("Missing output format definition")
+
+        if output.format not in cls.output_formats:
+            raise InputValueError(f"Invalid format definition: {output.format.media_type}")
+
+        params = GetPrintParameters.model_validate(request.inputs)
+
+        yield "SERVICE", "WMS"
+        yield "REQUEST", "GetPrint"
+        yield "VERSION", OWS_GETPRINT_VERSION
+        yield "FORMAT", output.format.media_type
+        yield from params.to_query_params()
+
+    @classmethod
+    def execute(
+        cls,
+        request: JobExecute,
+        feedback: QgsProcessingFeedback,
+        context: ProcessingContext,
+        server: QgsServer,
+    ) -> JobResults:
+        """ Execute GetPrint request
+        """
+        _query = urlencode(tuple(cls.parameters(request)))
+
+        project = context.project()
+        assert_precondition(project is not None)
+
+        output_file = context.workdir.joinpath(f"getprint-{context.job_id}")
+
+        req = QgsServerRequest(f"?{_query}", QgsServerRequest.GetMethod)
+        response = QgsServerFileResponse(output_file)
+        server.handleRequest(req, response, project=project)
+
+        status_code = response.statusCode()
+        if status_code != 200:
+            raise RunProcessException("Getprint failure (code: %s)", status_code)
+
+        media_type = request.outputs['output'].format.media_type
+        reference = context.file_reference(output_file)
+
+        return {
+            'output': Link(
+                href=reference,
+                mime_type=media_type,
+                title="GetPrint document",
+                length=output_file.stat().st_size,
+            ).model_dump(mode='json', by_alias=True, exclude_none=True),
+        }

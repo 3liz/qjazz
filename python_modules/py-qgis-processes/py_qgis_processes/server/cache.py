@@ -50,7 +50,7 @@ class ServiceCache:
 
             async def update_services() -> bool:
                 try:
-                    logger.info("Updating services")
+                    logger.debug("Updating services")
                     services = await executor.update_services()
                     if services:
                         _log_services(services)

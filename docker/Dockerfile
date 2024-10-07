@@ -38,6 +38,7 @@ RUN mkdir -p /opt/local/ \
     && ln -s /opt/local/qgisserver/bin/qgis-server-http \
     && ln -s /opt/local/qgisserver/bin/qgis-server-cli \
     && ln -s /opt/local/qgisserver/bin/qgis-processes \
+    && ln -s /opt/local/qgisserver/bin/qgis-printserver \
     ${NULL}
 
 # Install qgis-plugin-manager

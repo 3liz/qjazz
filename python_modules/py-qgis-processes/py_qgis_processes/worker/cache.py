@@ -9,6 +9,7 @@ from typing_extensions import (
     Dict,
     List,
     Optional,
+    Protocol,
     cast,
 )
 
@@ -31,6 +32,24 @@ class MsgType(Enum):
 
 
 POLL_TIMEOUT = 5.
+
+
+class ProcessCacheProto(Protocol):
+    @property
+    def processes(self) -> Dict:
+        ...
+
+    def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:
+        ...
+
+    def update(self) -> List[ProcessSummary]:
+        ...
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
 
 
 class ProcessCache(mp.Process):
@@ -107,6 +126,7 @@ class ProcessCache(mp.Process):
 
     def stop(self) -> None:
         if not self.is_alive():
+            logger.info("Cache process alreay stopped")
             return
         self._sender.send((MsgType.QUIT,))
         self.join(5.0)
@@ -133,7 +153,6 @@ class ProcessCache(mp.Process):
                         self._conn.send(True)
             except Exception as e:
                 logger.error("%s\nCache error: %s", traceback.format_exc, e)
-
         logger.info("Leaving process cache")
 
     @abstractmethod

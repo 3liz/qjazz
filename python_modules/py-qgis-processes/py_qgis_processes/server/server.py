@@ -95,10 +95,10 @@ class ServerConfig(ConfigBase):
     proxy: ForwardedConfig = Field(default=ForwardedConfig())
 
     update_interval: int = Field(
-        default=180,
+        default=60,
         gt=0,
         title="Service update interval",
-        description="Interval in seconds between update of avaialable services",
+        description="Interval in seconds between update of available services",
     )
 
     timeout: int = Field(20, gt=0, title="Backend request timeout")

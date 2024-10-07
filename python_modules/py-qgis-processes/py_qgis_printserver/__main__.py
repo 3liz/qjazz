@@ -12,12 +12,7 @@ PathType = click.Path(
 )
 
 
-@click.group()
-def main():
-    pass
-
-
-@main.command('worker')
+@click.command()
 @click.option(
     "--conf",
     "-C",
@@ -38,9 +33,9 @@ def run_worker(
     loglevel: str,
     dump: bool,
 ):
-    """ Run processes worker
+    """ Run printserver processes worker
     """
-    from .worker.config import CONFIG_ENV_PATH
+    from py_qgis_processes.worker.config import CONFIG_ENV_PATH
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
@@ -48,7 +43,7 @@ def run_worker(
         from pydantic import BaseModel
         from typing_extensions import cast
 
-        from .worker.config import load_configuration
+        from py_qgis_processes.worker.config import load_configuration
         conf = cast(BaseModel, load_configuration())
         click.echo(conf.model_dump_json(indent=4))
     else:
@@ -56,31 +51,8 @@ def run_worker(
         app.start_worker(loglevel=loglevel)
 
 
-@main.command('serve')
-@click.option(
-    "--conf",
-    "-C",
-    "configpath",
-    type=PathType,
-    help="Path to configuration file",
-)
-@click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
-def run_server(
-    configpath: Path,
-    verbose: bool,
-):
-    """ Run server
-    """
-    from py_qgis_contrib.core import logger
-
-    from .server import load_configuration, serve
-
-    conf = load_configuration(configpath)
-    logger.setup_log_handler(
-        logger.LogLevel.TRACE if verbose else conf.logging.level,
-    )
-
-    serve(conf)
+def main():
+    run_worker()
 
 
 main()
