@@ -172,7 +172,7 @@ def lock(
     )
 
 
-def exists(app: Celery, job_id: str) -> bool:
+def exists(app: Celery, job_id: str, *, service: Optional[str] = None) -> bool:
     """ Check if a job is registred
     """
-    return bool(app.backend.client.keys(f"py-qgis::{job_id}::*"))
+    return bool(app.backend.client.keys(f"py-qgis::{job_id}::{service or '*'}"))

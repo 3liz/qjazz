@@ -37,7 +37,7 @@ def init_qgis(*args, **kwargs):
 class QgisPrintServerWorker(QgisWorker):
 
     def create_context(self) -> QgisContext:
-        return QgisPrintServerContext(self.processing_config)
+        return QgisPrintServerContext(self.processing_config, service_name=self.service_name)
 
     def create_processes_cache(self) -> Optional[ProcessCacheProto]:
         processes_cache = PrintServerCache(self.processing_config)
@@ -75,6 +75,6 @@ def execute_process(
         public_url=public_url,
     )
 
-    self.app.store_files(ctx.task_id, public_url)
+    self.app.store_files(ctx.task_id)
 
     return result

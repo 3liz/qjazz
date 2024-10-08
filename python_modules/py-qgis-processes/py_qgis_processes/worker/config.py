@@ -62,6 +62,7 @@ class WorkerConfig(CeleryConfig):
     Configure celery worker settings
     """
     service_name: str = Field(
+        pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_\-]+$",
         title="Name of the service",
         description=_D(
             """
@@ -87,7 +88,7 @@ class WorkerConfig(CeleryConfig):
         description=_D(
             """
             Interval is seconds between two cleanup of expired jobs.
-            The minimun is 300s (5mn)
+            The minimun is 300s (5mn).
             """,
         ),
     )

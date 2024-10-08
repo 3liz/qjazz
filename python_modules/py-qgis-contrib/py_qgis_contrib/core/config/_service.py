@@ -98,7 +98,7 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str
     """ Generic config reader
     """
     from string import Template
-    
+
     cfgfile = Path(cfgfile)
     # Load the toml file
     with cfgfile.open() as f:

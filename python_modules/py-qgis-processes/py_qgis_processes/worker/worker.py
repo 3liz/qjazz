@@ -285,7 +285,7 @@ class QgisWorker(Worker):
             with self.lock("cleanup-batch"):
                 logger.debug("Running cleanup task")
                 # Search for expirable jobs resources
-                for p in self._workdir.glob("*/.job-expire"):
+                for p in self._workdir.glob(f"*/.job-expire-{self.service_name}"):
                     jobdir = p.parent
                     job_id = jobdir.name
                     if registry.exists(self, job_id):
@@ -304,14 +304,9 @@ class QgisWorker(Worker):
 
     def reload_processes(self) -> None:
         """ Reload processes """
-        destinations = (self.worker_hostname,)
-        # Send control command to ourself
         if self.processes_cache:
-            self.control.broadcast(
-                "reload_processes_cache",
-                destination=destinations,
-                reply=True,
-            )
+            self.processes_cache.update()
+
         self.control.pool_restart(destination=(self.worker_hostname,))
 
     def on_worker_ready(self) -> None:
@@ -353,8 +348,8 @@ class QgisWorker(Worker):
 
             # Update reference according to the given public_url
             def update_ref(link: Link) -> Link:
-                ref = self.store_reference_url(job_id, link.title, public_url)
-                return link.model_copy(update={'ref': ref})
+                href = self.store_reference_url(job_id, link.title, public_url)
+                return link.model_copy(update={'href': href})
 
             files = ProcessFilesVersion(links=tuple(update_ref(link) for link in links))
         else:
@@ -372,7 +367,7 @@ class QgisWorker(Worker):
             expires=expiration,
         )
 
-    def store_files(self, job_id: str, public_url: str):
+    def store_files(self, job_id: str):
         """ Move files to storage
         """
         jobdir = self._workdir.joinpath(job_id)
@@ -391,7 +386,7 @@ class QgisWorker(Worker):
                 content_type = mimetypes.types_map.get(p.suffix)
                 size = p.stat().st_size
                 yield Link(
-                    href=self.store_reference_url(job_id, name, public_url),
+                    href=self.store_reference_url(job_id, name, "$public_url"),
                     mime_type=content_type or "application/octet-stream",
                     length=size,
                     title=name,
@@ -418,7 +413,7 @@ class QgisWorker(Worker):
         )
 
     def create_context(self) -> QgisContext:
-        return QgisContext(self.processing_config)
+        return QgisContext(self.processing_config, service_name=self.service_name)
 
     def create_processes_cache(self) -> Optional[ProcessCacheProto]:
         return None

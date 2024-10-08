@@ -19,6 +19,7 @@ services:
     depends_on: [rabbitmq, redis]
     profiles:
     - worker
+    - base
     - all 
   #
   # Worker S3 configuration
@@ -32,7 +33,7 @@ services:
     - { type: bind, source: "./.local", target: /.local }
     user: "${USER_ID}:${GROUP_ID}"
     environment:
-      CONF_WORKER__SERVICE_NAME: "Test"
+      CONF_WORKER__SERVICE_NAME: "TestS3"
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
       CONF_STORAGE__STORAGE_CLASS: py_qgis_processes.worker.storages.s3.S3Storage
@@ -79,6 +80,7 @@ services:
     depends_on: [rabbitmq, redis, worker]
     profiles: 
     - web
+    - base
     - all
     expose: [4000]
     ports:

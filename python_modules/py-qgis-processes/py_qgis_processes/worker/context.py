@@ -145,10 +145,18 @@ class QgisContext:
                         continue
                     yield p
 
-    def __init__(self, conf: ProcessingConfig, with_expiration: bool = True):
+    def __init__(
+            self,
+            conf: ProcessingConfig,
+            *,
+            service_name: Optional[str] = None,
+            with_expiration: bool = True,
+        ):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")
         self._conf = conf
         self._with_expiration = with_expiration
+        if service_name:
+            self.EXPIRE_FILE = f"{self.EXPIRE_FILE}-{service_name}"
 
     def job_execute(
         self,

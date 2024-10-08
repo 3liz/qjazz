@@ -51,7 +51,7 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
 
     # see https://github.com/qgis/QGIS/pull/49266
     project = QgsProject(capabilities=Qgis.ProjectCapabilities())
- 
+
     readflags = Qgis.ProjectReadFlags()
     if config.dont_resolve_layers:
         # Activate all optimisation flags

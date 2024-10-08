@@ -48,7 +48,7 @@ def init_qgis(*args, **kwargs):
 class QgisProcessingWorker(QgisWorker):
 
     def create_context(self) -> QgisProcessingContext:
-        return QgisProcessingContext(self.processing_config)
+        return QgisProcessingContext(self.processing_config, service_name=self.service_name)
 
     def create_processes_cache(self) -> Optional[ProcessCacheProto]:
         processes_cache = ProcessingCache(self.processing_config)
@@ -110,6 +110,6 @@ def execute_process(
     )
 
     # Move files to store
-    self.app.store_files(ctx.task_id, public_url)
+    self.app.store_files(ctx.task_id)
 
     return result
