@@ -23,12 +23,12 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_qgis)
 
 
-def pytest_sessionstart(session):
+def pytest_sessionstart(session: pytest.Session) -> None:
     try:
         print("Initialising qgis application")
         qgis.init_qgis_application()
         qgis.init_qgis_processing()
-        if logger.isEnabledFor(logger.LogLevel.DEBUG):
+        if logger.is_enabled_for(logger.LogLevel.DEBUG):
             print(qgis.show_qgis_settings())
     except ModuleNotFoundError:
         print("No qgis environment found")

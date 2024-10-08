@@ -174,6 +174,6 @@ class InputValueError(Exception):
                 include_context=False,
                 include_input=False,
             )
-            super().__init__(f'{{ "message"; "{msg}", "details": {text} }}')
+            super().__init__(f'{{ "message": "{msg}", "details": {text} }}')
         else:
             super().__init__(msg)
