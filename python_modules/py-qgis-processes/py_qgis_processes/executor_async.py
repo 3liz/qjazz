@@ -102,9 +102,7 @@ class Executor(_ExecutorBase):
         pending_timeout: Optional[int] = None,
     ) -> Result:
         """ Send an execute request
-
-            Returns a synchronous or asynchronous  'Result' object
-            depending on the `sync` parameter.
+            Returns an asynchronous  'Result' object
         """
         job_id, _get_result, _get_status = self._execute(
             service,

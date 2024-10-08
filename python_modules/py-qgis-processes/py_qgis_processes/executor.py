@@ -177,12 +177,13 @@ class _ExecutorBase:
             raise ServiceNotAvailable(service)
         return dests
 
-    def restart_pool(self, service: str, *, reply: bool = True) -> JsonValue:
+    def restart_pool(self, service: str, *, timeout: float = 5.) -> JsonValue:
         """ Restart worker pool
         """
         return self._celery.control.pool_restart(
             destination=self._dests(service),
-            reply=reply,
+            reply=True,
+            timeout=timeout,
         )
 
     def ping(self, service: str, timeout: float = 1.) -> JsonValue:
@@ -190,8 +191,12 @@ class _ExecutorBase:
         """
         return self._celery.control.ping(self._dests(service), timeout=timeout)
 
-    def shutdown(self, service: str, **kwargs) -> JsonValue:
-        return self._celery.control.shutdown(self._dests(service), **kwargs)
+    def shutdown(self, service: str, *, reply: bool = True, timeout: float = 5.) -> JsonValue:
+        return self._celery.control.shutdown(
+            self._dests(service),
+            reply=reply,
+            timeout=timeout,
+        )
 
     #
     # Processes
