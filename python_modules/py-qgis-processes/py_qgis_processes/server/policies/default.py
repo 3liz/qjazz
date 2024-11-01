@@ -70,7 +70,7 @@ class DefaultAccessPolicy(AccessPolicy):
                     service = detail.service
                     break
                 else:
-                    raise ErrorResponse.raises(web.HTTPServiceUnavailable, "No service available")
+                    ErrorResponse.raises(web.HTTPServiceUnavailable, "No service available")
 
         return service
 
