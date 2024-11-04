@@ -109,7 +109,7 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     param = QgsProcessingParameterVectorDestination("VectorDestination")
 
-    assert QgsProcessingUtils.defaultVectorExtension()  == qgis_session.default_vector_file_ext
+    assert QgsProcessingUtils.defaultVectorExtension() == qgis_session.default_vector_file_ext
     assert param.defaultFileExtension() == qgis_session.default_vector_file_ext
 
     config = qgis_session

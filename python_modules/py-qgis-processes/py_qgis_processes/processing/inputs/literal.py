@@ -197,8 +197,17 @@ class ParameterDistance(ParameterNumber):
                 md.append(
                     MetadataLink(
                         role="uom",
-                        href=ogc.uom_ref(uom),
+                        href=ref,
                         title=uom,
+                    ),
+                )
+            else:
+                # No standard reference found
+                md.append(
+                    MetadataValue(
+                        role="uom",
+                        title=uom,
+                        value=QgsUnitTypes.toAbbreviatedString(unit),
                     ),
                 )
 
@@ -248,10 +257,19 @@ class ParameterDuration(ParameterNumber):
                 md.append(
                     MetadataLink(
                         role="uom",
-                        href=ogc.uom_ref(uom),
+                        href=ref,
                         title=uom,
                     ),
                 )
+            else:
+                md.append(
+                    MetadataValue(
+                        role="uom",
+                        title=uom,
+                        value=QgsUnitTypes.toAbbreviatedString(unit),
+                    ),
+                )
+
         return md
 
 #
