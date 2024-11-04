@@ -82,7 +82,7 @@ CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
 @dataclass(frozen=True)
 class DebugMetadata:
-    load_memory_bytes: int
+    load_memory_bytes: Optional[int]
     load_time_ms: int
 
 
@@ -376,7 +376,7 @@ class CacheManager:
         # a project
         #
         used_mem = self._process.memory_info().vms - s_mem if self._process else None
-        if used_mem < last_used_mem:
+        if used_mem is not None and used_mem < last_used_mem:
             used_mem = last_used_mem
 
         return CacheEntry(

@@ -20,8 +20,9 @@
 import sys
 
 from dataclasses import dataclass
+from importlib import metadata
 
-from typing_extensions import Any, Callable, Dict, Generic, List, TypeVar
+from typing_extensions import Any, Callable, Dict, Generic, TypeVar
 
 
 class ComponentManagerError(Exception):
@@ -59,10 +60,9 @@ def _warn(msg: str):
     print("WARNING:", msg, file=sys.stderr, flush=True)  # noqa T201
 
 
-def _entry_points(group: str, **kwargs) -> List:
+def _entry_points(group: str, **kwargs) -> metadata.EntryPoints:
     """ Return entry points
     """
-    from importlib import metadata
 
     # See https://docs.python.org/3.10/library/importlib.metadata.html
     return metadata.entry_points().select(group=group, **kwargs)
