@@ -125,8 +125,8 @@ class Channel:
         while self._connected:
             request = health_pb2.HealthCheckRequest(service="QgisServer")
             try:
-                self._status = "available"
                 async for resp in stub.Watch(request):
+                    self._status = "available"
                     match resp.status:
                         case ServingStatus.SERVING:
                             logger.info("Backend: %s: status changed to SERVING", self._address)
@@ -149,8 +149,9 @@ class Channel:
                         rpcerr.details(),
                     )
                 else:
-                    self._status = "unavailable"
-                    logger.error("Backend: %s: UNAVAILABLE", self._address)
+                    if self._status != "unavailable":
+                        self._status = "unavailable"
+                        logger.error("Backend: %s: UNAVAILABLE", self._address)
             if self._connected:
                 await asyncio.sleep(5)
 

@@ -21,7 +21,12 @@ from typing_extensions import (
 from py_qgis_contrib.core import logger
 
 from . import metrics
-from .admin import backends_list_route, backends_route, config_route
+from .admin import (
+    admin_root,
+    backends_list_route,
+    backends_route,
+    config_route,
+)
 from .channels import Channels
 from .config import (
     AdminHttpConfig,
@@ -382,11 +387,9 @@ async def setup_ogc_server(
             await metrics_service.close()
         app.on_cleanup.append(close_service)
 
-    router = _Router(channels, conf.router)
-
     app.router.add_route('*', "/{tail:.*}", router.do_route)
 
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, handler_cancellation=True)
     await runner.setup()
     try:
         yield runner
@@ -420,14 +423,15 @@ async def setup_adm_server(
 
     app.add_routes(
         [
+            web.get('/', admin_root),
+            web.get('/backends', redirect('/backends/')),
             backends_route(channels, cors_options_handler),
             backends_list_route(channels, cors_options_handler),
             config_route(channels, cors_options_handler),
-            web.get('/backends', redirect('/backends/')),
         ],
     )
 
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, handler_cancellation=True)
     await runner.setup()
     try:
         yield runner

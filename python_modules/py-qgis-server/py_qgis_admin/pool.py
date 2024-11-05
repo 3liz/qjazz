@@ -34,7 +34,10 @@ from .resolvers import Resolver
 def MessageToDict(message: Message) -> Dict[str, JsonValue]:
     return json_format.MessageToDict(
         message,
-        including_default_value_fields=True,
+        # including_default_value_fields=True,
+        # XXX Since protobuf 5.26
+        # See https://github.com/python/typeshed/issues/11636
+        always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
         preserving_proto_field_name=False,
     )
 
@@ -196,7 +199,10 @@ class PoolClient:
 
                     while watchers:
                         done, pending = await asyncio.wait(
-                            (sync.wait(), queue.get()),
+                            (
+                                asyncio.create_task(sync.wait()),
+                                asyncio.create_task(queue.get()),
+                            ),
                             return_when=asyncio.FIRST_COMPLETED,
                         )
                         # Cancel pendings futures
@@ -608,3 +614,16 @@ class PoolClient:
         if not serving:
             raise ServiceNotAvailable(self.address)
         return list(plugins.values())
+
+
+    #
+    #  Test
+    #
+    async def test_backend(self, delay: int) -> None:
+        """ Run test on backend
+        """
+        # Pick a backend
+        for s in self._backends:
+            if await s.serving():
+                await s.test(delay)
+                break

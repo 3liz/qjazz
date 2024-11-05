@@ -75,7 +75,6 @@ class Backend:
         # but that does not mean necessarly that we are connected
         # to a backend server
         self._connected = 0
-        self._serving = False
         self._address = conf.address_to_string()
         self._use_ssl = conf.use_ssl
         self._shutdown = False
@@ -401,3 +400,7 @@ class Backend:
                     raise
             if not self._shutdown:
                 await asyncio.sleep(RECONNECT_DELAY)
+
+    async def test(self, delay: int) -> api_pb2.Empty:
+        async with self._stub() as stub:
+            return await stub.Test(api_pb2.TestRequest(delay=delay))

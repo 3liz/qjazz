@@ -244,5 +244,6 @@ def serve(conf: ConfigProto):
         app,
         ssl_context=http.ssl.create_ssl_server_context() if http.use_ssl else None,
         handle_signals=True,
+        handler_cancellation=True,
         **listen,
     )

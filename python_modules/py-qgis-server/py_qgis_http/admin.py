@@ -51,6 +51,10 @@ class BackendList(JsonModel):
     backends: List[BackendSummary]
 
 
+class Root(JsonModel):
+    links: List[Link]
+
+
 def backend_summary(request: web.Request, channel: Channel) -> BackendSummary:
     return BackendSummary(
         name=channel.name,
@@ -60,7 +64,7 @@ def backend_summary(request: web.Request, channel: Channel) -> BackendSummary:
         links=[
             make_link(
                 request,
-                rel="backend",
+                rel="item",
                 title="Qgis Backend",
                 path=f"/backends/{channel.name}",
             ),
@@ -272,3 +276,29 @@ def config_route(
             )
 
     return web.view('/config', ConfigView)
+
+
+async def admin_root(request: web.Request) -> web.Response:
+    """ Admin root
+    """
+    return web.Response(
+        content_type="application/json",
+        text=Root(
+            links=[
+                make_link(
+                    request,
+                    rel="backends",
+                    title="Backends collection",
+                    path="/backends/",
+                    description="List of remote backends",
+                ),
+                make_link(
+                    request,
+                    rel="config",
+                    title="Configuration",
+                    path="/config",
+                    description="Server configuration",
+                ),
+            ],
+        ).model_dump_json(),
+    )

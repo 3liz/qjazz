@@ -285,9 +285,8 @@ def run_test(conn: Connection, msg: _m.Test, feedback: QgsFeedback):
         sleep(1.0)
         canceled = feedback.isCanceled()
         if canceled:
-            logger.info("** Test canceled **")
+            logger.info("** Test cancelled **")
             break
     if not canceled:
         logger.info("** Test ended without interruption **")
         _m.send_reply(conn, "", 200)
-

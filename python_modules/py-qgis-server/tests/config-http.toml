@@ -5,12 +5,15 @@ level = "TRACE"
 [http]
 listen=["0.0.0.0", 4000]
 
+[backends.local]
+address = ["localhost", 23456]
+route = "/local"
+
 [backends.test]
 title = "Test backend"
 description = "Backend for local test: run `dc up -d scale worker=<scale>`"
 # Address to reach the backend
 address = ["tcp://worker", 23456]
-#address = ["localhost", 23456]
 # Define route to service
 route = "/test"
 
@@ -37,3 +40,7 @@ name = "Features OGC Api (WFS3)"
 [[backends.test.api]]
 endpoint = "wfs3"
 name = "Features OGC Api (WFS3)"
+
+
+[admin_http]
+listen = ["0.0.0.0", 9876]

@@ -35,13 +35,16 @@ class Handlers(
     def routes(self):
         return [
             # backends
-            web.get(f'/{API_VERSION}/pools', self.get_pools, allow_head=False),
+            web.get(f'/{API_VERSION}/pools/', self.get_pools, allow_head=False),
             web.patch(f'/{API_VERSION}/pools', self.patch_pools),
             web.get(f'/{API_VERSION}/pools/{{Id}}', self.get_pool_infos, allow_head=False),
             web.get(f'/{API_VERSION}/pools/{{Id}}/backends', self.get_pool_backends, allow_head=False),
             # Config
             web.get(f'/{API_VERSION}/pools/{{Id}}/config', self.get_pool_config, allow_head=False),
             web.put(f'/{API_VERSION}/pools/{{Id}}/config', self.put_pool_config),
+
+            # Test
+            web.get(f'/{API_VERSION}/pools/{{Id}}/test', self.get_pool_test, allow_head=False),
 
             # Cache
             web.get(f'/{API_VERSION}/pools/{{Id}}/catalog', self.get_catalog, allow_head=False),

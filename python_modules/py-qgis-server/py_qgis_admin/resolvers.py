@@ -4,6 +4,7 @@ from abc import abstractmethod
 
 import dns.asyncresolver
 
+from dns.resolver import NoNameservers
 from pydantic import Field
 from typing_extensions import (
     Annotated,
@@ -125,15 +126,19 @@ class DNSResolver:
             rdtype = "AAAA"
         else:
             rdtype = "A"
-        addresses = await dns.asyncresolver.resolve(self._config.host, rdtype)
-        return tuple(
-            BackendConfig(
-                server_address=(str(addr), self._config.port),
-                use_ssl=self._config.use_ssl,
-                ssl=self._config.ssl,
+        try:
+            addresses = await dns.asyncresolver.resolve(self._config.host, rdtype)
+            return tuple(
+                BackendConfig(
+                    server_address=(str(addr), self._config.port),
+                    use_ssl=self._config.use_ssl,
+                    ssl=self._config.ssl,
+                )
+                for addr in addresses
             )
-            for addr in addresses
-        )
+        except NoNameservers:
+            logger.warning("No servers found at '%s' ", self._config.host)
+            return ()
 
     @classmethod
     def from_string(cls: Type[Self], name: str) -> Self:

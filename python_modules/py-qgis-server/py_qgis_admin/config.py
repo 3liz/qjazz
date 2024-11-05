@@ -121,7 +121,7 @@ class ConfigProto(Protocol):
 
 confservice = ConfBuilder()
 
-confservice.add_section('admin_http', ConfigUrl)
+confservice.add_section('admin_http', HttpConfig)
 confservice.add_section('admin_config_url', ConfigUrl)
 confservice.add_section('resolvers', ResolverConfig)
 

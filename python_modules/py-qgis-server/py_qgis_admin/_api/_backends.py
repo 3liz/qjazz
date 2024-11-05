@@ -1,5 +1,6 @@
 # import traceback
 from aiohttp import web
+from pydantic import TypeAdapter, ValidationError
 
 from ..models import (
     BackendStatus,
@@ -7,7 +8,7 @@ from ..models import (
     PoolInfos,
     PoolListResponse,
 )
-from .utils import _link
+from .utils import _http_error, _link
 
 
 class _Backends:
@@ -150,3 +151,50 @@ class _Backends:
                 backends=[BackendStatus.model_validate(s) for _, s in stats],
             ).model_dump_json(),
         )
+
+    async def get_pool_test(self, request):
+        """
+        summary: "Backend test"
+        description: >
+            Send a test request
+        parameters:
+          - in: path
+            name: Id
+            schema:
+                type: string
+            required: true
+            description: Identifier for the backend
+          - in: query
+            schema:
+                type: int
+            required: true
+            description: Delay in seconds to apply to backend response
+        tags:
+          - pools
+        responses:
+            "200":
+                description: Test passed
+                content:
+                    text/plain:
+                        schema:
+                            type: string
+            "404":
+                description: >
+                    The requested backends does not exists
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
+        """
+        pool = self._pool(request)
+        try:
+            delay = TypeAdapter(int).validate_json(request.query['delay'])
+        except KeyError:
+            _http_error(web.HTTPBadRequest, message="Missing 'delay' parameter")
+        except ValidationError:
+            _http_error(web.HTTPBadRequest, message="Invalid 'delay' parameter")
+
+        await pool.test_backend(delay)
+        return web.Response(content_type="text/plain", text="Test passed")
+
+

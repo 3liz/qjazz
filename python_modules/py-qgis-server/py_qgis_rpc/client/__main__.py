@@ -29,6 +29,7 @@ def MessageToJson(msg: Message) -> str:
     return json_format.MessageToJson(
         msg,
         # XXX Since protobuf 5.26
+        # See https://github.com/python/typeshed/issues/11636
         always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
     )
 
@@ -329,7 +330,7 @@ def plugin_commands():
 
 @plugin_commands.command("list")
 def list_plugins():
-    """ List projects from cache
+    """ List plugins
     """
     import json
     with connect() as stub:
@@ -348,7 +349,7 @@ def list_plugins():
                         name=item.name,
                         path=item.path,
                         pluginType=item.plugin_type,
-                        metadata=json.loads(item.json_metadata),
+                        metadata=json.loads(item.metadata),
                     ),
                     indent=4,
                 ),

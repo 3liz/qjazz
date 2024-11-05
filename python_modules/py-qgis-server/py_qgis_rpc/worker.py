@@ -43,6 +43,7 @@ class Worker(mp.Process):
     def cancel(self):
         """ Send a SIGHUP signal to to the process
         """
+        logger.trace("Cancelling job: %s (done: %s)", self.pid, self.task_done())
         if not (self.pid is None or self.task_done()):
             os.kill(self.pid, signal.SIGHUP)
 

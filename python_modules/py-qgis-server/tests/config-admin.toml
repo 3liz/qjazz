@@ -10,3 +10,9 @@ type = "dns"
 host = "worker"
 port = 23456
 
+[[resolvers.pools]]
+label = "local"
+type = "dns"
+host = "localhost"
+port = 23456
+

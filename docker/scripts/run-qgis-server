@@ -14,7 +14,7 @@ set -e
 
 function help() {
     echo "Usage:"
-    echo "run-full-server [config-file]"
+    echo "run-qgis-server [config-file]"
     echo ""
     exit 1
 }
