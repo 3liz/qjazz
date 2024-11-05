@@ -18,6 +18,6 @@ class Foo:
 
         # Test that module is marked
         pkg = sys.modules['foo']
-        assert pkg._is_py_qgis_server
+        assert pkg._is_py_qgis_server2
 
     

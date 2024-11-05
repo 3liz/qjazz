@@ -1,9 +1,11 @@
 [logging]
-level = "debug"
+level = "trace"
 
 [worker]
 name = "Test"
 shutdown_grace_period = 5
+process_timeout = 5
+process_grace_period = 3
 
 [worker.plugins]
 paths = ['$location/plugins']

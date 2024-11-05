@@ -28,7 +28,8 @@ from . import _client
 def MessageToJson(msg: Message) -> str:
     return json_format.MessageToJson(
         msg,
-        including_default_value_fields=True,
+        # XXX Since protobuf 5.26
+        always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
     )
 
 
@@ -61,7 +62,7 @@ def connect(stub=None):
         try:
             yield _stub
         except grpc.RpcError as rpcerr:
-            click.echo("RPC ERROR:", rpcerr.code(), rpcerr.details(), file=sys.stderr)
+            click.echo(f"RPC ERROR: {rpcerr.code()} {rpcerr.details()}", err=True)
             print_metadata(rpcerr.initial_metadata())
             print_metadata(rpcerr.trailing_metadata())
 
@@ -73,11 +74,11 @@ def print_metadata(metadata):
             status_code = v
         elif k.startswith("x-reply-header-"):
             h = k.replace("x-reply-header-", "", 1)
-            click.echo(h.title(), ":", v, file=sys.stderr)
+            click.echo(f"{h.title()} : {v}", err=True)
         elif k.startswith("x-"):
-            click.echo(k, ":", v, file=sys.stderr)
+            click.echo(f"{k} : {v}", err=True)
     if status_code:
-        click.echo("Return code:", status_code, file=sys.stderr)
+        click.echo(f"Return code: {status_code}", err=True)
 
 
 @click.group('commands')
@@ -142,7 +143,7 @@ def ows_request(
             print_metadata(stream.initial_metadata())
 
         _t_ms = int((_t_end - _t_start) * 1000.0)
-        click.echo(f"First chunk returned in {_t_ms} ms", file=sys.stderr)
+        click.echo(f"First chunk returned in {_t_ms} ms", err=True)
 
 
 @request_commands.command("api")
@@ -194,7 +195,7 @@ def api_request(
             print_metadata(stream.initial_metadata())
 
         _t_ms = int((_t_end - _t_start) * 1000.0)
-        click.echo(f"First chunk returned in {_t_ms} ms", file=sys.stderr)
+        click.echo(f"First chunk returned in {_t_ms} ms", err=True)
 
 
 #
@@ -223,7 +224,7 @@ def checkout_project(project: str, pull: bool):
             count += 1
             click.echo(MessageToJson(item))
 
-        click.echo(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", err=True)
 
 
 @cache_commands.command("drop")
@@ -240,7 +241,7 @@ def drop_project(project: str):
             count += 1
             click.echo(MessageToJson(item))
 
-        click.echo(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", err=True)
 
 
 @cache_commands.command("clear")
@@ -265,7 +266,7 @@ def list_cache(status: str):
 
         for k, v in stream.initial_metadata():
             if k == "x-reply-header-cache-count":
-                click.echo(f"Cache size: {v}", file=sys.stderr)
+                click.echo(f"Cache size: {v}", err=True)
 
         for item in stream:
             click.echo(MessageToJson(item))
@@ -295,7 +296,7 @@ def project_info(project: str):
             count += 1
             click.echo(MessageToJson(item))
 
-        click.echo(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", err=True)
 
 
 @cache_commands.command("catalog")
@@ -312,7 +313,7 @@ def catalog(location: Optional[str]):
             count += 1
             click.echo(MessageToJson(item))
 
-        click.echo(f"Returned {count} items", file=sys.stderr)
+        click.echo(f"Returned {count} items", err=True)
 
 #
 # Plugins
@@ -338,7 +339,7 @@ def list_plugins():
 
         for k, v in stream.initial_metadata():
             if k == "x-reply-header-installed-plugins":
-                click.echo("Installed plugins:", v, file=sys.stderr)
+                click.echo(f"Installed plugins: {v}", err=True)
 
         for item in stream:
             click.echo(
@@ -388,7 +389,7 @@ def set_config(config: str):
             json.loads(config)
             stub.SetConfig(api_pb2.JsonConfig(json=config))
         except json.JSONDecodeError as err:
-            click.echo(err, file=sys.stderr)
+            click.echo(err, err=True)
 
 
 @config_commands.command("reload")
@@ -494,6 +495,16 @@ def display_stats(watch: bool, interval: int):
             resp = stub.Stats(api_pb2.Empty())
             click.echo(MessageToJson(resp))
             sleep(interval)
+
+
+@cli_commands.command("test")
+@click.option("--delay", "-d", type=int, default=3, help="Response delay in seconds")
+def test_request(delay: int):
+    """ Execute cancelable request
+    """
+    with connect() as stub:
+        resp = stub.Test(api_pb2.TestRequest(delay=delay))
+        click.echo(MessageToJson(resp))
 
 
 # Make it callable for scripts

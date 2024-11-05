@@ -38,6 +38,7 @@ class WorkerPool:
         self._next_id = config.num_processes
         self._avails: asyncio.Queue = asyncio.Queue()
         self._timeout = config.process_timeout
+        self._grace_period = config.process_grace_period
         self._max_requests = config.max_waiting_requests
         self._count = 0
         self._cached_worker_env = None
@@ -285,23 +286,25 @@ class WorkerPool:
                 worker = None
                 raise WorkerError(503, "Server busy")
             yield worker
-        except asyncio.TimeoutError:
+        except _m.WouldBlockError:
             logger.critical("Worker stalled, terminating...")
-            worker.terminate()  # This will trigger a SIGCHLD signal
-            worker = None       # Do not put back worker on queue
+            worker.cancel()  # Try cancelling request
+            try:
+                await asyncio.wait_for(worker.consume_until_task_done(), self._grace_period)
+            except asyncio.TimeoutError:
+                worker.terminate()  # This will trigger a SIGCHLD signal
+                worker = None       # Do not put back worker on queue
             raise WorkerError(503, "Server stalled")
         except asyncio.CancelledError:
             logger.error("Connection cancelled by client")
             if worker:
+                worker.cancel()  # Cancel any rendering
                 # Flush stream from current task
                 # Handle timeout, since the main reason
                 # for cancelling may be a stucked or
                 # long polling response.
                 try:
-                    await asyncio.wait_for(
-                        worker.consume_until_task_done(),
-                        self._timeout,
-                    )
+                    await asyncio.wait_for(worker.consume_until_task_done(), self._grace_period)
                 except asyncio.TimeoutError:
                     logger.critical("Worker stalled, terminating...")
                     worker.terminate()  # This will trigger a SIGCHLD signal

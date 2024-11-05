@@ -58,9 +58,10 @@ class MsgType(Enum):
     GET_CONFIG = auto()
     ENV = auto()
     STATS = auto()
-
+    TEST = auto()
 
 # Note: HTTPMethod is defined in python 3.11 via http module
+
 
 class HTTPMethod(Enum):
     GET = auto()
@@ -301,10 +302,10 @@ class Catalog:
     return_type: ClassVar[Type] = CatalogItem
     location: Optional[str] = None
 
-
 #
 # ENV
 #
+
 
 @dataclass(frozen=True)
 class GetEnv:
@@ -313,8 +314,17 @@ class GetEnv:
 
 
 #
+# TEST
+#
+@dataclass(frozen=True)
+class Test:
+    msg_id: ClassVar[MsgType] = MsgType.TEST
+    delay: int
+
+#
 # Asynchronous Pipe connection reader
 #
+
 
 DEFAULT_TIMEOUT = 20
 
@@ -324,6 +334,11 @@ DEFAULT_TIMEOUT = 20
 class WouldBlockError(Exception):
     pass
 
+
+#
+# XXX Note that data sent by chird *MUST* be retrieved in parent
+# side, otherwise cpu goes wild.
+#
 
 class Pipe:
     """ Wrapper for Connection object that allow reading asynchronously

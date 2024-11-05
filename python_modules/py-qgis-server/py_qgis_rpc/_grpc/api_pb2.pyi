@@ -29,6 +29,12 @@ class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class TestRequest(_message.Message):
+    __slots__ = ("delay",)
+    DELAY_FIELD_NUMBER: _ClassVar[int]
+    delay: int
+    def __init__(self, delay: _Optional[int] = ...) -> None: ...
+
 class StatsReply(_message.Message):
     __slots__ = ("num_workers", "stopped_workers", "worker_failure_pressure", "request_pressure", "uptime")
     NUM_WORKERS_FIELD_NUMBER: _ClassVar[int]

@@ -5,7 +5,7 @@ import warnings
 
 from . import api_pb2 as api__pb2
 
-GRPC_GENERATED_VERSION = '1.66.1'
+GRPC_GENERATED_VERSION = '1.67.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -315,6 +315,11 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.StatsReply.FromString,
                 _registered_method=True)
+        self.Test = channel.unary_unary(
+                '/api.QgisAdmin/Test',
+                request_serializer=api__pb2.TestRequest.SerializeToString,
+                response_deserializer=api__pb2.Empty.FromString,
+                _registered_method=True)
 
 
 class QgisAdminServicer(object):
@@ -416,6 +421,12 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Test(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisAdminServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -498,6 +509,11 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     servicer.Stats,
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.StatsReply.SerializeToString,
+            ),
+            'Test': grpc.unary_unary_rpc_method_handler(
+                    servicer.Test,
+                    request_deserializer=api__pb2.TestRequest.FromString,
+                    response_serializer=api__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -932,6 +948,33 @@ class QgisAdmin(object):
             '/api.QgisAdmin/Stats',
             api__pb2.Empty.SerializeToString,
             api__pb2.StatsReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Test(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.QgisAdmin/Test',
+            api__pb2.TestRequest.SerializeToString,
+            api__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

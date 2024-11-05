@@ -30,6 +30,7 @@ service QgisAdmin {
     rpc GetEnv (Empty) returns (JsonConfig) {}
     rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
     rpc Stats (Empty) returns (StatsReply) {}
+    rpc Test (TestRequest) returns (Empty) {}
 }
 
 
@@ -44,6 +45,11 @@ message PingReply {
 
 
 message Empty {}
+
+
+message TestRequest {
+    int32 delay = 1;
+}
 
 
 enum ServingStatus {

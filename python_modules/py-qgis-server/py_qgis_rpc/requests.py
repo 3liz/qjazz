@@ -10,6 +10,7 @@ import psutil
 
 from typing_extensions import Dict, Optional
 
+from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
 
@@ -76,6 +77,7 @@ class Response(QgsServerResponse):
             chunk_size: int = DEFAULT_CHUNK_SIZE,
             _process: Optional[psutil.Process] = None,
             cache_id: str = "",
+            feedback: Optional[QgsFeedback] = None,
     ):
         super().__init__()
         self._buffer = QBuffer()
@@ -91,6 +93,7 @@ class Response(QgsServerResponse):
         self._extra_headers = headers or {}
         self._chunk_size = chunk_size
         self._cache_id = cache_id
+        self._feedback = feedback
 
         if self._process:
             self._memory = self._process.memory_info().vms
@@ -112,6 +115,10 @@ class Response(QgsServerResponse):
                 duration=time() - self._timestamp,
             ),
         )
+
+    # Since 3.36
+    def feedback(self) -> Optional[QgsFeedback]:
+        return self._feedback
 
     def setStatusCode(self, code: int) -> None:
         if not self._header_written:

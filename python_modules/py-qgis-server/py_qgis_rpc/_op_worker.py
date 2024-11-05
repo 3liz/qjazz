@@ -2,19 +2,21 @@
     as a sub process
 """
 import os
+import signal
 import traceback
 
 from multiprocessing.connection import Connection
 
 # See https://stackoverflow.com/questions/75630114/multiprocessing-and-event-type-hint-issue-python
 from multiprocessing.synchronize import Event as EventClass
-from time import time
+from time import sleep, time
 
 import psutil
 
 from pydantic import JsonValue
-from typing_extensions import assert_never, cast
+from typing_extensions import Optional, assert_never, cast
 
+from qgis.core import QgsFeedback
 from qgis.server import QgsServer
 
 from py_qgis_cache import CacheManager, CheckoutStatus, ProjectMetadata
@@ -85,6 +87,26 @@ def worker_env() -> JsonValue:
         environment=dict(os.environ),
     )
 
+
+class Feedback:
+    def __init__(self) -> None:
+        self._feedback: Optional[QgsFeedback] = None
+
+        def _cancel(*args) -> None:
+            if self._feedback:
+                self._feedback.cancel()
+
+        signal.signal(signal.SIGHUP, _cancel)
+
+    def reset(self) -> None:
+        self._feedback = None
+
+    @property
+    def feedback(self) -> QgsFeedback:
+        if not self._feedback:
+            self._feedback = QgsFeedback()
+        return self._feedback
+
 #
 # Run Qgis server
 #
@@ -123,6 +145,8 @@ def qgis_server_run(
     # For reporting
     _process = psutil.Process() if reporting else None
 
+    feedback = Feedback()
+
     event.set()
     while True:
         logger.trace("%s: Waiting for messages", name)
@@ -141,21 +165,33 @@ def qgis_server_run(
                         conn,
                         msg,
                         server,
-                        cm, conf, _process, cache_id=name,
+                        cm,
+                        conf,
+                        _process,
+                        cache_id=name,
+                        feedback=feedback.feedback,
                     )
                 case _m.MsgType.APIREQUEST:
                     _op_requests.handle_api_request(
                         conn,
                         msg,
                         server,
-                        cm, conf, _process, cache_id=name,
+                        cm,
+                        conf,
+                        _process,
+                        cache_id=name,
+                        feedback=feedback.feedback,
                     )
                 case _m.MsgType.REQUEST:
                     _op_requests.handle_generic_request(
                         conn,
                         msg,
                         server,
-                        cm, conf, _process, cache_id=name,
+                        cm,
+                        conf,
+                        _process,
+                        cache_id=name,
+                        feedback=feedback.feedback,
                     )
                 # --------------------
                 # Global management
@@ -212,6 +248,11 @@ def qgis_server_run(
                 case _m.MsgType.ENV:
                     _m.send_reply(conn, worker_env())
                 # --------------------
+                # Test
+                # --------------------
+                case _m.MsgType.TEST:
+                    run_test(conn, msg, feedback.feedback)
+                # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)
         except KeyboardInterrupt:
@@ -231,3 +272,22 @@ def qgis_server_run(
                         int((_t_end - _t_start) * 1000.),
                     )
                 event.set()
+            # Reset feedback
+            feedback.reset()
+
+
+def run_test(conn: Connection, msg: _m.Test, feedback: QgsFeedback):
+    """ Feedback test
+    """
+    done_ts = time() + msg.delay
+    canceled = False
+    while done_ts > time():
+        sleep(1.0)
+        canceled = feedback.isCanceled()
+        if canceled:
+            logger.info("** Test canceled **")
+            break
+    if not canceled:
+        logger.info("** Test ended without interruption **")
+        _m.send_reply(conn, "", 200)
+

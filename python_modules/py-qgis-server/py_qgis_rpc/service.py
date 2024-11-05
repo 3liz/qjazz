@@ -367,6 +367,18 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         logger.debug("QgisAdmin Received PING request")
         return api_pb2.PingReply(echo=request.echo)
 
+    async def Test(
+        self,
+        request: api_pb2.TestRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> api_pb2.Empty:
+        """  Simple ping request
+        """
+        logger.debug("QgisAdmin Received TEST request")
+        async with self.get_worker(context, "Test") as worker:
+            await worker.execute_test(request.delay)
+        return api_pb2.Empty()
+
     async def SetServerServingStatus(
         self,
         request: api_pb2.ServerStatus,

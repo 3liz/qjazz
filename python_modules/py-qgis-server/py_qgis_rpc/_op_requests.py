@@ -8,6 +8,7 @@ import psutil
 
 from typing_extensions import Dict, Optional, Tuple, assert_never, cast
 
+from qgis.core import QgsFeedback
 from qgis.server import QgsServer, QgsServerException, QgsServerRequest
 
 from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
@@ -36,7 +37,9 @@ def handle_ows_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional[psutil.Process],
+    *,
     cache_id: str = "",
+    feedback: QgsFeedback,
 ):
     """ Handle OWS request
     """
@@ -72,6 +75,7 @@ def handle_ows_request(
         _process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
+        feedback=feedback,
     )
 
 
@@ -82,7 +86,9 @@ def handle_api_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional[psutil.Process],
+    *,
     cache_id: str = "",
+    feedback: QgsFeedback,
 ):
     """ Handle api request
     """
@@ -128,6 +134,7 @@ def handle_api_request(
         _process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
+        feedback=feedback,
     )
 
 
@@ -138,7 +145,9 @@ def handle_generic_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional[psutil.Process],
+    *,
     cache_id: str = "",
+    feedback: QgsFeedback,
 ):
     try:
         method = _to_qgis_method(msg.method)
@@ -164,6 +173,7 @@ def handle_generic_request(
         _process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
+        feedback=feedback,
     )
 
 
@@ -179,8 +189,10 @@ def _handle_generic_request(
     cm: CacheManager,
     config: WorkerConfig,
     _process: Optional[psutil.Process],
+    *,
     cache_id: str,
     request_id: str,
+    feedback: QgsFeedback,
 ):
     """ Handle generic Qgis request
     """
@@ -213,12 +225,20 @@ def _handle_generic_request(
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             _process=_process,
+            cache_id=cache_id,
+            feedback=feedback,
         )
         # See https://github.com/qgis/QGIS/pull/9773
         server.serverInterface().setConfigFilePath(project.fileName())
     else:
         project = None
-        response = Response(conn, _process=_process, cache_id=cache_id)
+        response = Response(
+            conn,
+            _process=_process,
+            cache_id=cache_id,
+            chunk_size=config.max_chunk_size,
+            feedback=feedback,
+        )
 
     request = Request(url, method, headers, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)

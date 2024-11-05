@@ -127,6 +127,14 @@ class WorkerConfig(config.ConfigBase):
             "exit with an error code"
         ),
     )
+    process_grace_period: int = Field(
+        default=3,
+        title="Process grace period",
+        description=(
+            "The grace period to apply on worker timeout\n"
+            "when attempting to cancel the actual request"
+        ),
+    )
     shutdown_grace_period: int = Field(
         default=20,
         title="Shutdown grace period",

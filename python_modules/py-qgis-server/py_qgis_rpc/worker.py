@@ -1,5 +1,6 @@
-import asyncio
 import multiprocessing as mp
+import os
+import signal
 
 from functools import cached_property
 
@@ -39,6 +40,12 @@ class Worker(mp.Process):
     def config(self) -> WorkerConfig:
         return self._worker_conf
 
+    def cancel(self):
+        """ Send a SIGHUP signal to to the process
+        """
+        if not (self.pid is None or self.task_done()):
+            os.kill(self.pid, signal.SIGHUP)
+
     def task_done(self) -> bool:
         """ Return true if there is no processing
             at hand
@@ -62,7 +69,7 @@ class Worker(mp.Process):
         while not self._done_event.is_set():
             try:
                 _ = await self.io.read_bytes(1)
-            except asyncio.TimeoutError:
+            except _m.WouldBlockError:
                 pass
         self.io.flush()
 
@@ -478,3 +485,16 @@ class Worker(mp.Process):
             return resp, _stream()
         else:
             return resp, None
+
+    #
+    # Test
+    #
+    async def execute_test(self, delay: int) -> None:
+        """  Send ping with echo string
+        """
+        status, resp = await self.io.send_message(
+            _m.Test(delay),
+            timeout=self._timeout,
+        )
+        if status != 200:
+            raise WorkerError(status, resp)
