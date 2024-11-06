@@ -123,4 +123,12 @@ async def serve(pool: WorkerPool, restore: Restore):
     loop.add_signal_handler(signal.SIGCHLD, _sigchild_handler)
 
     await server.start()
+
+    # XXX For an unknown reason, polling event reader is set at this point
+    # and this occurs in `server.start()`.
+    # Workaround: flush worker's io and reset polling event.
+    logger.info("Reseting worker IO state...")
+    for w in pool.workers:
+        await w.consume_until_task_done()
+
     await server.wait_for_termination()

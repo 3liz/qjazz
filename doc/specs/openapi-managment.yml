@@ -1,6 +1,6 @@
 openapi: 3.0.0
 paths:
-  /v1/pools:
+  /v1/pools/:
     get:
       description: Return the list of managed pools
       tags:
@@ -12,6 +12,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/definitions/PoolListResponse'
+  /v1/pools:
     patch:
       summary: Resynchronize all pools
       description: "Resynchronize all pools with their backends.\n\nThis is necessary
@@ -144,6 +145,37 @@ paths:
                 $ref: '#/definitions/ErrorResponse'
         '502':
           description: "Backends are unavailables\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ErrorResponse'
+  /v1/pools/{Id}/test:
+    get:
+      summary: Backend test
+      description: "Send a test request\n"
+      parameters:
+      - in: path
+        name: Id
+        schema:
+          type: string
+        required: true
+        description: Identifier for the backend
+      - in: query
+        schema:
+          type: int
+        required: true
+        description: Delay in seconds to apply to backend response
+      tags:
+      - pools
+      responses:
+        '200':
+          description: Test passed
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: "The requested backends does not exists\n"
           content:
             application/json:
               schema:

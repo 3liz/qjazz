@@ -62,6 +62,12 @@ max_waiting_requests = 20
 # exit with an error code
 process_timeout = 20
 #
+# Process grace period
+#
+# The grace period to apply on worker timeout
+# when attempting to cancel the actual request
+process_grace_period = 3
+#
 # Shutdown grace period
 #
 # The maximum amount of time to wait before
@@ -142,13 +148,6 @@ force_readonly_layers = true
 # Note that the 'dont_resolve_layers flag' trigger automatically
 # this option.
 ignore_bad_layers = false
-#
-# Don't resolve layer paths
-#
-# Don't load any layer content
-# Improve loading time when actual layer data is
-# not required.
-dont_resolve_layers = false
 #
 # Disable OWS advertised urls
 #
@@ -232,7 +231,7 @@ extra_builtin_providers = []
 #
 # The absolute path to the qgis-plugin_manager executable
 # that will be used for installing plugin in automatic mode.
-plugin_manager = "/usr/local/bin/qgis-plugin_manager"
+plugin_manager = "/usr/local/bin/qgis-plugin-manager"
 
 #
 # Interfaces to listen to

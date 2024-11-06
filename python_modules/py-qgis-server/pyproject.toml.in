@@ -22,6 +22,7 @@ dependencies = [
     "click",
     "dnspython",
     "jsondiff",
+    "ruamel.yaml",
 ]
 version = "${PIN_VERSION}"
 

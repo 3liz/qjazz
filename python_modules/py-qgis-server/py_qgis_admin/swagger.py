@@ -135,7 +135,9 @@ def _get_method_names_for_handler(route):
 def paths(app: web.Application) -> Dict:
     """ Extract swagger doc from aiohttp routes handlers
     """
-    import yaml
+    import ruamel.yaml
+
+    yaml = ruamel.yaml.YAML()
 
     paths: Dict[str, Dict[str, str]] = {}
     for route in app.router.routes():
@@ -159,14 +161,14 @@ def paths(app: web.Application) -> Dict:
                 for method_name in _get_method_names_for_handler(route):
                     method = getattr(route.handler, method_name)
                     if method.__doc__ is not None:
-                        methods[method_name] = yaml.full_load(method.__doc__)
+                        methods[method_name] = yaml.load(method.__doc__)
             else:
                 try:
                     if route.handler.__doc__:
-                        methods[route.method.lower()] = yaml.full_load(route.handler.__doc__)
+                        methods[route.method.lower()] = yaml.load(route.handler.__doc__)
                 except AttributeError:
                     continue
-        except (yaml.scanner.ScannerError, yaml.parser.ParserError) as err:
+        except (ruamel.yaml.scanner.ScannerError, ruamel.yaml.parser.ParserError) as err:
             raise SwaggerError(
                 f"Yaml error for {route.handler.__qualname__}: {err}",
             ) from None

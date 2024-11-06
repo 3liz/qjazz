@@ -196,5 +196,3 @@ class _Backends:
 
         await pool.test_backend(delay)
         return web.Response(content_type="text/plain", text="Test passed")
-
-

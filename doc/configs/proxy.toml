@@ -122,6 +122,18 @@ proxy_conf = false
 # Path to the SSL certificat file
 #keyfile =   	# Optional
 
+
+[router]
+#
+# The router class
+#
+# The router class allow for defining routing rules
+# from the request url.
+router_class = "py_qgis_http.router.DefaultRouter"
+#
+# Router configuration
+config = {}
+
 #[backends.key]
 #
 # A descriptive title

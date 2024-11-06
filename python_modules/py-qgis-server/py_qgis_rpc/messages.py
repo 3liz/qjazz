@@ -351,6 +351,7 @@ class Pipe:
     def __init__(self, conn: Connection):
         self._conn = conn
         self._data_available = asyncio.Event()
+
         asyncio.get_running_loop().add_reader(self._conn.fileno(), self._data_available.set)
 
     def write(self, obj):
@@ -361,12 +362,15 @@ class Pipe:
         """
         while self._conn.poll():
             _ = self._conn.recv_bytes()
+        # Clear  event
+        self._data_available.clear()
 
     async def _poll(self, timeout: int):
         """ Asynchronous read of Pipe connection
         """
         try:
-            if not self._conn.poll():
+            if not self._conn.poll():  # Check for data
+                # No data, wait for incoming data
                 await asyncio.wait_for(self._data_available.wait(), timeout)
                 # This is blocking, but not infinitely
                 # In some cases the _poll() method may return without timeout even

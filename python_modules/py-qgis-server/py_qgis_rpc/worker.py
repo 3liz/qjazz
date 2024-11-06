@@ -66,7 +66,6 @@ class Worker(mp.Process):
             This is required if a client abort the request
             in the middle.
         """
-        logger.debug("Waiting until task done")
         while not self._done_event.is_set():
             try:
                 _ = await self.io.read_bytes(1)

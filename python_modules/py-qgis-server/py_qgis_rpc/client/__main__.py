@@ -503,9 +503,15 @@ def display_stats(watch: bool, interval: int):
 def test_request(delay: int):
     """ Execute cancelable request
     """
+    # XXX The first request to an rpc worker is never cancelled
+    # try to figure out why.
     with connect() as stub:
-        resp = stub.Test(api_pb2.TestRequest(delay=delay))
-        click.echo(MessageToJson(resp))
+        resp = stub.Test.future(api_pb2.TestRequest(delay=delay))
+        try:
+            click.echo(MessageToJson(resp.result()))
+        except KeyboardInterrupt:
+            click.echo("Cancelling...", err=True)
+            resp.cancel()
 
 
 # Make it callable for scripts

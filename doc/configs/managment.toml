@@ -4,18 +4,33 @@
 level = "INFO"
 
 
-# Remote configuration settings
 [admin_http]
 #
-# External configuration Url
+# Interfaces to listen to
+listen = ["127.0.0.1",9871]
 #
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-# Note that this overrides all local settings.
-#url =   	# Optional
+# Use ssl
+use_ssl = false
+#
+# CORS origin
+#
+# Allows to specify origin for CORS. If set 'all' will set
+# Access-Control-Allow-Origin to '*'; 'same-origin' return
+# the same value as the 'Origin' request header.
+# An url may may be specified, restricting allowed origin to this url.
+cross_origin = "all"
+#
+# Enable proxy_configuration
+#
+# Indicates that the server is behind a reverse proxy.
+# This enable handling of forwarded proxy headers
+proxy_conf = false
+#
+# List of authorized tokens
+auth_tokens = []
 
 #
-# SSL configuration
+# SSL certificats
 #
 [admin_http.ssl]
 #

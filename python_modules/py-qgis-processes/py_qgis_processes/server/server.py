@@ -435,7 +435,7 @@ async def _serve(conf: ConfigProto):
     """
     app = create_app(conf)
 
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, handler_cancellation=True)
 
     await runner.setup()
 

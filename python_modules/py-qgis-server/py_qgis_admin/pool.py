@@ -615,7 +615,6 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return list(plugins.values())
 
-
     #
     #  Test
     #

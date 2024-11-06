@@ -119,7 +119,6 @@ class WorkerPool:
 
         async def _restore(i: int, w: Worker):
             try:
-                # Wait for convergence
                 await w.ping("")      # Wait for convergence
                 self._workers[i] = w  # Replace dead worker
 
