@@ -129,6 +129,6 @@ async def serve(pool: WorkerPool, restore: Restore):
     # Workaround: flush worker's io and reset polling event.
     logger.info("Reseting worker IO state...")
     for w in pool.workers:
-        await w.consume_until_task_done()
+        w.io.flush()
 
     await server.wait_for_termination()

@@ -99,7 +99,7 @@ class RouterConfig(ConfigBase):
                 "from the request url."
             ),
         ),
-        ]
+    ]
     config: RouterConfigOptions = Field({}, title="Router configuration")
 
     @model_validator(mode='after')

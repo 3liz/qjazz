@@ -336,7 +336,7 @@ class WouldBlockError(Exception):
 
 
 #
-# XXX Note that data sent by chird *MUST* be retrieved in parent
+# XXX Note that data sent by child *MUST* be retrieved in parent
 # side, otherwise cpu goes wild.
 #
 
