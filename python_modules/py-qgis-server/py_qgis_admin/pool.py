@@ -88,6 +88,14 @@ class PoolClient:
     def address(self) -> str:
         return self._resolver.address
 
+    @property
+    def title(self) -> str:
+        return self._resolver.title
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._resolver.description
+
     async def shutdown(self):
         self._shutdown = True
         self._sync()

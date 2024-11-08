@@ -18,6 +18,10 @@ from typing_extensions import (  # noqa
     Type,
 )
 
+from py_qgis_contrib.core.models import (
+    JsonModel,
+)
+
 from . import swagger
 from .pool import PoolClient
 
@@ -28,36 +32,39 @@ AnyJson = Annotated[
 
 
 @swagger.model
-class ErrorResponse(BaseModel):
+class ErrorResponse(JsonModel):
     message: str
     details: Optional[AnyJson] = None
 
 
 @swagger.model
-class BackendStatus(BaseModel):
+class BackendStatus(JsonModel):
     """ Pool backend status
     """
     address: str
     numWorkers: Optional[int] = None
-    requestPressure: Optional[float] = None
+    request_pressure: Optional[float] = None
     status: Literal["ok", "unavailable"]
-    stoppedWorkers: Optional[int] = None
-    workerFailurePressure: Optional[float] = None
+    stopped_workers: Optional[int] = None
+    worker_failure_pressure: Optional[float] = None
     uptime: Optional[int] = None
 
 
 @swagger.model
-class PoolBackendsResponse(BaseModel):
+class PoolBackendsResponse(JsonModel):
     label: str
     address: str
     backends: List[BackendStatus]
 
 
 @swagger.model
-class PoolInfos(BaseModel):
+class PoolInfos(JsonModel):
     label: str
     address: str
     backends: List[str]
+    title: str
+    description: Optional[str]
+
     links: List[swagger.Link]
 
     @classmethod
@@ -66,6 +73,8 @@ class PoolInfos(BaseModel):
             label=pool.label,
             address=pool.address,
             backends=[be.address for be in pool.backends],
+            title=pool.title,
+            description=pool.description,
             links=links,
         )
 
@@ -77,7 +86,7 @@ PoolListResponse = swagger.model(
 
 
 @swagger.model
-class PoolBackendConfig(BaseModel):
+class PoolBackendConfig(JsonModel):
     label: str
     address: str
     config: AnyJson
@@ -85,7 +94,7 @@ class PoolBackendConfig(BaseModel):
 
 
 @swagger.model
-class PoolSetConfigResponse(BaseModel):
+class PoolSetConfigResponse(JsonModel):
     label: str
     address: str
     diff: AnyJson
@@ -103,9 +112,9 @@ class JsonValidator(BaseModel):
 
 
 @swagger.model
-class CacheItem(BaseModel):
-    inCache: bool
-    lastModified: Annotated[
+class CacheItem(JsonModel):
+    in_cache: bool
+    last_modified: Annotated[
         str,
         WithJsonSchema({
             "type": "string",
@@ -113,18 +122,18 @@ class CacheItem(BaseModel):
         }),
     ]
     name: str
-    savedVersion: str
+    saved_version: str
     status: str
     storage: str
     uri: str
-    debugMetadata: Optional[Dict[str, str]]
+    debug_metadata: Optional[Dict[str, str]]
     timestamp: int
-    lastHit: int
+    last_hit: int
     hits: int
 
 
 @swagger.model
-class CacheItemPool(BaseModel):
+class CacheItemPool(JsonModel):
     pool: Dict[str, CacheItem]
     links: List[swagger.Link]
 

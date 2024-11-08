@@ -72,6 +72,7 @@ def _link(
     request: web.Request,
     rel: str,
     path: str,
+    *,
     mime_type: str = "application/json",
     title: str = "",
     description: Optional[str] = None,

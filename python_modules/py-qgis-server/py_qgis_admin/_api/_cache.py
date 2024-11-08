@@ -124,20 +124,27 @@ class _Cache:
         await resp.prepare(request)
         await resp.write(b'[')
         count = 0
+        length = 0
         try:
             async for item in pool.catalog():
                 if count > 0:
                     await resp.write(b',')
-                await resp.write(CatalogItem.model_validate(item).model_dump_json().encode())
+                payload = CatalogItem.model_validate(item).model_dump_json().encode()
+                await resp.write(payload)
                 count += 1
+                length += len(payload)
         except ServiceNotAvailable:
             _http_error(
                 web.HTTPBadGateway,
                 f"No backends availables for pool '{pool.label}'",
             )
 
+        length += 2 + (count-1)
+        resp.content_length = length
+
         await resp.write(b']')
         await resp.write_eof()
+
         return resp
 
     async def get_cache(self, request):

@@ -1,6 +1,9 @@
 import asyncio
 import traceback
 
+from importlib import resources
+from pathlib import Path
+
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 from pydantic import (
@@ -20,6 +23,9 @@ from .api import API_VERSION, ErrorResponse, Handlers
 from .config import RESOLVERS_SECTION, ConfigProto, ResolverConfig, confservice
 from .service import Service
 
+PACKAGE_NAME = "py_qgis_admin"
+
+
 # routes = web.RouteTableDef()
 
 # Required if the request has an "Authorization" header.
@@ -37,25 +43,23 @@ class AccessLogger(AbstractAccessLogger):
     """ Custom access logger
     """
 
-    def log(self, request, response, time):
+    def log(self, request: web.BaseRequest, response: web.StreamResponse, time: float):
 
-        length = response.headers.get('Content-Length') or -1
         agent = request.headers.get('User-Agent', "")
         referer = request.headers.get('Referer', "")
 
         fmt = REQ_FORMAT.format(
             ip=request.remote,
             method=request.method,
-            url=request.path,
+            url=request.rel_url,
             code=response.status,
             time=int(1000.0 * time),
-            length=length,
+            length=response.content_length,
             referer=referer,
             agent=agent,
         )
 
         logger.log_req(fmt)
-
 
 def forwarded_for(request):
     """ Return the remote ip
@@ -209,16 +213,23 @@ def create_app(conf: ConfigProto) -> web.Application:
     app.add_routes(handlers.routes)
 
     # Create documentation model
-    doc = _swagger_doc(app)
+    doc = _swagger_doc(app).model_dump_json()
+
+    staticpath = Path(str(resources.files(PACKAGE_NAME)), "static")
+
+    async def index(request: web.Request) -> web.StreamResponse:
+        return web.FileResponse(path=staticpath.joinpath('index.html'))
 
     # Create a router for the landing page
-    async def landing_page(request):
-        return web.Response(
-            content_type="application/json",
-            text=doc.model_dump_json(),
-        )
-    app.router.add_route('GET', '/', redirect(f'/{API_VERSION}'))
-    app.router.add_route('GET', f'/{API_VERSION}', landing_page)
+    async def landing_page(request: web.Request) -> web.Response:
+        return web.Response(content_type="application/json", text=doc)
+
+    async def favicon(request: web.Request) -> web.Response:
+        return web.Response(status=204)
+
+    app.router.add_route('GET', '/', landing_page)
+    app.router.add_route('GET', '/api', index)
+    app.router.add_route('GET', '/favicon.ico', favicon)
     return app
 
 

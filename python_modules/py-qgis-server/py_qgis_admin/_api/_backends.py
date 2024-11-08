@@ -15,7 +15,9 @@ class _Backends:
 
     async def get_pools(self, request):
         """
-        description: Return the list of managed pools
+        summary: Return the list of managed pools
+        description: >
+            Return description of all of managed pools
         tags:
           - pools
         responses:
@@ -29,11 +31,19 @@ class _Backends:
         """
         body = [PoolInfos._from_pool(
             pool,
-            [_link(request, "item", f"/pools/{pool.label}")],
+            [
+                _link(
+                    request,
+                    "item",
+                    f"/pools/{pool.label}",
+                    title=pool.title,
+                    description=pool.description,
+                ),
+            ],
         ) for pool in self.service.pools]
         return web.Response(
             content_type="application/json",
-            text=PoolListResponse.dump_json(body, by_alias=True).decode(),
+            text=PoolListResponse.dump_json(body, by_alias=True, exclude_none=True).decode(),
         )
 
     async def patch_pools(self, request):
@@ -63,7 +73,7 @@ class _Backends:
         ) for pool in self.service.pools]
         return web.Response(
             content_type="application/json",
-            text=PoolListResponse.dump_json(body, by_alias=True).decode(),
+            text=PoolListResponse.dump_json(body, by_alias=True, exclude_none=True).decode(),
         )
 
     async def get_pool_infos(self, request):
@@ -102,13 +112,33 @@ class _Backends:
             text=PoolInfos._from_pool(
                 pool,
                 links=[
-                    _link(request, "self", f"/pools/{pool.label}"),
-                    _link(request, "backends", f"/pools/{pool.label}/backends"),
-                    _link(request, "config", f"/pools/{pool.label}/config"),
-                    _link(request, "catalog", f"/pools/{pool.label}/catalog"),
-                    _link(request, "cache", f"/pools/{pool.label}/cache"),
+                    _link(request, "self", f"/pools/{pool.label}", title="Pool info"),
+                    _link(
+                        request,
+                        "backends",
+                        f"/pools/{pool.label}/backends",
+                        title="Backends list",
+                    ),
+                    _link(
+                        request,
+                        "config",
+                        f"/pools/{pool.label}/config",
+                        title="Backend configuration",
+                    ),
+                    _link(
+                        request,
+                        "catalog",
+                        f"/pools/{pool.label}/catalog",
+                        title="Backend's projects catalog",
+                    ),
+                    _link(
+                        request,
+                        "cache",
+                        f"/pools/{pool.label}/cache",
+                        title="Backend's projects cache",
+                    ),
                 ],
-            ).model_dump_json(by_alias=True),
+            ).model_dump_json(),
         )
 
     async def get_pool_backends(self, request):

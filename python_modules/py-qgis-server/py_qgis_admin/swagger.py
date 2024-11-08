@@ -18,6 +18,8 @@ from pydantic import (
 )
 from typing_extensions import Dict, List, Literal, Optional, Tuple, Type
 
+from py_qgis_contrib.core.models import JsonModel
+
 ModelAlias = Type[BaseModel] | TypeAdapter
 
 _models: List[Tuple[str, ModelAlias]] = []
@@ -31,12 +33,12 @@ class SwaggerError(Exception):
     pass
 
 
-class Tag(BaseModel):
+class Tag(JsonModel):
     description: str
     name: str
 
 
-class Info(BaseModel):
+class Info(JsonModel):
     title: str
     description: str
     version: str
@@ -55,7 +57,7 @@ LinkRel = Literal[
 ]
 
 
-class Link(BaseModel):
+class Link(JsonModel):
     # Supplies the URI to a remote resource (or resource fragment).
     href: AnyHttpUrl
     # The type or semantics of the relation.
@@ -74,7 +76,7 @@ class Link(BaseModel):
     hreflang: Optional[str] = None
 
 
-class OpenApiDocument(BaseModel):
+class OpenApiDocument(JsonModel):
     """ Swagger/OpenApi document
     """
     openapi: str = oapi_version

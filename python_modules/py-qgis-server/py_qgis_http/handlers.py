@@ -227,7 +227,7 @@ async def ows_handler(
                     target=project,
                     url=url,
                     direct=channel.allow_direct_resolution,
-                    options=urlencode(check_getfeature_limit(channel, arguments)),
+                    options=urlencode(arguments),
                     request_id=request.get('request_id', ''),
                     debug_report=collect is not None,
                 ),

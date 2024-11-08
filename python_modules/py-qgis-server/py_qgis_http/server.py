@@ -65,17 +65,16 @@ class AccessLogger(AbstractAccessLogger):
 
     def log(self, request: web.BaseRequest, response: web.StreamResponse, duration: float):
 
-        length = response.headers.get('Content-Length') or -1
         agent = request.headers.get('User-Agent', "")
         referer = request.headers.get('Referer', "")
 
         fmt = REQ_FORMAT.format(
             ip=request.remote,
             method=request.method,
-            url=request.path,
+            url=request.rel_url,
             code=response.status,
             time=int(1000.0 * duration),
-            length=length,
+            length=response.content_length or -1,
             referer=referer,
             agent=agent,
         )
@@ -154,7 +153,7 @@ async def set_server_headers(request: web.Request, response: web.StreamResponse)
 
 
 #
-# Unhandled exceptions
+# Incoming request logger
 #
 
 @web.middleware
@@ -169,7 +168,7 @@ async def log_incoming_request(request, handler):
         fmt = RREQ_FORMAT.format(
             ip=request.remote,
             method=request.method,
-            url=request.path,
+            url=request.rel_url,
             referer=referer,
             agent=agent,
             request_id=request.get('request_id', ""),
@@ -179,6 +178,10 @@ async def log_incoming_request(request, handler):
 
     return await handler(request)
 
+
+#
+# Unhandled exceptions
+#
 
 @web.middleware
 async def unhandled_exceptions(request, handler):
@@ -387,7 +390,15 @@ async def setup_ogc_server(
             await metrics_service.close()
         app.on_cleanup.append(close_service)
 
-    app.router.add_route('*', "/{tail:.*}", router.do_route)
+    async def favicon(request: web.Request) -> web.Response:
+        return web.Response(status=204)
+
+    async def forbidden(request: web.Request) -> web.Response:
+        return web.Response(status=403)
+
+    app.router.add_route('GET', '/favicon.ico', favicon)
+    app.router.add_route('*', '/', forbidden)
+    app.router.add_route('*', "/{tail:.+}", router.do_route)
 
     runner = web.AppRunner(app, handler_cancellation=True)
     await runner.setup()
@@ -421,9 +432,13 @@ async def setup_adm_server(
         set_access_control_headers(conf.cross_origin),
     )
 
+    async def favicon(request: web.Request) -> web.Response:
+        return web.Response(status=204)
+
     app.add_routes(
         [
             web.get('/', admin_root),
+            web.get('/favicon.ico', favicon),
             web.get('/backends', redirect('/backends/')),
             backends_route(channels, cors_options_handler),
             backends_list_route(channels, cors_options_handler),

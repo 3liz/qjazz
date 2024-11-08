@@ -104,8 +104,8 @@ def _validate_template(s: str | Template) -> Template:
 
 
 TemplateStr = Annotated[
-        Template,
-        PlainValidator(_validate_template),
-        PlainSerializer(lambda t: t.template, return_type=str),
-        WithJsonSchema({'type': 'str'}),
-        ]
+    Template,
+    PlainValidator(_validate_template),
+    PlainSerializer(lambda t: t.template, return_type=str),
+    WithJsonSchema({'type': 'str'}),
+]

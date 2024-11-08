@@ -9,10 +9,14 @@ label = "test"
 type = "dns"
 host = "worker"
 port = 23456
+title = "Test"
+description = "Worker pool on 'test' host"
 
 [[resolvers.pools]]
 label = "local"
 type = "dns"
 host = "localhost"
 port = 23456
+title = "Local" 
+description = "Worker pool on localhost"
 

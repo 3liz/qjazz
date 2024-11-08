@@ -11,6 +11,7 @@ from typing_extensions import (
     Iterator,
     List,
     Literal,
+    Optional,
     Protocol,
     Self,
     Sequence,
@@ -55,6 +56,14 @@ class Resolver(Protocol):
         """
         ...
 
+    @property
+    def title(self) -> str:
+        return ""
+
+    @property
+    def description(self) -> Optional[str]:
+        return None
+
 
 ResolverLabel = Annotated[
     str,
@@ -78,6 +87,15 @@ class ResolverConfigProto(Protocol):
     def get_resolver(self) -> Resolver:
         ...
 
+    @property
+    def title(self) -> str:
+        ...
+
+    @property
+    def description(self) -> Optional[str]:
+        ...
+
+
 #
 # DNS resolver
 #
@@ -97,6 +115,9 @@ class DNSResolverConfig(ConfigBase):
     ipv6: bool = Field(default=False, title="Check for ipv6")
     use_ssl: bool = Field(default=False, title="Use ssl connection")
     ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
+
+    title: str = ""
+    description: Optional[str] = None
 
     def resolver_address(self) -> str:
         return f"{self.host}:{self.port}"
@@ -119,6 +140,14 @@ class DNSResolver:
     @property
     def address(self) -> str:
         return self._config.resolver_address()
+
+    @property
+    def title(self) -> str:
+        return self._config.title
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._config.description
 
     @property
     async def configs(self) -> Sequence[BackendConfig]:
@@ -161,6 +190,9 @@ class SocketResolverConfig(ConfigBase):
     use_ssl: bool = False
     ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
 
+    title: str = ""
+    description: Optional[str] = None
+
     @no_type_check
     def resolver_address(self) -> str:
         match self.address:
@@ -187,6 +219,14 @@ class SocketResolver(Resolver):
     @property
     def address(self) -> str:
         return self._config.resolver_address()
+
+    @property
+    def title(self) -> str:
+        return self._config.title
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._config.description
 
     @property
     async def configs(self) -> Sequence[BackendConfig]:
