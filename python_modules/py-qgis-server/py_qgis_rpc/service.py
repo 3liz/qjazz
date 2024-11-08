@@ -6,10 +6,19 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import AsyncGenerator, AsyncIterator, Iterable, Iterator, Tuple
+from typing import (
+    AsyncGenerator,
+    AsyncIterator,
+    Iterable,
+    Iterator,
+    Optional,
+    Tuple,
+)
 
 import grpc
 
+from google.protobuf import json_format
+from google.protobuf.message import Message
 from grpc_health.v1 import health_pb2
 from grpc_health.v1._async import HealthServicer
 
@@ -71,11 +80,15 @@ class WorkerMixIn:
         self,
         context: grpc.aio.ServicerContext,
         request: str,
+        req: Optional[Message] = None,
     ) -> AsyncGenerator[Worker, None]:
         try:
             async with self._pool.get_worker() as worker:
                 yield worker
         except WorkerError as e:
+            if e.code == 504 and req:
+                # Dump request on timeout error
+                logger.error("Request stalled:\n%s", json_format.MessageToJson(req))
             await _abort_on_error(context, e.code, e.details, request)
 
     @asynccontextmanager
@@ -133,7 +146,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 request.request_id,
             )
 
-        async with self.get_worker(context, "ExecuteOwsRequest") as worker:
+        async with self.get_worker(context, "ExecuteOwsRequest", request) as worker:
             headers = dict(context.invocation_metadata())
             _t_start = time()
             resp, stream = await worker.ows_request(
@@ -203,7 +216,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                 request.request_id,
             )
 
-        async with self.get_worker(context, "ExecuteOwsRequest") as worker:
+        async with self.get_worker(context, "ExecuteOwsRequest", request) as worker:
             headers = dict(context.invocation_metadata())
 
             _t_start = time()

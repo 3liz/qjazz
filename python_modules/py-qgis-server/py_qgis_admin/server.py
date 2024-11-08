@@ -61,6 +61,7 @@ class AccessLogger(AbstractAccessLogger):
 
         logger.log_req(fmt)
 
+
 def forwarded_for(request):
     """ Return the remote ip
     """

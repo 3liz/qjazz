@@ -293,7 +293,7 @@ class WorkerPool:
             except asyncio.TimeoutError:
                 worker.terminate()  # This will trigger a SIGCHLD signal
                 worker = None       # Do not put back worker on queue
-            raise WorkerError(503, "Server stalled")
+            raise WorkerError(504, "Server stalled") from None
         except asyncio.CancelledError:
             logger.error("Connection cancelled by client")
             if worker:

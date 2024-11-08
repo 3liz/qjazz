@@ -139,7 +139,7 @@ class _Cache:
                 f"No backends availables for pool '{pool.label}'",
             )
 
-        length += 2 + (count-1)
+        length += 2 + (count - 1)
         resp.content_length = length
 
         await resp.write(b']')
