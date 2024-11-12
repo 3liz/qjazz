@@ -99,7 +99,7 @@ def find_key(
     client = app.backend.client
     keys = client.keys(f"py-qgis::{job_id}::*::{realm or '*'}")
     if keys:
-        return tuple(keys[0].split('::')[1:4])
+        return tuple(keys[0].decode().split('::')[1:4])
     else:
         return None
 

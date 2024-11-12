@@ -285,11 +285,11 @@ class _ExecutorBase:
         """
         _, service_details = self._services[service]
 
-        # Get the  expiration time
+        # Get the expiration time
         expires = service_details.result_expires
 
         # In synchronous mode, set the pending timeout
-        # the the passed value of fallback to default
+        # to the passed value or fallback to default
         pending_timeout = pending_timeout or self._pending_expiration_timeout
 
         if pending_timeout > expires:
@@ -402,7 +402,7 @@ class _ExecutorBase:
     ) -> Optional[JobStatus]:
         # Dismiss job (blocking)
 
-        # Lock accross multiple server instance
+        # Lock accross multiple server instances
         with registry.lock(self._celery, f"job:{job_id}", timeout=timeout):
 
             # Check if job_id is registered
@@ -444,7 +444,7 @@ class _ExecutorBase:
                     else:
                         status = _S.DONE  # job has expired
                 else:
-                    match st, request:
+                    match st:
                         case "active" | "scheduled" | "reserved":
                             status = _S.ACTIVE
                         case "revoked":
@@ -655,14 +655,6 @@ class _ExecutorBase:
             return state['result']
         else:
             return None
-
-    def scan_jobs(
-        self,
-        service: Optional[str] = None,
-        realm: Optional[str] = None,
-    ) -> Iterator[Tuple[str, str, str]]:
-        """ Iterate over all registered jobs """
-        return registry.find_keys(self._celery, service=service, realm=realm)
 
     def _jobs(
         self,
