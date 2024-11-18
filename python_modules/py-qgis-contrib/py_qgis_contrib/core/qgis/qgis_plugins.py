@@ -389,6 +389,7 @@ def install_plugins(conf: QgisPluginConfig):
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
+
     def _run(*args):
         res = subprocess.run(
             [conf.plugin_manager, *args],  # nosec; path is checked to be absolute
@@ -397,7 +398,8 @@ def install_plugins(conf: QgisPluginConfig):
         if res.returncode > 0:
             raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
 
-    if not (install_path / 'sources.list').exists():
+    sources_list = Path(os.getenv('QGIS_PLUGIN_MANAGER_SOURCES_FILE', install_path / 'sources.list'))
+    if not sources_list.exists():
         _run("init")
 
     try:
