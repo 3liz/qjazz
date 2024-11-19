@@ -27,11 +27,19 @@ celery = [ "celery>=5.4", "redis>=5.0.8" ]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
 
+[tool.setuptools.package-data]
+py_qgis_contrib = [ "core/manifest.json" ]
+
 [tool.setuptools.packages.find]
+exclude = [ "tests/*" ]
 include = [
     "py_qgis_contrib", 
     "py_qgis_contrib.*",
 ]
+
+#
+# Ruff 
+#
 
 [tool.ruff]
 extend = "../../config/ruff.toml"

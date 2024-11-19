@@ -17,3 +17,4 @@ swagger-plugin-for-sphinx
 grpcio-tools
 pipdeptree
 bandit
+build >= 1.2.2

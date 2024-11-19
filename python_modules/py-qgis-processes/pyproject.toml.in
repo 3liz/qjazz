@@ -32,12 +32,17 @@ name = "David Marteau"
 email = "dmarteau@3liz.org"
 
 [tool.setuptools.packages.find]
+exclude = [ "tests/*" ]
 include = [
     "py_qgis_processes", 
     "py_qgis_processes.*",
     "py_qgis_printserver",
     "py_qgis_printserver.*",
 ]
+
+#
+# Ruff
+#
 
 [tool.ruff]
 extend = "../../config/ruff.toml"

@@ -8,7 +8,7 @@ configure::
 dist::
 	mkdir -p $(SDIST)
 	rm -rf *.egg-info
-	$(PYTHON) setup.py sdist --dist-dir=$(SDIST)
+	$(PYTHON) -m build --no-isolation --sdist --outdir=$(SDIST)
 
 clean::
 	rm -rf $(SDIST) *.egg-info

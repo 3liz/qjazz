@@ -1,1 +1,2 @@
-include LICENSE
+exclude tests/*
+recursive-include py_qgis_processes/server/html *

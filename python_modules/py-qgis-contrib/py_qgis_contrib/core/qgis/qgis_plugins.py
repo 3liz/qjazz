@@ -389,7 +389,6 @@ def install_plugins(conf: QgisPluginConfig):
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
-
     def _run(*args):
         res = subprocess.run(
             [conf.plugin_manager, *args],  # nosec; path is checked to be absolute

@@ -22,6 +22,7 @@ email = "dmarteau@3liz.org"
 
 
 [tool.setuptools.packages.find]
+exclude = [ "tests", "tests/*" ]
 include = [
     "py_qgis_cache", 
     "py_qgis_cache.*",

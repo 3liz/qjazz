@@ -33,6 +33,7 @@ BUILD_TARGET:=base
 #BUILD_CACHE:=--force-rm --no-cache
 
 build: manifest requirements
+	$(MAKE) -C .. build
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
