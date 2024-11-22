@@ -1,3 +1,4 @@
+SHELL=bash
 
 PROJECT_NAME=py-qgis-server
 
@@ -46,3 +47,6 @@ clean:
 	rm -r ${BUILDDIR}
 
 all: build main
+
+serve:
+	python3 -m http.server -d build/html

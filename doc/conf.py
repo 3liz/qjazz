@@ -40,7 +40,7 @@ master_doc = 'index'
 
 # -- Swagger ---
 # Note: for reading swagger doc one must use http server:
-# ex  'python -m http.server doc/build'
+# ex  'python -m http.server -d doc/build/html'
 swagger = [
     {
         "name": "Managment API",
