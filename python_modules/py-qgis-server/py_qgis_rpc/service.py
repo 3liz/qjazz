@@ -180,7 +180,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             # Final report
             if request.debug_report:
                 logger.trace("Sending debug report")
-                report = await worker.io.read()
+                report = await worker.io.read_report()
                 context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
@@ -260,7 +260,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             # Final report
             if request.debug_report:
                 logger.trace("Sending debug report")
-                report = await worker.io.read()
+                report = await worker.io.read_report()
                 context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
@@ -335,7 +335,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 
             # Final report
             if request.debug_report:
-                report = await worker.io.read()
+                report = await worker.io.read_report()
                 context.set_trailing_metadata([
                     ('x-debug-memory', str(report.memory)),
                     ('x-debug-duration', str(report.duration)),
@@ -606,20 +606,18 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         context: grpc.aio.ServicerContext,
     ) -> AsyncIterator[api_pb2.PluginInfo]:
 
-        count, plugins = self._pool.list_plugins()
-        await context.send_initial_metadata([("x-reply-header-installed-plugins", str(count))])
-        if plugins:
-            for item in plugins:
-                yield api_pb2.PluginInfo(
-                    name=item.name,
-                    path=str(item.path),
-                    plugin_type=item.plugin_type.name,
-                    metadata=json.dumps(item.metadata),
-                )
+        plugins = self._pool.list_plugins()
+        for item in plugins:
+            yield api_pb2.PluginInfo(
+                name=item.name,
+                path=str(item.path),
+                plugin_type=item.plugin_type.name,
+                metadata=json.dumps(item.metadata),
+            )
+
     #
     # Get config
     #
-
     async def GetConfig(
         self,
         request: api_pb2.Empty,

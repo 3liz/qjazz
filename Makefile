@@ -10,7 +10,7 @@ DIRS= \
 docker-%:
 	$(MAKE) -C docker $*
 
-install-tests::
+install-dev::
 	pip install -U --upgrade-strategy=eager -r tests/requirements.txt
 
 include $(topsrcdir)/config/rules.mk

@@ -11,11 +11,11 @@ from typing_extensions import (
     Iterator,
     List,
     Optional,
-    Tuple,
 )
 
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigProxy
+from py_qgis_contrib.core.timer import Stopwatch
 
 from . import messages as _m
 from .config import WorkerConfig, confservice
@@ -57,7 +57,7 @@ class WorkerPool:
 
     @property
     def stopped_workers(self) -> int:
-        return sum(1 for w in self._workers if not w.is_alive())
+        return sum(1 for w in self._workers if not w.is_alive)
 
     @property
     def num_workers(self) -> int:
@@ -81,18 +81,24 @@ class WorkerPool:
     def requests_count(self) -> int:
         return self._count
 
-    def start(self):
+    async def start(self):
         """ Start all worker's processes
         """
+        ts = Stopwatch()
         for w in self._workers:
-            w.start()
+            await w.start()
+            self._avails.put_nowait(w)
 
-    def terminate_and_join(self, timeout: Optional[int] = 10):
+        # Cache immutable status
+        await self._cache_worker_status()
+        logger.info("Started %s workers in %s ms", len(self._workers), ts.elapsed_ms)
+
+    async def terminate_and_join(self, timeout: Optional[int] = 10):
+        logger.debug("Terminating worker pool")
         self._shutdown = True
         for w in self._workers:
             w.terminate()
-        for w in self._workers:
-            w.join(timeout)
+        await asyncio.gather(*(w.join(timeout) for w in self._workers), return_exceptions=True)
 
     async def _maintain_pool(self, restore: Optional[Iterable[str]] = None):
         """ Replace dead workers in the worker's list
@@ -101,9 +107,8 @@ class WorkerPool:
 
         def _processes():
             for i, worker in enumerate(self._workers):
-                if not worker.is_alive():
+                if not worker.is_alive:
                     w = Worker(self._config, name=f"{self._config.name}_{i}")
-                    w.start()
                     replace.append((i, w))
 
         await asyncio.to_thread(_processes)
@@ -119,6 +124,7 @@ class WorkerPool:
 
         async def _restore(i: int, w: Worker):
             try:
+                w.start()
                 await w.ping("")      # Wait for convergence
                 self._workers[i] = w  # Replace dead worker
 
@@ -164,14 +170,10 @@ class WorkerPool:
         await self._maintain_pool(restore)
 
         # Terminate removed workers
-        await asyncio.gather(*(workers[i].quit() for i in removed))
-
-        def _join():
-            for i in removed:
-                w = workers[i]
-                w.join(10)
-
-        await asyncio.to_thread(_join)
+        await asyncio.gather(
+            *(workers[i].quit(self._grace_period) for i in removed),
+            return_exceptions=True,
+        )
         return len(removed)
 
     async def _grow(self, n: int = 1, restore: Optional[Iterable[str]] = None):
@@ -183,7 +185,6 @@ class WorkerPool:
             pid = self._next_id
             for i in range(n):
                 w = Worker(self._config, name=f"{self._config.name}_{pid}")
-                w.start()
                 added.append(w)
                 pid += 1
 
@@ -193,8 +194,9 @@ class WorkerPool:
 
         async def _restore(w: Worker):
             try:
+                await w.start()
                 # Wait for convergence
-                await w.ping("")      # Wait for convergence
+                await w.ping("")
                 if restore:
                     for uri in restore:
                         await w.checkout_project(uri, pull=True)
@@ -225,26 +227,12 @@ class WorkerPool:
             else:
                 await self._maintain_pool(restore)
 
-    async def initialize(self):
-        """ Test that workers are alive
-            and populate the queue
-        """
-        for w in self._workers:
-            await w.ping("")
-            self._avails.put_nowait(w)
-        # Cache immutable status
-        await self._cache_worker_status()
-
     async def _cache_worker_status(self):
         worker = self._workers[0]
         # Cache environment since it is immutable
         logger.debug("Caching workers status")
         self._cached_worker_env = await worker.env()
-        _, items = await worker.list_plugins()
-        if items:
-            self._cached_worker_plugins = [item async for item in items]
-        else:
-            self._cached_worker_plugins = []
+        self._cached_worker_plugins = [item async for item in worker.list_plugins()]
         #
         # Update status metadata
         #
@@ -285,29 +273,24 @@ class WorkerPool:
                 worker = None
                 raise WorkerError(503, "Server busy")
             yield worker
-        except _m.WouldBlockError:
+        except TimeoutError:
             logger.critical("Worker stalled, terminating...")
-            worker.cancel()  # Try cancelling request
             try:
-                await asyncio.wait_for(worker.consume_until_task_done(), self._grace_period)
-            except asyncio.TimeoutError:
+                # Try cancelling request
+                await asyncio.wait_for(worker.cancel(), self._grace_period)
+            except TimeoutError:
                 worker.terminate()  # This will trigger a SIGCHLD signal
                 worker = None       # Do not put back worker on queue
             raise WorkerError(504, "Server stalled") from None
         except asyncio.CancelledError:
             logger.error("Connection cancelled by client")
-            if worker:
-                worker.cancel()  # Cancel any rendering
-                # Flush stream from current task
-                # Handle timeout, since the main reason
-                # for cancelling may be a stucked or
-                # long polling response.
-                try:
-                    await asyncio.wait_for(worker.consume_until_task_done(), self._grace_period)
-                except asyncio.TimeoutError:
-                    logger.critical("Worker stalled, terminating...")
-                    worker.terminate()  # This will trigger a SIGCHLD signal
-                    worker = None       # Do not put back worker on queue
+            try:
+                # Cancel any rendering
+                await asyncio.wait_for(worker.cancel(), self._grace_period)
+            except TimeoutError:
+                logger.critical("Worker stalled, terminating...")
+                worker.terminate()  # This will trigger a SIGCHLD signal
+                worker = None       # Do not put back worker on queue
         except WorkerError:
             raise
         except Exception as err:
@@ -391,7 +374,7 @@ class WorkerPool:
 
         # Update configs for live workers
         await asyncio.gather(
-           *(w.update_config(self._config) for w in self._workers if w.is_alive()),
+           *(w.update_config(self._config) for w in self._workers if w.is_alive),
         )
 
         # Restore pool
@@ -409,9 +392,5 @@ class WorkerPool:
     # Plugins
     #
 
-    def list_plugins(self) -> Tuple[int, Optional[Iterator[_m.PluginInfo]]]:
-        count = len(self._cached_worker_plugins)
-        if count == 0:
-            return (count, None)
-        else:
-            return (count, (item for item in self._cached_worker_plugins))
+    def list_plugins(self) -> List[_m.PluginInfo]:
+        return self._cached_worker_plugins

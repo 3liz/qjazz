@@ -4,7 +4,7 @@ from pathlib import Path
 
 import grpc
 
-from typing_extensions import Callable, List, Optional, no_type_check
+from typing_extensions import Callable, List, Optional
 
 from py_qgis_contrib.core.config import SSLConfig
 
@@ -24,11 +24,12 @@ def stub(
     # of the code.
     #
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
-    @no_type_check
     def _read_if(f: Optional[Path]) -> Optional[bytes]:
         if f:
             with f.open('rb') as fp:
                 return fp.read()
+        else:
+            return None
 
     with (
         grpc.secure_channel(

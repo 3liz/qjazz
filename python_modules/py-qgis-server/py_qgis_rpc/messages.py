@@ -2,12 +2,14 @@
     sub process
 """
 import asyncio
-import multiprocessing as mp
+import os
+import pickle  # nosec
 
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from multiprocessing.connection import Connection
+from enum import Enum, IntEnum, auto
+from io import BytesIO
 from pathlib import Path
+from struct import pack, unpack
 
 from pydantic import JsonValue
 from typing_extensions import (
@@ -16,31 +18,18 @@ from typing_extensions import (
     ClassVar,
     Dict,
     List,
-    Literal,
     Optional,
-    Self,
+    Protocol,
     Tuple,
     Type,
+    Union,
 )
 
 from py_qgis_cache import CheckoutStatus
-from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.qgis import PluginType
 
 
-@dataclass(frozen=True)
-class Envelop:
-    status: int
-    msg: Optional[Any]
-
-
-def send_reply(conn: Connection, msg: Optional[Any], status: int = 200):  # noqa ANN401
-    """  Send a reply in a envelope message
-    """
-    conn.send(Envelop(status, msg))
-
-
-class MsgType(Enum):
+class MsgType(IntEnum):
     PING = auto()
     QUIT = auto()
     REQUEST = auto()
@@ -75,8 +64,9 @@ class HTTPMethod(Enum):
     PATCH = auto()
 
 
+#
 # REQUEST
-
+#
 @dataclass(frozen=True)
 class RequestReply:
     status_code: int
@@ -95,9 +85,8 @@ class RequestReport:
 
 
 @dataclass(frozen=True)
-class OwsRequest:
+class OwsRequestMsg:
     msg_id: ClassVar[MsgType] = MsgType.OWSREQUEST
-    return_type: ClassVar[Type] = RequestReply
     service: str
     request: str
     target: str
@@ -111,9 +100,8 @@ class OwsRequest:
 
 
 @dataclass(frozen=True)
-class ApiRequest:
+class ApiRequestMsg:
     msg_id: ClassVar[MsgType] = MsgType.APIREQUEST
-    return_type: ClassVar[Type] = RequestReply
     name: str
     path: str
     method: HTTPMethod
@@ -129,9 +117,8 @@ class ApiRequest:
 
 
 @dataclass(frozen=True)
-class Request:
+class RequestMsg:
     msg_id: ClassVar[MsgType] = MsgType.REQUEST
-    return_type: ClassVar[Type] = RequestReply
     url: str
     method: HTTPMethod
     data: Optional[bytes]
@@ -143,18 +130,17 @@ class Request:
 
 
 @dataclass(frozen=True)
-class Ping:
+class PingMsg:
     msg_id: ClassVar[MsgType] = MsgType.PING
-    return_type: ClassVar[None] = None
     echo: Optional[str] = None
 
+
+#
 # QUIT
-
-
+#
 @dataclass(frozen=True)
-class Quit:
+class QuitMsg:
     msg_id: ClassVar[MsgType] = MsgType.QUIT
-    return_type: ClassVar[None] = None
 
 
 @dataclass(frozen=True)
@@ -174,54 +160,54 @@ class CacheInfo:
     pinned: bool = False
 
 
+#
 # PULL_PROJECT
-
-
+#
 @dataclass(frozen=True)
-class CheckoutProject:
+class CheckoutProjectMsg:
     msg_id: ClassVar[MsgType] = MsgType.CHECKOUT_PROJECT
-    return_type: ClassVar[Type] = CacheInfo
     uri: str
-    pull: Optional[bool] = False
+    pull: bool = False
 
 
+#
 # DROP_PROJECT
-
+#
 @dataclass(frozen=True)
-class DropProject:
+class DropProjectMsg:
     msg_id: ClassVar[MsgType] = MsgType.DROP_PROJECT
-    return_type: ClassVar[Type] = CacheInfo
     uri: str
 
 
+#
 # CLEAR_CACHE
-
+#
 @dataclass(frozen=True)
-class ClearCache:
+class ClearCacheMsg:
     msg_id: ClassVar[MsgType] = MsgType.CLEAR_CACHE
-    return_type: ClassVar[Literal[None]] = None
 
 
+#
 # LIST_CACHE
-
+#
 @dataclass(frozen=True)
-class ListCache:
+class ListCacheMsg:
     msg_id: ClassVar[MsgType] = MsgType.LIST_CACHE
-    return_type: ClassVar[Type] = CacheInfo
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
 
 
+#
 # UPDATE_CACHE
-
+#
 @dataclass(frozen=True)
-class UpdateCache:
+class UpdateCacheMsg:
     msg_id: ClassVar[MsgType] = MsgType.UPDATE_CACHE
-    return_type: ClassVar[Type] = CacheInfo
 
 
+#
 # PLUGINS
-
+#
 @dataclass(frozen=True)
 class PluginInfo:
     name: str
@@ -231,13 +217,13 @@ class PluginInfo:
 
 
 @dataclass(frozen=True)
-class Plugins:
+class PluginsMsg:
     msg_id: ClassVar[MsgType] = MsgType.PLUGINS
-    return_type: ClassVar[Type] = PluginInfo
 
 
+#
 # PROJECT_INFO
-
+#
 @dataclass(frozen=True)
 class LayerInfo:
     layer_id: str
@@ -262,31 +248,28 @@ class ProjectInfo:
 
 
 @dataclass(frozen=True)
-class GetProjectInfo:
+class GetProjectInfoMsg:
     msg_id: ClassVar[MsgType] = MsgType.PROJECT_INFO
-    return_type: ClassVar[Type] = ProjectInfo
     uri: str
 
 
+#
 # CONFIG
-
+#
 @dataclass(frozen=True)
-class GetConfig:
+class GetConfigMsg:
     msg_id: ClassVar[MsgType] = MsgType.GET_CONFIG
-    return_type: ClassVar = JsonValue
 
 
 @dataclass(frozen=True)
-class PutConfig:
+class PutConfigMsg:
     msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
-    return_type: ClassVar[None] = None
     config: Optional[Dict] = None
 
 
 #
 # CATALOG
 #
-
 @dataclass(frozen=True)
 class CatalogItem:
     uri: str
@@ -297,27 +280,24 @@ class CatalogItem:
 
 
 @dataclass(frozen=True)
-class Catalog:
+class CatalogMsg:
     msg_id: ClassVar[MsgType] = MsgType.CATALOG
-    return_type: ClassVar[Type] = CatalogItem
     location: Optional[str] = None
+
 
 #
 # ENV
 #
-
-
 @dataclass(frozen=True)
-class GetEnv:
+class GetEnvMsg:
     msg_id: ClassVar[MsgType] = MsgType.ENV
-    return_type: ClassVar[Type] = Dict
 
 
 #
 # TEST
 #
 @dataclass(frozen=True)
-class Test:
+class TestMsg:
     msg_id: ClassVar[MsgType] = MsgType.TEST
     delay: int
 
@@ -326,86 +306,185 @@ class Test:
 #
 
 
-DEFAULT_TIMEOUT = 20
+@dataclass(frozen=True)
+class Envelop:
+    status: int
+    msg: Any
 
 
-# Raised when there is an attempt
-# to read a connection that would block
-class WouldBlockError(Exception):
-    pass
+Message = Union[
+    OwsRequestMsg,
+    ApiRequestMsg,
+    RequestMsg,
+    PingMsg,
+    QuitMsg,
+    CheckoutProjectMsg,
+    DropProjectMsg,
+    ClearCacheMsg,
+    ListCacheMsg,
+    UpdateCacheMsg,
+    PluginsMsg,
+    GetProjectInfoMsg,
+    GetConfigMsg,
+    PutConfigMsg,
+    CatalogMsg,
+    GetEnvMsg,
+    TestMsg,
+]
+
+
+class Connection(Protocol):
+    def recv(self) -> Message: ...
+    def send_bytes(self, data: bytes): ...
+
+
+def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
+    """  Send a reply in a envelope message """
+    conn.send_bytes(pickle.dumps(Envelop(status, msg=msg)))
+
+
+def send_report(conn: Connection, report: RequestReport):
+    """ Send report """
+    conn.send_bytes(pickle.dumps(report))
 
 
 #
 # XXX Note that data sent by child *MUST* be retrieved in parent
 # side, otherwise cpu goes wild.
-#
+
+
+def cast_into[T](o: Any, t: Type[T]) -> T:  # noqa ANN401
+    if not isinstance(o, t):
+        raise ValueError(f"Cast failed, Expecting {t}, not {type(o)}")
+    return o
+
 
 class Pipe:
     """ Wrapper for Connection object that allow reading asynchronously
     """
-    @classmethod
-    def new(cls: Type[Self]) -> Tuple[Self, Connection]:
-        parent, child = mp.Pipe(duplex=True)
-        return cls(parent), child
+    def __init__(self, proc: asyncio.subprocess.Process):
+        if proc.stdin is None:
+            raise ValueError("Invalid StreamWriter")
+        if proc.stdout is None:
+            raise ValueError("Invalid StreamReader")
+        self._stdin = proc.stdin
+        self._stdout = proc.stdout
 
-    def __init__(self, conn: Connection):
-        self._conn = conn
-        self._data_available = asyncio.Event()
+    async def put_message(self, message: Message):
+        data = pickle.dumps(message)
+        self._stdin.write(pack('i', len(data)))
+        self._stdin.write(data)
+        await self._stdin.drain()
 
-        asyncio.get_running_loop().add_reader(self._conn.fileno(), self._data_available.set)
-
-    def write(self, obj):
-        self._conn.send(obj)
-
-    def flush(self):
+    async def drain(self):
         """ Pull out all remaining data from pipe
         """
-        while self._conn.poll():
-            _ = self._conn.recv_bytes()
-        # Clear  event
-        self._data_available.clear()
+        size = unpack('i', await self._stdout.readexactly(4))
+        if size > 0:
+            _ = await self._stdout.read(size)
 
-    async def _poll(self, timeout: int):
-        """ Asynchronous read of Pipe connection
-        """
-        try:
-            if not self._conn.poll():  # Check for data
-                # No data, wait for incoming data
-                await asyncio.wait_for(self._data_available.wait(), timeout)
-                # This is blocking, but not infinitely
-                # In some cases the _poll() method may return without timeout even
-                # if there is no data to read.
-                # We ensure that we are not going to block forever on recv().
-                if not self._conn.poll(timeout):
-                    logger.warning("Blocking timeout (%ds) in worker connection", timeout)
-                    raise WouldBlockError()
-        except asyncio.exceptions.TimeoutError:
-            raise WouldBlockError() from None
-        finally:
-            self._data_available.clear()
+    async def read_report(self) -> RequestReport:
+        return cast_into(
+            pickle.loads(await self.read_bytes()),  # nosec
+            RequestReport,
+        )
 
-    async def read(self, timeout: int = DEFAULT_TIMEOUT) -> Any:  # noqa ANN401
-        await self._poll(timeout)
-        return self._conn.recv()
-
-    async def read_message(self, timeout: int = DEFAULT_TIMEOUT) -> Any:  # noqa ANN401
+    async def read_message(self) -> Tuple[int, Any]:
         """ Read an Envelop message
         """
-        msg = await self.read(timeout)
+        msg = cast_into(
+            pickle.loads(await self.read_bytes()),  # nosec
+            Envelop,
+        )
+
         return msg.status, msg.msg
 
-    async def read_bytes(self, timeout: int = DEFAULT_TIMEOUT) -> bytes:
-        await self._poll(timeout)
-        return self._conn.recv_bytes()
+    async def read_bytes(self) -> bytes:
+        size, = unpack('i', await self._stdout.read(4))
+        data = await self._stdout.read(size) if size else b''
+        if len(data) < size:
+            buf = BytesIO()
+            buf.write(data)
+            remaining = size - len(data)
+            while remaining > 0:
+                chunk = await self._stdout.read(remaining)
+                remaining -= len(chunk)
+                buf.write(chunk)
+            data = buf.getvalue()
+        return data
 
-    async def stream_bytes(self, timeout: int = DEFAULT_TIMEOUT) -> AsyncIterator[bytes]:
-        b = await self.read_bytes(timeout)
+    async def stream_bytes(self) -> AsyncIterator[bytes]:
+        b = await self.read_bytes()
         while b:
             yield b
-            b = await self.read_bytes(timeout)
+            b = await self.read_bytes()
 
-    async def send_message(self, msg, timeout: int = DEFAULT_TIMEOUT) -> Tuple[int, Any]:  # noqa ANN401
-        self._conn.send(msg)
-        response = await self.read(timeout)
-        # Response must be an Envelop object
-        return response.status, response.msg
+    async def send_message(self, msg: Message) -> Tuple[int, Any]:
+        await self.put_message(msg)
+        return await self.read_message()
+
+#
+# Rendez Vous
+#
+
+
+class RendezVous:
+
+    def __init__(self, path: Path):
+        self._path = path
+        self._done = asyncio.Event()
+        self._running = False
+        self._task: asyncio.Task | None = None
+
+    @property
+    def path(self) -> Path:
+        return self._path
+
+    def stop(self):
+        self._running = False
+        if self._task and not self._task.done():
+            self._task.cancel()
+
+    def start(self):
+        if self._task:
+            raise RuntimeError("Rendez vous already started")
+        self._task = asyncio.create_task(self._listen())
+
+    @property
+    def done(self) -> bool:
+        return self._done.is_set()
+
+    @property
+    def busy(self) -> bool:
+        return not self.done
+
+    async def wait(self):
+        await self._done.wait()
+
+    async def _listen(self):
+        # Open a named pipe and read continuously from it.
+        #
+        #    Writer just need to open the path
+        #    in binary write mode (rb)
+        #
+        #    ```
+        #    rendez_vous = path.open('wb')
+        #    ```
+        self._running = True
+
+        path = self.path.as_posix()
+        os.mkfifo(path)
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        avail = asyncio.Event()
+        asyncio.get_running_loop().add_reader(fd, avail.set)
+        while self._running:
+            await avail.wait()
+            try:
+                match os.read(fd, 1024):
+                    case b'0':  # DONE
+                        self._done.set()
+                    case b'1':  # BUSY
+                        self._done.clear()
+            except BlockingIOError:
+                pass
+            avail.clear()

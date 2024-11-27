@@ -3,7 +3,6 @@
 import traceback
 
 from contextlib import contextmanager
-from multiprocessing.connection import Connection
 from time import time
 
 import psutil
@@ -71,7 +70,7 @@ class Response(QgsServerResponse):
 
     def __init__(
             self,
-            conn: Connection,
+            conn: _m.Connection,
             co_status: Optional[CheckoutStatus] = None,
             headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
@@ -90,7 +89,7 @@ class Response(QgsServerResponse):
         self._co_status = co_status
         self._process = _process
         self._timestamp = time()
-        self._extra_headers = headers or {}
+        self._extra_headers: Dict[str, str] = headers or {}
         self._chunk_size = chunk_size
         self._cache_id = cache_id
         self._feedback = feedback
@@ -108,7 +107,8 @@ class Response(QgsServerResponse):
         memory = self._process.memory_info().vms - self._memory
 
         logger.trace(">>> Sending request report")
-        self._conn.send(
+        _m.send_report(
+            self._conn,
             _m.RequestReport(
                 memory=memory,
                 timestamp=self._timestamp,
@@ -140,7 +140,7 @@ class Response(QgsServerResponse):
         """
         self._headers.update(self._extra_headers)
 
-        # Return reply in Envelop
+        # Return reply
         _m.send_reply(
             self._conn,
             _m.RequestReply(
@@ -173,7 +173,7 @@ class Response(QgsServerResponse):
 
         if self._finish and bytes_avail and not self._header_written:
             # Make sure that we have Content-length set
-            self._headers['Content-Length'] = bytes_avail
+            self._headers['Content-Length'] = f"{bytes_avail}"
 
         data = bytes(self._buffer.data())
 

@@ -11,7 +11,6 @@ from typing_extensions import Optional
 from py_qgis_contrib.core import config, logger
 
 from .config import ENV_CONFIGFILE, ConfigProto, confservice
-from .pool import WorkerPool
 from .server import serve
 
 
@@ -141,16 +140,11 @@ def serve_grpc(configpath: Optional[Path]):
 
     conf.worker.plugins.do_install()
 
-    pool = WorkerPool(conf.worker)
-    pool.start()
-
     restore = create_restore_object(conf.restore_cache)
-
     try:
-        asyncio.run(serve(pool, restore))
+        asyncio.run(serve(conf, restore))
     finally:
-        pool.terminate_and_join()
-        logger.info("Worker shutdown")
+        click.echo("Server shutdown")
 
 
 def main():

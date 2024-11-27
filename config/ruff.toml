@@ -1,14 +1,14 @@
 # Ruff configuration
 # See https://docs.astral.sh/ruff/configuration/
 line-length = 120
-target-version = "py310"
+target-version = "py312"
 extend-exclude = [
     "_grpc",
 ]
 
 [lint]
 extend-select = ["E", "F", "I", "ANN", "W", "T", "COM", "RUF"]
-ignore = ["ANN101", "ANN102", "ANN002", "ANN003", "RUF100", "RUF029"]
+ignore = ["ANN002", "ANN003", "RUF100", "RUF029"]
 
 [format]
 indent-style = "space"

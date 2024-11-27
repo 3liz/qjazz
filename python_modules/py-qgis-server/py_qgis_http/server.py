@@ -15,7 +15,6 @@ from typing_extensions import (
     Callable,
     Optional,
     TypeAlias,
-    no_type_check,
 )
 
 from py_qgis_contrib.core import logger
@@ -335,21 +334,20 @@ class _Router:
 Site: TypeAlias = web.TCPSite | web.UnixSite
 
 
-@no_type_check
 async def start_site(conf: HttpConfig, runner: web.AppRunner) -> Site:
 
     ssl_context = conf.ssl.create_ssl_server_context() if conf.use_ssl else None
 
     site: Site
     match conf.listen:
-        case (address, port):
+        case (str(address), int(port)):
             site = web.TCPSite(
                 runner,
                 host=address.strip('[]'),
                 port=port,
                 ssl_context=ssl_context,
             )
-        case socket:
+        case str(socket):
             site = web.UnixSite(
                 runner,
                 socket[len('unix:'):],

@@ -15,15 +15,13 @@ pytest_plugins = ('pytest_asyncio',)
 @asynccontextmanager
 async def worker_context(projects: ProjectsConfig):
     worker = Worker(WorkerConfig(name="Test", projects=projects))
-    worker.start()
+    await worker.start()
     try:
         yield worker
     finally:
         print("Sending Quit message")
-        status, _ = await worker.io.send_message(messages.Quit())
-        assert status == 200
-        worker.join(5)
-        assert not worker.is_alive()
+        await worker.quit()
+        assert not worker.is_alive
 
 
 async def test_worker_io(projects: ProjectsConfig):
@@ -32,12 +30,12 @@ async def test_worker_io(projects: ProjectsConfig):
     async with worker_context(projects) as worker:
 
         # Test ping message
-        status, _ = await worker.io.send_message(messages.Ping())
+        status, _ = await worker.io.send_message(messages.PingMsg())
         assert status == 200
 
         # Test Qgis server OWS request with valid project
         status, resp = await worker.io.send_message(
-            messages.OwsRequest(
+            messages.OwsRequestMsg(
                 service="WFS",
                 request="GetCapabilities",
                 target="/france/france_parts",
@@ -45,6 +43,8 @@ async def test_worker_io(projects: ProjectsConfig):
                 debug_report=True,
             ),
         )
+
+        print("test_worker_io::status", status)
 
         assert status == 200
         assert resp.status_code == 200
@@ -58,24 +58,24 @@ async def test_worker_io(projects: ProjectsConfig):
                 assert len(chunk > 0)
 
         # Get final report
-        report = await worker.io.read()
+        report = await worker.io.read_report()
         print(f"> {report.memory}")
         print(f"> {report.timestamp}")
         print(f"> {report.duration}")
 
 
 async def test_chunked_response(projects: ProjectsConfig):
-    """ Test worker process
+    """ Test Response with chunk
     """
     async with worker_context(projects) as worker:
 
-        status, _ = await worker.io.send_message(messages.Ping())
+        status, _ = await worker.io.send_message(messages.PingMsg())
         assert status == 200
 
         start = time()
         # Test Qgis server OWS request with valid project
         status, resp = await worker.io.send_message(
-            messages.OwsRequest(
+            messages.OwsRequestMsg(
                 service="WFS",
                 request="GetFeature",
                 version="1.0.0",
@@ -91,8 +91,8 @@ async def test_chunked_response(projects: ProjectsConfig):
         assert status == 200
         assert resp.status_code == 200
 
-        print("> ", resp.chunked)
-        print("> ", resp.headers)
+        print("> chunked", resp.chunked)
+        print("> headers", resp.headers)
 
         if resp.chunked:
             # Stream remaining bytes
@@ -100,7 +100,7 @@ async def test_chunked_response(projects: ProjectsConfig):
                 assert len(chunk) > 0
 
         # Get final report
-        report = await worker.io.read()
+        report = await worker.io.read_report()
         print("> ", report.memory)
         print("> ", report.timestamp)
         print("> ", report.duration)
@@ -114,7 +114,7 @@ async def test_cache_api(projects: ProjectsConfig):
 
         # Pull
         status, resp = await worker.io.send_message(
-            messages.CheckoutProject(uri="/france/france_parts", pull=True),
+            messages.CheckoutProjectMsg(uri="/france/france_parts", pull=True),
         )
         assert status == 200
         assert resp.status == messages.CheckoutStatus.NEW
@@ -124,14 +124,14 @@ async def test_cache_api(projects: ProjectsConfig):
 
         # Checkout
         status, resp = await worker.io.send_message(
-            messages.CheckoutProject(uri="/france/france_parts", pull=False),
+            messages.CheckoutProjectMsg(uri="/france/france_parts", pull=False),
         )
         assert status == 200
         assert resp.status == messages.CheckoutStatus.UNCHANGED
 
         # List
         status, resp = await worker.io.send_message(
-            messages.ListCache(),
+            messages.ListCacheMsg(),
         )
 
         assert status == 200
@@ -143,19 +143,19 @@ async def test_cache_api(projects: ProjectsConfig):
 
         # Project info
         status, resp = await worker.io.send_message(
-            messages.GetProjectInfo("/france/france_parts"),
+            messages.GetProjectInfoMsg("/france/france_parts"),
         )
         assert status == 200
 
         # Drop project
         status, resp = await worker.io.send_message(
-            messages.DropProject(uri),
+            messages.DropProjectMsg(uri),
         )
         assert status == 200
 
         # Empty List
         status, resp = await worker.io.send_message(
-            messages.ListCache(),
+            messages.ListCacheMsg(),
         )
 
         assert status == 200
@@ -169,7 +169,7 @@ async def test_catalog(projects: ProjectsConfig):
 
         # Pull
         status, _resp = await worker.io.send_message(
-            messages.Catalog("/france"),
+            messages.CatalogMsg("/france"),
         )
         assert status == 200
         status, item = await worker.io.read_message()
@@ -236,8 +236,9 @@ async def test_ows_chunked_request(projects: ProjectsConfig):
         async for chunk in stream:
             assert len(chunk) > 0
 
-        with pytest.raises(messages.WouldBlockError):
-            _ = await worker.io.read(timeout=1)
+        with pytest.raises(TimeoutError):
+            async with asyncio.timeout(1):
+                _ = await worker.io.read_bytes()
 
 
 async def test_api_request(projects: ProjectsConfig):

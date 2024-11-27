@@ -31,7 +31,8 @@ from .messages import CheckoutStatus as Co
 
 
 class Worker(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     async def checkout_project(self, uri: str, pull: bool = False) -> CacheInfo:
         ...

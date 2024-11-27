@@ -20,13 +20,11 @@ def worker_config(projects: ProjectsConfig, num_processes: int) -> WorkerConfig:
 @asynccontextmanager
 async def pool_context(projects: ProjectsConfig, num_processes: int = 3):
     pool = WorkerPool(worker_config(projects, num_processes))
-    pool.start()
-    print("Initializing pool")
-    await pool.initialize()
+    await pool.start()
     try:
         yield pool
     finally:
-        pool.terminate_and_join()
+        await pool.terminate_and_join()
 
 
 async def test_pool_rescale_workers(projects: ProjectsConfig):

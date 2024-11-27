@@ -338,10 +338,6 @@ def list_plugins():
             api_pb2.Empty(),
         )
 
-        for k, v in stream.initial_metadata():
-            if k == "x-reply-header-installed-plugins":
-                click.echo(f"Installed plugins: {v}", err=True)
-
         for item in stream:
             click.echo(
                 json.dumps(

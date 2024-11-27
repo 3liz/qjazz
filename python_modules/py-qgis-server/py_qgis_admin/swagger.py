@@ -16,13 +16,24 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from typing_extensions import Dict, List, Literal, Optional, Tuple, Type
+from typing_extensions import (
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from py_qgis_contrib.core.models import JsonModel
 
-ModelAlias = Type[BaseModel] | TypeAdapter
+_Model = Union[Type[BaseModel], TypeAdapter]
 
-_models: List[Tuple[str, ModelAlias]] = []
+M = TypeVar("M", bound=_Model)
+
+_models: List[Tuple[str, _Model]] = []
 
 oapi_title = "Py-Qgis services admin"
 oapi_description = "Manage Py-Qgis services clusters"
@@ -86,7 +97,7 @@ class OpenApiDocument(JsonModel):
     info: Info
 
 
-def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
+def model(model: M, name: Optional[str] = None) -> M:
     """ Collect models
     """
     if isinstance(model, TypeAdapter):

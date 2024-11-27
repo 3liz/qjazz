@@ -4,10 +4,10 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from pydantic import (
+    AnyUrl,
     Field,
     UrlConstraints,
 )
-from pydantic.networks import Url as UrlBase
 from typing_extensions import Annotated, Dict, Optional
 
 from py_qgis_contrib.core import componentmanager
@@ -18,13 +18,16 @@ from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
 from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
 
-def _parameters(url: Url | UrlBase) -> Dict[str, str]:
+def _parameters(url: Url | AnyUrl) -> Dict[str, str]:
     return dict(parse_qsl(url.query))
 
 
 PostgresURL = Annotated[
-    UrlBase,
-    UrlConstraints(allowed_schemes=["postgresql"]),
+    AnyUrl,
+    UrlConstraints(
+        allowed_schemes=["postgresql"],
+        host_required=False,
+    ),
 ]
 
 

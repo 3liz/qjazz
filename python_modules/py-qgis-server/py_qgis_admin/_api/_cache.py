@@ -8,7 +8,7 @@ from pydantic import (
     ValidationError,
     WithJsonSchema,
 )
-from typing_extensions import Annotated, Dict, List, no_type_check
+from typing_extensions import Annotated, Dict, List
 
 from .. import swagger
 from ..errors import ServiceNotAvailable
@@ -37,14 +37,16 @@ CatalogResponse = swagger.model(
 )
 
 
-CacheContentResponse = swagger.model(
+CacheContentResponse: TypeAdapter[Dict[str, CacheItemPool]] = swagger.model(
     TypeAdapter(Dict[str, CacheItemPool]),
     name="CacheContentResponse",
 )
 
 
-@no_type_check
-def cache_content_response(request: web.Request, label: str, response: Dict[str, JsonValue]) -> Json:
+def cache_content_response(
+    request: web.Request,
+    label: str, response: Dict[str, JsonValue],
+) -> Json:
     return CacheContentResponse.dump_json(
         CacheContentResponse.validate_python({
             uri: {

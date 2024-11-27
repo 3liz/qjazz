@@ -5,17 +5,17 @@ level = "TRACE"
 [http]
 listen=["0.0.0.0", 4000]
 
-[backends.local]
-address = ["localhost", 23456]
-route = "/local"
-
 [backends.test]
-title = "Test backend"
+address = ["localhost", 23456]
+route = "/test"
+
+[backends.local]
+title = "Local backend"
 description = "Backend for local test: run `dc up -d scale worker=<scale>`"
 # Address to reach the backend
 address = ["tcp://worker", 23456]
 # Define route to service
-route = "/test"
+route = "/local"
 
 # Define headers that will be forwarded to Qgis server backend
 #forward_headers = ['x-qgis-*', 'x-lizmap-*']

@@ -14,7 +14,7 @@ stages:
     # XXX shell runned with gitlab runner are not
     # sourcing ~/.bashrc (but works with `docker run ...`)
     - source ~/.bashrc
-    - make install install-tests
+    - make install install-dev
     - pip list -l
     - make test
   tags:   

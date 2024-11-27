@@ -1,7 +1,6 @@
 #
 # Qgis server request operations
 #
-from multiprocessing.connection import Connection
 from urllib.parse import urlunsplit
 
 import psutil
@@ -31,8 +30,8 @@ QGIS_MISSING_PROJECT_ERROR_MSG = "No project defined"
 
 
 def handle_ows_request(
-    conn: Connection,
-    msg: _m.OwsRequest,
+    conn: _m.Connection,
+    msg: _m.OwsRequestMsg,
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
@@ -80,8 +79,8 @@ def handle_ows_request(
 
 
 def handle_api_request(
-    conn: Connection,
-    msg: _m.ApiRequest,
+    conn: _m.Connection,
+    msg: _m.ApiRequestMsg,
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
@@ -139,8 +138,8 @@ def handle_api_request(
 
 
 def handle_generic_request(
-    conn: Connection,
-    msg: _m.Request,
+    conn: _m.Connection,
+    msg: _m.RequestMsg,
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
@@ -184,7 +183,7 @@ def _handle_generic_request(
     data: Optional[bytes],
     method: QgsServerRequest.Method,
     headers: Dict[str, str],
-    conn: Connection,
+    conn: _m.Connection,
     server: QgsServer,
     cm: CacheManager,
     config: WorkerConfig,
@@ -245,7 +244,7 @@ def _handle_generic_request(
 
 
 def request_project_from_cache(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
     config: WorkerConfig,
     target: str,

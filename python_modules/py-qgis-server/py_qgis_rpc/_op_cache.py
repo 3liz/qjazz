@@ -1,7 +1,6 @@
 #
 # Cache management operations
 #
-from multiprocessing.connection import Connection
 from urllib.parse import urlunsplit
 
 from typing_extensions import Optional, assert_never, cast
@@ -27,7 +26,7 @@ Co = CheckoutStatus
 #
 
 
-def drop_project(conn: Connection, cm: CacheManager, uri: str, cache_id: str = ""):
+def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str = ""):
     md, status = cm.checkout(
         cm.resolve_path(uri, allow_direct=True),
     )
@@ -87,7 +86,7 @@ def _cache_info_from_entry(
 # and apply update if requested
 #
 def checkout_project(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
     config: WorkerConfig,
     uri: str,
@@ -173,7 +172,7 @@ def checkout_project(
 # Send cache list
 #
 def send_cache_list(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
     status_filter: Optional[CheckoutStatus],
     cache_id: str = "",
@@ -200,7 +199,7 @@ def send_cache_list(
 # Update cache
 #
 def update_cache(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
     cache_id: str = "",
 ):
@@ -220,7 +219,7 @@ def update_cache(
 
 
 def send_project_info(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
     uri: str,
     cache_id: str = "",
@@ -269,9 +268,9 @@ def send_project_info(
 # Send catalog
 #
 def send_catalog(
-    conn: Connection,
+    conn: _m.Connection,
     cm: CacheManager,
-    location: str,
+    location: str | None,
 ):
     _m.send_reply(conn, None)
     # Stream CacheInfo
