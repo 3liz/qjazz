@@ -20,6 +20,7 @@ from py_qgis_contrib.core import logger
 
 from . import messages as _m
 from .config import WorkerConfig
+from .pipes import Pipe, RendezVous
 
 START_TIMEOUT = 5
 
@@ -43,7 +44,7 @@ class Worker:
         self._worker_conf = config
         self._timeout = config.process_timeout
         self._tmpdir = TemporaryDirectory(prefix="qserv_")
-        self._rendez_vous = _m.RendezVous(Path(self._tmpdir.name, "_rendez_vous"))
+        self._rendez_vous = RendezVous(Path(self._tmpdir.name, "_rendez_vous"))
         self._process: asyncio.subprocess.Process | None = None
         self._terminate_task: asyncio.Task | None = None
 
@@ -188,10 +189,10 @@ class Worker:
             await self._process.wait()
 
     @cached_property
-    def io(self) -> _m.Pipe:
+    def io(self) -> Pipe:
         if not self._process:
             raise RuntimeError("Process no initialized")
-        return _m.Pipe(self._process)
+        return Pipe(self._process)
 
     # ================
     # API stubs

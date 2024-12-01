@@ -1,26 +1,21 @@
 """ Messages for communicating with the qgis server
     sub process
 """
-import asyncio
-import os
 import pickle  # nosec
 
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
-from io import BytesIO
 from pathlib import Path
-from struct import pack, unpack
 
-from pydantic import JsonValue
+from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 from typing_extensions import (
+    Annotated,
     Any,
-    AsyncIterator,
-    ClassVar,
     Dict,
     List,
+    Literal,
     Optional,
     Protocol,
-    Tuple,
     Type,
     Union,
 )
@@ -30,24 +25,24 @@ from py_qgis_contrib.core.qgis import PluginType
 
 
 class MsgType(IntEnum):
-    PING = auto()
-    QUIT = auto()
-    REQUEST = auto()
-    OWSREQUEST = auto()
-    APIREQUEST = auto()
-    CHECKOUT_PROJECT = auto()
-    DROP_PROJECT = auto()
-    CLEAR_CACHE = auto()
-    LIST_CACHE = auto()
-    UPDATE_CACHE = auto()
-    PROJECT_INFO = auto()
-    PLUGINS = auto()
-    CATALOG = auto()
-    PUT_CONFIG = auto()
-    GET_CONFIG = auto()
-    ENV = auto()
-    STATS = auto()
-    TEST = auto()
+    PING = 1
+    QUIT = 2
+    REQUEST = 3
+    OWSREQUEST = 4
+    APIREQUEST = 5
+    CHECKOUT_PROJECT = 6
+    DROP_PROJECT = 7
+    CLEAR_CACHE = 8
+    LIST_CACHE = 9
+    UPDATE_CACHE = 10
+    PROJECT_INFO = 11
+    PLUGINS = 12
+    CATALOG = 13
+    PUT_CONFIG = 14
+    GET_CONFIG = 15
+    ENV = 16
+    STATS = 17
+    TEST = 18
 
 # Note: HTTPMethod is defined in python 3.11 via http module
 
@@ -62,6 +57,10 @@ class HTTPMethod(Enum):
     OPTIONS = auto()
     TRACE = auto()
     PATCH = auto()
+
+
+class MsgModel(BaseModel, frozen=True):
+    pass
 
 
 #
@@ -84,9 +83,8 @@ class RequestReport:
     duration: float
 
 
-@dataclass(frozen=True)
-class OwsRequestMsg:
-    msg_id: ClassVar[MsgType] = MsgType.OWSREQUEST
+class OwsRequestMsg(MsgModel):
+    msg_id: Literal[MsgType.OWSREQUEST] = MsgType.OWSREQUEST
     service: str
     request: str
     target: str
@@ -94,14 +92,13 @@ class OwsRequestMsg:
     version: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: Dict[str, str] = Field({})
     request_id: str = ""
     debug_report: bool = False
 
 
-@dataclass(frozen=True)
-class ApiRequestMsg:
-    msg_id: ClassVar[MsgType] = MsgType.APIREQUEST
+class ApiRequestMsg(MsgModel):
+    msg_id: Literal[MsgType.APIREQUEST] = MsgType.APIREQUEST
     name: str
     path: str
     method: HTTPMethod
@@ -111,36 +108,33 @@ class ApiRequestMsg:
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: Dict[str, str] = Field({})
     request_id: str = ""
     debug_report: bool = False
 
 
-@dataclass(frozen=True)
-class RequestMsg:
-    msg_id: ClassVar[MsgType] = MsgType.REQUEST
+class RequestMsg(MsgModel):
+    msg_id: Literal[MsgType.REQUEST] = MsgType.REQUEST
     url: str
     method: HTTPMethod
     data: Optional[bytes]
     target: Optional[str]
     direct: bool = False
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: Dict[str, str] = Field({})
     request_id: str = ""
     debug_report: bool = False
 
 
-@dataclass(frozen=True)
-class PingMsg:
-    msg_id: ClassVar[MsgType] = MsgType.PING
+class PingMsg(MsgModel):
+    msg_id: Literal[MsgType.PING] = MsgType.PING
     echo: Optional[str] = None
 
 
 #
 # QUIT
 #
-@dataclass(frozen=True)
-class QuitMsg:
-    msg_id: ClassVar[MsgType] = MsgType.QUIT
+class QuitMsg(MsgModel):
+    msg_id: Literal[MsgType.QUIT] = MsgType.QUIT
 
 
 @dataclass(frozen=True)
@@ -163,9 +157,8 @@ class CacheInfo:
 #
 # PULL_PROJECT
 #
-@dataclass(frozen=True)
-class CheckoutProjectMsg:
-    msg_id: ClassVar[MsgType] = MsgType.CHECKOUT_PROJECT
+class CheckoutProjectMsg(MsgModel):
+    msg_id: Literal[MsgType.CHECKOUT_PROJECT] = MsgType.CHECKOUT_PROJECT
     uri: str
     pull: bool = False
 
@@ -173,26 +166,23 @@ class CheckoutProjectMsg:
 #
 # DROP_PROJECT
 #
-@dataclass(frozen=True)
-class DropProjectMsg:
-    msg_id: ClassVar[MsgType] = MsgType.DROP_PROJECT
+class DropProjectMsg(MsgModel):
+    msg_id: Literal[MsgType.DROP_PROJECT] = MsgType.DROP_PROJECT
     uri: str
 
 
 #
 # CLEAR_CACHE
 #
-@dataclass(frozen=True)
-class ClearCacheMsg:
-    msg_id: ClassVar[MsgType] = MsgType.CLEAR_CACHE
+class ClearCacheMsg(MsgModel):
+    msg_id: Literal[MsgType.CLEAR_CACHE] = MsgType.CLEAR_CACHE
 
 
 #
 # LIST_CACHE
 #
-@dataclass(frozen=True)
-class ListCacheMsg:
-    msg_id: ClassVar[MsgType] = MsgType.LIST_CACHE
+class ListCacheMsg(MsgModel):
+    msg_id: Literal[MsgType.LIST_CACHE] = MsgType.LIST_CACHE
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
 
@@ -200,9 +190,8 @@ class ListCacheMsg:
 #
 # UPDATE_CACHE
 #
-@dataclass(frozen=True)
-class UpdateCacheMsg:
-    msg_id: ClassVar[MsgType] = MsgType.UPDATE_CACHE
+class UpdateCacheMsg(MsgModel):
+    msg_id: Literal[MsgType.UPDATE_CACHE] = MsgType.UPDATE_CACHE
 
 
 #
@@ -216,9 +205,8 @@ class PluginInfo:
     metadata: JsonValue
 
 
-@dataclass(frozen=True)
-class PluginsMsg:
-    msg_id: ClassVar[MsgType] = MsgType.PLUGINS
+class PluginsMsg(MsgModel):
+    msg_id: Literal[MsgType.PLUGINS] = MsgType.PLUGINS
 
 
 #
@@ -247,23 +235,20 @@ class ProjectInfo:
     cache_id: str = ""
 
 
-@dataclass(frozen=True)
-class GetProjectInfoMsg:
-    msg_id: ClassVar[MsgType] = MsgType.PROJECT_INFO
+class GetProjectInfoMsg(MsgModel):
+    msg_id: Literal[MsgType.PROJECT_INFO] = MsgType.PROJECT_INFO
     uri: str
 
 
 #
 # CONFIG
 #
-@dataclass(frozen=True)
-class GetConfigMsg:
-    msg_id: ClassVar[MsgType] = MsgType.GET_CONFIG
+class GetConfigMsg(MsgModel):
+    msg_id: Literal[MsgType.GET_CONFIG] = MsgType.GET_CONFIG
 
 
-@dataclass(frozen=True)
-class PutConfigMsg:
-    msg_id: ClassVar[MsgType] = MsgType.PUT_CONFIG
+class PutConfigMsg(MsgModel):
+    msg_id: Literal[MsgType.PUT_CONFIG] = MsgType.PUT_CONFIG
     config: Optional[Dict] = None
 
 
@@ -279,26 +264,23 @@ class CatalogItem:
     public_uri: str
 
 
-@dataclass(frozen=True)
-class CatalogMsg:
-    msg_id: ClassVar[MsgType] = MsgType.CATALOG
+class CatalogMsg(MsgModel):
+    msg_id: Literal[MsgType.CATALOG] = MsgType.CATALOG
     location: Optional[str] = None
 
 
 #
 # ENV
 #
-@dataclass(frozen=True)
-class GetEnvMsg:
-    msg_id: ClassVar[MsgType] = MsgType.ENV
+class GetEnvMsg(MsgModel):
+    msg_id: Literal[MsgType.ENV] = MsgType.ENV
 
 
 #
 # TEST
 #
-@dataclass(frozen=True)
-class TestMsg:
-    msg_id: ClassVar[MsgType] = MsgType.TEST
+class TestMsg(MsgModel):
+    msg_id: Literal[MsgType.TEST] = MsgType.TEST
     delay: int
 
 #
@@ -312,25 +294,31 @@ class Envelop:
     msg: Any
 
 
-Message = Union[
-    OwsRequestMsg,
-    ApiRequestMsg,
-    RequestMsg,
-    PingMsg,
-    QuitMsg,
-    CheckoutProjectMsg,
-    DropProjectMsg,
-    ClearCacheMsg,
-    ListCacheMsg,
-    UpdateCacheMsg,
-    PluginsMsg,
-    GetProjectInfoMsg,
-    GetConfigMsg,
-    PutConfigMsg,
-    CatalogMsg,
-    GetEnvMsg,
-    TestMsg,
+Message = Annotated[
+    Union[
+        OwsRequestMsg,
+        ApiRequestMsg,
+        RequestMsg,
+        PingMsg,
+        QuitMsg,
+        CheckoutProjectMsg,
+        DropProjectMsg,
+        ClearCacheMsg,
+        ListCacheMsg,
+        UpdateCacheMsg,
+        PluginsMsg,
+        GetProjectInfoMsg,
+        GetConfigMsg,
+        PutConfigMsg,
+        CatalogMsg,
+        GetEnvMsg,
+        TestMsg,
+    ],
+    Field(discriminator="msg_id"),
 ]
+
+
+MessageAdapter: TypeAdapter[Message] = TypeAdapter(Message)
 
 
 class Connection(Protocol):
@@ -359,132 +347,4 @@ def cast_into[T](o: Any, t: Type[T]) -> T:  # noqa ANN401
     return o
 
 
-class Pipe:
-    """ Wrapper for Connection object that allow reading asynchronously
-    """
-    def __init__(self, proc: asyncio.subprocess.Process):
-        if proc.stdin is None:
-            raise ValueError("Invalid StreamWriter")
-        if proc.stdout is None:
-            raise ValueError("Invalid StreamReader")
-        self._stdin = proc.stdin
-        self._stdout = proc.stdout
 
-    async def put_message(self, message: Message):
-        data = pickle.dumps(message)
-        self._stdin.write(pack('i', len(data)))
-        self._stdin.write(data)
-        await self._stdin.drain()
-
-    async def drain(self):
-        """ Pull out all remaining data from pipe
-        """
-        size = unpack('i', await self._stdout.readexactly(4))
-        if size > 0:
-            _ = await self._stdout.read(size)
-
-    async def read_report(self) -> RequestReport:
-        return cast_into(
-            pickle.loads(await self.read_bytes()),  # nosec
-            RequestReport,
-        )
-
-    async def read_message(self) -> Tuple[int, Any]:
-        """ Read an Envelop message
-        """
-        msg = cast_into(
-            pickle.loads(await self.read_bytes()),  # nosec
-            Envelop,
-        )
-
-        return msg.status, msg.msg
-
-    async def read_bytes(self) -> bytes:
-        size, = unpack('i', await self._stdout.read(4))
-        data = await self._stdout.read(size) if size else b''
-        if len(data) < size:
-            buf = BytesIO()
-            buf.write(data)
-            remaining = size - len(data)
-            while remaining > 0:
-                chunk = await self._stdout.read(remaining)
-                remaining -= len(chunk)
-                buf.write(chunk)
-            data = buf.getvalue()
-        return data
-
-    async def stream_bytes(self) -> AsyncIterator[bytes]:
-        b = await self.read_bytes()
-        while b:
-            yield b
-            b = await self.read_bytes()
-
-    async def send_message(self, msg: Message) -> Tuple[int, Any]:
-        await self.put_message(msg)
-        return await self.read_message()
-
-#
-# Rendez Vous
-#
-
-
-class RendezVous:
-
-    def __init__(self, path: Path):
-        self._path = path
-        self._done = asyncio.Event()
-        self._running = False
-        self._task: asyncio.Task | None = None
-
-    @property
-    def path(self) -> Path:
-        return self._path
-
-    def stop(self):
-        self._running = False
-        if self._task and not self._task.done():
-            self._task.cancel()
-
-    def start(self):
-        if self._task:
-            raise RuntimeError("Rendez vous already started")
-        self._task = asyncio.create_task(self._listen())
-
-    @property
-    def done(self) -> bool:
-        return self._done.is_set()
-
-    @property
-    def busy(self) -> bool:
-        return not self.done
-
-    async def wait(self):
-        await self._done.wait()
-
-    async def _listen(self):
-        # Open a named pipe and read continuously from it.
-        #
-        #    Writer just need to open the path
-        #    in binary write mode (rb)
-        #
-        #    ```
-        #    rendez_vous = path.open('wb')
-        #    ```
-        self._running = True
-
-        path = self.path.as_posix()
-        os.mkfifo(path)
-        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
-        avail = asyncio.Event()
-        asyncio.get_running_loop().add_reader(fd, avail.set)
-        while self._running:
-            await avail.wait()
-            try:
-                match os.read(fd, 1024):
-                    case b'0':  # DONE
-                        self._done.set()
-                    case b'1':  # BUSY
-                        self._done.clear()
-            except BlockingIOError:
-                pass
-            avail.clear()

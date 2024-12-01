@@ -13,7 +13,7 @@ from py_qgis_contrib.core import config, logger
 
 from ._op_config import WORKER_SECTION, WorkerConfig
 from ._op_worker import qgis_server_run, setup_server
-from .messages import Message
+from .messages import Message, MessageAdapter
 
 #
 # This module is expected to be run
@@ -62,7 +62,11 @@ class Connection:
                 buf.write(chunk)
             data = buf.getvalue()
 
-        return cast(Message, pickle.loads(data))  # nosec
+        msg = pickle.loads(data)  # nosec
+        if isinstance(msg, dict):
+            return MessageAdapter.validate_python(msg)
+        else:
+            return cast(Message, msg)
 
     def send_bytes(self, data: bytes):
         os.write(self._out, pack('i', len(data)))

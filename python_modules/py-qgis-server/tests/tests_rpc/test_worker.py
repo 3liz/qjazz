@@ -33,6 +33,13 @@ async def test_worker_io(projects: ProjectsConfig):
         status, _ = await worker.io.send_message(messages.PingMsg())
         assert status == 200
 
+        # Test ping message as dict
+        status, resp = await worker.io.send_message(
+            {'msg_id': messages.MsgType.PING, 'echo': "hello"},
+        )
+        assert status == 200
+        assert resp == "hello"
+
         # Test Qgis server OWS request with valid project
         status, resp = await worker.io.send_message(
             messages.OwsRequestMsg(
@@ -143,13 +150,13 @@ async def test_cache_api(projects: ProjectsConfig):
 
         # Project info
         status, resp = await worker.io.send_message(
-            messages.GetProjectInfoMsg("/france/france_parts"),
+            messages.GetProjectInfoMsg(uri="/france/france_parts"),
         )
         assert status == 200
 
         # Drop project
         status, resp = await worker.io.send_message(
-            messages.DropProjectMsg(uri),
+            messages.DropProjectMsg(uri=uri),
         )
         assert status == 200
 
@@ -169,7 +176,7 @@ async def test_catalog(projects: ProjectsConfig):
 
         # Pull
         status, _resp = await worker.io.send_message(
-            messages.CatalogMsg("/france"),
+            messages.CatalogMsg(location="/france"),
         )
         assert status == 200
         status, item = await worker.io.read_message()
