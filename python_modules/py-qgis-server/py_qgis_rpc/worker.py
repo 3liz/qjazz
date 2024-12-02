@@ -144,7 +144,7 @@ class Worker:
         )
 
         # Run subprocess
-        # This is definitely slower that `fork` but
+        # This is slower that `fork` but
         # allow for solid asynchronous I/0 handling
         self._process = await asyncio.create_subprocess_exec(
             sys.executable, "-m", "py_qgis_rpc.process", self._name,

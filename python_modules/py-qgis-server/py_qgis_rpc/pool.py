@@ -85,9 +85,14 @@ class WorkerPool:
         """ Start all worker's processes
         """
         ts = Stopwatch()
-        for w in self._workers:
+
+        async def _start(w: Worker):
             await w.start()
             self._avails.put_nowait(w)
+
+        async with asyncio.TaskGroup() as tg:
+            for w in self._workers:
+                tg.create_task(_start(w))
 
         # Cache immutable status
         await self._cache_worker_status()
