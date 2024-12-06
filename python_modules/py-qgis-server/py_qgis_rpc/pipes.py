@@ -59,7 +59,6 @@ class Pipe:
             case _:
                 raise ValueError(f"Expecting (status, msg), not {resp}")
 
-
     async def read_bytes(self) -> bytes:
         size, = unpack('!i', await self._stdout.read(4))
         data = await self._stdout.read(size) if size else b''

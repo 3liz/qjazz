@@ -2,6 +2,7 @@ import asyncio
 import signal
 import traceback
 
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
@@ -240,7 +241,16 @@ class _Router:
         self._channels_last_modified = self.channels.last_modified
 
         logger.debug("Updating backend's routes")
-        routes = {chan.route: chan for chan in self.channels.backends}
+        # Sort routes so we can compare with the longest path first
+        # if there is relative routes to each others
+        routes = OrderedDict((chan.route, chan) for chan in sorted(
+            self.channels.backends,
+            key=lambda c: c.route,
+            reverse=True,
+        ))
+
+        if logger.is_enabled_for(logger.LogLevel.TRACE):
+            logger.trace("Routes: %s", list(routes.keys()))
 
         @dataclass
         class _Routable:
@@ -391,12 +401,8 @@ async def setup_ogc_server(
     async def favicon(request: web.Request) -> web.Response:
         return web.Response(status=204)
 
-    async def forbidden(request: web.Request) -> web.Response:
-        return web.Response(status=403)
-
     app.router.add_route('GET', '/favicon.ico', favicon)
-    app.router.add_route('*', '/', forbidden)
-    app.router.add_route('*', "/{tail:.+}", router.do_route)
+    app.router.add_route('*', "/{tail:.*}", router.do_route)
 
     runner = web.AppRunner(app, handler_cancellation=True)
     await runner.setup()
