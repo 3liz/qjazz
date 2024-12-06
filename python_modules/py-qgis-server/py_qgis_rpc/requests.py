@@ -13,7 +13,6 @@ from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
 
-from py_qgis_cache import CheckoutStatus
 from py_qgis_contrib.core import logger
 
 from . import messages as _m
@@ -71,7 +70,7 @@ class Response(QgsServerResponse):
     def __init__(
             self,
             conn: _m.Connection,
-            co_status: Optional[CheckoutStatus] = None,
+            co_status: Optional[int] = None,
             headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
             _process: Optional[psutil.Process] = None,

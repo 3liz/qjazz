@@ -117,7 +117,7 @@ message CheckoutRequest {
 
 message CacheInfo {
     string uri = 1;
-    string status = 2;
+    int64 status = 2;
     bool in_cache = 3;
     int64 timestamp = 4;
     optional string name = 5;
@@ -152,7 +152,7 @@ message ProjectInfo {
         bool is_valid = 5;
         bool is_spatial = 6;
     } 
-    string status = 1;
+    int64 status = 1;
     string uri = 2;
     string filename = 3;
     string crs = 4;

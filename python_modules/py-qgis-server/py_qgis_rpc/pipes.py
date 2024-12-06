@@ -13,7 +13,6 @@ from typing_extensions import (
 )
 
 from .messages import (
-    Envelop,
     Message,
     RequestReport,
     cast_into,
@@ -33,14 +32,14 @@ class Pipe:
 
     async def put_message(self, message: Message):
         data = pickle.dumps(message)
-        self._stdin.write(pack('i', len(data)))
+        self._stdin.write(pack('!i', len(data)))
         self._stdin.write(data)
         await self._stdin.drain()
 
     async def drain(self):
         """ Pull out all remaining data from pipe
         """
-        size = unpack('i', await self._stdout.readexactly(4))
+        size = unpack('!i', await self._stdout.readexactly(4))
         if size > 0:
             _ = await self._stdout.read(size)
 
@@ -53,15 +52,16 @@ class Pipe:
     async def read_message(self) -> Tuple[int, Any]:
         """ Read an Envelop message
         """
-        msg = cast_into(
-            pickle.loads(await self.read_bytes()),  # nosec
-            Envelop,
-        )
+        resp = pickle.loads(await self.read_bytes())  # nosec
+        match resp:
+            case (int(status), msg):
+                return (status, msg)
+            case _:
+                raise ValueError(f"Expecting (status, msg), not {resp}")
 
-        return msg.status, msg.msg
 
     async def read_bytes(self) -> bytes:
-        size, = unpack('i', await self._stdout.read(4))
+        size, = unpack('!i', await self._stdout.read(4))
         data = await self._stdout.read(size) if size else b''
         if len(data) < size:
             buf = BytesIO()
@@ -142,9 +142,9 @@ class RendezVous:
             await avail.wait()
             try:
                 match os.read(fd, 1024):
-                    case b'0':  # DONE
+                    case b'\x00':  # DONE
                         self._done.set()
-                    case b'1':  # BUSY
+                    case b'\x01':  # BUSY
                         self._done.clear()
             except BlockingIOError:
                 pass

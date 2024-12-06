@@ -124,7 +124,7 @@ async def test_cache_api(projects: ProjectsConfig):
             messages.CheckoutProjectMsg(uri="/france/france_parts", pull=True),
         )
         assert status == 200
-        assert resp.status == messages.CheckoutStatus.NEW
+        assert resp.status == messages.CheckoutStatus.NEW.value
         assert resp.pinned
 
         uri = resp.uri
@@ -134,7 +134,7 @@ async def test_cache_api(projects: ProjectsConfig):
             messages.CheckoutProjectMsg(uri="/france/france_parts", pull=False),
         )
         assert status == 200
-        assert resp.status == messages.CheckoutStatus.UNCHANGED
+        assert resp.status == messages.CheckoutStatus.UNCHANGED.value
 
         # List
         status, resp = await worker.io.send_message(

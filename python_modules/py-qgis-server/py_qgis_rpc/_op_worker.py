@@ -1,6 +1,7 @@
 """ Implement Qgis server worker
     as a sub process
 """
+import json
 import os
 import signal
 import traceback
@@ -235,8 +236,12 @@ def qgis_server_run(
                 # --------------------
                 case _m.PutConfigMsg():
                     if isinstance(conf, ConfigProxy):
+                        if isinstance(msg.config, str):
+                            config_data = json.loads(msg.config)
+                        else:
+                            config_data = msg.config
                         confservice = conf.service
-                        confservice.update_config(msg.config)
+                        confservice.update_config(config_data)
                         # Update log level
                         logger.set_log_level(confservice.conf.logging.level)
                         _m.send_reply(conn, None)

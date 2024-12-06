@@ -4,7 +4,7 @@
 import pickle  # nosec
 
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum, auto
+from enum import IntEnum, StrEnum
 from pathlib import Path
 
 from pydantic import BaseModel, Field, JsonValue, TypeAdapter
@@ -14,14 +14,15 @@ from typing_extensions import (
     Dict,
     List,
     Literal,
+    NewType,
     Optional,
     Protocol,
+    Tuple,
     Type,
     Union,
 )
 
 from py_qgis_cache import CheckoutStatus
-from py_qgis_contrib.core.qgis import PluginType
 
 
 class MsgType(IntEnum):
@@ -47,16 +48,16 @@ class MsgType(IntEnum):
 # Note: HTTPMethod is defined in python 3.11 via http module
 
 
-class HTTPMethod(Enum):
-    GET = auto()
-    HEAD = auto()
-    POST = auto()
-    PUT = auto()
-    DELETE = auto()
-    CONNECT = auto()
-    OPTIONS = auto()
-    TRACE = auto()
-    PATCH = auto()
+class HTTPMethod(StrEnum):
+    GET = "GET"
+    HEAD = "HEAD"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELATE"
+    CONNECT = "CONNECT"
+    OPTIONS = "OPTIONS"
+    TRACE = "TRACE"
+    PATCH = "PATCH"
 
 
 class MsgModel(BaseModel, frozen=True):
@@ -71,7 +72,7 @@ class RequestReply:
     status_code: int
     data: bytes
     chunked: bool
-    checkout_status: Optional[CheckoutStatus]
+    checkout_status: Optional[int]
     headers: Dict[str, str] = field(default_factory=dict)
     cache_id: str = ""
 
@@ -140,7 +141,7 @@ class QuitMsg(MsgModel):
 @dataclass(frozen=True)
 class CacheInfo:
     uri: str
-    status: CheckoutStatus
+    status: int  # CheckoutStatus
     in_cache: bool
     timestamp: Optional[float] = None
     name: str = ""
@@ -201,7 +202,7 @@ class UpdateCacheMsg(MsgModel):
 class PluginInfo:
     name: str
     path: Path
-    plugin_type: PluginType
+    plugin_type: str
     metadata: JsonValue
 
 
@@ -224,7 +225,7 @@ class LayerInfo:
 
 @dataclass(frozen=True)
 class ProjectInfo:
-    status: CheckoutStatus
+    status: int  # CheckoutStatus
     uri: str
     filename: str
     crs: str
@@ -249,7 +250,7 @@ class GetConfigMsg(MsgModel):
 
 class PutConfigMsg(MsgModel):
     msg_id: Literal[MsgType.PUT_CONFIG] = MsgType.PUT_CONFIG
-    config: Optional[Dict] = None
+    config: Optional[Dict | str] = None
 
 
 #
@@ -287,13 +288,6 @@ class TestMsg(MsgModel):
 # Asynchronous Pipe connection reader
 #
 
-
-@dataclass(frozen=True)
-class Envelop:
-    status: int
-    msg: Any
-
-
 Message = Annotated[
     Union[
         OwsRequestMsg,
@@ -321,6 +315,9 @@ Message = Annotated[
 MessageAdapter: TypeAdapter[Message] = TypeAdapter(Message)
 
 
+Envelop = NewType('Envelop', Tuple[int, Any])
+
+
 class Connection(Protocol):
     def recv(self) -> Message: ...
     def send_bytes(self, data: bytes): ...
@@ -328,7 +325,7 @@ class Connection(Protocol):
 
 def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
     """  Send a reply in a envelope message """
-    conn.send_bytes(pickle.dumps(Envelop(status, msg=msg)))
+    conn.send_bytes(pickle.dumps((status, msg)))
 
 
 def send_report(conn: Connection, report: RequestReport):
@@ -345,6 +342,3 @@ def cast_into[T](o: Any, t: Type[T]) -> T:  # noqa ANN401
     if not isinstance(o, t):
         raise ValueError(f"Cast failed, Expecting {t}, not {type(o)}")
     return o
-
-
-

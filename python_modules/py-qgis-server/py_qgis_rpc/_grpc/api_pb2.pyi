@@ -158,7 +158,7 @@ class CacheInfo(_message.Message):
     HITS_FIELD_NUMBER: _ClassVar[int]
     PINNED_FIELD_NUMBER: _ClassVar[int]
     uri: str
-    status: str
+    status: int
     in_cache: bool
     timestamp: int
     name: str
@@ -170,7 +170,7 @@ class CacheInfo(_message.Message):
     last_hit: int
     hits: int
     pinned: bool
-    def __init__(self, uri: _Optional[str] = ..., status: _Optional[str] = ..., in_cache: bool = ..., timestamp: _Optional[int] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ..., last_hit: _Optional[int] = ..., hits: _Optional[int] = ..., pinned: bool = ...) -> None: ...
+    def __init__(self, uri: _Optional[str] = ..., status: _Optional[int] = ..., in_cache: bool = ..., timestamp: _Optional[int] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ..., last_hit: _Optional[int] = ..., hits: _Optional[int] = ..., pinned: bool = ...) -> None: ...
 
 class DropRequest(_message.Message):
     __slots__ = ("uri",)
@@ -216,7 +216,7 @@ class ProjectInfo(_message.Message):
     HAS_BAD_LAYERS_FIELD_NUMBER: _ClassVar[int]
     LAYERS_FIELD_NUMBER: _ClassVar[int]
     CACHE_ID_FIELD_NUMBER: _ClassVar[int]
-    status: str
+    status: int
     uri: str
     filename: str
     crs: str
@@ -225,7 +225,7 @@ class ProjectInfo(_message.Message):
     has_bad_layers: bool
     layers: _containers.RepeatedCompositeFieldContainer[ProjectInfo.Layer]
     cache_id: str
-    def __init__(self, status: _Optional[str] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, status: _Optional[int] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class PluginInfo(_message.Message):
     __slots__ = ("name", "path", "plugin_type", "metadata")

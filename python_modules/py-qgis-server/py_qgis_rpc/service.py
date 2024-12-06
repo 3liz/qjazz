@@ -580,7 +580,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
                 try:
                     resp = await w.project_info(uri=request.uri)
                     return api_pb2.ProjectInfo(
-                        status=resp.status.name,
+                        status=resp.status,
                         uri=resp.uri,
                         filename=resp.filename,
                         crs=resp.crs,
@@ -611,7 +611,7 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             yield api_pb2.PluginInfo(
                 name=item.name,
                 path=str(item.path),
-                plugin_type=item.plugin_type.name,
+                plugin_type=item.plugin_type,
                 metadata=json.dumps(item.metadata),
             )
 
@@ -750,7 +750,7 @@ def _new_cache_info(resp: _m.CacheInfo) -> api_pb2.CacheInfo:
 
     return api_pb2.CacheInfo(
         uri=resp.uri,
-        status=resp.status.name,
+        status=resp.status,
         in_cache=resp.in_cache,
         timestamp=timestamp,
         name=resp.name,

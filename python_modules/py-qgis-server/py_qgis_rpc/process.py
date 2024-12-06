@@ -48,7 +48,7 @@ class Connection:
         os.close(self._out)
 
     def recv(self) -> Message:
-        size, = unpack('i', os.read(self._in, 4))
+        size, = unpack('!i', os.read(self._in, 4))
         data = os.read(self._in, size)
 
         # Handle data larger than pipe size
@@ -69,7 +69,7 @@ class Connection:
             return cast(Message, msg)
 
     def send_bytes(self, data: bytes):
-        os.write(self._out, pack('i', len(data)))
+        os.write(self._out, pack('!i', len(data)))
         if data:
             os.write(self._out, data)
 
@@ -89,12 +89,12 @@ class RendezVous:
     def busy(self):
         if not self._busy:
             self._busy = True
-            self._write(b'1')
+            self._write(b'\x01')
 
     def done(self):
         if self._busy:
             self._busy = False
-            self._write(b'0')
+            self._write(b'\x00')
 
 
 def run(name: str) -> None:

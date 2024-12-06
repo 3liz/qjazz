@@ -40,14 +40,14 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
                 in_cache=False,
                 last_modified=e.md.last_modified,
                 saved_version=e.project.lastSaveVersion().text(),
-                status=status,
+                status=status.value,
                 cache_id=cache_id,
             )
         case _:
             reply = _m.CacheInfo(
                 uri=uri,
                 in_cache=False,
-                status=status,
+                status=status.value,
                 cache_id=cache_id,
             )
 
@@ -68,7 +68,7 @@ def _cache_info_from_entry(
         uri=e.uri,
         in_cache=in_cache,
         timestamp=e.timestamp,
-        status=status,
+        status=status.value,
         name=e.name,
         storage=e.storage,
         last_modified=e.last_modified,
@@ -104,7 +104,7 @@ def checkout_project(
                     reply = _m.CacheInfo(
                         uri=md.uri,
                         in_cache=False,
-                        status=status,
+                        status=status.value,
                         storage=md.storage or "<none>",
                         last_modified=md.last_modified,
                         cache_id=cache_id,
@@ -115,7 +115,7 @@ def checkout_project(
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
                         in_cache=False,
-                        status=status,
+                        status=status.value,
                         cache_id=cache_id,
                     )
                 case _ as unreachable:
@@ -154,7 +154,7 @@ def checkout_project(
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
                         in_cache=False,
-                        status=status,
+                        status=status.value,
                         cache_id=cache_id,
                     )
                 case _ as unreachable:
@@ -245,7 +245,7 @@ def send_project_info(
                 _m.send_reply(
                     conn,
                     _m.ProjectInfo(
-                        status=status,
+                        status=status.value,
                         uri=entry.md.uri,
                         filename=entry.project.fileName(),
                         crs=entry.project.crs().authid(),

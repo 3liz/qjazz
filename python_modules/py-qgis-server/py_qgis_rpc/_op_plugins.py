@@ -18,7 +18,7 @@ def inspect_plugins(
             _m.PluginInfo(
                 name=p.name,
                 path=p.path,
-                plugin_type=p.plugin_type,
+                plugin_type=p.plugin_type.value,
                 metadata=p.metadata,
             ),
             206,

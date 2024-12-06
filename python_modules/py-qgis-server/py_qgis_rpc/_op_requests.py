@@ -220,7 +220,7 @@ def _handle_generic_request(
         project = entry.project
         response = Response(
             conn,
-            co_status,
+            co_status.value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             _process=_process,
