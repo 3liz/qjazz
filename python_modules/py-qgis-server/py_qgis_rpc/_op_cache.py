@@ -181,18 +181,17 @@ def send_cache_list(
     if status_filter:
         co = filter(lambda n: n[1] == status_filter, co)
 
-    count = len(cm)
-    _m.send_reply(conn, count)
-    if count:
-        # Stream CacheInfo
-        for entry, status in co:
-            _m.send_reply(
-                conn,
-                _cache_info_from_entry(entry, status, cache_id=cache_id),
-                206,
-            )
-        # EOT
-        _m.send_reply(conn, None)
+    # Stream CacheInfo
+    _m.stream_data(
+        conn,
+        (
+            _cache_info_from_entry(
+                entry,
+                status,
+                cache_id=cache_id,
+            ) for entry, status in co
+        ),
+    )
 
 
 #
@@ -203,15 +202,17 @@ def update_cache(
     cm: CacheManager,
     cache_id: str = "",
 ):
-    for entry, status in cm.update_cache():
-        # Stream CacheInfo
-        _m.send_reply(
-            conn,
-            _cache_info_from_entry(entry, status, cache_id=cache_id),
-            206,
-        )
-    # EOT
-    _m.send_reply(conn, None)
+    # Stream CacheInfo
+    _m.stream_data(
+        conn,
+        (
+            _cache_info_from_entry(
+                entry,
+                status,
+                cache_id=cache_id,
+            ) for entry, status in cm.update_cache()
+        ),
+    )
 
 #
 # Send project info
@@ -272,21 +273,19 @@ def send_catalog(
     cm: CacheManager,
     location: str | None,
 ):
-    _m.send_reply(conn, None)
     # Stream CacheInfo
-    for md, public_path in cm.collect_projects(location):
-        _m.send_reply(
-            conn,
+    _m.stream_data(
+        conn,
+        (
             _m.CatalogItem(
                 uri=md.uri,
                 name=md.name,
                 storage=md.storage or "<none>",
                 last_modified=md.last_modified,
                 public_uri=public_path,
-            ),
-            206,
-        )
-    _m.send_reply(conn, None)
+            ) for md, public_path in cm.collect_projects(location)
+        ),
+    )
 
 
 #

@@ -5,8 +5,7 @@ import pickle  # nosec
 from io import BytesIO
 from pathlib import Path
 from struct import pack, unpack
-
-from typing_extensions import (
+from typing import (
     Any,
     AsyncIterator,
     Tuple,
@@ -17,6 +16,10 @@ from .messages import (
     RequestReport,
     cast_into,
 )
+
+
+class NoDataResponse(Exception):
+    pass
 
 
 class Pipe:
@@ -56,8 +59,10 @@ class Pipe:
         match resp:
             case (int(status), msg):
                 return (status, msg)
+            case 204:
+                raise NoDataResponse()
             case _:
-                raise ValueError(f"Expecting (status, msg), not {resp}")
+                raise ValueError(f"Unexpected response format: {resp}")
 
     async def read_bytes(self) -> bytes:
         size, = unpack('!i', await self._stdout.read(4))

@@ -265,10 +265,6 @@ def list_cache(status: str):
             api_pb2.ListRequest(status_filter=status),
         )
 
-        for k, v in stream.initial_metadata():
-            if k == "x-reply-header-cache-count":
-                click.echo(f"Cache size: {v}", err=True)
-
         for item in stream:
             click.echo(MessageToJson(item))
 

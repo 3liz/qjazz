@@ -6,7 +6,7 @@ from time import time
 import pytest
 
 from py_qgis_rpc import messages
-from py_qgis_rpc.worker import Worker
+from py_qgis_rpc.worker import Worker, NoDataResponse
 from py_qgis_rpc.config import ProjectsConfig, WorkerConfig
 
 pytest_plugins = ('pytest_asyncio',)
@@ -94,7 +94,7 @@ async def test_chunked_response(projects: ProjectsConfig):
         )
 
         total_time = time() - start
-        print("> ", total_time)
+        print("> time", total_time)
         assert status == 200
         assert resp.status_code == 200
 
@@ -108,9 +108,9 @@ async def test_chunked_response(projects: ProjectsConfig):
 
         # Get final report
         report = await worker.io.read_report()
-        print("> ", report.memory)
-        print("> ", report.timestamp)
-        print("> ", report.duration)
+        print("> memory   ", report.memory)
+        print("> timestamp", report.timestamp)
+        print("> duration ", report.duration)
         print("> overhead:", total_time - report.duration)
 
 
@@ -137,16 +137,12 @@ async def test_cache_api(projects: ProjectsConfig):
         assert resp.status == messages.CheckoutStatus.UNCHANGED.value
 
         # List
-        status, resp = await worker.io.send_message(
-            messages.ListCacheMsg(),
-        )
-
-        assert status == 200
-        assert resp == 1
+        await worker.io.put_message(messages.ListCacheMsg())
         status, _item = await worker.io.read_message()
-        while status == 206:
+        assert status == 206
+
+        with pytest.raises(NoDataResponse):
             status, _item = await worker.io.read_message()
-        assert status == 200
 
         # Project info
         status, resp = await worker.io.send_message(
@@ -161,12 +157,9 @@ async def test_cache_api(projects: ProjectsConfig):
         assert status == 200
 
         # Empty List
-        status, resp = await worker.io.send_message(
-            messages.ListCacheMsg(),
-        )
-
-        assert status == 200
-        assert resp == 0
+        await worker.io.put_message(messages.ListCacheMsg())
+        with pytest.raises(NoDataResponse):
+            _ = await worker.io.read_message()
 
 
 async def test_catalog(projects: ProjectsConfig):
@@ -174,18 +167,17 @@ async def test_catalog(projects: ProjectsConfig):
     """
     async with worker_context(projects) as worker:
 
-        # Pull
-        status, _resp = await worker.io.send_message(
-            messages.CatalogMsg(location="/france"),
-        )
-        assert status == 200
+        await worker.io.put_message(messages.CatalogMsg(location="/france"))
         status, item = await worker.io.read_message()
         count = 0
-        while status == 206:
-            count += 1
-            print("ITEM", item.uri)
-            status, item = await worker.io.read_message()
-        assert status == 200
+        try:
+            while status == 206:
+                count += 1
+                print("ITEM", item.uri)
+                status, item = await worker.io.read_message()
+        except NoDataResponse:
+            pass
+
         assert count == 3
 
 
@@ -243,9 +235,9 @@ async def test_ows_chunked_request(projects: ProjectsConfig):
         async for chunk in stream:
             assert len(chunk) > 0
 
-        with pytest.raises(TimeoutError):
-            async with asyncio.timeout(1):
-                _ = await worker.io.read_bytes()
+        # Ensure that there is nothing left to read
+        async with asyncio.timeout(1):
+            await worker.wait_ready()
 
 
 async def test_api_request(projects: ProjectsConfig):

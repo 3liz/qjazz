@@ -237,7 +237,7 @@ class WorkerPool:
         # Cache environment since it is immutable
         logger.debug("Caching workers status")
         self._cached_worker_env = await worker.env()
-        self._cached_worker_plugins = [item async for item in worker.list_plugins()]
+        self._cached_worker_plugins = [item async for item in await worker.list_plugins()]
         #
         # Update status metadata
         #

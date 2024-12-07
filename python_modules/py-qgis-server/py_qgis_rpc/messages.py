@@ -12,6 +12,7 @@ from typing_extensions import (
     Annotated,
     Any,
     Dict,
+    Iterable,
     List,
     Literal,
     NewType,
@@ -143,13 +144,13 @@ class CacheInfo:
     uri: str
     status: int  # CheckoutStatus
     in_cache: bool
+    cache_id: str
     timestamp: Optional[float] = None
     name: str = ""
     storage: str = ""
     last_modified: Optional[float] = None
     saved_version: Optional[str] = None
     debug_metadata: Dict[str, int] = field(default_factory=dict)
-    cache_id: str = ""
     last_hit: float = 0
     hits: int = 0
     pinned: bool = False
@@ -333,6 +334,12 @@ def send_report(conn: Connection, report: RequestReport):
     """ Send report """
     conn.send_bytes(pickle.dumps(report))
 
+
+def stream_data(conn: Connection, stream: Iterable):
+    for item in stream:
+        conn.send_bytes(pickle.dumps((206, item)))
+    # EOT
+    conn.send_bytes(pickle.dumps(204))
 
 #
 # XXX Note that data sent by child *MUST* be retrieved in parent

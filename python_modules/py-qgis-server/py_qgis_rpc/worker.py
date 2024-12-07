@@ -13,6 +13,7 @@ from typing_extensions import (
     Dict,
     Optional,
     Tuple,
+    Type,
     cast,
 )
 
@@ -20,7 +21,7 @@ from py_qgis_contrib.core import logger
 
 from . import messages as _m
 from .config import WorkerConfig
-from .pipes import Pipe, RendezVous
+from .pipes import NoDataResponse, Pipe, RendezVous
 
 START_TIMEOUT = 5
 
@@ -78,6 +79,9 @@ class Worker:
     @property
     def is_alive(self):
         return self._process and self._process.returncode is None
+
+    async def wait_ready(self):
+        await self._rendez_vous.wait()
 
     async def quit(self, grace_period: Optional[int] = None):
         """ Send a quit message
@@ -431,35 +435,11 @@ class Worker:
     async def list_cache(
         self,
         status_filter: Optional[_m.CheckoutStatus] = None,
-    ) -> Tuple[int, Optional[AsyncIterator[_m.CacheInfo]]]:
+    ) -> AsyncIterator[_m.CacheInfo]:
         """ List projects in cache
-
-            Return 2-tuple where first element is the number
-            of items in cache and the second elemeent an async
-            iterator yielding CacheInfo items
         """
-        status, resp = await self.io.send_message(
-            _m.ListCacheMsg(status_filter=status_filter),
-        )
-
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        count = cast(int, resp)
-
-        if count > 0:
-            async def _stream():
-                status, resp = await self.io.read_message()
-                while status == 206:
-                    yield _m.cast_into(resp, _m.CheckoutStatus)
-                    status, resp = await self.io.read_message()
-            # Incomplete transmission ?
-            if status != 200:
-                raise WorkerError(status, resp)
-
-            return count, _stream()
-        else:
-            return count, None
+        await self.io.put_message(_m.ListCacheMsg(status_filter=status_filter))
+        return stream_response(self.io, _m.CacheInfo)
 
     async def update_cache(self) -> AsyncIterator[_m.CacheInfo]:
         """ Update projects in cache
@@ -467,21 +447,8 @@ class Worker:
             Return the list of cached object with their new status
         """
         logger.info("Updating cache for '%s'", self.name)
-        status, resp = await self.io.send_message(_m.UpdateCacheMsg())
-
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        async def _stream():
-            status, resp = await self.io.read_message()
-            while status == 206:
-                yield _m.cast_into(resp, _m.CacheInfo)
-                status, resp = await self.io.read_message()
-            # Incomplete transmission ?
-            if status != 200:
-                raise WorkerError(status, resp)
-
-        return _stream()
+        await self.io.put_message(_m.UpdateCacheMsg())
+        return stream_response(self.io, _m.CacheInfo)
 
     async def clear_cache(self) -> None:
         """  Clear all items in cache
@@ -497,20 +464,8 @@ class Worker:
             If location is set, returns only projects availables for
             this particular location
         """
-        status, resp = await self.io.send_message(_m.CatalogMsg(location=location))
-        if status != 200:
-            raise WorkerError(status, str(resp))
-
-        async def _stream():
-            status, item = await self.io.read_message()
-            while status == 206:
-                yield _m.cast_into(resp, _m.CatalogItem)
-                status, item = await self.io.read_message()
-            # Incomplete transmission ?
-            if status != 200:
-                raise WorkerError(status, item)
-
-        return _stream()
+        await self.io.put_message(_m.CatalogMsg(location=location))
+        return stream_response(self.io, _m.CatalogItem)
 
     async def project_info(self, uri: str) -> _m.ProjectInfo:
         """ Return project information from loaded project in
@@ -536,17 +491,8 @@ class Worker:
             of loaded plugins and the second elemeent an async
             iterator yielding PluginInfo items
         """
-        status, resp = await self.io.send_message(_m.PluginsMsg())
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        status, resp = await self.io.read_message()
-        while status == 206:
-            yield _m.cast_into(resp, _m.PluginInfo)
-            status, resp = await self.io.read_message()
-        # Incomplete transmissions !
-        if status != 200:
-            raise WorkerError(status, resp)
+        await self.io.put_message(_m.PluginsMsg())
+        return stream_response(self.io, _m.PluginInfo)
 
     #
     # Test
@@ -557,3 +503,24 @@ class Worker:
         status, resp = await self.io.send_message(_m.TestMsg(delay=delay))
         if status != 200:
             raise WorkerError(status, resp)
+
+#
+# Helper
+#
+
+
+async def stream_response[T](io: Pipe, resp_type: Type[T]) -> AsyncIterator[T]:
+    try:
+        while True:
+            status, resp = await io.read_message()
+            match status:
+                case 206:
+                    yield resp
+                case 200:
+                    yield resp
+                    break
+                case _:
+                    raise WorkerError(status, resp)
+    except NoDataResponse:
+        # End of transmission
+        pass

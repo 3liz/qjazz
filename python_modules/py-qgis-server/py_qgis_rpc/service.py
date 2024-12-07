@@ -482,17 +482,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             status_filter = None
 
         async with self.wait_for_all_workers(context, "ListCache") as workers:
-            count = 0
-            cachelist: Tuple[AsyncIterator[_m.CacheInfo], ...] = tuple()
             for w in workers:
-                n, items = await w.list_cache(status_filter)
-                if items:
-                    count += n
-                    cachelist += (items,)
-
-            await context.send_initial_metadata([("x-reply-header-cache-count", str(count))])
-            for items in cachelist:
-                async for item in items:
+                async for item in await w.list_cache(status_filter):
                     yield _new_cache_info(item)
 
     #
@@ -527,10 +518,8 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
             _all = set()
             for w in _workers:
                 # Collect all items for all workers
-                _, items = await w.list_cache()
-                if items:
-                    async for item in items:
-                        _all.add(item.uri)
+                async for item in await w.list_cache():
+                    _all.add(item.uri)
             for uri in _all:
                 # Update all items for all workers
                 for w in _workers:
