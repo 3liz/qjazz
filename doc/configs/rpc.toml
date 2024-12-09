@@ -14,37 +14,6 @@ name = "default"
 # Description for administrative purpose
 description = ""
 #
-# Max number of projects in cache
-#
-# The maximum number of projects allowed in cache.
-# The default value is set to 50 projects. 
-max_projects = 50
-#
-# Load project in cache when requested
-#
-# Load project in cache at request.
-# If set to 'false', project not loaded in cache will
-# return a 403 HTTP code when requested.
-# Thus, adding project's to cache will require a specific
-# action from another service or admininstrative
-# management tools.
-load_project_on_request = true
-#
-# Reload outdated project when requested
-#
-# Reload outdated project at request.
-# If set to 'false', outdated project in cache will
-# not be refreshed when requested.
-# Thus, refreshing project's to cache will require a specific
-# action from another service or admininstrative
-# management tools.
-reload_outdated_project_on_request = false
-#
-# Maximum chunk size
-#
-# Set the maximum chunk size for streamed responses.
-max_chunk_size = 1048576
-#
 # Max number of concurrent requests
 #
 # The maximum number of requests that can be
@@ -103,135 +72,6 @@ num_processes = 1
 # to the configuration and dead processes will be replaced
 # with new processes.
 rescale_period = 5
-#
-# Qgis settings
-#
-# Qgis settings override.
-# Use the syntax '<section>/<path>' for keys.
-# Not that values defined here will override those
-# from QGIS3.ini file.
-qgis_settings = {}
-
-#
-# Projects configuration
-#
-# Projects and cache configuration
-#
-[worker.projects]
-#
-# Trust layer metadata
-#
-# Trust layer metadata.
-# Improves layer load time by skipping expensive checks
-# like primary key unicity, geometry type and
-# srid and by using estimated metadata on layer load.
-# Since QGIS 3.16
-trust_layer_metadata = false
-#
-# Disable GetPrint requests
-#
-# Don't load print layouts.
-# Improves project read time if layouts are not required,
-# and allows projects to be safely read in background threads
-# (since print layouts are not thread safe).
-disable_getprint = false
-#
-# Force read only mode
-#
-# Force layers to open in read only mode
-force_readonly_layers = true
-#
-# Ignore bad layers
-#
-# Allow projects to be loaded with event if it contains
-# layers that cannot be loaded
-# Note that the 'dont_resolve_layers flag' trigger automatically
-# this option.
-ignore_bad_layers = false
-#
-# Disable OWS advertised urls
-#
-# Disable ows urls defined in projects.
-# This may be necessary because Qgis projects
-# urls override proxy urls.
-disable_advertised_urls = false
-#
-# Scheme mapping definitions
-#
-# Defines mapping betweeen location base path and storage handler root url.
-# Resource path relative to location will be joined the the root url path.
-# In the case of Qgis storage, the handler is responsible for transforming
-# the result url into a comprehensive format for the corresponding
-# QgsProjectStorage implementation.
-# This is handled by the default storage implementation for Qgis native
-# project storage. In case of custom QgsProjectStorage, if the scheme does not allow passing
-# project as path component, it is possible to specify a custom resolver function.
-search_paths = {}
-#
-# Allow direct path resolution
-#
-# Allow direct path resolution if there is
-# no matching from the search paths.
-# Uri are directly interpreted as valid Qgis project's path.
-# WARNING: allowing this may be a security vulnerabilty.
-allow_direct_path_resolution = true
-#
-# Project storage Handler configurations
-#
-# Configure storage handlers.
-# The name will be used as scheme for project's search path
-# configuration.
-handlers = {}
-
-#
-# Plugins configuration
-#
-[worker.plugins]
-#
-# Plugin paths
-#
-# The list of search paths for plugins.
-# Qgis plugins found will be loaded according to
-# the 'install' list.
-# If the list is empty, the 'QGIS_PLUGINPATH'
-# variable will be checked.
-paths = []
-#
-# Installable plugins
-#
-# The list of installable plugins.
-# Note: if the plugin directory contains other plugins
-# plugins not in the list will NOT be loaded !
-# The Plugins will be installed at startup
-# if the 'install_mode' is set to 'auto'.
-# Note that an empty list means what it is:
-# i.e, *no* installed plugins.
-#install =   	# Optional
-#
-# Plugin installation mode
-#
-# If set to 'auto', plugins installation
-# will be checked at startup. Otherwise,
-# Installation will be done from already available
-# plugins.
-install_mode = "external"
-#
-# Enable processing scripts
-#
-# Enable publication of processing scripts
-enable_scripts = true
-#
-# Extra builtins providers
-#
-# Load extra builtin processing providers
-# such as 'grass' and 'otb'.
-extra_builtin_providers = []
-#
-# Path to plugin manager executable
-#
-# The absolute path to the qgis-plugin_manager executable
-# that will be used for installing plugin in automatic mode.
-plugin_manager = "/usr/local/bin/qgis-plugin-manager"
 
 #
 # Interfaces to listen to
@@ -242,6 +82,67 @@ plugin_manager = "/usr/local/bin/qgis-plugin-manager"
 listen = ["[::]",23456]
 use_ssl = false
 ssl = "cafile=None certfile=None keyfile=None"
+
+#
+# Qgis configuration
+#
+# The Qgis process configuration
+#
+[worker.qgis]
+#
+# Projects configuration
+#
+# Projects and cache configuration
+projects = "trust_layer_metadata=False disable_getprint=False force_readonly_layers=True ignore_bad_layers=False disable_advertised_urls=False search_paths={} allow_direct_path_resolution=True handlers={}"
+#
+# Max number of projects in cache
+#
+# The maximum number of projects allowed in cache.
+# The default value is set to 50 projects. 
+max_projects = 50
+#
+# Load project in cache when requested
+#
+# Load project in cache at request.
+# If set to 'false', project not loaded in cache will
+# return a 403 HTTP code when requested.
+# Thus, adding project's to cache will require a specific
+# action from another service or admininstrative
+# management tools.
+load_project_on_request = true
+#
+# Reload outdated project when requested
+#
+# Reload outdated project at request.
+# If set to 'false', outdated project in cache will
+# not be refreshed when requested.
+# Thus, refreshing project's to cache will require a specific
+# action from another service or admininstrative
+# management tools.
+reload_outdated_project_on_request = false
+#
+# Plugins configuration
+plugins = "paths=[PosixPath('/home/david/.qgis-server/plugins')] install=None install_mode='external' enable_scripts=True extra_builtin_providers=set() plugin_manager=PosixPath('/usr/local/bin/qgis-plugin-manager')"
+#
+# Maximum chunk size
+#
+# Set the maximum chunk size for streamed responses.
+max_chunk_size = 1048576
+#
+# Qgis settings
+#
+# Qgis settings override.
+# Use the syntax '<section>/<path>' for keys.
+# Not that values defined here will override those
+# from QGIS3.ini file.
+qgis_settings = {}
+#
+# Ignore INT signal in worker
+#
+# Ignore INT signal in workers.
+# This is useful when you don't want
+# propagating signal from parent process.
+ignore_interrupt_signal = true
 
 
 # Bootstrap configuration from remote location.

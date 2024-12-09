@@ -91,7 +91,7 @@ The simplest configuration for basic working installation is the following
           CONF_DISPLAY_XVFB: ON
           CONF_LOGGING__LEVEL: debug
           CONF_WORKER__NAME: basic_worker
-          CONF_WORKER__PROJECTS__SEARCH_PATHS: >-
+          CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
             { 
               "/":/"qgis-projects" 
             }
@@ -221,7 +221,7 @@ Environment variables::
     
     CONF_LOGGING__LEVEL=trace
     CONF_WORKER__NAME=worker
-    CONF_WORKER__PROJECTS__SEARCH_PATHS='{ "/": "/qgis-projects/france_parts" }'
+    CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS='{ "/": "/qgis-projects/france_parts" }'
 
 Which gives the toml equivalent:
 

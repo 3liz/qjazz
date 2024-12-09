@@ -403,4 +403,4 @@ class Backend:
 
     async def test(self, delay: int) -> api_pb2.Empty:
         async with self._stub() as stub:
-            return await stub.Test(api_pb2.TestRequest(delay=delay))
+            return await stub.Sleep(api_pb2.SleepRequest(delay=delay))

@@ -29,7 +29,7 @@ class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class TestRequest(_message.Message):
+class SleepRequest(_message.Message):
     __slots__ = ("delay",)
     DELAY_FIELD_NUMBER: _ClassVar[int]
     delay: int

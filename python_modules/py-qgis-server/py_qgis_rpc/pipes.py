@@ -11,7 +11,7 @@ from typing import (
     Tuple,
 )
 
-from .messages import (
+from .process.messages import (
     Message,
     RequestReport,
     cast_into,
@@ -113,7 +113,36 @@ class RendezVous:
     def start(self):
         if self._task:
             raise RuntimeError("Rendez vous already started")
-        self._task = asyncio.create_task(self._listen())
+
+        async def _listen():
+            # Open a named pipe and read continuously from it.
+            #
+            #    Writer just need to open the path
+            #    in binary write mode (rb)
+            #
+            #    ```
+            #    rendez_vous = path.open('wb')
+            #    ```
+            self._running = True
+
+            path = self.path.as_posix()
+            os.mkfifo(path)
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+            avail = asyncio.Event()
+            asyncio.get_running_loop().add_reader(fd, avail.set)
+            while self._running:
+                await avail.wait()
+                try:
+                    match os.read(fd, 1024):
+                        case b'\x00':  # DONE
+                            self._done.set()
+                        case b'\x01':  # BUSY
+                            self._done.clear()
+                except BlockingIOError:
+                    pass
+                avail.clear()
+
+        self._task = asyncio.create_task(_listen())
 
     @property
     def done(self) -> bool:
@@ -125,31 +154,3 @@ class RendezVous:
 
     async def wait(self):
         await self._done.wait()
-
-    async def _listen(self):
-        # Open a named pipe and read continuously from it.
-        #
-        #    Writer just need to open the path
-        #    in binary write mode (rb)
-        #
-        #    ```
-        #    rendez_vous = path.open('wb')
-        #    ```
-        self._running = True
-
-        path = self.path.as_posix()
-        os.mkfifo(path)
-        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
-        avail = asyncio.Event()
-        asyncio.get_running_loop().add_reader(fd, avail.set)
-        while self._running:
-            await avail.wait()
-            try:
-                match os.read(fd, 1024):
-                    case b'\x00':  # DONE
-                        self._done.set()
-                    case b'\x01':  # BUSY
-                        self._done.clear()
-            except BlockingIOError:
-                pass
-            avail.clear()

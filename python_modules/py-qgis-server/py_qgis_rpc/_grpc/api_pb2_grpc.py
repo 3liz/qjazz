@@ -315,9 +315,9 @@ class QgisAdminStub(object):
                 request_serializer=api__pb2.Empty.SerializeToString,
                 response_deserializer=api__pb2.StatsReply.FromString,
                 _registered_method=True)
-        self.Test = channel.unary_unary(
-                '/api.QgisAdmin/Test',
-                request_serializer=api__pb2.TestRequest.SerializeToString,
+        self.Sleep = channel.unary_unary(
+                '/api.QgisAdmin/Sleep',
+                request_serializer=api__pb2.SleepRequest.SerializeToString,
                 response_deserializer=api__pb2.Empty.FromString,
                 _registered_method=True)
 
@@ -421,7 +421,7 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Test(self, request, context):
+    def Sleep(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -510,9 +510,9 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=api__pb2.Empty.FromString,
                     response_serializer=api__pb2.StatsReply.SerializeToString,
             ),
-            'Test': grpc.unary_unary_rpc_method_handler(
-                    servicer.Test,
-                    request_deserializer=api__pb2.TestRequest.FromString,
+            'Sleep': grpc.unary_unary_rpc_method_handler(
+                    servicer.Sleep,
+                    request_deserializer=api__pb2.SleepRequest.FromString,
                     response_serializer=api__pb2.Empty.SerializeToString,
             ),
     }
@@ -959,7 +959,7 @@ class QgisAdmin(object):
             _registered_method=True)
 
     @staticmethod
-    def Test(request,
+    def Sleep(request,
             target,
             options=(),
             channel_credentials=None,
@@ -972,8 +972,8 @@ class QgisAdmin(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.QgisAdmin/Test',
-            api__pb2.TestRequest.SerializeToString,
+            '/api.QgisAdmin/Sleep',
+            api__pb2.SleepRequest.SerializeToString,
             api__pb2.Empty.FromString,
             options,
             channel_credentials,

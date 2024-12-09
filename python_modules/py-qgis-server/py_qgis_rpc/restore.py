@@ -22,8 +22,8 @@ from typing_extensions import (
 from py_qgis_contrib.core import config, logger
 from py_qgis_contrib.core.config import SSLConfig
 
-from .messages import CacheInfo
-from .messages import CheckoutStatus as Co
+from .process.messages import CacheInfo
+from .process.messages import CheckoutStatus as Co
 
 #
 # Protocols

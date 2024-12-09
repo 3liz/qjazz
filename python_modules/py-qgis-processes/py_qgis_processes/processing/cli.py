@@ -74,7 +74,7 @@ def init_qgis(
     plugin_service.register_as_service()
 
     if use_projects:
-        from py_qgis_cache import CacheManager
+        from py_qgis_cache.prelude import CacheManager
 
         CacheManager.initialize_handlers(processing_config.projects)
 
@@ -85,8 +85,8 @@ def init_qgis(
 
 
 def get_project(path: str) -> QgsProject:
-    from py_qgis_cache import CacheManager
-    from py_qgis_cache import CheckoutStatus as Co
+    from py_qgis_cache.prelude import CacheManager
+    from py_qgis_cache.prelude import CheckoutStatus as Co
 
     cm = CacheManager.get_service()
 

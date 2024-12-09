@@ -19,8 +19,8 @@ from typing_extensions import (
 from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
 from qgis.server import QgsServer
 
-from py_qgis_cache import CacheManager
 from py_qgis_cache.extras import evict_by_popularity
+from py_qgis_cache.prelude import CacheManager
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_postcondition, assert_precondition
 from py_qgis_contrib.core.qgis import (
@@ -226,7 +226,7 @@ class QgisContext:
         return CacheManager.get_service()
 
     def project(self, path: str) -> QgsProject:
-        from py_qgis_cache import CheckoutStatus as Co
+        from py_qgis_cache.prelude import CheckoutStatus as Co
 
         cm = self.cache_manager
 

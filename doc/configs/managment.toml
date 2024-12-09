@@ -111,6 +111,8 @@ use_ssl = false
 #
 # SSL certificats
 ssl = "cafile=None certfile=None keyfile=None"
+title = ""
+#description =   	# Optional
 
 #
 # List of Qgis pool backends
@@ -130,4 +132,6 @@ use_ssl = false
 #
 # SSL certificats
 ssl = "cafile=None certfile=None keyfile=None"
+title = ""
+#description =   	# Optional
 

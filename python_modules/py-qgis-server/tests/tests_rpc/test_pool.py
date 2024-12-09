@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 
 from py_qgis_rpc.pool import WorkerPool
-from py_qgis_rpc.config import ProjectsConfig, WorkerConfig
+from py_qgis_rpc.config import ProjectsConfig, QgisConfig, WorkerConfig
 
 pytest_plugins = ('pytest_asyncio',)
 
@@ -12,7 +12,7 @@ pytest_plugins = ('pytest_asyncio',)
 def worker_config(projects: ProjectsConfig, num_processes: int) -> WorkerConfig:
     return WorkerConfig(
         name="TestPool",
-        projects=projects,
+        qgis=QgisConfig(projects=projects),
         num_processes=num_processes,
     )
 

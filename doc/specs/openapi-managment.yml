@@ -2,7 +2,8 @@ openapi: 3.0.0
 paths:
   /v1/pools/:
     get:
-      description: Return the list of managed pools
+      summary: Return the list of managed pools
+      description: "Return description of all of managed pools\n"
       tags:
       - pools
       responses:
@@ -592,14 +593,12 @@ definitions:
   ErrorResponse:
     properties:
       message:
-        title: Message
         type: string
       details:
         anyOf:
         - type: object
         - type: 'null'
         default:
-        title: Details
     required:
     - message
     title: ErrorResponse
@@ -608,61 +607,50 @@ definitions:
     description: "Pool backend status\n    "
     properties:
       address:
-        title: Address
         type: string
       numWorkers:
         anyOf:
         - type: integer
         - type: 'null'
         default:
-        title: Numworkers
       requestPressure:
         anyOf:
         - type: number
         - type: 'null'
         default:
-        title: Requestpressure
       status:
         enum:
         - ok
         - unavailable
-        title: Status
         type: string
       stoppedWorkers:
         anyOf:
         - type: integer
         - type: 'null'
         default:
-        title: Stoppedworkers
       workerFailurePressure:
         anyOf:
         - type: number
         - type: 'null'
         default:
-        title: Workerfailurepressure
       uptime:
         anyOf:
         - type: integer
         - type: 'null'
         default:
-        title: Uptime
     required:
     - address
     - status
-    title: BackendStatus
     type: object
   PoolBackendsResponse:
     properties:
       label:
-        title: Label
         type: string
       address:
-        title: Address
         type: string
       backends:
         items:
           $ref: '#/definitions/BackendStatus'
-        title: Backends
         type: array
     required:
     - label
@@ -680,12 +668,12 @@ definitions:
       rel:
         title: Rel
         type: string
-      mime_type:
+      mimeType:
         anyOf:
         - type: string
         - type: 'null'
         default:
-        title: Mime Type
+        title: Mimetype
       title:
         default: ''
         title: Title
@@ -730,6 +718,14 @@ definitions:
           type: string
         title: Backends
         type: array
+      title:
+        title: Title
+        type: string
+      description:
+        anyOf:
+        - type: string
+        - type: 'null'
+        title: Description
       links:
         items:
           $ref: '#/definitions/Link'
@@ -739,6 +735,8 @@ definitions:
     - label
     - address
     - backends
+    - title
+    - description
     - links
     title: PoolInfos
     type: object
@@ -749,16 +747,12 @@ definitions:
   PoolBackendConfig:
     properties:
       label:
-        title: Label
         type: string
       address:
-        title: Address
         type: string
       config:
-        title: Config
         type: object
       env:
-        title: Env
         type: object
     required:
     - label
@@ -770,13 +764,10 @@ definitions:
   PoolSetConfigResponse:
     properties:
       label:
-        title: Label
         type: string
       address:
-        title: Address
         type: string
       diff:
-        title: Diff
         type: object
     required:
     - label

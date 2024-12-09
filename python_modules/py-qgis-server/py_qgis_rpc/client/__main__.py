@@ -490,15 +490,15 @@ def display_stats(watch: bool, interval: int):
             sleep(interval)
 
 
-@cli_commands.command("test")
+@cli_commands.command("sleep")
 @click.option("--delay", "-d", type=int, default=3, help="Response delay in seconds")
-def test_request(delay: int):
+def sleep_request(delay: int):
     """ Execute cancelable request
     """
     # XXX The first request to an rpc worker is never cancelled
     # try to figure out why.
     with connect() as stub:
-        resp = stub.Test.future(api_pb2.TestRequest(delay=delay))
+        resp = stub.Sleep.future(api_pb2.SleepRequest(delay=delay))
         try:
             click.echo(MessageToJson(resp.result()))
         except KeyboardInterrupt:

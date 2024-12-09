@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from py_qgis_cache import CacheManager, ProjectsConfig
+from py_qgis_cache.prelude import CacheManager, ProjectsConfig
 
 
 @pytest.fixture(scope='session')

@@ -15,7 +15,7 @@ from typing_extensions import (
     Optional,
 )
 
-from py_qgis_cache import ProjectsConfig
+from py_qgis_cache.prelude import ProjectsConfig
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigBase, SSLConfig, Template, TemplateStr
 from py_qgis_contrib.core.qgis import QgisPluginConfig

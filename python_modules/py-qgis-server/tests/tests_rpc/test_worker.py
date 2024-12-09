@@ -5,16 +5,16 @@ from time import time
 
 import pytest
 
-from py_qgis_rpc import messages
+from py_qgis_rpc.process import messages
 from py_qgis_rpc.worker import Worker, NoDataResponse
-from py_qgis_rpc.config import ProjectsConfig, WorkerConfig
+from py_qgis_rpc.config import ProjectsConfig, QgisConfig, WorkerConfig
 
 pytest_plugins = ('pytest_asyncio',)
 
 
 @asynccontextmanager
 async def worker_context(projects: ProjectsConfig):
-    worker = Worker(WorkerConfig(name="Test", projects=projects))
+    worker = Worker(WorkerConfig(name="Test", qgis=QgisConfig(projects=projects)))
     await worker.start()
     try:
         yield worker

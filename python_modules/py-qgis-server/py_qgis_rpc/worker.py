@@ -19,9 +19,9 @@ from typing_extensions import (
 
 from py_qgis_contrib.core import logger
 
-from . import messages as _m
 from .config import WorkerConfig
 from .pipes import NoDataResponse, Pipe, RendezVous
+from .process import messages as _m
 
 START_TIMEOUT = 5
 
@@ -122,7 +122,7 @@ class Worker:
             _m.PutConfigMsg(
                 config={
                     'logging': {'level': logger.log_level()},
-                    'worker': worker_conf.model_dump(),
+                    'qgis': worker_conf.qgis.model_dump(),
                 },
             ),
         )
@@ -142,7 +142,7 @@ class Worker:
         # Prepare environment
         env = os.environ.copy()
         env.update(
-            CONF_WORKER=self.config.model_dump_json(),
+            CONF_QGIS=self.config.qgis.model_dump_json(),
             CONF_LOGGING__LEVEL=logger.log_level().name,
             RENDEZ_VOUS=self._rendez_vous.path,
         )
@@ -151,7 +151,7 @@ class Worker:
         # This is slower that `fork` but
         # allow for solid asynchronous I/0 handling
         self._process = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "py_qgis_rpc.process", self._name,
+            sys.executable, "-m", "py_qgis_rpc.process.main", self._name,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             env=env,
@@ -497,10 +497,10 @@ class Worker:
     #
     # Test
     #
-    async def execute_test(self, delay: int) -> None:
+    async def sleep(self, delay: int) -> None:
         """  Send ping with echo string
         """
-        status, resp = await self.io.send_message(_m.TestMsg(delay=delay))
+        status, resp = await self.io.send_message(_m.SleepMsg(delay=delay))
         if status != 200:
             raise WorkerError(status, resp)
 

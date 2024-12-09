@@ -23,7 +23,7 @@ from typing_extensions import (
     Union,
 )
 
-from py_qgis_cache import CheckoutStatus
+from py_qgis_cache.status import CheckoutStatus
 
 
 class MsgType(IntEnum):
@@ -44,7 +44,7 @@ class MsgType(IntEnum):
     GET_CONFIG = 15
     ENV = 16
     STATS = 17
-    TEST = 18
+    SLEEP = 18
 
 # Note: HTTPMethod is defined in python 3.11 via http module
 
@@ -281,8 +281,8 @@ class GetEnvMsg(MsgModel):
 #
 # TEST
 #
-class TestMsg(MsgModel):
-    msg_id: Literal[MsgType.TEST] = MsgType.TEST
+class SleepMsg(MsgModel):
+    msg_id: Literal[MsgType.SLEEP] = MsgType.SLEEP
     delay: int
 
 #
@@ -308,7 +308,7 @@ Message = Annotated[
         PutConfigMsg,
         CatalogMsg,
         GetEnvMsg,
-        TestMsg,
+        SleepMsg,
     ],
     Field(discriminator="msg_id"),
 ]
@@ -339,6 +339,10 @@ def stream_data(conn: Connection, stream: Iterable):
     for item in stream:
         conn.send_bytes(pickle.dumps((206, item)))
     # EOT
+    conn.send_bytes(pickle.dumps(204))
+
+
+def send_nodata(conn: Connection):
     conn.send_bytes(pickle.dumps(204))
 
 #

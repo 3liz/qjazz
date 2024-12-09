@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from py_qgis_cache import CacheManager, ProjectsConfig, errors
+from py_qgis_cache.prelude import CacheManager, ProjectsConfig, errors
 
 
 def test_storage_postgres(data, config):

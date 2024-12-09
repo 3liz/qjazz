@@ -7,17 +7,17 @@ from typing_extensions import Optional, assert_never, cast
 
 from qgis.core import QgsMapLayer
 
-from py_qgis_cache import (
+from py_qgis_cache.extras import evict_by_popularity
+from py_qgis_cache.prelude import (
     CacheEntry,
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,
 )
-from py_qgis_cache.extras import evict_by_popularity
 from py_qgis_contrib.core import logger
 
 from . import messages as _m
-from .config import WorkerConfig
+from .config import QgisConfig
 
 Co = CheckoutStatus
 
@@ -88,7 +88,7 @@ def _cache_info_from_entry(
 def checkout_project(
     conn: _m.Connection,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     uri: str,
     pull: bool,
     cache_id: str = "",

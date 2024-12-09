@@ -26,10 +26,10 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigError, read_config_toml
 from py_qgis_contrib.core.utils import to_iso8601
 
-from . import messages as _m
 from ._grpc import api_pb2, api_pb2_grpc
 from .config import ENV_CONFIGFILE, RemoteConfigError, confservice
 from .pool import Worker, WorkerError, WorkerPool
+from .process import messages as _m
 from .restore import Restore
 
 #
@@ -380,16 +380,16 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         logger.debug("QgisAdmin Received PING request")
         return api_pb2.PingReply(echo=request.echo)
 
-    async def Test(
+    async def Sleep(
         self,
-        request: api_pb2.TestRequest,
+        request: api_pb2.SleepRequest,
         context: grpc.aio.ServicerContext,
     ) -> api_pb2.Empty:
         """  Simple ping request
         """
-        logger.debug("QgisAdmin Received TEST request")
-        async with self.get_worker(context, "Test") as worker:
-            await worker.execute_test(request.delay)
+        logger.debug("QgisAdmin Received SLEEP request")
+        async with self.get_worker(context, "Sleep") as worker:
+            await worker.sleep(request.delay)
         return api_pb2.Empty()
 
     async def SetServerServingStatus(

@@ -53,14 +53,14 @@ services:
       CONF_LOGGING__LEVEL: debug
       CONF_WORKER__NAME: worker
       # Configure search to s3 'example' bucket
-      CONF_WORKER__PROJECTS__SEARCH_PATHS: >-
+      CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
         { 
           "/": "s3://examples"
         }
       # Define a 's3' protocol handler
       # Note: configuration fragments can be stored in secret files
-      CONF_WORKER__PROJECTS__HANDLERS__S3__HANDLER: "py_qgis_cache.handlers.s3.S3ProtocolHandler"
-      CONF_WORKER__PROJECTS__HANDLERS__S3__CONFIG: >-
+      CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__HANDLER: "py_qgis_cache.handlers.s3.S3ProtocolHandler"
+      CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__CONFIG: >-
         {
           "endpoint": "minio:9000",
           "access_key": "minioadmin",

@@ -30,7 +30,7 @@ service QgisAdmin {
     rpc GetEnv (Empty) returns (JsonConfig) {}
     rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
     rpc Stats (Empty) returns (StatsReply) {}
-    rpc Test (TestRequest) returns (Empty) {}
+    rpc Sleep (SleepRequest) returns (Empty) {}
 }
 
 
@@ -47,7 +47,7 @@ message PingReply {
 message Empty {}
 
 
-message TestRequest {
+message SleepRequest {
     int32 delay = 1;
 }
 

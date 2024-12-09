@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from py_qgis_cache import (
+from py_qgis_cache.prelude import (
     CacheEntry,
     CacheManager,
     CheckoutStatus,

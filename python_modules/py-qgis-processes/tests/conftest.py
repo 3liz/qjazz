@@ -12,7 +12,7 @@ from qgis.core import (
     QgsProcessingFeedback,
 )
 
-from py_qgis_cache import ProjectsConfig
+from py_qgis_cache.prelude import ProjectsConfig
 from py_qgis_contrib.core import qgis
 from py_qgis_processes.processing.prelude import (
     ProcessingConfig,
@@ -148,7 +148,7 @@ def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> 
 
 @pytest.fixture(scope='session')
 def cache_manager(cache_config, qgis_session):
-    from py_qgis_cache import CacheManager
+    from py_qgis_cache.prelude import CacheManager
 
     CacheManager.initialize_handlers(cache_config)
     return CacheManager(cache_config)
@@ -160,7 +160,7 @@ def projects(cache_manager):
     """
     from qgis.core import QgsProject
 
-    from py_qgis_cache import CheckoutStatus as Co
+    from py_qgis_cache.prelude import CheckoutStatus as Co
 
     cm = cache_manager
 

@@ -45,7 +45,6 @@ except ImportError:
     psutil = None  # type: ignore
 
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from time import time
 
@@ -76,6 +75,7 @@ from .handlers import (
     register_default_handlers,
     register_protocol_handler,
 )
+from .status import CheckoutStatus
 
 CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
 
@@ -110,22 +110,6 @@ class CacheEntry:
 
     def pin(self):
         self.__dict__['pinned'] = True
-
-
-class CheckoutStatus(Enum):
-    """ Returned as checkout result from
-        CacheManager.
-        Gives information about the status
-        of the required resource.
-    """
-    UNCHANGED = 0
-    NEEDUPDATE = 1
-    REMOVED = 2
-    NOTFOUND = 3
-    NEW = 4
-    # Returned by update() if the resource
-    # has been updated on NEEDUPDATE.
-    UPDATED = 5
 
 
 class CacheManager:

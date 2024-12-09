@@ -16,7 +16,7 @@ from typing_extensions import Optional, Protocol, assert_never, cast
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer
 
-from py_qgis_cache import CacheManager, CheckoutStatus, ProjectMetadata
+from py_qgis_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.qgis import (
@@ -27,8 +27,9 @@ from py_qgis_contrib.core.qgis import (
     show_qgis_settings,
 )
 
-from . import _op_cache, _op_config, _op_plugins, _op_requests
+from . import _op_cache, _op_plugins, _op_requests
 from . import messages as _m
+from .config import QgisConfig
 from .delegate import ApiDelegate
 
 Co = CheckoutStatus
@@ -47,7 +48,7 @@ def load_default_project(cm: CacheManager):
             logger.error("The project %s does not exists", url)
 
 
-def setup_server(conf: _op_config.WorkerConfig) -> QgsServer:
+def setup_server(conf: QgisConfig) -> QgsServer:
     """ Setup Qgis server and plugins
     """
     # Enable qgis server debug verbosity
@@ -120,7 +121,7 @@ class RendezVous(Protocol):
 def qgis_server_run(
     server: QgsServer,
     conn: _m.Connection,
-    conf: _op_config.WorkerConfig,
+    conf: QgisConfig,
     rendez_vous: RendezVous,
     name: str = "",
     reporting: bool = True,
@@ -261,7 +262,7 @@ def qgis_server_run(
                 # --------------------
                 # Test
                 # --------------------
-                case _m.TestMsg():
+                case _m.SleepMsg():
                     run_test(conn, msg, feedback.feedback)
                 # --------------------
                 case _ as unreachable:
@@ -273,8 +274,13 @@ def qgis_server_run(
                 logger.warning("Worker interrupted")
                 break
         except Exception as exc:
-            logger.critical(traceback.format_exc())
-            _m.send_reply(conn, str(exc), 500)
+            if msg:
+                logger.critical(traceback.format_exc())
+                _m.send_reply(conn, str(exc), 500)
+            else:
+                # No message has been set !
+                # Exception occured outside message handling
+                raise
         finally:
             if msg:
                 if logger.is_enabled_for(logger.LogLevel.TRACE):
@@ -290,17 +296,18 @@ def qgis_server_run(
     logger.debug("Worker exiting")
 
 
-def run_test(conn: _m.Connection, msg: _m.TestMsg, feedback: QgsFeedback):
+def run_test(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):
     """ Feedback test
     """
     done_ts = time() + msg.delay
     canceled = False
+    logger.info("Entering sleep mode for %s seconds", msg.delay)
     while done_ts > time():
         sleep(1.0)
         canceled = feedback.isCanceled()
         if canceled:
-            logger.info("** Test cancelled **")
+            logger.info("** Sleep cancelled **")
             break
     if not canceled:
-        logger.info("** Test ended without interruption **")
-        _m.send_reply(conn, "", 200)
+        logger.info("** Worker is now awake  **")
+        _m.send_nodata(conn)

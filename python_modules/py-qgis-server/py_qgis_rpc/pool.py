@@ -17,8 +17,8 @@ from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.config import ConfigProxy
 from py_qgis_contrib.core.timer import Stopwatch
 
-from . import messages as _m
 from .config import WorkerConfig, confservice
+from .process import messages as _m
 from .worker import Worker, WorkerError
 
 

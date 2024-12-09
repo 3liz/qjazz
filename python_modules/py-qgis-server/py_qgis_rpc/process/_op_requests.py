@@ -10,13 +10,13 @@ from typing_extensions import Dict, Optional, Tuple, assert_never, cast
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer, QgsServerException, QgsServerRequest
 
-from py_qgis_cache import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
+from py_qgis_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from py_qgis_contrib.core import logger
 from py_qgis_contrib.core.condition import assert_precondition
 from py_qgis_contrib.core.utils import to_rfc822
 
 from . import messages as _m
-from .config import WorkerConfig
+from .config import QgisConfig
 from .delegate import ROOT_DELEGATE
 from .requests import Request, Response, _to_qgis_method
 
@@ -34,7 +34,7 @@ def handle_ows_request(
     msg: _m.OwsRequestMsg,
     server: QgsServer,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     _process: Optional[psutil.Process],
     *,
     cache_id: str = "",
@@ -83,7 +83,7 @@ def handle_api_request(
     msg: _m.ApiRequestMsg,
     server: QgsServer,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     _process: Optional[psutil.Process],
     *,
     cache_id: str = "",
@@ -142,7 +142,7 @@ def handle_generic_request(
     msg: _m.RequestMsg,
     server: QgsServer,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     _process: Optional[psutil.Process],
     *,
     cache_id: str = "",
@@ -186,7 +186,7 @@ def _handle_generic_request(
     conn: _m.Connection,
     server: QgsServer,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     _process: Optional[psutil.Process],
     *,
     cache_id: str,
@@ -246,7 +246,7 @@ def _handle_generic_request(
 def request_project_from_cache(
     conn: _m.Connection,
     cm: CacheManager,
-    config: WorkerConfig,
+    config: QgisConfig,
     target: str,
     allow_direct: bool,
 ) -> Tuple[CheckoutStatus, Optional[CacheEntry]]:
