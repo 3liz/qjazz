@@ -167,15 +167,11 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             metadata.append(('x-reply-status-code', str(resp.status_code)))
             await context.send_initial_metadata(metadata)
 
-            chunk = resp.data
-            size = len(chunk)
-
             # Send data
-            yield api_pb2.ResponseChunk(chunk=chunk)
-            if stream:
-                async for chunk in stream:
-                    size += len(chunk)
-                    yield api_pb2.ResponseChunk(chunk=chunk)
+            size = 0
+            async for chunk in stream:
+                size += len(chunk)
+                yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
             if request.debug_report:
@@ -246,16 +242,11 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             metadata = list(_headers_to_metadata(resp.headers.items()))
             metadata.append(('x-reply-status-code', str(resp.status_code)))
             await context.send_initial_metadata(metadata)
-
-            chunk = resp.data
-            size = len(chunk)
-
             # Send data
-            yield api_pb2.ResponseChunk(chunk=chunk)
-            if stream:
-                async for chunk in stream:
-                    size += len(chunk)
-                    yield api_pb2.ResponseChunk(chunk=chunk)
+            size = 0
+            async for chunk in stream:
+                size += len(chunk)
+                yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
             if request.debug_report:
@@ -323,15 +314,11 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
             metadata.append(('x-reply-status-code', str(resp.status_code)))
             await context.send_initial_metadata(metadata)
 
-            chunk = resp.data
-            size = len(chunk)
-
             # Send data
-            yield api_pb2.ResponseChunk(chunk)
-            if stream:
-                async for chunk in stream:
-                    size += len(chunk)
-                    yield api_pb2.ResponseChunk(chunk=chunk)
+            size = 0
+            async for chunk in stream:
+                size += len(chunk)
+                yield api_pb2.ResponseChunk(chunk=chunk)
 
             # Final report
             if request.debug_report:

@@ -6,11 +6,10 @@ import pickle  # nosec
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
 from pathlib import Path
-
-from pydantic import BaseModel, Field, JsonValue, TypeAdapter
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
+    ByteString,
     Dict,
     Iterable,
     List,
@@ -22,6 +21,8 @@ from typing_extensions import (
     Type,
     Union,
 )
+
+from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 
 from py_qgis_cache.status import CheckoutStatus
 
@@ -71,8 +72,6 @@ class MsgModel(BaseModel, frozen=True):
 @dataclass(frozen=True)
 class RequestReply:
     status_code: int
-    data: bytes
-    chunked: bool
     checkout_status: Optional[int]
     headers: Dict[str, str] = field(default_factory=dict)
     cache_id: str = ""
@@ -328,6 +327,15 @@ class Connection(Protocol):
 def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
     """  Send a reply in a envelope message """
     conn.send_bytes(pickle.dumps((status, msg)))
+
+
+# Send a binary chunk
+def send_chunk(conn: Connection, data: ByteString):
+    if len(data) > 0:
+        conn.send_bytes(pickle.dumps(206))
+        conn.send_bytes(data)
+    else:
+        conn.send_bytes(pickle.dumps(204))
 
 
 def send_report(conn: Connection, report: RequestReport):

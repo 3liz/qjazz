@@ -134,7 +134,7 @@ class Response(QgsServerResponse):
         self._finish = True
         self.flush()
 
-    def _send_response(self, data: bytes, chunked: bool = False):
+    def _send_response(self):
         """ Send response
         """
         self._headers.update(self._extra_headers)
@@ -145,9 +145,7 @@ class Response(QgsServerResponse):
             _m.RequestReply(
                 status_code=self._status_code,
                 headers=self._headers,
-                data=data,
                 checkout_status=self._co_status,
-                chunked=chunked,
                 cache_id=self._cache_id,
             ),
         )
@@ -174,36 +172,22 @@ class Response(QgsServerResponse):
             # Make sure that we have Content-length set
             self._headers['Content-Length'] = f"{bytes_avail}"
 
-        data = bytes(self._buffer.data())
-
-        # Take care of the logic: if finish and not handler.header_written then there is no
-        # chunk following
-        chunked = not self._finish or self._header_written
-
-        MAX_CHUNK_SIZE = self._chunk_size
-
-        if bytes_avail > MAX_CHUNK_SIZE:
-            chunked = True
-            bytes_avail = MAX_CHUNK_SIZE
-
-        chunks = (data[i:i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
-
         if not self._header_written:
-            # Send headers with first chunk of data
-            chunk = next(chunks) if bytes_avail else data
-            logger.trace("Sending response (chunked: %s), size: %s", chunked, len(chunk))
-            self._send_response(chunk, chunked)
+            # Send response
+            self._send_response()
 
-        if chunked:
-            for chunk in chunks:
-                logger.trace("Sending chunk of %s bytes", len(chunk))
-                self._conn.send_bytes(chunk)
+        # Send data as chunks
+        data = memoryview(self._buffer.data())
+        MAX_CHUNK_SIZE = self._chunk_size
+        chunks = (data[i:i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
+        for chunk in chunks:
+            logger.trace("Sending chunk of %s bytes", len(chunk))
+            _m.send_chunk(self._conn, chunk)
 
         if self._finish:
-            if chunked:
-                # Send sentinel to signal end of data
-                logger.trace("Sending final chunk")
-                self._conn.send_bytes(b'')
+            # Send sentinel to signal end of data
+            logger.trace("Sending final chunk")
+            _m.send_chunk(self._conn, b'')
             # Send final report
             self._send_report()
 
@@ -235,8 +219,9 @@ class Response(QgsServerResponse):
             if not self._header_written:
                 logger.error("Qgis server error: %s (%s)", message, code)
                 self._status_code = code
-                self._send_response(message.encode() if message else b"")
-                self._finish = True
+                self.truncate()
+                self._buffer.write(message.encode() if message else b"")
+                self.flush()
             else:
                 logger.error("Cannot set error after header written")
         except Exception:

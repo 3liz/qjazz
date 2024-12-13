@@ -56,13 +56,11 @@ async def test_worker_io(projects: ProjectsConfig):
         assert status == 200
         assert resp.status_code == 200
 
-        print(f"> {resp.chunked}")
         print(f"> {resp.headers}")
 
-        if resp.chunked:
-            # Stream remaining bytes
-            async for chunk in worker.io.stream_bytes():
-                assert len(chunk > 0)
+        # Stream remaining bytes
+        async for chunk in worker.io.stream_bytes():
+            assert len(chunk) > 0
 
         # Get final report
         report = await worker.io.read_report()
@@ -98,13 +96,11 @@ async def test_chunked_response(projects: ProjectsConfig):
         assert status == 200
         assert resp.status_code == 200
 
-        print("> chunked", resp.chunked)
         print("> headers", resp.headers)
 
-        if resp.chunked:
-            # Stream remaining bytes
-            async for chunk in worker.io.stream_bytes():
-                assert len(chunk) > 0
+        # Stream remaining bytes
+        async for chunk in worker.io.stream_bytes():
+            assert len(chunk) > 0
 
         # Get final report
         report = await worker.io.read_report()
@@ -198,13 +194,11 @@ async def test_ows_request(projects: ProjectsConfig):
         )
 
         assert resp.status_code == 200
-        print(f"> {resp.chunked}")
         print(f"> {resp.headers}")
 
-        # Stream remaining bytes
-        if stream:
-            async for chunk in stream:
-                assert len(chunk) > 0
+        # Stream data
+        async for chunk in stream:
+            assert len(chunk) > 0
 
 
 async def test_ows_chunked_request(projects: ProjectsConfig):
@@ -226,11 +220,8 @@ async def test_ows_chunked_request(projects: ProjectsConfig):
         )
 
         assert resp.status_code == 200
-        print(f"> {resp.chunked}")
         print(f"> {resp.headers}")
 
-        assert resp.chunked
-        assert stream is not None
         # Stream remaining bytes
         async for chunk in stream:
             assert len(chunk) > 0
@@ -251,16 +242,18 @@ async def test_api_request(projects: ProjectsConfig):
         # Test Qgis server API request with valid project
         resp, stream = await worker.api_request(
             name="WFS3",
-            path="/collections",
+            path="/wfs3/collections",
             target="/france/france_parts",
             url="http://localhost:8080/features",
         )
 
         assert resp.status_code == 200
-        print(f"> {resp.chunked}")
         print(f"> {resp.headers}")
 
         # Stream remaining bytes
-        if stream:
-            async for chunk in stream:
-                assert len(chunk) > 0
+        count = 0
+        async for chunk in stream:
+            count += 1
+            assert len(chunk) > 0
+
+        print(f"> chunks: {count}")

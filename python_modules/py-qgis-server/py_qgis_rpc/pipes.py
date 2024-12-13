@@ -79,10 +79,17 @@ class Pipe:
         return data
 
     async def stream_bytes(self) -> AsyncIterator[bytes]:
-        b = await self.read_bytes()
-        while b:
-            yield b
-            b = await self.read_bytes()
+        resp = pickle.loads(await self.read_bytes())  # nosec
+        while True:
+            match resp:
+                case 206:
+                    yield await self.read_bytes()
+                    resp = pickle.loads(await self.read_bytes())  # nosec
+                    continue
+                case 204:
+                    break
+                case _ :
+                    raise ValueError(f"Byte stream returned {resp}")
 
     async def send_message(self, msg: Message) -> Tuple[int, Any]:
         await self.put_message(msg)

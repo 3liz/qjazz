@@ -237,7 +237,7 @@ class Worker:
         headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
+    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
         """ Send OWS request
 
             Exemple:
@@ -278,11 +278,7 @@ class Worker:
             raise WorkerError(status, resp)
 
         reply = _m.cast_into(resp, _m.RequestReply)
-
-        if reply.chunked:
-            return reply, self.io.stream_bytes()
-        else:
-            return reply, None
+        return reply, self.io.stream_bytes()
 
     async def api_request(
         self,
@@ -298,7 +294,7 @@ class Worker:
         headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
+    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
         """ Send generic (api) request
 
             Exemple:
@@ -340,11 +336,7 @@ class Worker:
             raise WorkerError(status, resp)
 
         reply = _m.cast_into(resp, _m.RequestReply)
-
-        if reply.chunked:
-            return reply, self.io.stream_bytes()
-        else:
-            return reply, None
+        return reply, self.io.stream_bytes()
 
     async def request(
         self,
@@ -356,7 +348,7 @@ class Worker:
         headers: Optional[Dict[str, str]] = None,
         request_id: str = "",
         debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, Optional[AsyncIterator[bytes]]]:
+    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
         """ Send generic (api) request
 
             Exemple:
@@ -392,11 +384,7 @@ class Worker:
             raise WorkerError(status, resp)
 
         reply = _m.cast_into(resp, _m.RequestReply)
-
-        if reply.chunked:
-            return reply, self.io.stream_bytes()
-        else:
-            return reply, None
+        return reply, self.io.stream_bytes()
 
     #
     # Cache

@@ -23,6 +23,9 @@ lint-preview::
 	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
 
 lint-fix::
+	@ruff check --fix $(PYTHON_PKG) $(TESTDIR)
+
+lint-fix-preview::
 	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
 
 install::
