@@ -1,0 +1,30 @@
+[logging]
+level = "debug"
+
+[server]
+timeout = 20
+shutdown_grace_period = 10
+
+[server.listen]
+address = "[::1]:23456"
+
+[worker]
+name = "Test"
+num_processes = 5
+
+[worker.config]
+
+
+[worker.config.plugins]
+paths = ['$location/plugins']
+
+[worker.config.projects]
+trust_layer_metadata = true
+disable_getprint = true
+force_readonly_layers = true
+
+[worker.config.projects.search_paths]
+'/tests' = "$location/data/samples"
+'/france' = "$location/data/france_parts"
+'/montpellier' = "$location/data/montpellier"
+ 

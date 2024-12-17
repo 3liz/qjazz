@@ -1,0 +1,30 @@
+[workspace]
+members = [
+    "qjazz-pool", "qjazz-rpc",
+]
+resolver = "2"
+
+[workspace.package]
+keywords = ["gis", "geography", "geospatial"]
+authors = ["David Marteau <dmarteau@3liz.com"]
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/3liz/qjazz/"
+repository = "https://github.com/3liz/qjazz/"
+categories = ["science::geo"]
+
+[workspace.dependencies]
+thiserror = "2.0"
+log = "0.4"
+tokio = "1"
+env_logger = "0.11"
+config = "0.14"
+serde = "1.0"
+serde_json = "1.0"
+
+[profile.release]
+lto = true
+incremental = false
+
+[patch.crates-io]
+# Use local crates
+qjazz-pool = { path = "./qjazz-pool" }

@@ -1,0 +1,32 @@
+[package]
+name = "qjazz-rpc"
+version = "0.1.0"
+edition = "2021"
+keywords.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "qjazz-rpc"
+path = "src/main.rs"
+
+[dependencies]
+qjazz-pool = "~0.1"
+tonic = "0.12"
+tonic-health = "0.12"
+prost = "0.13"
+tokio = { workspace = true, features = ["sync"] }
+tokio-stream = "0.1"
+log = { workspace = true,  features = ["serde"] }
+env_logger = { workspace = true }
+config = { workspace = true, features = ["serde_json", "toml"] }
+clap = { version = "4", features=["derive"] }
+serde = { workspace = true, features=["derive"] }
+serde_json = { workspace = true }
+subst = "0.3"
+
+[build-dependencies]
+tonic-build = "0.12"
