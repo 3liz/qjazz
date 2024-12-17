@@ -1,0 +1,34 @@
+services:
+  qgis-rpc:
+    image: ${QGIS_IMAGE}
+    working_dir: /src/python_modules/qjazz-server
+    environment:
+      CONF_DISPLAY_XVFB: ON
+      CONF_LOGGING__LEVEL: debug
+      CONF_WORKER__NAME: worker
+      CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
+        { 
+          "/": "/qgis-projects/france_parts"
+        }
+    volumes:
+    - { type: bind, source: "${DEPTH}", target: /src }
+    - { type: bind, source: "./.local", target: /.local }
+    command: ${SRCDIR}/tests/run-worker.sh
+    user: "${USER_ID}:${GROUP_ID}"
+  web:
+    image: ${QGIS_IMAGE}
+    working_dir: /src/python_modules/qjazz-server
+    volumes:
+    - { type: bind, source: "${DEPTH}", target: /src }
+    - { type: bind, source: "./.local", target: /.local }
+    environment:
+      CONF_LOGGING__LEVEL: trace
+      CONF_BACKENDS__BASIC__TITLE: "Test backends"
+      CONF_BACKENDS__BASIC__ADDRESS: "qgis-rpc"
+      CONF_BACKENDS__BASIC__ROUTE: "/basic"    
+    user: "${USER_ID}:${GROUP_ID}"
+    ports:
+    - 80:80
+    command: ${SRCDIR}/tests/run-web.sh
+    profiles: [web]
+

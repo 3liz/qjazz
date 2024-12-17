@@ -1,6 +1,6 @@
 services:
   qgis-rpc:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qjazz-services:qgis-ltr-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_LOGGING__LEVEL: debug
@@ -11,9 +11,9 @@ services:
         }
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
-    command: ["qgis-server-rpc", "serve"]
+    command: ["qjazz-server-rpc", "serve"]
   web:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qjazz-services:qgis-ltr-eager
     environment:
       CONF_LOGGING__LEVEL: trace
       CONF_BACKENDS__BASIC__TITLE: "Basic backends"
@@ -26,5 +26,5 @@ services:
           ]
     ports:
     - 127.0.0.1:9080:9080
-    command: ["qgis-server-http", "serve"]
+    command: ["qjazz-server-http", "serve"]
 

@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   qgis-rpc:
-    image: 3liz/qgis-services:qgis-ltr-eager
+    image: 3liz/qjazz-services:qgis-ltr-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_CONFIG_URL__URL: "http://config-server/qgis-rpc.json"
@@ -10,15 +10,15 @@ services:
       CONF_RESTORE_CACHE__RESTORE_TYPE: "http"
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
-    command: ["qgis-server-rpc", "serve"]
+    command: ["qjazz-server-rpc", "serve"]
 
   web:
-    image: 3liz/qgis-services:qgis-ltr
+    image: 3liz/qjazz-services:qgis-ltr
     environment:
       CONF_CONFIG_URL__URL: "http://config-server/web.json"
     ports:
     - 80:80
-    command: ["qgis-server-http", "serve"]
+    command: ["qjazz-server-http", "serve"]
 
   # The configuration server 
   config-server:

@@ -19,12 +19,12 @@ indent-style = "space"
 [lint.isort]
 lines-between-types = 1
 known-first-party = [
-    "py_qgis_contrib", 
-    "py_qgis_cache",
-    "py_qgis_rpc",
-    "py_qgis_admin",
-    "py_qgis_http",
-    "py_qgis_processes",
+    "qjazz_contrib", 
+    "qjazz_cache",
+    "qjazz_rpc",
+    "qjazz_admin",
+    "qjazz_http",
+    "qjazz_processes",
 ]
 #known-third-party = [
 #    "qgis",

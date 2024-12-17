@@ -8,7 +8,7 @@
 
 import sphinx_rtd_theme
 
-project = 'py-qgis-server2'
+project = 'qjazz'
 copyright = '2023, David Marteau - 3liz'
 author = 'David Marteau'
 release = '${PIN_VERSION}'

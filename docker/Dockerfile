@@ -8,7 +8,7 @@
 # 
 
 FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} AS base
-LABEL Description="QGIS py-qgis services" Vendor="3liz.org"
+LABEL Description="QJazz QGIS services" Vendor="3liz.org"
 LABEL org.opencontainers.image.authors="David Marteau <david.marteau@3liz.com>"
 
 RUN apt-get update -y \
@@ -28,17 +28,17 @@ RUN mkdir -p /opt/local/ \
     && /opt/local/qgisserver/bin/pip install -U --no-cache-dir pip setuptools wheel \
     && /opt/local/qgisserver/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
     && /opt/local/qgisserver/bin/pip install --no-cache-dir --no-deps \
-        -e /python_modules/py-qgis-contrib \
-        -e /python_modules/py-qgis-cache \
-        -e /python_modules/py-qgis-server \
-        -e /python_modules/py-qgis-processes \
-        -e /python_modules/py-qgis-scripts \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-rpc \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-admin \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-http \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-cli \
-    && ln -s /opt/local/qgisserver/bin/qgis-processes \
-    && ln -s /opt/local/qgisserver/bin/qgis-printserver \
+        -e /python_modules/qjazz-contrib \
+        -e /python_modules/qjazz-cache \
+        -e /python_modules/qjazz-server \
+        -e /python_modules/qjazz-processes \
+        -e /python_modules/qjazz-scripts \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-rpc \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-admin \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-http \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-cli \
+    && ln -s /opt/local/qgisserver/bin/qjazz-processes \
+    && ln -s /opt/local/qgisserver/bin/qjazz-printserver \
     ${NULL}
 
 # Install qgis-plugin-manager
@@ -101,10 +101,10 @@ COPY --from=base /python_modules /python_modules
 COPY --from=base /opt/local/qgisserver /opt/local/qgisserver
 
 RUN cd /usr/local/bin \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-admin \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-http \
-    && ln -s /opt/local/qgisserver/bin/qgis-server-cli \
-    && ln -s /opt/local/qgisserver/bin/qgis-processes \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-admin \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-http \
+    && ln -s /opt/local/qgisserver/bin/qjazz-server-cli \
+    && ln -s /opt/local/qgisserver/bin/qjazz-processes \
     ${NULL}
 
 COPY docker/scripts/ /usr/local/bin/

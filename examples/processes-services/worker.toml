@@ -18,6 +18,6 @@ force_readonly_layers = true
 '/samples' = "/src/tests/data/samples/"
 '/france' = "/src/tests/data/france_parts/"
 '/montpellier' = "/src/tests/data/montpellier/"
-'/database' = "postgresql://?service=py-qgis"
+'/database' = "postgresql://?service=qjazz"
 
 

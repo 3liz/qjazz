@@ -26,8 +26,8 @@ if [[ $# -eq 1 ]]; then
 fi
 
 
-export CONF_WORKER__INTERFACES='[{ "listen": "unix:/tmp/py-qgis-worker.sock" }]'
-export CONF_BACKENDS__LOCAL__ADDRESS=unix:/tmp/py-qgis-worker.sock
+export CONF_WORKER__INTERFACES='[{ "listen": "unix:/tmp/qjazz-worker.sock" }]'
+export CONF_BACKENDS__LOCAL__ADDRESS=unix:/tmp/qjazz-worker.sock
 export CONF_BACKENDS__LOCAL__ROUTE=/
 
 # Enable job control
@@ -42,11 +42,11 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGABRT SIGTERM SIGQUIT
 
 # Start worker
-qgis-server-rpc serve $config_option &
+qjazz-server-rpc serve $config_option &
 
 sleep 2
 
 # Start http server
-qgis-server-http serve $config_option &
+qjazz-server-http serve $config_option &
 
 wait -n 

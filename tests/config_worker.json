@@ -11,9 +11,9 @@
       "force_readonly_layers": true,
       "disable_advertised_urls": false,
       "search_paths": {
-        "/tests": "file:///opt/qgis-services/data/samples",
-        "/france": "file:///opt/qgis-services/data/france_parts",
-        "/montpellier": "file:///opt/qgis-services/data/montpellier"
+        "/tests": "file:///opt/qjazz/data/samples",
+        "/france": "file:///opt/qjazz/data/france_parts",
+        "/montpellier": "file:///opt/qjazz/data/montpellier"
       },
       "allow_direct_path_resolution": true
     },

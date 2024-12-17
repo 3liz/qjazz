@@ -1,7 +1,7 @@
 services:
 
   worker:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/qjazz:qgis-release-eager
     networks:
     - qgis_rpc_network
     hostname: worker
@@ -11,7 +11,7 @@ services:
     volumes:
     - { type: bind, source: "${PWD}/tests/", target: /opt/qgis-services }
     - { type: volume, target: /srv/vol1 }
-    command: ["qgis-server-rpc", "serve"]
+    command: ["qjazz-server-rpc", "serve"]
     depends_on:
     - config-server
 
@@ -24,7 +24,7 @@ services:
     - 127.0.0.1:9876:9876
     networks:
     - qgis_rpc_network
-    command: ["qgis-server-http", "serve", "--verbose"]
+    command: ["qjazz-server-http", "serve", "--verbose"]
     profiles:
     - web
     depends_on:

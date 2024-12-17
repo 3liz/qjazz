@@ -1,0 +1,209 @@
+
+
+[logging]
+level = "INFO"
+
+
+# OAPI configuration
+# 
+[oapi]
+title = "Py-Qgis-Processes"
+description = "Publish Qgis processing algorithms as OGC api processes"
+
+
+# Configure access policy
+[access_policy]
+#
+# Access policy module
+#
+# The module implementing the access policy for
+# processes execution.
+policy_class = "qjazz_processes.server.policies.DefaultAccessPolicy"
+config = {}
+
+
+# Defining job realm allow filtering job's requests by a token that is
+# set by the client when requesting task execution (see description below).
+# 
+[job_realm]
+#
+# Enable job realm header
+#
+# When enabled, use the 'X-Job-Realm' http header
+# as a client identification token for retrieving jobs status and results.
+enabled = false
+#
+# Admininistrator realm jobs tokens
+#
+# Define catch all tokens for listing and retrieve status and results
+# for all jobs.
+admin_tokens = []
+
+
+[server]
+#
+# Interfaces to listen to
+listen = ["127.0.0.1",9180]
+#
+# Use ssl
+use_ssl = false
+#
+# CORS origin
+#
+# 
+# Allows to specify origin for CORS. If set 'all' will set
+# Access-Control-Allow-Origin to '*'; 'same-origin' return
+# the same value as the 'Origin' request header.
+# A url may may be specified, restricting allowed origin to
+# this url.
+# 
+cross_origin = "all"
+#
+# Service update interval
+#
+# Interval in seconds between update of available services
+update_interval = 60
+#
+# Backend request timeout
+timeout = 20
+#
+# Enable Web UI
+enable_ui = true
+
+#
+# SSL configuration
+#
+[server.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
+
+#
+# Forwarded Configuration
+[server.proxy]
+#
+# Enabled Forwarded headers
+#
+# Enable proxy headers resolution.
+# Include support for 'Forwarded' headers
+# and 'X-Forwarded' headers if allow_x_headers is 
+# enabled.
+enable = false
+#
+# Support for 'X-Forwarded' headers
+allow_x_headers = false
+
+
+[executor]
+#
+# Message expiration timeout
+#
+# 
+# The amount of time an execution message
+# can wait on queue before beeing processed
+# with asynchronous response.
+# 
+message_expiration_timeout = 600
+
+#
+# Celery configuration
+[executor.celery]
+#
+# Celery amqp broker host
+broker_host = ""
+broker_use_ssl = false
+#broker_ssl =   	# Optional
+#
+# Celery redis backend host
+backend_host = "localhost:6379/0"
+backend_use_ssl = false
+#backend_ssl =   	# Optional
+#security =   	# Optional
+#
+# Task hard time limit in seconds.
+# The worker processing the task will be killed
+# and replaced with a new one when this is exceeded.
+task_time_limit = 3600
+#
+# Grace period to add to the 'task_time_limit'
+# value.
+# The SoftTimeLimitExceeded exception will be raised
+# when the 'task_time_limit' is exceeded.
+task_time_grace_period = 60
+#
+# Time (in seconds), for when after stored task tombstones will
+# be deleted
+result_expires = 86400
+#
+# Concurrency
+#
+# The number of concurrent worker processes executing tasks.
+#concurrency =   	# Optional
+#
+# Processes life cycle
+#
+# Maximum number of tasks a pool worker process can execute
+# before it's replaced with a new one. Default is no limit.
+#max_tasks_per_child =   	# Optional
+#
+# Maximum consumed memory
+#
+# Maximum amount of resident memory, in kilobytes,
+# that may be consumed by a worker before it will
+# be replaced by a new worker.
+#max_memory_per_child =   	# Optional
+#
+# Autoscale
+#
+# Activate concurrency autoscaling
+#autoscale =   	# Optional
+
+
+# The storage configuration is used for configuring the
+# connections to storage backends used by workers.
+# 
+[storage]
+#
+# Allow only secure downloads
+#
+# Only TLS encrypted downloads are allowed
+allow_insecure_connection = true
+#
+# Download chunksize
+chunksize = 65536
+#
+# Download url expiration
+#
+# Download url expiration in seconds
+download_url_expiration = 3600
+
+#
+# TLS certifificats
+#
+# Certificats required for TLS downloads connections
+#
+[storage.ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# SSL/TLS  key
+#
+# Path to the SSL key file
+#certfile =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the SSL certificat file
+#keyfile =   	# Optional
+

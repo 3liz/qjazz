@@ -251,7 +251,7 @@
                     "title": "External configuration Url"
                 },
                 "user_agent": {
-                    "default": "py-qgis-server2 middleware 1.0.0.dev0",
+                    "default": "qjazz middleware 1.0.0.dev0",
                     "description": "The user agent for configuration requests",
                     "title": "User agent",
                     "type": "string"
@@ -471,7 +471,7 @@
             "default": {
                 "ssl": null,
                 "url": null,
-                "user_agent": "py-qgis-server2 middleware 1.0.0.dev0"
+                "user_agent": "qjazz middleware 1.0.0.dev0"
             }
         },
         "http": {

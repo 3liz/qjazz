@@ -1,5 +1,5 @@
 {
-    "confdir": "/home/david/qgis/python_modules/py-qgis-http",
+    "confdir": "/home/david/qgis/python_modules/qjazz-http",
     "logging": {
         "level": "TRACE"
     },
@@ -10,7 +10,7 @@
             "keyfile": null
         },
         "url": null,
-        "user_agent": "py-qgis-server2 middleware 1.0.0.dev0"
+        "user_agent": "qjazz middleware 1.0.0.dev0"
     },
     "http": {
         "listen": [

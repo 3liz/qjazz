@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qjazz-contrib"
+description = "QJazz contrib utilities"
+requires-python = ">= 3.12"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX",
+]
+dependencies = [
+  'pydantic < 3.0',
+  'pydantic-settings',
+  'typing-extensions',
+]
+version = "0.1.0.dev0"
+
+[project.optional-dependencies]
+celery = [ "celery>=5.4", "redis>=5.0.8" ]
+
+[[project.authors]]
+name = "David Marteau"
+email = "dmarteau@3liz.org"
+
+[tool.setuptools.package-data]
+qjazz_contrib = [ "core/manifest.json" ]
+
+[tool.setuptools.packages.find]
+exclude = [ "tests/*" ]
+include = [
+    "qjazz_contrib", 
+    "qjazz_contrib.*",
+]
+
+#
+# Ruff 
+#
+
+[tool.ruff]
+extend = "../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+"qjazz_contrib/core/qgis/qgis_init.py" = ["T201"]
+"qjazz_contrib/core/config/_toml.py" = ["T201"]
+ 

@@ -62,7 +62,7 @@ proxy_conf = false
 # User agent
 #
 # The user agent for configuration requests
-user_agent = "py-qgis-server2 middleware 1.0.0.dev0"
+user_agent = "qjazz-server middleware 1.0.0.dev0"
 
 #
 [http_config_url.ssl]
@@ -129,7 +129,7 @@ proxy_conf = false
 #
 # The router class allow for defining routing rules
 # from the request url.
-router_class = "py_qgis_http.router.DefaultRouter"
+router_class = "qjazz_http.router.DefaultRouter"
 #
 # Router configuration
 config = {}

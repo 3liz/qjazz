@@ -5,7 +5,7 @@
 Advanced managment
 ==================
 
-`py-qgis-server2` come with managment tools for Qgis service clusters.
+`qjazz` come with managment tools for Qgis service clusters.
 
 It allows you to:
 
@@ -23,9 +23,9 @@ Running managment from CLI
 
 You may run the managment tool from CLI::
 
-    > pip install py-qgis-admin
-    > python3 -m py_qgis_admin --help
-    Usage: python -m py_qgis_admin [OPTIONS] COMMAND [ARGS]...
+    > pip install qjazz-admin
+    > python3 -m qjazz_admin --help
+    Usage: python -m qjazz_admin [OPTIONS] COMMAND [ARGS]...
 
     Options:
       --help  Show this message and exit.
@@ -44,9 +44,9 @@ You may run the managment tool from CLI::
 
 or from the docker image::
 
-    docker run -it --rm  -v <path/to/configfile>:/etc/qgis-server-admin.toml \
-        -e PY_QGIS_SERVER_ADMIN_CONFIGFILE=/etc/qgis-server-admin.toml \
-        3liz/qgis-services:ltr qgis-server-admin
+    docker run -it --rm  -v <path/to/configfile>:/etc/qjazz-server-admin.toml \
+        -e PY_QGIS_SERVER_ADMIN_CONFIGFILE=/etc/qjazz-server-admin.toml \
+        3liz/qjazz:ltr qjazz-server-admin
 
 
 Managment from REST api
@@ -54,7 +54,7 @@ Managment from REST api
 
 Managment may also be handler using REST api with the `serve` command::
 
-    > qgis-server-admin serve
+    > qjazz-server-admin serve
 
 From this you can use your own dashboard for managing your Qgis clusters.
 
@@ -94,13 +94,13 @@ will point to the `qgis-rpc` services.
 
 Examples::
 
-    > qgis-server-admin pools
+    > qjazz-server-admin pools
     Pool  1. basic           qgis-rpc:23456    backends: 3
     * 172.25.0.5:23456
     * 172.25.0.2:23456
     * 172.25.0.6:23456
 
-    > qgis-server-admin stats --host qgis-rpc
+    > qjazz-server-admin stats --host qgis-rpc
     [
         {
             "address": "172.25.0.2:23456",

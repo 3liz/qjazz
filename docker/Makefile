@@ -5,7 +5,7 @@ DEPTH=..
 
 include $(DEPTH)/config/config.mk
 
-NAME=qgis-services
+NAME=qjazz
 
 BUILDID=$(shell date +"%Y%m%d%H%M")
 COMMITID=$(shell git rev-parse --short HEAD)

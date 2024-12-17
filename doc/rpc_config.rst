@@ -149,7 +149,7 @@ Managing cache
 
 Cache can be managed with the :ref:`service cli command <managing_rpc_services>`::
 
-    Usage: qgis-server-cli cache [OPTIONS] COMMAND [ARGS]...
+    Usage: qjazz-server-cli cache [OPTIONS] COMMAND [ARGS]...
 
       Commands for cache management
 

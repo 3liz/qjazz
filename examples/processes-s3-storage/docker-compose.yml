@@ -4,13 +4,13 @@ services:
   # Processes stack
   #
   processes-worker:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/qjazz-services:qgis-release-eager
     environment:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
       CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9180/results/$$jobId/$$name"
-      CONF_STORAGE__STORAGE_CLASS: py_qgis_processes.worker.storages.s3.S3Storage
+      CONF_STORAGE__STORAGE_CLASS: qjazz_processes.worker.storages.s3.S3Storage
       # Note: this may be set in the config file:
       CONF_S3_ENDPOINT: "minio:9000"
       CONF_S3_ACCESS_KEY: minioadmin
@@ -27,7 +27,7 @@ services:
     command: ["qgis-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
   
   processes-server:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/qjazz-services:qgis-release-eager
     ports:
     - 127.0.0.1:9180:9180
     command: ["qgis-processes", "serve", "-v"]
@@ -47,7 +47,7 @@ services:
   # Map server stack
   #
   qgis-rpc:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/qjazz-services:qgis-release-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_LOGGING__LEVEL: debug
@@ -59,7 +59,7 @@ services:
         }
       # Define a 's3' protocol handler
       # Note: configuration fragments can be stored in secret files
-      CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__HANDLER: "py_qgis_cache.handlers.s3.S3ProtocolHandler"
+      CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__HANDLER: "qjazz_cache.handlers.s3.S3ProtocolHandler"
       CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__CONFIG: >-
         {
           "endpoint": "minio:9000",
@@ -69,10 +69,10 @@ services:
         }
     volumes:
     - { type: bind, source: "./__workdir__", target: /workdir } 
-    command: ["qgis-server-rpc", "serve"]
+    command: ["qjazz-server-rpc", "serve"]
 
   map:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/qjazz-services:qgis-release-eager
     environment:
       CONF_LOGGING__LEVEL: debug
       CONF_BACKENDS__jOBS__TITLE: "Jobs backends"
@@ -81,7 +81,7 @@ services:
     ports:
     - 127.0.0.1:9080:9080
     - 127.0.0.1:9876:9876
-    command: ["qgis-server-http", "serve"]
+    command: ["qjazz-server-http", "serve"]
 
   #
   # Minio service for s3 storage

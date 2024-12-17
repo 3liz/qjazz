@@ -5,9 +5,9 @@
 Description
 ===========
 
-Py-qgis-server is a set of services for serving Qgis 3.34+ server requests.
+QJazz is a set of services for serving Qgis 3.34+ server requests.
 
-The py-qgis-server setup is splitted in 3 different services: 
+The qjazz-server setup is splitted in 3 different services: 
     
 - Services using gRCP protocols for running qgis servers processes
 - Middleware asynchronous HTTP proxy for routing requests to differents worker backends
@@ -40,7 +40,7 @@ Features
 --------
 
 These services have been designed after experimenting with version 1.x of 
-`py-qgis-server <https://https://github.com/3liz/py-qgis-server>`_ 
+`qjazz-server <https://https://github.com/3liz/qjazz-server>`_ 
 on production infrastructure.
 
 It aims at bringing better scaling managment, cache managment and healtcheck/fault tolerance
@@ -72,7 +72,7 @@ Note that most of the examples in this documentation assumes
 docker deployment.
 
 All services are runnable from a single image: 
-`3liz/qgis-services <https://hub.docker.com/3liz/qgis-services>`_
+`3liz/qjazz <https://hub.docker.com/3liz/qjazz>`_
 
 Running workers with docker compose:
 
@@ -86,7 +86,7 @@ The simplest configuration for basic working installation is the following
       # qgis server
       #
       qgis-rpc:
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         environment:
           CONF_DISPLAY_XVFB: ON
           CONF_LOGGING__LEVEL: debug
@@ -97,13 +97,13 @@ The simplest configuration for basic working installation is the following
             }
         volumes:
         - { type: bind, source: "/path/to/projects/", target: /qgis-projects } 
-        command: ["qgis-server-rpc", "serve"]
+        command: ["qjazz-server-rpc", "serve"]
       web:
         #
         # The web service communicate to (multiple) backends and route
         # request to the appropriate backend.
         #
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         environment:
           CONF_LOGGING__LEVEL: debug
           CONF_BACKENDS__BASIC__TITLE: "Basic backends"
@@ -111,7 +111,7 @@ The simplest configuration for basic working installation is the following
           CONF_BACKENDS__BASIC__ROUTE: "/basic"
         ports:
         - 127.0.0.1:80:80
-        command: ["qgis-server-http", "serve"]
+        command: ["qjazz-server-http", "serve"]
 
 Run the stack with::
 
@@ -162,9 +162,9 @@ Managing individual service
 One way to manage workers individually is to use cli commands 
 from inside running containers::
 
-    docker compose exec [--index=n] qgis-rpc qgis-server-cli
+    docker compose exec [--index=n] qgis-rpc qjazz-server-cli
 
-The `qgis-server-cli` enables you to retrieve various information 
+The `qjazz-server-cli` enables you to retrieve various information 
 about the running service:
 
 - Get environment state
@@ -195,7 +195,7 @@ Using configuration file
 
 You may specify a configuration file with the `--conf` or `-C` option::
         
-    qgis-server-rpc  serve -C path/to/config/file.toml
+    qjazz-server-rpc  serve -C path/to/config/file.toml
 
 
 Using environment variables
@@ -250,7 +250,7 @@ Live configuration may be partial changes (configuration fragments)
 The following example change the logging level a running qgis service
 instance::
 
-        > qgis-server-cli config set '{ "logging": { "level": "trace" }}'
+        > qjazz-server-cli config set '{ "logging": { "level": "trace" }}'
 
 Configuration fragments must be in json format.
 

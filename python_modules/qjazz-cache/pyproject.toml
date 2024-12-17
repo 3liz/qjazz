@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qjazz-cache"
+description = "QJazz QGIS project cache"
+requires-python = ">= 3.12"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX",
+]
+dependencies = [
+    "qjazz-contrib==0.1.0.dev0",
+]
+version = "0.1.0.dev0"
+
+[[project.authors]]
+name = "David Marteau"
+email = "dmarteau@3liz.org"
+
+
+[tool.setuptools.packages.find]
+exclude = [ "tests", "tests/*" ]
+include = [
+    "qjazz_cache", 
+    "qjazz_cache.*",
+]
+
+[tool.ruff]
+extend = "../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+
+
