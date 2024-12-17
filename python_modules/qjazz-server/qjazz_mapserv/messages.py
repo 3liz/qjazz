@@ -30,7 +30,7 @@ from qjazz_cache.status import CheckoutStatus
 class MsgType(IntEnum):
     PING = 1
     QUIT = 2
-    #REQUEST = 3
+    # REQUEST = 3
     OWSREQUEST = 4
     APIREQUEST = 5
     CHECKOUT_PROJECT = 6

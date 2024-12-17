@@ -18,7 +18,7 @@ from qjazz_contrib.core.config import ConfigProxy
 from qjazz_contrib.core.timer import Stopwatch
 
 from .config import WorkerConfig, confservice
-from .process import messages as _m
+from .pipes import messages as _m
 from .worker import Worker, WorkerError
 
 

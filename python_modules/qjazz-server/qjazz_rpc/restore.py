@@ -21,9 +21,8 @@ from typing_extensions import (
 
 from qjazz_contrib.core import config, logger
 from qjazz_contrib.core.config import SSLConfig
-
-from .process.messages import CacheInfo
-from .process.messages import CheckoutStatus as Co
+from qjazz_mapserv.messages import CacheInfo
+from qjazz_mapserv.messages import CheckoutStatus as Co
 
 #
 # Protocols

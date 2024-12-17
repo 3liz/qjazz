@@ -41,6 +41,8 @@ include = [
     "qjazz_rpc.*",
     "qjazz_admin",
     "qjazz_admin.*",
+    "qjazz_mapserv",
+    "qjazz_mapserv.*",
 ]
 
 [tool.autopep8]

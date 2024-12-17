@@ -5,7 +5,7 @@ from time import time
 
 import pytest
 
-from qjazz_rpc.process import messages
+from qjazz_rpc.pipes import messages
 from qjazz_rpc.worker import Worker, NoDataResponse
 from qjazz_rpc.config import ProjectsConfig, QgisConfig, WorkerConfig
 

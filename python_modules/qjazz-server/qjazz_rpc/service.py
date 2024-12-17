@@ -28,8 +28,8 @@ from qjazz_contrib.core.utils import to_iso8601
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 from .config import ENV_CONFIGFILE, RemoteConfigError, confservice
+from .pipes import messages as _m
 from .pool import Worker, WorkerError, WorkerPool
-from .process import messages as _m
 from .restore import Restore
 
 #
@@ -272,6 +272,7 @@ class QgisServer(qjazz_pb2_grpc.QgisServerServicer, WorkerMixIn):
 # ======================
 # Admin service
 # ======================
+
 
 class QgisAdmin(qjazz_pb2_grpc.QgisAdminServicer, WorkerMixIn):
 

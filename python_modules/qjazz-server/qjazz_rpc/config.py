@@ -7,11 +7,11 @@ from typing_extensions import (
 
 from qjazz_contrib.core import config, logger
 from qjazz_contrib.core.config import NetInterface, SSLConfig
-
-from .process.config import (
+from qjazz_mapserv.config import (
     ProjectsConfig,  # noqa F401
     QgisConfig,  # noqa F401
 )
+
 from .restore import CacheRestoreConfig
 
 DEFAULT_INTERFACE = ("[::]", 23456)

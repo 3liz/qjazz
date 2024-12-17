@@ -21,7 +21,7 @@ from qjazz_contrib.core import logger
 
 from .config import WorkerConfig
 from .pipes import NoDataResponse, Pipe, RendezVous
-from .process import messages as _m
+from .pipes import messages as _m
 
 START_TIMEOUT = 5
 
@@ -151,7 +151,7 @@ class Worker:
         # This is slower that `fork` but
         # allow for solid asynchronous I/0 handling
         self._process = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "qjazz_rpc.process.main", self._name,
+            sys.executable, "-m", "qjazz_mapserv.main", self._name,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             env=env,

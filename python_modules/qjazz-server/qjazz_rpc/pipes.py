@@ -11,7 +11,8 @@ from typing import (
     Tuple,
 )
 
-from .process.messages import (
+from qjazz_mapserv import messages  # noqa F401
+from qjazz_mapserv.messages import (
     Message,
     RequestReport,
     cast_into,
