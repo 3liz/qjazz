@@ -191,13 +191,14 @@ impl Pool {
                 }
             }
         }).await;
-        log::info!("Shutting down...");
         // Drain all idle workers
+        log::info!("Shutting down...");
         let mut removed = self.queue.q.drain(self.num_processes);
         self.num_processes -= removed.len();
         for mut w in removed.drain(..) {
             let _ = w.terminate().await;
         }
+        log::debug!("Pool terminated (rem:  {})", self.num_processes);
     }
 }
 

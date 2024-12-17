@@ -8,6 +8,7 @@ def test_wms_getcaps( host ):
     """ Test 
     """
     rv = requests.get(f"http://{host}/test/?MAP=france/france_parts.qgs&SERVICE=WMS&request=GetCapabilities")
+    print("test_wfs_getcaps::body", rv.content);
     assert rv.status_code == 200
     assert rv.headers['Content-Type'] == 'text/xml; charset=utf-8'
 

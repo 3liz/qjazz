@@ -125,6 +125,7 @@ impl Worker {
     /// Attempt a SIGTERM then wait for 5s before attempting a
     /// kill.
     pub(crate) async fn terminate(&mut self) -> Result<()> {
+        log::debug!("Terminating worker {}", self.id());
         self.rendez_vous.stop().await;
         self.process.send_signal(Signal::SIGTERM)?;
         if timeout(

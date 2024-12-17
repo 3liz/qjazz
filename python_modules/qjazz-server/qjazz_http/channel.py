@@ -123,7 +123,7 @@ class Channel:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
         stub = health_pb2_grpc.HealthStub(self._channel)
         while self._connected:
-            request = health_pb2.HealthCheckRequest(service="QgisServer")
+            request = health_pb2.HealthCheckRequest(service="qjazz.QgisServer")
             try:
                 async for resp in stub.Watch(request):
                     self._status = "available"

@@ -83,6 +83,7 @@ impl Pipe {
             // not go anywhere.
             let buf: &mut [u8] = unsafe { std::mem::transmute(buffer.spare_capacity_mut()) };
             loop {
+                log::trace!("Entering blocking i/o drain...");
                 match unistd::read(fd, buf) {
                     Ok(0) | Err(Errno::EWOULDBLOCK) => return Ok(len > 0),
                     Ok(n) => len += n,
@@ -101,6 +102,7 @@ impl Pipe {
                     log::error!("Drain task failed:  {:?}", err);
                     Err(Error::TaskFailed("Drain task failed".to_string()))
                 } else {
+                    log::trace!("Drain finished");
                     Ok(true)
                 }
             }

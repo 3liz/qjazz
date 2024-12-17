@@ -1,5 +1,5 @@
 [logging]
-level = "debug"
+level = "trace"
 
 [server]
 timeout = 20
@@ -10,7 +10,7 @@ address = "[::1]:23456"
 
 [worker]
 name = "Test"
-num_processes = 3
+num_processes = 1
 
 [worker.config]
 

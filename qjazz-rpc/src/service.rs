@@ -3,10 +3,11 @@ use qjazz_service::{ApiRequest, OwsRequest, PingReply, PingRequest, ResponseChun
 
 use std::collections::HashMap;
 use std::pin::Pin;
+use std::str::FromStr;
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{
-    metadata::{KeyAndValueRef, MetadataMap},
+    metadata::{KeyAndValueRef, MetadataMap, MetadataKey, AsciiMetadataValue},
     Request, Response, Status,
 };
 
@@ -109,7 +110,7 @@ impl QgisServer for QgisServerServicer {
 
         let headers = metadata_to_dict(request.metadata());
         let req = request.get_ref();
-        let resp = w
+        let mut resp = w
             .request(qjazz_pool::messages::OwsRequestMsg {
                 service: &req.service,
                 request: &req.request,
@@ -130,9 +131,7 @@ impl QgisServer for QgisServerServicer {
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteOwsRequestStream);
 
-        response
-            .metadata_mut()
-            .insert("x-reply-status-code", resp.status_code.into());
+        set_metadata(response.metadata_mut(), resp.status_code, &mut resp.headers);
         Ok(response)
     }
 
@@ -146,7 +145,7 @@ impl QgisServer for QgisServerServicer {
         let mut w = self.get_worker().await?;
         let headers = metadata_to_dict(request.metadata());
         let req = request.get_ref();
-        let resp = w
+        let mut resp = w
             .request(qjazz_pool::messages::ApiRequestMsg {
                 name: &req.name,
                 path: &req.path,
@@ -173,9 +172,30 @@ impl QgisServer for QgisServerServicer {
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteApiRequestStream);
 
-        response
-            .metadata_mut()
-            .insert("x-reply-status-code", resp.status_code.into());
+        set_metadata(response.metadata_mut(), resp.status_code, &mut resp.headers);
         Ok(response)
+    }
+}
+
+
+fn set_metadata(
+    metadata: &mut MetadataMap,
+    status: i64, 
+    headers: &mut HashMap<String, String>
+)
+{
+    metadata.insert("x-reply-status-code", status.into());
+    for (k, v) in headers.iter() {
+        if let Ok(v) = AsciiMetadataValue::from_str(v) {
+            let mut k = format!("x-reply-header-{k}");
+            k.make_ascii_lowercase();
+            if let Ok(k) = MetadataKey::from_str(&k) {
+                metadata.insert(k, v);
+            } else {
+                log::error!("Invalid response header key {:?}", k);
+            }
+        } else {
+            log::error!("Invalid response header value {:?}", v);
+        }
     }
 }

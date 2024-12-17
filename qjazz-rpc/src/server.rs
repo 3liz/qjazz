@@ -46,10 +46,11 @@ pub(crate) async fn serve(
         .serve_with_shutdown(addr, async move {
             token.cancelled().await;
             pool.close(grace_period).await;
+            log::debug!("Shutdown finalized");
         })
         .await?;
-   
-    // close the signal handle
+  
+    log::debug!("Closing signal handle");
     signal_handle.close();
 
     log::info!("Server shutdown");

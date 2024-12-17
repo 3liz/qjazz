@@ -27,6 +27,7 @@ pub (crate) fn handle_signals(token: CancellationToken) -> Result<Handle, Box<dy
                 _ => {}
             }
         }
+        log::debug!("Releasing signal handler");
         token.cancel();
     });
     Ok(handle)
