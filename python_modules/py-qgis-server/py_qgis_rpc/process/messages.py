@@ -30,7 +30,7 @@ from py_qgis_cache.status import CheckoutStatus
 class MsgType(IntEnum):
     PING = 1
     QUIT = 2
-    REQUEST = 3
+    #REQUEST = 3
     OWSREQUEST = 4
     APIREQUEST = 5
     CHECKOUT_PROJECT = 6
@@ -89,12 +89,12 @@ class OwsRequestMsg(MsgModel):
     service: str
     request: str
     target: str
-    url: str
+    url: Optional[str]
     version: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
     headers: Dict[str, str] = Field({})
-    request_id: str = ""
+    request_id: Optional[str] = ""
     debug_report: bool = False
 
 
@@ -109,18 +109,6 @@ class ApiRequestMsg(MsgModel):
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict[str, str] = Field({})
-    request_id: str = ""
-    debug_report: bool = False
-
-
-class RequestMsg(MsgModel):
-    msg_id: Literal[MsgType.REQUEST] = MsgType.REQUEST
-    url: str
-    method: HTTPMethod
-    data: Optional[bytes]
-    target: Optional[str]
-    direct: bool = False
     headers: Dict[str, str] = Field({})
     request_id: str = ""
     debug_report: bool = False
@@ -293,7 +281,6 @@ Message = Annotated[
     Union[
         OwsRequestMsg,
         ApiRequestMsg,
-        RequestMsg,
         PingMsg,
         QuitMsg,
         CheckoutProjectMsg,
@@ -321,7 +308,10 @@ Envelop = NewType('Envelop', Tuple[int, Any])
 
 class Connection(Protocol):
     def recv(self) -> Message: ...
-    def send_bytes(self, data: bytes): ...
+    def send_bytes(self, data: ByteString): ...
+
+    @property
+    def cancelled(self) -> bool: ...
 
 
 def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401

@@ -267,13 +267,13 @@ def create_job_run_config(wrapped: Callable) -> Tuple[Type[RunConfig], TypeAdapt
                         p.default if has_default else ...,
                     )
 
-    _inputs = {name: model for name, model in _models()}
+    inputs_ = {name: model for name, model in _models()}
 
     # Inputs
     inputs = create_model(
         "_RunConfig",
         __base__=RunConfig,
-        **_inputs,
+        **inputs_,
     )
 
     # Outputs

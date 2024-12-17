@@ -269,9 +269,9 @@ class PoolClient:
             while not self._shutdown:
                 try:
                     # Reconnect
-                    _watchers = tuple(s.watch_stats(interval) for s in self._backends)
-                    while _watchers:
-                        results = await asyncio.gather(*(anext(w) for w in _watchers))
+                    watchers = tuple(s.watch_stats(interval) for s in self._backends)
+                    while watchers:
+                        results = await asyncio.gather(*(anext(w) for w in watchers))
                         yield tuple(_to_dict(item, stats) for item, stats in results)
                         if sync.is_set():
                             break
@@ -396,15 +396,15 @@ class PoolClient:
             try:
                 cached: Dict[str, Dict[str, JsonValue]] = {}
                 async for item in server.pull_projects(*uris):
-                    _item = cached.get(item.uri)
-                    if not _item:
-                        _item = MessageToDict(item)
-                        del _item['cacheId']
-                        cached[item.uri] = _item
+                    item_ = cached.get(item.uri)
+                    if not item_:
+                        item_ = MessageToDict(item)
+                        del item_['cacheId']
+                        cached[item.uri] = item_
                     else:
-                        reduce_cache(_item, item)
-                for uri, _item in cached.items():
-                    rv.setdefault(uri, {})[server.address] = _item
+                        reduce_cache(item_, item)
+                for uri, item_ in cached.items():
+                    rv.setdefault(uri, {})[server.address] = item_
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -424,15 +424,15 @@ class PoolClient:
         serving = False
         for server in self._backends:
             try:
-                _item = None
+                item_ = None
                 async for item in server.drop_project(uri):
-                    if not _item:
-                        _item = MessageToDict(item)
-                        del _item['cacheId']
+                    if not item_:
+                        item_ = MessageToDict(item)
+                        del item_['cacheId']
                     else:
-                        reduce_cache(_item, item)
-                if _item:
-                    rv[server.address] = _item
+                        reduce_cache(item_, item)
+                if item_:
+                    rv[server.address] = item_
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -452,15 +452,15 @@ class PoolClient:
         serving = False
         for server in self._backends:
             try:
-                _item = None
+                item_ = None
                 async for item in server.checkout_project(uri):
-                    if not _item:
-                        _item = MessageToDict(item)
-                        del _item['cacheId']
+                    if not item_:
+                        item_ = MessageToDict(item)
+                        del item_['cacheId']
                     else:
-                        reduce_cache(_item, item)
-                if _item:
-                    rv[server.address] = _item
+                        reduce_cache(item_, item)
+                if item_:
+                    rv[server.address] = item_
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -604,13 +604,13 @@ class PoolClient:
         for server in self._backends:
             try:
                 async for item in server.list_plugins():
-                    _item = plugins.get(item.name)
-                    if _item is None:
-                        _item = MessageToDict(item)
-                        _item['backends'] = [server.address]
-                        plugins[item.name] = _item
+                    item_ = plugins.get(item.name)
+                    if item_ is None:
+                        item_ = MessageToDict(item)
+                        item_['backends'] = [server.address]
+                        plugins[item.name] = item_
                     else:
-                        _item['backends'].append(server.address)  # type: ignore
+                        item_['backends'].append(server.address)  # type: ignore
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:

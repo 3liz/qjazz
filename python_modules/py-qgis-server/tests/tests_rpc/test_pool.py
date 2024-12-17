@@ -12,7 +12,7 @@ pytest_plugins = ('pytest_asyncio',)
 def worker_config(projects: ProjectsConfig, num_processes: int) -> WorkerConfig:
     return WorkerConfig(
         name="TestPool",
-        qgis=QgisConfig(projects=projects),
+        config=QgisConfig(projects=projects),
         num_processes=num_processes,
     )
 

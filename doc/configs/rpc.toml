@@ -84,11 +84,9 @@ use_ssl = false
 ssl = "cafile=None certfile=None keyfile=None"
 
 #
-# Qgis configuration
+# Qgis process configuration
 #
-# The Qgis process configuration
-#
-[worker.qgis]
+[worker.config]
 #
 # Projects configuration
 #

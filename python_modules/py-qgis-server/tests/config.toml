@@ -13,15 +13,15 @@ shutdown_grace_period = 5
 # [[worker.interfaces]]
 # listen =  "unix:/tmp/py-qgis-worker.sock"
 
-[worker.qgis.plugins]
+[worker.config.plugins]
 paths = ['$location/plugins']
 
-[worker.qgis.projects]
+[worker.config.projects]
 trust_layer_metadata = true
 disable_getprint = true
 force_readonly_layers = true
 
-[worker.qgis.projects.search_paths]
+[worker.config.projects.search_paths]
 '/tests' = "$location/data/samples"
 '/france' = "$location/data/france_parts"
 '/montpellier' = "$location/data/montpellier"

@@ -127,10 +127,9 @@ class WorkerConfig(config.ConfigBase):
         ),
     )
 
-    qgis: QgisConfig = Field(
+    config: QgisConfig = Field(
         QgisConfig(),
-        title="Qgis configuration",
-        description="The Qgis process configuration",
+        title="Qgis process configuration",
     )
 
 

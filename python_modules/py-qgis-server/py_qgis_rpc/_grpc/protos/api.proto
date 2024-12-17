@@ -10,7 +10,6 @@ service QgisServer {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
     rpc ExecuteApiRequest (ApiRequest) returns (stream ResponseChunk) {}
-    rpc ExecuteRequest (GenericRequest) returns (stream ResponseChunk) {}
 }
 
 service QgisAdmin {
@@ -100,15 +99,7 @@ message ApiRequest {
     optional bool debug_report = 11;
 }
 
-message GenericRequest {
-    string url = 1;
-    string method = 2;
-    optional bytes data = 3;
-    optional string target = 4;
-    optional bool direct = 6;
-    optional string request_id = 7;
-    optional bool debug_report = 9;
-}
+
 
 message CheckoutRequest {
     string uri = 1;

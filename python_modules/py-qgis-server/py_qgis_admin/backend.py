@@ -149,7 +149,7 @@ class Backend:
             raise
 
     @asynccontextmanager
-    async def _stub(self, _factory=api_pb2_grpc.QgisAdminStub):
+    async def _stub(self, factory=api_pb2_grpc.QgisAdminStub):
         # There is shutdown in progress
         if self._shutdown:
             raise ShutdownInProgress(self._address)
@@ -160,8 +160,8 @@ class Backend:
             await self._connect()
         try:
             self._connected += 1
-            if _factory:
-                yield _factory(self._channel)
+            if factory:
+                yield factory(self._channel)
             else:
                 yield
         finally:

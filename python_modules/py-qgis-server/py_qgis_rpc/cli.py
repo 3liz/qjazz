@@ -113,7 +113,7 @@ def install_plugins(configpath: Optional[Path]):
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    install_plugins(conf.worker.qgis.plugins)
+    install_plugins(conf.worker.config.plugins)
 
 
 @cli_commands.command('serve')
@@ -138,7 +138,7 @@ def serve_grpc(configpath: Optional[Path]):
     if logger.is_enabled_for(logger.LogLevel.DEBUG):
         logger.debug("== Qgis RPC configuration ==\n%s", conf.model_dump_json(indent=4))
 
-    conf.worker.qgis.plugins.do_install()
+    conf.worker.config.plugins.do_install()
 
     restore = create_restore_object(conf.restore_cache)
     try:

@@ -35,7 +35,7 @@ def handle_ows_request(
     server: QgsServer,
     cm: CacheManager,
     config: QgisConfig,
-    _process: Optional[psutil.Process],
+    process: Optional[psutil.Process],
     *,
     cache_id: str = "",
     feedback: QgsFeedback,
@@ -49,12 +49,12 @@ def handle_ows_request(
         response.finish()
         return
 
-    if msg.debug_report and not _process:
+    if msg.debug_report and not process:
         _m.send_reply(conn, "No report available", 409)
         return
 
     # Rebuild URL for Qgis server
-    url = msg.url + f"?SERVICE={msg.service}&REQUEST={msg.request}"
+    url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
     if msg.version:
         url += f"&VERSION={msg.version}"
     if msg.options:
@@ -71,7 +71,7 @@ def handle_ows_request(
         server,
         cm,
         config,
-        _process if msg.debug_report else None,
+        process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
@@ -84,7 +84,7 @@ def handle_api_request(
     server: QgsServer,
     cm: CacheManager,
     config: QgisConfig,
-    _process: Optional[psutil.Process],
+    process: Optional[psutil.Process],
     *,
     cache_id: str = "",
     feedback: QgsFeedback,
@@ -97,7 +97,7 @@ def handle_api_request(
         _m.send_reply(conn, "HTTP Method not supported", 405)
         return
 
-    if msg.debug_report and not _process:
+    if msg.debug_report and not process:
         _m.send_reply(conn, "No report available", 409)
         return
 
@@ -130,46 +130,7 @@ def handle_api_request(
         server,
         cm,
         config,
-        _process if msg.debug_report else None,
-        cache_id=cache_id,
-        request_id=msg.request_id,
-        feedback=feedback,
-    )
-
-
-def handle_generic_request(
-    conn: _m.Connection,
-    msg: _m.RequestMsg,
-    server: QgsServer,
-    cm: CacheManager,
-    config: QgisConfig,
-    _process: Optional[psutil.Process],
-    *,
-    cache_id: str = "",
-    feedback: QgsFeedback,
-):
-    try:
-        method = _to_qgis_method(msg.method)
-    except ValueError:
-        _m.send_reply(conn, "HTTP Method not supported", 405)
-        return
-
-    if msg.debug_report and not _process:
-        _m.send_reply(conn, "No report available", 409)
-        return
-
-    _handle_generic_request(
-        msg.url,
-        msg.target,
-        msg.direct,
-        msg.data,
-        msg.headers,
-        method,
-        conn,
-        server,
-        cm,
-        config,
-        _process if msg.debug_report else None,
+        process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
@@ -187,10 +148,10 @@ def _handle_generic_request(
     server: QgsServer,
     cm: CacheManager,
     config: QgisConfig,
-    _process: Optional[psutil.Process],
+    process: Optional[psutil.Process],
     *,
     cache_id: str,
-    request_id: str,
+    request_id: Optional[str],
     feedback: QgsFeedback,
 ):
     """ Handle generic Qgis request
@@ -223,7 +184,7 @@ def _handle_generic_request(
             co_status.value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
-            _process=_process,
+            process=process,
             cache_id=cache_id,
             feedback=feedback,
         )
@@ -233,7 +194,7 @@ def _handle_generic_request(
         project = None
         response = Response(
             conn,
-            _process=_process,
+            process=process,
             cache_id=cache_id,
             chunk_size=config.max_chunk_size,
             feedback=feedback,

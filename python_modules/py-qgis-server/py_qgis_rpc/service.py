@@ -148,7 +148,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
 
         async with self.get_worker(context, "ExecuteOwsRequest", request) as worker:
             headers = dict(context.invocation_metadata())
-            _t_start = time()
+            t_start = time()
             resp, stream = await worker.ows_request(
                 service=request.service,
                 request=request.request,
@@ -183,14 +183,14 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                     ('x-debug-timestamp', str(report.timestamp)),
                 ])
 
-            _t_end = time()
+            t_end = time()
             logger.log_req(
                 "OWS\t%s\t%s\t%s\t%d\t%d%s",
                 request.service,
                 request.request,
                 request.target,
                 size,
-                int((_t_end - _t_start) * 1000.),
+                int((t_end - t_start) * 1000.),
                 f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
 
@@ -215,7 +215,7 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
         async with self.get_worker(context, "ExecuteOwsRequest", request) as worker:
             headers = dict(context.invocation_metadata())
 
-            _t_start = time()
+            t_start = time()
 
             try:
                 http_method = _m.HTTPMethod[request.method]
@@ -258,87 +258,16 @@ class QgisServer(api_pb2_grpc.QgisServerServicer, WorkerMixIn):
                     ('x-debug-timestamp', str(report.timestamp)),
                 ])
 
-            _t_end = time()
+            t_end = time()
             logger.log_req(
                 "API\t%s\t%s\t%s\t%d\t%d%s",
                 request.name,
                 request.url,
                 request.target,
                 size,
-                int((_t_end - _t_start) * 1000.),
+                int((t_end - t_start) * 1000.),
                 f"\tREQ-ID:{request.request_id}" if request.request_id else "",
             )
-
-    #
-    # Generic request
-    #
-
-    async def ExecuteRequest(
-        self,
-        request: api_pb2.GenericRequest,
-        context: grpc.aio.ServicerContext,
-    ) -> AsyncIterator[api_pb2.ResponseChunk]:
-
-        if request.request_id:
-            logger.log_req(
-                "---\t%s\t%s\tREQ-ID:%s",
-                request.url,
-                request.target,
-                request.request_id,
-            )
-
-        async with self.get_worker(context, "ExecuteRequest") as worker:
-            headers = dict(context.invocation_metadata())
-
-            _t_start = time()
-
-            try:
-                http_method = _m.HTTPMethod[request.method]
-            except KeyError:
-                details = f"Invalid method {request.method}"
-                await _abort_on_error(context, 405, details, "ExecuteRequest")
-
-            resp, stream = await worker.request(
-                url=request.url,
-                method=http_method,
-                data=request.data,
-                target=request.target,
-                direct=request.direct,
-                headers=headers,
-                request_id=request.request_id,
-                debug_report=request.debug_report,
-            )
-
-            # Send Headers
-            metadata = list(_headers_to_metadata(resp.headers.items()))
-            metadata.append(('x-reply-status-code', str(resp.status_code)))
-            await context.send_initial_metadata(metadata)
-
-            # Send data
-            size = 0
-            async for chunk in stream:
-                size += len(chunk)
-                yield api_pb2.ResponseChunk(chunk=chunk)
-
-            # Final report
-            if request.debug_report:
-                report = await worker.io.read_report()
-                context.set_trailing_metadata([
-                    ('x-debug-memory', str(report.memory)),
-                    ('x-debug-duration', str(report.duration)),
-                    ('x-debug-timestamp', str(report.timestamp)),
-                ])
-
-            _t_end = time()
-            logger.log_req(
-                "---\t%s\t%s\t%d\t%d%s",
-                request.url,
-                request.target,
-                size,
-                int((_t_end - _t_start) * 1000.),
-                f"\tREQ-ID:{request.request_id}" if request.request_id else "",
-            )
-
 
 # ======================
 # Admin service
@@ -501,15 +430,15 @@ class QgisAdmin(api_pb2_grpc.QgisAdminServicer, WorkerMixIn):
         """ Update and synchronize all Worker's cache
         """
         async with self.wait_for_all_workers(context, "UpdateCache") as workers:
-            _workers = list(workers)
-            _all = set()
-            for w in _workers:
+            workers_ = list(workers)
+            all_ = set()
+            for w in workers_:
                 # Collect all items for all workers
                 async for item in await w.list_cache():
-                    _all.add(item.uri)
-            for uri in _all:
+                    all_.add(item.uri)
+            for uri in all_:
                 # Update all items for all workers
-                for w in _workers:
+                for w in workers_:
                     yield _new_cache_info(await w.checkout_project(uri, pull=True))
 
     #

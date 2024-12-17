@@ -5,8 +5,7 @@ import sys
 from io import BytesIO
 from pathlib import Path
 from struct import pack, unpack
-
-from typing_extensions import cast
+from typing import ByteString, cast
 
 from py_qgis_contrib.core import logger
 
@@ -17,6 +16,11 @@ class Connection:
     # Read and write data directly in binary format
     # by bypassing TextIOWrapper
     def __init__(self):
+        # Used when the request is 'cancelled' to
+        # prevent feeding more unwanted inputs
+        # to parent process.
+        self._cancelled = False
+
         self._in = sys.stdin.fileno()
         # Protect against spurious
         # write to stdout from QGIS, Python plugins
@@ -39,7 +43,17 @@ class Connection:
         # Close the duplicated file descriptor
         os.close(self._out)
 
+    def cancel(self):
+        self._cancelled = True
+
+    @property
+    def cancelled(self) -> bool:
+        return self._cancelled
+
     def recv(self) -> Message:
+        # Reset state
+        self._cancelled = False
+
         b = os.read(self._in, 4)
         # Take care if the parent close the connection then
         # read() will return an empty buffer (EOF)
@@ -66,10 +80,14 @@ class Connection:
         else:
             return cast(Message, msg)
 
-    def send_bytes(self, data: bytes):
-        os.write(self._out, pack('!i', len(data)))
-        if data:
-            os.write(self._out, data)
+    def send_bytes(self, data: ByteString):
+        if not self._cancelled:
+            size = len(data)
+            os.write(self._out, pack('!i', size))
+            if data:
+                written = 0
+                while written < size:
+                    written += os.write(self._out, data[written:])
 
 
 class RendezVous:

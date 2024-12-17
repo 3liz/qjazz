@@ -73,7 +73,7 @@ class Response(QgsServerResponse):
             co_status: Optional[int] = None,
             headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
-            _process: Optional[psutil.Process] = None,
+            process: Optional[psutil.Process] = None,
             cache_id: str = "",
             feedback: Optional[QgsFeedback] = None,
     ):
@@ -86,7 +86,7 @@ class Response(QgsServerResponse):
         self._header_written = False
         self._headers: Dict[str, str] = {}
         self._co_status = co_status
-        self._process = _process
+        self._process = process
         self._timestamp = time()
         self._extra_headers: Dict[str, str] = headers or {}
         self._chunk_size = chunk_size

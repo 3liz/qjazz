@@ -1,8 +1,7 @@
 import sys
 
 from contextlib import closing
-
-from typing_extensions import cast
+from typing import List, cast
 
 from py_qgis_contrib.core import config, logger
 
@@ -18,7 +17,7 @@ from .worker import qgis_server_run, setup_server
 QGIS_SECTION = "qgis"
 
 
-def run(name: str) -> None:
+def run(name: str, projects: List[str]) -> None:
 
     rendez_vous = RendezVous()
 
@@ -40,9 +39,10 @@ def run(name: str) -> None:
             qgis_conf,
             rendez_vous,
             name=name,
+            projects=projects,
         )
 
 
 if __name__ == '__main__':
     import sys
-    run(sys.argv[1])
+    run(sys.argv[1], sys.argv[2:])

@@ -7,11 +7,11 @@ import signal
 import traceback
 
 from time import sleep, time
+from typing import List, Optional, Protocol, assert_never, cast
 
 import psutil
 
 from pydantic import JsonValue
-from typing_extensions import Optional, Protocol, assert_never, cast
 
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer
@@ -89,11 +89,9 @@ class Feedback:
     def __init__(self) -> None:
         self._feedback: Optional[QgsFeedback] = None
 
-        def _cancel(*args) -> None:
-            if self._feedback:
-                self._feedback.cancel()
-
-        signal.signal(signal.SIGHUP, _cancel)
+    def cancel(self, *args) -> None:
+        if self._feedback:
+            self._feedback.cancel()
 
     def reset(self) -> None:
         self._feedback = None
@@ -124,6 +122,7 @@ def qgis_server_run(
     conf: QgisConfig,
     rendez_vous: RendezVous,
     name: str = "",
+    projects: Optional[List[str]] = None,
     reporting: bool = True,
 ):
     """ Run Qgis server and process incoming requests
@@ -149,9 +148,16 @@ def qgis_server_run(
     load_default_project(cm)
 
     # For reporting
-    _process = psutil.Process() if reporting else None
+    process = psutil.Process() if reporting else None
 
     feedback = Feedback()
+
+    def on_sighup(*args, **kwargs):
+        logger.warning("SIGHUP received, cancelling...")
+        conn.cancel()
+        feedback.cancel()
+
+    signal.signal(signal.SIGHUP, on_sighup)
 
     while True:
         logger.trace("%s: Waiting for messages", name)
@@ -162,7 +168,7 @@ def qgis_server_run(
             rendez_vous.busy()
             logger.debug("Received message: %s", msg.msg_id.name)
             logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
-            _t_start = time()
+            t_start = time()
             match msg:
                 # --------------------
                 # Qgis server Requests
@@ -174,7 +180,7 @@ def qgis_server_run(
                         server,
                         cm,
                         conf,
-                        _process,
+                        process,
                         cache_id=name,
                         feedback=feedback.feedback,
                     )
@@ -185,18 +191,7 @@ def qgis_server_run(
                         server,
                         cm,
                         conf,
-                        _process,
-                        cache_id=name,
-                        feedback=feedback.feedback,
-                    )
-                case _m.RequestMsg():
-                    _op_requests.handle_generic_request(
-                        conn,
-                        msg,
-                        server,
-                        cm,
-                        conf,
-                        _process,
+                        process,
                         cache_id=name,
                         feedback=feedback.feedback,
                     )
@@ -282,16 +277,16 @@ def qgis_server_run(
                 # Exception occured outside message handling
                 raise
         finally:
-            if msg:
+            if msg and not conn.cancelled:
                 if logger.is_enabled_for(logger.LogLevel.TRACE):
                     logger.trace(
                         "%s\t%s\tResponse time: %d ms",
                         name,
                         msg.msg_id.name,
-                        int((time() - _t_start) * 1000.),
+                        int((time() - t_start) * 1000.),
                     )
-                # Reset feedback
-                feedback.reset()
+            # Reset feedback
+            feedback.reset()
 
     logger.debug("Worker exiting")
 

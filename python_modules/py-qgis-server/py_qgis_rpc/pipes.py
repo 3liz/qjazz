@@ -88,7 +88,7 @@ class Pipe:
                     continue
                 case 204:
                     break
-                case _ :
+                case _:
                     raise ValueError(f"Byte stream returned {resp}")
 
     async def send_message(self, msg: Message) -> Tuple[int, Any]:

@@ -122,7 +122,7 @@ class Worker:
             _m.PutConfigMsg(
                 config={
                     'logging': {'level': logger.log_level()},
-                    'qgis': worker_conf.qgis.model_dump(),
+                    'qgis': worker_conf.config.model_dump(),
                 },
             ),
         )
@@ -142,7 +142,7 @@ class Worker:
         # Prepare environment
         env = os.environ.copy()
         env.update(
-            CONF_QGIS=self.config.qgis.model_dump_json(),
+            CONF_QGIS=self.config.config.model_dump_json(),
             CONF_LOGGING__LEVEL=logger.log_level().name,
             RENDEZ_VOUS=self._rendez_vous.path,
         )
@@ -326,54 +326,6 @@ class Worker:
                 target=target,
                 direct=direct,
                 options=options,
-                headers=headers or {},
-                request_id=request_id,
-                debug_report=debug_report,
-            ),
-        )
-        # Request failed before reaching Qgis server
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        reply = _m.cast_into(resp, _m.RequestReply)
-        return reply, self.io.stream_bytes()
-
-    async def request(
-        self,
-        url: str,
-        data: bytes,
-        target: Optional[str],
-        direct: bool = False,
-        method: _m.HTTPMethod = _m.HTTPMethod.GET,
-        headers: Optional[Dict[str, str]] = None,
-        request_id: str = "",
-        debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
-        """ Send generic (api) request
-
-            Exemple:
-            ```
-            resp, stream = await worker.request(
-                url="/wfs3/collections",
-                target="/france/france_parts",
-            )
-            if resp.status_code != 200:
-                print("Request failed")
-            data = resp.data
-            # Stream remaining bytes
-            if stream:
-                async for chunk in stream:
-                    # Do something with chunk of data
-                    ...
-            ```
-        """
-        status, resp = await self.io.send_message(
-            _m.RequestMsg(
-                url=url,
-                method=method,
-                data=data,
-                target=target,
-                direct=direct,
                 headers=headers or {},
                 request_id=request_id,
                 debug_report=debug_report,

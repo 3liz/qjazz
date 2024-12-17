@@ -1,9 +1,14 @@
 #
 # Cache management operations
 #
+from typing import (
+    Iterator,
+    Optional,
+    Tuple,
+    assert_never,
+    cast,
+)
 from urllib.parse import urlunsplit
-
-from typing_extensions import Optional, assert_never, cast
 
 from qgis.core import QgsMapLayer
 
@@ -58,7 +63,7 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 # Helper for returning CacheInfo from
 # cache entry
 #
-def _cache_info_from_entry(
+def cache_info_from_entry(
     e: CacheEntry,
     status: CheckoutStatus,
     in_cache: bool = True,
@@ -110,7 +115,7 @@ def checkout_project(
                         cache_id=cache_id,
                     )
                 case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED:
-                    reply = _cache_info_from_entry(cast(CacheEntry, md), status, cache_id=cache_id)
+                    reply = cache_info_from_entry(cast(CacheEntry, md), status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
@@ -136,20 +141,20 @@ def checkout_project(
                     # Pin the entry since this object has been asked explicitely
                     # in cache
                     e.pin()
-                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
+                    reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 # UPDATED for the sake of exhaustiveness
                 case Co.UNCHANGED | Co.UPDATED:
                     e = cast(CacheEntry, e)
                     e.pin()  # See above
-                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
+                    reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.NEEDUPDATE:
                     e, status = cm.update(cast(CacheEntry, md).md, status)
                     e = cast(CacheEntry, e)
                     e.pin()  # See above
-                    reply = _cache_info_from_entry(e, status, cache_id=cache_id)
+                    reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.REMOVED:
                     e, status = cm.update(cast(CacheEntry, md).md, status)
-                    reply = _cache_info_from_entry(e, status, False, cache_id=cache_id)
+                    reply = cache_info_from_entry(e, status, False, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
@@ -181,15 +186,21 @@ def send_cache_list(
     if status_filter:
         co = filter(lambda n: n[1] == status_filter, co)
 
+    def collect() -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
+        for item in co:
+            if conn.cancelled:
+                break
+            yield item
+
     # Stream CacheInfo
     _m.stream_data(
         conn,
         (
-            _cache_info_from_entry(
+            cache_info_from_entry(
                 entry,
                 status,
                 cache_id=cache_id,
-            ) for entry, status in co
+            ) for entry, status in collect()
         ),
     )
 
@@ -202,15 +213,21 @@ def update_cache(
     cm: CacheManager,
     cache_id: str = "",
 ):
+    def collect() -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
+        for item in cm.update_cache():
+            if conn.cancelled:
+                break
+            yield item
+
     # Stream CacheInfo
     _m.stream_data(
         conn,
         (
-            _cache_info_from_entry(
+            cache_info_from_entry(
                 entry,
                 status,
                 cache_id=cache_id,
-            ) for entry, status in cm.update_cache()
+            ) for entry, status in collect()
         ),
     )
 
@@ -273,6 +290,12 @@ def send_catalog(
     cm: CacheManager,
     location: str | None,
 ):
+    def collect() -> Iterator[Tuple[ProjectMetadata, str]]:
+        for item in cm.collect_projects(location):
+            if conn.cancelled:
+                break
+            yield item
+
     # Stream CacheInfo
     _m.stream_data(
         conn,
@@ -283,7 +306,7 @@ def send_catalog(
                 storage=md.storage or "<none>",
                 last_modified=md.last_modified,
                 public_uri=public_path,
-            ) for md, public_path in cm.collect_projects(location)
+            ) for md, public_path in collect()
         ),
     )
 

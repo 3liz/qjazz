@@ -14,7 +14,7 @@ pytest_plugins = ('pytest_asyncio',)
 
 @asynccontextmanager
 async def worker_context(projects: ProjectsConfig):
-    worker = Worker(WorkerConfig(name="Test", qgis=QgisConfig(projects=projects)))
+    worker = Worker(WorkerConfig(name="Test", config=QgisConfig(projects=projects)))
     await worker.start()
     try:
         yield worker
@@ -119,6 +119,7 @@ async def test_cache_api(projects: ProjectsConfig):
         status, resp = await worker.io.send_message(
             messages.CheckoutProjectMsg(uri="/france/france_parts", pull=True),
         )
+        print("\ntest_cache_api::", resp)
         assert status == 200
         assert resp.status == messages.CheckoutStatus.NEW.value
         assert resp.pinned
@@ -134,11 +135,11 @@ async def test_cache_api(projects: ProjectsConfig):
 
         # List
         await worker.io.put_message(messages.ListCacheMsg())
-        status, _item = await worker.io.read_message()
+        status, _ = await worker.io.read_message()
         assert status == 206
 
         with pytest.raises(NoDataResponse):
-            status, _item = await worker.io.read_message()
+            status, _ = await worker.io.read_message()
 
         # Project info
         status, resp = await worker.io.send_message(

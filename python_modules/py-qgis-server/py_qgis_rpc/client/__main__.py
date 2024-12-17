@@ -120,7 +120,7 @@ def ows_request(
     """ Send OWS request
     """
     with connect(api_pb2_grpc.QgisServerStub) as stub:
-        _t_start = time()
+        t_start = time()
         stream = stub.ExecuteOwsRequest(
             api_pb2.OwsRequest(
                 service=service,
@@ -133,7 +133,7 @@ def ows_request(
         )
 
         chunk = next(stream)
-        _t_end = time()
+        t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout
         fp.buffer.write(chunk.chunk)
@@ -143,8 +143,8 @@ def ows_request(
         if headers:
             print_metadata(stream.initial_metadata())
 
-        _t_ms = int((_t_end - _t_start) * 1000.0)
-        click.echo(f"First chunk returned in {_t_ms} ms", err=True)
+        t_ms = int((t_end - t_start) * 1000.0)
+        click.echo(f"First chunk returned in {t_ms} ms", err=True)
 
 
 @request_commands.command("api")
@@ -171,7 +171,7 @@ def api_request(
     """ Send Api request
     """
     with connect(api_pb2_grpc.QgisServerStub) as stub:
-        _t_start = time()
+        t_start = time()
         stream = stub.ExecuteApiRequest(
             api_pb2.ApiRequest(
                 name=name,
@@ -185,7 +185,7 @@ def api_request(
         )
 
         chunk = next(stream)
-        _t_end = time()
+        t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout
         fp.buffer.write(chunk.chunk)
@@ -195,8 +195,8 @@ def api_request(
         if headers:
             print_metadata(stream.initial_metadata())
 
-        _t_ms = int((_t_end - _t_start) * 1000.0)
-        click.echo(f"First chunk returned in {_t_ms} ms", err=True)
+        t_ms = int((t_end - t_start) * 1000.0)
+        click.echo(f"First chunk returned in {t_ms} ms", err=True)
 
 
 #
@@ -443,12 +443,12 @@ def ping(count: int, server: bool = False):
     target = "server" if server else "admin"
     with connect(stub) as stub:
         for n in range(count):
-            _t_start = time()
+            t_start = time()
             resp = stub.Ping(api_pb2.PingRequest(echo=str(n)))
-            _t_end = time()
+            t_end = time()
             click.echo(
                 f"({target}) "
-                f"seq={n:<5} resp={resp.echo:<5} time={int((_t_end - _t_start) * 1000.)} ms",
+                f"seq={n:<5} resp={resp.echo:<5} time={int((t_end - t_start) * 1000.)} ms",
             )
             sleep(1)
 

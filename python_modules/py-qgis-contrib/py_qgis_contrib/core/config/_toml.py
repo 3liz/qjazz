@@ -99,7 +99,7 @@ def _unpack_arg(t: Type) -> Type:
 def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = False):
     """ Dump a model as a toml
     """
-    _deferred = []
+    deferred_ = []
 
     if comment:
         print(f"#[{section}]", file=s)
@@ -110,12 +110,12 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         arg = _unpack_arg(arg)
         rv = False
         if _is_model(arg):
-            _deferred.append((arg, name.format(key="key"), field))
+            deferred_.append((arg, name.format(key="key"), field))
             rv = True
         elif arg.__name__ == 'Union':
             for i, m in enumerate(arg.__args__):
                 if _is_model(m):
-                    _deferred.append((m, name.format(key=f"key{i}"), field))
+                    deferred_.append((m, name.format(key=f"key{i}"), field))
                     rv = True
         return rv
 
@@ -138,7 +138,7 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         #    _print_field_doc(s, field)
         #    _print_field(s, name, field, comment=True)
 
-    for model, name, field in _deferred:
+    for model, name, field in deferred_:
         print(file=s)
         _print_field_doc(s, field)
         print("#", file=s)

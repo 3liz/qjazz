@@ -97,10 +97,10 @@ class Template(string.Template):
 
 
 def _validate_template(s: str | Template) -> Template:
-    _t = Template(s) if not isinstance(s, Template) else s
-    if sys.version_info >= (3, 11) and not _t.is_valid():
+    t = Template(s) if not isinstance(s, Template) else s
+    if sys.version_info >= (3, 11) and not t.is_valid():
         raise ValueError(f"Invalid template: {s}")
-    return _t
+    return t
 
 
 TemplateStr = Annotated[

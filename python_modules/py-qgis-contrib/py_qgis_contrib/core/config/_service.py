@@ -225,14 +225,14 @@ class ConfBuilder:
         """ Validate the configuration against
             configuration models
         """
-        _BaseConfig = self._get_model()
-        _conf = _BaseConfig.model_validate(obj, strict=True)
+        BaseConfig = self._get_model()
+        conf = BaseConfig.model_validate(obj, strict=True)
 
-        self._conf = _conf
+        self._conf = conf
         # Update timestamp so that we can check update in
         # proxy
         self._timestamp = time()
-        return _conf
+        return conf
 
     def update_config(self, obj: Optional[Dict] = None) -> ConfigSettings:
         """ Update the configuration

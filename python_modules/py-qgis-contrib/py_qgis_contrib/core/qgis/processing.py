@@ -85,13 +85,13 @@ class ProcessesLoader:
         reg = QgsApplication.processingRegistry()
         reg.providerAdded.disconnect(self._registerProvider)
 
-    def _registerProvider(self, _id: str):
+    def _registerProvider(self, id_: str):
         """ Called when a provider is added
             to the registry
         """
-        if self._register and _id not in self._discard:
-            logger.info("* Registering processing provider: %s", _id)
-            self._providers.append(_id)
+        if self._register and id_ not in self._discard:
+            logger.info("* Registering processing provider: %s", id_)
+            self._providers.append(id_)
 
     def read_configuration(self, path: Path):
         """ Read processes configuration as toml file
