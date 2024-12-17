@@ -10,7 +10,7 @@ address = "[::1]:23456"
 
 [worker]
 name = "Test"
-num_processes = 5
+num_processes = 3
 
 [worker.config]
 

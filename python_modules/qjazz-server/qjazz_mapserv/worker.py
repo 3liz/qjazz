@@ -70,7 +70,7 @@ def setup_server(conf: QgisConfig) -> QgsServer:
     CacheManager.initialize_handlers(projects)
 
     if logger.is_enabled_for(logger.LogLevel.DEBUG):
-        print(show_qgis_settings())  # noqa T201
+        print(show_qgis_settings(), flush=True)  # noqa T201
 
     return server
 
@@ -264,7 +264,7 @@ def qgis_server_run(
                     assert_never(unreachable)
         except KeyboardInterrupt:
             if conf.ignore_interrupt_signal:
-                logger.debug("Ignoring interrupt signal")
+                logger.trace("Ignoring interrupt signal")
             else:
                 logger.warning("Worker interrupted")
                 break

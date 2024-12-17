@@ -58,7 +58,7 @@ impl Pipe {
     /// Until it would block or return 0
     pub async fn drain(&mut self) -> Result<bool> {
         let fd = self.stdout.as_raw_fd();
-        let mut buf = [1u8; 0];
+        let mut buf = [0u8; 1];
         // Test if there is data waiting by reading only one byte
         // Otherwise block while reading remaining input
         // NOTE: assume that the file descriptor is in non blocking mode
