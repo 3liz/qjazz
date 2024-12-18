@@ -2,8 +2,26 @@
 # Build
 #-------------
 
+build-binaries:
+  image: ${REGISTRY_URL}/factory-ci-runner:rust-noble
+  stage: build
+  script:
+    - make build-release
+  environment:
+    name: snap
+  artifacts:
+    paths:
+    - "target/release/qjazz-rpc"
+  only:
+    refs:
+    - tags
+    - main
+  tags:
+  - factory-plain
+
+
 .build-docker:
-  image: ${REGISTRY_URL}/factory-ci-runner:build-package
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=ci_build
@@ -12,6 +30,8 @@
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:
     name: snap
+  dependencies:
+      - build-binaries
   artifacts:
     paths:
     - "docker/factory.manifest"

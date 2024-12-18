@@ -1,7 +1,10 @@
+import os
 import sys
 
 from contextlib import closing
 from typing import List, cast
+
+from pydantic import ConfigDict, Field
 
 from qjazz_contrib.core import config, logger
 
@@ -14,7 +17,18 @@ from .worker import qgis_server_run, setup_server
 # as rpc module child process
 #
 
-QGIS_SECTION = "qgis"
+WORKER_SECTION = "worker"
+
+
+# Get the same hierarchy as the main configuration
+# otherwise env variables wont apply
+class WorkerConfig(config.ConfigBase):
+    model_config = ConfigDict(extra='ignore')
+
+    qgis: QgisConfig = Field(
+        QgisConfig(),
+        title="Qgis process configuration",
+    )
 
 
 def run(name: str, projects: List[str]) -> None:
@@ -22,13 +36,21 @@ def run(name: str, projects: List[str]) -> None:
     rendez_vous = RendezVous()
 
     confservice = config.ConfBuilder()
-    confservice.add_section(QGIS_SECTION, QgisConfig)
+    confservice.add_section(WORKER_SECTION, WorkerConfig)
     confservice.validate({})
+
+    if os.getenv("QJAZZ_DUMP_CONFIG") == "1":
+        print(   # noqa T201
+            "== Configuration ==\n",
+            confservice.conf.model_dump_json(indent=4),
+            flush=True,
+            file=sys.stderr,
+        )
 
     logger.setup_log_handler(confservice.conf.logging.level)
 
     # Create proxy for allow update
-    qgis_conf = cast(QgisConfig, config.ConfigProxy(confservice, QGIS_SECTION))
+    qgis_conf = cast(QgisConfig, config.ConfigProxy(confservice, f"{WORKER_SECTION}.qgis"))
 
     with closing(Connection()) as connection:
         # Create QGIS server

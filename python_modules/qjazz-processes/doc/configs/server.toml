@@ -40,7 +40,7 @@ enabled = false
 admin_tokens = []
 
 
-[server]
+[http]
 #
 # Interfaces to listen to
 listen = ["127.0.0.1",9180]
@@ -73,7 +73,7 @@ enable_ui = true
 #
 # SSL configuration
 #
-[server.ssl]
+[http.ssl]
 #
 # CA file
 #cafile =   	# Optional
@@ -90,7 +90,7 @@ enable_ui = true
 
 #
 # Forwarded Configuration
-[server.proxy]
+[http.proxy]
 #
 # Enabled Forwarded headers
 #

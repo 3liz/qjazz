@@ -1,7 +1,7 @@
 from time import time
 
 
-class Stopwatch:
+class Instant:
 
     def __init__(self):
         self.restart()

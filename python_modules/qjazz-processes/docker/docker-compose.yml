@@ -2,9 +2,9 @@
 # Minimal docker compose for running examples
 services:
   worker:
-    image: 3liz/qgis-services:qgis-release-eager
+    image: 3liz/jazz:qgis-release-eager
     working_dir: /opt/qjazz/python_modules/qjazz-processes
-    command: qgis-processes worker -C tests/worker-config.toml
+    command: qjazz-processes worker -C tests/worker-config.toml
     volumes:
     - { type: bind, source: "../../../", target: /opt/qjazz }
     profiles:

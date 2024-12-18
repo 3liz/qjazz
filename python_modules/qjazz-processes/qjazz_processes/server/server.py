@@ -64,8 +64,8 @@ DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 
 
-@section('server')
-class ServerConfig(ConfigBase):
+@section('http')
+class HttpConfig(ConfigBase):
 
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
@@ -106,7 +106,7 @@ class ServerConfig(ConfigBase):
     enable_ui: bool = Field(True, title="Enable Web UI")
 
 
-def format_interface(conf: ServerConfig) -> str:
+def format_interface(conf: HttpConfig) -> str:
     match conf.listen:
         case (address, port):
             return f"{address}:{port}"
@@ -126,7 +126,7 @@ confservice.add_section("storage", StorageConfig)
 # Allow type validation
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
-    server: ServerConfig
+    http: HttpConfig
     executor: ExecutorConfig
     access_policy: AccessPolicyConfig
     oapi: swagger.OapiConfig
@@ -321,7 +321,7 @@ async def unhandled_exceptions(
 Site: TypeAlias = web.TCPSite | web.UnixSite
 
 
-def create_site(http: ServerConfig, runner: web.AppRunner) -> Site:
+def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
 
     ssl_context = http.ssl.create_ssl_server_context() if http.use_ssl else None
 
@@ -351,7 +351,7 @@ def create_app(conf: ConfigProto) -> web.Application:
         middlewares=[
             unhandled_exceptions,
             log_incoming_request,
-            forwarded(conf.server.proxy),
+            forwarded(conf.http.proxy),
         ],
         handler_args={
             'access_log_class': AccessLogger,
@@ -359,7 +359,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     )
 
     # CORS support
-    app.on_response_prepare.append(set_access_control_headers(conf.server.cross_origin))
+    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin))
 
     # Default server headers
     app.on_response_prepare.append(set_server_headers)
@@ -376,8 +376,8 @@ def create_app(conf: ConfigProto) -> web.Application:
     handler = Handler(
         executor=executor,
         policy=access_policy,
-        timeout=conf.server.timeout,
-        enable_ui=conf.server.enable_ui,
+        timeout=conf.http.timeout,
+        enable_ui=conf.http.enable_ui,
         jobrealm=conf.job_realm,
         storage=conf.storage,
     )
@@ -396,7 +396,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     app.router.add_route('GET', '/', landing_page)
 
     # Add executor context
-    app.cleanup_ctx.append(cache.cleanup_ctx(conf.server, executor))
+    app.cleanup_ctx.append(cache.cleanup_ctx(conf.http, executor))
     return app
 
 
@@ -440,9 +440,9 @@ async def _serve(conf: ConfigProto):
     await runner.setup()
 
     try:
-        site = create_site(conf.server, runner)
+        site = create_site(conf.http, runner)
 
-        logger.info("Server listening at %s", format_interface(conf.server))
+        logger.info("Server listening at %s", format_interface(conf.http))
         await site.start()
 
         event = asyncio.Event()

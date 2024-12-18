@@ -354,8 +354,8 @@ class ConfigProxy(Generic[T]):
     def service(self) -> ConfBuilder:
         return self._builder
 
-    def model_dump_json(self) -> str:
-        return self.__update().model_dump_json()
+    def model_dump_json(self, indent: Optional[int] = None) -> str:
+        return self.__update().model_dump_json(indent=indent)
 
     def __update(self) -> ConfigBase:
         if self._builder._timestamp > self._timestamp:

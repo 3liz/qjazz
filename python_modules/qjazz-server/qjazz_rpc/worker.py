@@ -1,466 +1,308 @@
-import asyncio
+""" Implement Qgis server worker
+    as a sub process
+"""
+import json
 import os
 import signal
-import sys
+import traceback
 
-from functools import cached_property
-from pathlib import Path
-from tempfile import TemporaryDirectory
+from time import sleep, time
+from typing import List, Optional, Protocol, assert_never, cast
+
+import psutil
 
 from pydantic import JsonValue
-from typing_extensions import (
-    AsyncIterator,
-    Dict,
-    Optional,
-    Tuple,
-    Type,
-    cast,
+
+from qgis.core import QgsFeedback
+from qgis.server import QgsServer
+
+from qjazz_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
+from qjazz_contrib.core import logger
+from qjazz_contrib.core.config import ConfigProxy
+from qjazz_contrib.core.qgis import (
+    PluginType,
+    QgisPluginService,
+    init_qgis_server,
+    show_all_versions,
+    show_qgis_settings,
 )
 
-from qjazz_contrib.core import logger
+from . import _op_cache, _op_plugins, _op_requests
+from . import messages as _m
+from .config import QgisConfig
+from .delegate import ApiDelegate
 
-from .config import WorkerConfig
-from .pipes import NoDataResponse, Pipe, RendezVous
-from .pipes import messages as _m
-
-START_TIMEOUT = 5
-
-
-class WorkerError(Exception):
-    def __init__(self, code: int, details: JsonValue = ""):
-        self.code = code
-        self.details = str(details)
+Co = CheckoutStatus
 
 
-class Worker:
-    """ Worker stub api
-
-        *WARNING*: There is a race condition between
-        tasks: use a lock mecanism to protect
-        concurrent calls.
+def load_default_project(cm: CacheManager):
+    """ Load default project
     """
-
-    def __init__(self, config: WorkerConfig, name: Optional[str] = None):
-        self._name = name or ""
-        self._worker_conf = config
-        self._timeout = config.process_timeout
-        self._tmpdir = TemporaryDirectory(prefix="qserv_")
-        self._rendez_vous = RendezVous(Path(self._tmpdir.name, "_rendez_vous"))
-        self._process: asyncio.subprocess.Process | None = None
-        self._terminate_task: asyncio.Task | None = None
-
-    @property
-    def config(self) -> WorkerConfig:
-        return self._worker_conf
-
-    async def cancel(self):
-        """ Send a SIGHUP signal to to the process
-        """
-        logger.trace("Cancelling job: %s (done: %s)", self.pid, self.task_done)
-        if not (self._process is None or self.task_done):
-            self._process.send_signal(signal.SIGHUP)
-            # Pull stream from current task
-            # Handle timeout, since the main reason
-            # for cancelling may be a stucked or
-            # long polling response.
-            await self.consume_until_task_done()
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def task_done(self) -> bool:
-        """ Return true if there is no processing
-            at hand
-        """
-        return not self._rendez_vous.busy
-
-    @property
-    def is_alive(self):
-        return self._process and self._process.returncode is None
-
-    async def wait_ready(self):
-        await self._rendez_vous.wait()
-
-    async def quit(self, grace_period: Optional[int] = None):
-        """ Send a quit message
-        """
-        if not self.is_alive:
-            return
-
-        self._rendez_vous.stop()
-        if grace_period:
-            try:
-                async with asyncio.timeout(grace_period):
-                    await self.io.send_message(_m.QuitMsg())
-                    await self.join()
-            except TimeoutError:
-                self.terminate()
+    default_project = os.getenv("QGIS_PROJECT_FILE")
+    if default_project:
+        url = cm.resolve_path(default_project, allow_direct=True)
+        md, status = cm.checkout(url)
+        if status == Co.NEW:
+            cm.update(cast(ProjectMetadata, md), status)
         else:
-            status, _ = await self.io.send_message(_m.QuitMsg())
-            if status != 200:
-                raise WorkerError(status, "Message failure (QUIT)")
-            # Wait for process to finish
-            await self.join()
+            logger.error("The project %s does not exists", url)
 
-    async def consume_until_task_done(self):
-        """ Consume all remaining data that may be send
-            by the worker task.
-            This is required if a client abort the request
-            in the middle.
-        """
-        while self._rendez_vous.busy:
-            try:
-                await asyncio.wait_for(self.io.drain(), 1)
-            except TimeoutError:
-                pass
 
-    async def update_config(self, worker_conf: WorkerConfig):
-        self._worker_conf = worker_conf
-        status, resp = await self.io.send_message(
-            _m.PutConfigMsg(
-                config={
-                    'logging': {'level': logger.log_level()},
-                    'qgis': worker_conf.config.model_dump(),
-                },
-            ),
-        )
-        if status != 200:
-            raise WorkerError(status, resp)
-        # Update timeout config
-        self._timeout = self.config.process_timeout
-        logger.trace(f"Updated config for worker '{self.name}'")
+def setup_server(conf: QgisConfig) -> QgsServer:
+    """ Setup Qgis server and plugins
+    """
+    # Enable qgis server debug verbosity
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
+        os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'
+        os.environ['QGIS_DEBUG'] = '1'
 
-    async def start(self):
-        """ Start the worker QGIS subprocess
-        """
-        logger.debug("Starting worker %s", self.name)
-        # Start rendez-vous fifo
-        self._rendez_vous.start()
+    projects = conf.projects
+    if projects.trust_layer_metadata:
+        os.environ['QGIS_SERVER_TRUST_LAYER_METADATA'] = 'yes'
+    if projects.disable_getprint:
+        os.environ['QGIS_SERVER_DISABLE_GETPRINT'] = 'yes'
 
-        # Prepare environment
-        env = os.environ.copy()
-        env.update(
-            CONF_QGIS=self.config.config.model_dump_json(),
-            CONF_LOGGING__LEVEL=logger.log_level().name,
-            RENDEZ_VOUS=self._rendez_vous.path,
-        )
+    # Disable any cache strategy
+    os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
 
-        # Run subprocess
-        # This is slower that `fork` but
-        # allow for solid asynchronous I/0 handling
-        self._process = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "qjazz_mapserv.main", self._name,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            env=env,
-        )
+    server = init_qgis_server(settings=conf.qgis_settings)
 
+    CacheManager.initialize_handlers(projects)
+
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
+        print(show_qgis_settings(), flush=True)  # noqa T201
+
+    return server
+
+
+def worker_env() -> JsonValue:
+    from qgis.core import Qgis
+    return dict(
+        qgis_version=Qgis.QGIS_VERSION_INT,
+        qgis_release=Qgis.QGIS_RELEASE_NAME,
+        versions=list(show_all_versions()),
+        environment=dict(os.environ),
+    )
+
+
+class Feedback:
+    def __init__(self) -> None:
+        self._feedback: Optional[QgsFeedback] = None
+
+    def cancel(self, *args) -> None:
+        if self._feedback:
+            self._feedback.cancel()
+
+    def reset(self) -> None:
+        self._feedback = None
+
+    @property
+    def feedback(self) -> QgsFeedback:
+        if not self._feedback:
+            self._feedback = QgsFeedback()
+        return self._feedback
+
+
+#
+#  Rendez vous
+#
+
+class RendezVous(Protocol):
+    def busy(self): ...
+    def done(self): ...
+
+
+#
+# Run Qgis server
+#
+
+def qgis_server_run(
+    server: QgsServer,
+    conn: _m.Connection,
+    conf: QgisConfig,
+    rendez_vous: RendezVous,
+    name: str = "",
+    projects: Optional[List[str]] = None,
+    reporting: bool = True,
+):
+    """ Run Qgis server and process incoming requests
+    """
+    cm = CacheManager(conf.projects, server)
+
+    # Register the cache manager as a service
+    cm.register_as_service()
+
+    server_iface = server.serverInterface()
+
+    # Load plugins
+    plugin_s = QgisPluginService(conf.plugins)
+    plugin_s.load_plugins(PluginType.SERVER, server_iface)
+
+    # Register as a service
+    plugin_s.register_as_service()
+
+    # Register delegation api
+    api_delegate = ApiDelegate(server_iface)
+    server_iface.serviceRegistry().registerApi(api_delegate)
+
+    load_default_project(cm)
+
+    # For reporting
+    process = psutil.Process() if reporting else None
+
+    feedback = Feedback()
+
+    def on_sighup(*args, **kwargs):
+        logger.warning("SIGHUP received, cancelling...")
+        conn.cancel()
+        feedback.cancel()
+
+    signal.signal(signal.SIGHUP, on_sighup)
+
+    while True:
+        logger.trace("%s: Waiting for messages", name)
         try:
-            await asyncio.wait_for(self._rendez_vous.wait(), START_TIMEOUT)
-        except TimeoutError:
-            raise RuntimeError(
-                f"Failed to start worker <return code: {self._process.returncode}>",
-            ) from None
-
-    def terminate(self):
-        """ Terminate the subprocess """
-        if not self.is_alive:
-            return
-
-        self._rendez_vous.stop()
-
-        proc = self._process
-
-        # Run the termination in its own task
-        async def _term():
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), 10)
-            except TimeoutError:
-                logger.warning("Worker '%s' not terminated, kill forced", self._name)
-                proc.kill()
-
-        self._terminate_task = asyncio.create_task(_term())
-
-    async def join(self, timeout: Optional[int] = None):
-        if not self._process:
-            return
-        if timeout:
-            await asyncio.wait_for(self._process.wait(), timeout)
-        else:
-            await self._process.wait()
-
-    @cached_property
-    def io(self) -> Pipe:
-        if not self._process:
-            raise RuntimeError("Process no initialized")
-        return Pipe(self._process)
-
-    # ================
-    # API stubs
-    # ================
-
-    #
-    # Admin
-    #
-
-    async def ping(self, echo: str) -> str:
-        """  Send ping with echo string
-        """
-        status, resp = await self.io.send_message(_m.PingMsg(echo=echo))
-        if status != 200:
-            raise WorkerError(status, resp)
-        return cast(str, resp)
-
-    async def env(self) -> Dict:
-        status, resp = await self.io.send_message(_m.GetEnvMsg())
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        return cast(Dict, resp)
-
-    #
-    # Requests
-    #
-
-    async def ows_request(
-        self,
-        service: str,
-        request: str,
-        target: str,
-        url: str = "",
-        version: Optional[str] = None,
-        direct: bool = False,
-        options: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        request_id: str = "",
-        debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
-        """ Send OWS request
-
-            Exemple:
-            ```
-            resp, stream = await worker.ows_request(
-                service="WFS",
-                request="GetCapabilities",
-                target="/france/france_parts",
-                url="http://localhost:8080/test.3liz.com",
-            )
-            if resp.status_code != 200:
-                print("Request failed")
-            data = resp.data
-            if stream:
-                # Stream remaining bytes
-                async for chunk in stream:
-                    # Do something with chunk of data
-                    ...
-            ```
-        """
-        status, resp = await self.io.send_message(
-            _m.OwsRequestMsg(
-                service=service,
-                request=request,
-                version=version,
-                options=options,
-                target=target,
-                url=url,
-                direct=direct,
-                headers=headers or {},
-                request_id=request_id,
-                debug_report=debug_report,
-            ),
-        )
-
-        # Request failed before reaching Qgis server
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        reply = _m.cast_into(resp, _m.RequestReply)
-        return reply, self.io.stream_bytes()
-
-    async def api_request(
-        self,
-        name: str,
-        path: str,
-        url: str,
-        target: Optional[str] = None,
-        data: Optional[bytes] = None,
-        delegate: bool = False,
-        direct: bool = False,
-        method: _m.HTTPMethod = _m.HTTPMethod.GET,
-        options: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        request_id: str = "",
-        debug_report: bool = False,
-    ) -> Tuple[_m.RequestReply, AsyncIterator[bytes]]:
-        """ Send generic (api) request
-
-            Exemple:
-            ```
-            resp, stream = await worker.api_request(
-                name="OGC WFS3 (Draft)"
-                path="/collections"
-                url="http://foo.com/features",
-                target="/france/france_parts",
-            )
-            if resp.status_code != 200:
-                print("Request failed")
-            data = resp.data
-            # Stream remaining bytes
-            if stream:
-                async for chunk in stream:
-                    # Do something with chunk of data
-                    ...
-            ```
-        """
-        status, resp = await self.io.send_message(
-            _m.ApiRequestMsg(
-                name=name,
-                path=path,
-                url=url,
-                method=method,
-                data=data,
-                delegate=delegate,
-                target=target,
-                direct=direct,
-                options=options,
-                headers=headers or {},
-                request_id=request_id,
-                debug_report=debug_report,
-            ),
-        )
-        # Request failed before reaching Qgis server
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        reply = _m.cast_into(resp, _m.RequestReply)
-        return reply, self.io.stream_bytes()
-
-    #
-    # Cache
-    #
-
-    async def checkout_project(self, uri: str, pull: bool = False) -> _m.CacheInfo:
-        """ Checkout project status
-
-            If pull is True, the cache will be updated
-            according the checkout status:
-
-            * `NEW`: The Project exists and will be loaded in cache
-            * `NEEDUPDATE`: The Project is already loaded and will be updated in cache
-            * `UNCHANGED`: The Project is loaded, up to date. Nothing happend
-            * `REMOVED`: The Project is loaded but has been removed from storage;
-              project will be removed from cache.
-            * `NOTFOUND`: The project does not exists, nor in storage, nor in cache.
-        """
-        status, resp = await self.io.send_message(
-            _m.CheckoutProjectMsg(uri=uri, pull=pull),
-        )
-        if status != 200:
-            raise WorkerError(status, resp)
-        return _m.cast_into(resp, _m.CacheInfo)
-
-    async def drop_project(self, uri: str) -> _m.CacheInfo:
-        """ Drop project from cache
-        """
-        status, resp = await self.io.send_message(
-            _m.DropProjectMsg(uri=uri),
-        )
-        if status != 200:
-            raise WorkerError(status, resp)
-        return _m.cast_into(resp, _m.CacheInfo)
-
-    async def list_cache(
-        self,
-        status_filter: Optional[_m.CheckoutStatus] = None,
-    ) -> AsyncIterator[_m.CacheInfo]:
-        """ List projects in cache
-        """
-        await self.io.put_message(_m.ListCacheMsg(status_filter=status_filter))
-        return stream_response(self.io, _m.CacheInfo)
-
-    async def update_cache(self) -> AsyncIterator[_m.CacheInfo]:
-        """ Update projects in cache
-
-            Return the list of cached object with their new status
-        """
-        logger.info("Updating cache for '%s'", self.name)
-        await self.io.put_message(_m.UpdateCacheMsg())
-        return stream_response(self.io, _m.CacheInfo)
-
-    async def clear_cache(self) -> None:
-        """  Clear all items in cache
-        """
-        logger.info("Purging cache for '%s'", self.name)
-        status, resp = await self.io.send_message(_m.ClearCacheMsg())
-        if status != 200:
-            raise WorkerError(status, resp)
-
-    async def catalog(self, location: Optional[str] = None) -> AsyncIterator[_m.CatalogItem]:
-        """ Return all projects availables
-
-            If location is set, returns only projects availables for
-            this particular location
-        """
-        await self.io.put_message(_m.CatalogMsg(location=location))
-        return stream_response(self.io, _m.CatalogItem)
-
-    async def project_info(self, uri: str) -> _m.ProjectInfo:
-        """ Return project information from loaded project in
-            cache
-
-            The method will NOT load the project in cache
-        """
-        status, resp = await self.io.send_message(
-            _m.GetProjectInfoMsg(uri=uri),
-        )
-        if status != 200:
-            raise WorkerError(status, resp)
-
-        return _m.cast_into(resp, _m.ProjectInfo)
-
-    #
-    # Plugins
-    #
-    async def list_plugins(self) -> AsyncIterator[_m.PluginInfo]:
-        """ List projects in cache
-
-            Return 2-tuple where first element is the number
-            of loaded plugins and the second elemeent an async
-            iterator yielding PluginInfo items
-        """
-        await self.io.put_message(_m.PluginsMsg())
-        return stream_response(self.io, _m.PluginInfo)
-
-    #
-    # Test
-    #
-    async def sleep(self, delay: int) -> None:
-        """  Send ping with echo string
-        """
-        status, resp = await self.io.send_message(_m.SleepMsg(delay=delay))
-        if status != 200:
-            raise WorkerError(status, resp)
-
-#
-# Helper
-#
-
-
-async def stream_response[T](io: Pipe, resp_type: Type[T]) -> AsyncIterator[T]:
-    try:
-        while True:
-            status, resp = await io.read_message()
-            match status:
-                case 206:
-                    yield resp
-                case 200:
-                    yield resp
+            rendez_vous.done()
+            msg = None   # Prevent unbound value if recv() is interrupted
+            msg = conn.recv()
+            rendez_vous.busy()
+            logger.debug("Received message: %s", msg.msg_id.name)
+            logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
+            t_start = time()
+            match msg:
+                # --------------------
+                # Qgis server Requests
+                # --------------------
+                case _m.OwsRequestMsg():
+                    _op_requests.handle_ows_request(
+                        conn,
+                        msg,
+                        server,
+                        cm,
+                        conf,
+                        process,
+                        cache_id=name,
+                        feedback=feedback.feedback,
+                    )
+                case _m.ApiRequestMsg():
+                    _op_requests.handle_api_request(
+                        conn,
+                        msg,
+                        server,
+                        cm,
+                        conf,
+                        process,
+                        cache_id=name,
+                        feedback=feedback.feedback,
+                    )
+                # --------------------
+                # Global management
+                # --------------------
+                case _m.PingMsg():
+                    _m.send_reply(conn, msg.echo)
+                case _m.QuitMsg():
+                    _m.send_reply(conn, None)
+                    msg = None
                     break
-                case _:
-                    raise WorkerError(status, resp)
-    except NoDataResponse:
-        # End of transmission
-        pass
+                # --------------------
+                # Cache management
+                # --------------------
+                case _m.CheckoutProjectMsg():
+                    _op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)
+                case _m.DropProjectMsg():
+                    _op_cache.drop_project(conn, cm, msg.uri, name)
+                case _m.ClearCacheMsg():
+                    cm.clear()
+                    _m.send_reply(conn, None)
+                case _m.ListCacheMsg():
+                    _op_cache.send_cache_list(conn, cm, msg.status_filter, cache_id=name)
+                case _m.UpdateCacheMsg():
+                    _op_cache.update_cache(conn, cm, cache_id=name)
+                case _m.GetProjectInfoMsg():
+                    _op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
+                case _m.CatalogMsg():
+                    _op_cache.send_catalog(conn, cm, msg.location)
+                # --------------------
+                # Plugin inspection
+                # --------------------
+                case _m.PluginsMsg():
+                    _op_plugins.inspect_plugins(conn, plugin_s)
+                # --------------------
+                # Config
+                # --------------------
+                case _m.PutConfigMsg():
+                    if isinstance(conf, ConfigProxy):
+                        if isinstance(msg.config, str):
+                            config_data = json.loads(msg.config)
+                        else:
+                            config_data = msg.config
+                        confservice = conf.service
+                        confservice.update_config(config_data)
+                        # Update log level
+                        logger.set_log_level(confservice.conf.logging.level)
+                        _m.send_reply(conn, None)
+                    else:
+                        # It does no make sense to update configuration
+                        # If the configuration is not a proxy
+                        # since cache manager and others will hold immutable
+                        # instance of configuration
+                        _m.send_reply(conn, "", 403)
+                case _m.GetConfigMsg():
+                    _m.send_reply(conn, conf.model_dump(mode='json'))
+                # --------------------
+                # Status
+                # --------------------
+                case _m.GetEnvMsg():
+                    _m.send_reply(conn, worker_env())
+                # --------------------
+                # Test
+                # --------------------
+                case _m.SleepMsg():
+                    do_sleep(conn, msg, feedback.feedback)
+                # --------------------
+                case _ as unreachable:
+                    assert_never(unreachable)
+        except KeyboardInterrupt:
+            if conf.ignore_interrupt_signal:
+                logger.trace("Ignoring interrupt signal")
+            else:
+                logger.warning("Worker interrupted")
+                break
+        except Exception as exc:
+            if msg:
+                logger.critical(traceback.format_exc())
+                _m.send_reply(conn, str(exc), 500)
+            else:
+                # No message has been set !
+                # Exception occured outside message handling
+                raise
+        finally:
+            if msg and not conn.cancelled:
+                if logger.is_enabled_for(logger.LogLevel.TRACE):
+                    logger.trace(
+                        "%s\t%s\tResponse time: %d ms",
+                        name,
+                        msg.msg_id.name,
+                        int((time() - t_start) * 1000.),
+                    )
+            # Reset feedback
+            feedback.reset()
+
+    logger.debug("Worker exiting")
+
+
+def do_sleep(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):
+    """ Feedback test
+    """
+    done_ts = time() + msg.delay
+    canceled = False
+    logger.info("Entering sleep mode for %s seconds", msg.delay)
+    while done_ts > time():
+        sleep(1.0)
+        canceled = feedback.isCanceled()
+        if canceled:
+            logger.info("** Sleep cancelled **")
+            break
+    if not canceled:
+        logger.info("** Worker is now awake  **")
+        _m.send_nodata(conn)

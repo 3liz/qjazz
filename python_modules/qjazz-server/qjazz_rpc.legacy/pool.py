@@ -15,7 +15,7 @@ from typing_extensions import (
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigProxy
-from qjazz_contrib.core.timer import Stopwatch
+from qjazz_contrib.core.timer import Instant
 
 from .config import WorkerConfig, confservice
 from .pipes import messages as _m
@@ -84,7 +84,7 @@ class WorkerPool:
     async def start(self):
         """ Start all worker's processes
         """
-        ts = Stopwatch()
+        ts = Instant()
 
         async def _start(w: Worker):
             await w.start()

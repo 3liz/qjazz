@@ -35,14 +35,12 @@ email = "dmarteau@3liz.org"
 [tool.setuptools.packages.find]
 exclude = [ "tests/*" ]
 include = [
-    "qjazz_http", 
-    "qjazz_http.*", 
     "qjazz_rpc",
     "qjazz_rpc.*",
+    "qjazz_http", 
+    "qjazz_http.*", 
     "qjazz_admin",
     "qjazz_admin.*",
-    "qjazz_mapserv",
-    "qjazz_mapserv.*",
 ]
 
 [tool.autopep8]

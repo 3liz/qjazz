@@ -121,11 +121,10 @@ impl Settings {
             let replace =
                 std::collections::HashMap::from([("location", location.to_string_lossy())]);
             let content = subst::substitute(
-                &std::fs::read_to_string(path)
-                    .map_err(|err| ConfigError::Message(format!("{}", err)))?,
+                &std::fs::read_to_string(path).map_err(Self::error)?,
                 &replace,
             )
-            .map_err(|err| ConfigError::Message(format!("{}", err)))?;
+            .map_err(Self::error)?;
             Self::build(
                 Config::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
             )

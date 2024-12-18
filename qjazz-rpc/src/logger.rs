@@ -26,10 +26,10 @@ impl Logging {
             builder.format(|buf, record| {
                 writeln!(
                     buf,
-                    "{} {:5} [{}] {}",
-                    buf.timestamp(),
-                    record.level(),
+                    "{}\t[{}]\t{:5}\t{}",
+                    buf.timestamp_millis(),
                     record.module_path().unwrap_or_default(),
+                    record.level(),
                     record.args()
                 )
             });
@@ -37,8 +37,8 @@ impl Logging {
             builder.format(|buf, record| {
                 writeln!(
                     buf,
-                    "{} {:5} {}",
-                    buf.timestamp(),
+                    "{}\t[main]\t{:5}\t{}",
+                    buf.timestamp_millis(),
                     record.level(),
                     record.args()
                 )

@@ -8,7 +8,6 @@ OPTIONAL_DEPENDENCIES=minio
 INSTALL_DEPENDENCIES=[minio]
 
 PYTHON_PKG= \
-	qjazz_mapserv \
 	qjazz_rpc   \
 	qjazz_http  \
 	qjazz_admin \

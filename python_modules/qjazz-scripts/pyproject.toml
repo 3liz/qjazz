@@ -17,8 +17,6 @@ dependencies = [
 version = "0.1.0.dev0"
 
 [project.scripts]
-qjazz-server-rpc = "qjazz_rpc.cli:main"
-qjazz-server-cli = "qjazz_rpc.client.__main__:main"
 qjazz-server-admin = "qjazz_admin.cli:main"
 qjazz-server-http = "qjazz_http.cli:main"
 qjazz-processes = "qjazz_processes.__main__:main"

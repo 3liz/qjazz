@@ -1,7 +1,7 @@
- # syntax=docker/dockerfile:1
- # vim: ft=dockerfile
- ARG REGISTRY_PREFIX=''
- ARG QGIS_VERSION=release
+# syntax=docker/dockerfile:1
+# vim: ft=dockerfile
+ARG REGISTRY_PREFIX=''
+ARG QGIS_VERSION=release
 
 #
 # Qgis platform
@@ -23,22 +23,20 @@ COPY python_modules docker/requirements.txt /python_modules
 
 # Create virtualenv for installing modules
 RUN mkdir -p /opt/local/ \
-    && python3 -m venv --system-site-packages /opt/local/qgisserver \
+    && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
-    && /opt/local/qgisserver/bin/pip install -U --no-cache-dir pip setuptools wheel \
-    && /opt/local/qgisserver/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
-    && /opt/local/qgisserver/bin/pip install --no-cache-dir --no-deps \
+    && /opt/local/qjazz/bin/pip install -U --no-cache-dir pip setuptools wheel \
+    && /opt/local/qjazz/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
+    && /opt/local/qjazz/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/qjazz-contrib \
         -e /python_modules/qjazz-cache \
         -e /python_modules/qjazz-server \
         -e /python_modules/qjazz-processes \
         -e /python_modules/qjazz-scripts \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-rpc \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-admin \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-http \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-cli \
-    && ln -s /opt/local/qgisserver/bin/qjazz-processes \
-    && ln -s /opt/local/qgisserver/bin/qjazz-printserver \
+    && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
+    && ln -s /opt/local/qjazz/bin/qjazz-server-http \
+    && ln -s /opt/local/qjazz/bin/qjazz-processes \
+    && ln -s /opt/local/qjazz/bin/qjazz-printserver \
     ${NULL}
 
 # Install qgis-plugin-manager
@@ -56,11 +54,17 @@ RUN mkdir -p /opt/local/ \
 COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
 
+# Install binaries
+COPY target/release/qjazz-rpc /usr/local/bin/
+
+# Set path to the python executable
+ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
+
 # Set uid root on Xvfb
 # Allow us to run Xvfb when the container runs with '-u' option
 RUN chmod u+s /usr/bin/Xvfb
 
-ENV CONF_SERVER__LISTEN='["0.0.0.0", 9080]'
+ENV CONF_SERVER__LISTEN__ADDRESS='[::]:23456'
 ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
 ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 
@@ -77,7 +81,7 @@ FROM base AS ci_build
 
 ARG PIP_OPTIONS
 
-RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
+RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS \
     "py-amqp-client>=2.0.0"
 
 #
@@ -98,13 +102,12 @@ RUN apt-get update -y \
         ${NULL}
 
 COPY --from=base /python_modules /python_modules
-COPY --from=base /opt/local/qgisserver /opt/local/qgisserver
+COPY --from=base /opt/local/qjazz /opt/local/qjazz
 
 RUN cd /usr/local/bin \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-admin \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-http \
-    && ln -s /opt/local/qgisserver/bin/qjazz-server-cli \
-    && ln -s /opt/local/qgisserver/bin/qjazz-processes \
+    && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
+    && ln -s /opt/local/qjazz/bin/qjazz-server-http \
+    && ln -s /opt/local/qjazz/bin/qjazz-processes \
     ${NULL}
 
 COPY docker/scripts/ /usr/local/bin/
@@ -124,7 +127,7 @@ FROM front AS ci_front
 
 ARG PIP_OPTIONS
 
-RUN /opt/local/qgisserver/bin/pip install --no-cache-dir $PIP_OPTIONS \
+RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS \
     "py-amqp-client>=2.0.0"
 
 

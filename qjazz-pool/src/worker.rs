@@ -72,7 +72,7 @@ impl Worker {
         let mut child = command
             .kill_on_drop(true)
             .env("RENDEZ_VOUS", rendez_vous.path())
-            .env("CONF_QGIS__MAX_CHUNK_SIZE", buffer_size.to_string())
+            .env("CONF_WORKER__QGIS__MAX_CHUNK_SIZE", buffer_size.to_string())
             .spawn()?;
 
         let result;

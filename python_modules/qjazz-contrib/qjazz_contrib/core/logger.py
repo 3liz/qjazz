@@ -34,7 +34,7 @@ class LogLevel(Enum):
     CRITICAL = logging.CRITICAL
 
 
-FORMATSTR = '%(asctime)s\t[%(process)d]\t%(levelname)s\t%(message)s'
+FORMATSTR = '%(asctime)s.%(msecs)03dZ\t[%(process)d]\t%(levelname)s\t%(message)s'
 
 
 def _validate_log_level(v: str | LogLevel) -> LogLevel:
@@ -78,7 +78,7 @@ def setup_log_handler(
 
     log_level = set_log_level(log_level)
 
-    formatter = logging.Formatter(FORMATSTR)
+    formatter = logging.Formatter(FORMATSTR, datefmt="%Y-%m-%dT%H:%M:%S")
     channel = channel or logging.StreamHandler(sys.stderr)
     channel.setFormatter(formatter)
 

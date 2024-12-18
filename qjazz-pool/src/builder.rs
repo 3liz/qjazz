@@ -38,7 +38,7 @@ impl Builder {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .env("CONF_LOGGING__LEVEL", get_log_level())
-            .env("CONF_QGIS", opts.config.to_string());
+            .env("CONF_WORKER__QGIS", opts.qgis.to_string());
         command
     }
 
@@ -108,7 +108,7 @@ impl Builder {
         self
     }
     pub fn process_config(&mut self, value: JsonValue) -> &mut Self {
-        self.opts.config = value;
+        self.opts.qgis = value;
         self
     }
     pub fn num_processes(&mut self, value: usize) -> &mut Self {

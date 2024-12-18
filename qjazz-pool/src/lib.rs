@@ -14,11 +14,11 @@ pub(crate) mod queue;
 
 // reexport
 pub use builder::Builder;
+pub use config::WorkerOptions;
 pub use errors::{Error, Result};
 pub use pool::Pool;
 pub use receiver::{Receiver, ScopedWorker};
 pub use worker::Worker;
-pub use config::WorkerOptions;
 
 #[cfg(test)]
 mod tests;

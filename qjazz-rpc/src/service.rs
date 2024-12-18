@@ -19,21 +19,14 @@ mod qjazz_service {
 pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
 
 pub(crate) struct QgisServerServicer {
-    queue: qjazz_pool::Receiver,
+    inner: Inner,
 }
 
 impl QgisServerServicer {
     pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
-        Self { queue }
-    }
-
-    async fn get_worker(&self) -> Result<qjazz_pool::ScopedWorker, Status> {
-        // wait for available worker
-        self.queue.get().await.map_err(|err| match err {
-            qjazz_pool::Error::MaxRequestsExceeded => Status::resource_exhausted(err),
-            qjazz_pool::Error::QueueIsClosed => Status::unavailable(err),
-            _ => Status::unknown(err),
-        })
+        Self {
+            inner: Inner(queue),
+        }
     }
 
     // Handle byte streaming
@@ -94,7 +87,7 @@ impl QgisServer for QgisServerServicer {
         &self,
         request: Request<OwsRequest>,
     ) -> Result<Response<Self::ExecuteOwsRequestStream>, Status> {
-        let mut w = self.get_worker().await?;
+        let mut w = self.inner.get_worker().await?;
 
         let headers = metadata_to_dict(request.metadata());
         let req = request.get_ref();
@@ -130,7 +123,7 @@ impl QgisServer for QgisServerServicer {
         &self,
         request: Request<ApiRequest>,
     ) -> Result<Response<Self::ExecuteApiRequestStream>, Status> {
-        let mut w = self.get_worker().await?;
+        let mut w = self.inner.get_worker().await?;
         let headers = metadata_to_dict(request.metadata());
         let req = request.get_ref();
         let mut resp = w
@@ -165,6 +158,22 @@ impl QgisServer for QgisServerServicer {
     }
 }
 
+//
+// Wrapper for queue
+//
+struct Inner(qjazz_pool::Receiver);
+
+impl Inner {
+    // wait for available worker
+    async fn get_worker(&self) -> Result<qjazz_pool::ScopedWorker, Status> {
+        self.0.get().await.map_err(|err| match err {
+            qjazz_pool::Error::MaxRequestsExceeded => Status::resource_exhausted(err),
+            qjazz_pool::Error::QueueIsClosed => Status::unavailable(err),
+            _ => Status::unknown(err),
+        })
+    }
+}
+
 // HEADERS
 // XXX Fix metadata <-> headers handling
 
@@ -180,25 +189,24 @@ fn metadata_to_dict(metadata: &MetadataMap) -> HashMap<String, String> {
     }))
 }
 
-/// Handle response error 
+/// Handle response error
 fn from_response_err(err: qjazz_pool::Error) -> Status {
     match err {
         qjazz_pool::Error::ResponseError(status, msg) => {
             let mut rv = match status {
-                404|410 => Status::not_found(msg.to_string()),
+                404 | 410 => Status::not_found(msg.to_string()),
                 403 => Status::permission_denied(msg.to_string()),
                 500 => Status::internal(msg.to_string()),
                 401 => Status::unauthenticated(msg.to_string()),
-                _ => Status::unknown(format!("Response error {}: {}", status, msg.to_string())),
+                _ => Status::unknown(format!("Response error {}: {}", status, msg)),
             };
-            rv.metadata_mut().insert("x-reply-status-code", status.into());
+            rv.metadata_mut()
+                .insert("x-reply-status-code", status.into());
             rv
         }
-        _ => Status::unknown(err)
+        _ => Status::unknown(err),
     }
-
 }
-
 
 fn set_metadata(metadata: &mut MetadataMap, status: i64, headers: &mut HashMap<String, String>) {
     metadata.insert("x-reply-status-code", status.into());

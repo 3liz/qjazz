@@ -44,10 +44,11 @@ pub(crate) async fn serve(
     // Just launch the task and let tokio abort on exit.
     // Furthemore graceful shutdown is handled by the worker
     // pool.
-    tokio::spawn(Server::builder()
-        .add_service(health_service)
-        .add_service(QgisServerServer::new(servicer))
-        .serve(addr)
+    tokio::spawn(
+        Server::builder()
+            .add_service(health_service)
+            .add_service(QgisServerServer::new(servicer))
+            .serve(addr),
     );
 
     token.cancelled().await;

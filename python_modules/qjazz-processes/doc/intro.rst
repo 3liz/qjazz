@@ -117,7 +117,7 @@ The simplest configuration for basic working installation is the following
 
     services:
       worker:
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         environment:
           CONF_LOGGING__LEVEL: DEBUG
           CONF_WORKER__SERVICE_NAME: "MyService"
@@ -136,15 +136,13 @@ The simplest configuration for basic working installation is the following
         - { type: bind, source: "/path/to/workdir/", target: /qgis-workdir }
         - { type: bind, source: "/path/to/plugins/", target: /qgis-plugins }
         - { type: bind, source: "/path/to/projects", target: /qgis-projects }
-        command: ["qgis-processes", "worker"]
+        command: ["qjazz-processes", "worker"]
       server:
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         ports:
         - 127.0.0.1:9080:9080
-        command: ["qgis-processes", "serve", "-v"]
+        command: ["qjazz-processes", "serve", "-v"]
         environment:
-          CONF_SERVER__LISTEN: >-
-            ["0.0.0.0", 9080]
           CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
           CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
       rabbitmq:
@@ -159,7 +157,7 @@ Alternatively you may use a configuration file:
 
     services:
       worker:
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         depends_on:
         - rabbitmq
         volumes:
@@ -167,15 +165,13 @@ Alternatively you may use a configuration file:
         - { type: bind, source: "/path/to/workdir/", target: /qgis-workdir }
         - { type: bind, source: "/path/to/plugins/", target: /qgis-plugins }
         - { type: bind, source: "/path/to/projects", target: /qgis-projects }
-        command: ["qgis-processes", "worker", "-C", "/etc/worker.toml"]
+        command: ["qjazz-processes", "worker", "-C", "/etc/worker.toml"]
       server:
-        image: 3liz/qgis-services:qgis-ltr
+        image: 3liz/qjazz:qgis-ltr
         ports:
         - 127.0.0.1:9080:9080
-        command: ["qgis-processes", "serve", "-v"]
+        command: ["qjazz-processes", "serve", "-v"]
         environment:
-          CONF_SERVER__LISTEN: >-
-            ["0.0.0.0", 9080]
           CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
           CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
       rabbitmq:
@@ -220,13 +216,13 @@ Running the worker and the server is as simple as:
 
 .. code-block:: bash
 
-   qgis-processes worker -C <worker-configuration-file>
+   qjazz-processes worker -C <worker-configuration-file>
 
 and
 
 .. code-block:: bash
 
-   qgis-processes server -C <server-configuration-file>
+   qjazz-processes server -C <server-configuration-file>
 
 .. warning::
 

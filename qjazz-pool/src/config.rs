@@ -36,7 +36,7 @@ pub struct WorkerOptions {
     /// Timeout for starting child process
     pub(crate) process_start_timeout: u64,
     /// Qgis configuration (see python implementation for details)
-    pub(crate) config: serde_json::Value,
+    pub(crate) qgis: serde_json::Value,
     /// The grace period to apply on worker timeout
     /// when attempting to cancel the actual request
     /// This number should be kept small (a few seconds) since it
@@ -58,7 +58,7 @@ impl Default for WorkerOptions {
             num_processes: 1,
             process_start_timeout: DEFAULT_START_TIMEOUT_SEC,
             cancel_timeout: DEFAULT_CANCEL_TIMEOUT_SEC,
-            config: serde_json::json!({ "max_chunk_size": DEFAULT_MAX_CHUNK_SIZE }),
+            qgis: serde_json::json!({ "max_chunk_size": DEFAULT_MAX_CHUNK_SIZE }),
             max_waiting_requests: DEFAULT_MAX_REQUESTS,
             max_chunk_size: DEFAULT_MAX_CHUNK_SIZE,
         }

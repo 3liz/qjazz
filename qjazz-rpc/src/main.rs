@@ -27,13 +27,13 @@ enum Commands {
     /// Print configuration in json format
     Config {
         /// Print configuration and exit
-        #[arg(long, value_name = "FILE")]
-        conf: PathBuf,
+        #[arg(long, short = 'C', value_name = "FILE")]
+        conf: Option<PathBuf>,
     },
     /// Run grpc server
     Serve {
-        #[arg(long, value_name = "FILE")]
-        conf: PathBuf,
+        #[arg(long, short = 'C', value_name = "FILE")]
+        conf: Option<PathBuf>,
     },
 }
 
@@ -45,13 +45,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("TODO!");
         }
         Some(Commands::Config { conf }) => {
-            serde_json::to_writer_pretty(
-                io::stdout().lock(),
-                &Settings::from_file_template(conf)?,
-            )?;
+            let settings = match conf {
+                Some(conf) => Settings::from_file_template(conf)?,
+                None => Settings::new()?,
+            };
+            serde_json::to_writer_pretty(io::stdout().lock(), &settings)?;
         }
         Some(Commands::Serve { conf }) => {
-            let settings = Settings::from_file_template(conf)?;
+            let settings = match conf {
+                Some(conf) => Settings::from_file_template(conf)?,
+                None => Settings::new()?,
+            };
             let mapserv_args = std::env::var_os("QJAZZ_MAPSERV_ARGS");
 
             settings.init_logger();
@@ -62,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     mapserv_args
                         .as_ref()
                         .and_then(|v| v.to_str())
-                        .unwrap_or("-m qjazz_mapserv.main"),
+                        .unwrap_or("-m qjazz_rpc.main"),
                     &settings,
                 ))?;
         }

@@ -92,14 +92,18 @@ class Connection:
 
 class RendezVous:
     def __init__(self):
-        path = Path(os.environ["RENDEZ_VOUS"])
+        try:
+            path = Path(os.environ["RENDEZ_VOUS"])
+        except KeyError:
+            raise RuntimeError("No 'RENDEZ_VOUS' defined")
         if not path.exists():
             raise RuntimeError(f"No rendez vous at {path} !")
         self.fd = os.open(path, os.O_WRONLY)
         self._busy = True
 
     def __del__(self):
-        os.close(self.fd)
+        if hasattr(self, "fd"):
+            os.close(self.fd)
 
     def busy(self):
         if not self._busy:

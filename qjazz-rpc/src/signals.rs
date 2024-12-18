@@ -10,10 +10,10 @@ use tokio_util::sync::CancellationToken;
 // Run signal handling in its own thread
 
 pub(crate) fn handle_signals(token: CancellationToken) -> Result<Handle, Box<dyn Error>> {
-    let mut signals = Signals::new(&[SIGINT, SIGTERM])?;
+    let mut signals = Signals::new([SIGINT, SIGTERM])?;
     let handle = signals.handle();
     tokio::task::spawn_blocking(move || {
-        log::info!("Installing signal handler");
+        log::debug!("Installing signal handler");
         for signal in signals.forever() {
             match signal {
                 SIGINT => {
@@ -27,7 +27,7 @@ pub(crate) fn handle_signals(token: CancellationToken) -> Result<Handle, Box<dyn
                 _ => {}
             }
         }
-        log::debug!("Releasing signal handler");
+        log::trace!("Releasing signal handler");
         token.cancel();
     });
     Ok(handle)

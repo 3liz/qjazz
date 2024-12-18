@@ -43,7 +43,7 @@ impl WorkerQueue {
         mut worker: Worker,
         done_hint: bool,
     ) -> Result<()> {
-        log::debug!("Recycling worker [{}]", worker.id());
+        log::trace!("Recycling worker [{}]", worker.id());
         let rv = worker.cancel_timeout(done_hint).await;
         if rv.is_ok() {
             // Push back worker on queue
@@ -144,7 +144,7 @@ impl Pool {
 
         let ts = Instant::now();
 
-        log::debug!("Pool: launching {} workers", n);
+        log::trace!("Pool: launching {} workers", n);
         let futures: Vec<_> = (0..n).map(|_| self.builder.clone().start_owned()).collect();
 
         // Start the workers asynchronously
@@ -162,7 +162,7 @@ impl Pool {
         if self.queue.is_closed() {
             return Err(Error::QueueIsClosed);
         }
-        log::debug!("Pool: Shrinking by {} workers", n);
+        log::trace!("Pool: Shrinking by {} workers", n);
         let mut removed = self.queue.q.drain(n);
         self.num_processes -= removed.len();
         for mut w in removed.drain(..) {
@@ -186,11 +186,12 @@ impl Pool {
                     log::debug!("Active workers: {}", active);
                     tokio::time::sleep(throttle).await;
                 } else {
-                    log::info!("No active workers");
+                    log::debug!("No active workers");
                     break;
                 }
             }
-        }).await;
+        })
+        .await;
         // Drain all idle workers
         log::info!("Shutting down...");
         let mut removed = self.queue.q.drain(self.num_processes);
