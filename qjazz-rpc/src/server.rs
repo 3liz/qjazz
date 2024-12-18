@@ -41,9 +41,9 @@ pub(crate) async fn serve(
 
     // NOTE Do not use serve_with_shutdown since
     // it waits forever for client to disconnect
-    // Just launch the task and let tokio abort on exit
+    // Just launch the task and let tokio abort on exit.
     // Furthemore graceful shutdown is handled by the worker
-    // poo
+    // pool.
     tokio::spawn(Server::builder()
         .add_service(health_service)
         .add_service(QgisServerServer::new(servicer))

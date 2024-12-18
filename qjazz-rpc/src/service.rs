@@ -112,7 +112,7 @@ impl QgisServer for QgisServerServicer {
                 headers,
             })
             .await
-            .map_err(Status::unknown)?;
+            .map_err(from_response_err)?;
 
         let rx = Self::stream_bytes(w);
 
@@ -153,7 +153,7 @@ impl QgisServer for QgisServerServicer {
                 headers,
             })
             .await
-            .map_err(Status::unknown)?;
+            .map_err(from_response_err)?;
 
         let rx = Self::stream_bytes(w);
 
@@ -179,6 +179,26 @@ fn metadata_to_dict(metadata: &MetadataMap) -> HashMap<String, String> {
         }
     }))
 }
+
+/// Handle response error 
+fn from_response_err(err: qjazz_pool::Error) -> Status {
+    match err {
+        qjazz_pool::Error::ResponseError(status, msg) => {
+            let mut rv = match status {
+                404|410 => Status::not_found(msg.to_string()),
+                403 => Status::permission_denied(msg.to_string()),
+                500 => Status::internal(msg.to_string()),
+                401 => Status::unauthenticated(msg.to_string()),
+                _ => Status::unknown(format!("Response error {}: {}", status, msg.to_string())),
+            };
+            rv.metadata_mut().insert("x-reply-status-code", status.into());
+            rv
+        }
+        _ => Status::unknown(err)
+    }
+
+}
+
 
 fn set_metadata(metadata: &mut MetadataMap, status: i64, headers: &mut HashMap<String, String>) {
     metadata.insert("x-reply-status-code", status.into());

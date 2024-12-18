@@ -89,10 +89,10 @@ def on_unknown_rpc_error(metadata: Sequence[Tuple[str, str]]):
         In this case return the error code found in
         the initial metadata.
     """
-    status_code, headers = get_response_headers(metadata)
+    status, headers = get_response_headers(metadata)
 
     class _HTTPException(web.HTTPException):
-        status_code = status_code
+        status_code = status
 
     raise _HTTPException(
         reason="Service backend exception",
@@ -252,7 +252,7 @@ async def ows_handler(
                 stream.cancel()
                 logger.error("Connection cancelled: %s", err)
                 raise
-            
+
             await response.write_eof()
 
             if collect:
