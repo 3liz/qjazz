@@ -239,7 +239,7 @@ async def ows_handler(
             response = web.StreamResponse(status=status, headers=headers)
             # XXX: Get the first chunk before preparing the request
             # so we trigger the grcp error.
-            # Otherwise this will send an invalid chunked responsea
+            # Otherwise this will send an invalid chunked response
             streamit = aiter(stream)
             chunk = await anext(streamit)
             await response.prepare(request)
@@ -252,7 +252,7 @@ async def ows_handler(
                 stream.cancel()
                 logger.error("Connection cancelled: %s", err)
                 raise
-
+            
             await response.write_eof()
 
             if collect:

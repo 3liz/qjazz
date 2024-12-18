@@ -7,7 +7,7 @@ use std::str::FromStr;
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{
-    metadata::{KeyAndValueRef, MetadataMap, MetadataKey, AsciiMetadataValue},
+    metadata::{AsciiMetadataValue, KeyAndValueRef, MetadataKey, MetadataMap},
     Request, Response, Status,
 };
 
@@ -71,18 +71,6 @@ impl QgisServerServicer {
         });
         rx
     }
-}
-
-fn metadata_to_dict(metadata: &MetadataMap) -> HashMap<String, String> {
-    HashMap::from_iter(metadata.iter().filter_map(|key_value| {
-        match key_value {
-            KeyAndValueRef::Ascii(key, value) => value
-                .to_str()
-                .map(|v| (key.as_str().to_string(), v.to_string()))
-                .ok(),
-            _ => None,
-        }
-    }))
 }
 
 type ResponseChunkStream = Pin<Box<dyn Stream<Item = Result<ResponseChunk, Status>> + Send>>;
@@ -177,13 +165,22 @@ impl QgisServer for QgisServerServicer {
     }
 }
 
+// HEADERS
+// XXX Fix metadata <-> headers handling
 
-fn set_metadata(
-    metadata: &mut MetadataMap,
-    status: i64, 
-    headers: &mut HashMap<String, String>
-)
-{
+fn metadata_to_dict(metadata: &MetadataMap) -> HashMap<String, String> {
+    HashMap::from_iter(metadata.iter().filter_map(|key_value| {
+        match key_value {
+            KeyAndValueRef::Ascii(key, value) => value
+                .to_str()
+                .map(|v| (key.as_str().to_string(), v.to_string()))
+                .ok(),
+            _ => None,
+        }
+    }))
+}
+
+fn set_metadata(metadata: &mut MetadataMap, status: i64, headers: &mut HashMap<String, String>) {
     metadata.insert("x-reply-status-code", status.into());
     for (k, v) in headers.iter() {
         if let Ok(v) = AsciiMetadataValue::from_str(v) {
