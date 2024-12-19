@@ -23,7 +23,7 @@ from .rendezvous import (
 )
 from .rendezvous import messages as _m
 
-START_TIMEOUT = 5
+START_TIMEOUT = 20
 
 
 class WorkerError(Exception):

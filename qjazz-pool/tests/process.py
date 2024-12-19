@@ -7,7 +7,10 @@ import signal
 import traceback
 
 from contextlib import closing
+from datetime import datetime
+
 from qjazz_contrib.core import logger
+from qjazz_contrib.core.utils import to_iso8601
 from qjazz_cache.status import CheckoutStatus
 from qjazz_rpc.connection import Connection, RendezVous
 from qjazz_rpc import messages as m_
@@ -19,7 +22,7 @@ def echo(*args):
 
 
 def cache_info(name: str) -> m_.CacheInfo:
-    tt = time()
+    tt = int(time())
     return m_.CacheInfo(
         uri="/france/france_parts",
         status=CheckoutStatus.UNCHANGED.value,
@@ -28,7 +31,7 @@ def cache_info(name: str) -> m_.CacheInfo:
         timestamp=tt,
         name=name,
         storage="file",
-        last_modified=tt, 
+        last_modified=to_iso8601(datetime.fromtimestamp(tt)), 
         saved_version="Test1.0",
         debug_metadata={},
         last_hit=tt,
@@ -42,7 +45,7 @@ def catalog_item(name: str) -> m_.CatalogItem:
         uri="/france/france_parts",
         name=name,
         storage="file",
-        last_modified=time(),
+        last_modified=to_iso8601(datetime.fromtimestamp(time())), 
         public_uri="/france/france_parts",
     )
 

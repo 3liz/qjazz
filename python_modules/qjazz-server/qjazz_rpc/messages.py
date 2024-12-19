@@ -135,9 +135,9 @@ class CacheInfo:
     in_cache: bool
     cache_id: str
     timestamp: Optional[float] = None
-    name: str = ""
-    storage: str = ""
-    last_modified: Optional[float] = None
+    name: Optional[str] = None
+    storage: Optional[str] = None
+    last_modified: Optional[str] = None
     saved_version: Optional[str] = None
     debug_metadata: Dict[str, int] = field(default_factory=dict)
     last_hit: float = 0
@@ -251,7 +251,7 @@ class CatalogItem:
     uri: str
     name: str
     storage: str
-    last_modified: float
+    last_modified: str
     public_uri: str
 
 

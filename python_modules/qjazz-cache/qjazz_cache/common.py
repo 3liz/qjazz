@@ -33,7 +33,7 @@ class ProjectMetadata:
     name: str
     scheme: str
     storage: Optional[str]
-    last_modified: int
+    last_modified: float
 
 
 @runtime_checkable

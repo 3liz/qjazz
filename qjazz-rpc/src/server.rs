@@ -4,8 +4,6 @@
 use crate::config::Settings;
 use crate::service::{QgisServerServer, QgisServerServicer};
 use qjazz_pool::Pool;
-use std::ffi::OsStr;
-use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 

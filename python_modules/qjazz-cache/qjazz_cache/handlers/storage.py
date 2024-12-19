@@ -93,5 +93,5 @@ class QgisStorageProtocolHandler(ProtocolHandler):
             name=md.name,
             scheme=scheme,
             storage=self._storage.type(),
-            last_modified=int(datetime.timestamp(last_modified)),
+            last_modified=datetime.timestamp(last_modified),
         )

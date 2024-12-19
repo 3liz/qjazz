@@ -6,17 +6,20 @@
 use crate::builder::Builder;
 use crate::errors::{Error, Result};
 use crate::queue::Queue;
+use crate::restore::Restore;
 use crate::stats::Stats;
 use crate::worker::Worker;
 use futures::future::try_join_all;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     dead_workers: AtomicUsize,
     max_requests: usize,
+    update: RwLock<Restore>,
 }
 
 impl WorkerQueue {
@@ -39,19 +42,27 @@ impl WorkerQueue {
     // leftover data in case of incomplete response.
     //
     pub(crate) async fn recycle(
-        queue: Arc<Self>,
+        self: Arc<Self>,
         mut worker: Worker,
         done_hint: bool,
     ) -> Result<()> {
         log::trace!("Recycling worker [{}]", worker.id());
-        let rv = worker.cancel_timeout(done_hint).await;
+        let mut rv = worker.cancel_timeout(done_hint).await;
         if rv.is_ok() {
-            // Push back worker on queue
-            queue.q.send(worker).await;
+            // Update resources
+            rv = self.update.read().await.restore(&mut worker).await;
+        }
+        if rv.is_ok() {
+            // Push back on queue
+            self.q.send(worker).await;
         } else {
-            queue.dead_workers.fetch_add(1, Ordering::Relaxed);
+            self.dead_workers.fetch_add(1, Ordering::Relaxed);
         }
         rv
+    }
+
+    pub fn drain<B, F: FnMut(Worker) -> B>(&self, f: F) -> Vec<B> {
+        self.q.drain_map(f)
     }
 
     fn close(&self) {
@@ -81,6 +92,7 @@ impl Pool {
                 q: Queue::with_capacity(opts.num_processes),
                 dead_workers: AtomicUsize::new(0),
                 max_requests: opts.max_waiting_requests,
+                update: RwLock::new(Restore::new()),
             }),
             builder,
             num_processes: 0,

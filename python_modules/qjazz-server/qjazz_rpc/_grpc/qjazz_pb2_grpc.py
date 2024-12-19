@@ -197,7 +197,7 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.PingRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.PingReply.FromString,
                 _registered_method=True)
-        self.CheckoutProject = channel.unary_stream(
+        self.CheckoutProject = channel.unary_unary(
                 '/qjazz.QgisAdmin/CheckoutProject',
                 request_serializer=qjazz__pb2.CheckoutRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.CacheInfo.FromString,
@@ -392,7 +392,7 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=qjazz__pb2.PingRequest.FromString,
                     response_serializer=qjazz__pb2.PingReply.SerializeToString,
             ),
-            'CheckoutProject': grpc.unary_stream_rpc_method_handler(
+            'CheckoutProject': grpc.unary_unary_rpc_method_handler(
                     servicer.CheckoutProject,
                     request_deserializer=qjazz__pb2.CheckoutRequest.FromString,
                     response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
@@ -521,7 +521,7 @@ class QgisAdmin(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             '/qjazz.QgisAdmin/CheckoutProject',

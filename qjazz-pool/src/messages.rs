@@ -276,14 +276,14 @@ pub struct CacheInfo {
     pub uri: String,
     pub status: i64,
     pub in_cache: bool,
-    pub timestamp: Option<f64>,
-    pub name: String,
-    pub storage: String,
-    pub last_modified: Option<f64>,
+    pub timestamp: Option<i64>,
+    pub name: Option<String>,
+    pub storage: Option<String>,
+    pub last_modified: Option<String>,
     pub saved_version: Option<String>,
     pub debug_metadata: HashMap<String, i64>,
     pub cache_id: String,
-    pub last_hit: f64,
+    pub last_hit: i64,
     pub hits: i64,
     pub pinned: bool,
 }
@@ -316,7 +316,7 @@ pub struct CatalogItem {
     pub uri: String,
     pub name: String,
     pub storage: String,
-    pub last_modified: f64,
+    pub last_modified: String,
     pub public_uri: String,
 }
 
@@ -418,6 +418,5 @@ mod tests {
 
         let mut buf = Vec::new();
         pickle::to_writer(&mut buf, &Message::from(msg), Default::default()).unwrap();
-   
     }
 }

@@ -3,9 +3,9 @@
 //!
 //!
 use crate::errors::{Error, Result};
+use parking_lot::Mutex;
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Mutex;
 use tokio::sync::Notify;
 
 pub struct Queue<T> {
@@ -49,7 +49,7 @@ impl<T> Queue<T> {
                 return Err(Error::QueueIsClosed);
             }
             // Drain the queue
-            if let Some(item) = self.queue.lock().unwrap().pop_front() {
+            if let Some(item) = self.queue.lock().pop_front() {
                 self.count.fetch_sub(1, Ordering::Relaxed);
                 return Ok(item);
             }
@@ -62,7 +62,7 @@ impl<T> Queue<T> {
 
     /// Send an item to the queue
     pub async fn send(&self, item: T) {
-        self.queue.lock().unwrap().push_back(item);
+        self.queue.lock().push_back(item);
         self.count.fetch_add(1, Ordering::Relaxed);
         self.notify.notify_one();
     }
@@ -72,7 +72,7 @@ impl<T> Queue<T> {
     where
         I: IntoIterator<Item = T>,
     {
-        let mut q = self.queue.lock().unwrap();
+        let mut q = self.queue.lock();
         let count = iter
             .into_iter()
             .map(|item| {
@@ -88,10 +88,21 @@ impl<T> Queue<T> {
     /// Remove at most n elements
     /// Returns the number of element removed
     pub fn drain(&self, n: usize) -> Vec<T> {
-        let mut q = self.queue.lock().unwrap();
+        let mut q = self.queue.lock();
         let count = usize::min(n, q.len());
         let v = q.drain(0..count).collect();
         self.count.store(q.len(), Ordering::Relaxed);
+        v
+    }
+
+    /// Drain all elements
+    pub fn drain_map<B, F>(&self, f: F) -> Vec<B>
+    where
+        F: FnMut(T) -> B,
+    {
+        let mut q = self.queue.lock();
+        let v = q.drain(..).map(f).collect();
+        self.count.store(0, Ordering::Relaxed);
         v
     }
 

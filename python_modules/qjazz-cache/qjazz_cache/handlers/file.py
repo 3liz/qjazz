@@ -32,7 +32,7 @@ def file_metadata(path: Path) -> ProjectMetadata:
         name=path.stem,
         scheme='file',
         storage='file',
-        last_modified=int(st.st_mtime),
+        last_modified=st.st_mtime,
     )
 
 

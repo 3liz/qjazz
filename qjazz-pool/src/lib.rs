@@ -6,6 +6,7 @@ pub mod pipes;
 pub mod pool;
 pub mod receiver;
 pub mod rendezvous;
+pub mod restore;
 pub mod stats;
 pub mod stream;
 pub mod worker;

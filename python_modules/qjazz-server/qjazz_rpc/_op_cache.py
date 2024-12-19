@@ -1,6 +1,7 @@
 #
 # Cache management operations
 #
+from datetime import datetime
 from typing import (
     Iterator,
     Optional,
@@ -20,6 +21,7 @@ from qjazz_cache.prelude import (
     ProjectMetadata,
 )
 from qjazz_contrib.core import logger
+from qjazz_contrib.core.utils import to_iso8601
 
 from . import messages as _m
 from .config import QgisConfig
@@ -40,10 +42,11 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
         case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
             e = cast(CacheEntry, md)
             _, status = cm.update(e.md, Co.REMOVED)
+
             reply = _m.CacheInfo(
                 uri=e.md.uri,
                 in_cache=False,
-                last_modified=e.md.last_modified,
+                last_modified=timestamp_to_iso(e.md.last_modified),
                 saved_version=e.project.lastSaveVersion().text(),
                 status=status.value,
                 cache_id=cache_id,
@@ -58,6 +61,11 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 
     _m.send_reply(conn, reply)
 
+# Convert last modified date to ison
+def timestamp_to_iso(timestamp: Optional[float]) -> Optional[str]:
+    return to_iso8601(
+        datetime.fromtimestamp(timestamp),
+    ) if timestamp else None
 
 #
 # Helper for returning CacheInfo from
@@ -69,18 +77,19 @@ def cache_info_from_entry(
     in_cache: bool = True,
     cache_id: str = "",
 ) -> _m.CacheInfo:
+
     return _m.CacheInfo(
         uri=e.uri,
         in_cache=in_cache,
-        timestamp=e.timestamp,
+        timestamp=int(e.timestamp),
         status=status.value,
         name=e.name,
         storage=e.storage,
-        last_modified=e.last_modified,
+        last_modified=timestamp_to_iso(e.last_modified),
         saved_version=e.project.lastSaveVersion().text(),
         debug_metadata=e.debug_meta.__dict__.copy(),
         cache_id=cache_id,
-        last_hit=e.last_hit,
+        last_hit=int(e.last_hit),
         hits=e.hits,
         pinned=e.pinned,
     )
@@ -110,8 +119,8 @@ def checkout_project(
                         uri=md.uri,
                         in_cache=False,
                         status=status.value,
-                        storage=md.storage or "<none>",
-                        last_modified=md.last_modified,
+                        storage=md.storage or None,
+                        last_modified=timestamp_to_iso(md.last_modified),
                         cache_id=cache_id,
                     )
                 case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED:
@@ -304,7 +313,7 @@ def send_catalog(
                 uri=md.uri,
                 name=md.name,
                 storage=md.storage or "<none>",
-                last_modified=md.last_modified,
+                last_modified=to_iso8601(datetime.fromtimestamp(md.last_modified)),
                 public_uri=public_path,
             ) for md, public_path in collect()
         ),

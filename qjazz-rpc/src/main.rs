@@ -3,12 +3,13 @@ mod logger;
 mod server;
 mod service;
 mod signals;
+mod utils;
 
 use server::serve;
 
 use clap::{Parser, Subcommand};
 use config::Settings;
-use std::io::{self, Write};
+use std::io;
 use std::path::PathBuf;
 
 #[derive(Parser)]

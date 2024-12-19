@@ -71,7 +71,9 @@ async fn test_messages_io() {
 
     let headers = HashMap::<String, String>::from_iter(resp.headers.drain(..));
     assert_eq!(
-        headers.get("x-test-content-type").expect("Header not found"),
+        headers
+            .get("x-test-content-type")
+            .expect("Header not found"),
         "application/test"
     );
     assert_eq!(resp.checkout_status, Some(msg::CheckoutStatus::NEW as i64));
@@ -115,18 +117,18 @@ async fn test_messages_io() {
         .checkout_project("/france/france_parts", true)
         .await
         .unwrap();
-    assert_eq!(resp.name, "checkout");
+    assert_eq!(resp.name.unwrap(), "checkout");
 
     // UpdateCacheMsg
     let mut resp = w.update_cache().await.unwrap();
     while let Some(info) = resp.next().await.unwrap() {
         assert_eq!(info.cache_id, "test");
-        assert!(info.name.starts_with("update_"));
+        assert!(info.name.unwrap().starts_with("update_"));
     }
 
     // DropProjectMsg
     let resp = w.drop_project("/france/france_parts").await.unwrap();
-    assert_eq!(resp.name, "drop");
+    assert_eq!(resp.name.unwrap(), "drop");
 
     // CatalogMsg
     let mut resp = w.catalog(Some("/france")).await.unwrap();

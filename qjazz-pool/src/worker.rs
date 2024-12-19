@@ -54,6 +54,7 @@ pub struct Worker {
     ready_timeout: Duration,
     process: _Child,
     uptime: Instant,
+    pub(crate) last_update: u64,
 }
 
 impl Worker {
@@ -117,6 +118,7 @@ impl Worker {
             ready_timeout: Duration::from_secs(1),
             process,
             uptime: Instant::now(),
+            last_update: 0,
         })
     }
 

@@ -256,16 +256,10 @@ def checkout_project(project: str, pull: bool):
     """ CheckoutProject PROJECT from cache
     """
     with connect() as stub:
-        stream = stub.CheckoutProject(
+        item = stub.CheckoutProject(
             qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
         )
-        count = 0
-        for item in stream:
-            count += 1
-            click.echo(MessageToJson(item))
-
-        click.echo(f"Returned {count} items", err=True)
-
+        click.echo(MessageToJson(item))
 
 @cache_commands.command("drop")
 @click.argument('project', nargs=1)

@@ -34,7 +34,7 @@ impl ScopedWorker {
     pub(crate) fn recycle(&mut self) -> Option<JoinHandle<Result<()>>> {
         self.item
             .take()
-            .map(|w| tokio::spawn(WorkerQueue::recycle(self.queue.clone(), w, self.done)))
+            .map(|w| tokio::spawn(self.queue.clone().recycle(w, self.done)))
     }
 }
 
@@ -86,5 +86,15 @@ impl Receiver {
     /// Returns true if the queue is closed
     pub fn is_closed(&self) -> bool {
         self.queue.is_closed()
+    }
+
+    /// Drain all elements and get a scoped worker
+    /// for each.
+    pub fn drain(&self) -> Vec<ScopedWorker> {
+        self.queue.drain(|w| ScopedWorker {
+            queue: self.queue.clone(),
+            item: Some(w),
+            done: false,
+        })
     }
 }

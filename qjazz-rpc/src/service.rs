@@ -1,32 +1,81 @@
-use qjazz_service::qgis_server_server::QgisServer;
-use qjazz_service::{ApiRequest, OwsRequest, PingReply, PingRequest, ResponseChunk};
+use qjazz_service::{
+    ApiRequest, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty,
+    JsonConfig, ListRequest, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo,
+    ProjectRequest, ResponseChunk, ServerStatus, SleepRequest, StatsReply,
+};
 
-use std::collections::HashMap;
 use std::pin::Pin;
-use std::str::FromStr;
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
-use tonic::{
-    metadata::{AsciiMetadataValue, KeyAndValueRef, MetadataKey, MetadataMap},
-    Request, Response, Status,
-};
+use tonic::{Request, Response, Status};
+
+use crate::utils::{headers_to_metadata, metadata_to_headers};
+
+// Qjazz gRPC services
 
 mod qjazz_service {
     tonic::include_proto!("qjazz"); // proto package
 }
 
-// Reexport
-pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
+//
+// Wrapper for worker queue
+//
+struct Inner(qjazz_pool::Receiver);
+
+impl Inner {
+    // wait for available worker
+    async fn get_worker(&self) -> Result<qjazz_pool::ScopedWorker, Status> {
+        self.0.get().await.map_err(|err| match err {
+            qjazz_pool::Error::MaxRequestsExceeded => Status::resource_exhausted(err),
+            qjazz_pool::Error::QueueIsClosed => Status::unavailable(err),
+            _ => Status::unknown(err),
+        })
+    }
+}
+
+//
+// Helper trait
+//
+trait Qjazz {
+    const HEADER_PREFIX: &str = "x-reply-header-";
+
+    // Handle response error
+    // Convert process status response to gRPC response
+    // whenever it is possible.
+    fn error(err: qjazz_pool::Error) -> Status {
+        match err {
+            qjazz_pool::Error::ResponseError(status, msg) => {
+                let mut rv = match status {
+                    404 | 410 => Status::not_found(msg.to_string()),
+                    403 => Status::permission_denied(msg.to_string()),
+                    500 => Status::internal(msg.to_string()),
+                    401 => Status::unauthenticated(msg.to_string()),
+                    _ => Status::unknown(format!("Response error {}: {}", status, msg)),
+                };
+                rv.metadata_mut()
+                    .insert("x-reply-status-code", status.into());
+                rv
+            }
+            _ => Status::unknown(err),
+        }
+    }
+}
 
 //
 // The QGIS Server servicer
 //
 // Handle QGIS requests
 //
+
+use qjazz_service::qgis_server_server::QgisServer;
+// Reexport
+pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
+
 pub(crate) struct QgisServerServicer {
     inner: Inner,
 }
 
+impl Qjazz for QgisServerServicer {}
 
 impl QgisServerServicer {
     pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
@@ -77,7 +126,6 @@ type ResponseChunkStream = Pin<Box<dyn Stream<Item = Result<ResponseChunk, Statu
 // gRPC Service implementation
 #[tonic::async_trait]
 impl QgisServer for QgisServerServicer {
- 
     //
     // Ping
     //
@@ -131,7 +179,7 @@ impl QgisServer for QgisServerServicer {
     // Api request
     //
     type ExecuteApiRequestStream = ResponseChunkStream;
-    
+
     async fn execute_api_request(
         &self,
         request: Request<ApiRequest>,
@@ -171,81 +219,233 @@ impl QgisServer for QgisServerServicer {
         Ok(response)
     }
 }
-//
-// Wrapper for queue
-//
-struct Inner(qjazz_pool::Receiver);
 
-impl Inner {
-    // wait for available worker
-    async fn get_worker(&self) -> Result<qjazz_pool::ScopedWorker, Status> {
-        self.0.get().await.map_err(|err| match err {
-            qjazz_pool::Error::MaxRequestsExceeded => Status::resource_exhausted(err),
-            qjazz_pool::Error::QueueIsClosed => Status::unavailable(err),
-            _ => Status::unknown(err),
-        })
-    }
+//
+// The QGIS Admin servicer
+//
+
+use qjazz_service::qgis_admin_server::QgisAdmin;
+// Reexport
+pub(crate) use qjazz_service::qgis_admin_server::QgisAdminServer;
+
+pub(crate) struct QgisAdminServicer {
+    inner: Inner,
 }
 
-// 
-// Helper trait
-//
-trait Qjazz {
+impl Qjazz for QgisAdminServicer {}
 
-    const HEADER_PREFIX: &str = "x-reply-header-";
-    
-    // Handle response error
-    // Convert process status response to gRPC response
-    // whenever it is possible.
-    fn error(err: qjazz_pool::Error) -> Status {
-        match err {
-            qjazz_pool::Error::ResponseError(status, msg) => {
-                let mut rv = match status {
-                    404 | 410 => Status::not_found(msg.to_string()),
-                    403 => Status::permission_denied(msg.to_string()),
-                    500 => Status::internal(msg.to_string()),
-                    401 => Status::unauthenticated(msg.to_string()),
-                    _ => Status::unknown(format!("Response error {}: {}", status, msg)),
+impl QgisAdminServicer {
+    pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
+        Self {
+            inner: Inner(queue),
+        }
+    }
+    /*
+    // Handle byte streaming
+    fn stream_object<R, T>(qjazz
+        mut _w: qjazz_pool::ScopedWorker,
+    ) -> mpsc::Receiver<Result<T, Status>>
+    where
+        T: From<
+    {
+        let (tx, rx) = mpsc::channel(1);
+        tokio::spawn(async move {
+            {
+                let mut stream = match w.byte_stream() {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        let _ = tx.send(Err(Status::unknown(err))).await;
+                        return;
+                    }
                 };
-                rv.metadata_mut()
-                    .insert("x-reply-status-code", status.into());
-                rv
+                loop {
+                    if tx
+                        .send(match stream.next().await {
+                            Ok(Some(chunk)) => Ok(ResponseChunk {
+                                chunk: chunk.into(),
+                            }),
+                            Ok(None) => break,
+                            Err(err) => Err(Status::unknown(err)),
+                        })
+                        .await
+                        .is_err()
+                    {
+                        log::error!("Connection cancelled by client");
+                        return;
+                    }
+                }
             }
-            _ => Status::unknown(err),
-        }
+            w.done();
+        });
+        rx
+    }
+    */
+}
+
+type CacheInfoStream = Pin<Box<dyn Stream<Item = Result<CacheInfo, Status>> + Send>>;
+type PluginInfoStream = Pin<Box<dyn Stream<Item = Result<PluginInfo, Status>> + Send>>;
+type CatalogItemStream = Pin<Box<dyn Stream<Item = Result<CatalogItem, Status>> + Send>>;
+
+// gRPC Service implementation
+#[tonic::async_trait]
+impl QgisAdmin for QgisAdminServicer {
+    //
+    // Ping
+    //
+    async fn ping(&self, request: Request<PingRequest>) -> Result<Response<PingReply>, Status> {
+        let mut w = self.inner.get_worker().await?;
+        let echo = w
+            .ping(&request.into_inner().echo)
+            .await
+            .map_err(Self::error)?;
+        Ok(Response::new(PingReply { echo }))
+    }
+    //
+    // Cache managment
+    //
+    async fn checkout_project(
+        &self,
+        request: Request<CheckoutRequest>,
+    ) -> Result<Response<CacheInfo>, Status> {
+        let mut w = self.inner.get_worker().await?;
+
+        let req = request.get_ref();
+        let resp = w
+            .checkout_project(&req.uri, req.pull.unwrap_or(false))
+            .await
+            .map_err(Self::error)?;
+
+        Ok(Response::new(resp.into()))
+    }
+    // Pull project
+    type PullProjectsStream = CacheInfoStream;
+
+    // We need to sync all workers with the same data
+    // 1. Update the restore state for busy workers (Write lock)
+    // 2. Drain all idle workers
+    // 3. Unlock the restore state
+    // 4. Release all workers
+    async fn pull_projects(
+        &self,
+        request: Request<tonic::Streaming<ProjectRequest>>,
+    ) -> Result<Response<Self::PullProjectsStream>, Status> {
+        /*
+        let mut in_stream = request.into_inner();
+
+        let (tx, rx) = mpsc::channel(64);
+        */
+        Err(Status::unimplemented(""))
+    }
+    // Drop project
+    type DropProjectStream = CacheInfoStream;
+
+    async fn drop_project(
+        &self,
+        request: Request<DropRequest>,
+    ) -> Result<Response<Self::DropProjectStream>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    // List cache
+    type ListCacheStream = CacheInfoStream;
+
+    async fn list_cache(
+        &self,
+        request: Request<ListRequest>,
+    ) -> Result<Response<Self::ListCacheStream>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    // Clear cache
+    async fn clear_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    // Update cache
+    type UpdateCacheStream = CacheInfoStream;
+
+    async fn update_cache(
+        &self,
+        request: Request<Empty>,
+    ) -> Result<Response<Self::UpdateCacheStream>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    //
+    // Plugins
+    //
+    type ListPluginsStream = PluginInfoStream;
+
+    async fn list_plugins(
+        &self,
+        request: Request<Empty>,
+    ) -> Result<Response<Self::ListPluginsStream>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    //
+    // Config managment
+    //
+    async fn set_config(&self, request: Request<JsonConfig>) -> Result<Response<Empty>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn get_config(&self, request: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn reload_config(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    //
+    // Project inspection
+    //
+    async fn get_project_info(
+        &self,
+        request: Request<ProjectRequest>,
+    ) -> Result<Response<ProjectInfo>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    // Catalog
+    type CatalogStream = CatalogItemStream;
+
+    async fn catalog(
+        &self,
+        request: Request<CatalogRequest>,
+    ) -> Result<Response<Self::CatalogStream>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    //
+    // Service managment/inspection
+    //
+    async fn get_env(&self, request: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn set_server_serving_status(
+        &self,
+        request: Request<ServerStatus>,
+    ) -> Result<Response<Empty>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn stats(&self, request: Request<Empty>) -> Result<Response<StatsReply>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn sleep(&self, request: Request<SleepRequest>) -> Result<Response<Empty>, Status> {
+        Err(Status::unimplemented(""))
     }
 }
 
-impl Qjazz for QgisServerServicer {}
+// Converters
 
-
-// HEADERS
-// XXX Fix metadata <-> headers handling
-
-fn metadata_to_headers(metadata: &MetadataMap) -> Vec<(&str, &str)> {
-    metadata.iter().filter_map(|key_value| {
-        match key_value {
-            KeyAndValueRef::Ascii(key, value) => value
-                .to_str()
-                .map(|v| (key.as_str(), v))
-                .ok(),
-            _ => None,
-        }
-    }).collect()
-}
-
-
-fn headers_to_metadata(metadata: &mut MetadataMap, status: i64, headers: &Vec<(String, String)>) {
-    metadata.insert("x-reply-status-code", status.into());
-    for (k, v) in headers.iter() {
-        if let Ok(v) = AsciiMetadataValue::from_str(v) {
-            if let Ok(k) = MetadataKey::from_str(&k) {
-                metadata.insert(k, v);
-            } else {
-                log::error!("Invalid response header key {:?}", k);
-            }
-        } else {
-            log::error!("Invalid response header value {:?}", v);
+impl From<qjazz_pool::messages::CacheInfo> for CacheInfo {
+    fn from(msg: qjazz_pool::messages::CacheInfo) -> Self {
+        CacheInfo {
+            uri: msg.uri,
+            status: msg.status,
+            in_cache: msg.in_cache,
+            timestamp: msg.timestamp,
+            name: msg.name,
+            storage: msg.storage,
+            last_modified: msg.last_modified,
+            saved_version: msg.saved_version,
+            debug_metadata: msg.debug_metadata,
+            cache_id: msg.cache_id,
+            last_hit: msg.last_hit,
+            hits: msg.hits,
+            pinned: msg.pinned,
         }
     }
 }

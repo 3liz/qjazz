@@ -22,6 +22,7 @@ tempfile = "3"
 nix = { version = "0.29", features = ["fs", "signal", "process"] }
 futures = "0.3"
 tokio-util = { workspace = true }
+parking_lot = "0.12"
 
 [dependencies.tokio]
 workspace = true

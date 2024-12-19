@@ -14,7 +14,7 @@ service QgisServer {
 
 service QgisAdmin {
     rpc Ping (PingRequest) returns (PingReply) {}
-    rpc CheckoutProject (CheckoutRequest) returns (stream CacheInfo) {}
+    rpc CheckoutProject (CheckoutRequest) returns (CacheInfo) {}
     rpc PullProjects (stream ProjectRequest) returns (stream CacheInfo) {}
     rpc DropProject (DropRequest) returns (stream CacheInfo) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
@@ -107,16 +107,16 @@ message CacheInfo {
     string uri = 1;
     int64 status = 2;
     bool in_cache = 3;
-    int64 timestamp = 4;
+    optional int64 timestamp = 4;
     optional string name = 5;
     optional string storage = 6;
     optional string last_modified = 7;
     optional string saved_version = 8;
     map<string,int64> debug_metadata = 9;
-    optional string cache_id = 10;
-    optional int64 last_hit = 11;
-    optional int64 hits = 12;
-    optional bool pinned = 13;
+    string cache_id = 10;
+    int64 last_hit = 11;
+    int64 hits = 12;
+    bool pinned = 13;
 }
 
 message DropRequest {
