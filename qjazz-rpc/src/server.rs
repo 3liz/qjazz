@@ -37,7 +37,7 @@ pub(crate) async fn serve(
     let token = CancellationToken::new();
     let signal_handle = crate::signals::handle_signals(token.clone())?;
 
-    let grace_period = Duration::from_secs(settings.server.shutdown_grace_period);
+    let grace_period = settings.server.shutdown_grace_period();
 
     // NOTE Do not use serve_with_shutdown since
     // it waits forever for client to disconnect

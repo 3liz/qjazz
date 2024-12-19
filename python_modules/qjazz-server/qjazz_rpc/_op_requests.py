@@ -1,11 +1,10 @@
 #
 # Qgis server request operations
 #
+from typing import List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
 
 import psutil
-
-from typing_extensions import Dict, Optional, Tuple, assert_never, cast
 
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer, QgsServerException, QgsServerRequest
@@ -75,6 +74,7 @@ def handle_ows_request(
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
+        header_prefix=msg.header_prefix,
     )
 
 
@@ -110,7 +110,7 @@ def handle_api_request(
         url = f"{msg.url.removesuffix('/')}{ROOT_DELEGATE}/{msg.path.removeprefix('/')}"
         # Pass api name as header
         # to api delegate
-        headers['x-qgis-api'] = msg.name
+        headers.append(('x-qgis-api',msg.name))
     else:
         url = msg.url
         if msg.path:
@@ -134,6 +134,7 @@ def handle_api_request(
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
+        header_prefix=msg.header_prefix,
     )
 
 
@@ -143,7 +144,7 @@ def _handle_generic_request(
     allow_direct: bool,
     data: Optional[bytes],
     method: QgsServerRequest.Method,
-    headers: Dict[str, str],
+    headers: List[Tuple[str, str]],
     conn: _m.Connection,
     server: QgsServer,
     cm: CacheManager,
@@ -153,6 +154,7 @@ def _handle_generic_request(
     cache_id: str,
     request_id: Optional[str],
     feedback: QgsFeedback,
+    header_prefix: Optional[str],
 ):
     """ Handle generic Qgis request
     """
@@ -171,12 +173,12 @@ def _handle_generic_request(
         entry.hit_me()
 
         resp_hdrs = {
-            'Last-Modified': to_rfc822(entry.last_modified),
-            'X-Qgis-Cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
+            'x-qgis-last-modified': to_rfc822(entry.last_modified),
+            'x-qgis-cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
         }
 
         if request_id:
-            resp_hdrs['X-Request-ID'] = request_id
+            resp_hdrs['x-request-id'] = request_id
 
         project = entry.project
         response = Response(
@@ -187,6 +189,7 @@ def _handle_generic_request(
             process=process,
             cache_id=cache_id,
             feedback=feedback,
+            header_prefix=header_prefix,
         )
         # See https://github.com/qgis/QGIS/pull/9773
         server.serverInterface().setConfigFilePath(project.fileName())
@@ -198,9 +201,10 @@ def _handle_generic_request(
             cache_id=cache_id,
             chunk_size=config.max_chunk_size,
             feedback=feedback,
+            header_prefix=header_prefix,
         )
 
-    request = Request(url, method, headers, data=data)  # type: ignore
+    request = Request(url, method, dict(headers), data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
 
 

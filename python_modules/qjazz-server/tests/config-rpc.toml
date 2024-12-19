@@ -6,20 +6,20 @@ name = "Test"
 shutdown_grace_period = 5
 process_timeout = 20
 process_grace_period = 3
-num_processes = 3
+num_processes = 1
 
-[worker.config]
+[worker.qgis]
 
 
-[worker.config.plugins]
+[worker.qgis.plugins]
 paths = ['$location/plugins']
 
-[worker.config.projects]
+[worker.qgis.projects]
 trust_layer_metadata = true
 disable_getprint = true
 force_readonly_layers = true
 
-[worker.config.projects.search_paths]
+[worker.qgis.projects.search_paths]
 '/tests' = "$location/data/samples"
 '/france' = "$location/data/france_parts"
 '/montpellier' = "$location/data/montpellier"

@@ -9,8 +9,8 @@ import traceback
 from contextlib import closing
 from qjazz_contrib.core import logger
 from qjazz_cache.status import CheckoutStatus
-from qjazz_mapserv.connection import Connection, RendezVous
-from qjazz_mapserv import messages as m_
+from qjazz_rpc.connection import Connection, RendezVous
+from qjazz_rpc import messages as m_
 from time import sleep, time;
 
 
@@ -117,11 +117,12 @@ def run(name: str, projects: list[str]) -> None:
                         logger.info("Worker is now awake")
                         m_.send_nodata(conn)
                     case m_.OwsRequestMsg():
+                        prefix = msg.header_prefix or ""
                         m_.send_reply(
                             conn,
                             m_.RequestReply(
                                 status_code=200,
-                                headers={"Content-Type": "application/test"},
+                                headers=[(f"{prefix}content-type", "application/test")],
                                 checkout_status=CheckoutStatus.NEW.value,
                             ),
                         )
@@ -130,11 +131,12 @@ def run(name: str, projects: list[str]) -> None:
                         m_.send_chunk(conn, b"chunk2")
                         m_.send_chunk(conn, b"")
                     case m_.ApiRequestMsg():
+                        prefix = msg.header_prefix or ""
                         m_.send_reply(
                             conn,
                             m_.RequestReply(
                                 status_code=200,
-                                headers={"Content-Type": "application/test"},
+                                headers=[(f"{prefix}content-type", "application/test")],
                                 checkout_status=CheckoutStatus.NEW.value,
                             ),
                         )

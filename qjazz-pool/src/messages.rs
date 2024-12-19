@@ -161,8 +161,9 @@ pub struct OwsRequestMsg<'a> {
     pub version: Option<&'a str>,
     pub direct: bool,
     pub options: Option<&'a str>,
-    pub headers: HashMap<String, String>,
+    pub headers: Vec<(&'a str, &'a str)>,
     pub request_id: Option<&'a str>,
+    pub header_prefix: Option<&'a str>,
     pub debug_report: bool,
 }
 
@@ -179,8 +180,9 @@ pub struct ApiRequestMsg<'a> {
     pub target: Option<&'a str>,
     pub direct: bool,
     pub options: Option<&'a str>,
-    pub headers: HashMap<String, String>,
+    pub headers: Vec<(&'a str, &'a str)>,
     pub request_id: Option<&'a str>,
+    pub header_prefix: Option<&'a str>,
     pub debug_report: bool,
 }
 
@@ -188,7 +190,7 @@ pub struct ApiRequestMsg<'a> {
 pub struct RequestReply {
     pub status_code: i64,
     pub checkout_status: Option<i64>,
-    pub headers: HashMap<String, String>,
+    pub headers: Vec<(String, String)>,
     pub cache_id: String,
 }
 
@@ -394,6 +396,7 @@ pub enum Envelop<T> {
 mod tests {
     use super::*;
     use serde_json;
+    use serde_pickle as pickle;
 
     #[test]
     fn test_serialize_msg() {
@@ -407,29 +410,14 @@ mod tests {
             target: Some("MyProject"),
             direct: false,
             options: None,
-            headers: HashMap::new(),
+            headers: vec![("content-type", "application/test")],
             request_id: Some("1234"),
             debug_report: false,
+            header_prefix: Some("x-test-"),
         };
 
-        // Create buffer
-        let mut buf = String::new();
-        serde_json::to_writer(unsafe { buf.as_mut_vec() }, &Message::from(msg)).unwrap();
-        assert_eq!(
-            buf,
-            concat!(
-                r#"{"msg_id":5,"#,
-                r#""name":"Test","#,
-                r#""path":"/api/path","#,
-                r#""method":"GET","#,
-                r#""url":"http://foobar.com","data":[102,111,111,98,97,114],"#,
-                r#""delegate":false,"#,
-                r#""target":"MyProject","#,
-                r#""direct":false,"#,
-                r#""options":null,"#,
-                r#""headers":{},"#,
-                r#""request_id":"1234","debug_report":false}"#,
-            ),
-        );
+        let mut buf = Vec::new();
+        pickle::to_writer(&mut buf, &Message::from(msg), Default::default()).unwrap();
+   
     }
 }

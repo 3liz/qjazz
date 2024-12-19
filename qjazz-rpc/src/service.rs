@@ -18,9 +18,15 @@ mod qjazz_service {
 // Reexport
 pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
 
+//
+// The QGIS Server servicer
+//
+// Handle QGIS requests
+//
 pub(crate) struct QgisServerServicer {
     inner: Inner,
 }
+
 
 impl QgisServerServicer {
     pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
@@ -68,19 +74,24 @@ impl QgisServerServicer {
 
 type ResponseChunkStream = Pin<Box<dyn Stream<Item = Result<ResponseChunk, Status>> + Send>>;
 
+// gRPC Service implementation
 #[tonic::async_trait]
 impl QgisServer for QgisServerServicer {
+ 
     //
     // Ping
     //
     async fn ping(&self, request: Request<PingRequest>) -> Result<Response<PingReply>, Status> {
-        let reply = PingReply {
-            echo: request.into_inner().echo,
-        };
-        Ok(Response::new(reply))
+        let mut w = self.inner.get_worker().await?;
+        let echo = w
+            .ping(&request.into_inner().echo)
+            .await
+            .map_err(Self::error)?;
+        Ok(Response::new(PingReply { echo }))
     }
-
+    //
     // Ows request
+    //
     type ExecuteOwsRequestStream = ResponseChunkStream;
 
     async fn execute_ows_request(
@@ -89,9 +100,9 @@ impl QgisServer for QgisServerServicer {
     ) -> Result<Response<Self::ExecuteOwsRequestStream>, Status> {
         let mut w = self.inner.get_worker().await?;
 
-        let headers = metadata_to_dict(request.metadata());
+        let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();
-        let mut resp = w
+        let resp = w
             .request(qjazz_pool::messages::OwsRequestMsg {
                 service: &req.service,
                 request: &req.request,
@@ -101,32 +112,34 @@ impl QgisServer for QgisServerServicer {
                 direct: req.direct.unwrap_or(false),
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
-                debug_report: req.debug_report.unwrap_or(false),
+                header_prefix: Some(Self::HEADER_PREFIX),
+                debug_report: false,
                 headers,
             })
             .await
-            .map_err(from_response_err)?;
+            .map_err(Self::error)?;
 
         let rx = Self::stream_bytes(w);
 
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteOwsRequestStream);
 
-        set_metadata(response.metadata_mut(), resp.status_code, &mut resp.headers);
+        headers_to_metadata(response.metadata_mut(), resp.status_code, &resp.headers);
         Ok(response)
     }
-
+    //
     // Api request
+    //
     type ExecuteApiRequestStream = ResponseChunkStream;
-
+    
     async fn execute_api_request(
         &self,
         request: Request<ApiRequest>,
     ) -> Result<Response<Self::ExecuteApiRequestStream>, Status> {
         let mut w = self.inner.get_worker().await?;
-        let headers = metadata_to_dict(request.metadata());
+        let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();
-        let mut resp = w
+        let resp = w
             .request(qjazz_pool::messages::ApiRequestMsg {
                 name: &req.name,
                 path: &req.path,
@@ -142,22 +155,22 @@ impl QgisServer for QgisServerServicer {
                 direct: req.direct.unwrap_or(false),
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
-                debug_report: req.debug_report.unwrap_or(false),
+                header_prefix: Some(Self::HEADER_PREFIX),
+                debug_report: false,
                 headers,
             })
             .await
-            .map_err(from_response_err)?;
+            .map_err(Self::error)?;
 
         let rx = Self::stream_bytes(w);
 
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteApiRequestStream);
 
-        set_metadata(response.metadata_mut(), resp.status_code, &mut resp.headers);
+        headers_to_metadata(response.metadata_mut(), resp.status_code, &resp.headers);
         Ok(response)
     }
 }
-
 //
 // Wrapper for queue
 //
@@ -174,46 +187,58 @@ impl Inner {
     }
 }
 
-// HEADERS
-// XXX Fix metadata <-> headers handling
+// 
+// Helper trait
+//
+trait Qjazz {
 
-fn metadata_to_dict(metadata: &MetadataMap) -> HashMap<String, String> {
-    HashMap::from_iter(metadata.iter().filter_map(|key_value| {
-        match key_value {
-            KeyAndValueRef::Ascii(key, value) => value
-                .to_str()
-                .map(|v| (key.as_str().to_string(), v.to_string()))
-                .ok(),
-            _ => None,
+    const HEADER_PREFIX: &str = "x-reply-header-";
+    
+    // Handle response error
+    // Convert process status response to gRPC response
+    // whenever it is possible.
+    fn error(err: qjazz_pool::Error) -> Status {
+        match err {
+            qjazz_pool::Error::ResponseError(status, msg) => {
+                let mut rv = match status {
+                    404 | 410 => Status::not_found(msg.to_string()),
+                    403 => Status::permission_denied(msg.to_string()),
+                    500 => Status::internal(msg.to_string()),
+                    401 => Status::unauthenticated(msg.to_string()),
+                    _ => Status::unknown(format!("Response error {}: {}", status, msg)),
+                };
+                rv.metadata_mut()
+                    .insert("x-reply-status-code", status.into());
+                rv
+            }
+            _ => Status::unknown(err),
         }
-    }))
-}
-
-/// Handle response error
-fn from_response_err(err: qjazz_pool::Error) -> Status {
-    match err {
-        qjazz_pool::Error::ResponseError(status, msg) => {
-            let mut rv = match status {
-                404 | 410 => Status::not_found(msg.to_string()),
-                403 => Status::permission_denied(msg.to_string()),
-                500 => Status::internal(msg.to_string()),
-                401 => Status::unauthenticated(msg.to_string()),
-                _ => Status::unknown(format!("Response error {}: {}", status, msg)),
-            };
-            rv.metadata_mut()
-                .insert("x-reply-status-code", status.into());
-            rv
-        }
-        _ => Status::unknown(err),
     }
 }
 
-fn set_metadata(metadata: &mut MetadataMap, status: i64, headers: &mut HashMap<String, String>) {
+impl Qjazz for QgisServerServicer {}
+
+
+// HEADERS
+// XXX Fix metadata <-> headers handling
+
+fn metadata_to_headers(metadata: &MetadataMap) -> Vec<(&str, &str)> {
+    metadata.iter().filter_map(|key_value| {
+        match key_value {
+            KeyAndValueRef::Ascii(key, value) => value
+                .to_str()
+                .map(|v| (key.as_str(), v))
+                .ok(),
+            _ => None,
+        }
+    }).collect()
+}
+
+
+fn headers_to_metadata(metadata: &mut MetadataMap, status: i64, headers: &Vec<(String, String)>) {
     metadata.insert("x-reply-status-code", status.into());
     for (k, v) in headers.iter() {
         if let Ok(v) = AsciiMetadataValue::from_str(v) {
-            let mut k = format!("x-reply-header-{k}");
-            k.make_ascii_lowercase();
             if let Ok(k) = MetadataKey::from_str(&k) {
                 metadata.insert(k, v);
             } else {

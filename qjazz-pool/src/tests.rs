@@ -50,7 +50,7 @@ async fn test_messages_io() {
     //
     // Ows Request
     //
-    let resp = w
+    let mut resp = w
         .request(msg::OwsRequestMsg {
             service: "WFS",
             request: "GetCapabilities",
@@ -59,16 +59,19 @@ async fn test_messages_io() {
             version: None,
             direct: false,
             options: None,
-            headers: HashMap::new(),
+            headers: vec![("content-type", "application/test")],
             request_id: None,
             debug_report: false,
+            header_prefix: Some("x-test-"),
         })
         .await
         .unwrap();
 
     assert_eq!(resp.status_code, 200);
+
+    let headers = HashMap::<String, String>::from_iter(resp.headers.drain(..));
     assert_eq!(
-        resp.headers.get("Content-Type").unwrap(),
+        headers.get("x-test-content-type").expect("Header not found"),
         "application/test"
     );
     assert_eq!(resp.checkout_status, Some(msg::CheckoutStatus::NEW as i64));
@@ -93,9 +96,10 @@ async fn test_messages_io() {
             target: Some("/france/france_parts"),
             direct: false,
             options: None,
-            headers: HashMap::new(),
+            headers: vec![("content-type", "application/test")],
             request_id: None,
             debug_report: false,
+            header_prefix: Some("x-test-"),
         })
         .await
         .unwrap();

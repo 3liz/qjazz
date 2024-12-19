@@ -62,7 +62,7 @@ class ResponseChunk(_message.Message):
     def __init__(self, chunk: _Optional[bytes] = ...) -> None: ...
 
 class OwsRequest(_message.Message):
-    __slots__ = ("service", "request", "target", "version", "url", "direct", "options", "request_id", "debug_report")
+    __slots__ = ("service", "request", "target", "version", "url", "direct", "options", "request_id")
     SERVICE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_FIELD_NUMBER: _ClassVar[int]
     TARGET_FIELD_NUMBER: _ClassVar[int]
@@ -71,7 +71,6 @@ class OwsRequest(_message.Message):
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
-    DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
     service: str
     request: str
     target: str
@@ -80,11 +79,10 @@ class OwsRequest(_message.Message):
     direct: bool
     options: str
     request_id: str
-    debug_report: bool
-    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ...) -> None: ...
 
 class ApiRequest(_message.Message):
-    __slots__ = ("name", "path", "method", "data", "delegate", "target", "url", "direct", "options", "request_id", "debug_report")
+    __slots__ = ("name", "path", "method", "data", "delegate", "target", "url", "direct", "options", "request_id")
     NAME_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     METHOD_FIELD_NUMBER: _ClassVar[int]
@@ -95,7 +93,6 @@ class ApiRequest(_message.Message):
     DIRECT_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
-    DEBUG_REPORT_FIELD_NUMBER: _ClassVar[int]
     name: str
     path: str
     method: str
@@ -106,8 +103,7 @@ class ApiRequest(_message.Message):
     direct: bool
     options: str
     request_id: str
-    debug_report: bool
-    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., debug_report: bool = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ("uri", "pull")

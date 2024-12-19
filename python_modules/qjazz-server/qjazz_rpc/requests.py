@@ -76,6 +76,7 @@ class Response(QgsServerResponse):
             process: Optional[psutil.Process] = None,
             cache_id: str = "",
             feedback: Optional[QgsFeedback] = None,
+            header_prefix: Optional[str] = None,
     ):
         super().__init__()
         self._buffer = QBuffer()
@@ -92,6 +93,7 @@ class Response(QgsServerResponse):
         self._chunk_size = chunk_size
         self._cache_id = cache_id
         self._feedback = feedback
+        self._header_prefix = header_prefix or ""
 
         if self._process:
             self._memory = self._process.memory_info().vms
@@ -144,7 +146,7 @@ class Response(QgsServerResponse):
             self._conn,
             _m.RequestReply(
                 status_code=self._status_code,
-                headers=self._headers,
+                headers=[(f"{self._header_prefix}{k}", v) for k,v in self._headers.items()],
                 checkout_status=self._co_status,
                 cache_id=self._cache_id,
             ),

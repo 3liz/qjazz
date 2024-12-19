@@ -73,7 +73,7 @@ class MsgModel(BaseModel, frozen=True):
 class RequestReply:
     status_code: int
     checkout_status: Optional[int]
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: List[Tuple[str, str]] = field(default_factory=list)
     cache_id: str = ""
 
 
@@ -93,8 +93,9 @@ class OwsRequestMsg(MsgModel):
     version: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict[str, str] = Field({})
+    headers: List[Tuple[str, str]] = Field([])
     request_id: Optional[str] = None
+    header_prefix: Optional[str] = None
     debug_report: bool = False
 
 
@@ -109,8 +110,9 @@ class ApiRequestMsg(MsgModel):
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: Dict[str, str] = Field({})
+    headers: List[Tuple[str, str]] = Field([])
     request_id: Optional[str] = None
+    header_prefix: Optional[str] = None
     debug_report: bool = False
 
 

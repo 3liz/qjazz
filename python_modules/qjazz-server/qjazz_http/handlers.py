@@ -26,26 +26,9 @@ from .webutils import CORSHandler, _decode, public_location, public_url
 # Qgis request Handlers
 #
 
-ReportType: TypeAlias = Tuple[Optional[int], int, Optional[int]]
-
 
 class RpcMetadataProtocol(Protocol):
     def trailing_metadata(self) -> Awaitable[Sequence[Tuple[str, str]]]: ...
-
-
-# debug report
-async def get_report(stream: RpcMetadataProtocol) -> ReportType:  # ANN001
-    """ Return debug report from trailing_metadata
-    """
-    md = await stream.trailing_metadata()
-    memory, duration, timestamp = None, 0, None
-    for k, v in md:
-        match k:
-            case 'x-debug-memory':
-                memory = int(v)
-            case 'x-debug-duration':
-                duration = int(float(v) * 1000.0)
-    return (memory, duration, timestamp)
 
 
 MetricCollector: TypeAlias = Callable[
@@ -109,19 +92,11 @@ async def collect_metrics(
     service: str,
     request: str,
     status_code: int,
-    report: ReportType | None,
-    cached: bool,
 ):
     """ Emit metrics
     """
-    if not report:
-        logger.error("Something prevented to get metric's report...")
-        return
-
     project = project
     latency = int((time() - start) * 1000.)
-    memory, duration, _ = report
-    latency -= duration
     await collect(
         http_req,
         channel,
@@ -130,10 +105,7 @@ async def collect_metrics(
             service=service,
             request=request,
             project=project,
-            memory_footprint=memory,
-            response_time=duration,
-            latency=latency,
-            cached=cached,
+            response_time=latency,
          ),
     )
 
@@ -210,7 +182,6 @@ async def ows_handler(
 
     arguments = check_getfeature_limit(channel, arguments)
 
-    report_data: Optional[ReportType] = None
     if collect:
         start = time()
 
@@ -229,7 +200,6 @@ async def ows_handler(
                     direct=channel.allow_direct_resolution,
                     options=urlencode(arguments),
                     request_id=request.get('request_id', ''),
-                    debug_report=collect is not None,
                 ),
                 metadata=metadata,
                 timeout=channel.timeout,
@@ -254,10 +224,6 @@ async def ows_handler(
                 raise
 
             await response.write_eof()
-
-            if collect:
-                report_data = await get_report(stream)
-
             return response
 
     except web.HTTPException as exc:
@@ -274,8 +240,6 @@ async def ows_handler(
                 ows_service,
                 ows_request,
                 status_code=status,
-                report=report_data,
-                cached=request.headers.get('X-Qgis-Cache') == 'HIT',
             )
 
 
@@ -320,7 +284,6 @@ async def api_handler(
             allow_headers=ALLOW_API_HEADERS,
         )
 
-    report_data: Optional[ReportType] = None
     if collect:
         start = time()
 
@@ -342,7 +305,6 @@ async def api_handler(
                     direct=channel.allow_direct_resolution,
                     options=request.query_string,
                     request_id=request.get('request_id', ''),
-                    debug_report=collect is not None,
                 ),
                 metadata=metadata,
                 timeout=channel.timeout,
@@ -371,10 +333,6 @@ async def api_handler(
                 raise
 
             await response.write_eof()
-
-            if collect:
-                report_data = await get_report(stream)
-
             return response
     except web.HTTPException as exc:
         status = exc.status
@@ -390,6 +348,4 @@ async def api_handler(
                 api,
                 path,
                 status_code=status,
-                report=report_data,
-                cached=request.headers.get('X-Qgis-Cache') == 'HIT',
             )

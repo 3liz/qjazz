@@ -35,10 +35,7 @@ class Data(BaseModel, frozen=True):
     service: str
     request: str
     project: Optional[str]
-    memory_footprint: Optional[int]
     response_time: int
-    latency: int
-    cached: bool
 
     def dump_json(self) -> str:
         return self.model_dump_json()

@@ -32,6 +32,7 @@ async def test_rpc_io(worker: Worker):
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
             debug_report=True,
+            header_prefix="x-test-",
         ),
     )
 
@@ -41,6 +42,10 @@ async def test_rpc_io(worker: Worker):
     assert resp.status_code == 200
 
     print(f"> {resp.headers}")
+
+    # Check header prefix
+    for (k, _) in resp.headers:
+        assert k.startswith("x-test-")
 
     # Stream remaining bytes
     async for chunk in worker.io.stream_bytes():
