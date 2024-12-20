@@ -267,15 +267,10 @@ def drop_project(project: str):
     """ Drop PROJECT from cache
     """
     with connect() as stub:
-        stream = stub.DropProject(
+        item = stub.DropProject(
             qjazz_pb2.DropRequest(uri=project),
         )
-        count = 0
-        for item in stream:
-            count += 1
-            click.echo(MessageToJson(item))
-
-        click.echo(f"Returned {count} items", err=True)
+        click.echo(MessageToJson(item))
 
 
 @cache_commands.command("clear")

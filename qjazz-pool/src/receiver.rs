@@ -4,6 +4,7 @@
 //!
 use crate::errors::Result;
 use crate::pool::{Pool, WorkerQueue};
+use crate::restore;
 use crate::worker::Worker;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -34,7 +35,7 @@ impl ScopedWorker {
     pub(crate) fn recycle(&mut self) -> Option<JoinHandle<Result<()>>> {
         self.item
             .take()
-            .map(|w| tokio::spawn(self.queue.clone().recycle(w, self.done)))
+            .map(|w| tokio::spawn(self.queue.clone().recycle_owned(w, self.done)))
     }
 }
 
@@ -96,5 +97,23 @@ impl Receiver {
             item: Some(w),
             done: false,
         })
+    }
+
+    pub async fn update_state<S: Into<String>>(&self, s: S, state: restore::State) {
+        let mut restore = self.queue.restore().write().await;
+        let _ = self.drain(); // Will update on drop
+        restore.update_state(s, state);
+        restore.end_update();
+    }
+
+    pub async fn update_states<I, S>(&self, iter: I, state: restore::State)
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut restore = self.queue.restore().write().await;
+        let _ = self.drain(); // Will update on drop
+        restore.update_states(iter.into_iter().map(|s| (s, state)));
+        restore.end_update();
     }
 }

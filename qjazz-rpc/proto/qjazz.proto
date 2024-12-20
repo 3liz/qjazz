@@ -16,7 +16,7 @@ service QgisAdmin {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc CheckoutProject (CheckoutRequest) returns (CacheInfo) {}
     rpc PullProjects (stream ProjectRequest) returns (stream CacheInfo) {}
-    rpc DropProject (DropRequest) returns (stream CacheInfo) {}
+    rpc DropProject (DropRequest) returns (CacheInfo) {}
     rpc ListCache (ListRequest) returns (stream CacheInfo) {}
     rpc ClearCache (Empty) returns (Empty) {}
     rpc UpdateCache (Empty) returns (stream CacheInfo) {}

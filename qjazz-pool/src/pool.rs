@@ -19,20 +19,25 @@ pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     dead_workers: AtomicUsize,
     max_requests: usize,
-    update: RwLock<Restore>,
+    restore: RwLock<Restore>,
 }
 
 impl WorkerQueue {
-    #[inline(always)]
-    pub fn is_closed(&self) -> bool {
-        self.q.is_closed()
-    }
-    #[inline(always)]
     pub async fn recv(&self) -> Result<Worker> {
         if self.q.num_waiters() > self.max_requests {
             return Err(Error::MaxRequestsExceeded);
         }
         self.q.recv().await
+    }
+
+    // Return the restore lock
+    pub fn restore(&self) -> &RwLock<Restore> {
+        &self.restore
+    }
+
+    // Update the worker by acquiring the restore read lock
+    async fn update(&self, worker: &mut Worker) -> Result<()> {
+        self.restore.read().await.restore(worker).await
     }
 
     //
@@ -41,7 +46,7 @@ impl WorkerQueue {
     // `done_hint` is a hint to set for preventing draining any remaining
     // leftover data in case of incomplete response.
     //
-    pub(crate) async fn recycle(
+    pub(crate) async fn recycle_owned(
         self: Arc<Self>,
         mut worker: Worker,
         done_hint: bool,
@@ -50,7 +55,7 @@ impl WorkerQueue {
         let mut rv = worker.cancel_timeout(done_hint).await;
         if rv.is_ok() {
             // Update resources
-            rv = self.update.read().await.restore(&mut worker).await;
+            rv = self.update(&mut worker).await;
         }
         if rv.is_ok() {
             // Push back on queue
@@ -61,12 +66,17 @@ impl WorkerQueue {
         rv
     }
 
+    #[inline(always)]
     pub fn drain<B, F: FnMut(Worker) -> B>(&self, f: F) -> Vec<B> {
         self.q.drain_map(f)
     }
-
+    #[inline(always)]
     fn close(&self) {
         self.q.close();
+    }
+    #[inline(always)]
+    pub fn is_closed(&self) -> bool {
+        self.q.is_closed()
     }
 }
 
@@ -92,7 +102,7 @@ impl Pool {
                 q: Queue::with_capacity(opts.num_processes),
                 dead_workers: AtomicUsize::new(0),
                 max_requests: opts.max_waiting_requests,
-                update: RwLock::new(Restore::new()),
+                restore: RwLock::new(Restore::new()),
             }),
             builder,
             num_processes: 0,
@@ -161,6 +171,9 @@ impl Pool {
 
         // Start the workers asynchronously
         let mut workers = try_join_all(futures).await?;
+
+        // Resync
+        try_join_all(workers.iter_mut().map(|w| self.queue.update(w))).await?;
 
         // Update the queue
         self.queue.q.send_all(workers.drain(..));
@@ -260,5 +273,38 @@ mod tests {
 
         let _ = worker.recycle().unwrap().await.unwrap();
         assert_eq!(pool.stats_raw(), (0, num_processes, 0));
+    }
+
+    use crate::restore;
+
+    #[tokio::test]
+    async fn test_restore() {
+        setup();
+
+        let mut pool = Pool::new(builder(1));
+        {
+            let mut restore = pool.queue.restore().write().await;
+            restore.update_state("project_1", restore::State::Pull);
+            restore.end_update();
+        } 
+        pool.maintain_pool().await.unwrap();
+        
+        let queue = Receiver::new(&pool);
+        {
+            let mut worker = queue.get().await.unwrap();
+            let resp = worker.checkout_project("project_1",  false).await.unwrap();
+            assert_eq!(resp.status, 0); // UNCHANGED
+        }
+
+        // Update project's 
+        queue.update_state("project_2", restore::State::Pull).await;
+
+        {
+            let mut worker = queue.get().await.unwrap();
+            let resp = worker.checkout_project("project_2",  false).await.unwrap();
+            assert_eq!(resp.status, 0); // UNCHANGED
+        }
+
+
     }
 }

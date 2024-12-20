@@ -264,14 +264,13 @@ class Backend:
             ):
                 yield item
 
-    async def drop_project(self, project: str) -> AsyncIterator[qjazz_pb2.CacheInfo]:
+    async def drop_project(self, project: str) -> qjazz_pb2.CacheInfo:
         """ Drop PROJECT from cache
         """
         async with self._stub() as stub:
-            async for item in stub.DropProject(
+            return  stub.DropProject(
                 qjazz_pb2.DropRequest(uri=project),
-            ):
-                yield item
+            )
 
     async def clear_cache(self) -> None:
         """ Clear cache

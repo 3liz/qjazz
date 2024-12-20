@@ -21,23 +21,57 @@ def echo(*args):
     print(*args, flush=True, file=sys.stderr)
 
 
-def cache_info(name: str) -> m_.CacheInfo:
-    tt = int(time())
+PROJECTS: dict[m_.CacheInfo] = {}
+
+last_modified = to_iso8601(datetime.fromtimestamp(time()))
+
+
+def cache_info(uri, status):
+    timestamp = time()
     return m_.CacheInfo(
-        uri="/france/france_parts",
-        status=CheckoutStatus.UNCHANGED.value,
-        in_cache=True,
+        uri=uri,
+        status=status.value,
+        in_cache=False,
         cache_id="test",
-        timestamp=tt,
-        name=name,
-        storage="file",
-        last_modified=to_iso8601(datetime.fromtimestamp(tt)), 
+        timestamp=int(timestamp),
+        name=uri,
+        storage="test",
+        last_modified=last_modified,
         saved_version="Test1.0",
         debug_metadata={},
-        last_hit=tt,
-        hits=42,
+        last_hit=int(timestamp),
+        hits=0,
         pinned=True,
     )
+   
+
+def new_project(uri):
+    info = cache_info(uri, CheckoutStatus.NEW)
+    info.in_cache = True
+    PROJECTS[uri] = info
+    return info
+
+
+def get_project(uri: str, pull: bool):
+    info = PROJECTS.get(uri)
+    if not info:
+        if pull: 
+            info = new_project(uri)
+        else:
+            info = cache_info(uri, CheckoutStatus.NEW)
+    else:
+        info.status = CheckoutStatus.UNCHANGED.value
+    return info
+
+
+def drop_project(uri: str):
+    info = PROJECTS.get(uri)
+    if not info: 
+        info = new_project(uri)
+    else:
+        info.status = CheckoutStatus.REMOVED.value
+        del PROJECTS[uri]
+    return info
 
 
 def catalog_item(name: str) -> m_.CatalogItem:
@@ -153,17 +187,11 @@ def run(name: str, projects: list[str]) -> None:
                             environment=dict(os.environ),
                         ))
                     case m_.CheckoutProjectMsg():
-                        m_.send_reply(conn, cache_info("checkout"))
+                        m_.send_reply(conn, get_project(msg.uri, msg.pull))
                     case m_.UpdateCacheMsg():
-                        m_.stream_data(
-                            conn,
-                            (
-                                cache_info("update_1"),
-                                cache_info("update_2"),
-                            ),
-                        )
+                        m_.stream_data(conn, (v for v in PROJECTS.values()))
                     case m_.DropProjectMsg():
-                        m_.send_reply(conn, cache_info("drop"))
+                        m_.send_reply(conn, drop_project(msg.uri))
                     case m_.ClearCacheMsg():
                         m_.send_reply(conn, None)
                     case m_.CatalogMsg():
@@ -181,7 +209,7 @@ def run(name: str, projects: list[str]) -> None:
             except KeyboardInterrupt:
                 logger.warning("Ignoring interrupt signal")
             except Exception as exc:
-                traceback.format_exc()
+                traceback.print_exc()
                 if msg:
                     m_.send_reply(conn, str(exc), 500)
                 else:

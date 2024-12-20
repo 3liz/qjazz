@@ -425,12 +425,12 @@ class PoolClient:
         for server in self._backends:
             try:
                 item_ = None
-                async for item in server.drop_project(uri):
-                    if not item_:
-                        item_ = MessageToDict(item)
-                        del item_['cacheId']
-                    else:
-                        reduce_cache(item_, item)
+                item  = await server.drop_project(uri)
+                if not item_:
+                    item_ = MessageToDict(item)
+                    del item_['cacheId']
+                else:
+                    reduce_cache(item_, item)
                 if item_:
                     rv[server.address] = item_
                 serving = True

@@ -114,21 +114,24 @@ async fn test_messages_io() {
 
     // CheckoutProjectMsg
     let resp = w
-        .checkout_project("/france/france_parts", true)
+        .checkout_project("checkout", true)
         .await
         .unwrap();
     assert_eq!(resp.name.unwrap(), "checkout");
 
     // UpdateCacheMsg
     let mut resp = w.update_cache().await.unwrap();
+    let mut count = 0u32;
     while let Some(info) = resp.next().await.unwrap() {
         assert_eq!(info.cache_id, "test");
-        assert!(info.name.unwrap().starts_with("update_"));
+        count += 1;
     }
+    assert_eq!(count, 1);
 
     // DropProjectMsg
-    let resp = w.drop_project("/france/france_parts").await.unwrap();
-    assert_eq!(resp.name.unwrap(), "drop");
+    let resp = w.drop_project("checkout").await.unwrap();
+    assert_eq!(resp.name.unwrap(), "checkout");
+    assert_eq!(resp.status, 2);
 
     // CatalogMsg
     let mut resp = w.catalog(Some("/france")).await.unwrap();
@@ -151,3 +154,4 @@ async fn test_messages_io() {
     pub async fn list_plugins(&mut self) -> Result<ObjectStream<msg::PluginInfo>> {
     */
 }
+

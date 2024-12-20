@@ -6,10 +6,11 @@ use qjazz_service::{
 
 use std::pin::Pin;
 use tokio::sync::mpsc;
-use tokio_stream::{wrappers::ReceiverStream, Stream};
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
 use crate::utils::{headers_to_metadata, metadata_to_headers};
+use qjazz_pool::restore;
 
 // Qjazz gRPC services
 
@@ -30,6 +31,10 @@ impl Inner {
             qjazz_pool::Error::QueueIsClosed => Status::unavailable(err),
             _ => Status::unknown(err),
         })
+    }
+
+    fn get_ref(&self) -> &qjazz_pool::Receiver {
+        &self.0
     }
 }
 
@@ -320,31 +325,78 @@ impl QgisAdmin for QgisAdminServicer {
     // Pull project
     type PullProjectsStream = CacheInfoStream;
 
-    // We need to sync all workers with the same data
-    // 1. Update the restore state for busy workers (Write lock)
-    // 2. Drain all idle workers
-    // 3. Unlock the restore state
-    // 4. Release all workers
     async fn pull_projects(
         &self,
         request: Request<tonic::Streaming<ProjectRequest>>,
     ) -> Result<Response<Self::PullProjectsStream>, Status> {
-        /*
         let mut in_stream = request.into_inner();
+        // Collect uri's before updating in order to prevent
+        // locking the queue while waiting for inputs.
+        let mut projects: Vec<String> = Vec::new();
+        while let Some(req) = in_stream.next().await {
+            match req {
+                Ok(v) => projects.push(v.uri),
+                Err(err) => {
+                    log::error!("Update request failed: {:?}", err);
+                    return Err(err);
+                }
+            }
+        }
+
+        // Trigger state update
+        self.inner
+            .get_ref()
+            .update_states(projects.iter(), restore::State::Pull)
+            .await;
+
+        // Wait for next worker available
+        // the worker should have been updated
+        let mut w = self.inner.get_worker().await?;
 
         let (tx, rx) = mpsc::channel(64);
-        */
-        Err(Status::unimplemented(""))
+        let cloned_projects = projects.clone();
+        tokio::spawn(async move {
+            for uri in cloned_projects {
+                if match w.checkout_project(&uri, false).await {
+                    Ok(resp) => tx.send(Ok(CacheInfo::from(resp))).await,
+                    Err(err) => {
+                        let _ = tx.send(Err(Self::error(err))).await;
+                        return;
+                    }
+                }
+                .is_err()
+                {
+                    log::error!("Connection cancelled by client");
+                    return;
+                }
+            }
+            w.done();
+        });
+
+        let output_stream = ReceiverStream::new(rx);
+        let response = Response::new(Box::pin(output_stream) as Self::PullProjectsStream);
+        Ok(response)
     }
-    // Drop project
-    type DropProjectStream = CacheInfoStream;
 
     async fn drop_project(
         &self,
         request: Request<DropRequest>,
-    ) -> Result<Response<Self::DropProjectStream>, Status> {
-        Err(Status::unimplemented(""))
+    ) -> Result<Response<CacheInfo>, Status> {
+       
+        let uri = request.into_inner().uri;
+        self.inner
+            .get_ref()
+            .update_state(&uri, restore::State::Drop)
+            .await;
+       
+        let mut w = self.inner.get_worker().await?;
+        Ok(Response::new(w.checkout_project(&uri, false)
+            .await
+            .map(CacheInfo::from)
+            .map_err(Self::error)?
+        ))
     }
+
     // List cache
     type ListCacheStream = CacheInfoStream;
 
@@ -356,7 +408,13 @@ impl QgisAdmin for QgisAdminServicer {
     }
     // Clear cache
     async fn clear_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
+        let mut w = self.inner.get_worker().await?;
+        
+        w.clear_cache()
+            .await
+            .map_err(Self::error)?;
+
+        Ok(Response::new(Empty {}))
     }
     // Update cache
     type UpdateCacheStream = CacheInfoStream;

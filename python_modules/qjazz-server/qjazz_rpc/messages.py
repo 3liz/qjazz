@@ -69,7 +69,7 @@ class MsgModel(BaseModel, frozen=True):
 #
 # REQUEST
 #
-@dataclass(frozen=True)
+@dataclass
 class RequestReply:
     status_code: int
     checkout_status: Optional[int]
@@ -77,7 +77,7 @@ class RequestReply:
     cache_id: str = ""
 
 
-@dataclass(frozen=True)
+@dataclass
 class RequestReport:
     memory: Optional[int]
     timestamp: float
@@ -128,7 +128,7 @@ class QuitMsg(MsgModel):
     msg_id: Literal[MsgType.QUIT] = MsgType.QUIT
 
 
-@dataclass(frozen=True)
+@dataclass
 class CacheInfo:
     uri: str
     status: int  # CheckoutStatus
@@ -188,7 +188,7 @@ class UpdateCacheMsg(MsgModel):
 #
 # PLUGINS
 #
-@dataclass(frozen=True)
+@dataclass
 class PluginInfo:
     name: str
     path: Path
@@ -203,7 +203,7 @@ class PluginsMsg(MsgModel):
 #
 # PROJECT_INFO
 #
-@dataclass(frozen=True)
+@dataclass
 class LayerInfo:
     layer_id: str
     name: str
@@ -213,7 +213,7 @@ class LayerInfo:
     is_spatial: bool
 
 
-@dataclass(frozen=True)
+@dataclass
 class ProjectInfo:
     status: int  # CheckoutStatus
     uri: str
@@ -246,7 +246,7 @@ class PutConfigMsg(MsgModel):
 #
 # CATALOG
 #
-@dataclass(frozen=True)
+@dataclass
 class CatalogItem:
     uri: str
     name: str

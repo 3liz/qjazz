@@ -207,7 +207,7 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.ProjectRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.CacheInfo.FromString,
                 _registered_method=True)
-        self.DropProject = channel.unary_stream(
+        self.DropProject = channel.unary_unary(
                 '/qjazz.QgisAdmin/DropProject',
                 request_serializer=qjazz__pb2.DropRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.CacheInfo.FromString,
@@ -402,7 +402,7 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=qjazz__pb2.ProjectRequest.FromString,
                     response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
             ),
-            'DropProject': grpc.unary_stream_rpc_method_handler(
+            'DropProject': grpc.unary_unary_rpc_method_handler(
                     servicer.DropProject,
                     request_deserializer=qjazz__pb2.DropRequest.FromString,
                     response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
@@ -575,7 +575,7 @@ class QgisAdmin(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             '/qjazz.QgisAdmin/DropProject',
