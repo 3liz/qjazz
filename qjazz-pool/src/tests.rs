@@ -113,14 +113,13 @@ async fn test_messages_io() {
     assert_eq!(stream.next().await.unwrap(), None);
 
     // CheckoutProjectMsg
-    let resp = w
-        .checkout_project("checkout", true)
-        .await
-        .unwrap();
+    let resp = w.checkout_project("checkout", true).await.unwrap();
     assert_eq!(resp.name.unwrap(), "checkout");
 
-    // UpdateCacheMsg
-    let mut resp = w.update_cache().await.unwrap();
+    // UpdateCacheMsg + list_cache
+    w.update_cache().await.unwrap();
+
+    let mut resp = w.list_cache().await.unwrap();
     let mut count = 0u32;
     while let Some(info) = resp.next().await.unwrap() {
         assert_eq!(info.cache_id, "test");
@@ -154,4 +153,3 @@ async fn test_messages_io() {
     pub async fn list_plugins(&mut self) -> Result<ObjectStream<msg::PluginInfo>> {
     */
 }
-

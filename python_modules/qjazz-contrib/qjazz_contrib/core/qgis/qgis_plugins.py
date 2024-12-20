@@ -351,7 +351,7 @@ def find_plugins(
         yield plugin.name, cp
 
 
-def checkQgisVersion(minver: str, maxver: str) -> bool:
+def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
     from qgis.core import Qgis
 
     def to_int(ver):

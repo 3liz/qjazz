@@ -339,10 +339,11 @@ impl Worker {
     /// Update all projects in cache
     ///
     /// Return a streamed list of cached object with their new status
-    pub async fn update_cache(&mut self) -> Result<ObjectStream<msg::CacheInfo>> {
-        let io = self.io()?;
-        io.put_message(msg::UpdateCacheMsg.into()).await?;
-        Ok(ObjectStream::new(io))
+    pub async fn update_cache(&mut self) -> Result<()> {
+        self.io()?
+            .send_message(msg::UpdateCacheMsg)
+            .await
+            .map(|(_, resp)| resp)
     }
 
     /// Clear all items in cache
@@ -351,6 +352,13 @@ impl Worker {
             .send_message(msg::ClearCacheMsg)
             .await
             .map(|(_, resp)| resp)
+    }
+
+    /// List all items in cache
+    pub async fn list_cache(&mut self) -> Result<ObjectStream<msg::CacheInfo>> {
+        let io = self.io()?;
+        io.put_message(msg::ListCacheMsg.into()).await?;
+        Ok(ObjectStream::new(io))
     }
 
     /// Returs all projects availables

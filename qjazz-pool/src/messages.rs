@@ -251,9 +251,7 @@ pub struct ClearCacheMsg;
 
 /// List cache message
 #[derive(Serialize)]
-pub struct ListCacheMsg {
-    pub status_filter: Option<CheckoutStatus>,
-}
+pub struct ListCacheMsg;
 
 /// Update cache message
 #[derive(Serialize)]

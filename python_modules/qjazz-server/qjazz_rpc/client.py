@@ -284,15 +284,11 @@ def clear_cache():
 
 
 @cache_commands.command("list")
-@click.option("--status", help="Status filter")
-def list_cache(status: str):
+def list_cache():
     """ List projects from cache
     """
     with connect() as stub:
-        stream = stub.ListCache(
-            qjazz_pb2.ListRequest(status_filter=status),
-        )
-
+        stream = stub.ListCache(qjazz_pb2.Empty())
         for item in stream:
             click.echo(MessageToJson(item))
 

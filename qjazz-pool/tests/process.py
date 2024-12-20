@@ -189,6 +189,8 @@ def run(name: str, projects: list[str]) -> None:
                     case m_.CheckoutProjectMsg():
                         m_.send_reply(conn, get_project(msg.uri, msg.pull))
                     case m_.UpdateCacheMsg():
+                        m_.send_reply(conn, None)
+                    case m_.ListCacheMsg():
                         m_.stream_data(conn, (v for v in PROJECTS.values()))
                     case m_.DropProjectMsg():
                         m_.send_reply(conn, drop_project(msg.uri))

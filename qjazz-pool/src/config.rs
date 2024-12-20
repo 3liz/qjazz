@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-use crate::errors::{Error, Result};
-
 pub(crate) fn get_log_level() -> &'static str {
     match log::max_level() {
         log::LevelFilter::Error => "error",

@@ -279,13 +279,11 @@ class Backend:
             logger.debug("Cleaning cache for '%s'", self.address)
             await stub.ClearCache(qjazz_pb2.Empty())
 
-    async def list_cache(self, status: str = "") -> AsyncIterator[qjazz_pb2.CacheInfo]:
+    async def list_cache(self) -> AsyncIterator[qjazz_pb2.CacheInfo]:
         """ List projects from cache
         """
         async with self._stub() as stub:
-            async for item in stub.ListCache(
-                qjazz_pb2.ListRequest(status_filter=status),
-            ):
+            async for item in stub.ListCache(qjazz_pb2.Empty()):
                 yield item
 
     async def project_info(self, project: str) -> qjazz_pb2.ProjectInfo:

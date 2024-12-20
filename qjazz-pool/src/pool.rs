@@ -284,27 +284,24 @@ mod tests {
         let mut pool = Pool::new(builder(1));
         {
             let mut restore = pool.queue.restore().write().await;
-            restore.update_state("project_1", restore::State::Pull);
-            restore.end_update();
-        } 
+            restore.update_state(restore::State::Pull("project_1".into()));
+        }
         pool.maintain_pool().await.unwrap();
-        
+
         let queue = Receiver::new(&pool);
         {
             let mut worker = queue.get().await.unwrap();
-            let resp = worker.checkout_project("project_1",  false).await.unwrap();
+            let resp = worker.checkout_project("project_1", false).await.unwrap();
             assert_eq!(resp.status, 0); // UNCHANGED
         }
 
-        // Update project's 
-        queue.update_state("project_2", restore::State::Pull).await;
+        // Update project's
+        queue.update_state(restore::State::Pull("project_2".into())).await;
 
         {
             let mut worker = queue.get().await.unwrap();
-            let resp = worker.checkout_project("project_2",  false).await.unwrap();
+            let resp = worker.checkout_project("project_2", false).await.unwrap();
             assert_eq!(resp.status, 0); // UNCHANGED
         }
-
-
     }
 }

@@ -156,12 +156,6 @@ class DropRequest(_message.Message):
     uri: str
     def __init__(self, uri: _Optional[str] = ...) -> None: ...
 
-class ListRequest(_message.Message):
-    __slots__ = ("status_filter",)
-    STATUS_FILTER_FIELD_NUMBER: _ClassVar[int]
-    status_filter: str
-    def __init__(self, status_filter: _Optional[str] = ...) -> None: ...
-
 class ProjectRequest(_message.Message):
     __slots__ = ("uri",)
     URI_FIELD_NUMBER: _ClassVar[int]

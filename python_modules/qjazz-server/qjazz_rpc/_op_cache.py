@@ -188,12 +188,9 @@ def checkout_project(
 def send_cache_list(
     conn: _m.Connection,
     cm: CacheManager,
-    status_filter: Optional[CheckoutStatus],
     cache_id: str = "",
 ):
     co = cm.checkout_iter()
-    if status_filter:
-        co = filter(lambda n: n[1] == status_filter, co)
 
     def collect() -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
         for item in co:
@@ -213,37 +210,9 @@ def send_cache_list(
         ),
     )
 
-
-#
-# Update cache
-#
-def update_cache(
-    conn: _m.Connection,
-    cm: CacheManager,
-    cache_id: str = "",
-):
-    def collect() -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
-        for item in cm.update_cache():
-            if conn.cancelled:
-                break
-            yield item
-
-    # Stream CacheInfo
-    _m.stream_data(
-        conn,
-        (
-            cache_info_from_entry(
-                entry,
-                status,
-                cache_id=cache_id,
-            ) for entry, status in collect()
-        ),
-    )
-
 #
 # Send project info
 #
-
 
 def send_project_info(
     conn: _m.Connection,

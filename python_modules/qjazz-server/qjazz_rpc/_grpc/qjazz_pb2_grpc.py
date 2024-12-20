@@ -202,11 +202,6 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.CheckoutRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.CacheInfo.FromString,
                 _registered_method=True)
-        self.PullProjects = channel.stream_stream(
-                '/qjazz.QgisAdmin/PullProjects',
-                request_serializer=qjazz__pb2.ProjectRequest.SerializeToString,
-                response_deserializer=qjazz__pb2.CacheInfo.FromString,
-                _registered_method=True)
         self.DropProject = channel.unary_unary(
                 '/qjazz.QgisAdmin/DropProject',
                 request_serializer=qjazz__pb2.DropRequest.SerializeToString,
@@ -214,7 +209,7 @@ class QgisAdminStub(object):
                 _registered_method=True)
         self.ListCache = channel.unary_stream(
                 '/qjazz.QgisAdmin/ListCache',
-                request_serializer=qjazz__pb2.ListRequest.SerializeToString,
+                request_serializer=qjazz__pb2.Empty.SerializeToString,
                 response_deserializer=qjazz__pb2.CacheInfo.FromString,
                 _registered_method=True)
         self.ClearCache = channel.unary_unary(
@@ -222,10 +217,10 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.Empty.SerializeToString,
                 response_deserializer=qjazz__pb2.Empty.FromString,
                 _registered_method=True)
-        self.UpdateCache = channel.unary_stream(
+        self.UpdateCache = channel.unary_unary(
                 '/qjazz.QgisAdmin/UpdateCache',
                 request_serializer=qjazz__pb2.Empty.SerializeToString,
-                response_deserializer=qjazz__pb2.CacheInfo.FromString,
+                response_deserializer=qjazz__pb2.Empty.FromString,
                 _registered_method=True)
         self.ListPlugins = channel.unary_stream(
                 '/qjazz.QgisAdmin/ListPlugins',
@@ -289,12 +284,6 @@ class QgisAdminServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def CheckoutProject(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def PullProjects(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -397,11 +386,6 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=qjazz__pb2.CheckoutRequest.FromString,
                     response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
             ),
-            'PullProjects': grpc.stream_stream_rpc_method_handler(
-                    servicer.PullProjects,
-                    request_deserializer=qjazz__pb2.ProjectRequest.FromString,
-                    response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
-            ),
             'DropProject': grpc.unary_unary_rpc_method_handler(
                     servicer.DropProject,
                     request_deserializer=qjazz__pb2.DropRequest.FromString,
@@ -409,7 +393,7 @@ def add_QgisAdminServicer_to_server(servicer, server):
             ),
             'ListCache': grpc.unary_stream_rpc_method_handler(
                     servicer.ListCache,
-                    request_deserializer=qjazz__pb2.ListRequest.FromString,
+                    request_deserializer=qjazz__pb2.Empty.FromString,
                     response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
             ),
             'ClearCache': grpc.unary_unary_rpc_method_handler(
@@ -417,10 +401,10 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     request_deserializer=qjazz__pb2.Empty.FromString,
                     response_serializer=qjazz__pb2.Empty.SerializeToString,
             ),
-            'UpdateCache': grpc.unary_stream_rpc_method_handler(
+            'UpdateCache': grpc.unary_unary_rpc_method_handler(
                     servicer.UpdateCache,
                     request_deserializer=qjazz__pb2.Empty.FromString,
-                    response_serializer=qjazz__pb2.CacheInfo.SerializeToString,
+                    response_serializer=qjazz__pb2.Empty.SerializeToString,
             ),
             'ListPlugins': grpc.unary_stream_rpc_method_handler(
                     servicer.ListPlugins,
@@ -538,33 +522,6 @@ class QgisAdmin(object):
             _registered_method=True)
 
     @staticmethod
-    def PullProjects(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/qjazz.QgisAdmin/PullProjects',
-            qjazz__pb2.ProjectRequest.SerializeToString,
-            qjazz__pb2.CacheInfo.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def DropProject(request,
             target,
             options=(),
@@ -606,7 +563,7 @@ class QgisAdmin(object):
             request,
             target,
             '/qjazz.QgisAdmin/ListCache',
-            qjazz__pb2.ListRequest.SerializeToString,
+            qjazz__pb2.Empty.SerializeToString,
             qjazz__pb2.CacheInfo.FromString,
             options,
             channel_credentials,
@@ -656,12 +613,12 @@ class QgisAdmin(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             '/qjazz.QgisAdmin/UpdateCache',
             qjazz__pb2.Empty.SerializeToString,
-            qjazz__pb2.CacheInfo.FromString,
+            qjazz__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

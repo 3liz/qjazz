@@ -215,9 +215,13 @@ def qgis_server_run(
                     cm.clear()
                     _m.send_reply(conn, None)
                 case _m.ListCacheMsg():
-                    _op_cache.send_cache_list(conn, cm, msg.status_filter, cache_id=name)
+                    _op_cache.send_cache_list(conn, cm, cache_id=name)
                 case _m.UpdateCacheMsg():
-                    _op_cache.update_cache(conn, cm, cache_id=name)
+                    # We need to consume the iterator
+                    # for updating the whole cache
+                    for item in cm.update_cache():
+                        pass
+                    _m.send_reply(conn, None)
                 case _m.GetProjectInfoMsg():
                     _op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
                 case _m.CatalogMsg():

@@ -1,7 +1,7 @@
 use qjazz_service::{
     ApiRequest, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty,
-    JsonConfig, ListRequest, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo,
-    ProjectRequest, ResponseChunk, ServerStatus, SleepRequest, StatsReply,
+    JsonConfig, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest,
+    ResponseChunk, ServerStatus, SleepRequest, StatsReply,
 };
 
 use std::pin::Pin;
@@ -140,6 +140,7 @@ impl QgisServer for QgisServerServicer {
             .ping(&request.into_inner().echo)
             .await
             .map_err(Self::error)?;
+        w.done();
         Ok(Response::new(PingReply { echo }))
     }
     //
@@ -303,6 +304,7 @@ impl QgisAdmin for QgisAdminServicer {
             .ping(&request.into_inner().echo)
             .await
             .map_err(Self::error)?;
+        w.done();
         Ok(Response::new(PingReply { echo }))
     }
     //
@@ -314,87 +316,50 @@ impl QgisAdmin for QgisAdminServicer {
     ) -> Result<Response<CacheInfo>, Status> {
         let mut w = self.inner.get_worker().await?;
 
-        let req = request.get_ref();
+        // Pull project as reference
+        let req = request.into_inner();
+        let pull = req.pull.unwrap_or(false);
+
         let resp = w
-            .checkout_project(&req.uri, req.pull.unwrap_or(false))
+            .checkout_project(&req.uri, pull)
             .await
             .map_err(Self::error)?;
 
-        Ok(Response::new(resp.into()))
-    }
-    // Pull project
-    type PullProjectsStream = CacheInfoStream;
+        w.done();
 
-    async fn pull_projects(
-        &self,
-        request: Request<tonic::Streaming<ProjectRequest>>,
-    ) -> Result<Response<Self::PullProjectsStream>, Status> {
-        let mut in_stream = request.into_inner();
-        // Collect uri's before updating in order to prevent
-        // locking the queue while waiting for inputs.
-        let mut projects: Vec<String> = Vec::new();
-        while let Some(req) = in_stream.next().await {
-            match req {
-                Ok(v) => projects.push(v.uri),
-                Err(err) => {
-                    log::error!("Update request failed: {:?}", err);
-                    return Err(err);
-                }
-            }
+        if pull {
+            // Trigger sync
+            self.inner
+                .get_ref()
+                .update_state(restore::State::Pull(req.uri))
+                .await;
         }
 
-        // Trigger state update
-        self.inner
-            .get_ref()
-            .update_states(projects.iter(), restore::State::Pull)
-            .await;
-
-        // Wait for next worker available
-        // the worker should have been updated
-        let mut w = self.inner.get_worker().await?;
-
-        let (tx, rx) = mpsc::channel(64);
-        let cloned_projects = projects.clone();
-        tokio::spawn(async move {
-            for uri in cloned_projects {
-                if match w.checkout_project(&uri, false).await {
-                    Ok(resp) => tx.send(Ok(CacheInfo::from(resp))).await,
-                    Err(err) => {
-                        let _ = tx.send(Err(Self::error(err))).await;
-                        return;
-                    }
-                }
-                .is_err()
-                {
-                    log::error!("Connection cancelled by client");
-                    return;
-                }
-            }
-            w.done();
-        });
-
-        let output_stream = ReceiverStream::new(rx);
-        let response = Response::new(Box::pin(output_stream) as Self::PullProjectsStream);
-        Ok(response)
+        Ok(Response::new(resp.into()))
     }
 
     async fn drop_project(
         &self,
         request: Request<DropRequest>,
     ) -> Result<Response<CacheInfo>, Status> {
-       
+        // Get the state of project
+        let mut w = self.inner.get_worker().await?;
+
         let uri = request.into_inner().uri;
+        let response = Response::new(
+            w.checkout_project(&uri, false)
+                .await
+                .map(CacheInfo::from)
+                .map_err(Self::error)?,
+        );
+
+        // Sync state
         self.inner
             .get_ref()
-            .update_state(&uri, restore::State::Drop)
+            .update_state(restore::State::Remove(uri))
             .await;
-       
-        let mut w = self.inner.get_worker().await?;
-        Ok(Response::new(w.checkout_project(&uri, false)
-            .await
-            .map(CacheInfo::from)
-            .map_err(Self::error)?
-        ))
+
+        Ok(response)
     }
 
     // List cache
@@ -402,27 +367,24 @@ impl QgisAdmin for QgisAdminServicer {
 
     async fn list_cache(
         &self,
-        request: Request<ListRequest>,
+        request: Request<Empty>,
     ) -> Result<Response<Self::ListCacheStream>, Status> {
         Err(Status::unimplemented(""))
     }
+
     // Clear cache
     async fn clear_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        let mut w = self.inner.get_worker().await?;
-        
-        w.clear_cache()
-            .await
-            .map_err(Self::error)?;
+        // Sync state
+        self.inner
+            .get_ref()
+            .update_state(restore::State::Clear)
+            .await;
 
         Ok(Response::new(Empty {}))
     }
-    // Update cache
-    type UpdateCacheStream = CacheInfoStream;
 
-    async fn update_cache(
-        &self,
-        request: Request<Empty>,
-    ) -> Result<Response<Self::UpdateCacheStream>, Status> {
+    // Update cache
+    async fn update_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
         Err(Status::unimplemented(""))
     }
     //
