@@ -12,6 +12,7 @@ pub mod stream;
 pub mod worker;
 
 pub(crate) mod queue;
+pub(crate) mod utils;
 
 // reexport
 pub use builder::Builder;

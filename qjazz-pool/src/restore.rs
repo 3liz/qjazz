@@ -21,6 +21,7 @@ pub struct Restore {
     // Update count
     update: u64,
     pulls: BTreeSet<String>,
+    config: (u64, serde_json::Value),
     states: Vec<(u64, State)>,
 }
 
@@ -32,12 +33,17 @@ impl Restore {
     pub async fn restore(&self, worker: &mut Worker) -> Result<()> {
         let last_update = worker.last_update;
         if last_update == 0 {
-            // New worker with empty state
-            // Update with all pulled projects so for
+            // Update with all pulled projects so far
             for uri in &self.pulls {
                 worker.checkout_project(uri, true).await?;
             }
         } else if last_update < self.update {
+            // Update config
+            if self.config.0 > last_update {
+                log::debug!("Updating configuration for worker {}", worker.id());
+                worker.put_config(&self.config.1).await?;
+            }
+            // Update cache
             worker.update_cache().await?;
             for rev in self.states.iter().rev() {
                 if rev.0 <= last_update {
@@ -59,8 +65,13 @@ impl Restore {
         Ok(())
     }
 
+    pub fn update_config(&mut self, config: serde_json::Value) {
+        self.update += 1;
+        self.config = (self.update, config);
+    }
+
     // Update states
-    pub fn update_state(&mut self, state: State) {
+    pub fn update_cache(&mut self, state: State) {
         match &state {
             State::Pull(uri) => {
                 if self.pulls.contains(uri) {

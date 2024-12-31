@@ -1,14 +1,16 @@
 use qjazz_service::{
-    ApiRequest, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty,
-    JsonConfig, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest,
+    project_info, ApiRequest, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest,
+    Empty, JsonConfig, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest,
     ResponseChunk, ServerStatus, SleepRequest, StatsReply,
 };
 
 use std::pin::Pin;
+use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
+use crate::config::Settings;
 use crate::utils::{headers_to_metadata, metadata_to_headers};
 use qjazz_pool::restore;
 
@@ -71,7 +73,6 @@ trait Qjazz {
 //
 // Handle QGIS requests
 //
-
 use qjazz_service::qgis_server_server::QgisServer;
 // Reexport
 pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
@@ -229,63 +230,28 @@ impl QgisServer for QgisServerServicer {
 //
 // The QGIS Admin servicer
 //
-
 use qjazz_service::qgis_admin_server::QgisAdmin;
+use tokio::sync::RwLock;
 // Reexport
 pub(crate) use qjazz_service::qgis_admin_server::QgisAdminServer;
 
 pub(crate) struct QgisAdminServicer {
     inner: Inner,
+    pool: RwLock<qjazz_pool::Pool>,
+    uptime: Instant,
 }
 
 impl Qjazz for QgisAdminServicer {}
 
 impl QgisAdminServicer {
-    pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
+    pub(crate) fn new(pool: qjazz_pool::Pool) -> Self {
+        let queue = qjazz_pool::Receiver::new(&pool);
         Self {
             inner: Inner(queue),
+            pool: RwLock::new(pool),
+            uptime: Instant::now(),
         }
     }
-    /*
-    // Handle byte streaming
-    fn stream_object<R, T>(qjazz
-        mut _w: qjazz_pool::ScopedWorker,
-    ) -> mpsc::Receiver<Result<T, Status>>
-    where
-        T: From<
-    {
-        let (tx, rx) = mpsc::channel(1);
-        tokio::spawn(async move {
-            {
-                let mut stream = match w.byte_stream() {
-                    Ok(stream) => stream,
-                    Err(err) => {
-                        let _ = tx.send(Err(Status::unknown(err))).await;
-                        return;
-                    }
-                };
-                loop {
-                    if tx
-                        .send(match stream.next().await {
-                            Ok(Some(chunk)) => Ok(ResponseChunk {
-                                chunk: chunk.into(),
-                            }),
-                            Ok(None) => break,
-                            Err(err) => Err(Status::unknown(err)),
-                        })
-                        .await
-                        .is_err()
-                    {
-                        log::error!("Connection cancelled by client");
-                        return;
-                    }
-                }
-            }
-            w.done();
-        });
-        rx
-    }
-    */
 }
 
 type CacheInfoStream = Pin<Box<dyn Stream<Item = Result<CacheInfo, Status>> + Send>>;
@@ -331,7 +297,7 @@ impl QgisAdmin for QgisAdminServicer {
             // Trigger sync
             self.inner
                 .get_ref()
-                .update_state(restore::State::Pull(req.uri))
+                .update_cache(restore::State::Pull(req.uri))
                 .await;
         }
 
@@ -356,7 +322,7 @@ impl QgisAdmin for QgisAdminServicer {
         // Sync state
         self.inner
             .get_ref()
-            .update_state(restore::State::Remove(uri))
+            .update_cache(restore::State::Remove(uri))
             .await;
 
         Ok(response)
@@ -367,25 +333,65 @@ impl QgisAdmin for QgisAdminServicer {
 
     async fn list_cache(
         &self,
-        request: Request<Empty>,
+        _: Request<Empty>,
     ) -> Result<Response<Self::ListCacheStream>, Status> {
-        Err(Status::unimplemented(""))
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+
+        let (tx, rx) = mpsc::channel(32);
+        tokio::spawn(async move {
+            {
+                let mut stream = match w.list_cache().await {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        let _ = tx.send(Err(Status::unknown(err))).await;
+                        return;
+                    }
+                };
+                loop {
+                    if tx
+                        .send(match stream.next().await {
+                            Ok(Some(item)) => Ok(CacheInfo::from(item)),
+                            Ok(None) => break,
+                            Err(err) => Err(Status::unknown(err)),
+                        })
+                        .await
+                        .is_err()
+                    {
+                        log::error!("Connection cancelled by client");
+                        return;
+                    }
+                }
+            }
+            w.done();
+        });
+
+        let output_stream = ReceiverStream::new(rx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::ListCacheStream
+        ))
     }
 
     // Clear cache
-    async fn clear_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
+    async fn clear_cache(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
         // Sync state
         self.inner
             .get_ref()
-            .update_state(restore::State::Clear)
+            .update_cache(restore::State::Clear)
             .await;
 
         Ok(Response::new(Empty {}))
     }
 
     // Update cache
-    async fn update_cache(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
+    async fn update_cache(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
+        // Sync state
+        self.inner
+            .get_ref()
+            .update_cache(restore::State::Update)
+            .await;
+
+        Ok(Response::new(Empty {}))
     }
     //
     // Plugins
@@ -396,17 +402,79 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<Empty>,
     ) -> Result<Response<Self::ListPluginsStream>, Status> {
-        Err(Status::unimplemented(""))
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+
+        let (tx, rx) = mpsc::channel(8);
+        tokio::spawn(async move {
+            {
+                let mut stream = match w.list_plugins().await {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        let _ = tx.send(Err(Status::unknown(err))).await;
+                        return;
+                    }
+                };
+                loop {
+                    if tx
+                        .send(match stream.next().await {
+                            Ok(Some(item)) => Ok(PluginInfo::from(item)),
+                            Ok(None) => break,
+                            Err(err) => Err(Status::unknown(err)),
+                        })
+                        .await
+                        .is_err()
+                    {
+                        log::error!("Connection cancelled by client");
+                        return;
+                    }
+                }
+            }
+            w.done();
+        });
+
+        let output_stream = ReceiverStream::new(rx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::ListPluginsStream
+        ))
     }
     //
     // Config managment
     //
     async fn set_config(&self, request: Request<JsonConfig>) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
+        // Sync state
+        let patch = serde_json::from_str(&request.into_inner().json)
+            .map_err(|err| Status::invalid_argument(format!("{:?}", err)))?;
+
+        if log::log_enabled!(log::Level::Debug) {
+            log::debug!("Updating configuration: {}", patch);
+        } else {
+            log::info!("Updating configuration");
+        }
+
+        // Update log level
+        Settings::set_log_level(&patch);
+
+        // Patch configuration
+        self.pool
+            .write()
+            .await
+            .patch_config(&patch)
+            .await
+            .map_err(Status::invalid_argument)?;
+        self.inner.get_ref().update_config(patch).await;
+
+        Ok(Response::new(Empty {}))
     }
-    async fn get_config(&self, request: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
-        Err(Status::unimplemented(""))
+
+    async fn get_config(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+        Ok(Response::new(JsonConfig {
+            json: w.get_config().await.map_err(Self::error)?.to_string(),
+        }))
     }
+
     async fn reload_config(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
         Err(Status::unimplemented(""))
     }
@@ -417,7 +485,37 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<ProjectRequest>,
     ) -> Result<Response<ProjectInfo>, Status> {
-        Err(Status::unimplemented(""))
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+        let mut resp = w
+            .project_info(&request.into_inner().uri)
+            .await
+            .map_err(Self::error)?;
+
+        w.done();
+
+        Ok(Response::new(ProjectInfo {
+            status: resp.status,
+            uri: resp.uri,
+            filename: resp.filename,
+            crs: resp.crs,
+            last_modified: resp.last_modified,
+            storage: resp.storage,
+            has_bad_layers: resp.has_bad_layers,
+            layers: resp
+                .layers
+                .drain(..)
+                .map(|l| project_info::Layer {
+                    layer_id: l.layer_id,
+                    name: l.name,
+                    source: l.source,
+                    crs: l.crs,
+                    is_valid: l.is_valid,
+                    is_spatial: l.is_spatial,
+                })
+                .collect(),
+            cache_id: resp.cache_id,
+        }))
     }
     // Catalog
     type CatalogStream = CatalogItemStream;
@@ -426,25 +524,82 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<CatalogRequest>,
     ) -> Result<Response<Self::CatalogStream>, Status> {
-        Err(Status::unimplemented(""))
+
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+        let location = request.into_inner().location;
+
+        let (tx, rx) = mpsc::channel(32);
+        tokio::spawn(async move {
+            {
+                let mut stream = match w.catalog(location.as_deref()).await {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        let _ = tx.send(Err(Status::unknown(err))).await;
+                        return;
+                    }
+                };
+                loop {
+                    if tx
+                        .send(match stream.next().await {
+                            Ok(Some(item)) => Ok(CatalogItem::from(item)),
+                            Ok(None) => break,
+                            Err(err) => Err(Status::unknown(err)),
+                        })
+                        .await
+                        .is_err()
+                    {
+                        log::error!("Connection cancelled by client");
+                        return;
+                    }
+                }
+            }
+            w.done();
+        });
+
+        let output_stream = ReceiverStream::new(rx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::CatalogStream
+        ))
     }
     //
     // Service managment/inspection
     //
-    async fn get_env(&self, request: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
-        Err(Status::unimplemented(""))
+    async fn get_env(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+        Ok(Response::new(JsonConfig {
+            json: w.get_env().await.map_err(Self::error)?.to_string(),
+        }))
     }
+    // Change serving status
     async fn set_server_serving_status(
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
         Err(Status::unimplemented(""))
     }
-    async fn stats(&self, request: Request<Empty>) -> Result<Response<StatsReply>, Status> {
-        Err(Status::unimplemented(""))
+    // Stats
+    async fn stats(&self, _: Request<Empty>) -> Result<Response<StatsReply>, Status> {
+        let st = qjazz_pool::stats::Stats::new(self.pool.read().await);
+        Ok(Response::new(StatsReply {
+            num_workers: st.num_workers() as u64,
+            dead_workers: st.dead_workers() as u64,
+            activity: st.activity().unwrap_or(0.),
+            failure_pressure: st.failure_pressure(),
+            request_pressure: st.request_pressure(),
+            uptime: self.uptime.elapsed().as_secs(),
+        }))
     }
+    // Sleep
     async fn sleep(&self, request: Request<SleepRequest>) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
+        // Wait for available worker
+        let mut w = self.inner.get_worker().await?;
+
+        w.sleep(request.into_inner().delay)
+            .await
+            .map_err(Self::error)?;
+        Ok(Response::new(Empty {}))
     }
 }
 
@@ -466,6 +621,30 @@ impl From<qjazz_pool::messages::CacheInfo> for CacheInfo {
             last_hit: msg.last_hit,
             hits: msg.hits,
             pinned: msg.pinned,
+        }
+    }
+}
+
+impl From<qjazz_pool::messages::PluginInfo> for PluginInfo {
+    fn from(msg: qjazz_pool::messages::PluginInfo) -> Self {
+        PluginInfo {
+            name: msg.name,
+            path: msg.path,
+            plugin_type: msg.plugin_type,
+            metadata: msg.metadata.to_string(),
+        }
+    }
+}
+
+
+impl From<qjazz_pool::messages::CatalogItem> for CatalogItem {
+    fn from(msg: qjazz_pool::messages::CatalogItem) -> Self {
+        CatalogItem {
+            uri: msg.uri,
+            name: msg.name,
+            storage: msg.storage,
+            last_modified: msg.last_modified,
+            public_uri: msg.public_uri,
         }
     }
 }

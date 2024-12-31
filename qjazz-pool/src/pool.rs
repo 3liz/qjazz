@@ -4,6 +4,7 @@
 //! Manage multiple workers
 //!
 use crate::builder::Builder;
+use crate::config::WorkerOptions;
 use crate::errors::{Error, Result};
 use crate::queue::Queue;
 use crate::restore::Restore;
@@ -18,13 +19,17 @@ use tokio::sync::RwLock;
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     dead_workers: AtomicUsize,
-    max_requests: usize,
+    max_requests: AtomicUsize,
     restore: RwLock<Restore>,
 }
 
 impl WorkerQueue {
+    fn max_requests(&self) -> usize {
+        self.max_requests.load(Ordering::Relaxed)
+    }
+
     pub async fn recv(&self) -> Result<Worker> {
-        if self.q.num_waiters() > self.max_requests {
+        if self.q.num_waiters() > self.max_requests() {
             return Err(Error::MaxRequestsExceeded);
         }
         self.q.recv().await
@@ -101,12 +106,26 @@ impl Pool {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(opts.num_processes),
                 dead_workers: AtomicUsize::new(0),
-                max_requests: opts.max_waiting_requests,
+                max_requests: AtomicUsize::new(opts.max_waiting_requests),
                 restore: RwLock::new(Restore::new()),
             }),
             builder,
             num_processes: 0,
         }
+    }
+
+    pub(crate) fn options(&self) -> &WorkerOptions {
+        self.builder.options()
+    }
+
+    /// Patch configuration
+    pub async fn patch_config(&mut self, patch: &serde_json::Value) -> Result<()> {
+        self.builder.patch(patch)?;
+        self.queue.max_requests.store(
+            self.builder.options().max_waiting_requests,
+            Ordering::Relaxed,
+        );
+        self.maintain_pool().await
     }
 
     pub(crate) fn clone_queue(&self) -> Arc<WorkerQueue> {
@@ -134,11 +153,6 @@ impl Pool {
         let idle = self.queue.q.len();
         let busy = self.num_processes - idle - dead;
         (busy, idle, dead)
-    }
-
-    /// Return statistics about workers state
-    pub fn stats(&self) -> Stats {
-        Stats::from_raw_stats(self.stats_raw(), Instant::now())
     }
 
     /// Maintain the pool at nominal number of live workers
@@ -284,7 +298,7 @@ mod tests {
         let mut pool = Pool::new(builder(1));
         {
             let mut restore = pool.queue.restore().write().await;
-            restore.update_state(restore::State::Pull("project_1".into()));
+            restore.update_cache(restore::State::Pull("project_1".into()));
         }
         pool.maintain_pool().await.unwrap();
 
@@ -296,7 +310,9 @@ mod tests {
         }
 
         // Update project's
-        queue.update_state(restore::State::Pull("project_2".into())).await;
+        queue
+            .update_cache(restore::State::Pull("project_2".into()))
+            .await;
 
         {
             let mut worker = queue.get().await.unwrap();

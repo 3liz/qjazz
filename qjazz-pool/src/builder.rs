@@ -2,6 +2,7 @@
 use crate::config::{get_log_level, python_executable, WorkerOptions};
 use crate::errors::Result;
 use crate::messages::JsonValue;
+use crate::utils::json_merge;
 use crate::Worker;
 use std::ffi::OsStr;
 use std::process::Stdio;
@@ -68,6 +69,20 @@ impl Builder {
         Worker::spawn(&mut self.command, &self.opts).await
     }
 
+    /// Patch configuration
+    pub fn patch(&mut self, patch: &serde_json::Value) -> Result<()> {
+        let mut doc = serde_json::to_value(&self.opts)?;
+        json_merge(&mut doc, patch);
+
+        self.opts = serde_json::from_value(doc)?;
+
+        // Update environment
+        self.command
+            .env("CONF_LOGGING__LEVEL", get_log_level())
+            .env("CONF_WORKER__QGIS", self.opts.qgis.to_string());
+        Ok(())
+    }
+
     /// Start a worker by consumming the builder
     pub async fn start_owned(mut self) -> Result<Worker> {
         Worker::spawn(&mut self.command, &self.opts).await
@@ -128,5 +143,46 @@ impl Builder {
     {
         self.command.args(projects);
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_builder_patch() {
+        let mut builder = Builder::new(&[crate::rootdir!("process.py")]);
+        builder
+            .name("test")
+            .process_start_timeout(5)
+            .num_processes(1);
+
+        assert_eq!(builder.opts.num_processes, 1);
+        assert_eq!(
+            builder.opts.qgis,
+            json!({
+                "max_chunk_size": builder.opts.max_chunk_size
+            })
+        );
+
+        builder
+            .patch(&json!({
+                "num_processes": 3,
+                "qgis": {
+                    "max_projects": 25
+                }
+            }))
+            .unwrap();
+
+        assert_eq!(builder.opts.num_processes, 3);
+        assert_eq!(
+            builder.opts.qgis,
+            json!({
+                "max_chunk_size": builder.opts.max_chunk_size,
+                "max_projects": 25
+            })
+        );
     }
 }

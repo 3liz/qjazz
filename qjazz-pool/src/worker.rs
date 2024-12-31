@@ -286,7 +286,7 @@ impl Worker {
     }
 
     /// Return environment
-    pub async fn getenv(&mut self) -> Result<JsonValue> {
+    pub async fn get_env(&mut self) -> Result<JsonValue> {
         self.io()?
             .send_message(msg::GetEnvMsg)
             .await
@@ -392,6 +392,26 @@ impl Worker {
         let io = self.io()?;
         io.put_message(msg::PluginsMsg.into()).await?;
         Ok(ObjectStream::new(io))
+    }
+
+    //
+    // Config
+    //
+
+    /// Update worker configuration
+    pub async fn put_config(&mut self, config: &JsonValue) -> Result<()> {
+        self.io()?
+            .send_message(msg::PutConfigMsg { config })
+            .await
+            .map(|(_, resp)| resp)
+    }
+
+    /// Retrieve worker configuration
+    pub async fn get_config(&mut self) -> Result<JsonValue> {
+        self.io()?
+            .send_message(msg::GetConfigMsg {})
+            .await
+            .map(|(_, resp)| resp)
     }
 }
 

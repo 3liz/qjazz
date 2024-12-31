@@ -61,7 +61,7 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 
     _m.send_reply(conn, reply)
 
-# Convert last modified date to ison
+# Convert last modified date to iso8601
 def timestamp_to_iso(timestamp: Optional[float]) -> Optional[str]:
     return to_iso8601(
         datetime.fromtimestamp(timestamp),
@@ -245,7 +245,9 @@ def send_project_info(
                         uri=entry.md.uri,
                         filename=entry.project.fileName(),
                         crs=entry.project.crs().authid(),
-                        last_modified=entry.md.last_modified,
+                        last_modified=to_iso8601(
+                            datetime.fromtimestamp(entry.md.last_modified),
+                        ),
                         storage=entry.md.storage or "<none>",
                         has_bad_layers=any(not lyr.is_valid for lyr in layers),
                         layers=layers,

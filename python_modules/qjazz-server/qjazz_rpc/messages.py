@@ -219,8 +219,8 @@ class ProjectInfo:
     uri: str
     filename: str
     crs: str
-    last_modified: float
-    storage: str
+    last_modified: str
+    storage: Optional[str]
     has_bad_layers: bool
     layers: List[LayerInfo]
     cache_id: str = ""

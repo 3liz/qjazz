@@ -302,7 +302,7 @@ pub struct ProjectInfo {
     pub uri: String,
     pub filename: String,
     pub crs: String,
-    pub last_modified: f64,
+    pub last_modified: String,
     pub storage: String,
     pub has_bad_layers: bool,
     pub layers: Vec<LayerInfo>,
@@ -349,8 +349,7 @@ pub struct GetConfigMsg {}
 /// Put config message
 #[derive(Serialize)]
 pub struct PutConfigMsg<'a> {
-    pub logging: &'a str,
-    pub config: JsonValue,
+    pub config: &'a JsonValue,
 }
 
 //

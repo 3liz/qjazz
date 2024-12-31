@@ -90,7 +90,7 @@ def project_info(uri: str) -> m_.ProjectInfo:
         uri=uri,
         filename="/path/to/file",
         crs="EPSG:4326",
-        last_modified=time(),
+        last_modified=to_iso8601(datetime.fromtimestamp(time())),
         storage="file",
         has_bad_layers=False,
         layers=[

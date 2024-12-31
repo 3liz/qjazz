@@ -46,7 +46,7 @@ message Empty {}
 
 
 message SleepRequest {
-    int32 delay = 1;
+    int64 delay = 1;
 }
 
 
@@ -56,11 +56,12 @@ enum ServingStatus {
 }
 
 message StatsReply {
-    int32 num_workers = 2;
-    int32 stopped_workers = 3;
-    float worker_failure_pressure = 4;
-    float request_pressure = 5;
-    int32 uptime = 6;
+    uint64 num_workers = 1;
+    uint64 dead_workers = 2;
+    double activity = 3;
+    double failure_pressure = 4;
+    double request_pressure = 5;
+    uint64 uptime = 6;
 }
 
 message ServerStatus {
@@ -143,7 +144,7 @@ message ProjectInfo {
     string storage = 6;
     bool has_bad_layers = 7;
     repeated Layer layers = 8;
-    optional string cache_id = 9;
+    string cache_id = 9;
 }
 
 message PluginInfo {

@@ -99,9 +99,15 @@ impl Receiver {
         })
     }
 
-    pub async fn update_state(&self, state: restore::State) {
+    pub async fn update_cache(&self, state: restore::State) {
         let mut restore = self.queue.restore().write().await;
         let _ = self.drain(); // Will update on drop
-        restore.update_state(state);
+        restore.update_cache(state);
+    }
+
+    pub async fn update_config(&self, config: serde_json::Value) {
+        let mut restore = self.queue.restore().write().await;
+        let _ = self.drain(); // Will update on drop
+        restore.update_config(config);
     }
 }

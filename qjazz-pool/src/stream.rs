@@ -23,13 +23,19 @@ impl<'a> ByteStream<'a> {
         if self.done {
             return Ok(None);
         }
-        self.io.read_chunk().await.map(|control| match control {
-            ControlFlow::Continue(data) => Some(data),
-            ControlFlow::Break(()) => {
+        self.io
+            .read_chunk()
+            .await
+            .map(|control| match control {
+                ControlFlow::Continue(data) => Some(data),
+                ControlFlow::Break(()) => {
+                    self.done = true;
+                    None
+                }
+            })
+            .inspect_err(|_| {
                 self.done = true;
-                None
-            }
-        })
+            })
     }
 }
 
@@ -58,12 +64,18 @@ where
         if self.done {
             return Ok(None);
         }
-        self.io.read_stream().await.map(|control| match control {
-            ControlFlow::Continue(v) => Some(v),
-            ControlFlow::Break(v) => {
+        self.io
+            .read_stream()
+            .await
+            .map(|control| match control {
+                ControlFlow::Continue(v) => Some(v),
+                ControlFlow::Break(v) => {
+                    self.done = true;
+                    v
+                }
+            })
+            .inspect_err(|_| {
                 self.done = true;
-                v
-            }
-        })
+            })
     }
 }

@@ -44,6 +44,8 @@ pub(crate) struct Server {
     /// closing connections. During this period,
     /// no new connections are allowed.
     pub shutdown_grace_period: u64,
+    /// Use admin services
+    pub enable_admin_services: bool,
 }
 
 impl Default for Server {
@@ -52,6 +54,7 @@ impl Default for Server {
             listen: Default::default(),
             timeout: 20,
             shutdown_grace_period: 10,
+            enable_admin_services: true,
         }
     }
 }
@@ -119,7 +122,7 @@ impl Settings {
         if let Some(loc) = path.parent() {
             let location = loc.canonicalize().map_err(Self::error)?;
             let replace =
-                std::collections::HashMap::from([("location", location.to_string_lossy())]);
+                std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
             let content = subst::substitute(
                 &std::fs::read_to_string(path).map_err(Self::error)?,
                 &replace,
@@ -130,6 +133,29 @@ impl Settings {
             )
         } else {
             Self::from_file(path)
+        }
+    }
+
+    /// Set log level from json configuration
+    pub fn set_log_level(config: &serde_json::Value) {
+        if let Some(level) = config
+            .get("logging")
+            .and_then(|v| v.get("level"))
+            .and_then(|v| v.as_str())
+        {
+            log::set_max_level(match level.to_lowercase().as_str() {
+                "error" => log::LevelFilter::Error,
+                "warning" => log::LevelFilter::Warn,
+                "info" => log::LevelFilter::Info,
+                "debug" => log::LevelFilter::Debug,
+                "trace" => log::LevelFilter::Trace,
+                "critical" => log::LevelFilter::Off,
+                invalid => {
+                    log::error!("Invalid log level: '{}'", invalid);
+                    log::max_level() // Returns the current level filter
+                }
+            });
+            log::info!("Log level set to: {}", log::max_level());
         }
     }
 }

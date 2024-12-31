@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &args.command {
         Some(Commands::Settings) => {
-            println!("TODO!");
+            todo!();
         }
         Some(Commands::Config { conf }) => {
             let settings = match conf {

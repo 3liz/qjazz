@@ -7,6 +7,8 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("Pickle error")]
     PickleError(#[from] serde_pickle::Error),
+    #[error("Json error")]
+    JsonError(#[from] serde_json::Error),
     #[error("Response error {0}: {1}")]
     ResponseError(i64, serde_json::Value),
     #[error("System error")]

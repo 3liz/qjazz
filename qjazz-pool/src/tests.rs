@@ -43,7 +43,7 @@ async fn test_messages_io() {
 
     assert_eq!(w.ping("hello").await.unwrap(), "hello");
 
-    let resp = w.getenv().await.unwrap();
+    let resp = w.get_env().await.unwrap();
     let env = resp.as_object();
     assert!(env.is_some());
     // TODO: Check for specific env variable
