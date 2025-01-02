@@ -3,11 +3,13 @@
 level = "TRACE"
 
 [http]
-listen=["0.0.0.0", 4000]
+listen = ["0.0.0.0", 4000]
 
 [backends.test]
 address = ["localhost", 23456]
 route = "/test"
+use_ssl = false
+ssl = { cafile = "$location/certs/localhost.crt" }
 
 [backends.local]
 title = "Local backend"

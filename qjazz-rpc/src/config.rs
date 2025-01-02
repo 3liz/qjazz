@@ -1,8 +1,9 @@
 use core::net::SocketAddr;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::{io, fs};
 use std::net::{IpAddr, Ipv6Addr};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::logger::Logging;
@@ -15,12 +16,18 @@ use crate::logger::Logging;
 #[serde(default)]
 pub struct ListenConfig {
     address: SocketAddr,
+    enable_tls: bool,
+    tls_key_file: Option<PathBuf>,
+    tls_cert_file: Option<PathBuf>,
 }
 
 impl Default for ListenConfig {
     fn default() -> Self {
         Self {
             address: SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)), 23456),
+            enable_tls: false,
+            tls_key_file: None,
+            tls_cert_file: None,
         }
     }
 }
@@ -29,6 +36,14 @@ impl ListenConfig {
     /// Return the socker addresss from this configuration
     pub fn address(&self) -> SocketAddr {
         self.address
+    }
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.enable_tls {
+            check_file_exists(&self.tls_cert_file, "TLS cert file")
+                .and_then(|_| check_file_exists(&self.tls_key_file, "TLS key file"))
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -60,11 +75,23 @@ impl Default for Server {
 }
 
 impl Server {
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        self.listen.validate()
+    }
     pub fn timeout(&self) -> Duration {
         Duration::from_secs(self.timeout)
     }
     pub fn shutdown_grace_period(&self) -> Duration {
         Duration::from_secs(self.shutdown_grace_period)
+    }
+    pub fn enable_tls(&self) -> bool {
+        self.listen.enable_tls
+    }
+    pub fn tls_key(&self) -> io::Result<String> {
+        fs::read_to_string(self.listen.tls_key_file.as_ref().unwrap())
+    }
+    pub fn tls_cert(&self) -> io::Result<String> {
+        fs::read_to_string(self.listen.tls_cert_file.as_ref().unwrap())
     }
 }
 
@@ -85,6 +112,12 @@ pub(crate) struct Settings {
 }
 
 impl Settings {
+
+    fn validate(self) -> Result<Self, ConfigError> {
+        self.server.validate()?;
+        Ok(self)
+    }
+
     pub(crate) fn init_logger(&self) {
         self.logging.init()
     }
@@ -100,7 +133,7 @@ impl Settings {
             )
             .build()?;
 
-        s.try_deserialize()
+        s.try_deserialize().and_then(|this: Self| this.validate())
     }
 
     fn error<T: Display>(msg: T) -> ConfigError {
@@ -124,7 +157,7 @@ impl Settings {
             let replace =
                 std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
             let content = subst::substitute(
-                &std::fs::read_to_string(path).map_err(Self::error)?,
+                &fs::read_to_string(path).map_err(Self::error)?,
                 &replace,
             )
             .map_err(Self::error)?;
@@ -156,6 +189,26 @@ impl Settings {
                 }
             });
             log::info!("Log level set to: {}", log::max_level());
+        }
+    }
+}
+
+// Utils
+fn check_file_exists(path: &Option<PathBuf>, name: &str) -> Result<(), ConfigError> {
+    match path {
+        None => Err(ConfigError::Message(format!(
+            "Path required for '{}'",
+            name
+        ))),
+        Some(p) => {
+            if !p.exists() {
+                Err(ConfigError::Message(format!(
+                    "File {} does not exists !",
+                    p.to_string_lossy()
+                )))
+            } else {
+                Ok(())
+            }
         }
     }
 }

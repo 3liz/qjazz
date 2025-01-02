@@ -1,6 +1,11 @@
 [logging]
 level = "trace"
 
+[server.listen]
+enable_tls = false
+tls_key_file = "$location/certs/localhost.key"
+tls_cert_file = "$location/certs/localhost.crt"
+
 [worker]
 name = "Test"
 shutdown_grace_period = 5

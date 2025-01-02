@@ -7,7 +7,7 @@ use qjazz_pool::Pool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
-use tonic::transport::Server;
+use tonic::transport::{ Server, Identity, ServerTlsConfig};
 
 /// Run gRPC server
 pub(crate) async fn serve(
@@ -51,14 +51,29 @@ pub(crate) async fn serve(
     // Just launch the task and let tokio abort on exit.
     // Furthemore graceful shutdown is handled by the worker
     // pool.
-    tokio::spawn(
-        Server::builder()
-            .timeout(settings.server.timeout())
-            .add_service(health_service)
-            .add_service(QgisServerServer::new(qgis_servicer))
-            .add_service(QgisAdminServer::new(admin_servicer))
-            .serve(addr),
-    );
+    let mut builder = Server::builder();
+    
+    // Enable tls 
+    if settings.server.enable_tls() {
+        log::info!("TLS enabled");
+        let cert = settings.server.tls_cert()?;
+        let key = settings.server.tls_key()?;
+        builder = builder.tls_config(
+            ServerTlsConfig::new().identity(Identity::from_pem(cert, key))
+        )?;
+    }
+
+    let mut router = builder
+        .timeout(settings.server.timeout())
+        .add_service(health_service)
+        .add_service(QgisServerServer::new(qgis_servicer));
+
+    if settings.server.enable_admin_services {
+        log::info!("Enabling admin services");
+        router = router.add_service(QgisAdminServer::new(admin_servicer));
+    }
+
+    tokio::spawn(router.serve(addr));
 
     token.cancelled().await;
 
