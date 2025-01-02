@@ -2,8 +2,10 @@
 // Rpc server
 //
 use crate::config::Settings;
-use crate::service::{QgisServerServer, QgisServerServicer};
+use crate::service::{QgisAdminServer, QgisAdminServicer, QgisServerServer, QgisServerServicer};
 use qjazz_pool::Pool;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
@@ -27,9 +29,16 @@ pub(crate) async fn serve(
         .set_serving::<QgisServerServer<QgisServerServicer>>()
         .await;
 
+    let receiver = qjazz_pool::Receiver::new(&pool);
+
     // NOTE: service are registered as "qjazz.<service name>"
     // While in python this is "<service name>
-    let servicer = QgisServerServicer::new(qjazz_pool::Receiver::new(&pool));
+    let qgis_servicer = QgisServerServicer::new(receiver.clone());
+
+    // Create admin servicer
+    let pool_owned = Arc::new(RwLock::new(pool));
+    let admin_servicer =
+        QgisAdminServicer::new(receiver, pool_owned.clone(), health_reporter.clone());
 
     // Handle graceful shutdown
     let token = CancellationToken::new();
@@ -44,13 +53,17 @@ pub(crate) async fn serve(
     // pool.
     tokio::spawn(
         Server::builder()
+            .timeout(settings.server.timeout())
             .add_service(health_service)
-            .add_service(QgisServerServer::new(servicer))
+            .add_service(QgisServerServer::new(qgis_servicer))
+            .add_service(QgisAdminServer::new(admin_servicer))
             .serve(addr),
     );
 
     token.cancelled().await;
-    pool.close(grace_period).await;
+
+    // Close queue
+    pool_owned.write().await.close(grace_period).await;
     // Notify that we are not serving anymore.
     health_reporter
         .set_not_serving::<QgisServerServer<QgisServerServicer>>()

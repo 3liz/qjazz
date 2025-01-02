@@ -8,7 +8,6 @@ use crate::config::WorkerOptions;
 use crate::errors::{Error, Result};
 use crate::queue::Queue;
 use crate::restore::Restore;
-use crate::stats::Stats;
 use crate::worker::Worker;
 use futures::future::try_join_all;
 use std::sync::atomic::{AtomicUsize, Ordering};

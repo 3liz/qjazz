@@ -1,6 +1,5 @@
 use std::str::FromStr;
 use tonic::metadata::{AsciiMetadataValue, KeyAndValueRef, MetadataKey, MetadataMap};
-use tonic::Status;
 
 // gRPC metadata utilities
 

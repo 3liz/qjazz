@@ -117,10 +117,12 @@ impl<T> Queue<T> {
         self.closed.load(Ordering::Relaxed)
     }
 
+    /*
     /// Returns 'true' if the queue is empty
     pub fn is_empty(&self) -> bool {
         self.count.load(Ordering::Relaxed) == 0
     }
+    */
 
     /// Returns the number of elements in the queue
     pub fn len(&self) -> usize {

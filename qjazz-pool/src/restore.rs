@@ -51,10 +51,10 @@ impl Restore {
                 }
                 match &rev.1 {
                     State::Pull(uri) => {
-                        let _ = worker.checkout_project(&uri, true).await?;
+                        let _ = worker.checkout_project(uri, true).await?;
                     }
                     State::Remove(uri) => {
-                        let _ = worker.drop_project(&uri).await?;
+                        let _ = worker.drop_project(uri).await?;
                     }
                     State::Clear => worker.clear_cache().await?,
                     State::Update => (),

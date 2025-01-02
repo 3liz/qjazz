@@ -1,13 +1,13 @@
 use qjazz_service::{
     project_info, ApiRequest, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest,
     Empty, JsonConfig, OwsRequest, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest,
-    ResponseChunk, ServerStatus, SleepRequest, StatsReply,
+    ResponseChunk, ServerStatus, ServingStatus, SleepRequest, StatsReply,
 };
 
 use std::pin::Pin;
 use std::time::Instant;
 use tokio::sync::mpsc;
-use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{Request, Response, Status};
 
 use crate::config::Settings;
@@ -231,24 +231,32 @@ impl QgisServer for QgisServerServicer {
 // The QGIS Admin servicer
 //
 use qjazz_service::qgis_admin_server::QgisAdmin;
+use std::sync::Arc;
 use tokio::sync::RwLock;
+use tonic_health::server::HealthReporter;
+
 // Reexport
 pub(crate) use qjazz_service::qgis_admin_server::QgisAdminServer;
 
 pub(crate) struct QgisAdminServicer {
     inner: Inner,
-    pool: RwLock<qjazz_pool::Pool>,
+    pool: Arc<RwLock<qjazz_pool::Pool>>,
+    health_reporter: HealthReporter,
     uptime: Instant,
 }
 
 impl Qjazz for QgisAdminServicer {}
 
 impl QgisAdminServicer {
-    pub(crate) fn new(pool: qjazz_pool::Pool) -> Self {
-        let queue = qjazz_pool::Receiver::new(&pool);
+    pub(crate) fn new(
+        queue: qjazz_pool::Receiver,
+        pool: Arc<RwLock<qjazz_pool::Pool>>,
+        health_reporter: HealthReporter,
+    ) -> Self {
         Self {
             inner: Inner(queue),
-            pool: RwLock::new(pool),
+            pool,
+            health_reporter,
             uptime: Instant::now(),
         }
     }
@@ -400,7 +408,7 @@ impl QgisAdmin for QgisAdminServicer {
 
     async fn list_plugins(
         &self,
-        request: Request<Empty>,
+        _: Request<Empty>,
     ) -> Result<Response<Self::ListPluginsStream>, Status> {
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
@@ -462,6 +470,7 @@ impl QgisAdmin for QgisAdminServicer {
             .patch_config(&patch)
             .await
             .map_err(Status::invalid_argument)?;
+
         self.inner.get_ref().update_config(patch).await;
 
         Ok(Response::new(Empty {}))
@@ -475,7 +484,7 @@ impl QgisAdmin for QgisAdminServicer {
         }))
     }
 
-    async fn reload_config(&self, request: Request<Empty>) -> Result<Response<Empty>, Status> {
+    async fn reload_config(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
         Err(Status::unimplemented(""))
     }
     //
@@ -524,7 +533,6 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<CatalogRequest>,
     ) -> Result<Response<Self::CatalogStream>, Status> {
-
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
         let location = request.into_inner().location;
@@ -558,9 +566,7 @@ impl QgisAdmin for QgisAdminServicer {
         });
 
         let output_stream = ReceiverStream::new(rx);
-        Ok(Response::new(
-            Box::pin(output_stream) as Self::CatalogStream
-        ))
+        Ok(Response::new(Box::pin(output_stream) as Self::CatalogStream))
     }
     //
     // Service managment/inspection
@@ -572,12 +578,30 @@ impl QgisAdmin for QgisAdminServicer {
             json: w.get_env().await.map_err(Self::error)?.to_string(),
         }))
     }
-    // Change serving status
+    // Change QGIS server serving status
     async fn set_server_serving_status(
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
+        // We need a mutable reporter
+        let mut reporter = self.health_reporter.clone();
+
+        match request.into_inner().status {
+            st if st == ServingStatus::Serving as i32 => {
+                reporter
+                    .set_serving::<QgisServerServer<QgisServerServicer>>()
+                    .await
+            }
+            st if st == ServingStatus::NotServing as i32 => {
+                reporter
+                    .set_not_serving::<QgisServerServer<QgisServerServicer>>()
+                    .await
+            }
+            st => {
+                return Err(Status::invalid_argument(format!("{}", st)));
+            }
+        }
+        Ok(Response::new(Empty {}))
     }
     // Stats
     async fn stats(&self, _: Request<Empty>) -> Result<Response<StatsReply>, Status> {
@@ -635,7 +659,6 @@ impl From<qjazz_pool::messages::PluginInfo> for PluginInfo {
         }
     }
 }
-
 
 impl From<qjazz_pool::messages::CatalogItem> for CatalogItem {
     fn from(msg: qjazz_pool::messages::CatalogItem) -> Self {
