@@ -62,7 +62,7 @@ proxy_conf = false
 # User agent
 #
 # The user agent for configuration requests
-user_agent = "qjazz-server middleware 1.0.0.dev0"
+user_agent = "qjazz-server middleware 0.1.0.dev0"
 
 #
 [http_config_url.ssl]

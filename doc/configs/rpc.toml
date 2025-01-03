@@ -4,89 +4,84 @@
 level = "INFO"
 
 
-[worker]
+[server]
 #
-# Name of the worker instance
-name = "default"
+# Use admin services
+enable_admin_services = true
 #
-# Description
+# Timeout for requests in seconds
+timeout = 20
 #
-# Description for administrative purpose
-description = ""
+# Request timeout
 #
-# Max number of concurrent requests
-#
-# The maximum number of requests that can be
-# queued for this worker task. If the number of
-# waiting requests reach the limit, the subsequent
-# requests will be returned with a `service unavailable`
-# error
-max_waiting_requests = 20
-#
-# Stalled process timeout
-#
-# Set the amount of time in seconds before considering
-# considering that a process is stalled.
-# A stalled process will be terminated and the server will
-# exit with an error code
-process_timeout = 20
-#
-# Process grace period
-#
-# The grace period to apply on worker timeout
-# when attempting to cancel the actual request
-process_grace_period = 3
-#
-# Shutdown grace period
-#
-# The maximum amount of time to wait before
+# The maximum amount of time to wait in seconds before
 # closing connections. During this period,
 # no new connections are allowed.
-shutdown_grace_period = 20
-#
-# Max allowed processes failure ratio
-#
-# The maximum ratio of terminated/initial processes
-# allowed. If this limit is reached,  the server will
-# issue a critical failure before exiting.
-max_processes_failure_pressure = 0.0
-#
-# Number of Qgis processes
-#
-# Set the number of Qgis processes per worker.
-# If a processes crash, the worker is in a degraded
-# state. When the last process exit the worker will
-# stop with an error code.
-# 
-# In order not to let the worker degrade itself slowly
-# the number of worker should be kept low (from 1 to 3)
-# or keep a relatively low 'max_processes_failure_pressure'.
-# Note: server must be restarted if this option is modified.
-num_processes = 1
+shutdown_grace_period = 10
 #
 # Rescale period
 #
-# Set the interval in seconds between rescaling of the number of
-# live processes.
-# Scaling will adjust the number of processes according 
-# to the configuration and dead processes will be replaced
-# with new processes.
-rescale_period = 5
+# Interval in seconds between attempts to replace the
+# the dead processes.
+rescale_period = 10
+#
+# Max failure pressure
+#
+# The maximum failure pressure allowed before terminating
+# server with unrecoverable error.
+max_failure_pressure = 1.0
 
 #
-# Interfaces to listen to
+# Socket configuration
+[server.listen]
 #
-[[worker.interfaces]]
+# Socket address
+address = "[::1]:23456"
 #
-# TCP:PORT interface or unix socket
-listen = ["[::]",23456]
-use_ssl = false
-ssl = "cafile=None certfile=None keyfile=None"
+# Enable TLS
+#
+# Enable TLS, require certificat and key
+enable_tls = false
+#
+# Path to TLS key file
+#tls_key_file =   	# Optional
+#
+# Path to TLS cert PEM file
+#tls_cert_file =   	# Optional
+
+
+[worker]
+#
+# Name of the worker instance
+name = ""
+#
+# Number of simultanous workers
+num_processes = 1
+#
+# Timeout for starting child process
+process_start_timeout = 5
+#
+# Cancel timeout
+#
+# The grace period to apply on worker timeout
+# when attempting to cancel the actual request
+# This number should be kept small (a few seconds) since it
+# will be used after the response timeout.
+# 
+cancel_timeout = 3
+#
+# Maximum queued requests
+#
+# The maximum number of requests that can be
+# queued. If the number of waiting requests reach the limit,
+# the subsequent requests will be returned with a `service unavailable`
+# error.
+max_waiting_requests = 50
 
 #
-# Qgis process configuration
+# Qgis configuration
 #
-[worker.config]
+[worker.qgis]
 #
 # Projects configuration
 #
@@ -141,62 +136,4 @@ qgis_settings = {}
 # This is useful when you don't want
 # propagating signal from parent process.
 ignore_interrupt_signal = true
-
-
-# Bootstrap configuration from remote location.
-# The configuration is fetched from the remote url
-# at startup and override all local settings.
-[worker_config_url]
-#
-# External configuration Url
-#
-# Url to external configuration.
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-#url =   	# Optional
-
-#
-[worker_config_url.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
-
-
-# Bootstrap configuration from remote location.
-# The configuration is fetched from the remote url
-# at startup and override all local settings.
-[restore_cache]
-#
-# External configuration Url
-#
-# Url to external configuration.
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-#url =   	# Optional
-
-#
-[restore_cache.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
 

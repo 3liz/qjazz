@@ -321,7 +321,7 @@ impl Worker {
     //
 
     /// Checkout project status
-    pub async fn checkout_project<'a>(&mut self, uri: &str, pull: bool) -> Result<msg::CacheInfo> {
+    pub async fn checkout_project(&mut self, uri: &str, pull: bool) -> Result<msg::CacheInfo> {
         self.io()?
             .send_message(msg::CheckoutProjectMsg { uri, pull })
             .await

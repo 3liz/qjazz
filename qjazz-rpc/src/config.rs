@@ -12,6 +12,7 @@ use crate::logger::Logging;
 // Server configuration
 //
 
+/// Socket configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ListenConfig {
@@ -47,10 +48,10 @@ impl ListenConfig {
     }
 }
 
-/// Worker configuration
+/// RPC Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
-pub(crate) struct Server {
+pub struct Server {
     /// The interface to listen to
     listen: ListenConfig,
     /// Use admin services
@@ -123,9 +124,10 @@ use config::{
     Config, ConfigError, Environment, FileFormat,
 };
 
+/// Global settings
 #[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(default)]
-pub(crate) struct Settings {
+pub struct Settings {
     pub logging: Logging,
     pub server: Server,
     pub worker: qjazz_pool::WorkerOptions,
@@ -137,7 +139,7 @@ impl Settings {
         Ok(self)
     }
 
-    pub(crate) fn init_logger(&self) {
+    pub fn init_logger(&self) {
         self.logging.init()
     }
 
