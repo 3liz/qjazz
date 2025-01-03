@@ -6,15 +6,16 @@ use crate::service::{QgisAdminServer, QgisAdminServicer, QgisServerServer, QgisS
 use qjazz_pool::Pool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::time;
 use tokio_util::sync::CancellationToken;
-use tonic::transport::{ Server, Identity, ServerTlsConfig};
+use tonic::transport::{Identity, Server, ServerTlsConfig};
 
 /// Run gRPC server
 pub(crate) async fn serve(
     args: &str,
     settings: &Settings,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let addr = settings.server.listen.address();
+    let addr = settings.server.listen().address();
 
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
@@ -42,7 +43,9 @@ pub(crate) async fn serve(
 
     // Handle graceful shutdown
     let token = CancellationToken::new();
-    let signal_handle = crate::signals::handle_signals(token.clone())?;
+
+    let signal_handle =
+        crate::signals::handle_signals(pool_owned.clone(), token.clone(), &settings.server)?;
 
     let grace_period = settings.server.shutdown_grace_period();
 
@@ -52,15 +55,14 @@ pub(crate) async fn serve(
     // Furthemore graceful shutdown is handled by the worker
     // pool.
     let mut builder = Server::builder();
-    
-    // Enable tls 
+
+    // Enable tls
     if settings.server.enable_tls() {
         log::info!("TLS enabled");
         let cert = settings.server.tls_cert()?;
         let key = settings.server.tls_key()?;
-        builder = builder.tls_config(
-            ServerTlsConfig::new().identity(Identity::from_pem(cert, key))
-        )?;
+        builder =
+            builder.tls_config(ServerTlsConfig::new().identity(Identity::from_pem(cert, key)))?;
     }
 
     let mut router = builder
@@ -68,12 +70,20 @@ pub(crate) async fn serve(
         .add_service(health_service)
         .add_service(QgisServerServer::new(qgis_servicer));
 
-    if settings.server.enable_admin_services {
+    if settings.server.enable_admin_services() {
         log::info!("Enabling admin services");
         router = router.add_service(QgisAdminServer::new(admin_servicer));
     }
 
+    // Start server
     tokio::spawn(router.serve(addr));
+
+    // Scale handler
+    tokio::spawn(rescale_pool(
+        pool_owned.clone(),
+        settings.server.rescale_period(),
+        token.clone(),
+    ));
 
     token.cancelled().await;
 
@@ -89,4 +99,18 @@ pub(crate) async fn serve(
 
     log::info!("Server shutdown");
     Ok(())
+}
+
+// Handle pool re-scaling
+async fn rescale_pool(pool: Arc<RwLock<Pool>>, duration: time::Duration, token: CancellationToken) {
+    let mut interval = time::interval(duration);
+    loop {
+        interval.tick().await;
+        if token.is_cancelled() {
+            break;
+        }
+        if let Err(err) = pool.write().await.maintain_pool().await {
+            log::error!("Pool scaling failed: {:?}", err);
+        }
+    }
 }

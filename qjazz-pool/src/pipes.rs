@@ -82,8 +82,8 @@ impl Pipe {
             // SAFETY: buf is waste container used to drain data and it will
             // not go anywhere.
             let buf: &mut [u8] = unsafe { std::mem::transmute(buffer.spare_capacity_mut()) };
+            log::trace!("Entering blocking i/o drain...");
             loop {
-                log::trace!("Entering blocking i/o drain...");
                 match unistd::read(fd, buf) {
                     Ok(0) | Err(Errno::EWOULDBLOCK) => return Ok(len > 0),
                     Ok(n) => len += n,

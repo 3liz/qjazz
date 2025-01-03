@@ -162,7 +162,7 @@ impl RendezVous {
                             eof = 0;
                             log::trace!("Rendez-vous: READY");
                             state.store(false, atomic::Ordering::Relaxed);
-                            notify.notify_one();
+                            notify.notify_waiters();
                         }
                         1 => {
                             // BUSY

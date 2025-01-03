@@ -1,10 +1,10 @@
 use core::net::SocketAddr;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::{io, fs};
 use std::net::{IpAddr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use std::{fs, io};
 
 use crate::logger::Logging;
 
@@ -52,15 +52,21 @@ impl ListenConfig {
 #[serde(default)]
 pub(crate) struct Server {
     /// The interface to listen to
-    pub listen: ListenConfig,
+    listen: ListenConfig,
+    /// Use admin services
+    enable_admin_services: bool,
     /// Timeout for requests in seconds
-    pub timeout: u64,
+    timeout: u64,
     /// The maximum amount of time to wait in seconds before
     /// closing connections. During this period,
     /// no new connections are allowed.
-    pub shutdown_grace_period: u64,
-    /// Use admin services
-    pub enable_admin_services: bool,
+    shutdown_grace_period: u64,
+    /// Interval in seconds between attempts to replace the
+    /// the dead processes
+    rescale_period: u64,
+    /// The maximum failure pressure allowed before terminating
+    /// server with unrecoverable error
+    max_failure_pressure: f64,
 }
 
 impl Default for Server {
@@ -70,6 +76,8 @@ impl Default for Server {
             timeout: 20,
             shutdown_grace_period: 10,
             enable_admin_services: true,
+            rescale_period: 10,
+            max_failure_pressure: 1.0,
         }
     }
 }
@@ -78,11 +86,20 @@ impl Server {
     pub fn validate(&self) -> Result<(), ConfigError> {
         self.listen.validate()
     }
+    pub fn listen(&self) -> &ListenConfig {
+        &self.listen
+    }
+    pub fn enable_admin_services(&self) -> bool {
+        self.enable_admin_services
+    }
     pub fn timeout(&self) -> Duration {
         Duration::from_secs(self.timeout)
     }
     pub fn shutdown_grace_period(&self) -> Duration {
         Duration::from_secs(self.shutdown_grace_period)
+    }
+    pub fn rescale_period(&self) -> Duration {
+        Duration::from_secs(self.rescale_period)
     }
     pub fn enable_tls(&self) -> bool {
         self.listen.enable_tls
@@ -92,6 +109,9 @@ impl Server {
     }
     pub fn tls_cert(&self) -> io::Result<String> {
         fs::read_to_string(self.listen.tls_cert_file.as_ref().unwrap())
+    }
+    pub fn max_failure_pressure(&self) -> f64 {
+        self.max_failure_pressure
     }
 }
 
@@ -112,7 +132,6 @@ pub(crate) struct Settings {
 }
 
 impl Settings {
-
     fn validate(self) -> Result<Self, ConfigError> {
         self.server.validate()?;
         Ok(self)
@@ -156,11 +175,9 @@ impl Settings {
             let location = loc.canonicalize().map_err(Self::error)?;
             let replace =
                 std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
-            let content = subst::substitute(
-                &fs::read_to_string(path).map_err(Self::error)?,
-                &replace,
-            )
-            .map_err(Self::error)?;
+            let content =
+                subst::substitute(&fs::read_to_string(path).map_err(Self::error)?, &replace)
+                    .map_err(Self::error)?;
             Self::build(
                 Config::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
             )

@@ -25,7 +25,7 @@ from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 
 
 @contextmanager
-def stub(
+def channel(
     address: str,
     ssl: Optional[SSLConfig] = None,
     channel_options: Optional[List] = None,
@@ -59,9 +59,9 @@ def stub(
             address,
             options=channel_options,
         )
-    ) as channel:
+    ) as chan:
         stub = stub or qjazz_pb2_grpc.QgisAdminStub
-        yield stub(channel)
+        yield stub(chan)
 
 
 def MessageToJson(msg: Message) -> str:
@@ -87,7 +87,7 @@ def connect(stub=None):
         ("grpc.keepalive_timeout_ms", 10000),
     ]
 
-    target = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
+    address = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
 
     if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, 'yes', 'true'):
         ssl = SSLConfig(
@@ -98,7 +98,7 @@ def connect(stub=None):
     else:
         ssl = None
 
-    with stub(target, ssl, channel_options, stub) as _stub:
+    with channel(address, ssl, channel_options, stub) as _stub:
         try:
             yield _stub
         except grpc.RpcError as rpcerr:
@@ -479,20 +479,18 @@ def ping(count: int, server: bool = False):
 
 @cli_commands.command("healthcheck")
 @click.option("--watch", "-w", is_flag=True, help="Watch status changes")
-@click.option("--server", is_flag=True, help="Check qgis server service")
-def healthcheck_status(watch: bool, server: bool):
+def healthcheck_status(watch: bool):
     """ Check and monitor the status of a GRPC server
     """
-    target = "QgisServer" if server else "QgisAdmin"
     with connect(stub=health_pb2_grpc.HealthStub) as stub:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
-        request = health_pb2.HealthCheckRequest(service=target)
+        request = health_pb2.HealthCheckRequest(service="qjazz.QgisServer")
         if watch:
             for resp in stub.Watch(request):
-                click.echo(f"{target}:", ServingStatus.Name(resp.status))
+                click.echo(f"=: {ServingStatus.Name(resp.status)}")
         else:
             resp = stub.Check(request)
-            click.echo(f"{target}", ServingStatus.Name(resp.status))
+            click.echo(f"=: {ServingStatus.Name(resp.status)}")
 
 
 @cli_commands.command("stats")

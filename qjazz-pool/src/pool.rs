@@ -142,9 +142,15 @@ impl Pool {
         self.queue.q.num_waiters()
     }
 
-    /// Return the number of worker created so far
+    /// Returns the number of worker created so far
     pub fn num_workers(&self) -> usize {
         self.num_processes
+    }
+
+    /// Returns the ratio of dead workers against
+    /// the number of created workers
+    pub fn failure_pressure(&self) -> f64 {
+        self.dead_workers() as f64 / self.num_processes as f64
     }
 
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {
