@@ -148,6 +148,12 @@ async fn test_messages_io() {
     assert_eq!(resp.layers.len(), 1);
     assert_eq!(resp.layers[0].name, "Layer");
 
+    // Plugins
+    let mut resp = w.list_plugins().await.unwrap();
+    while let Some(item) = resp.next().await.unwrap() {
+        assert!(item.name.starts_with("plugin_"));
+    }
+
     /*
     pub async fn project_info(&mut self, uri: &str) -> Result<msg::ProjectInfo> {
     pub async fn list_plugins(&mut self) -> Result<ObjectStream<msg::PluginInfo>> {

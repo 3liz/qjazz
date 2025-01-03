@@ -153,7 +153,7 @@ def checkout_project(
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 # UPDATED for the sake of exhaustiveness
                 case Co.UNCHANGED | Co.UPDATED:
-                    e = cast(CacheEntry, e)
+                    e = cast(CacheEntry, md)
                     e.pin()  # See above
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.NEEDUPDATE:

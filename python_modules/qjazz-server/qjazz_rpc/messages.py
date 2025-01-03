@@ -5,7 +5,6 @@ import pickle  # nosec
 
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
-from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -191,7 +190,7 @@ class UpdateCacheMsg(MsgModel):
 @dataclass
 class PluginInfo:
     name: str
-    path: Path
+    path: str
     plugin_type: str
     metadata: JsonValue
 

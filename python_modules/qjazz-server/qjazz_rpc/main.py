@@ -60,7 +60,7 @@ def run(name: str, projects: List[str]) -> None:
             connection,
             qgis_conf,
             rendez_vous,
-            name=name,
+            name=f"{name}_{os.getpid()}",
             projects=projects,
         )
 

@@ -60,8 +60,8 @@ impl Restore {
                     State::Update => (),
                 };
             }
-            worker.last_update = self.update;
         }
+        worker.last_update = self.update;
         Ok(())
     }
 

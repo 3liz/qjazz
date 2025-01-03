@@ -107,6 +107,16 @@ def project_info(uri: str) -> m_.ProjectInfo:
     )
 
 
+def plugin_item(name: str) -> m_.PluginInfo:
+    return m_.PluginInfo(
+        name=name,
+        path="/path/to/plugin",
+        plugin_type="test",
+        metadata= dict(
+            version=1,
+        ),
+    )
+
 
 def run(name: str, projects: list[str]) -> None:
 
@@ -206,6 +216,14 @@ def run(name: str, projects: list[str]) -> None:
                         )
                     case m_.GetProjectInfoMsg():
                         m_.send_reply(conn, project_info(msg.uri))
+                    case m_.PluginsMsg():
+                        m_.stream_data(
+                            conn,
+                            (
+                                plugin_item("plugin_1"),
+                                plugin_item("plugin_2"),
+                            ),
+                        )
                     case _: 
                         raise ValueError("Unhandled message")
             except KeyboardInterrupt:
