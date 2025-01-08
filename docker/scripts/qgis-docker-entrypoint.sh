@@ -11,10 +11,12 @@ export QGIS_HOME=$HOME
 # multiple instances don't mess with the same config
 #
 copy_qgis_configuration() {
+    mkdir -p $HOME/profiles/default
     QGIS_CUSTOM_CONFIG_PATH=${QGIS_CUSTOM_CONFIG_PATH:-$QGIS_OPTIONS_PATH}
     if [[ -n $QGIS_CUSTOM_CONFIG_PATH ]]; then
         echo "Copying Qgis configuration: $QGIS_CUSTOM_CONFIG_PATH"
-        cp -RL $QGIS_CUSTOM_CONFIG_PATH/* $HOME/
+        # Create config path as default profiles
+        cp -RL $QGIS_CUSTOM_CONFIG_PATH/* $HOME/profiles/default/
     fi
     # Qgis initialization rely on this
     export QGIS_CUSTOM_CONFIG_PATH=$HOME

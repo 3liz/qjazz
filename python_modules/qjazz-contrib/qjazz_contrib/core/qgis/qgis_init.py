@@ -50,8 +50,9 @@ def setup_qgis_application(
     settings: Optional[Dict[str, str]] = None,
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
+    server_settings: bool = False,
 ) -> str:
-    """ Start qgis application
+    """ Setup qgis application
 
          :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
              Note that prevents qgis to segfault when exiting. Default to True.
@@ -93,10 +94,11 @@ def setup_qgis_application(
     QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
 
     # Initialize configuration settings
-    options_path = load_qgis_settings(settings)
+    options_path = load_qgis_settings(settings, server_settings=server_settings)
 
     # XXX: note, setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
+    # But this has side-effects when used with
     qgis_application = QgsApplication(
         [],
         False,
@@ -155,10 +157,8 @@ def set_qgis_settings(settings: Dict[str, str]):
         qgsettings.setValue(k, v)
 
 
-def init_qgis_application(
-    settings: Optional[Dict[str, str]] = None,
-):
-    setup_qgis_application(settings=settings)
+def init_qgis_application(**kwargs):
+    setup_qgis_application(**kwargs)
     qgis_application.initQgis()  # type: ignore [union-attr]
 
 
@@ -172,7 +172,7 @@ def init_qgis_processing() -> None:
 def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     """ Init Qgis server
     """
-    setup_qgis_application(**kwargs)
+    setup_qgis_application(server_settings=True, **kwargs)
 
     from qgis.server import QgsServer
     server = QgsServer()
@@ -185,7 +185,7 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     return server
 
 
-def load_qgis_settings(settings: Optional[Dict[str, str]]) -> str:
+def load_qgis_settings(settings: Optional[Dict[str, str]], server_settings: bool = False) -> str:
     """ Load qgis settings
     """
     from qgis.core import QgsSettings
@@ -194,25 +194,36 @@ def load_qgis_settings(settings: Optional[Dict[str, str]]) -> str:
     options_path = os.getenv('QGIS_CUSTOM_CONFIG_PATH')
     if not options_path:
         # Set config path in current directory
-        options_path = str(Path.cwd().joinpath('.qjazz-settings'))
+        path = Path.cwd().joinpath('.qjazz-settings')
+        # InitQgis use settings in 'profiles/default'
+        settings_path = path.joinpath('profiles', 'default')
+        settings_path.mkdir(parents=True, exist_ok=True)
+        options_path = str(path)
+        os.environ['QGIS_CUSTOM_CONFIG_PATH'] = options_path
+        os.environ['QGIS_OPTIONS_PATH'] = options_path
+    else:
+        settings_path = Path(options_path).joinpath('profiles', 'default')
+        if not settings_path.is_dir():
+            raise FileNotFoundError(f"{settings_path}")
+
+    # XXX: if we call initQgis then the settings used will be located in
+    # $QGIS_OPTIONS_PATH/profiles/default - while server will use the designated
+    # path.
+    #
+    # This is because it is not possible to set together 'platformName' and 'profileFolder'
+    # with initQgis :-(
+    #
+    if server_settings:
+        # Use default profile as main config path (for server)
+        options_path = str(settings_path)
         os.environ['QGIS_CUSTOM_CONFIG_PATH'] = options_path
         os.environ['QGIS_OPTIONS_PATH'] = options_path
 
     QSettings.setDefaultFormat(QSettings.IniFormat)
-    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, options_path)
+    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
 
     qgssettings = QgsSettings()
     logger.info("Settings loaded from %s", qgssettings.fileName())
-
-    # Create a symbolic link to handle initialization with initQgis
-    # that always create profiles/default subdirectory.
-    # XXX It is not possible to set together 'platformName' and 'profileFolder'
-    # if we call initQgis :-(
-    profile_folder = Path(options_path, "profiles")
-    profile_folder.mkdir(0o770, parents=True, exist_ok=True)
-    profile_folder = profile_folder.joinpath('default')
-    if not profile_folder.exists():
-        profile_folder.symlink_to('..')
 
     if settings:
         # Initialize custom parameters settings
