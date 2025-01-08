@@ -1,8 +1,6 @@
 
 # QJazz - QGIS as a service
 
-**NOTE: This is a work in progress**
-
 ## Description
 
 QJazz is a suite of QGIS based services including:
@@ -36,7 +34,7 @@ when dealing with large numbers of projects.
 
 - Python 3.12+
 - Qgis 3.34+
-- Linux based platform
+- Linux/Posix based platform
 
 If you plan to use the processing services then the following extra services are
 required:
