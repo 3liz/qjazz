@@ -484,9 +484,6 @@ impl QgisAdmin for QgisAdminServicer {
         }))
     }
 
-    async fn reload_config(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
-        Err(Status::unimplemented(""))
-    }
     //
     // Project inspection
     //

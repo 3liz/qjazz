@@ -30,6 +30,13 @@ impl Restore {
         Self::default()
     }
 
+    pub fn with_projects<I: IntoIterator<Item = String>>(iter: I) -> Self {
+        Self {
+            pulls: iter.into_iter().collect(),
+            ..Default::default()
+        }
+    }
+
     pub async fn restore(&self, worker: &mut Worker) -> Result<()> {
         let last_update = worker.last_update;
         if last_update == 0 {

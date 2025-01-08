@@ -99,14 +99,14 @@ pub struct Pool {
 
 impl Pool {
     /// Create a new pool instance from a Worker builder
-    pub fn new(builder: Builder) -> Self {
-        let opts = builder.options();
+    pub fn new(mut builder: Builder) -> Self {
+        let opts = builder.options_mut();
         Self {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(opts.num_processes),
                 dead_workers: AtomicUsize::new(0),
                 max_requests: AtomicUsize::new(opts.max_waiting_requests),
-                restore: RwLock::new(Restore::new()),
+                restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
             }),
             builder,
             num_processes: 0,

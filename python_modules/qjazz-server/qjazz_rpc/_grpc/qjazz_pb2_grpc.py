@@ -237,11 +237,6 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.Empty.SerializeToString,
                 response_deserializer=qjazz__pb2.JsonConfig.FromString,
                 _registered_method=True)
-        self.ReloadConfig = channel.unary_unary(
-                '/qjazz.QgisAdmin/ReloadConfig',
-                request_serializer=qjazz__pb2.Empty.SerializeToString,
-                response_deserializer=qjazz__pb2.Empty.FromString,
-                _registered_method=True)
         self.GetProjectInfo = channel.unary_unary(
                 '/qjazz.QgisAdmin/GetProjectInfo',
                 request_serializer=qjazz__pb2.ProjectRequest.SerializeToString,
@@ -331,12 +326,6 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ReloadConfig(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def GetProjectInfo(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -420,11 +409,6 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     servicer.GetConfig,
                     request_deserializer=qjazz__pb2.Empty.FromString,
                     response_serializer=qjazz__pb2.JsonConfig.SerializeToString,
-            ),
-            'ReloadConfig': grpc.unary_unary_rpc_method_handler(
-                    servicer.ReloadConfig,
-                    request_deserializer=qjazz__pb2.Empty.FromString,
-                    response_serializer=qjazz__pb2.Empty.SerializeToString,
             ),
             'GetProjectInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetProjectInfo,
@@ -700,33 +684,6 @@ class QgisAdmin(object):
             '/qjazz.QgisAdmin/GetConfig',
             qjazz__pb2.Empty.SerializeToString,
             qjazz__pb2.JsonConfig.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ReloadConfig(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/qjazz.QgisAdmin/ReloadConfig',
-            qjazz__pb2.Empty.SerializeToString,
-            qjazz__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

@@ -150,7 +150,10 @@ impl Settings {
                 Environment::with_prefix("conf")
                     .prefix_separator("_")
                     .separator("__")
-                    .ignore_empty(true),
+                    .ignore_empty(true)
+                    .try_parsing(true)   // Enable treating env as string list
+                    .list_separator(",")
+                    .with_list_parse_key("worker.restore_projects"),
             )
             .build()?;
 

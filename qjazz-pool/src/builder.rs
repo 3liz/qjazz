@@ -93,6 +93,11 @@ impl Builder {
         &self.opts
     }
 
+    /// Return mutable worker options
+    pub(crate) fn options_mut(&mut self) -> &mut WorkerOptions {
+        &mut self.opts
+    }
+
     pub fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
     where
         K: AsRef<OsStr>,

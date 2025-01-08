@@ -28,25 +28,27 @@ const DEFAULT_MAX_CHUNK_SIZE: usize = 1024 * 1024;
 #[serde(default)]
 pub struct WorkerOptions {
     /// Name of the worker instance
-    pub(crate) name: String,
+    pub name: String,
     /// Number of simultanous workers
-    pub(crate) num_processes: usize,
+    pub num_processes: usize,
     /// Timeout for starting child process
-    pub(crate) process_start_timeout: u64,
+    pub process_start_timeout: u64,
     /// Qgis configuration (see python implementation for details)
-    pub(crate) qgis: serde_json::Value,
+    pub qgis: serde_json::Value,
     /// The grace period to apply on worker timeout
     /// when attempting to cancel the actual request
     /// This number should be kept small (a few seconds) since it
     /// will be used after the response timeout.
-    pub(crate) cancel_timeout: u64,
+    pub cancel_timeout: u64,
     /// The maximum number of requests that can be
     /// queued. If the number of waiting requests reach the limit,
     /// the subsequent requests will be returned with a `service unavailable`
     /// error.
-    pub(crate) max_waiting_requests: usize,
+    pub max_waiting_requests: usize,
     /// Set the maximum chunk size for streamed responses.
-    pub(crate) max_chunk_size: usize,
+    pub max_chunk_size: usize,
+    /// Projects to restore at startup
+    pub restore_projects: Vec<String>,
 }
 
 impl Default for WorkerOptions {
@@ -59,6 +61,7 @@ impl Default for WorkerOptions {
             qgis: serde_json::json!({ "max_chunk_size": DEFAULT_MAX_CHUNK_SIZE }),
             max_waiting_requests: DEFAULT_MAX_REQUESTS,
             max_chunk_size: DEFAULT_MAX_CHUNK_SIZE,
+            restore_projects: Default::default(),
         }
     }
 }

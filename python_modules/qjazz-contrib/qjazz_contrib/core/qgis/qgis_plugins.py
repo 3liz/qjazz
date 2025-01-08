@@ -250,8 +250,6 @@ class QgisPluginService:
                     # Mark packace as loaded by qjazz_server
                     # allow plugins to check if it has been
                     # loaded by qjazzs-server
-                    # Legacy: used by Lizmap server plugin
-                    package._is_py_qgis_server2 = True  # type: ignore [attr-defined]
                     package._is_qjazz_server = True  # type: ignore [attr-defined]
 
                     # Initialize the plugin
