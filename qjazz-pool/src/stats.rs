@@ -23,7 +23,7 @@ impl Stats {
             dead: stats.2,
             num_workers: pool.num_workers(),
             request_pressure: pool.num_waiters() as f64
-                / pool.options().max_waiting_requests as f64,
+                / pool.options().max_waiting_requests() as f64,
             instant: Instant::now(),
         }
     }

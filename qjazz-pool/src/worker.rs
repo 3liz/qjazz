@@ -64,7 +64,7 @@ impl Worker {
         let name = &opts.name;
         let mut rendez_vous = RendezVous::new()?;
 
-        let buffer_size = opts.max_chunk_size;
+        let buffer_size = opts.max_chunk_size();
 
         log::debug!("Starting child process");
 

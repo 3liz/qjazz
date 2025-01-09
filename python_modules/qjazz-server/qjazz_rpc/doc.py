@@ -1,7 +1,7 @@
 #
 #
 #
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field, FilePath
 
@@ -85,7 +85,11 @@ class Worker(ConfigBase):
             "error."
         ),
     )
-
+    startup_projects: List[str] = Field(
+        default=[],
+        title="Startup projects",
+        description="List of projects to load at startup",
+    )
 
 if __name__ == '__main__':
     import sys

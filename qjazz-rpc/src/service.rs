@@ -624,10 +624,9 @@ impl QgisAdmin for QgisAdminServicer {
     }
     // Reload
     async fn reload(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
-        self.inner.get_ref().reload();    
+        self.inner.get_ref().reload();
         Ok(Response::new(Empty {}))
     }
-
 }
 
 // Converters

@@ -32,7 +32,7 @@ impl WorkerQueue {
         self.generation.load(Ordering::Relaxed)
     }
 
-    pub fn next_generation(&self) -> usize  {
+    pub fn next_generation(&self) -> usize {
         self.generation.fetch_add(1, Ordering::Relaxed)
     }
 
@@ -53,9 +53,9 @@ impl WorkerQueue {
         self.restore.read().await.restore(worker).await
     }
 
-    async fn terminate(&self, mut w: Worker)  -> Result<()> {
-        w.terminate().await.inspect(|_| { 
-            self.dead_workers.fetch_add(1, Ordering::Relaxed); 
+    async fn terminate(&self, mut w: Worker) -> Result<()> {
+        w.terminate().await.inspect(|_| {
+            self.dead_workers.fetch_add(1, Ordering::Relaxed);
         })
     }
 
@@ -129,10 +129,10 @@ impl Pool {
         let opts = builder.options_mut();
         Self {
             queue: Arc::new(WorkerQueue {
-                q: Queue::with_capacity(opts.num_processes),
+                q: Queue::with_capacity(opts.num_processes()),
                 dead_workers: AtomicUsize::new(0),
-                max_requests: AtomicUsize::new(opts.max_waiting_requests),
-                restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
+                max_requests: AtomicUsize::new(opts.max_waiting_requests()),
+                restore: RwLock::new(Restore::with_projects(opts.startup_projects.drain(..))),
                 generation: AtomicUsize::new(1),
             }),
             builder,
@@ -148,7 +148,7 @@ impl Pool {
     pub async fn patch_config(&mut self, patch: &serde_json::Value) -> Result<()> {
         self.builder.patch(patch)?;
         self.queue.max_requests.store(
-            self.builder.options().max_waiting_requests,
+            self.builder.options().max_waiting_requests(),
             Ordering::Relaxed,
         );
         self.maintain_pool().await
@@ -189,7 +189,7 @@ impl Pool {
 
     /// Maintain the pool at nominal number of live workers
     pub async fn maintain_pool(&mut self) -> Result<()> {
-        let nominal = self.builder.options().num_processes;
+        let nominal = self.builder.options().num_processes();
         let current = self.num_processes - self.dead_workers();
         #[allow(clippy::comparison_chain)]
         let rv = if nominal > current {
@@ -222,7 +222,8 @@ impl Pool {
         try_join_all(workers.iter_mut().map(|w| {
             w.generation = generation;
             self.queue.update(w)
-        })).await?;
+        }))
+        .await?;
 
         // Update the queue
         self.queue.q.send_all(workers.drain(..));
@@ -290,10 +291,11 @@ mod tests {
 
     fn builder(num_processes: usize) -> Builder {
         let mut builder = Builder::new(&[crate::rootdir!("process.py")]);
-        builder
+        let _ = builder
             .name("test")
             .process_start_timeout(5)
-            .num_processes(num_processes);
+            .num_processes(num_processes)
+            .unwrap();
         builder
     }
 

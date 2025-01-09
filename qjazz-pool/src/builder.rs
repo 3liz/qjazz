@@ -131,9 +131,9 @@ impl Builder {
         self.opts.qgis = value;
         self
     }
-    pub fn num_processes(&mut self, value: usize) -> &mut Self {
-        self.opts.num_processes = value;
-        self
+    pub fn num_processes(&mut self, value: usize) -> Result<&mut Self> {
+        self.opts.num_processes = value.try_into()?;
+        Ok(self)
     }
     /// Add project to load at startup
     pub fn project(&mut self, value: &str) -> &mut Self {
@@ -159,12 +159,13 @@ mod tests {
     #[test]
     fn test_builder_patch() {
         let mut builder = Builder::new(&[crate::rootdir!("process.py")]);
-        builder
+        let _ = builder
             .name("test")
             .process_start_timeout(5)
-            .num_processes(1);
+            .num_processes(1)
+            .unwrap();
 
-        assert_eq!(builder.opts.num_processes, 1);
+        assert_eq!(builder.opts.num_processes.as_usize(), 1);
         assert_eq!(
             builder.opts.qgis,
             json!({
@@ -181,7 +182,7 @@ mod tests {
             }))
             .unwrap();
 
-        assert_eq!(builder.opts.num_processes, 3);
+        assert_eq!(builder.opts.num_processes.as_usize(), 3);
         assert_eq!(
             builder.opts.qgis,
             json!({

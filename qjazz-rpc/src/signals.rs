@@ -5,10 +5,10 @@
 use signal_hook::consts::signal::{SIGCHLD, SIGINT, SIGTERM};
 use signal_hook::iterator::{backend::Handle, Signals};
 use std::error::Error;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::time;
+use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 use qjazz_pool::Pool;
@@ -28,7 +28,7 @@ pub(crate) fn handle_signals(
 
         let rescaling = Arc::new(AtomicBool::new(false));
         let throttle_duration = time::Duration::from_millis(200);
-        
+
         for signal in signals.forever() {
             match signal {
                 SIGINT => {
@@ -40,8 +40,8 @@ pub(crate) fn handle_signals(
                     break;
                 }
                 SIGCHLD => {
-                    // Throttle rescaling so that when a child die we wait some 
-                    // time for other child to die and so perform only one 
+                    // Throttle rescaling so that when a child die we wait some
+                    // time for other child to die and so perform only one
                     // rescaling task.
                     log::debug!("SIGCHLD detected");
                     if !rescaling.load(Ordering::Relaxed) {
