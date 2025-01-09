@@ -6,28 +6,29 @@ use signal_hook::consts::signal::{SIGCHLD, SIGINT, SIGTERM};
 use signal_hook::iterator::{backend::Handle, Signals};
 use std::error::Error;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tokio::time;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
 use qjazz_pool::Pool;
-
-use crate::config;
 
 // Run signal handling in its own thread
 
 pub(crate) fn handle_signals(
     pool: Arc<RwLock<Pool>>,
     token: CancellationToken,
-    settings: &config::Server,
 ) -> Result<Handle, Box<dyn Error>> {
     let mut signals = Signals::new([SIGINT, SIGTERM, SIGCHLD])?;
 
     let handle = signals.handle();
 
-    let max_failure_pressure = settings.max_failure_pressure();
-
     tokio::task::spawn_blocking(move || {
         log::debug!("Installing signal handler");
+
+        let rescaling = Arc::new(AtomicBool::new(false));
+        let throttle_duration = time::Duration::from_millis(200);
+        
         for signal in signals.forever() {
             match signal {
                 SIGINT => {
@@ -39,15 +40,26 @@ pub(crate) fn handle_signals(
                     break;
                 }
                 SIGCHLD => {
-                    let pool = pool.clone();
-                    let token = token.clone();
-                    tokio::spawn(async move {
-                        log::debug!("SIGCHLD detected: handling failure pressure");
-                        if pool.read().await.failure_pressure() >= max_failure_pressure {
-                            log::error!("Too many worker failures, terminating server...");
-                            token.cancel();
-                        }
-                    });
+                    // Throttle rescaling so that when a child die we wait some 
+                    // time for other child to die and so perform only one 
+                    // rescaling task.
+                    log::debug!("SIGCHLD detected");
+                    if !rescaling.load(Ordering::Relaxed) {
+                        rescaling.store(true, Ordering::Relaxed);
+                        let mut throttle = time::interval(throttle_duration);
+                        let pool = pool.clone();
+                        let token = token.clone();
+                        let state = rescaling.clone();
+                        tokio::spawn(async move {
+                            throttle.tick().await;
+                            // Release barrier
+                            state.store(false, Ordering::Relaxed);
+                            if let Err(err) = pool.write().await.maintain_pool().await {
+                                log::error!("Pool scaling failed: {:?}, terminating server", err);
+                                token.cancel();
+                            }
+                        });
+                    }
                 }
                 _ => {}
             }

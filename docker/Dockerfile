@@ -25,7 +25,7 @@ COPY python_modules docker/requirements.txt /python_modules
 RUN mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
-    && /opt/local/qjazz/bin/pip install -U --no-cache-dir pip setuptools wheel \
+    && /opt/local/qjazz/bin/pip install -U --no-cache-dir pip setuptools wheel requests \
     && /opt/local/qjazz/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
     && /opt/local/qjazz/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/qjazz-contrib \

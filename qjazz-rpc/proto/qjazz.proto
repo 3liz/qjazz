@@ -28,6 +28,7 @@ service QgisAdmin {
     rpc SetServerServingStatus (ServerStatus) returns (Empty) {}
     rpc Stats (Empty) returns (StatsReply) {}
     rpc Sleep (SleepRequest) returns (Empty) {}
+    rpc Reload (Empty) returns (Empty) {}
 }
 
 
@@ -55,8 +56,8 @@ enum ServingStatus {
 }
 
 message StatsReply {
-    uint64 num_workers = 1;
-    uint64 dead_workers = 2;
+    uint64 active_workers = 1;
+    uint64 idle_workers = 2;
     double activity = 3;
     double failure_pressure = 4;
     double request_pressure = 5;

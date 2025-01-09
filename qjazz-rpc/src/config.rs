@@ -62,12 +62,6 @@ pub struct Server {
     /// closing connections. During this period,
     /// no new connections are allowed.
     shutdown_grace_period: u64,
-    /// Interval in seconds between attempts to replace the
-    /// the dead processes
-    rescale_period: u64,
-    /// The maximum failure pressure allowed before terminating
-    /// server with unrecoverable error
-    max_failure_pressure: f64,
 }
 
 impl Default for Server {
@@ -77,8 +71,6 @@ impl Default for Server {
             timeout: 20,
             shutdown_grace_period: 10,
             enable_admin_services: true,
-            rescale_period: 10,
-            max_failure_pressure: 1.0,
         }
     }
 }
@@ -99,9 +91,6 @@ impl Server {
     pub fn shutdown_grace_period(&self) -> Duration {
         Duration::from_secs(self.shutdown_grace_period)
     }
-    pub fn rescale_period(&self) -> Duration {
-        Duration::from_secs(self.rescale_period)
-    }
     pub fn enable_tls(&self) -> bool {
         self.listen.enable_tls
     }
@@ -110,9 +99,6 @@ impl Server {
     }
     pub fn tls_cert(&self) -> io::Result<String> {
         fs::read_to_string(self.listen.tls_cert_file.as_ref().unwrap())
-    }
-    pub fn max_failure_pressure(&self) -> f64 {
-        self.max_failure_pressure
     }
 }
 

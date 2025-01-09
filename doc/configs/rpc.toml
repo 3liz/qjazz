@@ -18,18 +18,6 @@ timeout = 20
 # closing connections. During this period,
 # no new connections are allowed.
 shutdown_grace_period = 10
-#
-# Rescale period
-#
-# Interval in seconds between attempts to replace the
-# the dead processes.
-rescale_period = 10
-#
-# Max failure pressure
-#
-# The maximum failure pressure allowed before terminating
-# server with unrecoverable error.
-max_failure_pressure = 1.0
 
 #
 # Socket configuration

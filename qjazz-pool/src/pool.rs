@@ -19,12 +19,21 @@ pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     dead_workers: AtomicUsize,
     max_requests: AtomicUsize,
+    generation: AtomicUsize,
     restore: RwLock<Restore>,
 }
 
 impl WorkerQueue {
-    fn max_requests(&self) -> usize {
+    pub fn max_requests(&self) -> usize {
         self.max_requests.load(Ordering::Relaxed)
+    }
+
+    pub fn generation(&self) -> usize {
+        self.generation.load(Ordering::Relaxed)
+    }
+
+    pub fn next_generation(&self) -> usize  {
+        self.generation.fetch_add(1, Ordering::Relaxed)
     }
 
     pub async fn recv(&self) -> Result<Worker> {
@@ -44,6 +53,12 @@ impl WorkerQueue {
         self.restore.read().await.restore(worker).await
     }
 
+    async fn terminate(&self, mut w: Worker)  -> Result<()> {
+        w.terminate().await.inspect(|_| { 
+            self.dead_workers.fetch_add(1, Ordering::Relaxed); 
+        })
+    }
+
     //
     // Recycler
     //
@@ -56,18 +71,29 @@ impl WorkerQueue {
         done_hint: bool,
     ) -> Result<()> {
         log::trace!("Recycling worker [{}]", worker.id());
-        let mut rv = worker.cancel_timeout(done_hint).await;
-        if rv.is_ok() {
-            // Update resources
-            rv = self.update(&mut worker).await;
-        }
-        if rv.is_ok() {
-            // Push back on queue
-            self.q.send(worker).await;
+
+        // Check if worker must be replaced
+        if worker.generation < self.generation() {
+            self.terminate(worker).await
         } else {
-            self.dead_workers.fetch_add(1, Ordering::Relaxed);
+            // Try graceful cancel
+            let mut rv = worker.cancel_timeout(done_hint).await;
+            if rv.is_ok() {
+                // Update resources
+                rv = self.update(&mut worker).await;
+                if rv.is_ok() {
+                    self.q.send(worker).await;
+                } else {
+                    self.terminate(worker).await?;
+                }
+            } else {
+                // Cancel failed, terminate the worker
+                let id = worker.id();
+                self.terminate(worker).await?;
+                log::error!("Killed stalled process {}", id);
+            }
+            rv
         }
-        rv
     }
 
     #[inline(always)]
@@ -107,6 +133,7 @@ impl Pool {
                 dead_workers: AtomicUsize::new(0),
                 max_requests: AtomicUsize::new(opts.max_waiting_requests),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
+                generation: AtomicUsize::new(1),
             }),
             builder,
             num_processes: 0,
@@ -172,8 +199,6 @@ impl Pool {
         } else {
             Ok(())
         };
-        // Clean up dead workers
-        self.queue.dead_workers.store(0, Ordering::Relaxed);
         rv
     }
 
@@ -191,8 +216,13 @@ impl Pool {
         // Start the workers asynchronously
         let mut workers = try_join_all(futures).await?;
 
+        let generation = self.queue.generation();
+
         // Resync
-        try_join_all(workers.iter_mut().map(|w| self.queue.update(w))).await?;
+        try_join_all(workers.iter_mut().map(|w| {
+            w.generation = generation;
+            self.queue.update(w)
+        })).await?;
 
         // Update the queue
         self.queue.q.send_all(workers.drain(..));
@@ -224,6 +254,7 @@ impl Pool {
         let throttle = Duration::from_secs(1);
         // Wait for all active workers
         let _ = tokio::time::timeout(grace_period, async {
+            log::info!("Waiting for active workers....");
             loop {
                 let (active, _, _) = self.stats_raw();
                 if active > 0 {

@@ -4,10 +4,17 @@ import json
 import os
 import sys
 
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from time import sleep, time
-from typing import Callable, List, Optional
+from typing import (
+    Generator,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    overload,
+)
 
 import click
 import grpc
@@ -23,14 +30,16 @@ from qjazz_contrib.core.config import SSLConfig
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 
+S = TypeVar("S")
+
 
 @contextmanager
 def channel(
     address: str,
+    stub: Type[S],
     ssl: Optional[SSLConfig] = None,
     channel_options: Optional[List] = None,
-    stub: Optional[Callable] = None,
-):
+) -> Generator[S, None, None]:
     # Return a synchronous client channel
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
@@ -60,8 +69,7 @@ def channel(
             options=channel_options,
         )
     ) as chan:
-        stub = stub or qjazz_pb2_grpc.QgisAdminStub
-        yield stub(chan)
+        yield stub(chan)  # type: ignore [call-arg]
 
 
 def MessageToJson(msg: Message) -> str:
@@ -72,9 +80,22 @@ def MessageToJson(msg: Message) -> str:
         always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
     )
 
+@overload
+def connect(
+    stub: Type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
+) -> AbstractContextManager[qjazz_pb2_grpc.QgisAdminStub]:
+    ...
+
+
+@overload
+def connect(
+    stub: Type[qjazz_pb2_grpc.QgisServerStub],
+) -> AbstractContextManager[qjazz_pb2_grpc.QgisServerStub]:
+    ...
+
 
 @contextmanager
-def connect(stub=None):
+def connect(stub = qjazz_pb2_grpc.QgisAdminStub) -> Generator:
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
@@ -91,20 +112,22 @@ def connect(stub=None):
 
     if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, 'yes', 'true'):
         ssl = SSLConfig(
-            key=os.getenv("CONF_GRPC_SSL_KEYFILE"),
-            cert=os.getenv("CONF_GRPC_SSL_CERTFILE"),
-            ca=os.getenv("CONF_GRPC_SSL_CAFILE"),
+            keyfile=os.getenv("CONF_GRPC_SSL_KEYFILE"),
+            certfile=os.getenv("CONF_GRPC_SSL_CERTFILE"),
+            cafile=os.getenv("CONF_GRPC_SSL_CAFILE"),
         )
     else:
         ssl = None
 
-    with channel(address, ssl, channel_options, stub) as _stub:
+    with channel(address, stub, ssl, channel_options) as _stub:
         try:
             yield _stub
         except grpc.RpcError as rpcerr:
             click.echo(f"RPC ERROR: {rpcerr.code()} {rpcerr.details()}", err=True)
             print_metadata(rpcerr.initial_metadata())
             print_metadata(rpcerr.trailing_metadata())
+
+
 
 
 def print_metadata(metadata):
@@ -408,14 +431,6 @@ def set_config(config: str):
         except json.JSONDecodeError as err:
             click.echo(err, err=True)
 
-
-@config_commands.command("reload")
-def reload_config():
-    """ Send CONFIG to remote
-    """
-    with connect() as stub:
-        stub.ReloadConfig(qjazz_pb2.Empty())
-
 #
 #  status
 #
@@ -463,7 +478,7 @@ def enable_server():
 def ping(count: int, server: bool = False):
     """ Ping service
     """
-    stub = qjazz_pb2_grpc.QgisServerStub if server else None
+    stub = qjazz_pb2_grpc.QgisServerStub if server else qjazz_pb2_grpc.QgisAdminStub
     target = "server" if server else "admin"
     with connect(stub) as stub:
         for n in range(count):
@@ -526,6 +541,14 @@ def sleep_request(delay: int):
         except KeyboardInterrupt:
             click.echo("Cancelling...", err=True)
             resp.cancel()
+
+
+@cli_commands.command("reload")
+def reload():
+    """ Reload QGIS processes
+    """
+    with connect() as stub:
+        stub.Reload(qjazz_pb2.Empty())
 
 
 if __name__ == '__main__':

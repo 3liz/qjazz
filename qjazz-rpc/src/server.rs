@@ -6,7 +6,6 @@ use crate::service::{QgisAdminServer, QgisAdminServicer, QgisServerServer, QgisS
 use qjazz_pool::Pool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tokio::time;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::{Identity, Server, ServerTlsConfig};
 
@@ -45,7 +44,7 @@ pub(crate) async fn serve(
     let token = CancellationToken::new();
 
     let signal_handle =
-        crate::signals::handle_signals(pool_owned.clone(), token.clone(), &settings.server)?;
+        crate::signals::handle_signals(pool_owned.clone(), token.clone())?;
 
     let grace_period = settings.server.shutdown_grace_period();
 
@@ -78,14 +77,10 @@ pub(crate) async fn serve(
     // Start server
     tokio::spawn(router.serve(addr));
 
-    // Scale handler
-    tokio::spawn(rescale_pool(
-        pool_owned.clone(),
-        settings.server.rescale_period(),
-        token.clone(),
-    ));
-
     token.cancelled().await;
+
+    log::debug!("Closing signal handle");
+    signal_handle.close();
 
     // Close queue
     pool_owned.write().await.close(grace_period).await;
@@ -94,23 +89,7 @@ pub(crate) async fn serve(
         .set_not_serving::<QgisServerServer<QgisServerServicer>>()
         .await;
 
-    log::debug!("Closing signal handle");
-    signal_handle.close();
-
     log::info!("Server shutdown");
     Ok(())
 }
 
-// Handle pool re-scaling
-async fn rescale_pool(pool: Arc<RwLock<Pool>>, duration: time::Duration, token: CancellationToken) {
-    let mut interval = time::interval(duration);
-    loop {
-        interval.tick().await;
-        if token.is_cancelled() {
-            break;
-        }
-        if let Err(err) = pool.write().await.maintain_pool().await {
-            log::error!("Pool scaling failed: {:?}", err);
-        }
-    }
-}

@@ -54,6 +54,7 @@ pub struct Worker {
     ready_timeout: Duration,
     process: _Child,
     uptime: Instant,
+    pub(crate) generation: usize,
     pub(crate) last_update: u64,
 }
 
@@ -119,6 +120,7 @@ impl Worker {
             process,
             uptime: Instant::now(),
             last_update: 0,
+            generation: 1,
         })
     }
 
@@ -126,7 +128,7 @@ impl Worker {
     ///
     /// Attempt a SIGTERM then wait for 5s before attempting a
     /// kill.
-    pub(crate) async fn terminate(&mut self) -> Result<()> {
+    pub async fn terminate(&mut self) -> Result<()> {
         log::debug!("Terminating worker {}", self.id());
         self.rendez_vous.stop().await;
         self.process.send_signal(Signal::SIGTERM)?;
@@ -193,7 +195,7 @@ impl Worker {
     }
 
     /// Cancel the task by sending a SIGHUP signal
-    pub(crate) async fn cancel(&mut self) -> Result<()> {
+    pub async fn cancel(&mut self) -> Result<()> {
         log::debug!(
             "Cancelling job {}:{:?}",
             &self.name,
@@ -214,9 +216,9 @@ impl Worker {
     ///
     /// If `done_hint` is set to `true`, we assume that a complete response
     /// has been received; if the worker reach ready state
-    pub(crate) async fn cancel_timeout(&mut self, done_hint: bool) -> Result<()> {
+    pub async fn cancel_timeout(&mut self, done_hint: bool) -> Result<()> {
         // Wait for readiness
-        let result = if timeout(self.ready_timeout, self.wait_ready())
+        if timeout(self.ready_timeout, self.wait_ready())
             .await
             .is_err()
         {
@@ -229,14 +231,7 @@ impl Worker {
             self.drain_until_task_done().await
         } else {
             Ok(())
-        };
-
-        if result.is_err() {
-            // Error occured, terminate the worker
-            self.terminate().await?;
         }
-
-        result
     }
 
     /// Return the id of the Worker

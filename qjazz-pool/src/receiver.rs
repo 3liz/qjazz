@@ -99,6 +99,11 @@ impl Receiver {
         })
     }
 
+    pub fn reload(&self) {
+        self.queue.next_generation();
+        let _ = self.drain(); // Will be terminated on drop
+    }
+
     pub async fn update_cache(&self, state: restore::State) {
         let mut restore = self.queue.restore().write().await;
         let _ = self.drain(); // Will update on drop

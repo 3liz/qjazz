@@ -604,8 +604,8 @@ impl QgisAdmin for QgisAdminServicer {
     async fn stats(&self, _: Request<Empty>) -> Result<Response<StatsReply>, Status> {
         let st = qjazz_pool::stats::Stats::new(self.pool.read().await);
         Ok(Response::new(StatsReply {
-            num_workers: st.num_workers() as u64,
-            dead_workers: st.dead_workers() as u64,
+            active_workers: st.active_workers() as u64,
+            idle_workers: st.idle_workers() as u64,
             activity: st.activity().unwrap_or(0.),
             failure_pressure: st.failure_pressure(),
             request_pressure: st.request_pressure(),
@@ -622,6 +622,12 @@ impl QgisAdmin for QgisAdminServicer {
             .map_err(Self::error)?;
         Ok(Response::new(Empty {}))
     }
+    // Reload
+    async fn reload(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
+        self.inner.get_ref().reload();    
+        Ok(Response::new(Empty {}))
+    }
+
 }
 
 // Converters

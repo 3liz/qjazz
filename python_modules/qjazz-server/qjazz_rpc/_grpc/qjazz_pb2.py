@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bqjazz.proto\x12\x05qjazz\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x07\n\x05\x45mpty\"\x1d\n\x0cSleepRequest\x12\r\n\x05\x64\x65lay\x18\x01 \x01(\x03\"\x8d\x01\n\nStatsReply\x12\x13\n\x0bnum_workers\x18\x01 \x01(\x04\x12\x14\n\x0c\x64\x65\x61\x64_workers\x18\x02 \x01(\x04\x12\x10\n\x08\x61\x63tivity\x18\x03 \x01(\x01\x12\x18\n\x10\x66\x61ilure_pressure\x18\x04 \x01(\x01\x12\x18\n\x10request_pressure\x18\x05 \x01(\x01\x12\x0e\n\x06uptime\x18\x06 \x01(\x04\"4\n\x0cServerStatus\x12$\n\x06status\x18\x01 \x01(\x0e\x32\x14.qjazz.ServingStatus\"\x1e\n\rResponseChunk\x12\r\n\x05\x63hunk\x18\x01 \x01(\x0c\"\xe4\x01\n\nOwsRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0f\n\x07request\x18\x02 \x01(\t\x12\x0e\n\x06target\x18\x03 \x01(\t\x12\x14\n\x07version\x18\x04 \x01(\tH\x00\x88\x01\x01\x12\x10\n\x03url\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x13\n\x06\x64irect\x18\x06 \x01(\x08H\x02\x88\x01\x01\x12\x14\n\x07options\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x17\n\nrequest_id\x18\x08 \x01(\tH\x04\x88\x01\x01\x42\n\n\x08_versionB\x06\n\x04_urlB\t\n\x07_directB\n\n\x08_optionsB\r\n\x0b_request_id\"\x9c\x02\n\nApiRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x11\n\x04\x64\x61ta\x18\x04 \x01(\x0cH\x00\x88\x01\x01\x12\x15\n\x08\x64\x65legate\x18\x05 \x01(\x08H\x01\x88\x01\x01\x12\x13\n\x06target\x18\x06 \x01(\tH\x02\x88\x01\x01\x12\x10\n\x03url\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x13\n\x06\x64irect\x18\x08 \x01(\x08H\x04\x88\x01\x01\x12\x14\n\x07options\x18\t \x01(\tH\x05\x88\x01\x01\x12\x17\n\nrequest_id\x18\n \x01(\tH\x06\x88\x01\x01\x42\x07\n\x05_dataB\x0b\n\t_delegateB\t\n\x07_targetB\x06\n\x04_urlB\t\n\x07_directB\n\n\x08_optionsB\r\n\x0b_request_id\":\n\x0f\x43heckoutRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x11\n\x04pull\x18\x02 \x01(\x08H\x00\x88\x01\x01\x42\x07\n\x05_pull\"\xaf\x03\n\tCacheInfo\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x03\x12\x10\n\x08in_cache\x18\x03 \x01(\x08\x12\x16\n\ttimestamp\x18\x04 \x01(\x03H\x00\x88\x01\x01\x12\x11\n\x04name\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x14\n\x07storage\x18\x06 \x01(\tH\x02\x88\x01\x01\x12\x1a\n\rlast_modified\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x1a\n\rsaved_version\x18\x08 \x01(\tH\x04\x88\x01\x01\x12;\n\x0e\x64\x65\x62ug_metadata\x18\t \x03(\x0b\x32#.qjazz.CacheInfo.DebugMetadataEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\n \x01(\t\x12\x10\n\x08last_hit\x18\x0b \x01(\x03\x12\x0c\n\x04hits\x18\x0c \x01(\x03\x12\x0e\n\x06pinned\x18\r \x01(\x08\x1a\x34\n\x12\x44\x65\x62ugMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x42\x0c\n\n_timestampB\x07\n\x05_nameB\n\n\x08_storageB\x10\n\x0e_last_modifiedB\x10\n\x0e_saved_version\"\x1a\n\x0b\x44ropRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\"\x1d\n\x0eProjectRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\"\xb1\x02\n\x0bProjectInfo\x12\x0e\n\x06status\x18\x01 \x01(\x03\x12\x0b\n\x03uri\x18\x02 \x01(\t\x12\x10\n\x08\x66ilename\x18\x03 \x01(\t\x12\x0b\n\x03\x63rs\x18\x04 \x01(\t\x12\x15\n\rlast_modified\x18\x05 \x01(\t\x12\x0f\n\x07storage\x18\x06 \x01(\t\x12\x16\n\x0ehas_bad_layers\x18\x07 \x01(\x08\x12(\n\x06layers\x18\x08 \x03(\x0b\x32\x18.qjazz.ProjectInfo.Layer\x12\x10\n\x08\x63\x61\x63he_id\x18\t \x01(\t\x1aj\n\x05Layer\x12\x10\n\x08layer_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\x12\x0b\n\x03\x63rs\x18\x04 \x01(\t\x12\x10\n\x08is_valid\x18\x05 \x01(\x08\x12\x12\n\nis_spatial\x18\x06 \x01(\x08\"O\n\nPluginInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0bplugin_type\x18\x03 \x01(\t\x12\x10\n\x08metadata\x18\x04 \x01(\t\"\x1a\n\nJsonConfig\x12\x0c\n\x04json\x18\x01 \x01(\t\"4\n\x0e\x43\x61talogRequest\x12\x15\n\x08location\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_location\"d\n\x0b\x43\x61talogItem\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0f\n\x07storage\x18\x03 \x01(\t\x12\x15\n\rlast_modified\x18\x04 \x01(\t\x12\x12\n\npublic_uri\x18\x05 \x01(\t*-\n\rServingStatus\x12\x0b\n\x07SERVING\x10\x00\x12\x0f\n\x0bNOT_SERVING\x10\x01\x32\xc0\x01\n\nQgisServer\x12.\n\x04Ping\x12\x12.qjazz.PingRequest\x1a\x10.qjazz.PingReply\"\x00\x12@\n\x11\x45xecuteOwsRequest\x12\x11.qjazz.OwsRequest\x1a\x14.qjazz.ResponseChunk\"\x00\x30\x01\x12@\n\x11\x45xecuteApiRequest\x12\x11.qjazz.ApiRequest\x1a\x14.qjazz.ResponseChunk\"\x00\x30\x01\x32\x8e\x06\n\tQgisAdmin\x12.\n\x04Ping\x12\x12.qjazz.PingRequest\x1a\x10.qjazz.PingReply\"\x00\x12=\n\x0f\x43heckoutProject\x12\x16.qjazz.CheckoutRequest\x1a\x10.qjazz.CacheInfo\"\x00\x12\x35\n\x0b\x44ropProject\x12\x12.qjazz.DropRequest\x1a\x10.qjazz.CacheInfo\"\x00\x12/\n\tListCache\x12\x0c.qjazz.Empty\x1a\x10.qjazz.CacheInfo\"\x00\x30\x01\x12*\n\nClearCache\x12\x0c.qjazz.Empty\x1a\x0c.qjazz.Empty\"\x00\x12+\n\x0bUpdateCache\x12\x0c.qjazz.Empty\x1a\x0c.qjazz.Empty\"\x00\x12\x32\n\x0bListPlugins\x12\x0c.qjazz.Empty\x1a\x11.qjazz.PluginInfo\"\x00\x30\x01\x12.\n\tSetConfig\x12\x11.qjazz.JsonConfig\x1a\x0c.qjazz.Empty\"\x00\x12.\n\tGetConfig\x12\x0c.qjazz.Empty\x1a\x11.qjazz.JsonConfig\"\x00\x12=\n\x0eGetProjectInfo\x12\x15.qjazz.ProjectRequest\x1a\x12.qjazz.ProjectInfo\"\x00\x12\x38\n\x07\x43\x61talog\x12\x15.qjazz.CatalogRequest\x1a\x12.qjazz.CatalogItem\"\x00\x30\x01\x12+\n\x06GetEnv\x12\x0c.qjazz.Empty\x1a\x11.qjazz.JsonConfig\"\x00\x12=\n\x16SetServerServingStatus\x12\x13.qjazz.ServerStatus\x1a\x0c.qjazz.Empty\"\x00\x12*\n\x05Stats\x12\x0c.qjazz.Empty\x1a\x11.qjazz.StatsReply\"\x00\x12,\n\x05Sleep\x12\x13.qjazz.SleepRequest\x1a\x0c.qjazz.Empty\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bqjazz.proto\x12\x05qjazz\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x07\n\x05\x45mpty\"\x1d\n\x0cSleepRequest\x12\r\n\x05\x64\x65lay\x18\x01 \x01(\x03\"\x90\x01\n\nStatsReply\x12\x16\n\x0e\x61\x63tive_workers\x18\x01 \x01(\x04\x12\x14\n\x0cidle_workers\x18\x02 \x01(\x04\x12\x10\n\x08\x61\x63tivity\x18\x03 \x01(\x01\x12\x18\n\x10\x66\x61ilure_pressure\x18\x04 \x01(\x01\x12\x18\n\x10request_pressure\x18\x05 \x01(\x01\x12\x0e\n\x06uptime\x18\x06 \x01(\x04\"4\n\x0cServerStatus\x12$\n\x06status\x18\x01 \x01(\x0e\x32\x14.qjazz.ServingStatus\"\x1e\n\rResponseChunk\x12\r\n\x05\x63hunk\x18\x01 \x01(\x0c\"\xe4\x01\n\nOwsRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\x12\x0f\n\x07request\x18\x02 \x01(\t\x12\x0e\n\x06target\x18\x03 \x01(\t\x12\x14\n\x07version\x18\x04 \x01(\tH\x00\x88\x01\x01\x12\x10\n\x03url\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x13\n\x06\x64irect\x18\x06 \x01(\x08H\x02\x88\x01\x01\x12\x14\n\x07options\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x17\n\nrequest_id\x18\x08 \x01(\tH\x04\x88\x01\x01\x42\n\n\x08_versionB\x06\n\x04_urlB\t\n\x07_directB\n\n\x08_optionsB\r\n\x0b_request_id\"\x9c\x02\n\nApiRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x0e\n\x06method\x18\x03 \x01(\t\x12\x11\n\x04\x64\x61ta\x18\x04 \x01(\x0cH\x00\x88\x01\x01\x12\x15\n\x08\x64\x65legate\x18\x05 \x01(\x08H\x01\x88\x01\x01\x12\x13\n\x06target\x18\x06 \x01(\tH\x02\x88\x01\x01\x12\x10\n\x03url\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x13\n\x06\x64irect\x18\x08 \x01(\x08H\x04\x88\x01\x01\x12\x14\n\x07options\x18\t \x01(\tH\x05\x88\x01\x01\x12\x17\n\nrequest_id\x18\n \x01(\tH\x06\x88\x01\x01\x42\x07\n\x05_dataB\x0b\n\t_delegateB\t\n\x07_targetB\x06\n\x04_urlB\t\n\x07_directB\n\n\x08_optionsB\r\n\x0b_request_id\":\n\x0f\x43heckoutRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x11\n\x04pull\x18\x02 \x01(\x08H\x00\x88\x01\x01\x42\x07\n\x05_pull\"\xaf\x03\n\tCacheInfo\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x03\x12\x10\n\x08in_cache\x18\x03 \x01(\x08\x12\x16\n\ttimestamp\x18\x04 \x01(\x03H\x00\x88\x01\x01\x12\x11\n\x04name\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x14\n\x07storage\x18\x06 \x01(\tH\x02\x88\x01\x01\x12\x1a\n\rlast_modified\x18\x07 \x01(\tH\x03\x88\x01\x01\x12\x1a\n\rsaved_version\x18\x08 \x01(\tH\x04\x88\x01\x01\x12;\n\x0e\x64\x65\x62ug_metadata\x18\t \x03(\x0b\x32#.qjazz.CacheInfo.DebugMetadataEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\n \x01(\t\x12\x10\n\x08last_hit\x18\x0b \x01(\x03\x12\x0c\n\x04hits\x18\x0c \x01(\x03\x12\x0e\n\x06pinned\x18\r \x01(\x08\x1a\x34\n\x12\x44\x65\x62ugMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x42\x0c\n\n_timestampB\x07\n\x05_nameB\n\n\x08_storageB\x10\n\x0e_last_modifiedB\x10\n\x0e_saved_version\"\x1a\n\x0b\x44ropRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\"\x1d\n\x0eProjectRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\"\xb1\x02\n\x0bProjectInfo\x12\x0e\n\x06status\x18\x01 \x01(\x03\x12\x0b\n\x03uri\x18\x02 \x01(\t\x12\x10\n\x08\x66ilename\x18\x03 \x01(\t\x12\x0b\n\x03\x63rs\x18\x04 \x01(\t\x12\x15\n\rlast_modified\x18\x05 \x01(\t\x12\x0f\n\x07storage\x18\x06 \x01(\t\x12\x16\n\x0ehas_bad_layers\x18\x07 \x01(\x08\x12(\n\x06layers\x18\x08 \x03(\x0b\x32\x18.qjazz.ProjectInfo.Layer\x12\x10\n\x08\x63\x61\x63he_id\x18\t \x01(\t\x1aj\n\x05Layer\x12\x10\n\x08layer_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\x12\x0b\n\x03\x63rs\x18\x04 \x01(\t\x12\x10\n\x08is_valid\x18\x05 \x01(\x08\x12\x12\n\nis_spatial\x18\x06 \x01(\x08\"O\n\nPluginInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0bplugin_type\x18\x03 \x01(\t\x12\x10\n\x08metadata\x18\x04 \x01(\t\"\x1a\n\nJsonConfig\x12\x0c\n\x04json\x18\x01 \x01(\t\"4\n\x0e\x43\x61talogRequest\x12\x15\n\x08location\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_location\"d\n\x0b\x43\x61talogItem\x12\x0b\n\x03uri\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0f\n\x07storage\x18\x03 \x01(\t\x12\x15\n\rlast_modified\x18\x04 \x01(\t\x12\x12\n\npublic_uri\x18\x05 \x01(\t*-\n\rServingStatus\x12\x0b\n\x07SERVING\x10\x00\x12\x0f\n\x0bNOT_SERVING\x10\x01\x32\xc0\x01\n\nQgisServer\x12.\n\x04Ping\x12\x12.qjazz.PingRequest\x1a\x10.qjazz.PingReply\"\x00\x12@\n\x11\x45xecuteOwsRequest\x12\x11.qjazz.OwsRequest\x1a\x14.qjazz.ResponseChunk\"\x00\x30\x01\x12@\n\x11\x45xecuteApiRequest\x12\x11.qjazz.ApiRequest\x1a\x14.qjazz.ResponseChunk\"\x00\x30\x01\x32\xb6\x06\n\tQgisAdmin\x12.\n\x04Ping\x12\x12.qjazz.PingRequest\x1a\x10.qjazz.PingReply\"\x00\x12=\n\x0f\x43heckoutProject\x12\x16.qjazz.CheckoutRequest\x1a\x10.qjazz.CacheInfo\"\x00\x12\x35\n\x0b\x44ropProject\x12\x12.qjazz.DropRequest\x1a\x10.qjazz.CacheInfo\"\x00\x12/\n\tListCache\x12\x0c.qjazz.Empty\x1a\x10.qjazz.CacheInfo\"\x00\x30\x01\x12*\n\nClearCache\x12\x0c.qjazz.Empty\x1a\x0c.qjazz.Empty\"\x00\x12+\n\x0bUpdateCache\x12\x0c.qjazz.Empty\x1a\x0c.qjazz.Empty\"\x00\x12\x32\n\x0bListPlugins\x12\x0c.qjazz.Empty\x1a\x11.qjazz.PluginInfo\"\x00\x30\x01\x12.\n\tSetConfig\x12\x11.qjazz.JsonConfig\x1a\x0c.qjazz.Empty\"\x00\x12.\n\tGetConfig\x12\x0c.qjazz.Empty\x1a\x11.qjazz.JsonConfig\"\x00\x12=\n\x0eGetProjectInfo\x12\x15.qjazz.ProjectRequest\x1a\x12.qjazz.ProjectInfo\"\x00\x12\x38\n\x07\x43\x61talog\x12\x15.qjazz.CatalogRequest\x1a\x12.qjazz.CatalogItem\"\x00\x30\x01\x12+\n\x06GetEnv\x12\x0c.qjazz.Empty\x1a\x11.qjazz.JsonConfig\"\x00\x12=\n\x16SetServerServingStatus\x12\x13.qjazz.ServerStatus\x1a\x0c.qjazz.Empty\"\x00\x12*\n\x05Stats\x12\x0c.qjazz.Empty\x1a\x11.qjazz.StatsReply\"\x00\x12,\n\x05Sleep\x12\x13.qjazz.SleepRequest\x1a\x0c.qjazz.Empty\"\x00\x12&\n\x06Reload\x12\x0c.qjazz.Empty\x1a\x0c.qjazz.Empty\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,8 +33,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_CACHEINFO_DEBUGMETADATAENTRY']._loaded_options = None
   _globals['_CACHEINFO_DEBUGMETADATAENTRY']._serialized_options = b'8\001'
-  _globals['_SERVINGSTATUS']._serialized_start=1992
-  _globals['_SERVINGSTATUS']._serialized_end=2037
+  _globals['_SERVINGSTATUS']._serialized_start=1995
+  _globals['_SERVINGSTATUS']._serialized_end=2040
   _globals['_PINGREQUEST']._serialized_start=22
   _globals['_PINGREQUEST']._serialized_end=49
   _globals['_PINGREPLY']._serialized_start=51
@@ -44,39 +44,39 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SLEEPREQUEST']._serialized_start=87
   _globals['_SLEEPREQUEST']._serialized_end=116
   _globals['_STATSREPLY']._serialized_start=119
-  _globals['_STATSREPLY']._serialized_end=260
-  _globals['_SERVERSTATUS']._serialized_start=262
-  _globals['_SERVERSTATUS']._serialized_end=314
-  _globals['_RESPONSECHUNK']._serialized_start=316
-  _globals['_RESPONSECHUNK']._serialized_end=346
-  _globals['_OWSREQUEST']._serialized_start=349
-  _globals['_OWSREQUEST']._serialized_end=577
-  _globals['_APIREQUEST']._serialized_start=580
-  _globals['_APIREQUEST']._serialized_end=864
-  _globals['_CHECKOUTREQUEST']._serialized_start=866
-  _globals['_CHECKOUTREQUEST']._serialized_end=924
-  _globals['_CACHEINFO']._serialized_start=927
-  _globals['_CACHEINFO']._serialized_end=1358
-  _globals['_CACHEINFO_DEBUGMETADATAENTRY']._serialized_start=1235
-  _globals['_CACHEINFO_DEBUGMETADATAENTRY']._serialized_end=1287
-  _globals['_DROPREQUEST']._serialized_start=1360
-  _globals['_DROPREQUEST']._serialized_end=1386
-  _globals['_PROJECTREQUEST']._serialized_start=1388
-  _globals['_PROJECTREQUEST']._serialized_end=1417
-  _globals['_PROJECTINFO']._serialized_start=1420
-  _globals['_PROJECTINFO']._serialized_end=1725
-  _globals['_PROJECTINFO_LAYER']._serialized_start=1619
-  _globals['_PROJECTINFO_LAYER']._serialized_end=1725
-  _globals['_PLUGININFO']._serialized_start=1727
-  _globals['_PLUGININFO']._serialized_end=1806
-  _globals['_JSONCONFIG']._serialized_start=1808
-  _globals['_JSONCONFIG']._serialized_end=1834
-  _globals['_CATALOGREQUEST']._serialized_start=1836
-  _globals['_CATALOGREQUEST']._serialized_end=1888
-  _globals['_CATALOGITEM']._serialized_start=1890
-  _globals['_CATALOGITEM']._serialized_end=1990
-  _globals['_QGISSERVER']._serialized_start=2040
-  _globals['_QGISSERVER']._serialized_end=2232
-  _globals['_QGISADMIN']._serialized_start=2235
-  _globals['_QGISADMIN']._serialized_end=3017
+  _globals['_STATSREPLY']._serialized_end=263
+  _globals['_SERVERSTATUS']._serialized_start=265
+  _globals['_SERVERSTATUS']._serialized_end=317
+  _globals['_RESPONSECHUNK']._serialized_start=319
+  _globals['_RESPONSECHUNK']._serialized_end=349
+  _globals['_OWSREQUEST']._serialized_start=352
+  _globals['_OWSREQUEST']._serialized_end=580
+  _globals['_APIREQUEST']._serialized_start=583
+  _globals['_APIREQUEST']._serialized_end=867
+  _globals['_CHECKOUTREQUEST']._serialized_start=869
+  _globals['_CHECKOUTREQUEST']._serialized_end=927
+  _globals['_CACHEINFO']._serialized_start=930
+  _globals['_CACHEINFO']._serialized_end=1361
+  _globals['_CACHEINFO_DEBUGMETADATAENTRY']._serialized_start=1238
+  _globals['_CACHEINFO_DEBUGMETADATAENTRY']._serialized_end=1290
+  _globals['_DROPREQUEST']._serialized_start=1363
+  _globals['_DROPREQUEST']._serialized_end=1389
+  _globals['_PROJECTREQUEST']._serialized_start=1391
+  _globals['_PROJECTREQUEST']._serialized_end=1420
+  _globals['_PROJECTINFO']._serialized_start=1423
+  _globals['_PROJECTINFO']._serialized_end=1728
+  _globals['_PROJECTINFO_LAYER']._serialized_start=1622
+  _globals['_PROJECTINFO_LAYER']._serialized_end=1728
+  _globals['_PLUGININFO']._serialized_start=1730
+  _globals['_PLUGININFO']._serialized_end=1809
+  _globals['_JSONCONFIG']._serialized_start=1811
+  _globals['_JSONCONFIG']._serialized_end=1837
+  _globals['_CATALOGREQUEST']._serialized_start=1839
+  _globals['_CATALOGREQUEST']._serialized_end=1891
+  _globals['_CATALOGITEM']._serialized_start=1893
+  _globals['_CATALOGITEM']._serialized_end=1993
+  _globals['_QGISSERVER']._serialized_start=2043
+  _globals['_QGISSERVER']._serialized_end=2235
+  _globals['_QGISADMIN']._serialized_start=2238
+  _globals['_QGISADMIN']._serialized_end=3060
 # @@protoc_insertion_point(module_scope)

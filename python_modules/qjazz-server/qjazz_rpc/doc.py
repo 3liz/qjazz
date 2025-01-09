@@ -49,22 +49,6 @@ class Server(ConfigBase):
             "no new connections are allowed."
         ),
     )
-    rescale_period: int = Field(
-        10,
-        title="Rescale period",
-        description=(
-            "Interval in seconds between attempts to replace the\n"
-            "the dead processes."
-        ),
-    )
-    max_failure_pressure: float = Field(
-        1.0,
-        title="Max failure pressure",
-        description=(
-            "The maximum failure pressure allowed before terminating\n"
-            "server with unrecoverable error."
-        ),
-    )
 
 
 class Worker(ConfigBase):

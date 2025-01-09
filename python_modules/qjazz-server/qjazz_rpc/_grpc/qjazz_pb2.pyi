@@ -36,20 +36,20 @@ class SleepRequest(_message.Message):
     def __init__(self, delay: _Optional[int] = ...) -> None: ...
 
 class StatsReply(_message.Message):
-    __slots__ = ("num_workers", "dead_workers", "activity", "failure_pressure", "request_pressure", "uptime")
-    NUM_WORKERS_FIELD_NUMBER: _ClassVar[int]
-    DEAD_WORKERS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("active_workers", "idle_workers", "activity", "failure_pressure", "request_pressure", "uptime")
+    ACTIVE_WORKERS_FIELD_NUMBER: _ClassVar[int]
+    IDLE_WORKERS_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_FIELD_NUMBER: _ClassVar[int]
     FAILURE_PRESSURE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_PRESSURE_FIELD_NUMBER: _ClassVar[int]
     UPTIME_FIELD_NUMBER: _ClassVar[int]
-    num_workers: int
-    dead_workers: int
+    active_workers: int
+    idle_workers: int
     activity: float
     failure_pressure: float
     request_pressure: float
     uptime: int
-    def __init__(self, num_workers: _Optional[int] = ..., dead_workers: _Optional[int] = ..., activity: _Optional[float] = ..., failure_pressure: _Optional[float] = ..., request_pressure: _Optional[float] = ..., uptime: _Optional[int] = ...) -> None: ...
+    def __init__(self, active_workers: _Optional[int] = ..., idle_workers: _Optional[int] = ..., activity: _Optional[float] = ..., failure_pressure: _Optional[float] = ..., request_pressure: _Optional[float] = ..., uptime: _Optional[int] = ...) -> None: ...
 
 class ServerStatus(_message.Message):
     __slots__ = ("status",)
