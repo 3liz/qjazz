@@ -1,16 +1,14 @@
 
 .. _rpc_services:
 
-Qgis RPC services
+QGIS RPC services
 =================
 
-RPC services runs qgis server processes and expose `gRPC <https://grpc.io/>`_ interfaces.
-for requesting and managing the Qgis processes.
+RPC services runs QGIS server processes and expose `gRPC <https://grpc.io/>`_ interfaces.
+for requesting and managing the QGIS processes.
 
-The unit of Qgis services is a *worker* which is a running instance
-of a gRPC service.  
-
-Workers are grouped by *pools* that share the exact same configuration.
+Workers may be grouped by *pools* that share the exact same configuration and network
+address.
 
 For examples, scaling a docker container with a running rpc-server in a docker compose
 stack automatically create a *pool* of workers.
@@ -18,12 +16,12 @@ stack automatically create a *pool* of workers.
 That is, a pool is addressed by a gRPC client as a single endpoint. (i.e `qgis-rpc` like in
 the :ref:`Docker compose setup <docker_compose_setup>` example.
 
-Qgis processes
+QGIS processes
 --------------
 
-A worker may run a configurable number of Qgis processes.  Incoming Qgis requests
+A worker may run a configurable number of QGIS processes.  Incoming QGIS requests
 to the gRPC service are distributed with a fair-queuing dispatching algorithm to 
-the embedded Qgis server processes.
+the child QGIS server processes.
 
 You may increase or decrease the number of processes but another strategy is to 
 scale the number of worker services while keeping the number of sub-processes relatively
@@ -34,8 +32,13 @@ Depending of the situation it may be better to choose one or another strategy.
 Life cycle and pressure conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a processes crash, the worker is then in a *degraded*
-state that can be monitored. When the number of dead process exceed some limite will
+If a processes crash, the worker is then in a *degraded* 
+state that can be monitored. 
+
+In *degraded state*, the RPC service will try to restore dead workers so as to keep
+the number of live QGIS processes constante.
+
+In some situation the number of dead process exceed some limite will
 stop with an error code.
 
 There is one condition for a worker to deliberatly exit 
@@ -43,12 +46,7 @@ with a error condition: the *process failure pressure*.
 
 The process failure pressure is the ratio of failed processes over the initial
 number of configured processes. If this ratio raise above some configured limit,
-then the worker exit with critical error condition.
-
-.. warning::
-    In order not to let the worker degrade itself slowly
-    the number of worker should be kept low (from 2 to 3)
-    or keep a relatively low 'max_processes_failure_pressure'.
+then the service will exit with critical error condition.
 
 
 Process timeout
@@ -57,16 +55,16 @@ Process timeout
 A process may be deliberatly killed (and thus increase the pressure) on long
 running requests.
 
-If the response time exceed the `process_timeout` then the procces processing the request
-is considered as stalled and killed. If terminating the process increase the failure 
-pressure too much then the worker will exit with an error condition. 
-
+If the response time exceed the request `server.timeout` then the process processing the request
+is considered as stalled and asked to abort gracefully the request. 
+The grace timeout is controlled by the `worker.cancel_timeout`; if the process fail to abort
+the request then process is killed, which will increase the failure 
+pressure. 
 
 .. note::
-   | The `worker.rescale_period` configuration setting allow to periodically restore the
-     initial number of worker. Nevertherless, if too many workers die in a short amount 
-     of time less that the rescale period the ressure can increase too much and the worker 
-     will exit.
+   | When a worker die, the service will try to maintain the initial number of workers.
+     Nevertherless, if too many workers die in a short amount the pressure can increase 
+     too much and the worker will exit.
    | If this occurs, this is usually because there is something wrong with the treatment of 
      the  qgis request that must be investigated.
    | On production, Monitoring workers lifecycle may be useful to detect such situations.
@@ -90,6 +88,25 @@ TOML configuration
 
 .. literalinclude:: configs/rpc.toml
      :language: toml
+
+
+Dynamic configuration setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is only available if you are running the service throught the official docker image.
+
+The configuration may be set dynamically at startup by running an executable returning 
+a configuration in *JSon* format.
+
+The executable is controlled by the `QJAZZ_CONFIG_EXEC` variable.
+
+The default settings allow you to define a remote URL for downloading the configuration at startup.
+See the `basic-with-config-server` example for an example of remote configuration setup. 
+
+.. note::
+   | You may define your own config setup by inheriting from the official Docker image
+     and define a setting a custom QJAZZ_CONFIG_EXEC executable.
+   | This may be useful if your are using alternate storage for your configuration settings.
 
 
 .. _rpc_cache_overview:
@@ -128,6 +145,7 @@ From client perspective, a project is always refered by its search path followed
 project's path or name::
 
     /<search_path>/<project_path>
+
 
 
 Managing cache
@@ -209,50 +227,43 @@ You may *pull* the project to make it change state depending on its inital state
 Cache restoration
 -----------------
 
-Cache restoration occurs under some condtions when a service instance is restarted or 
-new instance is created when scaling services.
+Projects loaded with the cache managment api are `pinned` in the cache: they cannot leave the cache
+except if removed explicitely.
 
-There is several restoration types:
+Operations on cache are recorded internally and a when a QGIS processes is restored, all pinned
+projects are loaded.
 
-   * :tmp:  | The list of cached projects is dynamically updated when projects are loaded explicitely
-              with the cache managment api; i.e, projects loaded dynamically with the 
-              `load_project_on_request` option will no be restored. 
-            | The list is saved on disk in a tmp directory and restored when the instance restart.
-   * :http: The list is downloaded from http remote url, it can be considired as a static configuration
-            and no update is done. 
-   * :https: Same as `http` with SSL configuration
-   * :none: No restoration
+The cache may be restored at startup either from the `worker.restore_projects` setting
+(or the `CONF_WORKER__RESTORE_PROJECTS` env variables).
 
+Dynamic cache restoration
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: toml
-    
-   # Cache restoration configuration
-   [restore_cache]
-   restore_type = "none" # one of "tmp", "http", "https" or "none"
-   # External cache url  if the restore_type is "http" or "https"
-   url = "https://..."
+Dynamic restoration is only available with the official Docker image.
 
-   # SSL configuration for https restoration type
-   [restore_cache.ssl]
-   # CA file
-   #cafile =   	# Optional
-   #
-   # SSL/TLS  key
-   #
-   # Path to the SSL key file
-   #certfile =   	# Optional
-   #
-   # SSL/TLS Certificat
-   #
-   # Path to the SSL certificat file
-   #keyfile =   	# Optional
-
+The cache restoration configuration may be set from remote location and indepedantly of 
+the remote configuration setup using the `QJAZZ_RESTORE_PROJECTS_EXEC` env varible. 
+The executable must return a comma separated list of projects to load at startup (internally
+it use the `CONF_WORKER__RESTORE_PROJECTS`).
 
 .. note::
+   | By default, the restoration list may by downloaded from a remote URL given by 
+     `QJAZZ_REMOTE_RESTORE_PROJECTS_URL` env variable. 
+   | You may define your own restoration setup by inheriting from the official Docker image
+     and define a setting a custom QJAZZ_REMOTE_RESTORE_PROJECTS_EXEC  executable.
+     This may be useful if your are using alternate storage for your restoration settings.
 
-    With `tmp` restoration type, the directory where the config is stored may be specified with 
-    the `CONF_TMPDIR` environment variable (by default it is saved in the `/tmp` directory).
+.. note::
+    | Using a dynamic cache restoration could be useful when synchronizing cache from a pool
+      of RPC services: if you keep a live version of the cache configuration accessible from 
+      a remote location then all rpc services of your pool will by synchronized at startup.
 
-    For preserving `tmp` cache restoration from container update or scaling update, you may use
-    a persistent docker volume which will be available for any new created container.
+
+
+
+
+
+
+
+
 

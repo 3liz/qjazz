@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::net::{IpAddr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use std::{fs, io};
+use std::{ffi::OsStr, fs, io};
 
 use crate::logger::Logging;
 
@@ -62,6 +62,10 @@ pub struct Server {
     /// closing connections. During this period,
     /// no new connections are allowed.
     shutdown_grace_period: u64,
+    /// The maximum allowed failure pressure.
+    /// If the failure pressure exceed this value then
+    /// the service will exit with critical error condition
+    max_failure_pressure: f64,
 }
 
 impl Default for Server {
@@ -71,6 +75,7 @@ impl Default for Server {
             timeout: 20,
             shutdown_grace_period: 10,
             enable_admin_services: true,
+            max_failure_pressure: 0.5,
         }
     }
 }
@@ -90,6 +95,9 @@ impl Server {
     }
     pub fn shutdown_grace_period(&self) -> Duration {
         Duration::from_secs(self.shutdown_grace_period)
+    }
+    pub fn max_failure_pressure(&self) -> f64 {
+        self.max_failure_pressure
     }
     pub fn enable_tls(&self) -> bool {
         self.listen.enable_tls
@@ -129,21 +137,24 @@ impl Settings {
         self.logging.init()
     }
 
+    fn builder() -> ConfigBuilder<DefaultState> {
+        Config::builder().add_source(
+            Environment::with_prefix("conf")
+                .prefix_separator("_")
+                .separator("__")
+                .ignore_empty(true)
+                .try_parsing(true) // Enable treating env as string list
+                .list_separator(",")
+                .with_list_parse_key("worker.restore_projects"),
+        )
+    }
+
     /// Configure so environement will be as CONF_KEY__VALUE
     fn build(settings: ConfigBuilder<DefaultState>) -> Result<Self, ConfigError> {
-        let s = settings
-            .add_source(
-                Environment::with_prefix("conf")
-                    .prefix_separator("_")
-                    .separator("__")
-                    .ignore_empty(true)
-                    .try_parsing(true) // Enable treating env as string list
-                    .list_separator(",")
-                    .with_list_parse_key("worker.restore_projects"),
-            )
-            .build()?;
-
-        s.try_deserialize().and_then(|this: Self| this.validate())
+        settings
+            .build()?
+            .try_deserialize()
+            .and_then(|this: Self| this.validate())
     }
 
     fn error<T: Display>(msg: T) -> ConfigError {
@@ -155,9 +166,20 @@ impl Settings {
         Self::build(Config::builder())
     }
 
+    /// Load configuration from env (Json)
+    pub fn from_env<K: AsRef<OsStr>>(key: K) -> Result<Self, ConfigError> {
+        match std::env::var(key) {
+            Ok(content) => Self::build(
+                Config::builder().add_source(config::File::from_str(&content, FileFormat::Json)),
+            ),
+            Err(std::env::VarError::NotPresent) => Self::new(),
+            Err(err) => Err(Self::error(err)),
+        }
+    }
+
     /// Load configuration from file
     pub fn from_file(path: &Path) -> Result<Self, ConfigError> {
-        Self::build(Config::builder().add_source(config::File::from(path)))
+        Self::build(Self::builder().add_source(config::File::from(path)))
     }
 
     /// Load configuration with variable substitution
@@ -170,7 +192,7 @@ impl Settings {
                 subst::substitute(&fs::read_to_string(path).map_err(Self::error)?, &replace)
                     .map_err(Self::error)?;
             Self::build(
-                Config::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
+                Self::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
             )
         } else {
             Self::from_file(path)

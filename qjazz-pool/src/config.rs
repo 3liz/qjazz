@@ -82,7 +82,7 @@ pub struct WorkerOptions {
     /// Set the maximum chunk size for streamed responses.
     pub(crate) max_chunk_size: BoundedUsize<1024>,
     /// Projects to restore at startup
-    pub startup_projects: Vec<String>,
+    pub restore_projects: Vec<String>,
 }
 
 impl Default for WorkerOptions {
@@ -95,7 +95,7 @@ impl Default for WorkerOptions {
             qgis: serde_json::json!({ "max_chunk_size": DEFAULT_MAX_CHUNK_SIZE }),
             max_waiting_requests: BoundedUsize(DEFAULT_MAX_REQUESTS),
             max_chunk_size: BoundedUsize(DEFAULT_MAX_CHUNK_SIZE),
-            startup_projects: Default::default(),
+            restore_projects: Default::default(),
         }
     }
 }

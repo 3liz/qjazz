@@ -46,39 +46,7 @@ proxy_conf = false
 #keyfile =   	# Optional
 
 
-# Url for external configuration.
-# The configuration is fetched from the remote url
-# at startup and override all local settings.
 [http_config_url]
-#
-# External configuration Url
-#
-# Url to external configuration.
-# The server will issue a GET method against this url at startup.
-# The method should returns a valid configuration fragment.
-# 
-#url =   	# Optional
-#
-# User agent
-#
-# The user agent for configuration requests
-user_agent = "qjazz-server middleware 0.1.0.dev0"
-
-#
-[http_config_url.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
 
 
 [admin_http]

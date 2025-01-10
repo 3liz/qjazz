@@ -58,7 +58,7 @@ impl Stats {
     pub fn activity(&self) -> Option<f64> {
         let b = self.active + self.idle;
         if b > 0 {
-            Some(self.idle as f64 / b as f64)
+            Some(self.active as f64 / b as f64)
         } else {
             None
         }

@@ -25,4 +25,4 @@ PS1_OLD=$PS1
 PS1="\[\e[1;33m\][\w]\n\[\e[1;31m\]\h\[\e[0m\]$ "
 
 # Active the qgis server virtual env
-source /opt/local/qgisserver/bin/activate
+source /opt/local/qjazz/bin/activate

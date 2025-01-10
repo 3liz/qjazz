@@ -41,6 +41,8 @@ enum Commands {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
+    const CONF_ENV: &str = "QJAZZ_CONFIG_JSON";
+
     match &args.command {
         Some(Commands::Settings) => {
             todo!();
@@ -48,14 +50,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Config { conf }) => {
             let settings = match conf {
                 Some(conf) => Settings::from_file_template(conf)?,
-                None => Settings::new()?,
+                None => Settings::from_env(CONF_ENV)?,
             };
             serde_json::to_writer_pretty(io::stdout().lock(), &settings)?;
         }
         Some(Commands::Serve { conf }) => {
             let settings = match conf {
                 Some(conf) => Settings::from_file_template(conf)?,
-                None => Settings::new()?,
+                None => Settings::from_env(CONF_ENV)?,
             };
             let mapserv_args = std::env::var_os("QJAZZ_MAPSERV_ARGS");
 

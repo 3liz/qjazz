@@ -18,6 +18,7 @@ use qjazz_pool::Pool;
 pub(crate) fn handle_signals(
     pool: Arc<RwLock<Pool>>,
     token: CancellationToken,
+    max_failure_pressure: f64,
 ) -> Result<Handle, Box<dyn Error>> {
     let mut signals = Signals::new([SIGINT, SIGTERM, SIGCHLD])?;
 
@@ -56,6 +57,11 @@ pub(crate) fn handle_signals(
                             state.store(false, Ordering::Relaxed);
                             if let Err(err) = pool.write().await.maintain_pool().await {
                                 log::error!("Pool scaling failed: {:?}, terminating server", err);
+                                token.cancel();
+                            }
+                            // Check failure pressure
+                            if pool.read().await.failure_pressure() > max_failure_pressure {
+                                log::error!("Max failure pressure exceeded, terminating server");
                                 token.cancel();
                             }
                         });

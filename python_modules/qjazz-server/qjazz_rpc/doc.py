@@ -90,6 +90,15 @@ class Worker(ConfigBase):
         title="Startup projects",
         description="List of projects to load at startup",
     )
+    max_failure_pressure: float = Field(
+        default=0.5,
+        title="Max failure pressure",
+        description=(
+            "The maximum allowed failure pressure.\n"
+            "If the failure pressure exceed this value then\n"
+            "the service will exit with critical error condition."
+        ),
+    )
 
 if __name__ == '__main__':
     import sys

@@ -132,7 +132,7 @@ impl Pool {
                 q: Queue::with_capacity(opts.num_processes()),
                 dead_workers: AtomicUsize::new(0),
                 max_requests: AtomicUsize::new(opts.max_waiting_requests()),
-                restore: RwLock::new(Restore::with_projects(opts.startup_projects.drain(..))),
+                restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
             }),
             builder,
@@ -190,12 +190,22 @@ impl Pool {
     /// Maintain the pool at nominal number of live workers
     pub async fn maintain_pool(&mut self) -> Result<()> {
         let nominal = self.builder.options().num_processes();
-        let current = self.num_processes - self.dead_workers();
+        let dead_workers = self.dead_workers();
+        let current = self.num_processes - dead_workers;
         #[allow(clippy::comparison_chain)]
         let rv = if nominal > current {
-            self.grow(nominal - current).await
+            self.grow(nominal - current).await.inspect(|_| {
+                self.num_processes = nominal;
+                self.queue
+                    .dead_workers
+                    .fetch_sub(dead_workers, Ordering::Relaxed);
+            })
         } else if nominal < current {
-            self.shrink(current - nominal).await
+            self.shrink(current - nominal).await.inspect(|_| {
+                self.queue
+                    .dead_workers
+                    .fetch_sub(dead_workers, Ordering::Relaxed);
+            })
         } else {
             Ok(())
         };

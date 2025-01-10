@@ -43,7 +43,11 @@ pub(crate) async fn serve(
     // Handle graceful shutdown
     let token = CancellationToken::new();
 
-    let signal_handle = crate::signals::handle_signals(pool_owned.clone(), token.clone())?;
+    let signal_handle = crate::signals::handle_signals(
+        pool_owned.clone(),
+        token.clone(),
+        settings.server.max_failure_pressure(),
+    )?;
 
     let grace_period = settings.server.shutdown_grace_period();
 

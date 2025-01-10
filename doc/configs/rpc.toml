@@ -65,6 +65,18 @@ cancel_timeout = 3
 # the subsequent requests will be returned with a `service unavailable`
 # error.
 max_waiting_requests = 50
+#
+# Startup projects
+#
+# List of projects to load at startup
+startup_projects = []
+#
+# Max failure pressure
+#
+# The maximum allowed failure pressure.
+# If the failure pressure exceed this value then
+# the service will exit with critical error condition.
+max_failure_pressure = 0.5
 
 #
 # Qgis configuration

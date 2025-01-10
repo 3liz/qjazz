@@ -5,7 +5,7 @@ import sys
 from glob import glob
 from pathlib import Path
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, TypeAdapter
 from typing_extensions import (
     Dict,
     Literal,
@@ -96,52 +96,43 @@ class RemoteConfigError(Exception):
     pass
 
 
-class ConfigUrl(ConfigBase):
-    (
-        "Url for external configuration.\n"
-        "The configuration is fetched from the remote url\n"
-        "at startup and override all local settings."
-    )
-    ssl: SSLConfig = SSLConfig()
-    url: Optional[AnyHttpUrl] = Field(
-        default=None,
-        title="External configuration Url",
-        description=(
-            "Url to external configuration.\n"
-            "The server will issue a GET method against this url at startup.\n"
-            "The method should returns a valid configuration fragment.\n"
-        ),
-    )
+class RemoteConfig(ConfigBase):
 
-    user_agent: str = Field(
-        default=DEFAULT_USER_AGENT,
-        title="User agent",
-        description="The user agent for configuration requests",
-    )
+    def getenv(self) -> Optional[str]:
+        return os.getenv('QJAZZ_REMOTE_CONFIG_URL')
 
     def is_set(self) -> bool:
-        return self.url is not None
+        return self.getenv() is not None
 
     async def load_configuration(self, builder: ConfBuilder) -> bool:
-        if not self.url:
+
+        env = self.getenv()
+        if not env:
             return False
 
         import aiohttp
 
-        use_ssl = self.url.scheme == 'https'
+        url = TypeAdapter(AnyHttpUrl).validate_python(env)
+        use_ssl = url.scheme == 'https'
 
         async with aiohttp.ClientSession() as session:
-            logger.info("** Loading configuration from %s **", self.url)
+            logger.info("** Loading configuration from %s **", url)
             async with session.get(
-                str(self.url),
-                ssl=self.ssl.create_ssl_client_context() if use_ssl else False,
+                str(url),
+                ssl=SSLConfig.model_validate(
+                    dict(
+                        cafile=os.getenv('QJAZZ_REMOTE_CAFILE'),
+                        certfile=os.getenv('QJAZZ_REMOTE_CLIENT_CERTFILE'),
+                        keyfile=os.getenv('QJAZZ_REMOTE_CLIENT_KEYFILE'),
+                    ),
+                ).create_ssl_client_context() if use_ssl else False,
             ) as resp:
                 if resp.status != 200:
                     raise RemoteConfigError(
-                        f"Failed to get configuration from {self.url} (error {resp.status})",
+                        f"Failed to get configuration from {url} (error {resp.status})",
                     )
                 cnf = await resp.json()
-                logger.trace("Loading configuration:\n%s", cnf)
+                logger.trace("Updating configuration:\n%s", cnf)
                 builder.update_config(cnf)
 
         return True
@@ -153,7 +144,7 @@ BACKENDS_SECTION = 'backends'
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
     http: HttpConfig
-    http_config_url: ConfigUrl
+    http_config_url: RemoteConfig
     admin_http: AdminHttpConfig
     router: RouterConfig
     metrics: Optional[MetricsConfig]
@@ -170,7 +161,7 @@ def create_config() -> ConfBuilder:
 
     # Add the `[http]` configuration section
     builder.add_section('http', HttpConfig)
-    builder.add_section("http_config_url", ConfigUrl)
+    builder.add_section("http_config_url", RemoteConfig)
     builder.add_section('admin_http', AdminHttpConfig)
 
     builder.add_section('router', RouterConfig)
@@ -264,7 +255,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
         # Do not load includes if configuration is remote
         if conf.http_config_url.is_set():
             print(
-                f"** Loading initial config from {conf.http_config_url.url} **",
+                f"** Loading initial config from {conf.http_config_url.getenv()} **",
                 file=sys.stderr,
                 flush=True,
             )

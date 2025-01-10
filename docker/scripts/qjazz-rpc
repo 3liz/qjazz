@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+# Remote configuration
+QJAZZ_CONFIG_EXEC=${QJAZZ_CONFIG_EXEC:-download-config.py}
+if [ -n "$QJAZZ_CONFIG_EXEC" ]; then
+    export QJAZZ_CONFIG_JSON=$($QJAZZ_CONFIG_EXEC)
+fi
+
+# Remote projects restore list
+QJAZZ_RESTORE_PROJECTS_EXEC=${QJAZZ_RESTORE_PROJECTS_EXEC:-download-restore-projects.py}
+if [ -n "$QJAZZ_RESTORE_PROJECTS_EXEC" ]; then
+    export CONF_WORKER__RESTORE_PROJECTS=$($QJAZZ_RESTORE_PROJECTS_EXEC)
+fi
+
+exec qjazz-rpc-bin "$@"

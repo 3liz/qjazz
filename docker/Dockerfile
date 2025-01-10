@@ -55,7 +55,7 @@ COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
 
 # Install binaries
-COPY target/release/qjazz-rpc /usr/local/bin/
+COPY target/release/qjazz-rpc /usr/local/bin/qjazz-rpc-bin
 
 # Set path to the python executable
 ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
@@ -71,6 +71,8 @@ ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 EXPOSE 23456 9080 9443 9876
 
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
+
+VOLUME /home/qgis
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
