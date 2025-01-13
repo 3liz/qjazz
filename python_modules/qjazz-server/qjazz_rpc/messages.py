@@ -96,7 +96,7 @@ class OwsRequestMsg(MsgModel):
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
     debug_report: bool = False
-
+    content_type: Optional[str] = None
 
 class ApiRequestMsg(MsgModel):
     msg_id: Literal[MsgType.APIREQUEST] = MsgType.APIREQUEST
@@ -113,6 +113,7 @@ class ApiRequestMsg(MsgModel):
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
     debug_report: bool = False
+    content_type: Optional[str] = None
 
 
 class PingMsg(MsgModel):

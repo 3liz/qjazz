@@ -76,6 +76,7 @@ def handle_ows_request(
         request_id=msg.request_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
+        content_type=msg.content_type,
     )
 
 
@@ -136,6 +137,7 @@ def handle_api_request(
         request_id=msg.request_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
+        content_type=msg.content_type,
     )
 
 
@@ -156,6 +158,7 @@ def _handle_generic_request(
     request_id: Optional[str],
     feedback: QgsFeedback,
     header_prefix: Optional[str],
+    content_type: Optional[str],
 ):
     """ Handle generic Qgis request
     """
@@ -205,7 +208,11 @@ def _handle_generic_request(
             header_prefix=header_prefix,
         )
 
-    req_hdrs = {capwords(k, sep='-'): v for k,v in headers}
+    # XXX QGIS does not complies to standard and handle X-Qgis-* headers
+    # in case sensitive way
+    req_hdrs = {capwords(k, sep='-'): v for k,v in headers if not k.startswith('grpc-')}
+    if content_type:
+        req_hdrs['Content-Type'] = content_type
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)

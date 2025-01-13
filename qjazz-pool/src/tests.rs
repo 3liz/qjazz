@@ -63,6 +63,7 @@ async fn test_messages_io() {
             request_id: None,
             debug_report: false,
             header_prefix: Some("x-test-"),
+            content_type: Some("application/test"),
         })
         .await
         .unwrap();
@@ -102,6 +103,7 @@ async fn test_messages_io() {
             request_id: None,
             debug_report: false,
             header_prefix: Some("x-test-"),
+            content_type: Some("application/test"),
         })
         .await
         .unwrap();

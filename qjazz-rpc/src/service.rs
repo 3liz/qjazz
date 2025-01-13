@@ -170,6 +170,7 @@ impl QgisServer for QgisServerServicer {
                 header_prefix: Some(Self::HEADER_PREFIX),
                 debug_report: false,
                 headers,
+                content_type: req.content_type.as_deref(),
             })
             .await
             .map_err(Self::error)?;
@@ -213,6 +214,7 @@ impl QgisServer for QgisServerServicer {
                 header_prefix: Some(Self::HEADER_PREFIX),
                 debug_report: false,
                 headers,
+                content_type: req.content_type.as_deref(),
             })
             .await
             .map_err(Self::error)?;

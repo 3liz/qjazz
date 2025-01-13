@@ -82,6 +82,7 @@ message OwsRequest {
     optional bool direct = 6;
     optional string options = 7;
     optional string request_id = 8;
+    optional string content_type = 9;
 }
 
 message ApiRequest {
@@ -95,6 +96,7 @@ message ApiRequest {
     optional bool direct = 8;
     optional string options = 9;
     optional string request_id = 10;
+    optional string content_type = 11;
 }
 
 
