@@ -14,4 +14,8 @@ if [ -n "$QJAZZ_RESTORE_PROJECTS_EXEC" ]; then
     export CONF_WORKER__RESTORE_PROJECTS=$($QJAZZ_RESTORE_PROJECTS_EXEC)
 fi
 
+if [[ "${@:1:1}" == "serve" ]]; then
+    qjazz-config install-plugins "${@:2}"
+fi
+
 exec qjazz-rpc-bin "$@"

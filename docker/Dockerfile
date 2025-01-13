@@ -37,6 +37,7 @@ RUN mkdir -p /opt/local/ \
     && ln -s /opt/local/qjazz/bin/qjazz-server-http \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-printserver \
+    && ln -s /opt/local/qjazz/bin/qjazz-config \
     ${NULL}
 
 # Install qgis-plugin-manager

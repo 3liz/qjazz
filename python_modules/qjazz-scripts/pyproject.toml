@@ -21,6 +21,7 @@ qjazz-server-admin = "qjazz_admin.cli:main"
 qjazz-server-http = "qjazz_http.cli:main"
 qjazz-processes = "qjazz_processes.__main__:main"
 qjazz-printserver = "qjazz_printserver.__main__:main"
+qjazz-config = "qjazz_rpc.cli:main"
 
 [[project.authors]]
 name = "David Marteau"

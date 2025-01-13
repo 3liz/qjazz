@@ -1,0 +1,18 @@
+[logging]
+level="trace"
+
+[worker]
+name = "worker"
+
+[worker.qgis.projects.search_paths]
+'/' = "/qgis-projects/france_parts"
+
+[worker.qgis.plugins]
+# Plugins allowed to install from plugin paths
+install = [
+    "Lizmap server",
+    "atlasprint",
+    "wfsOutputExtension",
+]
+# Auto install plugins from embedded plugin manager
+install_mode = "auto"

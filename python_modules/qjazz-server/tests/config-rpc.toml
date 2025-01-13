@@ -8,9 +8,6 @@ tls_cert_file = "$location/certs/localhost.crt"
 
 [worker]
 name = "Test"
-shutdown_grace_period = 5
-process_timeout = 20
-process_grace_period = 3
 num_processes = 1
 
 [worker.qgis]

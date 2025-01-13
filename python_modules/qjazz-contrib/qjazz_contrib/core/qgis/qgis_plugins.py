@@ -148,10 +148,6 @@ class QgisPluginConfig(config.ConfigBase):
         ),
     )
 
-    def do_install(self):
-        if self.install_mode == 'auto':
-            install_plugins(self)
-
 
 JsonDict = Dict[str, JsonValue]
 

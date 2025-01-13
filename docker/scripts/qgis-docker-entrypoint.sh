@@ -21,6 +21,9 @@ copy_qgis_configuration() {
     # Qgis initialization rely on this
     export QGIS_CUSTOM_CONFIG_PATH=$HOME
     export QGIS_OPTIONS_PATH=$HOME
+
+    # Create plugin dir
+    mkdir -p $HOME/plugins
 }
 
 # Check for uid (running with --user)

@@ -1,13 +1,29 @@
 #
 #
 #
-from typing import List, Optional
+from typing import (
+    Annotated,
+    List,
+    Optional,
+    Union,
+)
 
-from pydantic import Field, FilePath
+from pydantic import BeforeValidator, Field, FilePath
 
 from qjazz_contrib.core.config import ConfBuilder, ConfigBase
 
 from .config import QgisConfig
+
+
+# Parse list from string
+def _parse_list(value: Union[List[str],str]) -> List[str]:
+    if isinstance(value, str):
+        if value:
+            # Parse comma separated list
+            value = value.split(",")
+        else:
+            value = []
+    return value
 
 
 class Listen(ConfigBase):
@@ -99,6 +115,15 @@ class Worker(ConfigBase):
             "the service will exit with critical error condition."
         ),
     )
+    restore_projects: Annotated[
+        List[str],
+        BeforeValidator(_parse_list),
+    ] = Field(
+            default=[],
+            title="Restorable projects",
+            description="List of projects to restore",
+    )
+
 
 if __name__ == '__main__':
     import sys
