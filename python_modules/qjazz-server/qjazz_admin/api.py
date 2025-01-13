@@ -1,9 +1,10 @@
 import asyncio
 import traceback
 
+from typing import Dict
+
 from aiohttp import WSMsgType, web
 from pydantic import BaseModel
-from typing_extensions import Dict
 
 from qjazz_contrib.core import logger
 

@@ -1,7 +1,8 @@
 # import traceback
+from typing import Dict, List
+
 from aiohttp import web
 from pydantic import BaseModel
-from typing_extensions import Dict, List
 
 from .. import swagger
 from ..errors import ServiceNotAvailable

@@ -1,11 +1,12 @@
-from pydantic import AnyHttpUrl, Field
-from typing_extensions import (
+from typing import (
     List,
     Literal,
     Optional,
     Protocol,
     no_type_check,
 )
+
+from pydantic import AnyHttpUrl, Field
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import (

@@ -1,15 +1,11 @@
-# flake8: noqa
-import asyncio  # noqa
+from ipaddress import IPv4Address, IPv6Address
 
-import pytest  # noqa
+import pytest
 
-from qjazz_admin.pool import PoolClient  # noqa
-from qjazz_admin.resolvers import (  # noqa
-    DNSResolver,
-    DNSResolverConfig,
+from qjazz_admin.pool import PoolClient
+from qjazz_admin.resolvers import (
     Resolver,
     ResolverConfig,
-    SocketResolverConfig,
 )
 
 pytest_plugins = ('pytest_asyncio',)
@@ -17,54 +13,38 @@ pytest_plugins = ('pytest_asyncio',)
 
 async def test_resolver_config():
     config = ResolverConfig(
-        pools=[
-            DNSResolverConfig(
+        resolvers=[
+            Resolver(
                 label="resolver_1",
-                type="dns",
-                host="localhost",
-                port=23456,
+                address=("localhost", 23456),
             ),
-            DNSResolverConfig(
+            Resolver(
                 label="resolver_2",
-                type="dns",
-                host="localhost",
-                port=23456,
+                address=("localhost", 23456),
                 ipv6=True,
-            ),
-            SocketResolverConfig(
-                label="resolver_3",
-                type="socket",
-                address="unix:/tmp/my.sock",
             ),
         ],
     )
 
-    resolvers = list(config.get_resolvers())
-    assert len(resolvers) == 3
-    assert resolvers[0].address == "localhost:23456"
-    assert resolvers[1].address == "localhost:23456"
-    assert resolvers[2].address == "unix:/tmp/my.sock"
+    resolvers = config.resolvers
+    assert len(resolvers) == 2
+    assert resolvers[0].resolver_address() == "localhost:23456"
+    assert resolvers[1].resolver_address() == "localhost:23456"
 
-    configs = list(await resolvers[0].configs)
+    configs = list(await resolvers[0].backends)
     assert len(configs) == 1
-    assert configs[0].server_address == ("127.0.0.1", 23456)
+    assert configs[0].server_address == (IPv4Address("127.0.0.1"), 23456)
 
-    configs = list(await resolvers[1].configs)
+    configs = list(await resolvers[1].backends)
     assert len(configs) == 1
-    assert configs[0].server_address == ("[::1]", 23456)
-
-    configs = list(await resolvers[2].configs)
-    assert len(configs) == 1
-    assert configs[0].server_address == "unix:/tmp/my.sock"
+    assert configs[0].server_address == (IPv6Address("::1"), 23456)
 
 
 @pytest.mark.server
 async def test_pool():
-    resolver = DNSResolver(DNSResolverConfig(
-        type="dns",
-        host="localhost",
-        port=23456,
-    ))
+    resolver = Resolver(
+        address = ("localhost", 23456),
+    )
 
     pool = PoolClient(resolver)
     assert len(pool._servers) == 0
@@ -81,7 +61,7 @@ async def test_pool():
     # Pull project
     rv = await pool.pull_projects("/france/france_parts.qgs")
     assert len(rv) == 1
-    uri, items = tuple(rv.items())[0]
+    uri, items = next(iter(rv.items()))
     assert items[0]['uri'] == uri
     assert items[0]['status'] == 'NEW'
     assert items[0]['serverAddress'] == '127.0.0.1:23456'
@@ -91,7 +71,7 @@ async def test_pool():
     # there is not much to synchronize
     rv = await pool.synchronize_cache()
     assert len(rv) == 1
-    uri, items = tuple(rv.items())[0]
+    uri, items = next(iter(rv.items()))
     assert items[0]['uri'] == uri
     assert items[0]['status'] == 'UNCHANGED'
     assert items[0]['serverAddress'] == '127.0.0.1:23456'

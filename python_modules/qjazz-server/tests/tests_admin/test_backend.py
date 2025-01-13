@@ -12,9 +12,6 @@ def test_clientconfig():
     config = BackendConfig(server_address=('127.0.0.1', 23456))
     assert config.address_to_string() == '127.0.0.1:23456'
 
-    config = BackendConfig(server_address='unix:/tmp/qgis/server.sock')
-    assert config.address_to_string() == 'unix:/tmp/qgis/server.sock'
-
 
 @pytest.mark.server
 async def test_backend():

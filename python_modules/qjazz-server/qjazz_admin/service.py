@@ -2,8 +2,7 @@ import asyncio
 import traceback
 
 from contextlib import contextmanager
-
-from typing_extensions import (
+from typing import (
     AsyncIterator,
     Dict,
     Generator,

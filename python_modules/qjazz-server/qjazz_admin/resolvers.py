@@ -1,29 +1,23 @@
 """ Dns resolver
 """
-from abc import abstractmethod
+from ipaddress import IPv4Address, IPv6Address
+from typing import (
+    Annotated,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import dns.asyncresolver
 
 from dns.resolver import NoNameservers
-from pydantic import Field
-from typing_extensions import (
-    Annotated,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Protocol,
-    Self,
-    Sequence,
-    Type,
-    Union,
-    no_type_check,
-)
+from pydantic import Field, IPvAnyAddress, TypeAdapter
 
 from qjazz_contrib.core import logger  # noqa
 from qjazz_contrib.core.config import (
     ConfigBase,
-    NetInterface,
     SSLConfig,
 )
 
@@ -32,37 +26,7 @@ from .backend import BackendConfig
 DEFAULT_PORT = 23456
 
 
-class Resolver(Protocol):
-
-    @property
-    @abstractmethod
-    def label(self) -> str:
-        """ Unique label for this resolver
-            Will be used as pool identifier
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def address(self) -> str:
-        """
-        """
-        ...
-
-    @property
-    @abstractmethod
-    async def configs(self) -> Sequence[BackendConfig]:
-        """ Return a sequence of client configuration
-        """
-        ...
-
-    @property
-    def title(self) -> str:
-        return ""
-
-    @property
-    def description(self) -> Optional[str]:
-        return None
+ResolverAddress = Union[IPvAnyAddress, str]
 
 
 ResolverLabel = Annotated[
@@ -78,40 +42,23 @@ ResolverLabel = Annotated[
 ]
 
 
-class ResolverConfigProto(Protocol):
-
-    @property
-    def label(self) -> str:
-        ...
-
-    def get_resolver(self) -> Resolver:
-        ...
-
-    @property
-    def title(self) -> str:
-        ...
-
-    @property
-    def description(self) -> Optional[str]:
-        ...
-
-
 #
-# DNS resolver
+# Resolver config
 #
 
 
-class DNSResolverConfig(ConfigBase):
+class Resolver(ConfigBase):
     """
-    DNS resolver config
+    Resolver configuration
 
     Resolver for DNS resolution that may resolve
     to multiple ips.
     """
     label: ResolverLabel
-    type: Literal['dns'] = Field(description="Must be set to 'dns'")
-    host: str = Field(title="Host name")
-    port: int = Field(title="Service port", default=DEFAULT_PORT)
+    address: Tuple[ResolverAddress, int] = Field(
+        default=(IPv6Address("::1"), DEFAULT_PORT),
+        title="RPC address",
+    )
     ipv6: bool = Field(default=False, title="Check for ipv6")
     use_ssl: bool = Field(default=False, title="Use ssl connection")
     ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
@@ -120,165 +67,46 @@ class DNSResolverConfig(ConfigBase):
     description: Optional[str] = None
 
     def resolver_address(self) -> str:
-        return f"{self.host}:{self.port}"
-
-    def get_resolver(self) -> Resolver:
-        return DNSResolver(self)
-
-
-class DNSResolver:
-    """ DNS resolver from host name
-    """
-
-    def __init__(self, config: DNSResolverConfig):
-        self._config = config
+        return f"{self.address[0]}:{self.address[1]}"
 
     @property
-    def label(self) -> str:
-        return self._config.label
-
-    @property
-    def address(self) -> str:
-        return self._config.resolver_address()
-
-    @property
-    def title(self) -> str:
-        return self._config.title
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._config.description
-
-    @property
-    async def configs(self) -> Sequence[BackendConfig]:
-        if self._config.ipv6:
-            rdtype = "AAAA"
-        else:
-            rdtype = "A"
-        try:
-            addresses = await dns.asyncresolver.resolve(self._config.host, rdtype)
-            return tuple(
-                BackendConfig(
-                    server_address=(str(addr), self._config.port),
-                    use_ssl=self._config.use_ssl,
-                    ssl=self._config.ssl,
+    async def backends(self) -> Sequence[BackendConfig]:
+        match self.address[0]:
+            case IPv6Address()|IPv4Address():
+                return (
+                     BackendConfig(
+                        server_address=(self.address[0], self.address[1]),
+                        use_ssl=self.use_ssl,
+                        ssl=self.ssl,
+                    ),
                 )
-                for addr in addresses
-            )
-        except NoNameservers:
-            logger.warning("No servers found at '%s' ", self._config.host)
-            return ()
+            case str(host):
+                if self.ipv6:
+                    rdtype = "AAAA"
+                else:
+                    rdtype = "A"
+                try:
+                    addresses = await dns.asyncresolver.resolve(host, rdtype)
+                    IPAddressTA: TypeAdapter = TypeAdapter(IPvAnyAddress)
+                    return tuple(
+                        BackendConfig(
+                            server_address=(
+                                IPAddressTA.validate_python(addr),
+                                self.address[1],
+                            ),
+                            use_ssl=self.use_ssl,
+                            ssl=self.ssl,
+                        )
+                        for addr in addresses
+                    )
+                except NoNameservers:
+                    logger.warning("No servers found at '%s' ", host)
 
-    @classmethod
-    def from_string(cls: Type[Self], name: str) -> Self:
-        host, *rest = name.rsplit(':', 1)
-        port = int(rest[0]) if rest else DEFAULT_PORT
-        return cls(DNSResolverConfig(host=host, port=port, type="dns", label=name))
-
-#
-# Socket resolver
-#
-# Unix socket or direct ip resolution
-#
-
-
-class SocketResolverConfig(ConfigBase):
-    """Resolver for socket resolution"""
-    label: ResolverLabel
-    type: Literal['socket'] = Field(description="Must be set to 'socket'")
-    address: NetInterface
-    use_ssl: bool = False
-    ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
-
-    title: str = ""
-    description: Optional[str] = None
-
-    @no_type_check
-    def resolver_address(self) -> str:
-        match self.address:
-            case (addr, port):
-                return f"{addr}:{port}"
-            case socket:
-                return socket
-
-    def get_resolver(self) -> Resolver:
-        return SocketResolver(self)
-
-
-class SocketResolver(Resolver):
-    """ DNS resolver from host name
-    """
-
-    def __init__(self, config: SocketResolverConfig):
-        self._config = config
-
-    @property
-    def label(self) -> str:
-        return self._config.label
-
-    @property
-    def address(self) -> str:
-        return self._config.resolver_address()
-
-    @property
-    def title(self) -> str:
-        return self._config.title
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._config.description
-
-    @property
-    async def configs(self) -> Sequence[BackendConfig]:
-        # Return a 1-tuple
-        return (
-            BackendConfig(
-                server_address=self._config.address,
-                use_ssl=self._config.use_ssl,
-                ssl=self._config.ssl,
-            ),
-        )
-
-    @classmethod
-    def from_string(cls: Type[Self], address: str) -> Self:
-        name = address
-        if not address.startswith('unix:'):
-            addr, *rest = address.rsplit(':', 1)
-            port = int(rest[0]) if rest else DEFAULT_PORT
-            address = (addr, port)  # type: ignore
-        return cls(SocketResolverConfig(address=address, type="socket", label=name))
-
-
-#
-# Aggregate configuration for resolvers
-#
-
-ResolverConfigUnion = Annotated[
-    Union[
-        DNSResolverConfig,
-        SocketResolverConfig,
-    ],
-    Field(discriminator='type'),
-]
+        return ()
 
 
 class ResolverConfig(ConfigBase):
-    pools: List[ResolverConfigUnion] = Field(
+    resolvers: List[Resolver] = Field(
         default=[],
-        title="List of Qgis pool backends",
+        title="List of Rpc backends",
     )
-
-    def get_resolvers(self) -> Iterator[Resolver]:
-        for config in self.pools:
-            yield config.get_resolver()
-
-    @staticmethod
-    def from_string(address: str) -> Resolver:
-        # Build a resolver directly from string
-        match address:
-            case n if n.startswith('unix:'):
-                return SocketResolver.from_string(address)
-            case n if n.startswith('tcp://'):
-                return SocketResolver.from_string(address.removeprefix('tcp://'))
-            case _:
-                return DNSResolver.from_string(address)

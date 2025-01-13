@@ -1,9 +1,9 @@
 # import traceback
 from pathlib import Path
+from typing import List
 
 from aiohttp import web
 from pydantic import BaseModel, Json, TypeAdapter
-from typing_extensions import List
 
 from .. import swagger
 from ..errors import ServiceNotAvailable

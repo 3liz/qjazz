@@ -5,6 +5,16 @@ import json
 import sys  # noqa
 
 from inspect import isclass
+from typing import (
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from aiohttp import web
 from aiohttp.hdrs import METH_ALL, METH_ANY
@@ -15,16 +25,6 @@ from pydantic import (
     Json,
     JsonValue,
     TypeAdapter,
-)
-from typing_extensions import (
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
 )
 
 from qjazz_contrib.core.models import JsonModel

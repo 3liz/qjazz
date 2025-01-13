@@ -3,14 +3,7 @@ import json
 import traceback
 
 from contextlib import contextmanager
-
-import grpc
-import jsondiff
-
-from google.protobuf import json_format
-from google.protobuf.message import Message
-from pydantic import Json, JsonValue
-from typing_extensions import (
+from typing import (
     AsyncIterator,
     Dict,
     Generator,
@@ -19,11 +12,16 @@ from typing_extensions import (
     Optional,
     Sequence,
     Tuple,
-    cast,
 )
 
+import grpc
+import jsondiff
+
+from google.protobuf import json_format
+from google.protobuf.message import Message
+from pydantic import Json, JsonValue
+
 from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import PostconditionError, assert_postcondition
 from qjazz_rpc._grpc import qjazz_pb2
 
 from .backend import RECONNECT_DELAY, Backend
@@ -40,24 +38,6 @@ def MessageToDict(message: Message) -> Dict[str, JsonValue]:
         always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
         preserving_proto_field_name=False,
     )
-
-
-def reduce_cache(acc: Dict[str, JsonValue], item: qjazz_pb2.CacheInfo) -> Dict:
-    """ Reduce cache info and check for consistency
-
-        If status are not the same (cache not sync'ed) then
-        set the status to 'None'
-    """
-    status = acc['status']
-    if status and status != item.status:
-        acc.update(status=None)
-    try:
-        assert_postcondition(acc['name'] == item.name)
-        assert_postcondition(acc['lastModified'] == item.last_modified)
-        assert_postcondition(acc['savedVersion'] == item.saved_version)
-    except PostconditionError:
-        logger.error("Mismatched cache info for %s", item.uri)
-    return acc
 
 
 class PoolClient:
@@ -86,7 +66,7 @@ class PoolClient:
 
     @property
     def address(self) -> str:
-        return self._resolver.address
+        return self._resolver.resolver_address()
 
     @property
     def title(self) -> str:
@@ -129,7 +109,7 @@ class PoolClient:
         for s in self._backends:
             await s.enable_server(enable)
 
-    async def update_backends(self):
+    async def update_backends(self) -> None:
         """ Set up all clients from resolver
             The network configuration may have changed,
             in particular when containers ared added/removed
@@ -138,9 +118,11 @@ class PoolClient:
             We ask for a new updated list of servers from
             the resolver.
         """
-        configs = {conf.address_to_string(): conf for conf in await self._resolver.configs}
+        # Get backends from resolvers
+        configs = {conf.address_to_string(): conf for conf in await self._resolver.backends}
         addresses = set(configs)
 
+        # Current backends
         current_addr = set(s.address for s in self._backends)
 
         new_addr = addresses.difference(current_addr)
@@ -287,53 +269,33 @@ class PoolClient:
     # Cache
     #
 
-    async def _reduce_server_cache(self, server: Backend) -> Tuple[str, Iterator[Dict[str, JsonValue]]]:
-        """ Consolidate cache for client
-        """
-        cached_status: Dict[str, Dict[str, JsonValue]] = {}
-        try:
-            async for item in server.list_cache():
-                status = cached_status.get(item.uri)
-                if not status:
-                    status = MessageToDict(item)
-                    del status['cacheId']
-                    cached_status[cast(str, status['uri'])] = status
-                else:
-                    reduce_cache(status, item)
-        except grpc.RpcError as rpcerr:
-            logger.error(
-                "Failed to retrieve cache for %s: %s\t%s",
-                server.address,
-                rpcerr.code(),
-                rpcerr.details(),
-            )
-            cached_status.clear()
-        return server.address, iter(cached_status.values())
-
-    async def cache_content(self) -> Dict[str, Dict[str, JsonValue]]:
-        """ Build a synthetic/consolidated view
-            of the cache contents from all
+    async def cache_content(self) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
+        """ Build view of the cache contents by
             servers in the cluster.
 
             Return a dict of cached status list grouped
             by project's resource.
         """
-        all_status = await asyncio.gather(
-            *(self._reduce_server_cache(s) for s in self._backends),
-        )
+        rv: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {}
+        serving = False
+        try:
+            for server in self._backends:
+                async for item in server.list_cache():
+                    rv.setdefault(item.uri, {})[server.address] = item
+                serving = True
+        except grpc.RpcError as err:
+            if err.code() == grpc.StatusCode.UNAVAILABLE:
+                logger.error("Server '{server.address}' is unreachable")
+            else:
+                logger.error("%s\t%s\t%s", server.address, err.code(), err.details())
+                raise
 
-        result: Dict[str, Dict[str, JsonValue]] = {}
-        # Organize by cache uri
-        for addr, status_list in all_status:
-            for item in status_list:
-                bucket = result.setdefault(cast(str, item['uri']), {})
-                bucket[addr] = item
+        if not serving:
+            raise ServiceNotAvailable(self.address)
+        return rv
 
-        return result
-
-    async def synchronize_cache(self) -> Dict[str, Dict[str, JsonValue]]:
-        """ Synchronize all caches
-            for all instances
+    async def synchronize_cache(self) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
+        """ Synchronize backends caches
         """
         uris = set()
 
@@ -349,16 +311,15 @@ class PoolClient:
                     rpcerr.details(),
                 )
 
+        # Collect cache for each backends
         await asyncio.gather(*(_collect(s) for s in self._backends))
 
-        result: Dict[str, Dict[str, JsonValue]] = {uri: {} for uri in uris}
+        result: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {uri: {} for uri in uris}
 
-        async def _reduce(server):
+        async def _pull(server):
             try:
                 async for item in server.pull_projects(*uris):
-                    rv = MessageToDict(item)
-                    del rv['cacheId']
-                    result[item.uri][server.address] = rv
+                    result[item.uri][server.address] = item
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
                     logger.error("Server '{server.address}' is unreachable")
@@ -366,7 +327,7 @@ class PoolClient:
                     logger.error("%s\t%s\t%s", server.address, err.code(), err.details())
                     raise
 
-        await asyncio.gather(*(_reduce(s) for s in self._backends))
+        await asyncio.gather(*(_pull(s) for s in self._backends))
         return result
 
     async def clear_cache(self) -> None:
@@ -386,25 +347,16 @@ class PoolClient:
         if not serving:
             raise ServiceNotAvailable(self.address)
 
-    async def pull_projects(self, *uris) -> Dict[str, Dict[str, JsonValue]]:
+    async def pull_projects(self, *uris) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
         """ Pull/Update projects in all cache
         """
-        rv: Dict[str, Dict[str, JsonValue]] = {}
+        rv: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {}
         serving = False
 
         for server in self._backends:
             try:
-                cached: Dict[str, Dict[str, JsonValue]] = {}
                 async for item in server.pull_projects(*uris):
-                    item_ = cached.get(item.uri)
-                    if not item_:
-                        item_ = MessageToDict(item)
-                        del item_['cacheId']
-                        cached[item.uri] = item_
-                    else:
-                        reduce_cache(item_, item)
-                for uri, item_ in cached.items():
-                    rv.setdefault(uri, {})[server.address] = item_
+                    rv.setdefault(item.uri, {})[server.address] = item
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -417,22 +369,15 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def drop_project(self, uri: str) -> Dict[str, Dict]:
+    async def drop_project(self, uri: str) -> Dict[str, qjazz_pb2.CacheInfo]:
         """ Pull/Update projects in all cache
         """
         rv = {}
         serving = False
         for server in self._backends:
             try:
-                item_ = None
                 item  = await server.drop_project(uri)
-                if not item_:
-                    item_ = MessageToDict(item)
-                    del item_['cacheId']
-                else:
-                    reduce_cache(item_, item)
-                if item_:
-                    rv[server.address] = item_
+                rv[server.address] = item
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -445,22 +390,14 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def checkout_project(self, uri: str) -> Dict[str, Dict[str, JsonValue]]:
+    async def checkout_project(self, uri: str) -> Dict[str, qjazz_pb2.CacheInfo]:
         """ Pull/Update projects in all cache
         """
         rv = {}
         serving = False
         for server in self._backends:
             try:
-                item_ = None
-                async for item in server.checkout_project(uri):
-                    if not item_:
-                        item_ = MessageToDict(item)
-                        del item_['cacheId']
-                    else:
-                        reduce_cache(item_, item)
-                if item_:
-                    rv[server.address] = item_
+                rv[server.address] = await server.checkout_project(uri)
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -503,7 +440,10 @@ class PoolClient:
     # Catalog
     #
 
-    async def catalog(self, location: Optional[str] = None) -> AsyncIterator[Dict]:
+    async def catalog(
+        self,
+        location: Optional[str] = None,
+    ) -> AsyncIterator[qjazz_pb2.CatalogItem]:
         """ Return the catalog
         """
         # Find a serving server
@@ -512,7 +452,7 @@ class PoolClient:
         for s in self._backends:
             try:
                 async for item in s.catalog(location):
-                    yield MessageToDict(item)
+                    yield item
                 return
             except grpc.RpcError as rpcerr:
                 if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
@@ -536,7 +476,7 @@ class PoolClient:
         for s in self._backends:
             try:
                 if include_env:
-                    async with s._stub(None):
+                    async with s.connection():
                         return (
                             await s.get_config(),
                             await s.get_env(),
@@ -564,7 +504,7 @@ class PoolClient:
         for s in self._backends:
             try:
                 if return_diff:
-                    async with s._stub(None):
+                    async with s.connection():
                         prev_conf = json.loads(await s.get_config())
                         await s.set_config(conf)
                         new_conf = json.loads(await s.get_config())
@@ -596,21 +536,15 @@ class PoolClient:
     # Plugins
     #
 
-    async def list_plugins(self) -> List[Dict[str, JsonValue]]:
+    async def list_plugins(self) -> Dict[str, List[qjazz_pb2.PluginInfo]]:
         """ Pull/Update projects in all cache
         """
-        plugins: Dict[str, Dict[str, JsonValue]] = {}
+        plugins: Dict[str, List[qjazz_pb2.PluginInfo]] = {}
         serving = False
+
         for server in self._backends:
             try:
-                async for item in server.list_plugins():
-                    item_ = plugins.get(item.name)
-                    if item_ is None:
-                        item_ = MessageToDict(item)
-                        item_['backends'] = [server.address]
-                        plugins[item.name] = item_
-                    else:
-                        item_['backends'].append(server.address)  # type: ignore
+                plugins[server.address] = [item async for item in server.list_plugins()]
                 serving = True
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
@@ -621,16 +555,4 @@ class PoolClient:
 
         if not serving:
             raise ServiceNotAvailable(self.address)
-        return list(plugins.values())
-
-    #
-    #  Test
-    #
-    async def test_backend(self, delay: int) -> None:
-        """ Run test on backend
-        """
-        # Pick a backend
-        for s in self._backends:
-            if await s.serving():
-                await s.test(delay)
-                break
+        return plugins

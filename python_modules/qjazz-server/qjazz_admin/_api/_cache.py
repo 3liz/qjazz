@@ -1,4 +1,6 @@
 # import traceback
+from typing import Annotated, Dict, List
+
 from aiohttp import web
 from pydantic import (
     BaseModel,
@@ -8,7 +10,6 @@ from pydantic import (
     ValidationError,
     WithJsonSchema,
 )
-from typing_extensions import Annotated, Dict, List
 
 from .. import swagger
 from ..errors import ServiceNotAvailable

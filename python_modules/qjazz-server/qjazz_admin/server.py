@@ -3,16 +3,16 @@ import traceback
 
 from importlib import resources
 from pathlib import Path
+from typing import (
+    Dict,
+    Optional,
+    cast,
+)
 
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 from pydantic import (
     BaseModel,
-)
-from typing_extensions import (
-    Dict,
-    Optional,
-    cast,
 )
 
 from qjazz_contrib.core import logger

@@ -3,7 +3,17 @@
 import asyncio
 import json
 
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import (
+    AsyncGenerator,
+    AsyncIterator,
+    Dict,
+    Optional,
+    Self,
+    Tuple,
+    Type,
+    overload,
+)
 
 import grpc
 
@@ -11,8 +21,7 @@ from grpc_health.v1 import (
     health_pb2,  # HealthCheckRequest
     health_pb2_grpc,  # HealthStub
 )
-from pydantic import Field, Json
-from typing_extensions import AsyncIterator, Dict, Optional, Self, Tuple, no_type_check
+from pydantic import Field, IPvAnyAddress, Json
 
 from qjazz_contrib.core import config, logger
 from qjazz_rpc._grpc import qjazz_pb2, qjazz_pb2_grpc
@@ -33,22 +42,17 @@ CHANNEL_OPTIONS = [
 
 
 class BackendConfig(config.ConfigBase):
-    server_address: config.NetInterface = Field(
-        title="TCP or Socket address",
-        description="Address of Qgis service",
+    server_address: Tuple[IPvAnyAddress, int] = Field(
+        title="TCP address",
+        description="Address of RPC service",
     )
     use_ssl: bool = False
     ssl: config.SSLConfig = config.SSLConfig()
 
-    @no_type_check
     def address_to_string(self) -> str:
         """ Returns the address as string
         """
-        match self.server_address:
-            case (host, port):
-                return f"{host}:{port}"
-            case socket:
-                return socket
+        return f"{self.server_address[0]}:{self.server_address[1]}"
 
 
 #
@@ -79,7 +83,7 @@ class Backend:
         self._use_ssl = conf.use_ssl
         self._shutdown = False
         self._grace_period = grace_period
-        self._shutdown_task = None
+        self._shutdown_task: asyncio.Task|None = None
 
         def _read_if(f):
             if f:
@@ -127,7 +131,10 @@ class Backend:
             logger.debug("Closing channel '%s'", self._address)
             await channel.close()
 
-    async def _connect(self):
+    async def _connect(self) -> grpc.Channel:
+        if self._channel is not None:
+            return self._channel
+
         logger.debug("Backend: connecting to %s", self._address)
         try:
             self._channel = grpc.aio.secure_channel(
@@ -138,6 +145,7 @@ class Backend:
                 self._address,
                 options=CHANNEL_OPTIONS,
             )
+            return self._channel
         except grpc.RpcError as rpcerr:
             logger.error(
                 "Backend error:\t%s\t%s\t%s",
@@ -148,22 +156,38 @@ class Backend:
             # Unrecoverable error ?
             raise
 
+    @overload
+    def _stub(
+        self,
+        factory: Type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
+    ) -> AbstractAsyncContextManager[qjazz_pb2_grpc.QgisAdminStub]:
+        ...
+
+    @overload
+    def _stub(self, factory: Type[health_pb2_grpc.HealthStub],
+    ) -> AbstractAsyncContextManager[health_pb2_grpc.HealthStub]:
+        ...
+
     @asynccontextmanager
-    async def _stub(self, factory=qjazz_pb2_grpc.QgisAdminStub):
+    async def _stub(
+        self,
+        factory = qjazz_pb2_grpc.QgisAdminStub,
+    ) -> AsyncGenerator:
+        async with self.connection() as channel:
+            yield factory(channel)
+
+    @asynccontextmanager
+    async def connection(self) -> AsyncGenerator[grpc.Channel, None]:
         # There is shutdown in progress
         if self._shutdown:
             raise ShutdownInProgress(self._address)
         # Abort shutdown task
         self._cancel_shutdown_task()
         # Connect if needed
-        if self._channel is None:
-            await self._connect()
+        channel = await self._connect()
         try:
             self._connected += 1
-            if factory:
-                yield factory(self._channel)
-            else:
-                yield
+            yield channel
         finally:
             self._connected -= 1
             if self._connected == 0:
@@ -255,14 +279,13 @@ class Backend:
         self,
         project: str,
         pull: bool = False,
-    ) -> AsyncIterator[qjazz_pb2.CacheInfo]:
+    ) -> qjazz_pb2.CacheInfo:
         """ Checkout PROJECT from cache
         """
         async with self._stub() as stub:
-            async for item in stub.CheckoutProject(
+            return stub.CheckoutProject(
                 qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
-            ):
-                yield item
+            )
 
     async def drop_project(self, project: str) -> qjazz_pb2.CacheInfo:
         """ Drop PROJECT from cache
@@ -276,7 +299,6 @@ class Backend:
         """ Clear cache
         """
         async with self._stub() as stub:
-            logger.debug("Cleaning cache for '%s'", self.address)
             await stub.ClearCache(qjazz_pb2.Empty())
 
     async def list_cache(self) -> AsyncIterator[qjazz_pb2.CacheInfo]:
@@ -298,9 +320,8 @@ class Backend:
         """ Pull/Update projects in cache
         """
         async with self._stub() as stub:
-            requests = (qjazz_pb2.ProjectRequest(uri=uri) for uri in uris)
-            async for item in stub.PullProjects(requests):
-                yield item
+            for uri in uris:
+                yield await stub.CheckoutProject(qjazz_pb2.CheckoutRequest(uri=uri, pull=True))
 
     async def catalog(self, location: Optional[str] = None) -> AsyncIterator[qjazz_pb2.CatalogItem]:
         """ List projects from cache
@@ -398,6 +419,6 @@ class Backend:
             if not self._shutdown:
                 await asyncio.sleep(RECONNECT_DELAY)
 
-    async def test(self, delay: int) -> qjazz_pb2.Empty:
+    async def sleep(self, delay: int) -> qjazz_pb2.Empty:
         async with self._stub() as stub:
             return await stub.Sleep(qjazz_pb2.SleepRequest(delay=delay))

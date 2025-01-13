@@ -1,13 +1,5 @@
 # import traceback
-from aiohttp import web
-from pydantic import (  # noqa
-    BaseModel,
-    Field,
-    Json,
-    TypeAdapter,
-    ValidationError,
-)
-from typing_extensions import (  # noqa
+from typing import (  # noqa
     Dict,
     List,
     Literal,
@@ -15,6 +7,15 @@ from typing_extensions import (  # noqa
     Self,
     Set,
     Type,
+)
+
+from aiohttp import web
+from pydantic import (  # noqa
+    BaseModel,
+    Field,
+    Json,
+    TypeAdapter,
+    ValidationError,
 )
 
 from qjazz_contrib.core import logger

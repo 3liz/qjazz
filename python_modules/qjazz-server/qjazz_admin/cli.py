@@ -6,10 +6,9 @@ import sys
 
 from functools import wraps
 from pathlib import Path
+from typing import Any, List, Optional
 
 import click
-
-from typing_extensions import Any, List, Optional
 
 from qjazz_contrib.core import config, logger
 
@@ -36,7 +35,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
         if verbose:
             click.echo(confservice.conf.model_dump_json(indent=4))
     except config.ConfigError as err:
-        click.echo(f"Configuration error: {err}")
+        click.echo(f"Configuration error: {err}", err=True)
         sys.exit(1)
 
     conf = confservice.conf
@@ -49,13 +48,12 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
 def get_pool(conf: ResolverConfig, name: str) -> Optional[PoolClient]:
     """ Create a pool client from config
     """
-    for resolver in conf.get_resolvers():
+    for resolver in conf.resolvers:
         if resolver.label == name or resolver.address == name:
             return PoolClient(resolver)
 
-    # No match in config, try to resolve it
-    # directly from addresse
-    return PoolClient(ResolverConfig.from_string(name))
+    click.echo(f"No resolver found for {name}", err=True)
+    sys.exit(1)
 
 
 # Workaround https://github.com/pallets/click/issues/295

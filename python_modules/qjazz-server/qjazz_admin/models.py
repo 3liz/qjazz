@@ -7,7 +7,7 @@ from pydantic import (  # noqa
     ValidationError,
     WithJsonSchema,
 )
-from typing_extensions import (  # noqa
+from typing import (  # noqa
     Annotated,
     Dict,
     List,
