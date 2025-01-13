@@ -78,6 +78,7 @@ pub(crate) async fn serve(
     }
 
     // Start server
+    log::info!("RPC serving at {}", addr);
     tokio::spawn(router.serve(addr));
 
     token.cancelled().await;

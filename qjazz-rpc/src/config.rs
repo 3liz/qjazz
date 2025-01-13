@@ -163,14 +163,14 @@ impl Settings {
 
     /// Create from default and environment variables
     pub fn new() -> Result<Self, ConfigError> {
-        Self::build(Config::builder())
+        Self::build(Self::builder())
     }
 
     /// Load configuration from env (Json)
     pub fn from_env<K: AsRef<OsStr>>(key: K) -> Result<Self, ConfigError> {
         match std::env::var(key) {
             Ok(content) => Self::build(
-                Config::builder().add_source(config::File::from_str(&content, FileFormat::Json)),
+                Self::builder().add_source(config::File::from_str(&content, FileFormat::Json)),
             ),
             Err(std::env::VarError::NotPresent) => Self::new(),
             Err(err) => Err(Self::error(err)),
