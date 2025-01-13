@@ -1,6 +1,7 @@
 #
 # Qgis server request operations
 #
+from string import capwords
 from typing import List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
 
@@ -204,7 +205,9 @@ def _handle_generic_request(
             header_prefix=header_prefix,
         )
 
-    request = Request(url, method, dict(headers), data=data)  # type: ignore
+    req_hdrs = {capwords(k, sep='-'): v for k,v in headers}
+
+    request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
 
 
