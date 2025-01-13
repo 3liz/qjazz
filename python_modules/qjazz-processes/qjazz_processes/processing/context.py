@@ -4,8 +4,7 @@
 
 from pathlib import Path
 from string import Template
-
-from typing_extensions import Optional, cast
+from typing import Optional, cast
 
 from qgis.core import (
     Qgis,

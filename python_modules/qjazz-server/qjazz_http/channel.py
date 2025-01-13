@@ -2,15 +2,7 @@ import asyncio
 
 from contextlib import asynccontextmanager
 from fnmatch import fnmatch
-
-import grpc
-
-from aiohttp import web
-from grpc_health.v1 import (
-    health_pb2,  # HealthCheckRequest
-    health_pb2_grpc,  # HealthStub
-)
-from typing_extensions import (
+from typing import (
     Callable,
     Iterable,
     Iterator,
@@ -18,6 +10,14 @@ from typing_extensions import (
     Optional,
     Sequence,
     Tuple,
+)
+
+import grpc
+
+from aiohttp import web
+from grpc_health.v1 import (
+    health_pb2,  # HealthCheckRequest
+    health_pb2_grpc,  # HealthStub
 )
 
 from qjazz_contrib.core import logger

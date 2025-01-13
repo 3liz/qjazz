@@ -3,8 +3,7 @@
 #
 
 from functools import cached_property
-
-from typing_extensions import (
+from typing import (
     List,
     Optional,
     Tuple,

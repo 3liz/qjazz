@@ -1,15 +1,15 @@
 
 from datetime import datetime
-from urllib.parse import urlencode
-
-from aiohttp import web
-from pydantic import Field, TypeAdapter, ValidationError
-from typing_extensions import (
+from typing import (
     Annotated,
     Self,
     Sequence,
     TypeVar,
 )
+from urllib.parse import urlencode
+
+from aiohttp import web
+from pydantic import Field, TypeAdapter, ValidationError
 
 from .protos import (
     ErrorResponse,

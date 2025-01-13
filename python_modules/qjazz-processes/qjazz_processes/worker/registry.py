@@ -3,15 +3,14 @@
 # by id/service/realm/
 #
 from dataclasses import dataclass
-
-import redis
-
-from typing_extensions import (
+from typing import (
     Iterator,
     Mapping,
     Optional,
     Tuple,
 )
+
+import redis
 
 from qjazz_contrib.core.celery import Celery
 

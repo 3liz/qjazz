@@ -3,7 +3,7 @@
 # all rights reserved
 """ Handle Qgis storage metadata
 """
-from typing_extensions import Protocol
+from typing import Protocol
 
 from qgis.core import Qgis, QgsProject, QgsProjectBadLayerHandler
 from qgis.server import QgsServerProjectUtils

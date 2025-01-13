@@ -2,8 +2,7 @@
 import mimetypes
 
 from pathlib import Path
-
-from typing_extensions import (
+from typing import (
     Iterator,
     Optional,
 )

@@ -3,18 +3,19 @@
 # See https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas
 #
 
-from pydantic import (
-    Field,
-    JsonValue,
-    TypeAdapter,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Dict,
     List,
     Literal,
     Optional,
     Sequence,
+)
+
+from pydantic import (
+    Field,
+    JsonValue,
+    TypeAdapter,
 )
 
 from .models import (

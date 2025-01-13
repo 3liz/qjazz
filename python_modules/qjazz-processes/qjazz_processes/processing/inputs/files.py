@@ -3,11 +3,7 @@ import base64
 import mimetypes
 
 from pathlib import Path
-
-import requests
-
-from pydantic import JsonValue
-from typing_extensions import (
+from typing import (
     IO,
     Any,
     Dict,
@@ -18,6 +14,10 @@ from typing_extensions import (
     assert_never,
     cast,
 )
+
+import requests
+
+from pydantic import JsonValue
 
 from qgis.core import QgsProject
 

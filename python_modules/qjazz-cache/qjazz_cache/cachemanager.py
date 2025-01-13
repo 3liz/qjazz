@@ -47,8 +47,7 @@ except ImportError:
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-
-from typing_extensions import (
+from typing import (
     Dict,
     Iterable,
     Iterator,

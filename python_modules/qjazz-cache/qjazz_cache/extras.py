@@ -1,7 +1,6 @@
 
 from time import time
-
-from typing_extensions import Optional
+from typing import Optional
 
 from .cachemanager import (
     CacheEntry,

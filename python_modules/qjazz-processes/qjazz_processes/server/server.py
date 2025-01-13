@@ -5,15 +5,7 @@ import traceback
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from textwrap import dedent as _D
-
-from aiohttp import web
-from aiohttp.abc import AbstractAccessLogger
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    Field,
-)
-from typing_extensions import (
+from typing import (
     Awaitable,
     Callable,
     Literal,
@@ -21,6 +13,14 @@ from typing_extensions import (
     Protocol,
     TypeAlias,
     cast,
+)
+
+from aiohttp import web
+from aiohttp.abc import AbstractAccessLogger
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Field,
 )
 
 from qjazz_contrib.core import logger

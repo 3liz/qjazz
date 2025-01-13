@@ -5,6 +5,15 @@
 """
 
 from abc import abstractmethod
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    Optional,
+    Protocol,
+    Self,
+    runtime_checkable,
+)
 
 from aiohttp import web
 from pydantic import (
@@ -13,15 +22,6 @@ from pydantic import (
     ImportString,
     WithJsonSchema,
     model_validator,
-)
-from typing_extensions import (
-    Annotated,
-    Any,
-    Dict,
-    Optional,
-    Protocol,
-    Self,
-    runtime_checkable,
 )
 
 from qjazz_contrib.core import logger

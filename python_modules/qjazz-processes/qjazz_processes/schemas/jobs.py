@@ -3,9 +3,7 @@
 #
 
 from datetime import datetime
-
-from pydantic import Field, JsonValue, TypeAdapter
-from typing_extensions import (
+from typing import (
     ClassVar,
     Dict,
     List,
@@ -13,6 +11,8 @@ from typing_extensions import (
     Optional,
     TypeAlias,
 )
+
+from pydantic import Field, JsonValue, TypeAdapter
 
 from .models import (
     JsonModel,

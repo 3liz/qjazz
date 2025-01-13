@@ -1,15 +1,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-
-from pydantic import (
-    BaseModel,
-    Field,
-    ImportString,
-    WithJsonSchema,
-    model_validator,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -18,6 +10,14 @@ from typing_extensions import (
     Protocol,
     Self,
     runtime_checkable,
+)
+
+from pydantic import (
+    BaseModel,
+    Field,
+    ImportString,
+    WithJsonSchema,
+    model_validator,
 )
 
 from qjazz_contrib.core import logger

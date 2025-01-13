@@ -3,6 +3,17 @@ import inspect
 import types
 
 from functools import cached_property
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterator,
+    Optional,
+    Tuple,
+    Type,
+    TypeAlias,
+)
 
 import celery
 import celery.states
@@ -13,17 +24,6 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     create_model,
-)
-from typing_extensions import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Iterator,
-    Optional,
-    Tuple,
-    Type,
-    TypeAlias,
 )
 
 # from as_core.storage import StorageClient, StorageCreds, storage_client

@@ -1,6 +1,7 @@
 import os
 
 from textwrap import dedent as _D
+from typing import Annotated, Callable, Dict
 from urllib.parse import SplitResult, urlsplit
 
 from pydantic import (
@@ -13,7 +14,6 @@ from pydantic import (
     ValidationInfo,
     WithJsonSchema,
 )
-from typing_extensions import Annotated, Callable, Dict
 
 from qjazz_contrib.core import config
 

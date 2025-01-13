@@ -1,14 +1,15 @@
 
 import re
 
+from typing import (
+    Optional,
+    Sequence,
+)
+
 import celery.exceptions
 
 from aiohttp import web
 from pydantic import ValidationError
-from typing_extensions import (
-    Optional,
-    Sequence,
-)
 
 from qjazz_contrib.core import logger
 

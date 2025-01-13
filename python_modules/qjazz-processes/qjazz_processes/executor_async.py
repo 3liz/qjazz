@@ -4,8 +4,7 @@ import asyncio
 from dataclasses import dataclass
 from functools import partial
 from time import time
-
-from typing_extensions import (
+from typing import (
     Awaitable,
     Callable,
     Optional,

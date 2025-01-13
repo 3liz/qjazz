@@ -1,11 +1,11 @@
 #
 # Handle job realm
 #
+from typing import Annotated, Optional, Sequence
 from uuid import uuid4
 
 from aiohttp import web
 from pydantic import Field, TypeAdapter, ValidationError
-from typing_extensions import Annotated, Optional, Sequence
 
 from qjazz_contrib.core.config import ConfigBase, section
 

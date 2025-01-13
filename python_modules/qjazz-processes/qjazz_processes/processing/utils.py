@@ -4,15 +4,14 @@ import re
 from collections.abc import Container
 from enum import Enum
 from pathlib import Path
-from urllib.parse import urlsplit
-
-from typing_extensions import (
+from typing import (
     Iterator,
     Optional,
     Sequence,
     Tuple,
     Type,
 )
+from urllib.parse import urlsplit
 
 from qgis.core import (
     Qgis,

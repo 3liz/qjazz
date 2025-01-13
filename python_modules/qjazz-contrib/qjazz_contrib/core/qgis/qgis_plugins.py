@@ -17,14 +17,7 @@ import traceback
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-
-from pydantic import (
-    AfterValidator,
-    Field,
-    JsonValue,
-    ValidationInfo,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -38,6 +31,13 @@ from typing_extensions import (
     Type,
     assert_never,
     cast,
+)
+
+from pydantic import (
+    AfterValidator,
+    Field,
+    JsonValue,
+    ValidationInfo,
 )
 
 import qgis

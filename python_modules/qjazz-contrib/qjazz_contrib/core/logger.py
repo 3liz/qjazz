@@ -13,9 +13,9 @@ import sys
 from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
+from typing import Annotated, Optional
 
 from pydantic import Field, PlainSerializer, PlainValidator, WithJsonSchema
-from typing_extensions import Annotated, Optional
 
 from . import config
 

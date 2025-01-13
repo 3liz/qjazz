@@ -1,15 +1,15 @@
 
 from pathlib import Path
+from typing import (
+    Self,
+    Sequence,
+    cast,
+)
 
 from aiohttp import web
 from pydantic import (
     AnyUrl,
     ByteSize,
-)
-from typing_extensions import (
-    Self,
-    Sequence,
-    cast,
 )
 
 from qjazz_contrib.core import logger

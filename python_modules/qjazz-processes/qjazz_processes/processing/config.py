@@ -1,18 +1,18 @@
 
 from pathlib import Path
 from textwrap import dedent as _D
+from typing import (
+    Annotated,
+    Dict,
+    List,
+    Optional,
+)
 
 from pydantic import (
     AfterValidator,
     BeforeValidator,
     DirectoryPath,
     Field,
-)
-from typing_extensions import (
-    Annotated,
-    Dict,
-    List,
-    Optional,
 )
 
 from qjazz_cache.prelude import ProjectsConfig

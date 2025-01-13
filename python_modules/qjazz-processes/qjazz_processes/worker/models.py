@@ -1,11 +1,11 @@
 
 from datetime import datetime
-
-from pydantic import TypeAdapter
-from typing_extensions import (
+from typing import (
     Literal,
     Sequence,
 )
+
+from pydantic import TypeAdapter
 
 from ..schemas import JsonModel, Link, LinkHttp
 

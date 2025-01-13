@@ -35,20 +35,7 @@ import sys
 from importlib import metadata
 from pathlib import Path
 from time import time
-
-from pydantic import (
-    BaseModel,
-    JsonValue,
-    TypeAdapter,
-    ValidationError,
-    create_model,
-)
-from pydantic_settings import (
-    BaseSettings,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-)
-from typing_extensions import (
+from typing import (
     IO,
     Any,
     Callable,
@@ -61,6 +48,19 @@ from typing_extensions import (
     TypeAlias,
     TypeVar,
     assert_never,
+)
+
+from pydantic import (
+    BaseModel,
+    JsonValue,
+    TypeAdapter,
+    ValidationError,
+    create_model,
+)
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
 )
 
 from ..condition import assert_precondition

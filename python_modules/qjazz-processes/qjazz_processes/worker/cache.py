@@ -4,8 +4,7 @@ import traceback
 
 from abc import abstractmethod
 from enum import Enum, auto
-
-from typing_extensions import (
+from typing import (
     Dict,
     List,
     Optional,

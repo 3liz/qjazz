@@ -1,9 +1,7 @@
 
 import sys
 
-from pydantic import JsonValue
-from pydantic_extra_types.color import Color
-from typing_extensions import (
+from typing import (
     Any,
     Dict,
     List,
@@ -14,6 +12,9 @@ from typing_extensions import (
     Type,
     TypeAlias,
 )
+
+from pydantic import JsonValue
+from pydantic_extra_types.color import Color
 
 from qgis.core import (
     Qgis,

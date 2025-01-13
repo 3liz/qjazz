@@ -1,11 +1,12 @@
 """ Send metrics through amqp messages
 """
 
+from typing import List, Optional
+
 from aiohttp import web
 from amqpclient.aio import AsyncPublisher
 from pika import PlainCredentials
 from pydantic import Field, SecretStr
-from typing_extensions import List, Optional
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigSettings

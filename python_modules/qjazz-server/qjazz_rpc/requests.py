@@ -4,10 +4,9 @@ import traceback
 
 from contextlib import contextmanager
 from time import time
+from typing import Dict, Optional
 
 import psutil
-
-from typing_extensions import Dict, Optional
 
 from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice

@@ -46,8 +46,9 @@ def run_worker(
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
     if dump:
+        from typing import cast
+
         from pydantic import BaseModel
-        from typing_extensions import cast
 
         from .worker.config import load_configuration
         conf = cast(BaseModel, load_configuration())

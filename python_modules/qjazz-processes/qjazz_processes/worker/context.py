@@ -7,8 +7,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from string import Template
-
-from typing_extensions import (
+from typing import (
     Callable,
     Iterator,
     Optional,

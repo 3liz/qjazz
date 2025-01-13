@@ -1,7 +1,5 @@
 
-from aiohttp import web
-from pydantic import Field
-from typing_extensions import (
+from typing import (
     TYPE_CHECKING,
     Callable,
     List,
@@ -9,6 +7,9 @@ from typing_extensions import (
     Self,
     Sequence,
 )
+
+from aiohttp import web
+from pydantic import Field
 
 from .protos import (
     HandlerProto,

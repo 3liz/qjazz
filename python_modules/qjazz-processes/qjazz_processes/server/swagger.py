@@ -1,5 +1,13 @@
 
 from inspect import isclass
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+)
 
 from aiohttp import web
 from aiohttp.hdrs import METH_ALL, METH_ANY
@@ -8,14 +16,6 @@ from pydantic import (
     Json,
     JsonValue,
     TypeAdapter,
-)
-from typing_extensions import (
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
 )
 
 from qjazz_contrib.core.config import ConfigBase, section

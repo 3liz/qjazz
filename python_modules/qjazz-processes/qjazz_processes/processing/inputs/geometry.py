@@ -1,14 +1,7 @@
 
 import re
 
-from osgeo import ogr
-from pydantic import (
-    AnyUrl,
-    Field,
-    JsonValue,
-    TypeAdapter,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -18,6 +11,14 @@ from typing_extensions import (
     Sequence,
     TypeAlias,
     Union,
+)
+
+from osgeo import ogr
+from pydantic import (
+    AnyUrl,
+    Field,
+    JsonValue,
+    TypeAdapter,
 )
 
 from qgis.core import (

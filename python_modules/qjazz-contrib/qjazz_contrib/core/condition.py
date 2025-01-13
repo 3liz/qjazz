@@ -1,7 +1,7 @@
 #
 # Define pre/post condition assertion
 #
-from typing_extensions import Optional
+from typing import Optional
 
 
 class PreconditionError(Exception):

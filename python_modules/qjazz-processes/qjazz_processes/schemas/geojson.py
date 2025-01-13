@@ -1,6 +1,5 @@
 
-from pydantic import Field
-from typing_extensions import (
+from typing import (
     Annotated,
     Literal,
     Optional,
@@ -8,6 +7,8 @@ from typing_extensions import (
     Sequence,
     Union,
 )
+
+from pydantic import Field
 
 from .models import JsonModel, OneOf
 from .ogc import WGS84

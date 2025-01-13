@@ -2,6 +2,7 @@ import sys
 
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Optional
 
 import click
 
@@ -10,7 +11,6 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from typing_extensions import Optional
 
 from qjazz_contrib.core import logger
 

@@ -1,6 +1,5 @@
 
-from pydantic import Field, JsonValue
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -9,6 +8,8 @@ from typing_extensions import (
     Sequence,
     TypeAlias,
 )
+
+from pydantic import Field, JsonValue
 
 from qgis.core import (
     QgsProcessingContext,

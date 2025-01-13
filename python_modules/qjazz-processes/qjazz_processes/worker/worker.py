@@ -6,6 +6,15 @@ import shutil
 
 from itertools import chain
 from time import time
+from typing import (
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    cast,
+)
 
 import redis
 
@@ -19,15 +28,6 @@ from celery.worker.control import (
     inspect_command,
 )
 from pydantic import TypeAdapter
-from typing_extensions import (
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    cast,
-)
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Job, Worker

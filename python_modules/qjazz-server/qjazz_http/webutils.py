@@ -1,9 +1,10 @@
-from aiohttp import web
-from typing_extensions import (
+from typing import (
     Awaitable,
     Optional,
     Protocol,
 )
+
+from aiohttp import web
 
 from .models import Link
 

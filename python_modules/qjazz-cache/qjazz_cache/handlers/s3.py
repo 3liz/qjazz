@@ -25,17 +25,17 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
-from urllib.parse import urlsplit
-
-from minio import Minio, S3Error
-from osgeo.gdal import __version__ as __gdal_version__
-from pydantic import DirectoryPath, FilePath, SecretStr
-from typing_extensions import (
+from typing import (
     Dict,
     Iterator,
     Optional,
     cast,
 )
+from urllib.parse import urlsplit
+
+from minio import Minio, S3Error
+from osgeo.gdal import __version__ as __gdal_version__
+from pydantic import DirectoryPath, FilePath, SecretStr
 
 from qgis.core import Qgis, QgsPathResolver, QgsProject
 

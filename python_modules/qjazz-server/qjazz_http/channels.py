@@ -1,8 +1,7 @@
 import asyncio
 
 from time import time
-
-from typing_extensions import Iterator, List, Optional
+from typing import Iterator, List, Optional
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_precondition

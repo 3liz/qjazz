@@ -1,8 +1,8 @@
 from pathlib import Path
+from typing import Optional, Protocol
 
 from aiohttp import web
 from pydantic import TypeAdapter
-from typing_extensions import Optional, Protocol
 
 from ...worker.exceptions import (
     ProcessNotFound,

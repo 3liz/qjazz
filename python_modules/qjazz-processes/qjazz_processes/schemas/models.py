@@ -1,15 +1,7 @@
 
 import mimetypes
 
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    Field,
-    JsonValue,
-    TypeAdapter,
-    ValidationError,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Dict,
     Literal,
@@ -19,6 +11,15 @@ from typing_extensions import (
     Type,
     TypeAlias,
     cast,
+)
+
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    JsonValue,
+    TypeAdapter,
+    ValidationError,
 )
 
 from qjazz_contrib.core.condition import assert_precondition

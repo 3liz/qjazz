@@ -1,7 +1,8 @@
 
+from typing import Callable
+
 from aiohttp import web
 from pydantic import Field
-from typing_extensions import Callable
 
 from qjazz_contrib.core.config import ConfigBase
 

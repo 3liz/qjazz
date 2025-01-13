@@ -1,8 +1,6 @@
 
 from datetime import datetime
-
-from pydantic import BaseModel, Field, JsonValue, TypeAdapter
-from typing_extensions import (
+from typing import (
     Dict,
     Iterable,
     List,
@@ -12,6 +10,8 @@ from typing_extensions import (
     Set,
     Union,
 )
+
+from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 
 from qgis.core import (
     QgsMeshDatasetGroupMetadata,

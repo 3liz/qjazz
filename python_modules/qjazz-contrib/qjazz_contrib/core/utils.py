@@ -1,8 +1,7 @@
 """ Various utility functions
 """
 from datetime import datetime, timezone
-
-from typing_extensions import Literal
+from typing import Literal
 
 #
 # RFC822 datetime format

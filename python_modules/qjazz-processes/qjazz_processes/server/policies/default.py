@@ -1,10 +1,11 @@
 
-from aiohttp import web
-from pydantic import Field
-from typing_extensions import (
+from typing import (
     Optional,
     Sequence,
 )
+
+from aiohttp import web
+from pydantic import Field
 
 from qjazz_contrib.core.config import ConfigBase
 

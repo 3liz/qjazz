@@ -4,6 +4,8 @@ import ssl
 import string
 import sys
 
+from typing import Annotated, Optional, Tuple
+
 from pydantic import (
     AfterValidator,
     Field,
@@ -12,7 +14,6 @@ from pydantic import (
     PlainValidator,
     WithJsonSchema,
 )
-from typing_extensions import Annotated, Optional, Tuple
 
 from ._service import ConfigBase
 

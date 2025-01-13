@@ -1,8 +1,9 @@
-from pydantic import BeforeValidator, Field
-from typing_extensions import (
+from typing import (
     Annotated,
     Dict,
 )
+
+from pydantic import BeforeValidator, Field
 
 from qjazz_cache.config import ProjectsConfig
 from qjazz_contrib.core import config

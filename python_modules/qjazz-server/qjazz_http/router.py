@@ -1,5 +1,16 @@
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import (
+    Annotated,
+    Any,
+    Awaitable,
+    Dict,
+    Mapping,
+    Optional,
+    Protocol,
+    Self,
+    runtime_checkable,
+)
 from urllib.parse import unquote_plus
 
 from aiohttp import web
@@ -11,17 +22,6 @@ from pydantic import (
     TypeAdapter,
     WithJsonSchema,
     model_validator,
-)
-from typing_extensions import (
-    Annotated,
-    Any,
-    Awaitable,
-    Dict,
-    Mapping,
-    Optional,
-    Protocol,
-    Self,
-    runtime_checkable,
 )
 
 from qjazz_contrib.core import logger

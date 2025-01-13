@@ -2,9 +2,7 @@
 import traceback
 
 from functools import cached_property
-
-from pydantic import Field, JsonValue, TypeAdapter, ValidationError
-from typing_extensions import (
+from typing import (
     Annotated,
     Dict,
     Generic,
@@ -14,6 +12,8 @@ from typing_extensions import (
     TypeAlias,
     TypeVar,
 )
+
+from pydantic import Field, JsonValue, TypeAdapter, ValidationError
 
 from qgis.core import (
     QgsProcessingAlgorithm,

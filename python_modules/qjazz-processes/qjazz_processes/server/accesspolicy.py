@@ -1,5 +1,13 @@
 
 from abc import abstractmethod
+from typing import (
+    Annotated,
+    Dict,
+    Optional,
+    Protocol,
+    Type,
+    runtime_checkable,
+)
 
 from aiohttp import web
 from pydantic import (
@@ -7,14 +15,6 @@ from pydantic import (
     ImportString,
     JsonValue,
     WithJsonSchema,
-)
-from typing_extensions import (
-    Annotated,
-    Dict,
-    Optional,
-    Protocol,
-    Type,
-    runtime_checkable,
 )
 
 from qjazz_contrib.core import logger

@@ -1,17 +1,18 @@
 
 
-from pydantic import (
-    BaseModel,
-    Field,
-    JsonValue,
-    alias_generators,
-)
-from typing_extensions import (
+from typing import (
     Annotated,
     Dict,
     TypeAlias,
     TypeVar,
     cast,
+)
+
+from pydantic import (
+    BaseModel,
+    Field,
+    JsonValue,
+    alias_generators,
 )
 
 #

@@ -1,9 +1,6 @@
 
 from time import time
-from urllib.parse import urlencode
-
-from aiohttp import web
-from typing_extensions import (
+from typing import (
     Awaitable,
     Callable,
     Dict,
@@ -14,6 +11,9 @@ from typing_extensions import (
     Tuple,
     TypeAlias,
 )
+from urllib.parse import urlencode
+
+from aiohttp import web
 
 from qjazz_contrib.core import logger
 from qjazz_rpc._grpc import qjazz_pb2

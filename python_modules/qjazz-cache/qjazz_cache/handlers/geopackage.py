@@ -1,13 +1,13 @@
 """ Postgres storage handler
 """
 from pathlib import Path
+from typing import Dict, Optional
 from urllib.parse import parse_qsl, urlsplit
 
 from pydantic import (
     Field,
     FilePath,
 )
-from typing_extensions import Dict, Optional
 
 from qjazz_contrib.core import componentmanager
 from qjazz_contrib.core.condition import assert_postcondition

@@ -3,10 +3,9 @@ import sys
 
 from functools import wraps
 from pathlib import Path
+from typing import Optional, cast
 
 import click
-
-from typing_extensions import Optional, cast
 
 from .config import (
     ENV_CONFIGFILE,

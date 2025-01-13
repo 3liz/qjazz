@@ -4,9 +4,7 @@ import sys
 
 from glob import glob
 from pathlib import Path
-
-from pydantic import AnyHttpUrl, Field, TypeAdapter
-from typing_extensions import (
+from typing import (
     Dict,
     Literal,
     Optional,
@@ -14,6 +12,8 @@ from typing_extensions import (
     TypeAlias,
     cast,
 )
+
+from pydantic import AnyHttpUrl, Field, TypeAdapter
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import (

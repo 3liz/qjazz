@@ -7,14 +7,13 @@
 import traceback
 
 from pathlib import Path
-from urllib.parse import quote, urlencode
-
-from typing_extensions import (
+from typing import (
     ClassVar,
     Sequence,
     Tuple,
     TypeAlias,
 )
+from urllib.parse import quote, urlencode
 
 from qgis.core import (
     Qgis,

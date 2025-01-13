@@ -1,13 +1,13 @@
 from types import MappingProxyType
-
-from pydantic import ValidationError
-from typing_extensions import (
+from typing import (
     Any,
     Iterable,
     Mapping,
     Optional,
     Type,
 )
+
+from pydantic import ValidationError
 
 from qgis.core import (
     QgsProcessingParameterAggregate,

@@ -2,10 +2,10 @@ import inspect
 import sys  # noqa
 
 from textwrap import dedent
+from typing import IO, Type
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from typing_extensions import IO, Type
 
 from ..condition import assert_precondition
 

@@ -6,14 +6,14 @@ import sys
 
 from pathlib import Path
 from textwrap import dedent as _D
-
-from pydantic import Field
-from typing_extensions import (
+from typing import (
     Optional,
     Protocol,
     Sequence,
     cast,
 )
+
+from pydantic import Field
 
 from qjazz_contrib.core import config, logger
 from qjazz_contrib.core.celery import CeleryConfig

@@ -1,6 +1,7 @@
 """ Postgres storage handler
 """
 from pathlib import Path
+from typing import Annotated, Dict, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from pydantic import (
@@ -8,7 +9,6 @@ from pydantic import (
     Field,
     UrlConstraints,
 )
-from typing_extensions import Annotated, Dict, Optional
 
 from qjazz_contrib.core import componentmanager
 from qjazz_contrib.core.config import ConfigSettings

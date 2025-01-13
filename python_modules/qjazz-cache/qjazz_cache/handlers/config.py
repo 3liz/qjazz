@@ -5,6 +5,13 @@
     protocel handlers
 """
 
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    Self,
+)
+
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -13,12 +20,6 @@ from pydantic import (
     TypeAdapter,
     WithJsonSchema,
     model_validator,
-)
-from typing_extensions import (
-    Annotated,
-    Any,
-    Dict,
-    Self,
 )
 
 from qjazz_contrib.core import componentmanager, logger

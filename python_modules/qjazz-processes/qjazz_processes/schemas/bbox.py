@@ -1,14 +1,15 @@
 #
 # OGC bounding box
 #
-from annotated_types import Len
-from pydantic import Field
-from typing_extensions import (
+from typing import (
     Annotated,
     Optional,
     Sequence,
     TypeAlias,
 )
+
+from annotated_types import Len
+from pydantic import Field
 
 from .models import JsonModel, OneOf
 from .ogc import WGS84

@@ -1,12 +1,11 @@
 
 
 from pathlib import Path
-from urllib.parse import SplitResult, urlsplit
-
-from typing_extensions import (
+from typing import (
     Iterator,
     Union,
 )
+from urllib.parse import SplitResult, urlsplit
 
 from qgis.core import QgsProject
 

@@ -8,15 +8,15 @@ import traceback
 
 from datetime import timedelta
 from pathlib import Path
+from typing import (
+    Iterator,
+    Optional,
+)
 
 from minio import Minio, commonconfig
 from minio.deleteobjects import DeleteObject
 from minio.lifecycleconfig import Expiration, LifecycleConfig, Rule
 from pydantic import Field, FilePath, SecretStr
-from typing_extensions import (
-    Iterator,
-    Optional,
-)
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigSettings

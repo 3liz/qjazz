@@ -1,9 +1,10 @@
 import ssl
 
+from typing import Optional
+
 import aiohttp
 
 from aiohttp import web
-from typing_extensions import Optional
 
 from qjazz_contrib.core import logger
 

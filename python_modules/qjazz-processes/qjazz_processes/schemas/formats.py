@@ -9,8 +9,7 @@ import mimetypes
 import re
 
 from dataclasses import dataclass
-
-from typing_extensions import (
+from typing import (
     NamedTuple,
     Optional,
     Self,

@@ -1,8 +1,8 @@
 from importlib import resources
 from pathlib import Path
+from typing import List, Optional
 
 from aiohttp import web
-from typing_extensions import List, Optional
 
 from ._handlers import (
     Jobs,

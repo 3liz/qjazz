@@ -6,10 +6,7 @@ from enum import IntEnum
 from random import randint
 from textwrap import dedent as _D
 from time import time
-
-from celery.result import AsyncResult
-from pydantic import Field, JsonValue
-from typing_extensions import (
+from typing import (
     Callable,
     Dict,
     Iterator,
@@ -20,6 +17,9 @@ from typing_extensions import (
     assert_never,
     cast,
 )
+
+from celery.result import AsyncResult
+from pydantic import Field, JsonValue
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Celery, CeleryConfig

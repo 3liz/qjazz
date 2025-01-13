@@ -4,8 +4,7 @@
 import traceback
 
 from pathlib import Path
-
-from typing_extensions import (
+from typing import (
     Any,
     Mapping,
     Optional,

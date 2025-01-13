@@ -1,6 +1,5 @@
 from types import MappingProxyType
-
-from typing_extensions import Optional, Type
+from typing import Optional, Type
 
 from qgis.core import (
     QgsProcessingAlgorithm,

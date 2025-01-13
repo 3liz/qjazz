@@ -1,12 +1,13 @@
 
 import datetime
 
-from pydantic import JsonValue
-from typing_extensions import (
+from typing import (
     Dict,
     Optional,
     Type,
 )
+
+from pydantic import JsonValue
 
 from qgis.core import (
     Qgis,

@@ -7,12 +7,12 @@
 import traceback
 
 from pathlib import Path
-
-from pydantic import ValidationError
-from typing_extensions import (
+from typing import (
     Optional,
     Sequence,
 )
+
+from pydantic import ValidationError
 
 from qgis.core import (
     QgsProcessingAlgorithm,

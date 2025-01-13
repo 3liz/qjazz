@@ -1,10 +1,10 @@
 import os
 
 from pathlib import Path
+from typing import List, cast
 
 from aiohttp import web
 from pydantic import TypeAdapter, ValidationError
-from typing_extensions import List, cast
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.utils import to_rfc822

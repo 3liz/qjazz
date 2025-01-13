@@ -3,10 +3,11 @@
 #
 
 
-from celery.signals import worker_process_init
-from typing_extensions import (
+from typing import (
     Optional,
 )
+
+from celery.signals import worker_process_init
 
 from qjazz_contrib.core.celery import Job, JobContext
 

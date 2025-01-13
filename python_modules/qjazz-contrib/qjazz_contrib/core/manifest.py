@@ -4,9 +4,9 @@ import traceback
 
 from functools import cache
 from pathlib import Path
+from typing import Optional, cast
 
 from pydantic import BaseModel
-from typing_extensions import Optional, cast
 
 
 class Manifest(BaseModel):

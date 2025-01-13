@@ -1,9 +1,6 @@
 
 from pathlib import Path
-from urllib.parse import urlsplit
-
-from pydantic import BaseModel, Extra, Field, JsonValue
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -16,6 +13,9 @@ from typing_extensions import (
     Tuple,
     TypeAlias,
 )
+from urllib.parse import urlsplit
+
+from pydantic import BaseModel, Extra, Field, JsonValue
 
 from qgis.core import (
     Qgis,

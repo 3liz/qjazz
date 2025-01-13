@@ -1,7 +1,6 @@
 
 from pathlib import Path
-
-from typing_extensions import Callable
+from typing import Callable
 
 
 class WatchFile:

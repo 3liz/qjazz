@@ -17,7 +17,7 @@
 """
 import traceback
 
-from typing_extensions import List
+from typing import List
 
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext

@@ -6,9 +6,7 @@ import traceback
 
 from pathlib import Path
 from types import ModuleType
-
-from pydantic import BaseModel
-from typing_extensions import (
+from typing import (
     Any,
     Dict,
     List,
@@ -17,6 +15,8 @@ from typing_extensions import (
     Sequence,
     Set,
 )
+
+from pydantic import BaseModel
 
 if sys.version_info < (3, 11):
     import tomli as toml  # type: ignore

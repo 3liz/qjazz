@@ -1,7 +1,6 @@
 
 
-from pydantic import Field, JsonValue, TypeAdapter
-from typing_extensions import (
+from typing import (
     Annotated,
     Any,
     Dict,
@@ -12,6 +11,8 @@ from typing_extensions import (
     TypeAlias,
     TypeVar,
 )
+
+from pydantic import Field, JsonValue, TypeAdapter
 
 from qgis.core import (
     QgsProcessingParameterDefinition,

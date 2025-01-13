@@ -3,6 +3,7 @@
 import ipaddress
 
 from pathlib import PurePosixPath
+from typing import Annotated, List, Optional, Tuple
 
 from pydantic import (
     AfterValidator,
@@ -12,7 +13,6 @@ from pydantic import (
     StringConstraints,
     WithJsonSchema,
 )
-from typing_extensions import Annotated, List, Optional, Tuple
 
 from qjazz_contrib.core.config import ConfigBase, SSLConfig
 

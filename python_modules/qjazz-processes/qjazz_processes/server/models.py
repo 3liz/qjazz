@@ -1,14 +1,15 @@
 
-from aiohttp import web
-from pydantic import (
-    JsonValue,
-)
-from typing_extensions import (
+from typing import (
     Awaitable,
     Callable,
     NoReturn,
     Optional,
     Type,
+)
+
+from aiohttp import web
+from pydantic import (
+    JsonValue,
 )
 
 from .swagger import JsonModel, model

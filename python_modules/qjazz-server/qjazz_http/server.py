@@ -7,16 +7,16 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import PurePosixPath
-
-from aiohttp import web
-from aiohttp.abc import AbstractAccessLogger
-from typing_extensions import (
+from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
     Optional,
     TypeAlias,
 )
+
+from aiohttp import web
+from aiohttp.abc import AbstractAccessLogger
 
 from qjazz_contrib.core import logger
 

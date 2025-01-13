@@ -7,13 +7,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 from types import MappingProxyType
+from typing import (
+    Optional,
+)
 
 from pydantic import (
     AnyUrl,
     HttpUrl,
-)
-from typing_extensions import (
-    Optional,
 )
 
 OGC_OPENGIS_URL = AnyUrl("https://www.opengis.net")

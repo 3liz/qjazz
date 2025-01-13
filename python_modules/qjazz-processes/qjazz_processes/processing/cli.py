@@ -6,6 +6,13 @@ import sys
 from pathlib import Path
 from string import Template
 from types import SimpleNamespace
+from typing import (
+    Any,
+    NoReturn,
+    Optional,
+    Protocol,
+    cast,
+)
 
 import click
 
@@ -14,13 +21,6 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
     ValidationError,
-)
-from typing_extensions import (
-    Any,
-    NoReturn,
-    Optional,
-    Protocol,
-    cast,
 )
 
 from qgis.core import (

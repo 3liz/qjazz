@@ -1,3 +1,5 @@
+from typing import Literal, Optional
+
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -5,7 +7,6 @@ from pydantic import (
     JsonValue,
     alias_generators,
 )
-from typing_extensions import Literal, Optional
 
 model_json_properties = dict(
     alias_generator=alias_generators.to_camel,

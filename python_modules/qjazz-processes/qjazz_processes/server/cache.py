@@ -2,15 +2,15 @@ import asyncio
 import traceback
 
 from dataclasses import dataclass
-
-from aiohttp import web
-from typing_extensions import (
+from typing import (
     AsyncGenerator,
     Callable,
     Protocol,
     Sequence,
     Set,
 )
+
+from aiohttp import web
 
 from qjazz_contrib.core import logger
 

@@ -1,3 +1,11 @@
+from typing import (
+    ClassVar,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+)
+
 import celery
 import celery.states
 
@@ -6,13 +14,6 @@ from pydantic import (
     Field,
     FilePath,
     NonNegativeInt,
-)
-from typing_extensions import (
-    ClassVar,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
 )
 
 from qjazz_contrib.core.config import (

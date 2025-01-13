@@ -21,8 +21,7 @@ import sys
 
 from dataclasses import dataclass
 from importlib import metadata
-
-from typing_extensions import Any, Callable, Dict, Generic, TypeVar
+from typing import Any, Callable, Dict, Generic, TypeVar
 
 
 class ComponentManagerError(Exception):
