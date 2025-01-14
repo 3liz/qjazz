@@ -13,6 +13,6 @@ TESTDIR=tests
 
 include $(topsrcdir)/config/rules.mk
 
-build::
+configure::
 	# Create manifest
 	@echo "{\"commit_id\": \"$(shell git rev-parse HEAD)\" }" > $(PYTHON_PKG)/core/manifest.json

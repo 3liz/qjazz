@@ -33,7 +33,7 @@ BUILD_TARGET:=base
 #BUILD_CACHE:=--force-rm --no-cache
 
 build: manifest requirements
-	$(MAKE) -C .. build
+	$(MAKE) -C .. configure
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
@@ -58,7 +58,7 @@ manifest:
 # Merge requirement files
 requirements: $(REQUIREMENTS)
 	@echo "Merging requirements files"
-	@cat $$(ls -1 ../python_modules/*/$<) | sort | uniq > ./$<
+	@cat $$(ls -1 ../python_modules/*/$<) ../qjazz-process/$< ../qjazz-server/python/$< | sort | uniq > ./$<
 
 
 deliver: tag push

@@ -19,7 +19,9 @@ RUN apt-get update -y \
         less \
         ${NULL}
 
-COPY python_modules docker/requirements.txt /python_modules
+COPY python_modules docker/requirements.txt /python_modules/
+COPY qjazz-processes /python_modules/qjazz-processes
+COPY qjazz-server/python /python_modules/qjazz-server/
 
 # Create virtualenv for installing modules
 RUN mkdir -p /opt/local/ \
@@ -30,9 +32,8 @@ RUN mkdir -p /opt/local/ \
     && /opt/local/qjazz/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/qjazz-contrib \
         -e /python_modules/qjazz-cache \
-        -e /python_modules/qjazz-server \
         -e /python_modules/qjazz-processes \
-        -e /python_modules/qjazz-scripts \
+        -e /python_modules/qjazz-server \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-http \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
@@ -56,7 +57,7 @@ COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
 
 # Install binaries
-COPY target/release/qjazz-rpc /usr/local/bin/qjazz-rpc-bin
+COPY qjazz-server/target/release/qjazz-rpc /usr/local/bin/qjazz-rpc-bin
 
 # Set path to the python executable
 ENV PYTHON_EXEC=/opt/local/qjazz/bin/python

@@ -4,9 +4,11 @@ DEPTH=..
 include $(DEPTH)/config/config.mk
 
 DIRS= \
-	qjazz-contrib \
-	qjazz-cache \
+	python \
 	$(NULL)
+
+build-release:
+	cargo build --release
 
 include $(topsrcdir)/config/rules.mk
 

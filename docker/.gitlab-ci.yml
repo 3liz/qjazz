@@ -6,12 +6,12 @@ build-binaries:
   image: ${REGISTRY_URL}/factory-ci-runner:rust-noble
   stage: build
   script:
-    - make build-release
+    - make -C qjazz-server build-release
   environment:
     name: snap
   artifacts:
     paths:
-    - "target/release/qjazz-rpc"
+    - "qjazz-server/target/release/qjazz-rpc"
   only:
     refs:
     - tags

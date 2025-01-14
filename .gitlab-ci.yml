@@ -35,7 +35,7 @@ doc:
     - source ~/.bashrc
     - make -C doc
     - deploy-doc doc/build/html/ doc/doc.manifest
-    - make -C python_modules/qjazz-processes/doc html deploy-ci
+    - make -C qjazz-processes/doc html deploy-ci
   tags:
     - factory-plain
   only:
