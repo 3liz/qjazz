@@ -183,13 +183,16 @@ class DefaultRouter(RouterBase):
                 project = request.path
                 if route != '/':
                     project = project.removeprefix(route)
+            elif route != request.path:
+                # Do not allow arbitrary path
+                raise web.HTTPNotFound()
 
             logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)
         else:
             # Get api path
             # expecting {route}/{api}/{api_path}
-            head = request.path.removeprefix(route)
+            head = request.path.removeprefix(route).removeprefix('/')
 
             api, _, api_path = head.partition('/')
             if api_path:

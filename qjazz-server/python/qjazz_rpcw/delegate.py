@@ -30,7 +30,6 @@ API_ALIASES = {
     'WFS3': 'OGC WFS3 (Draft)',
 }
 
-
 class ApiDelegate(QgsServerApi):
 
     __instances: List[QgsServerApi] = []  #  noqa RUF012
@@ -65,7 +64,8 @@ class ApiDelegate(QgsServerApi):
 
     def executeRequest(self, context):
         request = context.request()
-        api = request.header("x-qgis-api")
+        # Take care that QGIS is header case sensitive
+        api = request.header("X-Qgis-Api")
         api = API_ALIASES.get(api.upper(), api)
         logger.debug("Executing delegated api for %s (root: %s)", api, self._rootpath)
         if api:
@@ -73,7 +73,7 @@ class ApiDelegate(QgsServerApi):
         if not api:
             response = context.response()
             response.clear()
-            response.setStatusCode(404)
+            response.setStatusCode(403)
         else:
             # Substitute path
             url = request.url()

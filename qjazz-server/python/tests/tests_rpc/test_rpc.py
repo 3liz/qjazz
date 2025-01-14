@@ -222,3 +222,35 @@ async def test_rpc_api_request(worker: Worker):
         assert len(chunk) > 0
 
     print(f"> chunks: {count}")
+
+
+async def test_rpc_api_delegate_request(worker: Worker):
+    """ Test worker process
+    """
+    # Test ping message
+    status, _ = await worker.io.send_message(messages.PingMsg())
+    assert status == 200
+
+    # Test Qgis server API request with valid project
+    status, resp = await worker.io.send_message(
+        messages.ApiRequestMsg(
+            name="WFS3",
+            path="",
+            target="/france/france_parts",
+            url="http://localhost:8080/features",
+            delegate=True,
+            method=messages.HTTPMethod.GET,
+        ),
+    )
+    assert status == 200
+
+    assert resp.status_code == 200
+    print(f"> {resp.headers}")
+
+    # Stream remaining bytes
+    count = 0
+    async for chunk in worker.io.stream_bytes():
+        count += 1
+        assert len(chunk) > 0
+
+    print(f"> chunks: {count}")

@@ -3,6 +3,7 @@ services:
     image: 3liz/qjazz:qgis-ltr-eager
     environment:
       CONF_DISPLAY_XVFB: ON
+      QGIS_SERVER_LIZMAP_REVEAL_SETTINGS: yes
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
     - { type: bind, source: "./config.toml", target: /home/qgis/config.toml } 
@@ -17,7 +18,9 @@ services:
       # publish the wfs3 api endpoint 
       CONF_BACKENDS__BASIC__API: >- 
           [
-            {"endpoint": "wfs3", "name": "Features OGC Api (WFS3)"}
+            {"endpoint": "wfs3", "name": "Features OGC Api (WFS3)"},
+            {"endpoint": "features", "delegate_to": "wfs3", "name": "Features OGC Api"},
+            {"endpoint": "lizmap", "name": "Lizmap server API"}
           ]
     ports:
     - 127.0.0.1:9080:9080

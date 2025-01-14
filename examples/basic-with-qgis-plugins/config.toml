@@ -11,8 +11,6 @@ name = "worker"
 # Plugins allowed to install from plugin paths
 install = [
     "Lizmap server",
-    "atlasprint",
-    "wfsOutputExtension",
 ]
 # Auto install plugins from embedded plugin manager
 install_mode = "auto"

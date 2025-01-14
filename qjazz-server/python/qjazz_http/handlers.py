@@ -211,20 +211,24 @@ async def ows_handler(
             # so we trigger the grcp error.
             # Otherwise this will send an invalid chunked response
             streamit = aiter(stream)
-            chunk = await anext(streamit)
-            await response.prepare(request)
+            try:
+                chunk = await anext(streamit)
+            except StopAsyncIteration:
+                # Nodata
+                stream.cancel()
+                return web.Response(status=status, headers=headers)
 
             try:
+                await response.prepare(request)
                 await response.write(chunk.chunk)
                 async for chunk in streamit:
                     await response.write(chunk.chunk)
+                await response.write_eof()
+                return response
             except OSError as err:
                 stream.cancel()
                 logger.error("Connection cancelled: %s", err)
                 raise
-
-            await response.write_eof()
-            return response
 
     except web.HTTPException as exc:
         status = exc.status
@@ -311,29 +315,33 @@ async def api_handler(
             )
 
             status, headers = get_response_headers(await stream.initial_metadata())
-            response = web.StreamResponse(status=status, headers=headers)
 
             if request.method == 'HEAD':
                 stream.cancel()
-                await response.write_eof()
-                return response
+                return web.Response(status=status, headers=headers)
 
             # See above
             streamit = aiter(stream)
-            chunk = await anext(streamit)
-            await response.prepare(request)
+            try:
+                chunk = await anext(streamit)
+            except StopAsyncIteration:
+                # Nodata
+                stream.cancel()
+                return web.Response(status=status, headers=headers)
 
             try:
+                response = web.StreamResponse(status=status, headers=headers)
+                await response.prepare(request)
                 await response.write(chunk.chunk)
                 async for chunk in streamit:
                     await response.write(chunk.chunk)
+                await response.write_eof()
+                return response
             except OSError as err:
                 stream.cancel()
                 logger.error("Connection cancelled: %s", err)
                 raise
 
-            await response.write_eof()
-            return response
     except web.HTTPException as exc:
         status = exc.status
         raise

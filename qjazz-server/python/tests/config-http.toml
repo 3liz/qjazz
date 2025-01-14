@@ -36,7 +36,7 @@ getfeature_limit = 1000
 [[backends.test.api]]
 endpoint = "features"
 delegate_to = "wfs3"
-name = "Features OGC Api (WFS3)"
+name = "Features OGC Api"
 
 # Without delegation
 [[backends.test.api]]
