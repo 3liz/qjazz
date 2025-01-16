@@ -60,13 +60,18 @@ class RouterBase(Protocol):
         """
         ...
 
-    async def arguments(self, request: web.Request) -> Mapping[str, str]:
+    async def arguments(self, request: web.Request) -> Mapping:
         args: Mapping
         if request.method == 'GET':
             args = request.query
-        elif request.content_type.startswith('application/x-www-form-urlencoded') or \
-            request.content_type.startswith('multipart/form-data'):
+        elif request.method == 'POST' and \
+        ( \
+            request.content_type.startswith('application/x-www-form-urlencoded') or \
+            request.content_type.startswith('multipart/form-data') \
+        ):
             args = await request.post()
+        else:
+            args = request.query
         return args
 
 

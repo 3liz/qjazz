@@ -255,11 +255,15 @@ async def get_ows_arguments(request: web.Request) -> Dict[str, str]:
     args: Mapping
     if request.method == 'GET':
         args = request.query
-    elif request.content_type.startswith('application/x-www-form-urlencoded') or \
-         request.content_type.startswith('multipart/form-data'):
+    elif request.method == 'POST' and (\
+        request.content_type.startswith('application/x-www-form-urlencoded') or \
+        request.content_type.startswith('multipart/form-data') \
+    ):
         args = await request.post()
+    else:
+        args = request.query
 
-    return {k.upper(): _decode(k, v) for k, v in args.items()}
+    return {k.upper(): _decode(k, v) for k, v in args.items() if isinstance(v, str)}
 
 #
 # API
