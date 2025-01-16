@@ -149,9 +149,9 @@ impl RendezVous {
                     Ok(0) => {
                         eof += 1;
                         if eof > MAX_EOF_RETURN {
-                            log::error!("Too many EOF detected, client was probably closed");
                             // Set the BUSY state
                             state.store(true, atomic::Ordering::Relaxed);
+                            log::error!("Too many EOF detected, client was probably closed");
                             return Err(Error::RendezVousDisconnected);
                         }
                         guard.clear_ready();

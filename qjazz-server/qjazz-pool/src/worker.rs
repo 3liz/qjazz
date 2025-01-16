@@ -218,19 +218,17 @@ impl Worker {
     /// has been received; if the worker reach ready state
     pub async fn cancel_timeout(&mut self, done_hint: bool) -> Result<()> {
         // Wait for readiness
-        if timeout(self.ready_timeout, self.wait_ready())
-            .await
-            .is_err()
-        {
-            // Try to cancel gracefully
-            match timeout(self.cancel_timeout, self.cancel()).await {
-                Err(_) => Err(Error::WorkerStalled), // Timeout occured, task is stalled
-                Ok(rv) => rv,                        // cancel() finished
+        if let Ok(rv) = timeout(self.ready_timeout, self.wait_ready()).await {
+            if rv.is_ok() && !done_hint {
+                self.drain_until_task_done().await
+            } else {
+                rv
             }
-        } else if !done_hint {
-            self.drain_until_task_done().await
         } else {
-            Ok(())
+            match timeout(self.cancel_timeout, self.cancel()).await {
+                Err(_) => Err(Error::WorkerStalled),
+                Ok(rv) => rv,
+            }
         }
     }
 

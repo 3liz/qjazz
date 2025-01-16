@@ -75,7 +75,7 @@ impl Default for Server {
             timeout: 20,
             shutdown_grace_period: 10,
             enable_admin_services: true,
-            max_failure_pressure: 0.5,
+            max_failure_pressure: 0.9,
         }
     }
 }

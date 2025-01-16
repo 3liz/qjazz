@@ -273,6 +273,8 @@ def qgis_server_run(
                 logger.warning("Worker interrupted")
                 break
         except Exception as exc:
+            # Ensure busy state as error may have occured in recv()
+            rendez_vous.busy()
             _m.send_reply(conn, str(exc), 500)
             if msg:
                 # Recoverable error

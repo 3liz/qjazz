@@ -54,9 +54,8 @@ impl WorkerQueue {
     }
 
     async fn terminate(&self, mut w: Worker) -> Result<()> {
-        w.terminate().await.inspect(|_| {
-            self.dead_workers.fetch_add(1, Ordering::Relaxed);
-        })
+        self.dead_workers.fetch_add(1, Ordering::Relaxed);
+        w.terminate().await
     }
 
     //
@@ -121,6 +120,7 @@ pub struct Pool {
     queue: Arc<WorkerQueue>,
     builder: Builder,
     num_processes: usize,
+    error_msg: Option<String>,
 }
 
 impl Pool {
@@ -137,7 +137,16 @@ impl Pool {
             }),
             builder,
             num_processes: 0,
+            error_msg: None,
         }
+    }
+
+    pub fn set_error_msg(&mut self, msg: String) {
+        self.error_msg = Some(msg);
+    }
+
+    pub fn take_error_msg(&mut self) -> Option<String> {
+        self.error_msg.take()
     }
 
     pub(crate) fn options(&self) -> &WorkerOptions {
@@ -156,7 +165,6 @@ impl Pool {
 
     pub(crate) fn clone_queue(&self) -> Arc<WorkerQueue> {
         self.queue.clone()
-
     }
 
     /// Returns the number of dead workers
@@ -192,10 +200,8 @@ impl Pool {
     /// from queue
     fn cleanup_dead_workers(&self) {
         let dead_workers = self.queue.q.retain(|w| w.is_alive());
-        if log::log_enabled!(log::Level::Debug) {
-            if dead_workers > 0  {
-                log::debug!("Removed {} dead workers", dead_workers);
-            }
+        if log::log_enabled!(log::Level::Debug) && dead_workers > 0 {
+            log::debug!("Removed {} dead workers", dead_workers);
         }
         self.queue
             .dead_workers

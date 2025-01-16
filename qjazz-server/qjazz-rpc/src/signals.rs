@@ -28,7 +28,7 @@ pub(crate) fn handle_signals(
         log::debug!("Installing signal handler");
 
         let rescaling = Arc::new(AtomicBool::new(false));
-        let throttle_duration = time::Duration::from_millis(200);
+        let throttle_duration = time::Duration::from_secs(2);
 
         for signal in signals.forever() {
             match signal {
@@ -47,21 +47,23 @@ pub(crate) fn handle_signals(
                     log::debug!("SIGCHLD detected");
                     if !rescaling.load(Ordering::Relaxed) {
                         rescaling.store(true, Ordering::Relaxed);
-                        let mut throttle = time::interval(throttle_duration);
                         let pool = pool.clone();
                         let token = token.clone();
                         let state = rescaling.clone();
                         tokio::spawn(async move {
-                            throttle.tick().await;
+                            time::sleep(throttle_duration).await;
                             // Release barrier
                             state.store(false, Ordering::Relaxed);
-                            if let Err(err) = pool.write().await.maintain_pool().await {
-                                log::error!("Pool scaling failed: {:?}, terminating server", err);
-                                token.cancel();
-                            }
                             // Check failure pressure
-                            if pool.read().await.failure_pressure() > max_failure_pressure {
+                            let failure_pressure = pool.read().await.failure_pressure();
+                            log::trace!("Failure pressure exceeded: {}", failure_pressure);
+                            if failure_pressure > max_failure_pressure {
                                 log::error!("Max failure pressure exceeded, terminating server");
+                                pool.write().await.set_error_msg("Too many worker failures".into());
+                                token.cancel();
+                            } else if let Err(err) = pool.write().await.maintain_pool().await {
+                                log::error!("Pool scaling failed: {:?}, terminating server", err);
+                                pool.write().await.set_error_msg("Unexpected error".into());
                                 token.cancel();
                             }
                         });
