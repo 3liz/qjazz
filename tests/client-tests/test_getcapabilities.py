@@ -10,11 +10,14 @@ ns = { "wms": "http://www.opengis.net/wms" }
 
 xlink = "{http://www.w3.org/1999/xlink}"
 
-def test_wms_getcapabilities_hrefs( host ):
+def test_wms_getcapabilities_hrefs(host):
     """ Test getcapabilities hrefs
     """
-    urlref = urlparse( f"http://{host}/test/?MAP=/france/france_parts.qgs&SERVICE=WMS&request=GetCapabilities" )
-    rv = requests.get( urlref.geturl() )
+    urlref = urlparse(
+        f"http://{host}/test/"
+        f"?MAP=/france/france_parts.qgs&SERVICE=WMS&request=GetCapabilities",
+    )
+    rv = requests.get(urlref.geturl())
     assert rv.status_code == 200
     assert rv.headers['Content-Type'] == 'text/xml; charset=utf-8'
 
@@ -31,9 +34,29 @@ def test_wms_getcapabilities_hrefs( host ):
     assert href.path     == urlref.path
 
 
-def test_lower_case_query_params( host ):
+def test_lower_case_query_params(host):
     """ Test that we support lower case query param
     """
     urlref = f"http://{host}/test/?map=france/france_parts.qgs&SERVICE=WMS&request=GetCapabilities"
-    rv = requests.get( urlref )
-    assert rv.status_code == 200    
+    rv = requests.get(urlref)
+    assert rv.status_code == 200   
+
+
+def test_wfs_getcaps_xml(host):
+    urlref = f"http://{host}/test/?map=france/france_parts.qgs&SERVICE=WFS"
+    rv = requests.post(
+        urlref,
+        data=b"""<?xml version="1.0" encoding="UTF-8"?>
+            <wfs:GetCapabilities
+                service="WFS"
+                version="1.0.0"
+                xmlns:wfs="http://www.opengis.net/wfs"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://www.opengis.net/wfs/1.0.0 http://schemas.opengis.net/wfs/1.0.0/wfs.xsd">
+            </wfs:GetCapabilities>
+        """,
+        headers={ 'Content-Type':'text/xml; charset=utf-8' },
+    )
+    print("\ntest_getcaps_wfs_xml::status::", rv.status_code)
+    print("\ntest_getcaps_wfs_xml::\n", rv.text)
+    assert rv.status_code == 200   

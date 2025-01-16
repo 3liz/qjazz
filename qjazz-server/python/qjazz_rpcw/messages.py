@@ -97,6 +97,9 @@ class OwsRequestMsg(MsgModel):
     header_prefix: Optional[str] = None
     debug_report: bool = False
     content_type: Optional[str] = None
+    method: Optional[HTTPMethod] = None
+    body: Optional[bytes] = None
+
 
 class ApiRequestMsg(MsgModel):
     msg_id: Literal[MsgType.APIREQUEST] = MsgType.APIREQUEST

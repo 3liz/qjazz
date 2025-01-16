@@ -64,6 +64,8 @@ async fn test_messages_io() {
             debug_report: false,
             header_prefix: Some("x-test-"),
             content_type: Some("application/test"),
+            method: None,
+            body: None,
         })
         .await
         .unwrap();

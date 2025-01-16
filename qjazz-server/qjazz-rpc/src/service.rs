@@ -171,6 +171,12 @@ impl QgisServer for QgisServerServicer {
                 debug_report: false,
                 headers,
                 content_type: req.content_type.as_deref(),
+                method: req
+                    .method
+                    .as_deref()
+                    .map(|me| me.try_into().map_err(Status::invalid_argument))
+                    .transpose()?,
+                body: req.body.as_deref(),
             })
             .await
             .map_err(Self::error)?;

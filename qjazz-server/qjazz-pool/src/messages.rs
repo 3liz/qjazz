@@ -166,6 +166,9 @@ pub struct OwsRequestMsg<'a> {
     pub header_prefix: Option<&'a str>,
     pub debug_report: bool,
     pub content_type: Option<&'a str>,
+    pub method: Option<HTTPMethod>,
+    #[serde(with = "serde_bytes")]
+    pub body: Option<&'a [u8]>,
 }
 
 /// API request message

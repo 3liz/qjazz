@@ -83,6 +83,8 @@ message OwsRequest {
     optional string options = 7;
     optional string request_id = 8;
     optional string content_type = 9;
+    optional string method = 10;
+    optional bytes body = 11;
 }
 
 message ApiRequest {

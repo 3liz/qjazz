@@ -188,9 +188,10 @@ class DefaultRouter(RouterBase):
                 project = request.path
                 if route != '/':
                     project = project.removeprefix(route)
-            elif route != request.path:
+            elif route != request.path and route != request.path.removesuffix('/'):
                 # Do not allow arbitrary path
-                raise web.HTTPNotFound()
+                logger.error("Route '%s'  does not match request path %s", route, request.path)
+                raise web.HTTPForbidden()
 
             logger.trace("DefaultRouter::router %s OWS request detected", request.url)
             return Route(route=route, project=project)

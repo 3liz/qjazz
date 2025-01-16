@@ -67,6 +67,20 @@ impl<T> Queue<T> {
         self.notify.notify_one();
     }
 
+    /// Retain only the elements specified by the predicate
+    ///
+    /// Returns the mumber of elements removed
+    pub fn retain<F>(&self, f: F) -> usize
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        let mut q = self.queue.lock();
+        let initial = q.len();
+        q.retain_mut(f);
+        self.count.store(q.len(), Ordering::Relaxed);
+        initial - q.len()
+    }
+
     /// Send a list object to the queue
     pub fn send_all<I>(&self, iter: I)
     where

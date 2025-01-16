@@ -273,12 +273,14 @@ def qgis_server_run(
                 logger.warning("Worker interrupted")
                 break
         except Exception as exc:
+            _m.send_reply(conn, str(exc), 500)
             if msg:
+                # Recoverable error
                 logger.critical(traceback.format_exc())
-                _m.send_reply(conn, str(exc), 500)
             else:
                 # No message has been set !
                 # Exception occured outside message handling
+                logger.critical("Unrecoverable error")
                 raise
         finally:
             if msg and not conn.cancelled:

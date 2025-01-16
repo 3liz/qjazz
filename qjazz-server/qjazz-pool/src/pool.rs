@@ -156,6 +156,7 @@ impl Pool {
 
     pub(crate) fn clone_queue(&self) -> Arc<WorkerQueue> {
         self.queue.clone()
+
     }
 
     /// Returns the number of dead workers
@@ -187,8 +188,24 @@ impl Pool {
         (busy, idle, dead)
     }
 
+    /// Clean dead workers by removing them
+    /// from queue
+    fn cleanup_dead_workers(&self) {
+        let dead_workers = self.queue.q.retain(|w| w.is_alive());
+        if log::log_enabled!(log::Level::Debug) {
+            if dead_workers > 0  {
+                log::debug!("Removed {} dead workers", dead_workers);
+            }
+        }
+        self.queue
+            .dead_workers
+            .fetch_add(dead_workers, Ordering::Relaxed);
+    }
+
     /// Maintain the pool at nominal number of live workers
     pub async fn maintain_pool(&mut self) -> Result<()> {
+        log::trace!("Maintain pool called");
+        self.cleanup_dead_workers();
         let nominal = self.builder.options().num_processes();
         let dead_workers = self.dead_workers();
         let current = self.num_processes - dead_workers;

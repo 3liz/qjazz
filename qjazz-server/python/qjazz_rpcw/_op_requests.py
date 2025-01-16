@@ -54,6 +54,15 @@ def handle_ows_request(
         _m.send_reply(conn, "No report available", 409)
         return
 
+    if msg.method:
+        try:
+            method = _to_qgis_method(msg.method)
+        except ValueError:
+            _m.send_reply(conn, "HTTP Method not supported", 405)
+            return
+    else:
+        method = QgsServerRequest.GetMethod
+
     # Rebuild URL for Qgis server
     url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
     if msg.version:
@@ -65,8 +74,8 @@ def handle_ows_request(
         url,
         msg.target,
         msg.direct,
-        None,  # data
-        QgsServerRequest.GetMethod,
+        msg.body,
+        method,
         msg.headers,
         conn,
         server,

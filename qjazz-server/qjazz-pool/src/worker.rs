@@ -245,6 +245,11 @@ impl Worker {
     pub fn uptime(&self) -> Duration {
         self.uptime.elapsed()
     }
+
+    /// Return true if the worker is alive
+    pub fn is_alive(&mut self) -> bool {
+        self.process.is_alive().unwrap_or(false)
+    }
 }
 
 //
