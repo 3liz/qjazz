@@ -188,10 +188,10 @@ async def unhandled_exceptions(request, handler):
     try:
         return await handler(request)
     except web.HTTPException as e:
-        logger.debug("Exception: %s: %s", e, e.headers)
+        logger.debug("Exception: %s: status=%s :%s", e, e.status, e.headers)
         if not e.content_type.startswith('application/json'):
             e.content_type = "application/json"
-            e.text = ErrorResponse(message=e.reason).model_dump_json()
+            e.text = ErrorResponse(message=e.reason, details=e.text).model_dump_json()
         raise
     except Exception:
         logger.critical(f"Error handling request:\n{traceback.format_exc()}")

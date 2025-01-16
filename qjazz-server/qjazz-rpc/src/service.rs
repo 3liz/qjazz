@@ -57,7 +57,7 @@ trait Qjazz {
                     403 => Status::permission_denied(msg.to_string()),
                     500 => Status::internal(msg.to_string()),
                     401 => Status::unauthenticated(msg.to_string()),
-                    _ => Status::unknown(format!("Response error {}: {}", status, msg)),
+                    _ => Status::unknown(msg.to_string()),
                 };
                 rv.metadata_mut()
                     .insert("x-reply-status-code", status.into());

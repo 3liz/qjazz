@@ -12,7 +12,6 @@ num_processes = 1
 
 [worker.qgis]
 
-
 [worker.qgis.plugins]
 paths = ['$location/plugins']
 

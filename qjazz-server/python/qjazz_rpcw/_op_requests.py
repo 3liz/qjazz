@@ -16,6 +16,7 @@ from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.utils import to_rfc822
 
 from . import messages as _m
+from ._op_cache import evict_project_from_cache
 from .config import QgisConfig
 from .delegate import ROOT_DELEGATE
 from .requests import Request, Response, _to_qgis_method
@@ -228,7 +229,7 @@ def request_project_from_cache(
     """ Handle project retrieval from cache
     """
     try:
-        entry: Optional[CacheEntry]
+        entry: Optional[CacheEntry] = None
         url = cm.resolve_path(target, allow_direct)
         md, co_status = cm.checkout(url)
         match co_status:
@@ -250,7 +251,7 @@ def request_project_from_cache(
                 entry = cast(CacheEntry, md)
             case Co.NEW:
                 if config.load_project_on_request:
-                    if config.max_projects <= len(cm):
+                    if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
                         logger.error(
                             "Cannot add NEW project '%s': Maximum projects reached",
                             target,
@@ -269,7 +270,6 @@ def request_project_from_cache(
                 logger.warning("Requested removed project: %s", entry.md.uri)  # type: ignore
                 _m.send_reply(conn, target, 410)
             case Co.NOTFOUND:
-                entry = None
                 logger.error("Requested project not found: %s", urlunsplit(url))
                 _m.send_reply(conn, target, 404)
             case _ as unreachable:

@@ -4,7 +4,8 @@ from pydantic import (
     AnyHttpUrl,
     BaseModel,
     Field,
-    JsonValue,
+    Json,
+    JsonValue,  # noqa F401
     alias_generators,
 )
 
@@ -22,7 +23,7 @@ class JsonModel(BaseModel, **model_json_properties):
 
 class ErrorResponse(JsonModel):
     message: str
-    details: Optional[JsonValue] = None
+    details: Optional[Json] = None
 
     # Conveys an identifier for the link's context.
 # See https://www.iana.org/assignments/link-relations/link-relations.xhtml

@@ -241,7 +241,7 @@ class Channel:
                     # Let the caller handle it in case
                     # the real error code was in initial metadata
                     if unknown_error_callback:
-                        unknown_error_callback(rpcerr.initial_metadata())
+                        unknown_error_callback(rpcerr.trailing_metadata(), rpcerr.details())
                     else:
                         raise
                 case _:

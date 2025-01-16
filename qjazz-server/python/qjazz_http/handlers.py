@@ -64,21 +64,22 @@ def get_metadata(request: web.Request, channel: Channel) -> Sequence[Tuple[str, 
     )
 
 
-def on_unknown_rpc_error(metadata: Sequence[Tuple[str, str]]):
+def on_unknown_rpc_error(metadata: Sequence[Tuple[str, str]], details: str):
     """ Handle rpc error which is out
         of gRPC namespace.
         Usually occurs when a non-Qgis error
         is raised before reaching qgis server.
         In this case return the error code found in
-        the initial metadata.
+        the trailing metadata.
     """
-    status, headers = get_response_headers(metadata)
+    code, headers = get_response_headers(metadata)
 
-    class _HTTPException(web.HTTPException):
-        status_code = status
+    class _HTTPError(web.HTTPError):
+        status_code = code
 
-    raise _HTTPException(
-        reason="Service backend exception",
+    raise _HTTPError(
+        reason="Backend error",
+        text=details,
         headers=headers,
     )
 
