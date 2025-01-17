@@ -149,7 +149,7 @@ async def set_server_headers(request: web.Request, response: web.StreamResponse)
 
     request_id = request.get('request_id')
     if request_id:
-        response.headers['X-Request-ID'] = request_id
+        response.headers['X-Request-Id'] = request_id
 
 
 #
@@ -158,7 +158,7 @@ async def set_server_headers(request: web.Request, response: web.StreamResponse)
 
 @web.middleware
 async def log_incoming_request(request, handler):
-    request_id = request.headers.get('X-Request-ID', "")
+    request_id = request.headers.get('X-Request-Id', "")
     if request_id:
         request['request_id'] = request_id
 
@@ -171,7 +171,7 @@ async def log_incoming_request(request, handler):
             url=request.rel_url,
             referer=referer,
             agent=agent,
-            request_id=request.get('request_id', ""),
+            request_id=request_id,
         )
 
         logger.log_rreq(fmt)

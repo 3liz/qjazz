@@ -1,4 +1,5 @@
 
+from string import capwords
 from time import time
 from typing import (
     Awaitable,
@@ -53,7 +54,7 @@ def get_response_headers(metadata: Sequence[Tuple[str, str]]) -> Tuple[int, Mapp
             case "x-reply-status-code":
                 status_code = int(v)
             case n if n.startswith("x-reply-header-"):
-                headers[n.removeprefix("x-reply-header-")] = v
+                headers[capwords(n.removeprefix("x-reply-header-"), sep='-')] = v
 
     return status_code, headers
 
