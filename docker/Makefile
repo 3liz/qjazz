@@ -58,7 +58,7 @@ manifest:
 # Merge requirement files
 requirements: $(REQUIREMENTS)
 	@echo "Merging requirements files"
-	@cat $$(ls -1 ../python_modules/*/$<) ../qjazz-process/$< ../qjazz-server/python/$< | sort | uniq > ./$<
+	@cat ../qjazz-contrib/$< ../qjazz-process/$< ../qjazz-server/python/$< | sort | uniq > ./$<
 
 
 deliver: tag push

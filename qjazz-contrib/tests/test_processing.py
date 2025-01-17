@@ -1,5 +1,3 @@
-import pytest
-
 from qjazz_contrib.core.qgis import (
     PluginType,
     QgisPluginConfig,
@@ -7,7 +5,6 @@ from qjazz_contrib.core.qgis import (
 )
 
 
-@pytest.mark.qgis
 def test_processing_plugin(plugindir):
     """ Test load processing plugins
     """

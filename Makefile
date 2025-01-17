@@ -4,7 +4,7 @@ DEPTH=.
 include $(DEPTH)/config/config.mk
 
 DIRS= \
-	python_modules \
+	qjazz-contrib \
 	qjazz-server \
 	qjazz-processes \
 	$(NULL)

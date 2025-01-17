@@ -16,7 +16,7 @@ dependencies = [
   'pydantic-settings',
   'typing-extensions',
 ]
-version = "${PIN_VERSION}"
+version = "0.1.0.dev0"
 
 [project.optional-dependencies]
 celery = [ "celery>=5.4", "redis>=5.0.8" ]
@@ -33,6 +33,8 @@ exclude = [ "tests/*" ]
 include = [
     "qjazz_contrib", 
     "qjazz_contrib.*",
+    "qjazz_cache",
+    "qjazz_cache.*",
 ]
 
 #
@@ -40,7 +42,7 @@ include = [
 #
 
 [tool.ruff]
-extend = "../../config/ruff.toml"
+extend = "../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]

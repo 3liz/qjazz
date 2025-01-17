@@ -12,7 +12,6 @@ classifiers = [
 ]
 dependencies = [
     "qjazz-contrib==${PIN_VERSION}",
-    "qjazz-cache==${PIN_VERSION}",
     "aiohttp",
     "grpcio",
     "grpcio-tools",

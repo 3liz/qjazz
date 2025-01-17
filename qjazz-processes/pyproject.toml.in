@@ -12,7 +12,6 @@ classifiers = [
 ]
 dependencies = [
     "qjazz-contrib[celery]==${PIN_VERSION}",
-    "qjazz-cache==${PIN_VERSION}",
     "pydantic-extra-types",
     "click",
     "requests",

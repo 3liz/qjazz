@@ -17,7 +17,7 @@ multidict==6.1.0
 propcache==0.2.1
 pycparser==2.22
 pycryptodome==3.21.0
-pydantic-extra-types==2.10.1
+pydantic-extra-types==2.10.2
 pydantic-settings==2.7.1
 pydantic==2.10.5
 pydantic_core==2.27.2

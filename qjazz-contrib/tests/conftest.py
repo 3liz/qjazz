@@ -5,11 +5,22 @@ from pathlib import Path
 import pytest
 
 from qjazz_cache.prelude import CacheManager, ProjectsConfig
+from qjazz_contrib.core import logger, qgis
 
 
 @pytest.fixture(scope='session')
-def data(request):
-    return Path(request.config.rootdir.strpath, 'data')
+def rootdir(request: pytest.FixtureRequest) -> Path:
+    return Path(request.config.rootdir.strpath)
+
+
+@pytest.fixture(scope='session')
+def data(rootdir: Path) -> Path:
+    return rootdir.joinpath('data')
+
+
+@pytest.fixture(scope='session')
+def plugindir(rootdir: Path) -> Path:
+    return rootdir.joinpath('plugins')
 
 
 @pytest.fixture(scope='session')
@@ -32,10 +43,13 @@ def config(data):
     return conf
 
 
-def pytest_sessionstart(session):
+def pytest_sessionstart(session: pytest.Session) -> None:
     try:
-        from qjazz_contrib.core import qgis
+        print("Initializing qgis application")
         qgis.init_qgis_application()
+        qgis.init_qgis_processing()
+        if logger.is_enabled_for(logger.LogLevel.DEBUG):
+            print(qgis.show_qgis_settings())
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)
 

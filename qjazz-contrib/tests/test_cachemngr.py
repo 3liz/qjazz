@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import SplitResult
 
 import pytest
 
@@ -10,6 +11,13 @@ from qjazz_cache.prelude import (
     ProjectMetadata,
 )
 from qjazz_contrib.core import logger
+
+
+def test_search_paths(config):
+    sp = config.search_paths
+    for url in sp.values():
+        assert isinstance(url, SplitResult)
+        assert url.scheme, "Expecting scheme"
 
 
 def test_path_resolution(data, config):

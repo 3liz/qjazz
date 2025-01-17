@@ -19,7 +19,8 @@ RUN apt-get update -y \
         less \
         ${NULL}
 
-COPY python_modules docker/requirements.txt /python_modules/
+COPY docker/requirements.txt /python_modules/
+COPY qjazz-contrib /python_modules/qjazz-contrib
 COPY qjazz-processes /python_modules/qjazz-processes
 COPY qjazz-server/python /python_modules/qjazz-server/
 
@@ -31,7 +32,6 @@ RUN mkdir -p /opt/local/ \
     && /opt/local/qjazz/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
     && /opt/local/qjazz/bin/pip install --no-cache-dir --no-deps \
         -e /python_modules/qjazz-contrib \
-        -e /python_modules/qjazz-cache \
         -e /python_modules/qjazz-processes \
         -e /python_modules/qjazz-server \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
