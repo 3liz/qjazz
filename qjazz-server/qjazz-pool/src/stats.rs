@@ -9,6 +9,7 @@ pub struct Stats {
     active: usize,
     idle: usize,
     dead: usize,
+    failure_pressure: f64,
     request_pressure: f64,
     num_workers: usize,
     instant: Instant,
@@ -21,9 +22,10 @@ impl Stats {
             active: stats.0,
             idle: stats.1,
             dead: stats.2,
-            num_workers: pool.num_workers(),
+            failure_pressure: pool.failure_pressure(),
             request_pressure: pool.num_waiters() as f64
                 / pool.options().max_waiting_requests() as f64,
+            num_workers: pool.num_workers(),
             instant: Instant::now(),
         }
     }
@@ -50,7 +52,7 @@ impl Stats {
     /// of number of dead processes over the number
     /// number of started processes.
     pub fn failure_pressure(&self) -> f64 {
-        self.dead as f64 / self.num_workers as f64
+        self.failure_pressure
     }
 
     /// Returns the measurement of the worker activity as

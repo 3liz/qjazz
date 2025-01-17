@@ -94,9 +94,9 @@ pub(crate) async fn serve(
         .await;
 
     log::info!("Server shutdown");
-    let msg = pool_owned.write().await.take_error_msg();
-    match msg {
-        Some(msg) => Err(msg.into()),
-        None => Ok(()),
+    if pool_owned.write().await.has_error() {
+        Err("Server terminated because of errors".into())
+    } else {
+        Ok(())
     }
 }

@@ -20,6 +20,7 @@ pub(crate) struct WorkerQueue {
     dead_workers: AtomicUsize,
     max_requests: AtomicUsize,
     generation: AtomicUsize,
+    failures: AtomicUsize,
     restore: RwLock<Restore>,
 }
 
@@ -53,9 +54,16 @@ impl WorkerQueue {
         self.restore.read().await.restore(worker).await
     }
 
+    // Terminate a worker
     async fn terminate(&self, mut w: Worker) -> Result<()> {
         self.dead_workers.fetch_add(1, Ordering::Relaxed);
         w.terminate().await
+    }
+
+    // Terminate a worker in increase the failure count
+    async fn terminate_failure(&self, w: Worker) -> Result<()> {
+        self.failures.fetch_add(1, Ordering::Relaxed);
+        self.terminate(w).await
     }
 
     //
@@ -83,12 +91,12 @@ impl WorkerQueue {
                 if rv.is_ok() {
                     self.q.send(worker).await;
                 } else {
-                    self.terminate(worker).await?;
+                    self.terminate_failure(worker).await?;
                 }
             } else {
                 // Cancel failed, terminate the worker
                 let id = worker.id();
-                self.terminate(worker).await?;
+                self.terminate_failure(worker).await?;
                 log::error!("Killed stalled process {}", id);
             }
             rv
@@ -120,7 +128,7 @@ pub struct Pool {
     queue: Arc<WorkerQueue>,
     builder: Builder,
     num_processes: usize,
-    error_msg: Option<String>,
+    error: bool,
 }
 
 impl Pool {
@@ -134,19 +142,20 @@ impl Pool {
                 max_requests: AtomicUsize::new(opts.max_waiting_requests()),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
+                failures: AtomicUsize::new(0),
             }),
             builder,
             num_processes: 0,
-            error_msg: None,
+            error: false,
         }
     }
 
-    pub fn set_error_msg(&mut self, msg: String) {
-        self.error_msg = Some(msg);
+    pub fn set_error(&mut self) {
+        self.error = true
     }
 
-    pub fn take_error_msg(&mut self) -> Option<String> {
-        self.error_msg.take()
+    pub fn has_error(&mut self) -> bool {
+        self.error
     }
 
     pub(crate) fn options(&self) -> &WorkerOptions {
@@ -172,6 +181,11 @@ impl Pool {
         self.queue.dead_workers.load(Ordering::Relaxed)
     }
 
+    /// Returns the number of failures
+    pub fn failures(&self) -> usize {
+        self.queue.failures.load(Ordering::Relaxed)
+    }
+
     /// Returns the number of waiters for available
     /// worker
     pub fn num_waiters(&self) -> usize {
@@ -183,10 +197,10 @@ impl Pool {
         self.num_processes
     }
 
-    /// Returns the ratio of dead workers against
+    /// Returns the ratio of failures against
     /// the number of created workers
     pub fn failure_pressure(&self) -> f64 {
-        self.dead_workers() as f64 / self.num_processes as f64
+        self.failures() as f64 / self.num_processes as f64
     }
 
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {
@@ -198,14 +212,19 @@ impl Pool {
 
     /// Clean dead workers by removing them
     /// from queue
+    ///
+    /// Normally, this should not happend since no dead workers
+    /// should reach the queue, but it may happends that an idle
+    /// worker may die for whatever reason, usually indicating that
+    /// something goes wrong
     fn cleanup_dead_workers(&self) {
         let dead_workers = self.queue.q.retain(|w| w.is_alive());
-        if log::log_enabled!(log::Level::Debug) && dead_workers > 0 {
-            log::debug!("Removed {} dead workers", dead_workers);
+        if dead_workers > 0 {
+            log::warn!("Removed {} dead workers from queue !", dead_workers);
+            self.queue
+                .dead_workers
+                .fetch_add(dead_workers, Ordering::Relaxed);
         }
-        self.queue
-            .dead_workers
-            .fetch_add(dead_workers, Ordering::Relaxed);
     }
 
     /// Maintain the pool at nominal number of live workers
@@ -214,17 +233,21 @@ impl Pool {
         self.cleanup_dead_workers();
         let nominal = self.builder.options().num_processes();
         let dead_workers = self.dead_workers();
+        let failures = self.failures();
         let current = self.num_processes - dead_workers;
+
         #[allow(clippy::comparison_chain)]
         let rv = if nominal > current {
             self.grow(nominal - current).await.inspect(|_| {
                 self.num_processes = nominal;
+                self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
                 self.queue
                     .dead_workers
                     .fetch_sub(dead_workers, Ordering::Relaxed);
             })
         } else if nominal < current {
             self.shrink(current - nominal).await.inspect(|_| {
+                self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
                 self.queue
                     .dead_workers
                     .fetch_sub(dead_workers, Ordering::Relaxed);
