@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from qjazz_cache.errors import StrictCheckingFailure
 from qjazz_cache.prelude import (
     CacheEntry,
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,
 )
-from qjazz_cache.errors import StrictCheckingFailure
 from qjazz_contrib.core import logger
 
 
