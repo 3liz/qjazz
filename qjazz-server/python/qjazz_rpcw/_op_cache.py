@@ -179,7 +179,7 @@ def checkout_project(
     except CacheManager.ResourceNotAllowed as err:
         _m.send_reply(conn, str(err), 403)
     except CacheManager.StrictCheckingFailure as err:
-        _m.send_reply(conn, str(err), 422)
+        _m.send_reply(conn, str(err), 500)
 
 
 #

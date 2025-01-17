@@ -8,6 +8,7 @@ from qjazz_cache.prelude import (
     CheckoutStatus,
     ProjectMetadata,
 )
+from qjazz_cache.errors import StrictCheckingFailure
 from qjazz_contrib.core import logger
 
 
@@ -65,3 +66,19 @@ def test_checkout_project(config):
 
     md, status = cm.checkout(url)
     assert status == CheckoutStatus.UNCHANGED
+
+
+def test_checkout_invalid_layers(config):
+
+    cm = CacheManager(config)
+
+    url = cm.resolve_path('/tests/project_simple_with_invalid.qgs')
+
+    md, status = cm.checkout(url)
+    assert status == CheckoutStatus.NEW
+    assert isinstance(md, ProjectMetadata)
+
+    with pytest.raises(StrictCheckingFailure):
+        _ = cm.update(md, status)
+
+
