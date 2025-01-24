@@ -5,9 +5,8 @@ services:
     image: 3liz/qjazz:qgis-ltr-eager
     environment:
       CONF_DISPLAY_XVFB: ON
-      CONF_CONFIG_URL__URL: "http://config-server/qgis-rpc.json"
-      CONF_RESTORE_CACHE__URL: "http://config-server/cache.json"
-      CONF_RESTORE_CACHE__RESTORE_TYPE: "http"
+      QJAZZ_REMOTE_CONFIG_URL: "http://config-server/qgis-rpc.json"
+      QJAZZ_REMOTE_RESTORE_PROJECTS_URL: "http://config-server/cache.json"
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
     command: ["qjazz-rpc", "serve"]
@@ -15,10 +14,10 @@ services:
   web:
     image: 3liz/qjazz:qgis-ltr
     environment:
-      CONF_CONFIG_URL__URL: "http://config-server/web.json"
+      QJAZZ_REMOTE_CONFIG_URL: "http://config-server/web.json"
     ports:
     - 80:80
-    command: ["qjazz-server-http", "serve"]
+    command: ["qjazz-map", "serve"]
 
   # The configuration server 
   config-server:

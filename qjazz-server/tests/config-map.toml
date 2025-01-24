@@ -1,0 +1,47 @@
+
+[logging]
+level = "debug"
+
+[server]
+listen = "0.0.0.0:4000"
+num_workers = 2
+
+[backends.test]
+title = "Backend to host localhost"
+description = "Local test backend"
+route = "/test"
+host = "localhost"
+port = 23456
+use_ssl = false
+cafile = "$location/certs/localhost.crt"
+
+# With delegation
+[[backends.test.api]]
+endpoint = "features"
+delegate_to = "wfs3"
+name = "Features OGC Api"
+
+# Without delegation
+[[backends.test.api]]
+endpoint = "wfs3"
+name = "Features OGC Api (WFS3)"
+
+
+[backends.worker]
+title = "Backend to host 'worker'"
+description = "Backend for test"
+# Address to reach the backend
+host = "worker"
+port = 23456
+# Define route to service
+route = "/worker"
+
+# Define headers that will be forwarded to Qgis server backend
+#forward_headers = ['x-qgis-*', 'x-lizmap-*']
+
+# Allow direct path resolution
+#allow_direct_resolution = false
+
+# Api endpoints
+# XXX html templates require that you
+# use wfs3 as api name

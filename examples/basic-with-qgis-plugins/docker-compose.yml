@@ -6,23 +6,15 @@ services:
       QGIS_SERVER_LIZMAP_REVEAL_SETTINGS: yes
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 
-    - { type: bind, source: "./config.toml", target: /home/qgis/config.toml } 
+    - { type: bind, source: "./config-rpc.toml", target: /home/qgis/config.toml } 
     command: ["qjazz-rpc", "serve", "-C", "/home/qgis/config.toml" ]
   web:
     image: 3liz/qjazz:qgis-ltr-eager
     environment:
-      CONF_LOGGING__LEVEL: trace
-      CONF_BACKENDS__BASIC__TITLE: "Basic backends"
-      CONF_BACKENDS__BASIC__ADDRESS: "tcp://qgis-rpc"
-      CONF_BACKENDS__BASIC__ROUTE: "/"  
-      # publish the wfs3 api endpoint 
-      CONF_BACKENDS__BASIC__API: >- 
-          [
-            {"endpoint": "wfs3", "name": "Features OGC Api (WFS3)"},
-            {"endpoint": "features", "delegate_to": "wfs3", "name": "Features OGC Api"},
-            {"endpoint": "lizmap", "name": "Lizmap server API"}
-          ]
+      CONF_LOGGING__LEVEL: debug
+    volumes:
+    - { type: bind, source: "./config-map.toml", target: /home/qgis/config.toml } 
     ports:
     - 127.0.0.1:9080:9080
-    command: ["qjazz-server-http", "serve"]
+    command: ["qjazz-map", "serve", "-C", "/home/qgis/config.toml"]
 

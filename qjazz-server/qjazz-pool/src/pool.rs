@@ -77,7 +77,7 @@ impl WorkerQueue {
         mut worker: Worker,
         done_hint: bool,
     ) -> Result<()> {
-        log::trace!("Recycling worker [{}]", worker.id());
+        log::debug!("Recycling worker [{}]", worker.id());
 
         // Check if worker must be replaced
         if worker.generation < self.generation() {
@@ -229,7 +229,6 @@ impl Pool {
 
     /// Maintain the pool at nominal number of live workers
     pub async fn maintain_pool(&mut self) -> Result<()> {
-        log::trace!("Maintain pool called");
         self.cleanup_dead_workers();
         let nominal = self.builder.options().num_processes();
         let dead_workers = self.dead_workers();
@@ -266,7 +265,7 @@ impl Pool {
 
         let ts = Instant::now();
 
-        log::trace!("Pool: launching {} workers", n);
+        log::debug!("Launching {} workers", n);
         let futures: Vec<_> = (0..n).map(|_| self.builder.clone().start_owned()).collect();
 
         // Start the workers asynchronously
@@ -293,7 +292,7 @@ impl Pool {
         if self.queue.is_closed() {
             return Err(Error::QueueIsClosed);
         }
-        log::trace!("Pool: Shrinking by {} workers", n);
+        log::debug!("Pool: Shrinking by {} workers", n);
         let mut removed = self.queue.q.drain(n);
         self.num_processes -= removed.len();
         for mut w in removed.drain(..) {

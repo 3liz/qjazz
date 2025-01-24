@@ -1,7 +1,7 @@
 use core::net::SocketAddr;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::net::{IpAddr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{ffi::OsStr, fs, io};
@@ -20,15 +20,17 @@ pub struct ListenConfig {
     enable_tls: bool,
     tls_key_file: Option<PathBuf>,
     tls_cert_file: Option<PathBuf>,
+    tls_client_cafile: Option<PathBuf>,
 }
 
 impl Default for ListenConfig {
     fn default() -> Self {
         Self {
-            address: SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)), 23456),
+            address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 23456),
             enable_tls: false,
             tls_key_file: None,
             tls_cert_file: None,
+            tls_client_cafile: None,
         }
     }
 }
@@ -107,6 +109,12 @@ impl Server {
     }
     pub fn tls_cert(&self) -> io::Result<String> {
         fs::read_to_string(self.listen.tls_cert_file.as_ref().unwrap())
+    }
+    pub fn tls_client_ca(&self) -> Option<io::Result<String>> {
+        self.listen
+            .tls_client_cafile
+            .as_deref()
+            .map(fs::read_to_string)
     }
 }
 

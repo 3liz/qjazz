@@ -28,7 +28,7 @@ when dealing with large numbers of projects.
 - REST admin api on project's cache
 - Managed project's cache synchronized between workers.
 - S3 storage supports for projects
-- SSL support
+- TLS support for server and client authentification
 
 ### Requirements
 

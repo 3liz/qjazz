@@ -1,6 +1,8 @@
 #
 # Qgis server request operations
 #
+import os
+
 from string import capwords
 from typing import List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
@@ -8,7 +10,7 @@ from urllib.parse import urlunsplit
 import psutil
 
 from qgis.core import QgsFeedback
-from qgis.server import QgsServer, QgsServerException, QgsServerRequest
+from qgis.server import QgsServer, QgsServerRequest
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_contrib.core import logger
@@ -27,7 +29,6 @@ Co = CheckoutStatus
 #
 # Server Request
 #
-QGIS_MISSING_PROJECT_ERROR_MSG = "No project defined"
 
 
 def handle_ows_request(
@@ -43,12 +44,13 @@ def handle_ows_request(
 ):
     """ Handle OWS request
     """
-    if not msg.target:
-        exception = QgsServerException(QGIS_MISSING_PROJECT_ERROR_MSG, 400)
-        response = Response(conn)
-        response.write(exception)
-        response.finish()
-        return
+    target = msg.target
+    if not target:
+        target = os.getenv("QGIS_PROJECT_FILE", "")
+        # OWS require a project file
+        if not target:
+            _m.send_reply(conn, "Missing project", 400)
+            return
 
     if msg.debug_report and not process:
         _m.send_reply(conn, "No report available", 409)
@@ -64,15 +66,17 @@ def handle_ows_request(
         method = QgsServerRequest.GetMethod
 
     # Rebuild URL for Qgis server
-    url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
-    if msg.version:
-        url += f"&VERSION={msg.version}"
+    # XXX options is the full query string
     if msg.options:
-        url += f"&{msg.options}"
+        url = f"{msg.url or ''}?{msg.options}"
+    else:
+        url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
+        if msg.version:
+            url += f"&VERSION={msg.version}"
 
     _handle_generic_request(
         url,
-        msg.target,
+        target,
         msg.direct,
         msg.body,
         method,
@@ -103,6 +107,10 @@ def handle_api_request(
 ):
     """ Handle api request
     """
+    target = msg.target
+    if not target:
+        target = os.getenv("QGIS_PROJECT_FILE", "")
+
     try:
         method = _to_qgis_method(msg.method)
     except ValueError:
@@ -133,7 +141,7 @@ def handle_api_request(
 
     _handle_generic_request(
         url,
-        msg.target,
+        target,
         msg.direct,
         msg.data,
         method,
@@ -173,6 +181,11 @@ def _handle_generic_request(
     """ Handle generic Qgis request
     """
     if target:
+
+        # XXX Prevent error in cache manager
+        if not target.startswith("/"):
+            target = f"/{target}"
+
         co_status, entry = request_project_from_cache(
             conn,
             cm,
@@ -190,9 +203,6 @@ def _handle_generic_request(
             'x-qgis-last-modified': to_rfc822(entry.last_modified),
             'x-qgis-cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
         }
-
-        if request_id:
-            resp_hdrs['x-request-id'] = request_id
 
         project = entry.project
         response = Response(
@@ -224,9 +234,11 @@ def _handle_generic_request(
     if content_type:
         req_hdrs['Content-Type'] = content_type
 
+    if request_id:
+        logger.log_req("ID:%s", request_id)
+
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
-
 
 def request_project_from_cache(
     conn: _m.Connection,

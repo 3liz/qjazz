@@ -33,7 +33,6 @@ email = "dmarteau@3liz.org"
 
 [project.scripts]
 qjazz-server-admin = "qjazz_admin.cli:main"
-qjazz-server-http = "qjazz_http.cli:main"
 qjazz-config = "qjazz_rpcw.cli:main"
 
 
@@ -42,8 +41,6 @@ exclude = [ "tests/*" ]
 include = [
     "qjazz_rpcw",
     "qjazz_rpcw.*",
-    "qjazz_http", 
-    "qjazz_http.*", 
     "qjazz_admin",
     "qjazz_admin.*",
 ]

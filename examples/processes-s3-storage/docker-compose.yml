@@ -76,12 +76,11 @@ services:
     environment:
       CONF_LOGGING__LEVEL: debug
       CONF_BACKENDS__jOBS__TITLE: "Jobs backends"
-      CONF_BACKENDS__JOBS__ADDRESS: "tcp://qgis-rpc"
+      CONF_BACKENDS__JOBS__HOST: "qgis-rpc"
       CONF_BACKENDS__JOBS__ROUTE: "/results"
     ports:
     - 127.0.0.1:9080:9080
-    - 127.0.0.1:9876:9876
-    command: ["qjazz-server-http", "serve"]
+    command: ["qjazz-map", "serve"]
 
   #
   # Minio service for s3 storage

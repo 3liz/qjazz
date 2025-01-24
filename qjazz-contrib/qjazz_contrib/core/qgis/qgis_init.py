@@ -142,7 +142,7 @@ def install_logger_hook(logprefix: str) -> None:
             logger.error(arg)
         else:
             # Qgis may be somehow very noisy
-            logger.trace(arg)
+            logger.debug(arg)
 
     messageLog = QgsApplication.messageLog()
     messageLog.messageReceived.connect(writelogmessage)

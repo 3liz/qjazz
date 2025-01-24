@@ -7,7 +7,7 @@ use qjazz_pool::Pool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
-use tonic::transport::{Identity, Server, ServerTlsConfig};
+use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 
 /// Run gRPC server
 pub(crate) async fn serve(
@@ -63,8 +63,13 @@ pub(crate) async fn serve(
         log::info!("TLS enabled");
         let cert = settings.server.tls_cert()?;
         let key = settings.server.tls_key()?;
-        builder =
-            builder.tls_config(ServerTlsConfig::new().identity(Identity::from_pem(cert, key)))?;
+
+        let mut tls = ServerTlsConfig::new().identity(Identity::from_pem(cert, key));
+        if let Some(cacert) = settings.server.tls_client_ca() {
+            tls = tls.client_ca_root(Certificate::from_pem(cacert?));
+        }
+
+        builder = builder.tls_config(tls)?;
     }
 
     let mut router = builder

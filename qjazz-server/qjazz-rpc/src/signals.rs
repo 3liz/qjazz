@@ -56,7 +56,7 @@ pub(crate) fn handle_signals(
                             state.store(false, Ordering::Relaxed);
                             // Check failure pressure
                             let failure_pressure = pool.read().await.failure_pressure();
-                            log::trace!("Failure pressure: {}", failure_pressure);
+                            log::debug!("Failure pressure: {}", failure_pressure);
                             if failure_pressure > max_failure_pressure {
                                 log::error!("Max failure pressure exceeded, terminating server");
                                 pool.write().await.set_error();
@@ -72,7 +72,7 @@ pub(crate) fn handle_signals(
                 _ => {}
             }
         }
-        log::trace!("Releasing signal handler");
+        log::debug!("Releasing signal handler");
         token.cancel();
     });
     Ok(handle)

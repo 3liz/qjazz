@@ -79,7 +79,7 @@ message OwsRequest {
     string target = 3;
     optional string version = 4;
     optional string url = 5;
-    optional bool direct = 6;
+    bool direct = 6;
     optional string options = 7;
     optional string request_id = 8;
     optional string content_type = 9;
@@ -92,10 +92,10 @@ message ApiRequest {
     string path = 2;
     string method = 3;
     optional bytes data = 4;
-    optional bool delegate = 5;
+    bool delegate = 5;
     optional string target = 6;
     optional string url = 7;
-    optional bool direct = 8;
+    bool direct = 8;
     optional string options = 9;
     optional string request_id = 10;
     optional string content_type = 11;

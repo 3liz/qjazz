@@ -35,7 +35,6 @@ RUN mkdir -p /opt/local/ \
         -e /python_modules/qjazz-processes \
         -e /python_modules/qjazz-server \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
-    && ln -s /opt/local/qjazz/bin/qjazz-server-http \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-printserver \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
@@ -58,6 +57,7 @@ RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis &
 
 # Install binaries
 COPY qjazz-server/target/release/qjazz-rpc /usr/local/bin/qjazz-rpc-bin
+COPY qjazz-server/target/release/qjazz-map /usr/local/bin/qjazz-map-bin
 
 # Set path to the python executable
 ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
@@ -66,11 +66,7 @@ ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
 # Allow us to run Xvfb when the container runs with '-u' option
 RUN chmod u+s /usr/bin/Xvfb
 
-ENV CONF_SERVER__LISTEN__ADDRESS='[::]:23456'
-ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
-ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
-
-EXPOSE 23456 9080 9443 9876
+EXPOSE 23456 9080 9443
 
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
 

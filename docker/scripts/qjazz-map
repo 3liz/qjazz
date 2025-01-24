@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+export CONF_SERVER__LISTEN='0.0.0.0:9080'
+
+# Remote configuration
+QJAZZ_CONFIG_EXEC=${QJAZZ_CONFIG_EXEC:-download-config.py}
+if [ -n "$QJAZZ_CONFIG_EXEC" ]; then
+    export QJAZZ_CONFIG_JSON=$($QJAZZ_CONFIG_EXEC)
+fi
+
+exec qjazz-map-bin "$@"

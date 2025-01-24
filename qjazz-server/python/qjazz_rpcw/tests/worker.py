@@ -45,7 +45,7 @@ class Worker:
     async def cancel(self):
         """ Send a SIGHUP signal to to the process
         """
-        logger.trace("Cancelling job: %s (done: %s)", self.pid, self.task_done)
+        logger.debug("Cancelling job: %s (done: %s)", self.pid, self.task_done)
         if not (self._process is None or self.task_done):
             self._process.send_signal(signal.SIGHUP)
             # Pull stream from current task
@@ -96,7 +96,7 @@ class Worker:
         )
         if status != 200:
             raise WorkerError(status, resp)
-        logger.trace(f"Updated config for worker '{self.name}'")
+        logger.debug(f"Updated config for worker '{self.name}'")
 
     async def start(self):
         """ Start the worker QGIS subprocess

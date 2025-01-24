@@ -1,0 +1,18 @@
+
+[backends.basic]
+title = "Basic backends"
+host = qgis-rpc"
+route = "/"
+
+[[backends.basic.api]]
+endpoint = "wfs3"
+name = "Features OGC Api (WFS3)"
+
+[[backends.basic.api]]
+endpoint = "features"
+delegate_to = "wfs3"
+name = "Features OGC Api"
+
+[[backends.basic.api]]
+endpoint = lizmap"
+name = Lizmap server API"

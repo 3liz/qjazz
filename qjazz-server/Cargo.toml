@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "qjazz-pool", "qjazz-rpc",
+    "qjazz-pool", "qjazz-rpc", "qjazz-map"
 ]
 resolver = "2"
 

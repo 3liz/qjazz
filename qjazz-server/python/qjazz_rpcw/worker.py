@@ -160,7 +160,7 @@ def qgis_server_run(
     signal.signal(signal.SIGHUP, on_sighup)
 
     while True:
-        logger.trace("%s: Waiting for messages", name)
+        logger.debug("%s: Waiting for messages", name)
         try:
             rendez_vous.done()
             msg = None   # Prevent unbound value if recv() is interrupted
@@ -268,14 +268,14 @@ def qgis_server_run(
                     assert_never(unreachable)
         except KeyboardInterrupt:
             if conf.ignore_interrupt_signal:
-                logger.trace("Ignoring interrupt signal")
+                logger.debug("Ignoring interrupt signal")
             else:
                 logger.warning("Worker interrupted")
                 break
-        except Exception as exc:
+        except Exception:
             # Ensure busy state as error may have occured in recv()
             rendez_vous.busy()
-            _m.send_reply(conn, str(exc), 500)
+            _m.send_reply(conn, "Internal error", 500)
             if msg:
                 # Recoverable error
                 logger.critical(traceback.format_exc())
@@ -287,7 +287,7 @@ def qgis_server_run(
         finally:
             if msg and not conn.cancelled:
                 if logger.is_enabled_for(logger.LogLevel.TRACE):
-                    logger.trace(
+                    logger.debug(
                         "%s\t%s\tResponse time: %d ms",
                         name,
                         msg.msg_id.name,

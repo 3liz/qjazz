@@ -8,7 +8,7 @@ DIRS= \
 	$(NULL)
 
 build-release:
-	cargo build --release
+	cargo build --release --all-targets --bins
 
 include $(topsrcdir)/config/rules.mk
 

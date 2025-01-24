@@ -16,7 +16,7 @@ services:
       QJAZZ_REMOTE_CONFIG_URL: "http://config-server/web.json"
     ports:
     - 127.0.0.1:9080:9080
-    command: ["qjazz-server-http", "serve"]
+    command: ["qjazz-map", "serve"]
 
   # The configuration server 
   config-server:

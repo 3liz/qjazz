@@ -51,18 +51,19 @@ trait Qjazz {
     // whenever it is possible.
     fn error(err: qjazz_pool::Error) -> Status {
         match err {
-            qjazz_pool::Error::ResponseError(status, msg) => {
-                let mut rv = match status {
-                    404 | 410 => Status::not_found(msg.to_string()),
-                    403 => Status::permission_denied(msg.to_string()),
-                    500 => Status::internal(msg.to_string()),
-                    401 => Status::unauthenticated(msg.to_string()),
-                    _ => Status::unknown(msg.to_string()),
-                };
-                rv.metadata_mut()
-                    .insert("x-reply-status-code", status.into());
-                rv
-            }
+            qjazz_pool::Error::ResponseError(code, msg) => match code {
+                404 | 410 => Status::not_found(msg.to_string()),
+                403 => Status::permission_denied(msg.to_string()),
+                500 => Status::internal(msg.to_string()),
+                401 => Status::unauthenticated(msg.to_string()),
+                _ => {
+                    let mut status = Status::unknown(msg.to_string());
+                    status
+                        .metadata_mut()
+                        .insert("x-reply-status-code", code.into());
+                    status
+                }
+            },
             _ => Status::unknown(err),
         }
     }
@@ -164,7 +165,7 @@ impl QgisServer for QgisServerServicer {
                 target: &req.target,
                 url: req.url.as_deref(),
                 version: req.version.as_deref(),
-                direct: req.direct.unwrap_or(false),
+                direct: req.direct,
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
                 header_prefix: Some(Self::HEADER_PREFIX),
@@ -212,9 +213,9 @@ impl QgisServer for QgisServerServicer {
                     .map_err(Status::invalid_argument)?,
                 url: req.url.as_deref(),
                 data: req.data.as_deref(),
-                delegate: req.delegate.unwrap_or(false),
+                delegate: req.delegate,
                 target: req.target.as_deref(),
-                direct: req.direct.unwrap_or(false),
+                direct: req.direct,
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
                 header_prefix: Some(Self::HEADER_PREFIX),

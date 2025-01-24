@@ -21,7 +21,7 @@ def test_wms_getcapabilities_hrefs(host):
     assert rv.status_code == 200
     assert rv.headers['Content-Type'] == 'text/xml; charset=utf-8'
 
-    urlref = urlparse(f"http://{host}/test/")
+    urlref = urlparse(f"http://{host}/test")
 
     xml  = etree.fromstring(rv.content)
 
