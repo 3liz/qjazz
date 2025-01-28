@@ -2,7 +2,7 @@
 
 set -e
 
-export CONF_SERVER__LISTEN__ADDRESS='0.0.0.0:23456'
+export CONF_RPC__LISTEN__ADDRESS='0.0.0.0:23456'
 
 # Remote configuration
 QJAZZ_CONFIG_EXEC=${QJAZZ_CONFIG_EXEC:-download-config.py}

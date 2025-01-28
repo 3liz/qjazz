@@ -10,7 +10,7 @@ repository.workspace = true
 categories.workspace = true
 
 [[bin]]
-name = "qjazz-rpc"
+name = "qjazz-rpc-bin"
 path = "src/main.rs"
 
 [dependencies]

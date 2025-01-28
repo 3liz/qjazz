@@ -1,7 +1,7 @@
 [logging]
 level = "debug"
 
-[server.listen]
+[rpc.listen]
 enable_tls = false
 tls_key_file = "$location/certs/localhost.key"
 tls_cert_file = "$location/certs/localhost.crt"

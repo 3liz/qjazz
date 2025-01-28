@@ -9,7 +9,7 @@ use std::{ffi::OsStr, fs, io};
 use crate::logger::Logging;
 
 //
-// Server configuration
+// Rpc server configuration
 //
 
 /// Socket configuration
@@ -53,7 +53,7 @@ impl ListenConfig {
 /// RPC Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
-pub struct Server {
+pub struct Rpc {
     /// The interface to listen to
     listen: ListenConfig,
     /// Use admin services
@@ -70,7 +70,7 @@ pub struct Server {
     max_failure_pressure: f64,
 }
 
-impl Default for Server {
+impl Default for Rpc {
     fn default() -> Self {
         Self {
             listen: Default::default(),
@@ -82,7 +82,7 @@ impl Default for Server {
     }
 }
 
-impl Server {
+impl Rpc {
     pub fn validate(&self) -> Result<(), ConfigError> {
         self.listen.validate()
     }
@@ -131,13 +131,13 @@ use config::{
 #[serde(default)]
 pub struct Settings {
     pub logging: Logging,
-    pub server: Server,
+    pub rpc: Rpc,
     pub worker: qjazz_pool::WorkerOptions,
 }
 
 impl Settings {
     fn validate(self) -> Result<Self, ConfigError> {
-        self.server.validate()?;
+        self.rpc.validate()?;
         Ok(self)
     }
 

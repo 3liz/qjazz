@@ -14,7 +14,7 @@ pub(crate) async fn serve(
     args: &str,
     settings: &Settings,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let addr = settings.server.listen().address();
+    let addr = settings.rpc.listen().address();
 
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
@@ -46,10 +46,10 @@ pub(crate) async fn serve(
     let signal_handle = crate::signals::handle_signals(
         pool_owned.clone(),
         token.clone(),
-        settings.server.max_failure_pressure(),
+        settings.rpc.max_failure_pressure(),
     )?;
 
-    let grace_period = settings.server.shutdown_grace_period();
+    let grace_period = settings.rpc.shutdown_grace_period();
 
     // NOTE Do not use serve_with_shutdown since
     // it waits forever for client to disconnect
@@ -59,13 +59,13 @@ pub(crate) async fn serve(
     let mut builder = Server::builder();
 
     // Enable tls
-    if settings.server.enable_tls() {
+    if settings.rpc.enable_tls() {
         log::info!("TLS enabled");
-        let cert = settings.server.tls_cert()?;
-        let key = settings.server.tls_key()?;
+        let cert = settings.rpc.tls_cert()?;
+        let key = settings.rpc.tls_key()?;
 
         let mut tls = ServerTlsConfig::new().identity(Identity::from_pem(cert, key));
-        if let Some(cacert) = settings.server.tls_client_ca() {
+        if let Some(cacert) = settings.rpc.tls_client_ca() {
             tls = tls.client_ca_root(Certificate::from_pem(cacert?));
         }
 
@@ -73,11 +73,11 @@ pub(crate) async fn serve(
     }
 
     let mut router = builder
-        .timeout(settings.server.timeout())
+        .timeout(settings.rpc.timeout())
         .add_service(health_service)
         .add_service(QgisServerServer::new(qgis_servicer));
 
-    if settings.server.enable_admin_services() {
+    if settings.rpc.enable_admin_services() {
         log::info!("Enabling admin services");
         router = router.add_service(QgisAdminServer::new(admin_servicer));
     }

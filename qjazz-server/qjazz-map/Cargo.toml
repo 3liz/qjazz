@@ -10,6 +10,10 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 
+[[bin]]
+name = "qjazz-map-bin"
+path = "src/main.rs"
+
 [dependencies]
 actix-web = { version = "4", features = ["rustls-0_23"] }
 tonic = { version = "0.12", features = ["tls"] }
