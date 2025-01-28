@@ -8,6 +8,7 @@ use std::{ffi::OsStr, fs};
 use crate::logger::Logging;
 use crate::resolver::{ChannelConfig, Channels};
 use crate::utils::Validator;
+use crate::cors::CorsConfig;
 
 //
 // Server configuration
@@ -15,7 +16,7 @@ use crate::utils::Validator;
 
 /// Socket configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ListenConfig {
     listen: SocketAddr,
     enable_tls: bool,
@@ -58,7 +59,7 @@ impl Validator for ListenConfig {
 
 /// Server configuration
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Server {
     /// The interface to listen to
     #[serde(flatten)]
@@ -69,6 +70,10 @@ pub struct Server {
     backend_request_timeout: u64,
     /// Shutdown grace period
     shutdown_timeout: u64,
+    /// Handle Forwarded headers
+    check_forwarded_headers: bool,
+    /// CORS configuration
+    pub cors: CorsConfig,
 }
 
 // For other server limits
@@ -83,6 +88,8 @@ impl Default for Server {
             num_workers: None,
             backend_request_timeout: ChannelConfig::default_timeout(),
             shutdown_timeout: DEFAULT_SHUTDOWN_TIMEOUT_SECS,
+            check_forwarded_headers: true,
+            cors: CorsConfig::default(),
         }
     }
 }
@@ -105,6 +112,9 @@ impl Server {
     }
     pub fn shutdown_timeout(&self) -> u64 {
         self.shutdown_timeout
+    }
+    pub fn check_forwarded_headers(&self) -> bool {
+        self.check_forwarded_headers
     }
 }
 

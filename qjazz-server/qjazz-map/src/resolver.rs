@@ -14,7 +14,7 @@ use crate::utils::Validator;
 
 /// Channel host configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ChannelService {
     /// Hostname
     host: String,
@@ -162,7 +162,7 @@ impl HeaderFilters {
 
 /// Backend channel service configuration
 #[derive(Default, Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ChannelConfig {
     /// Connection to service parameters
     #[serde(flatten)]
@@ -266,7 +266,7 @@ impl ChannelConfig {
 
 /// Api endpoint
 #[derive(Default, Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ApiEndPoint {
     /// Api endpoint
     pub endpoint: String,

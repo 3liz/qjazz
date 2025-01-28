@@ -1,12 +1,10 @@
 """ Dns resolver
 """
-import ipaddress
 
 from pathlib import PurePosixPath
-from typing import Annotated, List, Optional, Tuple
+from typing import Annotated, List, Optional
 
 from pydantic import (
-    AfterValidator,
     Field,
     FilePath,
     PlainSerializer,
@@ -15,7 +13,7 @@ from pydantic import (
     WithJsonSchema,
 )
 
-from qjazz_contrib.core.config import ConfigBase, SSLConfig
+from qjazz_contrib.core.config import ConfigBase
 from qjazz_contrib.core.models import NullField
 
 DEFAULT_PORT = 23456

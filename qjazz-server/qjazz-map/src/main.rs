@@ -1,5 +1,6 @@
 mod channel;
 mod config;
+mod cors;
 mod handlers;
 mod logger;
 mod resolver;

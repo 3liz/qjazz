@@ -1,5 +1,3 @@
-import asyncio
-import os
 import sys
 
 from glob import glob
@@ -13,7 +11,7 @@ from typing import (
     cast,
 )
 
-from pydantic import AnyHttpUrl, Field, FilePath, TypeAdapter
+from pydantic import AnyHttpUrl, Field, FilePath
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import (
@@ -22,11 +20,9 @@ from qjazz_contrib.core.config import (
     ConfigError,
     read_config_toml,
 )
-
-from qjazz_contrib.core.models import NullField, Null
+from qjazz_contrib.core.models import NullField
 
 from .resolver import BackendConfig
-
 
 HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
 
@@ -81,7 +77,7 @@ class Server(ConfigBase):
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
     backends: Dict[str, BackendConfig]
-    includes: Optional[str] 
+    includes: Optional[str]
 
     def model_dump_json(self, *args, **kwargs) -> str:
         ...
@@ -175,8 +171,8 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProto:
         return confservice.conf
 
     except ConfigError as err:
-        print("Configuration error:", err, file=sys.stderr, flush=True)
+        print("Configuration error:", err, file=sys.stderr, flush=True) # noqa T201
         sys.exit(1)
     except BackendConfigError as err:
-        print(err, file=sys.stderr, flush=True)
+        print(err, file=sys.stderr, flush=True)  # noqa T201
         sys.exit(1)

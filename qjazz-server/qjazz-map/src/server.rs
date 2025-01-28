@@ -9,7 +9,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::channel::{self, Channel};
 use crate::config::Settings;
-use crate::handlers::{api, ows};
+use crate::handlers::{api, ows, utils::request};
 use crate::resolver::{ApiEndPoint, Channels};
 
 // Log request as '[REQ:<request id>] ...'
@@ -22,18 +22,28 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
     // Handle channel's connection
     let backends = Backends::connect(settings.backends).await?;
 
-    let server_cfg = &settings.server;
+    let server_conf = settings.server;
 
-    let tls_config = server_cfg.tls_config()?;
-    let bind_address = server_cfg.bind_address();
+    let tls_config = server_conf.tls_config()?;
+    let bind_address = server_conf.bind_address();
+    let proxy_headers = request::ProxyHeaders {
+        allow: server_conf.check_forwarded_headers(),
+    };
+
+    let shutdown_timeout = server_conf.shutdown_timeout();
+    let num_workers = server_conf.num_workers();
+
+    let cors = server_conf.cors;
 
     backends.watch(token);
 
     let server = HttpServer::new(move || {
         let app = App::new()
+            .wrap(cors.configure())
             .wrap(middleware::Logger::new(LOGGER_FORMAT))
             .wrap(middleware::NormalizePath::trim())
-            .wrap(middleware::from_fn(qjazz_mw));
+            .wrap(middleware::from_fn(server_mw))
+            .app_data(web::ThinData(proxy_headers));
 
         match backends.clone() {
             Backends::Single(channel) => app
@@ -45,14 +55,14 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
             }),
         }
     })
-    .shutdown_timeout(server_cfg.shutdown_timeout());
+    .shutdown_timeout(shutdown_timeout);
 
     if let Some(tls_config) = tls_config {
         server.bind_rustls_0_23(&bind_address, tls_config)
     } else {
         server.bind(&bind_address)
     }?
-    .workers(server_cfg.num_workers())
+    .workers(num_workers)
     .run()
     .await?;
 
@@ -212,7 +222,7 @@ impl Backends {
 // Middlewares
 //
 
-async fn qjazz_mw(
+async fn server_mw(
     req: ServiceRequest,
     next: middleware::Next<impl body::MessageBody>,
 ) -> Result<ServiceResponse<impl body::MessageBody>> {

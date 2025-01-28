@@ -12,7 +12,7 @@ description = "Local test backend"
 route = "/test"
 host = "localhost"
 port = 23456
-use_ssl = false
+enable_tls = false
 cafile = "$location/certs/localhost.crt"
 
 # With delegation
