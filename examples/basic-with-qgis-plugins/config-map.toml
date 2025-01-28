@@ -1,7 +1,7 @@
 
 [backends.basic]
 title = "Basic backends"
-host = qgis-rpc"
+host = "qgis-rpc"
 route = "/"
 
 [[backends.basic.api]]
@@ -14,5 +14,5 @@ delegate_to = "wfs3"
 name = "Features OGC Api"
 
 [[backends.basic.api]]
-endpoint = lizmap"
-name = Lizmap server API"
+endpoint = "lizmap"
+name = "Lizmap server API"

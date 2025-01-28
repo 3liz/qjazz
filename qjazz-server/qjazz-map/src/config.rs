@@ -5,10 +5,10 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::{ffi::OsStr, fs};
 
+use crate::cors::CorsConfig;
 use crate::logger::Logging;
 use crate::resolver::{ChannelConfig, Channels};
 use crate::utils::Validator;
-use crate::cors::CorsConfig;
 
 //
 // Server configuration

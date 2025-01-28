@@ -48,8 +48,7 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
         match backends.clone() {
             Backends::Single(channel) => app
                 //.configure(dataset_collections)
-                .configure(single_channel_scope(&channel))
-                .app_data(web::Data::new(channel)),
+                .configure(single_channel_scope(channel)),
             Backends::Multi(mut channels) => channels.drain(..).fold(app, |app, channel| {
                 app.configure(multi_channel_scope(channel))
             }),
@@ -109,6 +108,7 @@ fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig
     let path = format!("/{}", api.endpoint);
 
     let scope = web::scope(path.as_str())
+        .wrap(middleware::from_fn(verify_channel_mw))
         .app_data(api.clone())
         .route("{path:.*}", web::to(api::handler))
         .default_service(web::to(api::default_handler));
@@ -117,11 +117,13 @@ fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig
         cfg.service(scope)
             .service(
                 web::resource(format!("{}.json", path).as_str())
+                    .wrap(middleware::from_fn(verify_channel_mw))
                     .app_data(api.clone())
                     .to(api::default_handler),
             )
             .service(
                 web::resource(format!("{}.html", path).as_str())
+                    .wrap(middleware::from_fn(verify_channel_mw))
                     .app_data(api.clone())
                     .to(api::default_handler),
             );
@@ -145,19 +147,18 @@ fn ows_resource(cfg: &mut web::ServiceConfig) {
 }
 
 // Single channel config
-fn single_channel_scope(channel: &Channel) -> impl FnOnce(&mut web::ServiceConfig) {
-    let scope = web::scope(channel.route())
-        .wrap(middleware::from_fn(verify_channel_mw))
-        .configure(ows_resource);
-
-    // Add api endpoints
-    let scope = channel
-        .api_endpoints()
-        .iter()
-        .fold(scope, |s, api| s.configure(api_scope(api.clone())));
-
+fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     |cfg| {
-        cfg.service(scope);
+        let cfg = cfg.service(
+            web::scope("/")
+                .wrap(middleware::from_fn(verify_channel_mw))
+                .configure(ows_resource),
+        );
+        channel
+            .api_endpoints()
+            .iter()
+            .fold(cfg, |cfg, api| cfg.configure(api_scope(api.clone())))
+            .app_data(channel);
     }
 }
 
@@ -221,7 +222,6 @@ impl Backends {
 //
 // Middlewares
 //
-
 async fn server_mw(
     req: ServiceRequest,
     next: middleware::Next<impl body::MessageBody>,

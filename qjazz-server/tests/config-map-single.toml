@@ -9,7 +9,7 @@ num_workers = 2
 [backends.test]
 title = "Backend to host localhost"
 description = "Local test backend"
-route = "/test"
+route = "/"
 host = "localhost"
 port = 23456
 enable_tls = false
@@ -31,22 +31,3 @@ endpoint = "lizmap"
 name = "Lizmap API"
 
 
-
-[backends.worker]
-title = "Backend to host 'worker'"
-description = "Backend for test"
-# Address to reach the backend
-host = "worker"
-port = 23456
-# Define route to service
-route = "/worker"
-
-# Define headers that will be forwarded to Qgis server backend
-#forward_headers = ['x-qgis-*', 'x-lizmap-*']
-
-# Allow direct path resolution
-#allow_direct_resolution = false
-
-# Api endpoints
-# XXX html templates require that you
-# use wfs3 as api name
