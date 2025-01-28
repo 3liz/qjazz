@@ -107,11 +107,11 @@ The simplest configuration for basic working installation is the following
         environment:
           CONF_LOGGING__LEVEL: debug
           CONF_BACKENDS__BASIC__TITLE: "Basic backends"
-          CONF_BACKENDS__BASIC__ADDRESS: "tcp://qgis-rpc"
+          CONF_BACKENDS__BASIC__HOST: "qgis-rpc"
           CONF_BACKENDS__BASIC__ROUTE: "/basic"
         ports:
         - 127.0.0.1:80:80
-        command: ["qjazz-server-http", "serve"]
+        command: ["qjazz-map", "serve"]
 
 Run the stack with::
 

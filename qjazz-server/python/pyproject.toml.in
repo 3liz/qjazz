@@ -41,6 +41,8 @@ exclude = [ "tests/*" ]
 include = [
     "qjazz_rpcw",
     "qjazz_rpcw.*",
+    "qjazz_map",
+    "qjazz_map.*",
     "qjazz_admin",
     "qjazz_admin.*",
 ]

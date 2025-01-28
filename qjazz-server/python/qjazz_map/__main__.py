@@ -8,12 +8,10 @@ from typing import Optional, cast
 import click
 
 from .config import (
-    ENV_CONFIGFILE,
     ConfigProto,
     confservice,
     load_configuration,
 )
-from .server import serve
 
 FilePathType = click.Path(
     exists=True,
@@ -23,41 +21,17 @@ FilePathType = click.Path(
 )
 
 
-# Workaround https://github.com/pallets/click/issues/295
-def global_options():
-    def _wrapper(f):
-        @wraps(f)
-        @click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
-        @click.option(
-            "--conf", "-C", "configpath",
-            envvar=ENV_CONFIGFILE,
-            help="configuration file",
-            type=FilePathType,
-        )
-        def _inner(*args, **kwargs):
-            return f(*args, **kwargs)
-        return _inner
-    return _wrapper
-
-
 @click.group()
 def cli_commands():
     pass
 
 
-@cli_commands.command('serve')
-@global_options()
-def serve_http(configpath: Path, verbose: bool):
-
-    from qjazz_contrib.core.config import ConfigProxy
-
-    click.echo(f"Qgis HTTP middleware {confservice.version}")
-    conf = load_configuration(configpath, verbose)
-    conf = cast(ConfigProto, ConfigProxy(confservice, "", default=conf))
-    asyncio.run(serve(conf))
-
-
 @cli_commands.command('config')
+@click.option(
+    "--conf", "-C", "configpath",
+    help="configuration file",
+    type=FilePathType,
+)
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
     "--format", "out_fmt",
@@ -66,10 +40,8 @@ def serve_http(configpath: Path, verbose: bool):
     help="Output format (--schema only)",
 )
 @click.option("--pretty", is_flag=True, help="Pretty format")
-@global_options()
 def print_config(
     configpath: Optional[Path],
-    verbose: bool,
     out_fmt: str,
     schema: bool = False,
     pretty: bool = False,
@@ -93,8 +65,8 @@ def print_config(
             case 'toml':
                 confservice.dump_toml_schema(sys.stdout)
     else:
-        click.echo(load_configuration(configpath, verbose).model_dump_json(indent=indent))
+        click.echo(load_configuration(configpath).model_dump_json(indent=indent))
 
 
-def main():
+if __name__ == '__main__':
     cli_commands()

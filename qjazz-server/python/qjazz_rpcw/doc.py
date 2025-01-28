@@ -29,7 +29,7 @@ def _parse_list(value: Union[List[str],str]) -> List[str]:
 class Listen(ConfigBase):
     """Socket configuration"""
     address: str = Field(
-        "[::1]:23456",
+        "127.0.0.1:23456",
         title="Socket address",
     )
     enable_tls: bool = Field(
@@ -45,6 +45,7 @@ class Listen(ConfigBase):
         None,
         title="Path to TLS cert PEM file",
     )
+
 
 class Server(ConfigBase):
     listen: Listen = Field(Listen())
@@ -63,6 +64,14 @@ class Server(ConfigBase):
             "The maximum amount of time to wait in seconds before\n"
             "closing connections. During this period,\n"
             "no new connections are allowed."
+        ),
+    )
+    max_failure_pressure: float = Field(
+        0.9,
+        description=(
+            "The maximum allowed failure pressure.\n"
+            "If the failure pressure exceed this value then\n"
+            "the service will exit with critical error condition,"
         ),
     )
 
@@ -101,11 +110,6 @@ class Worker(ConfigBase):
             "error."
         ),
     )
-    startup_projects: List[str] = Field(
-        default=[],
-        title="Startup projects",
-        description="List of projects to load at startup",
-    )
     max_failure_pressure: float = Field(
         default=0.5,
         title="Max failure pressure",
@@ -119,9 +123,9 @@ class Worker(ConfigBase):
         List[str],
         BeforeValidator(_parse_list),
     ] = Field(
-            default=[],
-            title="Restorable projects",
-            description="List of projects to restore",
+        default=[],
+        title="Startup projects",
+        description="Projects to restore at startup",
     )
 
 

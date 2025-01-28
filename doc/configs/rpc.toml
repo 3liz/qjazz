@@ -18,13 +18,18 @@ timeout = 20
 # closing connections. During this period,
 # no new connections are allowed.
 shutdown_grace_period = 10
+#
+# The maximum allowed failure pressure.
+# If the failure pressure exceed this value then
+# the service will exit with critical error condition,
+max_failure_pressure = 0.9
 
 #
 # Socket configuration
 [server.listen]
 #
 # Socket address
-address = "[::1]:23456"
+address = "127.0.0.1:23456"
 #
 # Enable TLS
 #
@@ -66,17 +71,17 @@ cancel_timeout = 3
 # error.
 max_waiting_requests = 50
 #
-# Startup projects
-#
-# List of projects to load at startup
-startup_projects = []
-#
 # Max failure pressure
 #
 # The maximum allowed failure pressure.
 # If the failure pressure exceed this value then
 # the service will exit with critical error condition.
 max_failure_pressure = 0.5
+#
+# Startup projects
+#
+# Projects to restore at startup
+restore_projects = []
 
 #
 # Qgis configuration

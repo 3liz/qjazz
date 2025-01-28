@@ -4,13 +4,28 @@
 level = "INFO"
 
 
-[http]
+[server]
 #
 # Interfaces to listen to
-listen = ["127.0.0.1",9080]
+address = "127.0.0.1:9080"
 #
-# Use ssl
-use_ssl = false
+# Use TLS
+enable_tls = false
+#
+# Client CA file
+#
+# Certificat for client authentification
+#tls_client_cafile =   	# Optional
+#
+# TLS  key
+#
+# Path to the TLS key file
+#tls_cert_file =   	# Optional
+#
+# SSL/TLS Certificat
+#
+# Path to the TLS certificat file
+#tls_key_file =   	# Optional
 #
 # CORS origin
 #
@@ -21,106 +36,48 @@ use_ssl = false
 # this url.
 cross_origin = "all"
 #
-# Enable proxy_configuration
+# Workers
 #
-# Indicates that the server is behind a reverse proxy.
-# This enable handling of forwarded proxy headers
-proxy_conf = false
-
+# Numbers of worker threads
+#num_workers =   	# Optional
 #
-# SSL configuration
+# Request timeout
+backends_request_timeout = 30
 #
-[http.ssl]
+# Shutdown timeout
 #
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
-
-
-[http_config_url]
-
-
-[admin_http]
-#
-# Interfaces to listen to
-listen = ["127.0.0.1",9876]
-#
-# Use ssl
-use_ssl = false
-#
-# CORS origin
-#
-# Allows to specify origin for CORS. If set 'all' will set
-# Access-Control-Allow-Origin to '*'; 'same-origin' return
-# the same value as the 'Origin' request header.
-# A url may may be specified, restricting allowed origin to
-# this url.
-cross_origin = "all"
-#
-# Enable proxy_configuration
-#
-# Indicates that the server is behind a reverse proxy.
-# This enable handling of forwarded proxy headers
-proxy_conf = false
-
-#
-# SSL configuration
-#
-[admin_http.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
-
-
-[router]
-#
-# The router class
-#
-# The router class allow for defining routing rules
-# from the request url.
-router_class = "qjazz_http.router.DefaultRouter"
-#
-# Router configuration
-config = {}
+# Shutdown grace period
+shutdown_timeout = 30
 
 #[backends.key]
+#
+# Hostname
+#host = "localhost"
+#
+# Port
+#port = 23456
+#
+# Enable TLS
+#enable_tls = false
+#
+# CA file
+#cafile =   	# Optional
+#
+# TLS  key file
+#
+# Path to the TLS key file
+#client_key_file =   	# Optional
+#
+# TLS Certificat
+#
+# Path to the TLS certificat file
+#client_cert_file =   	# Optional
 #
 # A descriptive title
 #title = ""
 #
 # A description of the service
 #description = ""
-#
-# Remote address of the service
-#
-#  Validate address
-# 
-#         Address may be:
-#         * A string `unix:path`
-#         * A 2-tuple `(name, port)` where `name` is either an ip addresse
-#           or a hostname
-#     
-#address = ["localhost",23456]
-#use_ssl = false
 #
 # Route to service
 #route =   	# Required
@@ -144,29 +101,6 @@ config = {}
 # WARNING: allowing this may be a security vulnerabilty.
 # See worker configuration for details.
 #allow_direct_resolution = false
-#
-# WFS/GetFeature limit
-#
-# Force setting a limit for WFS/GetFeature requests.
-# By default Qgis does not set limits and that may cause
-# issues with large collections.
-#getfeature_limit =   	# Optional
-
-#
-#[backends.key.ssl]
-#
-# CA file
-#cafile =   	# Optional
-#
-# SSL/TLS  key
-#
-# Path to the SSL key file
-#certfile =   	# Optional
-#
-# SSL/TLS Certificat
-#
-# Path to the SSL certificat file
-#keyfile =   	# Optional
 
 #
 # Api endpoints
@@ -197,17 +131,6 @@ config = {}
 # template resource resolution in Qgis server when using
 # delegated api endpoint.
 #enable_html_delegate = false
-
-#
-# Metrics configuration
-
-#[metrics]
-#
-# Metric module
-#
-# The module implementing request metrics
-#name =   	# Optional
-#options = {}
 
 #
 # Path to services configuration files

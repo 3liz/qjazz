@@ -33,7 +33,8 @@ def _to_string(v: str | bool | int | float) -> str:
             return "true" if b else "false"
         case int(n) | float(n):
             return f"{n}"
-
+        case default:
+            return str(v)
 
 def _field_default_repr(field: FieldInfo) -> str:
     match field.default:

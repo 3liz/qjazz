@@ -37,14 +37,14 @@ auth_tokens = []
 # CA file
 #cafile =   	# Optional
 #
-# SSL/TLS  key
+# TLS  certificat
 #
-# Path to the SSL key file
+# Path to the TLS cert file
 #certfile =   	# Optional
 #
-# SSL/TLS Certificat
+# TLS key file
 #
-# Path to the SSL certificat file
+# Path to the TLS key file
 #keyfile =   	# Optional
 
 
@@ -66,68 +66,41 @@ auth_tokens = []
 # CA file
 #cafile =   	# Optional
 #
-# SSL/TLS  key
+# TLS  certificat
 #
-# Path to the SSL key file
+# Path to the TLS cert file
 #certfile =   	# Optional
 #
-# SSL/TLS Certificat
+# TLS key file
 #
-# Path to the SSL certificat file
+# Path to the TLS key file
 #keyfile =   	# Optional
 
 
 [resolvers]
 
 #
-# List of Qgis pool backends
+# List of Rpc backends
 #
-# DNS resolver config
+# Resolver configuration
 # 
 # Resolver for DNS resolution that may resolve
 # to multiple ips.
 # 
-[[resolvers.pools]]
+[[resolvers.resolvers]]
 #
 # Unique label
 #
 # Unique resolver label. The label must be compatible with an url path component.
 #label =   	# Required
 #
-# Must be set to 'dns'
-#type =   	# Required
-#
-# Host name
-#host =   	# Required
-#
-# Service port
-port = 23456
+# RPC address
+address = [::1,23456]
 #
 # Check for ipv6
 ipv6 = false
 #
 # Use ssl connection
-use_ssl = false
-#
-# SSL certificats
-ssl = "cafile=None certfile=None keyfile=None"
-title = ""
-#description =   	# Optional
-
-#
-# List of Qgis pool backends
-#
-# Resolver for socket resolution
-[[resolvers.pools]]
-#
-# Unique label
-#
-# Unique resolver label. The label must be compatible with an url path component.
-#label =   	# Required
-#
-# Must be set to 'socket'
-#type =   	# Required
-#address =   	# Required
 use_ssl = false
 #
 # SSL certificats

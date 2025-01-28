@@ -16,11 +16,17 @@ use crate::utils::Validator;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ChannelService {
+    /// Hostname
     host: String,
+    /// Port
     port: u16,
+    /// Enable TLS
     enable_tls: bool,
+    /// CA certificate
     cafile: Option<PathBuf>,
+    /// Client authentification key
     client_key_file: Option<PathBuf>,
+    /// Client authentification certificat
     client_cert_file: Option<PathBuf>,
 }
 
@@ -41,12 +47,14 @@ impl Validator for ChannelService {
     }
 }
 
+const DEFAULT_CHANNEL_PORT: u16 = 23456;
+
 impl Default for ChannelService {
     fn default() -> Self {
         Self {
             // NOTE localhost resolve to ipv4 as first ip
             host: "localhost".into(),
-            port: 23456,
+            port: DEFAULT_CHANNEL_PORT,
             enable_tls: false,
             cafile: None,
             client_key_file: None,

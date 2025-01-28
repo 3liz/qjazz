@@ -56,13 +56,13 @@ class SSLConfig(ConfigBase):
     )
     certfile: Optional[FilePath] = Field(
         default=None,
-        title="SSL/TLS  key",
-        description="Path to the SSL key file",
+        title="TLS  certificat",
+        description="Path to the TLS cert file",
     )
     keyfile: Optional[FilePath] = Field(
         default=None,
-        title="SSL/TLS Certificat",
-        description="Path to the SSL certificat file",
+        title="TLS key file",
+        description="Path to the TLS key file",
     )
 
     #

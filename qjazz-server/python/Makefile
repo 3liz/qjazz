@@ -9,6 +9,7 @@ INSTALL_DEPENDENCIES=[minio]
 
 PYTHON_PKG= \
 	qjazz_rpcw \
+	qjazz_map \
 	qjazz_admin \
 	$(NULL)
 

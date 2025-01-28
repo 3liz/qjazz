@@ -8,6 +8,7 @@ from typing import Annotated, List, Optional, Tuple
 from pydantic import (
     AfterValidator,
     Field,
+    FilePath,
     PlainSerializer,
     PlainValidator,
     StringConstraints,
@@ -15,49 +16,13 @@ from pydantic import (
 )
 
 from qjazz_contrib.core.config import ConfigBase, SSLConfig
+from qjazz_contrib.core.models import NullField
 
 DEFAULT_PORT = 23456
 
 #
 # Resolver
 #
-
-
-def _validate_address(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
-    """ Validate address
-
-        Address may be:
-        * A string `unix:path`
-        * A 2-tuple `(name, port)` where `name` is either an ip addresse
-          or a hostname
-    """
-    def _check_ip(addr):
-        try:
-            addr = addr.strip('[]')
-            ipaddr = ipaddress.ip_address(addr)
-            if isinstance(ipaddr, ipaddress.IPv6Address):
-                addr = f"[{addr}]"
-        except ValueError:
-            # Assume this is a hostname
-            pass
-        return addr
-
-    match v:
-        case (str(addr), int(port)):
-            return (_check_ip(addr.removeprefix('tcp://')), port)
-        case str() as addr if addr.startswith('unix:'):
-            return addr
-        case str() as addr:
-            return (_check_ip(addr.removeprefix('tcp://')), DEFAULT_PORT)
-        case _ as addr:
-            raise ValueError(f"Unmanageable address: {addr}")
-
-
-NetAddress = Annotated[
-    str | Tuple[str, int],
-    AfterValidator(_validate_address),
-]
-
 
 def _validate_route(r: str) -> PurePosixPath:
     """ Validate a path:
@@ -85,8 +50,7 @@ class ApiEndpoint(ConfigBase):
         pattern=r"^[^\/]+",
         title="Api endpoint",
     )
-    delegate_to: Optional[str] = Field(
-        default=None,
+    delegate_to: Optional[str] = NullField(
         title="Api name to delegate to",
         description=(
             "Api delegation allow for using a baseurl different\n"
@@ -116,6 +80,23 @@ class ApiEndpoint(ConfigBase):
 
 
 class BackendConfig(ConfigBase):
+    host: str = Field("localhost", title="Hostname")
+    port: int = Field(DEFAULT_PORT, title="Port")
+    enable_tls: bool = Field(
+        False,
+        title="Enable TLS",
+    )
+    cafile: Optional[FilePath] = NullField(
+        title="CA file",
+    )
+    client_key_file: Optional[FilePath] = NullField(
+        title="TLS  key file",
+        description="Path to the TLS key file",
+    )
+    client_cert_file: Optional[FilePath] = NullField(
+        title="TLS Certificat",
+        description="Path to the TLS certificat file",
+    )
     title: str = Field(
         default="",
         title="A descriptive title",
@@ -124,14 +105,6 @@ class BackendConfig(ConfigBase):
         default="",
         title="A description of the service",
     )
-    address: NetAddress = Field(
-        default=('localhost', DEFAULT_PORT),
-        title="Remote address of the service",
-        description=_validate_address.__doc__,
-    )
-
-    use_ssl: bool = False
-    ssl: SSLConfig = SSLConfig()
 
     # Define route to service
     route: Route = Field(title="Route to service")
@@ -146,7 +119,6 @@ class BackendConfig(ConfigBase):
             "a timeout error (504) is returned to the client."
         ),
     )
-
     forward_headers: List[Annotated[str, StringConstraints(to_lower=True)]] = Field(
         default=['x-qgis-*', 'x-lizmap-*'],
         title="Forwarded headers",
@@ -155,12 +127,10 @@ class BackendConfig(ConfigBase):
             "This may be useful if you have plugins that may deal with request headers."
         ),
     )
-
     api: List[ApiEndpoint] = Field(
         default=[],
         title="Api endpoints",
     )
-
     allow_direct_resolution: bool = Field(
         default=False,
         title="Allow direct path resolution",
@@ -171,19 +141,3 @@ class BackendConfig(ConfigBase):
         ),
     )
 
-    getfeature_limit: Optional[Annotated[int, Field(gt=0)]] = Field(
-        default=None,
-        title="WFS/GetFeature limit",
-        description=(
-            "Force setting a limit for WFS/GetFeature requests.\n"
-            "By default Qgis does not set limits and that may cause\n"
-            "issues with large collections."
-        ),
-    )
-
-    def to_string(self) -> str:
-        match self.address:
-            case (addr, port):
-                return f"{addr}:{port}"
-            case _ as addr:
-                return str(addr)

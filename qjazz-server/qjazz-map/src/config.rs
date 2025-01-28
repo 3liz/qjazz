@@ -63,6 +63,7 @@ pub struct Server {
     /// The interface to listen to
     #[serde(flatten)]
     listen: ListenConfig,
+    /// Number of workers
     num_workers: Option<usize>,
     /// Backend request timeout
     backend_request_timeout: u64,
