@@ -1,7 +1,7 @@
 use actix_web::{
     body,
     dev::{ServiceRequest, ServiceResponse},
-    error, guard, middleware, web, App, HttpServer, Result,
+    guard, middleware, web, App, HttpServer, Result,
 };
 
 use futures::future::try_join_all;
@@ -38,21 +38,13 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
     backends.watch(token);
 
     let server = HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .wrap(cors.configure())
-            .wrap(middleware::Logger::new(LOGGER_FORMAT))
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::from_fn(server_mw))
-            .app_data(web::ThinData(proxy_headers));
-
-        match backends.clone() {
-            Backends::Single(channel) => app
-                //.configure(dataset_collections)
-                .configure(single_channel_scope(channel)),
-            Backends::Multi(mut channels) => channels.drain(..).fold(app, |app, channel| {
-                app.configure(multi_channel_scope(channel))
-            }),
-        }
+            .app_data(web::ThinData(proxy_headers))
+            .configure(backends.clone().configure())
+            .wrap(middleware::Logger::new(LOGGER_FORMAT))
     })
     .shutdown_timeout(shutdown_timeout);
 
@@ -108,7 +100,6 @@ fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig
     let path = format!("/{}", api.endpoint);
 
     let scope = web::scope(path.as_str())
-        .wrap(middleware::from_fn(verify_channel_mw))
         .app_data(api.clone())
         .route("{path:.*}", web::to(api::handler))
         .default_service(web::to(api::default_handler));
@@ -117,13 +108,11 @@ fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig
         cfg.service(scope)
             .service(
                 web::resource(format!("{}.json", path).as_str())
-                    .wrap(middleware::from_fn(verify_channel_mw))
                     .app_data(api.clone())
                     .to(api::default_handler),
             )
             .service(
                 web::resource(format!("{}.html", path).as_str())
-                    .wrap(middleware::from_fn(verify_channel_mw))
                     .app_data(api.clone())
                     .to(api::default_handler),
             );
@@ -149,11 +138,8 @@ fn ows_resource(cfg: &mut web::ServiceConfig) {
 // Single channel config
 fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     |cfg| {
-        let cfg = cfg.service(
-            web::scope("/")
-                .wrap(middleware::from_fn(verify_channel_mw))
-                .configure(ows_resource),
-        );
+        let cfg = cfg.service(web::scope("/").configure(ows_resource));
+        //.configure(dataset_collections)
         channel
             .api_endpoints()
             .iter()
@@ -165,7 +151,6 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
 // Create channel configuration
 fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     let scope = web::scope(channel.route())
-        .wrap(middleware::from_fn(verify_channel_mw))
         //.configure(dataset_collections)
         .configure(ows_resource);
 
@@ -209,12 +194,23 @@ impl Backends {
         }
     }
 
-    pub fn watch(&self, token: CancellationToken) {
+    fn watch(&self, token: CancellationToken) {
         match self {
             Self::Single(channel) => channel.watch(token),
             Self::Multi(channels) => channels
                 .iter()
                 .for_each(|channel| channel.watch(token.clone())),
+        }
+    }
+
+    fn configure(self) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |cfg| {
+            match self {
+                Backends::Single(channel) => cfg.configure(single_channel_scope(channel)),
+                Backends::Multi(mut channels) => channels.drain(..).fold(cfg, |cfg, channel| {
+                    cfg.configure(multi_channel_scope(channel))
+                }),
+            };
         }
     }
 }
@@ -229,30 +225,14 @@ async fn server_mw(
     // See https://docs.rs/actix-web/latest/actix_web/trait.HttpMessage.html#tymethod.extensions_mut
     // for adding data
 
+    // Check if channel is serving
+    // if we are in multi route mode
+    // then this call does nothing since channel data
+    // is not defined at this point
+    let mut resp = next.call(req).await?;
+
     // Normalize headers to camel case
     // for buggy clients
-
-    let mut resp = next.call(req).await?;
     resp.response_mut().head_mut().set_camel_case_headers(true);
     Ok(resp)
-}
-
-// A channel middleware for early returns
-// of unavailable channels
-async fn verify_channel_mw(
-    req: ServiceRequest,
-    next: middleware::Next<impl body::MessageBody>,
-) -> Result<ServiceResponse<body::EitherBody<body::BoxBody, impl body::MessageBody>>> {
-    // Check channel availability
-    if let Some(channel) = req.app_data::<web::Data<Channel>>() {
-        if !channel.serving() {
-            return Ok(req
-                .error_response(error::ErrorServiceUnavailable(
-                    "Service not available, please retry later.",
-                ))
-                .map_into_left_body());
-        }
-    }
-
-    Ok(next.call(req).await?.map_into_right_body())
 }

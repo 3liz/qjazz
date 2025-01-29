@@ -9,8 +9,8 @@ use tonic_health::pb::{
     health_check_response::ServingStatus, health_client::HealthClient, HealthCheckRequest,
 };
 
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+//use std::sync::atomic::{AtomicBool, Ordering};
+//use std::sync::Arc;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
@@ -37,7 +37,7 @@ pub struct Channel {
     // Make endpoints directly usable as
     // App shared data
     endpoints: Vec<web::Data<ApiEndPoint>>,
-    serving: Arc<AtomicBool>,
+    //serving: Arc<AtomicBool>,
     channel: LoadBalancedChannel,
 }
 
@@ -57,7 +57,7 @@ impl Builder {
             name: self.name,
             endpoints: self.config.api.drain(..).map(web::Data::new).collect(),
             config: self.config,
-            serving: Arc::new(AtomicBool::new(false)),
+            //serving: Arc::new(AtomicBool::new(false)),
             channel,
         })
     }
@@ -90,9 +90,11 @@ impl Channel {
         .map_err(|e| Status::internal(format!("Failed to create load balanced channel {}", e)))
     }
 
+    /*
     pub fn serving(&self) -> bool {
         self.serving.load(Ordering::Relaxed)
     }
+    */
 
     pub fn name(&self) -> &str {
         &self.name
@@ -134,7 +136,7 @@ impl Channel {
         let request = HealthCheckRequest {
             service: "qjazz.QgisServer".into(),
         };
-        let serving = self.serving.clone();
+        //let serving = self.serving.clone();
         let channel = self.channel.clone();
         let name = self.name.clone();
         let sleep_interval = self.config.probe_interval();
@@ -154,18 +156,18 @@ impl Channel {
                                 Ok(Some(status)) => match status.status {
                                     st if st == ServingStatus::Serving as i32 => {
                                         log::info!("Backend: {}: status changed to SERVING", name);
-                                        serving.store(true, Ordering::Relaxed);
+                                        //serving.store(true, Ordering::Relaxed);
                                     }
                                     st if st == ServingStatus::NotServing as i32 => {
                                         log::info!(
                                             "Backend: {}: status changed to NOT SERVING",
                                             name
                                         );
-                                        serving.store(false, Ordering::Relaxed);
+                                        //serving.store(false, Ordering::Relaxed);
                                     }
                                     _ => {
                                         log::info!("Backend: {}: status changed to UNKNOWN", name);
-                                        serving.store(false, Ordering::Relaxed);
+                                        //serving.store(false, Ordering::Relaxed);
                                     }
                                 },
                                 Ok(None) => {
@@ -177,7 +179,7 @@ impl Channel {
                     }
                 };
                 // Handle error
-                serving.store(false, Ordering::Relaxed);
+                //serving.store(false, Ordering::Relaxed);
                 if let Some(status) = rv {
                     if status.code() != Code::Unavailable {
                         log::error!("Backend error:\t{}\t{}", name, status);

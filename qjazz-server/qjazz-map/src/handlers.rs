@@ -25,8 +25,6 @@ fn stream_bytes(
         Err(status) => {
             log::error!("Backend error:\t{}\t{}", channel.name(), status);
             HttpResponseBuilder::from_rpc_status(&status, request_id)
-                .content_type("text/plain")
-                .body(status.message().to_string())
         }
         Ok(resp) => {
             let channel = channel.clone();
