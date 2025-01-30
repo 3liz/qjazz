@@ -4,7 +4,7 @@
 import pickle  # nosec
 
 from dataclasses import dataclass, field
-from enum import IntEnum, StrEnum
+from enum import IntEnum, StrEnum, Flag
 from typing import (
     Annotated,
     Any,
@@ -82,6 +82,7 @@ class RequestReport:
     memory: Optional[int]
     timestamp: float
     duration: float
+
 #
 # OWS
 #
@@ -125,21 +126,41 @@ class ApiRequestMsg(MsgModel):
 #
 # Collections
 #
+
+class CollectionsType(StrEnum):
+    CATALOG = "CATALOG"
+    DATASET = "DATASET"
+
+
 class CollectionsMsg(MsgModel):
     msg_id: Literal[MsgType.COLLECTIONS] = MsgType.COLLECTIONS
     location: Optional[str] = None
-    limit: int = 1000
-    page: int = 1
+    type: CollectionsType
+    start: int = 0
+    end: int = 50
+
+
+class OgcEndpoints(Flag):
+    MAP = 0x01
+    FEATURES = 0x02
+    COVERAGE = 0x04
+    TILE = 0x08
+    STYLE = 0x10
 
 
 @dataclass
 class CollectionsItem:
-    item_id: str
+    id: str
     name: str
-    title: str
-    item_type: str
-    description: str
+    json: str
+    endpoints: int # OgcEndpoints
 
+
+@dataclass
+class CollectionsPage:
+    schema: str
+    next: bool
+    items: List[CollectionsItem]
 
 #
 # Ping
@@ -311,6 +332,7 @@ Message = Annotated[
     Union[
         OwsRequestMsg,
         ApiRequestMsg,
+        CollectionsMsg,
         PingMsg,
         QuitMsg,
         CheckoutProjectMsg,

@@ -259,10 +259,15 @@ def qgis_server_run(
                 case _m.GetEnvMsg():
                     _m.send_reply(conn, worker_env())
                 # --------------------
-                # Test
+                # Sleep
                 # --------------------
                 case _m.SleepMsg():
                     do_sleep(conn, msg, feedback.feedback)
+                # --------------------
+                # Collections
+                # -------------------
+                case _m.CollectionsMsg():
+                    _m.send_reply(conn, "Not implemented", 501)
                 # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)

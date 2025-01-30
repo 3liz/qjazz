@@ -3,7 +3,7 @@
 //! Defines messages and reply for worker processes
 //! communication
 //!
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{de, Deserialize, Serialize, Serializer};
 use std::collections::HashMap;
 
 use crate::errors;
@@ -200,23 +200,64 @@ pub struct RequestReply {
     pub cache_id: String,
 }
 
+//
+// Collections
+//
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub enum CollectionsType {
+    CATALOG,
+    DATASET,
+}
+
 #[derive(Serialize)]
 pub struct CollectionsMsg<'a> {
     pub location: Option<&'a str>,
-    pub limit: i64,
-    pub page: i64,
+    pub r#type: CollectionsType,
+    pub start: i64,
+    pub end: i64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+bitflags::bitflags! {
+    //#[derive(Copy, Clone, Debug, Deserialize)]
+    #[derive(Copy, Clone, Debug)]
+    pub struct OgcEndpoints: i64 {
+        const MAP = 0x01;
+        const FEATURES = 0x02;
+        const COVERAGE = 0x04;
+        const TILE = 0x08;
+        const STYLE = 0x010;
+    }
+}
+
+// Workaround for https://github.com/birkenfeld/serde-pickle/pull/33
+impl<'de> Deserialize<'de> for OgcEndpoints {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        Ok(Self::from_bits_retain(i64::deserialize(deserializer)?))
+    }
+}
+
+
+#[derive(Deserialize, Debug)]
 pub struct CollectionsItem {
     pub id: String,
     pub name: String,
-    pub title: String,
-    pub r#type: String,
-    pub description: String,
+    pub json: String,
+    pub endpoints: OgcEndpoints,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug)]
+pub struct CollectionsPage {
+    pub schema: String,
+    pub next: bool,
+    pub items: Vec<CollectionsItem>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RequestReport {
     pub memory: Option<i64>,
     pub timestamp: f64,
@@ -239,6 +280,7 @@ pub enum CheckoutStatus {
 }
 
 impl Serialize for CheckoutStatus {
+    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

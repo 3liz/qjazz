@@ -15,8 +15,8 @@ pub mod qjazz_service {
 }
 
 use qjazz_service::{
-    ApiRequest, CollectionsItem, CollectionsRequest, OwsRequest, PingReply, PingRequest,
-    ResponseChunk,
+    collections_page::CollectionsItem, ApiRequest, CollectionsPage, CollectionsRequest,
+    CollectionsType, OwsRequest, PingReply, PingRequest, ResponseChunk,
 };
 
 pub mod admin;
@@ -130,7 +130,6 @@ impl QgisServerServicer {
 }
 
 type ResponseChunkStream = Pin<Box<dyn Stream<Item = Result<ResponseChunk, Status>> + Send>>;
-type CollectionsItemStream = Pin<Box<dyn Stream<Item = Result<CollectionsItem, Status>> + Send>>;
 
 // gRPC Service implementation
 #[tonic::async_trait]
@@ -239,49 +238,44 @@ impl QgisServer for QgisServerServicer {
     //
     // Collections
     //
-    type CollectionsStream = CollectionsItemStream;
 
     async fn collections(
         &self,
         request: Request<CollectionsRequest>,
-    ) -> Result<Response<Self::CollectionsStream>, Status> {
+    ) -> Result<Response<CollectionsPage>, Status> {
         // Wait for available worker
-        /*
         let mut w = self.inner.get_worker().await?;
-        let location = request.into_inner().location;
 
-        let (tx, rx) = mpsc::channel(32);
-        tokio::spawn(async move {
-            {
-                let mut stream = match w.collections(location.as_deref()).await {
-                    Ok(stream) => stream,
-                    Err(err) => {
-                        let _ = tx.send(Err(Status::unknown(err))).await;
-                        return;
+        let msg = request.into_inner();
+        Ok(Response::new(CollectionsPage::from(
+            w.collections(
+                msg.location.as_deref(),
+                match msg.r#type {
+                    t if t == CollectionsType::Catalog as i32 => {
+                        qjazz_pool::messages::CollectionsType::CATALOG
                     }
-                };
-                loop {
-                    if tx
-                        .send(match stream.next().await {
-                            Ok(Some(item)) => Ok(CollectionsItem::from(item)),
-                            Ok(None) => break,
-                            Err(err) => Err(Status::unknown(err)),
-                        })
-                        .await
-                        .is_err()
-                    {
-                        log::error!("Connection cancelled by client");
-                        return;
+                    t if t == CollectionsType::Dataset as i32 => {
+                        qjazz_pool::messages::CollectionsType::DATASET
                     }
-                }
-            }
-            w.done();
-        });
+                    t => {
+                        return Err(Status::internal(format!("Invalid collection type: {}", t)));
+                    }
+                },
+                msg.start..msg.end,
+            )
+            .await
+            .map_err(Self::error)?,
+        )))
+    }
+}
 
-        let output_stream = ReceiverStream::new(rx);
-        Ok(Response::new(Box::pin(output_stream) as Self::CollectionsStream))
-        */
-        Err(Status::unimplemented("Collections"))
+impl From<qjazz_pool::messages::CollectionsPage> for CollectionsPage {
+    fn from(mut msg: qjazz_pool::messages::CollectionsPage) -> Self {
+        CollectionsPage {
+            schema: msg.schema,
+            next: msg.next,
+            items: msg.items.drain(..).map(CollectionsItem::from).collect(),
+        }
     }
 }
 
@@ -290,9 +284,8 @@ impl From<qjazz_pool::messages::CollectionsItem> for CollectionsItem {
         CollectionsItem {
             id: msg.id,
             name: msg.name,
-            title: msg.title,
-            r#type: msg.r#type,
-            description: msg.description,
+            json: msg.json,
+            endpoints: msg.endpoints.bits(),
         }
     }
 }

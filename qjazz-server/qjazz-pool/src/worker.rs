@@ -314,6 +314,25 @@ impl Worker {
         Ok(ByteStream::new(self.io()?))
     }
 
+    // Collections
+
+    pub async fn collections(
+        &mut self,
+        location: Option<&str>,
+        r#type: msg::CollectionsType,
+        range: std::ops::Range<i64>,
+    ) -> Result<msg::CollectionsPage> {
+        self.io()?
+            .send_message(msg::CollectionsMsg {
+                location,
+                r#type,
+                start: range.start,
+                end: range.end,
+            })
+            .await
+            .map(|(_, resp)| resp)
+    }
+
     //
     // Cache
     //

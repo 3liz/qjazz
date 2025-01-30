@@ -10,7 +10,7 @@ service QgisServer {
     rpc Ping (PingRequest) returns (PingReply) {}
     rpc ExecuteOwsRequest (OwsRequest) returns (stream ResponseChunk) {}
     rpc ExecuteApiRequest (ApiRequest) returns (stream ResponseChunk) {}
-    rpc Collections (CollectionsRequest) returns (stream CollectionsItem) {}
+    rpc Collections (CollectionsRequest) returns (CollectionsPage) {}
 }
 
 service QgisAdmin {
@@ -104,20 +104,36 @@ message ApiRequest {
     optional string content_type = 11;
 }
 
+// Collections
+
+enum CollectionsType {
+    CATALOG = 0;  // Return the catalog 
+    DATASET = 1;  // Return the collections associated with the dataset
+}
 
 message CollectionsRequest {
     optional string location = 1;
-    int64 limit = 2;
-    int64 page = 3;
+    CollectionsType type = 2;
+    int64 start = 3;
+    int64 end = 4;
 }
 
-
-message CollectionsItem {
-    string id = 1;    
-    string name = 2;
-    string title = 3;
-    string type = 4;
-    string description = 5;
+message CollectionsPage {
+    message CollectionsItem {
+        string id = 1;
+        string name = 2;
+        string json = 3;
+        // Bitflags
+        // MAP = 0x01
+        // FEATURES = 0x02
+        // COVERAGE = 0x04
+        // TILE = 0x08
+        // STYLE = 0x10
+        int64 endpoints = 4;
+    }
+    string schema = 1;
+    bool next = 2;
+    repeated CollectionsItem items = 3;    
 }
 
 

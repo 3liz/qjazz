@@ -189,6 +189,24 @@ def run(name: str, projects: list[str]) -> None:
                         )
                         m_.send_chunk(conn, b"<data>")
                         m_.send_chunk(conn, b"")
+                    case m_.CollectionsMsg():
+                        m_.send_reply(
+                            conn,
+                            m_.CollectionsPage(
+                                schema="",
+                                next=False,
+                                items=[
+                                    m_.CollectionsItem(
+                                        id="Test000",
+                                        name="Test000",
+                                        json="",
+                                        endpoints=(
+                                            m_.OgcEndpoints.MAP|m_.OgcEndpoints.FEATURES
+                                        ).value,
+                                    ),
+                                ],
+                            )
+                        )
                     case m_.GetEnvMsg():
                         m_.send_reply(conn, dict(
                             qgis_version=0,
