@@ -119,11 +119,18 @@ pub mod metadata {
 }
 
 pub trait RpcResponseFactory {
+    fn from_metadata(metadata: &MetadataMap, response: Option<String>) -> HttpResponseBuilder {
+        Self::builder_from_metadata(StatusCode::OK, metadata, response)
+    }
     //
     // Handle response status and headers
     //
-    fn from_metadata(metadata: &MetadataMap, request_id: Option<String>) -> HttpResponseBuilder {
-        let mut builder = HttpResponseBuilder::new(StatusCode::OK);
+    fn builder_from_metadata(
+        code: StatusCode,
+        metadata: &MetadataMap,
+        request_id: Option<String>,
+    ) -> HttpResponseBuilder {
+        let mut builder = HttpResponseBuilder::new(code);
 
         if let Some(id) = request_id {
             builder.insert_header(("x-request-id", id));
@@ -167,31 +174,44 @@ pub trait RpcResponseFactory {
     // for details about gRPC error codes.
     fn from_rpc_status(status: &tonic::Status, request_id: Option<String>) -> HttpResponse {
         let code = match status.code() {
-            tonic::Code::Ok => StatusCode::OK,
-            tonic::Code::InvalidArgument => StatusCode::BAD_REQUEST,
             tonic::Code::DeadlineExceeded => StatusCode::GATEWAY_TIMEOUT,
-            tonic::Code::NotFound => StatusCode::NOT_FOUND,
-            tonic::Code::AlreadyExists => StatusCode::CONFLICT,
             tonic::Code::PermissionDenied => StatusCode::FORBIDDEN,
-            // XXX No better idea !
-            tonic::Code::Cancelled
-            | tonic::Code::Aborted
-            | tonic::Code::Internal
-            | tonic::Code::ResourceExhausted
-            | tonic::Code::DataLoss => StatusCode::INTERNAL_SERVER_ERROR,
-            tonic::Code::FailedPrecondition => StatusCode::PRECONDITION_FAILED,
-            tonic::Code::OutOfRange => StatusCode::BAD_REQUEST,
+            // XXX Cancelled is usually a response to an action from the caller.
+            // Having this error here means that some external cause occured on
+            // service side.
+            tonic::Code::Cancelled => StatusCode::SERVICE_UNAVAILABLE,
+            tonic::Code::Internal | tonic::Code::ResourceExhausted => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             tonic::Code::Unimplemented => StatusCode::NOT_IMPLEMENTED,
             tonic::Code::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             tonic::Code::Unauthenticated => StatusCode::UNAUTHORIZED,
-            tonic::Code::Unknown => {
-                // Handle rpc error which is out
-                // of gRPC namespace.
-                // Usually occurs when a non-Qgis error
-                // is raised before reaching qgis server.
-                // In this case return the error code found in
-                // the metadata.
-                return Self::from_metadata(status.metadata(), request_id)
+
+            // User code generated errors
+            // see https://grpc.io/docs/guides/status-codes
+            //
+            // Usually occurs when a non-Qgis error
+            // is raised before reaching qgis server.
+            code => {
+                let code = match code {
+                    tonic::Code::InvalidArgument => StatusCode::BAD_REQUEST,
+                    tonic::Code::NotFound => StatusCode::NOT_FOUND,
+                    tonic::Code::AlreadyExists => StatusCode::CONFLICT,
+                    tonic::Code::FailedPrecondition => StatusCode::PRECONDITION_FAILED,
+                    tonic::Code::Aborted => StatusCode::SERVICE_UNAVAILABLE,
+                    // tonic::Code::OK
+                    // tonic::Code::OutOfRange
+                    // tonic::Code::Dataloss
+                    // tonic::Code::Unknown
+
+                    // Consider these errors as legitimate Ok responses
+                    // or error which is out of gRPC namespace.
+                    // In this case the error code may be  found in
+                    // the metadata.
+                    _ => StatusCode::OK,
+                };
+
+                return Self::builder_from_metadata(code, status.metadata(), request_id)
                     .content_type("text/plain")
                     .body(status.message().to_string());
             }
@@ -200,10 +220,12 @@ pub trait RpcResponseFactory {
         // Send informative message
         HttpResponseBuilder::new(code)
             .content_type("text/plain")
-            .body(match code.as_u16() {
-                503 => "Service temporary unavailable".to_string(),
-                code if code < 500 => status.message().to_string(),
-                _ => "Server Error".to_string(),
+            .body(if code.is_server_error() {
+                code.canonical_reason()
+                    .unwrap_or("Server error")
+                    .to_string()
+            } else {
+                status.message().to_string()
             })
     }
 }

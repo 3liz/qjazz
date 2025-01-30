@@ -235,7 +235,7 @@ def _handle_generic_request(
         req_hdrs['Content-Type'] = content_type
 
     if request_id:
-        logger.log_req("ID:%s", request_id)
+        logger.log_req("[REQ:%s]", request_id)
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
@@ -282,7 +282,7 @@ def request_project_from_cache(
                         entry, co_status = cm.update(cast(ProjectMetadata, md), co_status)
                 else:
                     logger.error("load_project_on_request disabled for '%s'", md.uri)  # type: ignore
-                    _m.send_reply(conn, target, 404)
+                    _m.send_reply(conn, f"Resource not found: {target}", 404)
             case Co.REMOVED:
                 # Do not serve a removed project
                 # Since layer's data may not exists
@@ -292,7 +292,7 @@ def request_project_from_cache(
                 _m.send_reply(conn, target, 410)
             case Co.NOTFOUND:
                 logger.error("Requested project not found: %s", urlunsplit(url))
-                _m.send_reply(conn, target, 404)
+                _m.send_reply(conn, f"Resource not found: {target}", 404)
             case _ as unreachable:
                 assert_never(unreachable)
     except CacheManager.ResourceNotAllowed as err:

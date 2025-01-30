@@ -11,7 +11,8 @@ build-binaries:
     name: snap
   artifacts:
     paths:
-    - "qjazz-server/target/release/qjazz-rpc"
+    - "qjazz-server/target/release/qjazz-rpc-bin"
+    - "qjazz-server/target/release/qjazz-map-bin"
   only:
     refs:
     - tags

@@ -2,7 +2,8 @@
 // Rpc server
 //
 use crate::config::Settings;
-use crate::service::{QgisAdminServer, QgisAdminServicer, QgisServerServer, QgisServerServicer};
+use crate::service::admin::{QgisAdminServer, QgisAdminServicer};
+use crate::service::{QgisServerServer, QgisServerServicer};
 use qjazz_pool::Pool;
 use std::sync::Arc;
 use tokio::sync::RwLock;

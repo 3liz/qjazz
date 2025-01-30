@@ -1,7 +1,8 @@
 use actix_web::{
     body,
+    body::EitherBody,
     dev::{ServiceRequest, ServiceResponse},
-    guard, middleware, web, App, HttpServer, Result,
+    guard, middleware, web, App, HttpResponse, HttpServer, Result,
 };
 
 use futures::future::try_join_all;
@@ -151,6 +152,7 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
 // Create channel configuration
 fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     let scope = web::scope(channel.route())
+        .wrap(middleware::from_fn(verify_channel_mw))
         //.configure(dataset_collections)
         .configure(ows_resource);
 
@@ -225,14 +227,33 @@ async fn server_mw(
     // See https://docs.rs/actix-web/latest/actix_web/trait.HttpMessage.html#tymethod.extensions_mut
     // for adding data
 
-    // Check if channel is serving
-    // if we are in multi route mode
-    // then this call does nothing since channel data
-    // is not defined at this point
     let mut resp = next.call(req).await?;
 
     // Normalize headers to camel case
     // for buggy clients
     resp.response_mut().head_mut().set_camel_case_headers(true);
     Ok(resp)
+}
+
+// Early check that channel is serving
+async fn verify_channel_mw(
+    req: ServiceRequest,
+    next: middleware::Next<impl body::MessageBody>,
+) -> Result<ServiceResponse<EitherBody<impl body::MessageBody>>> {
+    // Check if channel is serving
+    if let Some(channel) = req.app_data::<web::Data<Channel>>() {
+        if !channel.serving() {
+            let name = channel.name().to_string();
+            return Ok(req.into_response(
+                HttpResponse::ServiceUnavailable()
+                    .content_type("text/plain")
+                    .body(format!(
+                        "Service '{}' not available, please retry later",
+                        name
+                    ))
+                    .map_into_right_body(),
+            ));
+        }
+    }
+    Ok(next.call(req).await?.map_into_left_body())
 }

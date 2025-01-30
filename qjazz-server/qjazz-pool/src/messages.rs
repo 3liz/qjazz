@@ -14,8 +14,6 @@ pub type JsonValue = serde_json::Value;
 #[derive(Clone, Copy, Debug)]
 pub enum MsgType {
     PING = 1,
-    //QUIT = 2,    XXX: Deprecated
-    //REQUEST = 3, XXX: Deprecated
     OWSREQUEST = 4,
     APIREQUEST = 5,
     CHECKOUT_PROJECT = 6,
@@ -31,6 +29,7 @@ pub enum MsgType {
     ENV = 16,
     STATS = 17,
     SLEEP = 18,
+    COLLECTIONS = 19,
 }
 
 // Pickable Trait
@@ -145,11 +144,13 @@ impl TryFrom<&str> for HTTPMethod {
 
 impl_message! {OwsRequestMsg<'a>, OWSREQUEST}
 impl_message! {ApiRequestMsg<'a>, APIREQUEST}
+impl_message! {CollectionsMsg<'a>, COLLECTIONS}
 
 pub trait RequestMessage: Pickable {}
 
 impl RequestMessage for OwsRequestMsg<'_> {}
 impl RequestMessage for ApiRequestMsg<'_> {}
+impl RequestMessage for CollectionsMsg<'_> {}
 
 /// OWS request message
 #[derive(Serialize)]
@@ -199,12 +200,29 @@ pub struct RequestReply {
     pub cache_id: String,
 }
 
+#[derive(Serialize)]
+pub struct CollectionsMsg<'a> {
+    pub location: Option<&'a str>,
+    pub limit: i64,
+    pub page: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CollectionsItem {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+    pub r#type: String,
+    pub description: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct RequestReport {
     pub memory: Option<i64>,
     pub timestamp: f64,
     pub duration: f64,
 }
+
 //
 // CACHE
 //

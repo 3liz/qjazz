@@ -45,6 +45,7 @@ class MsgType(IntEnum):
     ENV = 16
     STATS = 17
     SLEEP = 18
+    COLLECTIONS = 19
 
 # Note: HTTPMethod is defined in python 3.11 via http module
 
@@ -81,8 +82,9 @@ class RequestReport:
     memory: Optional[int]
     timestamp: float
     duration: float
-
-
+#
+# OWS
+#
 class OwsRequestMsg(MsgModel):
     msg_id: Literal[MsgType.OWSREQUEST] = MsgType.OWSREQUEST
     service: str
@@ -100,7 +102,9 @@ class OwsRequestMsg(MsgModel):
     method: Optional[HTTPMethod] = None
     body: Optional[bytes] = None
 
-
+#
+# API
+#
 class ApiRequestMsg(MsgModel):
     msg_id: Literal[MsgType.APIREQUEST] = MsgType.APIREQUEST
     name: str
@@ -118,7 +122,28 @@ class ApiRequestMsg(MsgModel):
     debug_report: bool = False
     content_type: Optional[str] = None
 
+#
+# Collections
+#
+class CollectionsMsg(MsgModel):
+    msg_id: Literal[MsgType.COLLECTIONS] = MsgType.COLLECTIONS
+    location: Optional[str] = None
+    limit: int = 1000
+    page: int = 1
 
+
+@dataclass
+class CollectionsItem:
+    item_id: str
+    name: str
+    title: str
+    item_type: str
+    description: str
+
+
+#
+# Ping
+#
 class PingMsg(MsgModel):
     msg_id: Literal[MsgType.PING] = MsgType.PING
     echo: Optional[str] = None

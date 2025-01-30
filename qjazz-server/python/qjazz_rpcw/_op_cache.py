@@ -255,7 +255,7 @@ def send_project_info(
                     ),
                 )
             case Co.NOTFOUND | Co.NEW | Co.UPDATED:
-                _m.send_reply(conn, urlunsplit(url), 404)
+                _m.send_reply(conn, f"Resource not found: {urlunsplit(url)}", 404)
             case _ as unreachable:
                 assert_never(unreachable)
     except CacheManager.ResourceNotAllowed as err:

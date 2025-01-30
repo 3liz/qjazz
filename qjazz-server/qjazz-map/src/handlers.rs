@@ -121,7 +121,7 @@ pub mod ows {
         // since Form will consume data
         let args = match serde_urlencoded::from_bytes::<Ows>(&bytes) {
             Err(err) => {
-                let message = format!("Invalid OWS request: {}", err);
+                let message = format!("Invalid OWS www-form-data body: {}", err);
                 log::error!("{}", message);
                 return web::Either::Left(HttpResponse::BadRequest().body(message));
             }
