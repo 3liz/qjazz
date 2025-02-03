@@ -4,8 +4,8 @@ from time import time
 
 import pytest
 
-from qjazz_rpcw import messages
-from qjazz_rpcw.tests.worker import Worker, NoDataResponse
+from qjazz_rpc import messages
+from qjazz_rpc.tests.worker import Worker, NoDataResponse
 
 pytest_plugins = ('pytest_asyncio',)
 

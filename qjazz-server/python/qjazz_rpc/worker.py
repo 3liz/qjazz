@@ -27,7 +27,7 @@ from qjazz_contrib.core.qgis import (
     show_qgis_settings,
 )
 
-from . import _op_cache, _op_plugins, _op_requests
+from . import _op_cache, _op_collections, _op_plugins, _op_requests
 from . import messages as _m
 from .config import QgisConfig
 from .delegate import ApiDelegate
@@ -196,6 +196,11 @@ def qgis_server_run(
                         feedback=feedback.feedback,
                     )
                 # --------------------
+                # Collections
+                # --------------------
+                case _m.CollectionsMsg():
+                    _op_collections.handle_collection(conn, msg, cm, conf)
+                # --------------------
                 # Global management
                 # --------------------
                 case _m.PingMsg():
@@ -263,12 +268,6 @@ def qgis_server_run(
                 # --------------------
                 case _m.SleepMsg():
                     do_sleep(conn, msg, feedback.feedback)
-                # --------------------
-                # Collections
-                # -------------------
-                case _m.CollectionsMsg():
-                    _m.send_reply(conn, "Not implemented", 501)
-                # --------------------
                 case _ as unreachable:
                     assert_never(unreachable)
         except KeyboardInterrupt:
@@ -313,7 +312,7 @@ def do_sleep(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):
     while done_ts > time():
         sleep(1.0)
         canceled = feedback.isCanceled()
-        #if canceled:
+        # if canceled:
         #    logger.info("** Sleep cancelled **")
         #    break
     if not canceled:

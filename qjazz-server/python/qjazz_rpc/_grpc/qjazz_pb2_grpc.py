@@ -5,7 +5,7 @@ import warnings
 
 from . import qjazz_pb2 as qjazz__pb2
 
-GRPC_GENERATED_VERSION = '1.69.0'
+GRPC_GENERATED_VERSION = '1.70.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -49,6 +49,11 @@ class QgisServerStub(object):
                 request_serializer=qjazz__pb2.ApiRequest.SerializeToString,
                 response_deserializer=qjazz__pb2.ResponseChunk.FromString,
                 _registered_method=True)
+        self.Collections = channel.unary_unary(
+                '/qjazz.QgisServer/Collections',
+                request_serializer=qjazz__pb2.CollectionsRequest.SerializeToString,
+                response_deserializer=qjazz__pb2.CollectionsPage.FromString,
+                _registered_method=True)
 
 
 class QgisServerServicer(object):
@@ -72,6 +77,12 @@ class QgisServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Collections(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -89,6 +100,11 @@ def add_QgisServerServicer_to_server(servicer, server):
                     servicer.ExecuteApiRequest,
                     request_deserializer=qjazz__pb2.ApiRequest.FromString,
                     response_serializer=qjazz__pb2.ResponseChunk.SerializeToString,
+            ),
+            'Collections': grpc.unary_unary_rpc_method_handler(
+                    servicer.Collections,
+                    request_deserializer=qjazz__pb2.CollectionsRequest.FromString,
+                    response_serializer=qjazz__pb2.CollectionsPage.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -172,6 +188,33 @@ class QgisServer(object):
             '/qjazz.QgisServer/ExecuteApiRequest',
             qjazz__pb2.ApiRequest.SerializeToString,
             qjazz__pb2.ResponseChunk.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Collections(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qjazz.QgisServer/Collections',
+            qjazz__pb2.CollectionsRequest.SerializeToString,
+            qjazz__pb2.CollectionsPage.FromString,
             options,
             channel_credentials,
             insecure,

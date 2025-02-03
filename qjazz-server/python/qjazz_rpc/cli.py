@@ -22,6 +22,7 @@ class ConfigProtocol(Protocol):
     def model_dump_json(self, indent: Optional[int] = None):
         ...
 
+
 def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
 
     confservice = config.ConfBuilder()
@@ -107,6 +108,6 @@ def install_plugins(configpath: Optional[Path], force: bool):
 def main():
     cli_commands()
 
+
 if __name__ == '__main__':
     main()
-

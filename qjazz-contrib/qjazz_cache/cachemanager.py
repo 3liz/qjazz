@@ -45,7 +45,7 @@ except ImportError:
     psutil = None  # type: ignore
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import time
 from typing import (
     Dict,
@@ -212,22 +212,31 @@ class CacheManager:
         else:
             raise ResourceNotAllowed(str(path))
 
-    def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
-        """ Collect projects metadata from search paths
-
-            Yield tuple of (entry, public_path) for all found  entries
+    def locations(self, location: Optional[str] = None) -> Iterable[Tuple[str, Url]]:
+        """ List compatible search paths
         """
         urls: Iterable[Tuple[str, Url]]
         if location:
             url = self.conf.search_paths.get(location)
             if not url:
-                logger.error(f"Location '{location}' does not exists in search paths")
-                return
+                urls = filter(
+                    lambda loc: PurePosixPath(loc[0]).is_relative_to(location),
+                    self.conf.search_paths.items(),
+                )
             else:
                 urls = ((location, url),)
         else:
             urls = self.conf.search_paths.items()
-        for location, url in urls:
+
+        return urls
+
+
+    def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
+        """ Collect projects metadata from search paths
+
+            Yield tuple of (entry, public_path) for all found  entries
+        """
+        for location, url in self.locations(location):
             try:
                 handler = self.get_protocol_handler(url.scheme)
                 for md in handler.projects(url):

@@ -10,8 +10,15 @@ class ServingStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     SERVING: _ClassVar[ServingStatus]
     NOT_SERVING: _ClassVar[ServingStatus]
+
+class CollectionsType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    CATALOG: _ClassVar[CollectionsType]
+    DATASET: _ClassVar[CollectionsType]
 SERVING: ServingStatus
 NOT_SERVING: ServingStatus
+CATALOG: CollectionsType
+DATASET: CollectionsType
 
 class PingRequest(_message.Message):
     __slots__ = ("echo",)
@@ -114,6 +121,41 @@ class ApiRequest(_message.Message):
     request_id: str
     content_type: str
     def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ...) -> None: ...
+
+class CollectionsRequest(_message.Message):
+    __slots__ = ("location", "type", "start", "end", "base_url")
+    LOCATION_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    START_FIELD_NUMBER: _ClassVar[int]
+    END_FIELD_NUMBER: _ClassVar[int]
+    BASE_URL_FIELD_NUMBER: _ClassVar[int]
+    location: str
+    type: CollectionsType
+    start: int
+    end: int
+    base_url: str
+    def __init__(self, location: _Optional[str] = ..., type: _Optional[_Union[CollectionsType, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., base_url: _Optional[str] = ...) -> None: ...
+
+class CollectionsPage(_message.Message):
+    __slots__ = ("schema", "next", "items")
+    class CollectionsItem(_message.Message):
+        __slots__ = ("id", "name", "json", "endpoints")
+        ID_FIELD_NUMBER: _ClassVar[int]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        JSON_FIELD_NUMBER: _ClassVar[int]
+        ENDPOINTS_FIELD_NUMBER: _ClassVar[int]
+        id: str
+        name: str
+        json: str
+        endpoints: int
+        def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., json: _Optional[str] = ..., endpoints: _Optional[int] = ...) -> None: ...
+    SCHEMA_FIELD_NUMBER: _ClassVar[int]
+    NEXT_FIELD_NUMBER: _ClassVar[int]
+    ITEMS_FIELD_NUMBER: _ClassVar[int]
+    schema: str
+    next: bool
+    items: _containers.RepeatedCompositeFieldContainer[CollectionsPage.CollectionsItem]
+    def __init__(self, schema: _Optional[str] = ..., next: bool = ..., items: _Optional[_Iterable[_Union[CollectionsPage.CollectionsItem, _Mapping]]] = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ("uri", "pull")

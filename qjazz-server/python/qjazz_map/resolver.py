@@ -2,10 +2,9 @@
 """
 
 from pathlib import PurePosixPath
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 from pydantic import (
-    Field,
     FilePath,
     PlainSerializer,
     PlainValidator,
@@ -14,13 +13,14 @@ from pydantic import (
 )
 
 from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import NullField
+from qjazz_contrib.core.models import Field, Opt
 
 DEFAULT_PORT = 23456
 
 #
 # Resolver
 #
+
 
 def _validate_route(r: str) -> PurePosixPath:
     """ Validate a path:
@@ -48,14 +48,14 @@ class ApiEndpoint(ConfigBase):
         pattern=r"^[^\/]+",
         title="Api endpoint",
     )
-    delegate_to: Optional[str] = NullField(
+    delegate_to: Opt[str] = Field(
         title="Api name to delegate to",
-        description=(
-            "Api delegation allow for using a baseurl different\n"
-            "from the expected rootpath of qgis server api.\n"
-            "For exemple, wfs3 request may be mapped to a completely different\n"
-            "root path. "
-        ),
+        description="""
+          Api delegation allow for using a baseurl different
+          from the expected rootpath of qgis server api.
+          For exemple, wfs3 request may be mapped to a completely different
+          root path.
+        """,
     )
     name: str = Field(
         default="",
@@ -84,14 +84,14 @@ class BackendConfig(ConfigBase):
         False,
         title="Enable TLS",
     )
-    cafile: Optional[FilePath] = NullField(
+    cafile: Opt[FilePath] = Field(
         title="CA file",
     )
-    client_key_file: Optional[FilePath] = NullField(
+    client_key_file: Opt[FilePath] = Field(
         title="TLS  key file",
         description="Path to the TLS key file",
     )
-    client_cert_file: Optional[FilePath] = NullField(
+    client_cert_file: Opt[FilePath] = Field(
         title="TLS Certificat",
         description="Path to the TLS certificat file",
     )
@@ -138,4 +138,3 @@ class BackendConfig(ConfigBase):
             "See worker configuration for details."
         ),
     )
-

@@ -261,6 +261,7 @@ impl QgisServer for QgisServerServicer {
                         return Err(Status::internal(format!("Invalid collection type: {}", t)));
                     }
                 },
+                msg.base_url.as_str(),
                 msg.start..msg.end,
             )
             .await

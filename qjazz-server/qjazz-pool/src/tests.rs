@@ -120,6 +120,7 @@ async fn test_messages_io() {
     let resp = w.collections(
         None,
         msg::CollectionsType::DATASET,
+        "http://foobar.com",
         0..100,
     )
     .await

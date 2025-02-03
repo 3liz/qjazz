@@ -24,7 +24,7 @@ from grpc_health.v1 import (
 from pydantic import Field, IPvAnyAddress, Json
 
 from qjazz_contrib.core import config, logger
-from qjazz_rpcw._grpc import qjazz_pb2, qjazz_pb2_grpc
+from qjazz_rpc._grpc import qjazz_pb2, qjazz_pb2_grpc
 
 
 class ShutdownInProgress(Exception):
@@ -83,7 +83,7 @@ class Backend:
         self._use_ssl = conf.use_ssl
         self._shutdown = False
         self._grace_period = grace_period
-        self._shutdown_task: asyncio.Task|None = None
+        self._shutdown_task: asyncio.Task | None = None
 
         def _read_if(f):
             if f:
@@ -171,7 +171,7 @@ class Backend:
     @asynccontextmanager
     async def _stub(
         self,
-        factory = qjazz_pb2_grpc.QgisAdminStub,
+        factory=qjazz_pb2_grpc.QgisAdminStub,
     ) -> AsyncGenerator:
         async with self.connection() as channel:
             yield factory(channel)
@@ -291,7 +291,7 @@ class Backend:
         """ Drop PROJECT from cache
         """
         async with self._stub() as stub:
-            return  stub.DropProject(
+            return stub.DropProject(
                 qjazz_pb2.DropRequest(uri=project),
             )
 

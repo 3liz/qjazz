@@ -36,6 +36,7 @@ def _to_string(v: str | bool | int | float) -> str:
         case _:
             return str(v)
 
+
 def _field_default_repr(field: FieldInfo) -> str:
     match field.default:
         case str(s):

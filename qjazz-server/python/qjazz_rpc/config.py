@@ -92,4 +92,3 @@ class QgisConfig(config.ConfigBase):
             "propagating signal from parent process."
         ),
     )
-

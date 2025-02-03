@@ -320,11 +320,13 @@ impl Worker {
         &mut self,
         location: Option<&str>,
         r#type: msg::CollectionsType,
+        base_url: &str,
         range: std::ops::Range<i64>,
     ) -> Result<msg::CollectionsPage> {
         self.io()?
             .send_message(msg::CollectionsMsg {
                 location,
+                base_url,
                 r#type,
                 start: range.start,
                 end: range.end,

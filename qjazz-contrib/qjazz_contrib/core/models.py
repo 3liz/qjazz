@@ -1,19 +1,46 @@
+import warnings
 
-
+from textwrap import dedent
 from typing import (
     Annotated,
+    Any,
     Dict,
     TypeAlias,
     TypeVar,
     cast,
 )
 
+import pydantic
+
 from pydantic import (
     BaseModel,
-    Field,
     JsonValue,
     alias_generators,
 )
+from pydantic.aliases import PydanticUndefined
+
+
+def deprecated(message):
+    def inner(fn):
+        def wrapper(*args, **kwargs):
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            return fn(*args, **kwargs)
+        return wrapper
+    return inner
+
+
+# noqa ANN401
+def Field(
+    default: Any = PydanticUndefined,  # noqa ANN401
+    *,
+    description: str | None = None, **kwargs,
+) -> Any:  # noqa ANN401
+    return pydantic.Field(
+        default,
+        description=dedent(description) if description else None,
+        **kwargs,
+    )
+
 
 #
 model_json_properties = dict(
@@ -42,7 +69,7 @@ def one_of(s):
 # {'anyOf': ... }
 
 
-OneOf: TypeAlias = Annotated[T, Field(json_schema_extra=one_of)]
+OneOf: TypeAlias = Annotated[T, pydantic.Field(json_schema_extra=one_of)]
 
 
 #
@@ -85,12 +112,27 @@ def fix_optional_schema(s):
     s.update(schema)
 
 
+def fix_nullable_schema(s):
+    fix_optional_schema(s)
+    s.update(nullable=True)
+
+
+# XXX Deprecated: use redefined Opt()
+@deprecated("NullField: Use 'Opt' from the contrib core models")
 def NullField(**kwargs):
     return Field(default=None, json_schema_extra=fix_optional_schema, **kwargs)
 
 
-# Use instead of 'None' for Optional properties
+# Use instead of 'None' for Opt properties
+# XXX Deprecated: use redefined Opt()
 Null = NullField()
+
+Opt = Annotated[T | None, Field(default=None, json_schema_extra=fix_optional_schema)]
+
+# nullable = true
+Nullable = Annotated[T | None, Field(json_schema_extra=fix_nullable_schema)]
+
+# Json base model
 
 
 class JsonModel(BaseModel, **model_json_properties):

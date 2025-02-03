@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from pydantic import AnyHttpUrl, Field, FilePath
+from pydantic import AnyHttpUrl, FilePath
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import (
@@ -20,7 +20,7 @@ from qjazz_contrib.core.config import (
     ConfigError,
     read_config_toml,
 )
-from qjazz_contrib.core.models import NullField
+from qjazz_contrib.core.models import Field, Opt
 
 from .resolver import BackendConfig
 
@@ -36,15 +36,15 @@ class Server(ConfigBase):
         default=False,
         title="Use TLS",
     )
-    tls_client_cafile: Optional[FilePath] = NullField(
+    tls_client_cafile: Opt[FilePath] = Field(
         title="Client CA file",
         description="Certificat for client authentification",
     )
-    tls_cert_file: Optional[FilePath] = NullField(
+    tls_cert_file: Opt[FilePath] = Field(
         title="TLS  key",
         description="Path to the TLS key file",
     )
-    tls_key_file: Optional[FilePath] = NullField(
+    tls_key_file: Opt[FilePath] = Field(
         title="SSL/TLS Certificat",
         description="Path to the TLS certificat file",
     )
@@ -59,7 +59,7 @@ class Server(ConfigBase):
             "this url."
         ),
     )
-    num_workers: Optional[int] = NullField(
+    num_workers: Opt[int] = Field(
         title="Workers",
         description="Numbers of worker threads",
     )
@@ -100,8 +100,8 @@ def create_config() -> ConfBuilder:
     # Path to services configuration
     builder.add_section(
         'includes',
-        Optional[str],
-        NullField(
+        Opt[str],   # type: ignore [misc]
+        Field(
             title="Path to services configuration files",
             description=(
                 "Path or globbing to services configuration files.\n"
@@ -125,7 +125,8 @@ confservice = create_config()
 # Load configuration file
 #
 
-BACKENDS_SECTION="backends"
+BACKENDS_SECTION = "backends"
+
 
 class BackendConfigError(Exception):
     def __init__(self, file, msg):

@@ -80,6 +80,7 @@ def MessageToJson(msg: Message) -> str:
         always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
     )
 
+
 @overload
 def connect(
     stub: Type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
@@ -95,7 +96,7 @@ def connect(
 
 
 @contextmanager
-def connect(stub = qjazz_pb2_grpc.QgisAdminStub) -> Generator:
+def connect(stub=qjazz_pb2_grpc.QgisAdminStub) -> Generator:
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
@@ -126,8 +127,6 @@ def connect(stub = qjazz_pb2_grpc.QgisAdminStub) -> Generator:
             click.echo(f"RPC ERROR: {rpcerr.code()} {rpcerr.details()}", err=True)
             print_metadata(rpcerr.initial_metadata())
             print_metadata(rpcerr.trailing_metadata())
-
-
 
 
 def print_metadata(metadata):
@@ -283,6 +282,7 @@ def checkout_project(project: str, pull: bool):
             qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
         )
         click.echo(MessageToJson(item))
+
 
 @cache_commands.command("drop")
 @click.argument('project', nargs=1)

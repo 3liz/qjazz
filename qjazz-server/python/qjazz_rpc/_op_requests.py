@@ -130,7 +130,7 @@ def handle_api_request(
         url = f"{msg.url.removesuffix('/')}{ROOT_DELEGATE}/{msg.path.removeprefix('/')}"
         # Pass api name as header
         # to api delegate
-        headers.append(('x-qgis-api',msg.name))
+        headers.append(('x-qgis-api', msg.name))
     else:
         url = msg.url
         if msg.path:
@@ -230,7 +230,7 @@ def _handle_generic_request(
 
     # XXX QGIS does not complies to standard and handle X-Qgis-* headers
     # in case sensitive way
-    req_hdrs = {capwords(k, sep='-'): v for k,v in headers if not k.startswith('grpc-')}
+    req_hdrs = {capwords(k, sep='-'): v for k, v in headers if not k.startswith('grpc-')}
     if content_type:
         req_hdrs['Content-Type'] = content_type
 
@@ -239,6 +239,7 @@ def _handle_generic_request(
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
+
 
 def request_project_from_cache(
     conn: _m.Connection,

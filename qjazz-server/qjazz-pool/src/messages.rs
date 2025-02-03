@@ -216,6 +216,7 @@ pub struct CollectionsMsg<'a> {
     pub r#type: CollectionsType,
     pub start: i64,
     pub end: i64,
+    pub base_url: &'a str
 }
 
 bitflags::bitflags! {

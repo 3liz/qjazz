@@ -61,11 +61,13 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 
     _m.send_reply(conn, reply)
 
+
 # Convert last modified date to iso8601
 def timestamp_to_iso(timestamp: Optional[float]) -> Optional[str]:
     return to_iso8601(
         datetime.fromtimestamp(timestamp),
     ) if timestamp else None
+
 
 #
 # Helper for returning CacheInfo from
@@ -213,6 +215,7 @@ def send_cache_list(
 #
 # Send project info
 #
+
 
 def send_project_info(
     conn: _m.Connection,

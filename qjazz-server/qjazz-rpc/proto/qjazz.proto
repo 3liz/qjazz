@@ -116,6 +116,7 @@ message CollectionsRequest {
     CollectionsType type = 2;
     int64 start = 3;
     int64 end = 4;
+    string base_url = 5;
 }
 
 message CollectionsPage {

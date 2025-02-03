@@ -8,7 +8,8 @@ OPTIONAL_DEPENDENCIES=minio
 INSTALL_DEPENDENCIES=[minio]
 
 PYTHON_PKG= \
-	qjazz_rpcw \
+	qjazz_ogc \
+	qjazz_rpc \
 	qjazz_map \
 	qjazz_admin \
 	$(NULL)
@@ -16,12 +17,12 @@ PYTHON_PKG= \
 TESTDIR=tests
 
 proto:
-	cd qjazz_rpcw/_grpc && python -m grpc_tools.protoc -I./protos \
+	cd qjazz_rpc/_grpc && python -m grpc_tools.protoc -I./protos \
 		--python_out=. \
 		--pyi_out=. \
 		--grpc_python_out=. \
 		./protos/qjazz.proto
-	@sed -i 's/import qjazz_pb2 as/from . import qjazz_pb2 as/' qjazz_rpcw/_grpc/qjazz_pb2_grpc.py
+	@sed -i 's/import qjazz_pb2 as/from . import qjazz_pb2 as/' qjazz_rpc/_grpc/qjazz_pb2_grpc.py
 
 include $(topsrcdir)/config/rules.mk
 

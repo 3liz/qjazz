@@ -119,7 +119,7 @@ class Worker:
         )
 
         self._process = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "qjazz_rpcw.main", self._name,
+            sys.executable, "-m", "qjazz_rpc.main", self._name,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             env=env,

@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     mapserv_args
                         .as_ref()
                         .and_then(|v| v.to_str())
-                        .unwrap_or("-m qjazz_rpcw.main"),
+                        .unwrap_or("-m qjazz_rpc.main"),
                     &settings,
                 ))?;
         }

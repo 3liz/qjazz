@@ -16,7 +16,7 @@ from .config import QgisConfig
 
 
 # Parse list from string
-def _parse_list(value: Union[List[str],str]) -> List[str]:
+def _parse_list(value: Union[List[str], str]) -> List[str]:
     if isinstance(value, str):
         if value:
             # Parse comma separated list
@@ -84,7 +84,7 @@ class Worker(ConfigBase):
     )
     qgis: QgisConfig = Field(
         QgisConfig(),
-        title = "Qgis configuration",
+        title="Qgis configuration",
     )
     process_start_timeout: int = Field(
         default=5,

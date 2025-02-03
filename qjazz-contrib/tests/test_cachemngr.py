@@ -88,5 +88,3 @@ def test_checkout_invalid_layers(config):
 
     with pytest.raises(StrictCheckingFailure):
         _ = cm.update(md, status)
-
-

@@ -145,7 +145,7 @@ class Response(QgsServerResponse):
             self._conn,
             _m.RequestReply(
                 status_code=self._status_code,
-                headers=[(f"{self._header_prefix}{k}", v) for k,v in self._headers.items()],
+                headers=[(f"{self._header_prefix}{k}", v) for k, v in self._headers.items()],
                 checkout_status=self._co_status,
                 cache_id=self._cache_id,
             ),

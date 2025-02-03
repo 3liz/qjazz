@@ -72,7 +72,7 @@ class Resolver(ConfigBase):
     @property
     async def backends(self) -> Sequence[BackendConfig]:
         match self.address[0]:
-            case IPv6Address()|IPv4Address():
+            case IPv6Address() | IPv4Address():
                 return (
                      BackendConfig(
                         server_address=(self.address[0], self.address[1]),

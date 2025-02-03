@@ -30,6 +30,7 @@ API_ALIASES = {
     'WFS3': 'OGC WFS3 (Draft)',
 }
 
+
 class ApiDelegate(QgsServerApi):
 
     __instances: List[QgsServerApi] = []  #  noqa RUF012

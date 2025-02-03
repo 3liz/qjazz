@@ -43,7 +43,7 @@ async def test_resolver_config():
 @pytest.mark.server
 async def test_pool():
     resolver = Resolver(
-        address = ("localhost", 23456),
+        address=("localhost", 23456),
     )
 
     pool = PoolClient(resolver)

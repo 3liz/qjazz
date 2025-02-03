@@ -12,8 +12,8 @@ from datetime import datetime
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.utils import to_iso8601
 from qjazz_cache.status import CheckoutStatus
-from qjazz_rpcw.connection import Connection, RendezVous
-from qjazz_rpcw import messages as m_
+from qjazz_rpc.connection import Connection, RendezVous
+from qjazz_rpc import messages as m_
 from time import sleep, time;
 
 

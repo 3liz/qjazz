@@ -22,7 +22,7 @@ from google.protobuf.message import Message
 from pydantic import Json, JsonValue
 
 from qjazz_contrib.core import logger
-from qjazz_rpcw._grpc import qjazz_pb2
+from qjazz_rpc._grpc import qjazz_pb2
 
 from .backend import RECONNECT_DELAY, Backend
 from .errors import RequestArgumentError, ServiceNotAvailable
@@ -376,7 +376,7 @@ class PoolClient:
         serving = False
         for server in self._backends:
             try:
-                item  = await server.drop_project(uri)
+                item = await server.drop_project(uri)
                 rv[server.address] = item
                 serving = True
             except grpc.RpcError as err:
