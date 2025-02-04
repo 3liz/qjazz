@@ -216,7 +216,6 @@ pub struct CollectionsMsg<'a> {
     pub r#type: CollectionsType,
     pub start: i64,
     pub end: i64,
-    pub base_url: &'a str
 }
 
 bitflags::bitflags! {
@@ -242,10 +241,8 @@ impl<'de> Deserialize<'de> for OgcEndpoints {
     }
 }
 
-
 #[derive(Deserialize, Debug)]
 pub struct CollectionsItem {
-    pub id: String,
     pub name: String,
     pub json: String,
     pub endpoints: OgcEndpoints,

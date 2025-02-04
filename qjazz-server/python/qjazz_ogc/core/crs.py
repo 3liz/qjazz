@@ -32,7 +32,7 @@ class CrsRef(HttpUrl):
         return cls.from_authority("EPSG", code)
 
     def to_ogc_urn(self) -> str:
-        return f"urn:ogc:{(self.path or "").replace('/', ':')}"  #
+        return f"urn:ogc{(self.path or "").replace('/', ':')}"  #
 
 
 WGS84 = CrsRef.from_authority("OGC", "CRS84", version="1.3")

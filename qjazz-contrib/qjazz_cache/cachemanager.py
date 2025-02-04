@@ -230,7 +230,6 @@ class CacheManager:
 
         return urls
 
-
     def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
         """ Collect projects metadata from search paths
 

@@ -117,21 +117,24 @@ async fn test_messages_io() {
     assert_eq!(stream.next().await.unwrap(), None);
 
     // Collections
-    let resp = w.collections(
-        None,
-        msg::CollectionsType::DATASET,
-        "http://foobar.com",
-        0..100,
-    )
-    .await
-    .unwrap();
+    let resp = w
+        .collections(
+            None,
+            msg::CollectionsType::DATASET,
+            0..100,
+        )
+        .await
+        .unwrap();
 
     assert_eq!(resp.next, false);
     assert_eq!(resp.items.len(), 1);
-    assert_eq!(resp.items[0].id, "Test000");
     assert!(resp.items[0].endpoints.contains(msg::OgcEndpoints::MAP));
-    assert!(resp.items[0].endpoints.contains(msg::OgcEndpoints::FEATURES));
-    assert!(!resp.items[0].endpoints.contains(msg::OgcEndpoints::COVERAGE));
+    assert!(resp.items[0]
+        .endpoints
+        .contains(msg::OgcEndpoints::FEATURES));
+    assert!(!resp.items[0]
+        .endpoints
+        .contains(msg::OgcEndpoints::COVERAGE));
 
     // CheckoutProjectMsg
     let resp = w.checkout_project("checkout", true).await.unwrap();

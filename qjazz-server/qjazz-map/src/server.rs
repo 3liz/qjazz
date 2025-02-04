@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::channel::{self, Channel};
 use crate::config::Settings;
-use crate::handlers::{api, ows, utils::request};
+use crate::handlers::{api, catalog, landing_page, ows, utils::request};
 use crate::resolver::{ApiEndPoint, Channels};
 
 // Log request as '[REQ:<request id>] ...'
@@ -65,36 +65,21 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
 // Services
 //
 
-/*
-
-// Service config for layer collections
-fn layer_collections(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/collections")
-            .route("", ...)
-            .service(
-                web::scope("/{layer}")
-                    .route("", ...)
-                    .route("/map", ...)
-                    .route("/items", ...),
-            ),
-    );
+fn landing_page(channels: Vec<web::Data<Channel>>) -> impl FnOnce(&mut web::ServiceConfig) {
+    move |cfg| {
+        cfg.service(
+            web::resource("/")
+                .app_data(web::Data::new(channels))
+                .get(landing_page::handler),
+        );
+    }
 }
 
 // Service config for  dataset collections
-fn dataset_collections(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/collections")
-            .route("", ...)
-            .service(
-                web::scope("/{dataset}")
-                    .route("", ...)
-                    .route("/map", ...)
-                    .configure(layer_collections),
-            ),
-    );
+fn catalog(cfg: &mut web::ServiceConfig) {
+    cfg.route("/catalog", web::get().to(catalog::catalog_handler))
+        .route("/catalog/{id}", web::get().to(catalog::item_handler));
 }
-*/
 
 // Configuration for api endpoint
 fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig) {
@@ -139,8 +124,9 @@ fn ows_resource(cfg: &mut web::ServiceConfig) {
 // Single channel config
 fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     |cfg| {
-        let cfg = cfg.service(web::scope("/").configure(ows_resource));
-        //.configure(dataset_collections)
+        let cfg = cfg
+            .service(web::scope("/").configure(ows_resource))
+            .configure(catalog);
         channel
             .api_endpoints()
             .iter()
@@ -153,7 +139,7 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
 fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     let scope = web::scope(channel.route())
         .wrap(middleware::from_fn(verify_channel_mw))
-        //.configure(dataset_collections)
+        .configure(catalog)
         .configure(ows_resource);
 
     // Add api endpoints
@@ -209,9 +195,12 @@ impl Backends {
         move |cfg| {
             match self {
                 Backends::Single(channel) => cfg.configure(single_channel_scope(channel)),
-                Backends::Multi(mut channels) => channels.drain(..).fold(cfg, |cfg, channel| {
-                    cfg.configure(multi_channel_scope(channel))
-                }),
+                Backends::Multi(channels) => channels
+                    .iter()
+                    .fold(cfg, |cfg, channel| {
+                        cfg.configure(multi_channel_scope(channel.clone()))
+                    })
+                    .configure(landing_page(channels)),
             };
         }
     }

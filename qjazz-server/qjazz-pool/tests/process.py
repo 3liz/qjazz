@@ -197,7 +197,6 @@ def run(name: str, projects: list[str]) -> None:
                                 next=False,
                                 items=[
                                     m_.CollectionsItem(
-                                        id="Test000",
                                         name="Test000",
                                         json="",
                                         endpoints=(

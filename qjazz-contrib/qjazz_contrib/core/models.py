@@ -1,4 +1,3 @@
-import warnings
 
 from textwrap import dedent
 from typing import (
@@ -18,15 +17,6 @@ from pydantic import (
     alias_generators,
 )
 from pydantic.aliases import PydanticUndefined
-
-
-def deprecated(message):
-    def inner(fn):
-        def wrapper(*args, **kwargs):
-            warnings.warn(message, DeprecationWarning, stacklevel=2)
-            return fn(*args, **kwargs)
-        return wrapper
-    return inner
 
 
 # noqa ANN401
@@ -118,7 +108,6 @@ def fix_nullable_schema(s):
 
 
 # XXX Deprecated: use redefined Opt()
-@deprecated("NullField: Use 'Opt' from the contrib core models")
 def NullField(**kwargs):
     return Field(default=None, json_schema_extra=fix_optional_schema, **kwargs)
 

@@ -141,7 +141,6 @@ class CollectionsMsg(MsgModel):
     type: CollectionsType
     start: int = 0
     end: int = 50
-    base_url: str
 
 
 class OgcEndpoints(Flag):
@@ -154,7 +153,6 @@ class OgcEndpoints(Flag):
 
 @dataclass
 class CollectionsItem:
-    id: str
     name: str
     json: str
     endpoints: int  # OgcEndpoints

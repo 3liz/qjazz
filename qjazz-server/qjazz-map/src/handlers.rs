@@ -3,7 +3,10 @@ use actix_web::{http, web, HttpRequest, HttpResponse, HttpResponseBuilder, Respo
 use futures::stream::StreamExt;
 use serde::Deserialize;
 
+pub mod catalog;
+pub mod landing_page;
 pub mod utils;
+
 use utils::{metadata, request, RpcResponseFactory};
 
 use crate::channel::qjazz_service::{ApiRequest, OwsRequest, ResponseChunk};

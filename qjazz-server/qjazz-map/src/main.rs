@@ -3,6 +3,7 @@ mod config;
 mod cors;
 mod handlers;
 mod logger;
+mod models;
 mod resolver;
 mod server;
 mod utils;

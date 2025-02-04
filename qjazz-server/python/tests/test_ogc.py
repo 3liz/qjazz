@@ -1,10 +1,17 @@
+import json
+
 from dataclasses import dataclass
 from pathlib import Path
 
 from qgis.core import QgsProject
 
 from qjazz_cache.storage import load_project_from_uri
-from qjazz_ogc.qgis.project import Collection
+from qjazz_ogc.crs import CrsRef
+from qjazz_ogc.project import Collection
+from qjazz_rpc import messages
+from qjazz_rpc.tests.worker import Worker
+
+pytest_plugins = ('pytest_asyncio',)
 
 
 @dataclass
@@ -21,7 +28,16 @@ def load_project(path: Path) -> QgsProject:
     return load_project_from_uri(str(path), ProjectLoaderConfig())
 
 
-async def test_project_collection(qgis_session: None, data: Path):
+def test_ogc_default_crs(qgis_session: None):
+
+    crs = CrsRef.default()
+    print("\n::test_ogc_default_crs::", crs, "->", crs.to_ogc_urn())
+
+    qgis_crs = crs.to_qgis()
+    assert qgis_crs.isValid()
+
+
+def test_ogc_project_collection(qgis_session: None, data: Path):
 
     project = load_project(data.joinpath('france_parts', 'france_parts.qgs'))
 
@@ -30,3 +46,38 @@ async def test_project_collection(qgis_session: None, data: Path):
 
     assert coll.extent.spatial is not None
     assert coll.extent.temporal.interval == [[None, None]]
+
+
+async def test_ogc_catalog_api(worker: Worker):
+    """ Test worker cache api
+    """
+    await worker.io.put_message(
+        messages.CollectionsMsg(
+            type=messages.CollectionsType.CATALOG,
+            start=0,
+            end=50,
+        ),
+    )
+
+    status, resp = await worker.io.read_message()
+    print("\n::test_ogc_api::catalog", status)
+    assert status == 200
+    assert isinstance(resp, messages.CollectionsPage)
+
+    assert not resp.next
+    assert len(resp.items) > 0
+    assert len(resp.items) < 50
+
+    schema = json.loads(resp.schema)
+    print("\n::test_ogc_api::catalog::schema\n", schema)
+
+    print("\n::test_ogc_api::catalog::items:")
+    print('\n'.join(n.name for n in resp.items))
+
+    item = resp.items[0]
+    print("\n::test_ogc_api::catalog::item", item)
+
+    coll = Collection.model_validate_json(item.json)
+
+    assert coll.id == item.name
+    assert item.endpoints == messages.OgcEndpoints.MAP.value

@@ -100,6 +100,14 @@ impl Channel {
         &self.name
     }
 
+    pub fn title(&self) -> &str {
+        &self.config.title
+    }
+
+    pub fn description(&self) -> &str {
+        &self.config.description
+    }
+
     pub fn route(&self) -> &str {
         &self.config.route
     }

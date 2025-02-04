@@ -261,7 +261,6 @@ impl QgisServer for QgisServerServicer {
                         return Err(Status::internal(format!("Invalid collection type: {}", t)));
                     }
                 },
-                msg.base_url.as_str(),
                 msg.start..msg.end,
             )
             .await
@@ -283,7 +282,6 @@ impl From<qjazz_pool::messages::CollectionsPage> for CollectionsPage {
 impl From<qjazz_pool::messages::CollectionsItem> for CollectionsItem {
     fn from(msg: qjazz_pool::messages::CollectionsItem) -> Self {
         CollectionsItem {
-            id: msg.id,
             name: msg.name,
             json: msg.json,
             endpoints: msg.endpoints.bits(),

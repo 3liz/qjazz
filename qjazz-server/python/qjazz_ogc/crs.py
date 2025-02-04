@@ -4,7 +4,7 @@ from typing import Optional, Self
 # from pyproj
 from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsProject
 
-from ..core import crs
+from .core import crs
 
 
 @cache

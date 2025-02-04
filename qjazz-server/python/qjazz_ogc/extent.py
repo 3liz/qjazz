@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils as Pu
 
-from ..core import extent
+from .core import extent
 from .crs import CrsRef, QgsCrs3D
 from .metadata import DateTime
 

@@ -16,9 +16,9 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils
 
-from qjazz_contrib.core.models import Nullable, Opt
+from qjazz_contrib.core.models import Opt
 
-from ..core import collections, crs
+from .core import collections, crs
 from .crs import Crs3D, CrsRef
 from .extent import Extent
 from .metadata import DateTime, Keywords, Links
@@ -50,8 +50,8 @@ def scale_denominators(p: QgsProject) -> Tuple[Optional[float], Optional[float]]
                 scales = (ml.minimumScale(), ml.maximumScale())
             else:
                 scales = (
-                    min(ml.minimumScale(), scales[0]),
-                    max(ml.maximumScale(), scales[1]),
+                    max(ml.minimumScale(), scales[0]),
+                    min(ml.maximumScale(), scales[1]),
                 )
 
     return scales if scales else (None, None)
@@ -59,7 +59,9 @@ def scale_denominators(p: QgsProject) -> Tuple[Optional[float], Optional[float]]
 
 class Collection(collections.Collection):
 
-    datetime: Nullable[DateTimeType]
+    # Not required for STAC collection object
+    # but they are qgis project metadata
+    datetime: Opt[DateTimeType]
     created: Opt[DateTimeType]
     updated: Opt[DateTimeType]
 

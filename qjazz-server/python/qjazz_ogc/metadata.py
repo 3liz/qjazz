@@ -6,7 +6,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QDateTime
 
-from ..stac import links
+from .stac import links
 
 
 def Keywords(md: QgsAbstractMetadataBase) -> List[str]:
