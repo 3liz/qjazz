@@ -19,13 +19,13 @@ from qgis.server import QgsServerProjectUtils
 from qjazz_contrib.core.models import Nullable, Opt
 
 from ..core import collections, crs
-from .crs import Crs, CrsRef
+from .crs import Crs3D, CrsRef
 from .extent import Extent
 from .metadata import DateTime, Keywords, Links
 
 
 def output_crs_list(p: QgsProject) -> Iterator[crs.Crs]:
-    storage_wms_crs = Crs(p.crs3D())
+    storage_wms_crs = Crs3D(p)
     if storage_wms_crs:
         yield storage_wms_crs
 
@@ -89,7 +89,7 @@ class Collection(collections.Collection):
             updated=DateTime(md.dateTime(Qgis.MetadataDateType.Revised)),
             created=DateTime(md.dateTime(Qgis.MetadataDateType.Created)),
             crs=tuple(output_crs_list(p)),
-            storageCrs=Crs(p.crs3D()),
+            storageCrs=Crs3D(p),
             keywords=keywords,
             links=Links(md),
             min_scale_denominator=min_scale,

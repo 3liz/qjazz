@@ -2,6 +2,7 @@
 from typing import List, Optional, Self
 
 from qgis.core import (
+    Qgis,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsDateTimeRange,
@@ -11,7 +12,7 @@ from qgis.core import (
 from qgis.server import QgsServerProjectUtils as Pu
 
 from ..core import extent
-from .crs import CrsRef
+from .crs import CrsRef, QgsCrs3D
 from .metadata import DateTime
 
 
@@ -21,7 +22,7 @@ def transform_extent(
     r: QgsRectangle,
 ) -> QgsRectangle:
 
-    transform = QgsCoordinateTransform(p.crs3D(), dest, p)
+    transform = QgsCoordinateTransform(QgsCrs3D(p), dest, p)
     transform.setBallparkTransformsAreAppropriate(True)
     return transform.transformBoundingBox(r)
 
@@ -84,12 +85,12 @@ class SpatialExtent(extent.SpatialExtent):
         bbox = parse_bbox(transform_extent(p, default_crs, extent))
         storage_crs_bbox = parse_bbox(extent)
 
-        # XXX Check elevation range in elevation properties
-        elev = p.elevationProperties()
-        if elev:
-            elev_range = elev.elevationRange()
-            if not elev_range.isInfinite():
-                bbox.extend((elev_range.lower(), elev_range.upper()))
+        if Qgis.QGIS_VERSION_INT >= 33800:
+            elev = p.elevationProperties()
+            if elev:
+                elev_range = elev.elevationRange()
+                if not elev_range.isInfinite():
+                    bbox.extend((elev_range.lower(), elev_range.upper()))
 
         return cls(
             bbox=[bbox],
