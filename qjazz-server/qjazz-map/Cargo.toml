@@ -38,6 +38,7 @@ serde_urlencoded = "0.7"
 actix-cors = "0.7"
 mime = "0.3"
 percent-encoding = "2"
+bitflags = "2"
 
 [build-dependencies]
 tonic-build = "0.12"

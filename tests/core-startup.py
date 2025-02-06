@@ -14,6 +14,7 @@ logger.setup_log_handler(log_level=logger.LogLevel.TRACE)
 from qgis.core import (
     Qgis,
     QgsProject,
+    QgsCoordinateReferenceSystem,
 )
 
 from qgis.server import (

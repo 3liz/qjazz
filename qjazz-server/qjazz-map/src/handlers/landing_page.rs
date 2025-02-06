@@ -4,6 +4,7 @@ use serde::Serialize;
 use crate::channel::Channel;
 use crate::handlers::utils::request;
 use crate::models::{rel, Link};
+//use crate::resolver::ApiEndPoint;
 
 type Channels = Vec<web::Data<Channel>>;
 
@@ -15,6 +16,7 @@ struct ChannelItem<'a> {
     description: &'a str,
     available: bool,
     links: Vec<Link<'a>>,
+    //apis: Vec<&'a ApiEndPoint>,
 }
 
 #[derive(Debug, Serialize)]
@@ -36,21 +38,18 @@ pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Re
                 title: channel.title(),
                 description: channel.description(),
                 available: channel.serving(),
-                links: vec![Link {
-                    href: format!("{public_url}{}/catalog", channel.route()).into(),
-                    rel: rel::RELATED.into(),
-                    r#type: mime::APPLICATION_JSON.as_ref().into(),
-                    title: Some("Catalog".into()),
-                    description: Some("Catalog of datasets from this endpoint".into()),
-                    ..Default::default()
-                }],
+                //apis: channel.api_endpoints().iter().map(|n| n.get_ref()).collect(),
+                links: vec![Link::application_json(
+                    format!("{public_url}{}/catalog", channel.route()).into(),
+                    rel::RELATED,
+                )
+                .title("Catalog")
+                .description("Catalog of datasets from this endpoint")],
             })
             .collect(),
-        links: vec![Link {
-            href: format!("{public_url}{}", req.path()).into(),
-            rel: rel::SELF.into(),
-            r#type: mime::APPLICATION_JSON.as_ref().into(),
-            ..Default::default()
-        }],
+        links: vec![Link::application_json(
+            format!("{public_url}{}", req.path()).into(),
+            rel::SELF,
+        )],
     })
 }

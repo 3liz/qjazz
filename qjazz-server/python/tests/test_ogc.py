@@ -53,7 +53,6 @@ async def test_ogc_catalog_api(worker: Worker):
     """
     await worker.io.put_message(
         messages.CollectionsMsg(
-            type=messages.CollectionsType.CATALOG,
             start=0,
             end=50,
         ),
@@ -81,3 +80,19 @@ async def test_ogc_catalog_api(worker: Worker):
 
     assert coll.id == item.name
     assert item.endpoints == messages.OgcEndpoints.MAP.value
+
+
+def test_ogc_layer_collection(qgis_session: None, data: Path):
+
+    project = load_project(data.joinpath('france_parts', 'france_parts.qgs'))
+
+    coll = Collection.from_project("france_parts", project)
+
+    for layer in project.layerTreeRoot().customLayerOrder():
+        layer_coll = Collection.from_layer(layer, coll)
+        print("\n::test_ogc_layer_collection::\n", layer_coll.model_dump_json(indent=4))
+
+        assert layer_coll.id == layer.name()
+
+    assert coll.extent.spatial is not None
+    assert coll.extent.temporal.interval == [[None, None]]

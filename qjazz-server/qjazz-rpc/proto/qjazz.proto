@@ -106,14 +106,9 @@ message ApiRequest {
 
 // Collections
 
-enum CollectionsType {
-    CATALOG = 0;  // Return the catalog 
-    DATASET = 1;  // Return the collections associated with the dataset
-}
-
 message CollectionsRequest {
     optional string location = 1;
-    CollectionsType type = 2;
+    optional string resource =2;
     int64 start = 3;
     int64 end = 4;
 }

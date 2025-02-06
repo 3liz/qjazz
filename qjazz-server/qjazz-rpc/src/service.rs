@@ -15,8 +15,8 @@ pub mod qjazz_service {
 }
 
 use qjazz_service::{
-    collections_page::CollectionsItem, ApiRequest, CollectionsPage, CollectionsRequest,
-    CollectionsType, OwsRequest, PingReply, PingRequest, ResponseChunk,
+    collections_page::CollectionsItem, ApiRequest, CollectionsPage, CollectionsRequest, OwsRequest,
+    PingReply, PingRequest, ResponseChunk,
 };
 
 pub mod admin;
@@ -250,17 +250,7 @@ impl QgisServer for QgisServerServicer {
         Ok(Response::new(CollectionsPage::from(
             w.collections(
                 msg.location.as_deref(),
-                match msg.r#type {
-                    t if t == CollectionsType::Catalog as i32 => {
-                        qjazz_pool::messages::CollectionsType::CATALOG
-                    }
-                    t if t == CollectionsType::Dataset as i32 => {
-                        qjazz_pool::messages::CollectionsType::DATASET
-                    }
-                    t => {
-                        return Err(Status::internal(format!("Invalid collection type: {}", t)));
-                    }
-                },
+                msg.resource.as_deref(),
                 msg.start..msg.end,
             )
             .await

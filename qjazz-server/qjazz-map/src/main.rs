@@ -6,6 +6,7 @@ mod logger;
 mod models;
 mod resolver;
 mod server;
+mod services;
 mod utils;
 
 use server::serve;

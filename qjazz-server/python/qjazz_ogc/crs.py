@@ -2,7 +2,12 @@ from functools import cache
 from typing import Optional, Self
 
 # from pyproj
-from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsProject
+from qgis.core import (
+    Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsMapLayer,
+    QgsProject,
+)
 
 from .core import crs
 
@@ -41,13 +46,13 @@ def Crs(inp: QgsCoordinateReferenceSystem) -> Optional[crs.Crs]:
         return CrsRef.default()
 
 
-def Crs3D(p: QgsProject) -> Optional[crs.Crs]:
+def Crs3D(p: QgsProject | QgsMapLayer) -> Optional[crs.Crs]:
     """ Return crs3D if available
     """
     return Crs(QgsCrs3D(p))
 
 
-def QgsCrs3D(p: QgsProject) -> QgsCoordinateReferenceSystem:
+def QgsCrs3D(p: QgsProject | QgsMapLayer) -> QgsCoordinateReferenceSystem:
     """ Return project's crs3D if available
     """
     if Qgis.QGIS_VERSION_INT < 33800:

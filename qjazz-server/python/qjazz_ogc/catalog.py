@@ -38,6 +38,20 @@ class CatalogItem:
     coll: Collection
 
 
+def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheEntry]:
+    """ Return a pinned project cache entry """
+    entry, co_status = cm.checkout(urlsplit(md.uri))
+    match co_status:
+        case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
+            entry = cast(CacheEntry, entry)
+            if entry.pinned:
+                return entry
+            else:
+                return None
+        case _:
+            return None
+
+
 class Catalog:
     """ Handle Qgis project's catalog
     """
@@ -53,15 +67,9 @@ class Catalog:
         loader_config = FastLoaderConfig()
         for md, public_path in cm.collect_projects():
 
-            if pinned:
+            if pinned and not get_pinned_project(md, cm):
                 # Handle only pinned projects
-                entry, co_status = cm.checkout(urlsplit(md.uri))
-                match co_status:
-                    case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
-                        if not cast(CacheEntry, entry).pinned:
-                            continue
-                    case _:
-                        continue
+                continue
 
             public_path = public_path.removesuffix('.qgs').removesuffix('.qgz')
             item = catalog.get(public_path)

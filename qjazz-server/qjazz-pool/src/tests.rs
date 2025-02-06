@@ -117,14 +117,7 @@ async fn test_messages_io() {
     assert_eq!(stream.next().await.unwrap(), None);
 
     // Collections
-    let resp = w
-        .collections(
-            None,
-            msg::CollectionsType::DATASET,
-            0..100,
-        )
-        .await
-        .unwrap();
+    let resp = w.collections(None, None, 0..100).await.unwrap();
 
     assert_eq!(resp.next, false);
     assert_eq!(resp.items.len(), 1);

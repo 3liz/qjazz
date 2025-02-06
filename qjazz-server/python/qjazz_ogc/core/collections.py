@@ -26,7 +26,7 @@ class Collection(collection.Collection):
 
     # XXX Check specs for this, this is totally unclear how it relates
     # to spatial extent `crs`
-    crs: List[Crs] = Field(
+    crs: Opt[List[Crs]] = Field(
         default=[WGS84],
         description="""
             the list of coordinate reference systems supported by the API;

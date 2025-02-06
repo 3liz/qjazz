@@ -2049,6 +2049,7 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
+ "bitflags",
  "clap",
  "config",
  "env_logger",

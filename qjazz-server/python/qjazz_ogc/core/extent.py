@@ -109,6 +109,9 @@ class TemporalExtent(JsonModel):
           to access the first item in each array.
         """,
     )
+    trs: Literal[
+        'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
+    ] = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
 
 
 class Extent(JsonModel):
@@ -118,6 +121,3 @@ class Extent(JsonModel):
     temporal: Opt[TemporalExtent] = Field(
         description="The temporal extent of the features in the collection.",
     )
-    trs: Literal[
-        'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
-    ] = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'

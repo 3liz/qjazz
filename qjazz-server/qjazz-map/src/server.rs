@@ -2,7 +2,7 @@ use actix_web::{
     body,
     body::EitherBody,
     dev::{ServiceRequest, ServiceResponse},
-    guard, middleware, web, App, HttpResponse, HttpServer, Result,
+    middleware, web, App, HttpResponse, HttpServer, Result,
 };
 
 use futures::future::try_join_all;
@@ -10,8 +10,9 @@ use tokio_util::sync::CancellationToken;
 
 use crate::channel::{self, Channel};
 use crate::config::Settings;
-use crate::handlers::{api, catalog, landing_page, ows, utils::request};
-use crate::resolver::{ApiEndPoint, Channels};
+use crate::handlers::utils::request;
+use crate::resolver::Channels;
+use crate::services::{api_scope, catalog, landing_page, ows_resource};
 
 // Log request as '[REQ:<request id>] ...'
 const LOGGER_FORMAT: &str =
@@ -59,66 +60,6 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
     .await?;
 
     Ok(())
-}
-
-//
-// Services
-//
-
-fn landing_page(channels: Vec<web::Data<Channel>>) -> impl FnOnce(&mut web::ServiceConfig) {
-    move |cfg| {
-        cfg.service(
-            web::resource("/")
-                .app_data(web::Data::new(channels))
-                .get(landing_page::handler),
-        );
-    }
-}
-
-// Service config for  dataset collections
-fn catalog(cfg: &mut web::ServiceConfig) {
-    cfg.route("/catalog", web::get().to(catalog::catalog_handler))
-        .route("/catalog/{id}", web::get().to(catalog::item_handler));
-}
-
-// Configuration for api endpoint
-fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig) {
-    let path = format!("/{}", api.endpoint);
-
-    let scope = web::scope(path.as_str())
-        .app_data(api.clone())
-        .route("{path:.*}", web::to(api::handler))
-        .default_service(web::to(api::default_handler));
-
-    move |cfg| {
-        cfg.service(scope)
-            .service(
-                web::resource(format!("{}.json", path).as_str())
-                    .app_data(api.clone())
-                    .to(api::default_handler),
-            )
-            .service(
-                web::resource(format!("{}.html", path).as_str())
-                    .app_data(api.clone())
-                    .to(api::default_handler),
-            );
-    }
-}
-
-// Configuration for handling OWS resources
-fn ows_resource(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::resource("")
-            .route(
-                web::post()
-                    .guard(guard::Header(
-                        "content-type",
-                        "application/x-www-form-urlencoded",
-                    ))
-                    .to(ows::form_handler),
-            )
-            .route(web::to(ows::query_handler)),
-    );
 }
 
 // Single channel config

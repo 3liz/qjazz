@@ -1,48 +1,20 @@
 use crate::channel::{ApiEndPoint, Channel};
-use actix_web::{http, web, HttpRequest, HttpResponse, HttpResponseBuilder, Responder};
-use futures::stream::StreamExt;
+use actix_web::{http, web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
 
 pub mod catalog;
 pub mod landing_page;
+pub mod map;
+pub mod response;
 pub mod utils;
 
-use utils::{metadata, request, RpcResponseFactory};
-
-use crate::channel::qjazz_service::{ApiRequest, OwsRequest, ResponseChunk};
+use crate::channel::qjazz_service::{ApiRequest, OwsRequest};
+use response::{metadata, StreamedResponse};
+use utils::request;
 
 //
 // Ows handler
 //
-
-// Stream response chunks
-fn stream_bytes(
-    response: std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ResponseChunk>>,
-        tonic::Status,
-    >,
-    channel: web::Data<Channel>,
-    request_id: Option<String>,
-) -> impl Responder {
-    match response {
-        Err(status) => {
-            log::error!("Backend error:\t{}\t{}", channel.name(), status);
-            HttpResponseBuilder::from_rpc_status(&status, request_id)
-        }
-        Ok(resp) => {
-            let channel = channel.clone();
-            HttpResponseBuilder::from_metadata(resp.metadata(), request_id).streaming(
-                resp.into_inner().map(move |res| match res {
-                    Ok(item) => Ok(web::Bytes::from(item.chunk)),
-                    Err(status) => {
-                        log::error!("Backend streaming error:\t{}\t{}", channel.name(), status);
-                        Err(status)
-                    }
-                }),
-            )
-        }
-    }
-}
 
 pub mod ows {
 
@@ -95,11 +67,12 @@ pub mod ows {
             channel.allow_header(h)
         });
 
-        stream_bytes(
+        StreamedResponse::new(
             client.execute_ows_request(request).await,
-            channel,
+            channel.name(),
             request_id,
         )
+        .into_response(channel)
     }
 
     // Handle request with query arguments
@@ -189,11 +162,12 @@ pub mod api {
             channel.allow_header(h)
         });
 
-        stream_bytes(
+        StreamedResponse::new(
             client.execute_api_request(request).await,
-            channel,
+            channel.name(),
             request_id,
         )
+        .into_response(channel)
     }
 
     // Handlers

@@ -319,13 +319,13 @@ impl Worker {
     pub async fn collections(
         &mut self,
         location: Option<&str>,
-        r#type: msg::CollectionsType,
+        resource: Option<&str>,
         range: std::ops::Range<i64>,
     ) -> Result<msg::CollectionsPage> {
         self.io()?
             .send_message(msg::CollectionsMsg {
                 location,
-                r#type,
+                resource,
                 start: range.start,
                 end: range.end,
             })

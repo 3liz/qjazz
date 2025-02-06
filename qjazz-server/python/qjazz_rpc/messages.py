@@ -130,20 +130,16 @@ class ApiRequestMsg(MsgModel):
 #
 
 
-class CollectionsType(StrEnum):
-    CATALOG = "CATALOG"
-    DATASET = "DATASET"
-
-
 class CollectionsMsg(MsgModel):
     msg_id: Literal[MsgType.COLLECTIONS] = MsgType.COLLECTIONS
     location: Optional[str] = None
-    type: CollectionsType
+    resource: Optional[str] = None
     start: int = 0
     end: int = 50
 
 
 class OgcEndpoints(Flag):
+    NONE = 0x00
     MAP = 0x01
     FEATURES = 0x02
     COVERAGE = 0x04

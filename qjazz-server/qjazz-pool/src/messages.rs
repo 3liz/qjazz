@@ -204,16 +204,10 @@ pub struct RequestReply {
 // Collections
 //
 
-#[derive(Clone, Copy, Debug, Serialize)]
-pub enum CollectionsType {
-    CATALOG,
-    DATASET,
-}
-
 #[derive(Serialize)]
 pub struct CollectionsMsg<'a> {
     pub location: Option<&'a str>,
-    pub r#type: CollectionsType,
+    pub resource: Option<&'a str>,
     pub start: i64,
     pub end: i64,
 }

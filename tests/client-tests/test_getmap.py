@@ -12,7 +12,7 @@ def test_getmap_request( host ):
         '&bbox=-621646.696284,5795001.359349,205707.697759,6354520.406319'
         '&crs=EPSG:3857'
         '&dpi=96&exceptions=application/vnd.ogc.se_inimage'
-        '&format=image/png&height=915'
+        '&format=image/png'
         '&layers=france_parts'
         '&request=GetMap'
         '&service=WMS'
@@ -20,6 +20,7 @@ def test_getmap_request( host ):
         '&transparent=TRUE'
         '&version=1.3.0'
         '&width=1353'
+        '&height=915'
     )
 
     rv = requests.get(f"http://{host}{url}")

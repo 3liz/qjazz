@@ -19,6 +19,7 @@ from qjazz_contrib.core.utils import to_rfc822
 
 from . import messages as _m
 from ._op_cache import evict_project_from_cache
+from ._op_map import InvalidMapRequest, prepare_map_request
 from .config import QgisConfig
 from .delegate import ROOT_DELEGATE
 from .requests import Request, Response, _to_qgis_method
@@ -52,11 +53,31 @@ def handle_ows_request(
             _m.send_reply(conn, "Missing project", 400)
             return
 
+    entry, co_status = get_project(
+        conn,
+        cm,
+        config,
+        target,
+        allow_direct=msg.direct,
+    )
+    if not entry:
+        return
+
     if msg.debug_report and not process:
         _m.send_reply(conn, "No report available", 409)
         return
 
-    if msg.method:
+    options = msg.options
+
+    if msg.request == 'qjazz-request-map':
+        try:
+            assert_precondition(options is not None)
+            options = prepare_map_request(entry.project, cast(str, options))
+            method = QgsServerRequest.GetMethod
+        except InvalidMapRequest as err:
+            _m.send_reply(conn, f"Invalid request: {err}", 400)
+            return
+    elif msg.method:
         try:
             method = _to_qgis_method(msg.method)
         except ValueError:
@@ -65,10 +86,10 @@ def handle_ows_request(
     else:
         method = QgsServerRequest.GetMethod
 
-    # Rebuild URL for Qgis server
-    # XXX options is the full query string
-    if msg.options:
-        url = f"{msg.url or ''}?{msg.options}"
+    if options:
+        # Rebuild URL for Qgis server
+        # XXX options is the full query string
+        url = f"{msg.url or ''}?{options}"
     else:
         url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
         if msg.version:
@@ -76,14 +97,13 @@ def handle_ows_request(
 
     _handle_generic_request(
         url,
-        target,
-        msg.direct,
+        entry,
+        co_status,
         msg.body,
         method,
         msg.headers,
         conn,
         server,
-        cm,
         config,
         process if msg.debug_report else None,
         cache_id=cache_id,
@@ -110,6 +130,19 @@ def handle_api_request(
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
+
+    if target:
+        entry, co_status = get_project(
+            conn,
+            cm,
+            config,
+            target,
+            allow_direct=msg.direct,
+        )
+        if not entry:
+            return
+    else:
+        entry, co_status = (None, None)
 
     try:
         method = _to_qgis_method(msg.method)
@@ -141,14 +174,13 @@ def handle_api_request(
 
     _handle_generic_request(
         url,
-        target,
-        msg.direct,
+        entry,
+        co_status,
         msg.data,
         method,
         msg.headers,
         conn,
         server,
-        cm,
         config,
         process if msg.debug_report else None,
         cache_id=cache_id,
@@ -161,14 +193,13 @@ def handle_api_request(
 
 def _handle_generic_request(
     url: str,
-    target: Optional[str],
-    allow_direct: bool,
+    entry: Optional[CacheEntry],
+    co_status: Optional[Co],
     data: Optional[bytes],
     method: QgsServerRequest.Method,
     headers: List[Tuple[str, str]],
     conn: _m.Connection,
     server: QgsServer,
-    cm: CacheManager,
     config: QgisConfig,
     process: Optional[psutil.Process],
     *,
@@ -180,34 +211,17 @@ def _handle_generic_request(
 ):
     """ Handle generic Qgis request
     """
-    if target:
-
-        # XXX Prevent error in cache manager
-        if not target.startswith("/"):
-            target = f"/{target}"
-
-        co_status, entry = request_project_from_cache(
-            conn,
-            cm,
-            config,
-            target=target,
-            allow_direct=allow_direct,
-        )
-
-        if not entry or co_status == Co.REMOVED:
-            return
-
-        entry.hit_me()
-
+    if entry:
+        assert_precondition(co_status is not None)
+        project = entry.project
         resp_hdrs = {
             'x-qgis-last-modified': to_rfc822(entry.last_modified),
-            'x-qgis-cache': 'MISS' if co_status in (Co.NEW, Co.UPDATED) else 'HIT',
+            'x-qgis-cache': 'MISS' if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else 'HIT',
         }
 
-        project = entry.project
         response = Response(
             conn,
-            co_status.value,
+            cast(Co, co_status).value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             process=process,
@@ -239,6 +253,34 @@ def _handle_generic_request(
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
+
+
+def get_project(
+    conn: _m.Connection,
+    cm: CacheManager,
+    config: QgisConfig,
+    target:  str,
+    allow_direct: bool,
+) -> Tuple[Optional[CacheEntry], Co]:
+
+    # XXX Prevent error in cache manager
+    if not target.startswith("/"):
+        target = f"/{target}"
+
+    co_status, entry = request_project_from_cache(
+        conn,
+        cm,
+        config,
+        target=target,
+        allow_direct=allow_direct,
+    )
+
+    if not entry or co_status == Co.REMOVED:
+        return (None, co_status)
+
+    entry.hit_me()
+
+    return (entry, co_status)
 
 
 def request_project_from_cache(
