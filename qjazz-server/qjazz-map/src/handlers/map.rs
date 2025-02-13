@@ -3,8 +3,8 @@
 //
 // The map api is implemented as a mapping to ows WMS/GetMap request
 //
-use actix_web::{error, web, HttpRequest, Responder, Result};
 use actix_web::http::header::{self, Header};
+use actix_web::{error, web, HttpRequest, Responder, Result};
 use serde::Deserialize;
 use std::fmt::{self, Write};
 
@@ -171,7 +171,6 @@ struct WmsBuilder {
     opts: String,
 }
 
-
 impl WmsBuilder {
     // Build wms options out of
     // parameters
@@ -259,18 +258,20 @@ impl WmsBuilder {
 
     fn format(mut self, params: &Params, req: &HttpRequest) -> Result<Self> {
         // Check format from params then from  acceptance header
-        if let Some(format) = params.format.as_deref()
-            .or_else(|| header::Accept::parse(req).ok()
-                .and_then(|accept| accept.0.into_iter().map(|q| q.item).find_map(|m| 
-                    match (m.type_(), m.subtype()) {
+        if let Some(format) = params.format.as_deref().or_else(|| {
+            header::Accept::parse(req).ok().and_then(|accept| {
+                accept
+                    .0
+                    .into_iter()
+                    .map(|q| q.item)
+                    .find_map(|m| match (m.type_(), m.subtype()) {
                         (mime::IMAGE, mime::JPEG) => Some("image/jpeg"),
                         (mime::IMAGE, n) if n.as_str() == "webp" => Some("image/webp"),
                         (mime::APPLICATION, n) if n.as_str() == "dxf" => Some("application/dxf"),
                         _ => None,
-                    }
-                ))
-            )
-        {
+                    })
+            })
+        }) {
             write!(self.opts, "&format={format}").map_err(Self::write_error)?;
         }
         Ok(self)

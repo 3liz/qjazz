@@ -41,11 +41,15 @@ impl Params {
     }
     #[inline]
     fn next_page(&self) -> u16 {
-        self.page + 1    
+        self.page + 1
     }
     #[inline]
     fn prev_page(&self) -> u16 {
-        if self.page > 0 { self.page - 1 } else { 0 }
+        if self.page > 0 {
+            self.page - 1
+        } else {
+            0
+        }
     }
 }
 
@@ -116,6 +120,9 @@ pub async fn collections_handler(
     .await
 }
 
+//
+// Handle collection list response
+//
 async fn collection_request<F>(
     req: HttpRequest,
     channel: web::Data<Channel>,
@@ -150,31 +157,30 @@ where
             let page = resp.into_inner();
             let mut links = Vec::with_capacity(3);
             links.push(Link::application_json(
-                format!(
-                    "{public_url}?page={}&limit={}",
-                        params.page,
-                        params.limit,
-                    ).into(),
-                    rel::SELF
+                format!("{public_url}?page={}&limit={}", params.page, params.limit,).into(),
+                rel::SELF,
             ));
             if page.next {
                 links.push(Link::application_json(
-                    format!("{public_url}?page={}&limit={}",
+                    format!(
+                        "{public_url}?page={}&limit={}",
                         params.next_page(),
                         params.limit,
-                    ).into(),
+                    )
+                    .into(),
                     rel::NEXT,
                 ));
             }
             if params.page > 0 {
-                 links.push(Link::application_json(
-                    format!("{public_url}?page={}&limit={}",
+                links.push(Link::application_json(
+                    format!(
+                        "{public_url}?page={}&limit={}",
                         params.prev_page(),
                         params.limit,
-                    ).into(),
+                    )
+                    .into(),
                     rel::PREV,
                 ));
-                                
             }
 
             Ok(HttpResponse::Ok().json(Catalog {
@@ -238,7 +244,7 @@ pub async fn collections_item_handler(
         Some(resource),
         |item, page, public_url| {
             let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
-            page.add_ogc_endpoints(&public_url, endpoints)?;
+            page.add_ogc_endpoints(public_url, endpoints)?;
             page.add_legend_links(public_url)?;
             let mut links = page.links()?;
             links.add(
