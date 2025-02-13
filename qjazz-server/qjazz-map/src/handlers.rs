@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 pub mod catalog;
 pub mod landing_page;
+pub mod legend;
 pub mod map;
 pub mod response;
 pub mod utils;

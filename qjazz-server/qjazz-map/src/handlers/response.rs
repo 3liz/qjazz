@@ -2,9 +2,8 @@
 // Handle RPC responses
 //
 use actix_web::{
-    error,
     http::{self, StatusCode},
-    web, HttpResponse, HttpResponseBuilder,
+    web, HttpRequest, HttpResponse, HttpResponseBuilder, Responder,
 };
 use futures::stream::StreamExt;
 use std::str::FromStr;
@@ -13,7 +12,10 @@ use tonic::{
     metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
 };
 
-use crate::channel::{qjazz_service::ResponseChunk, Channel};
+use crate::channel::{
+    qjazz_service::{OwsRequest, ResponseChunk},
+    Channel,
+};
 
 struct AnyError;
 
@@ -29,6 +31,7 @@ where
 pub mod metadata {
     use super::*;
 
+    /*
     pub fn insert_header(md: &mut MetadataMap, key: &str, value: &str) -> Result<(), error::Error> {
         MetadataKey::from_str(key)
             .inspect_err(|e| log::error!("{e}"))
@@ -43,6 +46,7 @@ pub mod metadata {
             })
             .map_err(|_| error::ErrorInternalServerError("Internal error"))
     }
+    */
 
     // Convert headers to metadata (infallible)
     pub fn insert_from_headers<F: FnMut(&str) -> bool>(
@@ -311,5 +315,60 @@ mod tests {
             service_exception_msg(msg),
             Some("The requested map size is too large")
         );
+    }
+}
+
+//
+// Send an OWS request
+//
+pub async fn execute_ows_request(
+    req: HttpRequest,
+    channel: web::Data<Channel>,
+    request_id: Option<String>,
+    ows_request: OwsRequest,
+) -> actix_web::Result<impl Responder> {
+    let mut client = channel.client();
+
+    let mut request = tonic::Request::new(ows_request);
+
+    request.set_timeout(channel.timeout());
+
+    // forward headers
+    metadata::insert_from_headers(request.metadata_mut(), req.headers(), |h| {
+        channel.allow_header(h)
+    });
+
+    match StreamedResponse::new(
+        client.execute_ows_request(request).await,
+        channel.name(),
+        request_id,
+    ) {
+        StreamedResponse::Fail(resp) => Ok(resp),
+        StreamedResponse::Succ(mut builder, resp) => {
+            // Check return code
+            // XXX: Need to check the returned content type ?
+            if builder.status_code().is_success() {
+                Ok(builder.stream_bytes(resp, channel.clone()))
+            } else {
+                let data = collect_payload(resp).await;
+                let text = data
+                    .as_deref()
+                    .map(|b| std::str::from_utf8(b).unwrap_or("<binary data>"));
+                log::error!(
+                    "{}: Map request returned error: {:?}\n{:?}",
+                    channel.name(),
+                    builder.status_code(),
+                    text,
+                );
+                Ok(builder.content_type(mime::TEXT_PLAIN).body(
+                    match text {
+                        Ok(msg) => service_exception_msg(msg),
+                        Err(_) => None,
+                    }
+                    .unwrap_or("Map request error")
+                    .to_string(),
+                ))
+            }
+        }
     }
 }

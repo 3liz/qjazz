@@ -58,9 +58,10 @@ impl<'a> Link<'a> {
 pub mod rel {
     pub const SELF: &str = "self";
     pub const RELATED: &str = "related";
-    pub const CHILD: &str = "child";
-    pub const COLLECTION: &str = "collection";
+    //pub const CHILD: &str = "child";
+    //pub const COLLECTION: &str = "collection";
     pub const OGC_REL_MAP: &str = "[ogc-rel:map]";
     pub const OGC_REL_ITEM: &str = "[ogc-rel:item]";
     pub const OGC_REL_DATA: &str = "[ogc-rel:data]";
+    pub const OGC_REL_LEGEND: &str = "[ogc-rel:legend]";
 }

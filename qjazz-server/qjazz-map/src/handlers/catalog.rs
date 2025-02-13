@@ -60,9 +60,9 @@ pub async fn catalog_handler(
         params,
         None,
         None,
-        |item, links, public_url| {
+        |item, page, public_url| {
             let item_url = item_url(item, public_url);
-            links
+            page.links()?
                 .reserve(2)
                 .add(
                     Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
@@ -92,9 +92,10 @@ pub async fn collections_handler(
         params,
         Some(location.into_inner()),
         None,
-        |item, links, public_url| {
-            let item_url = item_url(item, &public_url);
+        |item, page, public_url| {
+            let item_url = item_url(item, public_url);
             let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+            let mut links = page.links()?;
             links.reserve(2).add(
                 Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
                     .title(item.name.as_str()),
@@ -117,10 +118,10 @@ async fn collection_request<F>(
     params: web::Query<Params>,
     location: Option<String>,
     resource: Option<String>,
-    mut with_links: F,
+    mut with_page: F,
 ) -> Result<impl Responder>
 where
-    F: FnMut(&CollectionsItem, &mut Links, &str) -> Result<()>,
+    F: FnMut(&CollectionsItem, &mut JsonPage, &str) -> Result<()>,
 {
     let public_url = request::location(&req);
 
@@ -148,9 +149,7 @@ where
                     .iter()
                     .map(|n| {
                         let mut page = JsonPage::from_item(n)?;
-                        if let Some(mut links) = page.links() {
-                            with_links(n, &mut links, &public_url)?;
-                        }
+                        with_page(n, &mut page, &public_url)?;
                         Ok(page.into_value())
                     })
                     .collect::<Result<Vec<serde_json::Value>>>()?,
@@ -171,8 +170,8 @@ pub async fn item_handler(
         channel,
         None,
         Some(resource.into_inner()),
-        |item, links, public_url| {
-            links
+        |item, page, public_url| {
+            page.links()?
                 .reserve(3)
                 .add(
                     Link::application_json((public_url).into(), rel::SELF)
@@ -191,6 +190,7 @@ pub async fn item_handler(
     .await
 }
 
+// Handler for sub items of catalog (i.e layers)
 pub async fn collections_item_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
@@ -202,8 +202,10 @@ pub async fn collections_item_handler(
         channel,
         Some(location),
         Some(resource),
-        |item, links, public_url| {
+        |item, page, public_url| {
+            page.add_legend_links(public_url)?;
             let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+            let mut links = page.links()?;
             links.reserve(2).add(
                 Link::application_json((public_url).into(), rel::SELF).title(item.name.as_str()),
             )?;
@@ -220,15 +222,15 @@ pub async fn collections_item_handler(
 }
 
 // Item handler
-pub async fn item_request<F>(
+async fn item_request<F>(
     req: HttpRequest,
     channel: web::Data<Channel>,
     location: Option<String>,
     resource: Option<String>,
-    mut with_links: F,
+    mut with_page: F,
 ) -> Result<impl Responder>
 where
-    F: FnMut(&CollectionsItem, &mut Links, &str) -> Result<()>,
+    F: FnMut(&CollectionsItem, &mut JsonPage, &str) -> Result<()>,
 {
     let public_url = request::location(&req);
 
@@ -253,15 +255,13 @@ where
             if page.items.is_empty() {
                 Ok(HttpResponse::NotFound()
                     .content_type(mime::TEXT_PLAIN)
-                    .body(format!("Resource not found")))
+                    .body("Resource not found"))
             } else {
                 Ok(HttpResponse::Ok().json({
                     let item = &page.items[0];
-                    let mut page = JsonPage::from_item(item)?;
-                    if let Some(mut links) = page.links() {
-                        with_links(item, &mut links, &public_url)?;
-                    }
-                    page.into_value()
+                    let mut json_page = JsonPage::from_item(item)?;
+                    with_page(item, &mut json_page, &public_url)?;
+                    json_page.into_value()
                 }))
             }
         }
@@ -271,7 +271,7 @@ where
 fn item_url(item: &CollectionsItem, public_url: &str) -> String {
     format!(
         "{public_url}/{}",
-        percent_encoding::percent_encode(&item.name.as_bytes(), percent_encoding::NON_ALPHANUMERIC),
+        percent_encoding::percent_encode(item.name.as_bytes(), percent_encoding::NON_ALPHANUMERIC),
     )
 }
 
@@ -280,31 +280,87 @@ fn to_error<E: std::fmt::Debug>(e: E) -> error::Error {
     error::ErrorInternalServerError("Internal error")
 }
 
-struct JsonPage(serde_json::Value);
+struct JsonPage(serde_json::Map<String, serde_json::Value>);
 
 impl JsonPage {
+    const STYLE: &str = "styles";
+
     fn from_item(item: &CollectionsItem) -> Result<Self> {
         serde_json::from_str(&item.json)
             .map_err(to_error)
-            .map(|v| Self(v))
+            .and_then(|v| match v {
+                serde_json::Value::Object(m) => Ok(Self(m)),
+                _ => Err(error::ErrorInternalServerError(
+                    "Expecting JSon object from collection",
+                )),
+            })
     }
 
     fn into_value(self) -> serde_json::Value {
-        self.0
+        serde_json::Value::Object(self.0)
     }
 
-    fn links(&mut self) -> Option<Links> {
-        if let Some(serde_json::Value::Array(v)) = self.0.get_mut("links") {
-            Some(Links(v))
+    fn get_into_string(&mut self, name: &str) -> Option<String> {
+        if let Some(serde_json::Value::String(s)) = self.0.remove(name) {
+            Some(s)
         } else {
             None
+        }
+    }
+
+    fn has_styles(&self) -> bool {
+        self.0.contains_key(Self::STYLE)
+    }
+
+    fn add_legend_links(&mut self, public_url: &str) -> Result<()> {
+        let legend_url = self.get_into_string("legendUrl");
+        let legend_fmt = self.get_into_string("legendUrlFormat");
+
+        let styled = legend_url.is_none() && self.has_styles();
+
+        let mut links = self.links()?;
+        links.add(
+            Link::new(
+                legend_url
+                    .unwrap_or_else(|| format!("{public_url}/legend"))
+                    .into(),
+                rel::OGC_REL_LEGEND,
+            )
+            .media_type(
+                legend_fmt
+                    .as_deref()
+                    .unwrap_or(mime::IMAGE_PNG.as_ref()),
+            )
+            .title("Default legend"),
+        )?;
+        if styled {
+            links.add(
+                Link::new(
+                    format!("{public_url}/styles/{{style}}/legend").into(),
+                    rel::OGC_REL_LEGEND,
+                )
+                .media_type(legend_fmt.as_deref().unwrap_or(mime::IMAGE_PNG.as_ref()))
+                .title("Styled legend")
+                .templated(),
+            )?;
+        }
+        Ok(())
+    }
+
+    fn links(&mut self) -> Result<Links> {
+        if let Some(serde_json::Value::Array(v)) = self.0.get_mut("links") {
+            Ok(Links(v))
+        } else {
+            Err(error::ErrorInternalServerError(
+                "No 'links' array found in json object",
+            ))
         }
     }
 }
 
 struct Links<'a>(&'a mut Vec<serde_json::Value>);
 
-impl<'a> Links<'a> {
+impl Links<'_> {
     fn reserve(&mut self, additional: usize) -> &mut Self {
         self.0.reserve(additional);
         self

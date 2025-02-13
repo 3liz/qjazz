@@ -11,6 +11,8 @@ from typing import (
     Tuple,
 )
 
+from pydantic import HttpUrl
+
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -72,6 +74,10 @@ class Collection(collections.Collection):
 
     # QJazz Addition
     copyrights: Opt[Sequence[str]] = None
+
+    styles: Opt[Sequence[str]] = None
+    legend_url: Opt[HttpUrl] = None
+    legend_format: Opt[str] = None
 
     #
     # Compute catalog entry form QGIS project
@@ -165,6 +171,10 @@ class Collection(collections.Collection):
                     layer.maximumScale(),
                 )
 
+        styles = layer.styleManager().styles() or None
+        legend_url = layer.legendUrl() or None
+        legend_format = layer.legendUrlFormat() or None
+
         return cls(
             id=layer.name(),
             title=title,
@@ -183,4 +193,7 @@ class Collection(collections.Collection):
             max_scale_denominator=max_scale_denominator,
             # Additions to STAC specs
             copyrights=md.rights(),
+            styles=styles,
+            legend_url=legend_url,
+            legend_format=legend_format,
         )

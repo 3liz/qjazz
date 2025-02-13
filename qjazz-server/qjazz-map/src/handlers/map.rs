@@ -9,13 +9,11 @@ use std::fmt::{self, Write};
 
 use crate::channel::qjazz_service::OwsRequest;
 use crate::channel::Channel;
-use crate::handlers::response::{
-    collect_payload, metadata, service_exception_msg, StreamedResponse,
-};
+use crate::handlers::response::execute_ows_request;
 use crate::handlers::utils::request;
 
 use crate::models::bbox::{Bbox, CRS84};
-use crate::models::point::Point;
+//use crate::models::point::Point;
 
 // Serde initilizer
 fn true_value() -> bool {
@@ -30,10 +28,12 @@ pub struct Params {
     #[serde(default = "true_value")]
     transparent: bool,
     // This has no effects with WMS
+    /*
     #[serde(alias = "void-transparent")]
     void_transparent: Option<bool>,
     #[serde(alias = "void-bgcolor")]
     void_bgcolor: Option<String>,
+    */
 
     // Conformance class A.4:
     // https://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/collections-selection
@@ -123,12 +123,12 @@ pub async fn map_request(
     target: String,
     params: web::Query<Params>,
 ) -> Result<impl Responder> {
-    let mut client = channel.client();
+
     let request_id = request::request_id(&req).map(String::from);
 
     let options = WmsBuilder::build(&params)?.options();
 
-    let mut request = tonic::Request::new(OwsRequest {
+    let request = OwsRequest {
         target,
         options: Some(options),
         service: String::default(),
@@ -140,48 +140,9 @@ pub async fn map_request(
         request_id: request_id.clone(),
         body: None,
         content_type: None,
-    });
+    };
 
-    request.set_timeout(channel.timeout());
-
-    // forward headers
-    metadata::insert_from_headers(request.metadata_mut(), req.headers(), |h| {
-        channel.allow_header(h)
-    });
-
-    match StreamedResponse::new(
-        client.execute_ows_request(request).await,
-        channel.name(),
-        request_id,
-    ) {
-        StreamedResponse::Fail(resp) => Ok(resp),
-        StreamedResponse::Succ(mut builder, resp) => {
-            // Check return code
-            // XXX: Need to check the returned content type ?
-            if builder.status_code().is_success() {
-                Ok(builder.stream_bytes(resp, channel.clone()))
-            } else {
-                let data = collect_payload(resp).await;
-                let text = data
-                    .as_deref()
-                    .map(|b| std::str::from_utf8(b).unwrap_or("<binary data>"));
-                log::error!(
-                    "{}: Map request returned error: {:?}\n{:?}",
-                    channel.name(),
-                    builder.status_code(),
-                    text,
-                );
-                Ok(builder.content_type(mime::TEXT_PLAIN).body(
-                    match text {
-                        Ok(msg) => service_exception_msg(msg),
-                        Err(_) => None,
-                    }
-                    .unwrap_or("Map request error")
-                    .to_string(),
-                ))
-            }
-        }
-    }
+    execute_ows_request(req, channel, request_id, request).await
 }
 
 // WMS options builder
@@ -202,6 +163,7 @@ impl WmsBuilder {
         Self {
             opts: "service=WMS&request=GetMap&version=1.3.0".to_string(),
         }
+        .scaling(params)?
         .subsetting(params)?
         .display(params)?
         .layers(params)?
@@ -220,6 +182,16 @@ impl WmsBuilder {
         Ok(self)
     }
 
+    fn scaling(mut self, params: &Params) -> Result<Self> {
+        if let Some(width) = &params.width {
+            write!(self.opts, "&width={width}").map_err(Self::write_error)?;
+        }
+        if let Some(height) = &params.height {
+            write!(self.opts, "&height={height}").map_err(Self::write_error)?;
+        }
+        Ok(self)
+    }
+
     fn subsetting(mut self, params: &Params) -> Result<Self> {
         if let Some(bbox) = &params.bbox {
             write!(self.opts, "&bbox={}", bbox).map_err(Self::write_error)?;
@@ -231,8 +203,8 @@ impl WmsBuilder {
         Ok(self)
     }
 
+
     fn display(mut self, params: &Params) -> Result<Self> {
-        if let Some(mm_per_pixel) = &params.mm_per_pixel {}
         let mm_per_pixel = params.mm_per_pixel.unwrap_or(0.28);
         if mm_per_pixel <= 0. {
             return Err(error::ErrorBadRequest("Invalid mm-per-pixel parameter"));

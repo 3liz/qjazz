@@ -91,7 +91,7 @@ def handle_ows_request(
         # XXX options is the full query string
         url = f"{msg.url or ''}?{options}"
     else:
-        url = f"{msg.url or ''}?SERVICE={msg.service}&REQUEST={msg.request}"
+        url = f"{msg.url or ''}?SERVICE={msg.service or 'WMS'}&REQUEST={msg.request}"
         if msg.version:
             url += f"&VERSION={msg.version}"
 

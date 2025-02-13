@@ -2,7 +2,7 @@
 // Services
 //
 use crate::channel::Channel;
-use crate::handlers::{api, catalog, landing_page, map, ows};
+use crate::handlers::{api, catalog, legend, landing_page, map, ows};
 use crate::resolver::ApiEndPoint;
 use actix_web::{guard, web};
 
@@ -64,11 +64,7 @@ pub fn catalog(cfg: &mut web::ServiceConfig) {
             web::scope("/catalog/{id}")
                 .default_service(web::get().to(catalog::item_handler))
                 .configure(default_map)
-                .route("/maps", web::get().to(catalog::collections_handler))
-                .route(
-                    "/maps/{res}",
-                    web::get().to(catalog::collections_item_handler),
-                ),
+                .configure(maps),
         );
 }
 
@@ -83,9 +79,25 @@ pub fn default_map(cfg: &mut web::ServiceConfig) {
                 ))
                 .to(map::handler),
         ),
-    )
+    );
+}
+
+pub fn maps(cfg: &mut web::ServiceConfig) {
+    cfg
+    .route("/maps", web::get().to(catalog::collections_handler))
     .service(
-        web::resource("/maps/{res}/map")
+        web::scope("/maps/{res}")
+            .default_service(web::get().to(catalog::collections_item_handler))
+            .configure(collection_map)
+    );
+}
+
+//
+// /map for collection item (layer)
+//
+pub fn collection_map(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::resource("/map")
             .get(map::collection_handler)
             .route(
                 web::post()
@@ -94,6 +106,9 @@ pub fn default_map(cfg: &mut web::ServiceConfig) {
                         "application/x-www-form-urlencoded",
                     ))
                     .to(map::collection_handler),
-            ),
-    );
+            )
+    )
+    .route("/legend", web::get().to(legend::default_handler))
+    .route("/styles/{style}/legend", web::get().to(legend::styled_handler));
 }
+
