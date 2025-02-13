@@ -4,6 +4,7 @@
 // The map api is implemented as a mapping to ows WMS/GetMap request
 //
 use actix_web::{error, web, HttpRequest, Responder, Result};
+use actix_web::http::header::{self, Header};
 use serde::Deserialize;
 use std::fmt::{self, Write};
 
@@ -34,7 +35,6 @@ pub struct Params {
     #[serde(alias = "void-bgcolor")]
     void_bgcolor: Option<String>,
     */
-
     // Conformance class A.4:
     // https://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/collections-selection
     // A comma separated list of collections id
@@ -92,12 +92,17 @@ pub struct Params {
     // Custom Projection CRS
     // Conformance class A.12: https://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/projection
     // XXX: Not implemented
+
+    // Not in OGC specs but allow styling with 'collections' parameter
+    // see https://docs.qgis.org/latest/en/docs/server_manual/services/wms.html#wms-styles
+    styles: Option<String>,
+    format: Option<String>,
 }
 
 //
 // Map handler
 //
-pub async fn handler(
+pub async fn default_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     location: web::Path<String>,
@@ -106,7 +111,10 @@ pub async fn handler(
     map_request(req, channel, location.into_inner(), params).await
 }
 
-pub async fn collection_handler(
+//
+// Collection item (layer) handler
+//
+pub async fn child_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     resources: web::Path<(String, String)>,
@@ -117,16 +125,29 @@ pub async fn collection_handler(
     map_request(req, channel, location, params).await
 }
 
+//
+// Styled map
+//
+pub async fn styled_child_handler(
+    req: HttpRequest,
+    channel: web::Data<Channel>,
+    resources: web::Path<(String, String, String)>,
+    mut params: web::Query<Params>,
+) -> Result<impl Responder> {
+    let (location, resource, style) = resources.into_inner();
+    params.collections = Some(resource);
+    params.styles = Some(style);
+    map_request(req, channel, location, params).await
+}
+
 pub async fn map_request(
     req: HttpRequest,
     channel: web::Data<Channel>,
     target: String,
     params: web::Query<Params>,
 ) -> Result<impl Responder> {
-
     let request_id = request::request_id(&req).map(String::from);
-
-    let options = WmsBuilder::build(&params)?.options();
+    let options = WmsBuilder::build(&params, &req)?.options();
 
     let request = OwsRequest {
         target,
@@ -150,6 +171,7 @@ struct WmsBuilder {
     opts: String,
 }
 
+
 impl WmsBuilder {
     // Build wms options out of
     // parameters
@@ -159,7 +181,7 @@ impl WmsBuilder {
         error::ErrorInternalServerError("Internal error")
     }
 
-    fn build(params: &Params) -> Result<Self> {
+    fn build(params: &Params, req: &HttpRequest) -> Result<Self> {
         Self {
             opts: "service=WMS&request=GetMap&version=1.3.0".to_string(),
         }
@@ -168,7 +190,9 @@ impl WmsBuilder {
         .display(params)?
         .layers(params)?
         .bgcolor(params)?
-        .transparent(params)
+        .styles(params)?
+        .transparent(params)?
+        .format(params, req)
     }
 
     fn options(self) -> String {
@@ -203,6 +227,12 @@ impl WmsBuilder {
         Ok(self)
     }
 
+    fn styles(mut self, params: &Params) -> Result<Self> {
+        if let Some(styles) = &params.styles {
+            write!(self.opts, "&styles={styles}").map_err(Self::write_error)?;
+        }
+        Ok(self)
+    }
 
     fn display(mut self, params: &Params) -> Result<Self> {
         let mm_per_pixel = params.mm_per_pixel.unwrap_or(0.28);
@@ -224,6 +254,25 @@ impl WmsBuilder {
 
     fn transparent(mut self, params: &Params) -> Result<Self> {
         write!(self.opts, "&transparent={}", params.transparent).map_err(Self::write_error)?;
+        Ok(self)
+    }
+
+    fn format(mut self, params: &Params, req: &HttpRequest) -> Result<Self> {
+        // Check format from params then from  acceptance header
+        if let Some(format) = params.format.as_deref()
+            .or_else(|| header::Accept::parse(req).ok()
+                .and_then(|accept| accept.0.into_iter().map(|q| q.item).find_map(|m| 
+                    match (m.type_(), m.subtype()) {
+                        (mime::IMAGE, mime::JPEG) => Some("image/jpeg"),
+                        (mime::IMAGE, n) if n.as_str() == "webp" => Some("image/webp"),
+                        (mime::APPLICATION, n) if n.as_str() == "dxf" => Some("application/dxf"),
+                        _ => None,
+                    }
+                ))
+            )
+        {
+            write!(self.opts, "&format={format}").map_err(Self::write_error)?;
+        }
         Ok(self)
     }
 }

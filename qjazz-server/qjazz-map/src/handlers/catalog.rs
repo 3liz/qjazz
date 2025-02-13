@@ -39,6 +39,14 @@ impl Params {
     fn end(&self) -> u16 {
         self.start() + cmp::min(self.limit, MAX_PAGE_LIMIT)
     }
+    #[inline]
+    fn next_page(&self) -> u16 {
+        self.page + 1    
+    }
+    #[inline]
+    fn prev_page(&self) -> u16 {
+        if self.page > 0 { self.page - 1 } else { 0 }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -63,9 +71,9 @@ pub async fn catalog_handler(
         |item, page, public_url| {
             let item_url = item_url(item, public_url);
             page.links()?
-                .reserve(2)
+                .reserve(4)
                 .add(
-                    Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
+                    Link::application_json((&item_url).into(), rel::CHILD)
                         .title(item.name.as_str()),
                 )?
                 .add(
@@ -95,17 +103,13 @@ pub async fn collections_handler(
         |item, page, public_url| {
             let item_url = item_url(item, public_url);
             let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+            page.add_ogc_endpoints(&item_url, endpoints)?;
+            page.add_legend_links(&item_url)?;
             let mut links = page.links()?;
-            links.reserve(2).add(
+            links.add(
                 Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
                     .title(item.name.as_str()),
             )?;
-            if endpoints.contains(OgcEndpoints::MAP) {
-                links.add(
-                    Link::new(format!("{item_url}/map").into(), rel::OGC_REL_MAP)
-                        .title("Default map"),
-                )?;
-            }
             Ok(())
         },
     )
@@ -141,8 +145,38 @@ where
             log::error!("Backend error:\t{}\t{}", channel.name(), status);
             Ok(RpcHttpResponseBuilder::from_rpc_status(&status, None))
         }
+
         Ok(resp) => {
             let page = resp.into_inner();
+            let mut links = Vec::with_capacity(3);
+            links.push(Link::application_json(
+                format!(
+                    "{public_url}?page={}&limit={}",
+                        params.page,
+                        params.limit,
+                    ).into(),
+                    rel::SELF
+            ));
+            if page.next {
+                links.push(Link::application_json(
+                    format!("{public_url}?page={}&limit={}",
+                        params.next_page(),
+                        params.limit,
+                    ).into(),
+                    rel::NEXT,
+                ));
+            }
+            if params.page > 0 {
+                 links.push(Link::application_json(
+                    format!("{public_url}?page={}&limit={}",
+                        params.prev_page(),
+                        params.limit,
+                    ).into(),
+                    rel::PREV,
+                ));
+                                
+            }
+
             Ok(HttpResponse::Ok().json(Catalog {
                 items: page
                     .items
@@ -153,7 +187,7 @@ where
                         Ok(page.into_value())
                     })
                     .collect::<Result<Vec<serde_json::Value>>>()?,
-                links: vec![Link::application_json(public_url.into(), rel::SELF)],
+                links,
             }))
         }
     }
@@ -203,18 +237,13 @@ pub async fn collections_item_handler(
         Some(location),
         Some(resource),
         |item, page, public_url| {
-            page.add_legend_links(public_url)?;
             let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+            page.add_ogc_endpoints(&public_url, endpoints)?;
+            page.add_legend_links(public_url)?;
             let mut links = page.links()?;
-            links.reserve(2).add(
+            links.add(
                 Link::application_json((public_url).into(), rel::SELF).title(item.name.as_str()),
             )?;
-            if endpoints.contains(OgcEndpoints::MAP) {
-                links.add(
-                    Link::new(format!("{public_url}/map").into(), rel::OGC_REL_MAP)
-                        .title("Default map"),
-                )?;
-            }
             Ok(())
         },
     )
@@ -312,6 +341,29 @@ impl JsonPage {
         self.0.contains_key(Self::STYLE)
     }
 
+    // Handle OGC endpoints for child item (layer)
+    fn add_ogc_endpoints(&mut self, public_url: &str, endpoints: OgcEndpoints) -> Result<()> {
+        let styled = self.has_styles();
+        let mut links = self.links()?;
+        if endpoints.contains(OgcEndpoints::MAP) {
+            links.reserve(2).add(
+                Link::new(format!("{public_url}/map").into(), rel::OGC_REL_MAP)
+                    .title("Default map"),
+            )?;
+            if styled {
+                links.add(
+                    Link::new(
+                        format!("{public_url}/styles/{{style}}/map").into(),
+                        rel::OGC_REL_MAP,
+                    )
+                    .title("Styled map")
+                    .templated(),
+                )?;
+            }
+        }
+        Ok(())
+    }
+
     fn add_legend_links(&mut self, public_url: &str) -> Result<()> {
         let legend_url = self.get_into_string("legendUrl");
         let legend_fmt = self.get_into_string("legendUrlFormat");
@@ -319,18 +371,14 @@ impl JsonPage {
         let styled = legend_url.is_none() && self.has_styles();
 
         let mut links = self.links()?;
-        links.add(
+        links.reserve(2).add(
             Link::new(
                 legend_url
                     .unwrap_or_else(|| format!("{public_url}/legend"))
                     .into(),
                 rel::OGC_REL_LEGEND,
             )
-            .media_type(
-                legend_fmt
-                    .as_deref()
-                    .unwrap_or(mime::IMAGE_PNG.as_ref()),
-            )
+            .media_type(legend_fmt.as_deref().unwrap_or(mime::IMAGE_PNG.as_ref()))
             .title("Default legend"),
         )?;
         if styled {

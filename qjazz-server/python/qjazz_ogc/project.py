@@ -171,7 +171,10 @@ class Collection(collections.Collection):
                     layer.maximumScale(),
                 )
 
-        styles = layer.styleManager().styles() or None
+        styles = layer.styleManager().styles()
+        # Only default style
+        if not styles or len(styles) == 1:
+            styles = None
         legend_url = layer.legendUrl() or None
         legend_format = layer.legendUrlFormat() or None
 

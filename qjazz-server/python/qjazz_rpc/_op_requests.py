@@ -4,7 +4,7 @@
 import os
 
 from string import capwords
-from typing import List, Optional, Tuple, assert_never, cast
+from typing import Dict, List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
 
 import psutil
@@ -67,16 +67,22 @@ def handle_ows_request(
         _m.send_reply(conn, "No report available", 409)
         return
 
+    resp_hdrs: Dict[str, str] | None = None
+
     options = msg.options
 
     if msg.request == 'qjazz-request-map':
         try:
             assert_precondition(options is not None)
-            options = prepare_map_request(entry.project, cast(str, options))
+            map_req = prepare_map_request(entry.project, cast(str, options))
             method = QgsServerRequest.GetMethod
         except InvalidMapRequest as err:
             _m.send_reply(conn, f"Invalid request: {err}", 400)
             return
+
+        options = map_req.options
+        resp_hdrs = map_req.headers
+
     elif msg.method:
         try:
             method = _to_qgis_method(msg.method)
@@ -111,6 +117,7 @@ def handle_ows_request(
         feedback=feedback,
         header_prefix=msg.header_prefix,
         content_type=msg.content_type,
+        resp_hdrs=resp_hdrs,
     )
 
 
@@ -208,16 +215,18 @@ def _handle_generic_request(
     feedback: QgsFeedback,
     header_prefix: Optional[str],
     content_type: Optional[str],
+    resp_hdrs: Optional[Dict[str, str]] = None,
 ):
     """ Handle generic Qgis request
     """
     if entry:
         assert_precondition(co_status is not None)
         project = entry.project
-        resp_hdrs = {
-            'x-qgis-last-modified': to_rfc822(entry.last_modified),
-            'x-qgis-cache': 'MISS' if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else 'HIT',
-        }
+        resp_hdrs = resp_hdrs or {}
+        resp_hdrs.update((
+            ('x-qgis-last-modified', to_rfc822(entry.last_modified)),
+            ('x-qgis-cache', 'MISS' if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else 'HIT'),
+        ))
 
         response = Response(
             conn,

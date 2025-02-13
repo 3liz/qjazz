@@ -34,7 +34,6 @@ pub async fn styled_handler(
     legend_request(req, channel, target, layer, Some(style)).await
 }
 
-
 pub async fn legend_request(
     req: HttpRequest,
     channel: web::Data<Channel>,
@@ -42,7 +41,6 @@ pub async fn legend_request(
     layer: String,
     style: Option<String>,
 ) -> Result<impl Responder> {
-    let mut client = channel.client();
     let request_id = request::request_id(&req).map(String::from);
 
     let mut options = format!(
@@ -59,7 +57,7 @@ pub async fn legend_request(
 
     let request = OwsRequest {
         target,
-        service: String::default(),  // WMS by default,
+        service: String::default(), // WMS by default,
         request: "GetLegendGraphic".into(),
         options: Some(options),
         version: None,
@@ -73,4 +71,3 @@ pub async fn legend_request(
 
     execute_ows_request(req, channel, request_id, request).await
 }
-

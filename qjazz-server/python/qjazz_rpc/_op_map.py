@@ -1,7 +1,8 @@
 #
 # OGC api 'map' request
 #
-from typing import Any, Callable, Iterator
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterator
 from urllib.parse import parse_qs
 
 from qgis.core import (
@@ -54,7 +55,13 @@ def visible_layers(p: QgsProject) -> Iterator[str]:
             yield item.name()
 
 
-def prepare_map_request(project: QgsProject, options: str) -> str:
+@dataclass
+class MapRequest:
+    headers: Dict[str, str]
+    options: str
+
+
+def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
     """ Check for missing required parameters for
         a proper WMS GetMap request
 
@@ -64,7 +71,9 @@ def prepare_map_request(project: QgsProject, options: str) -> str:
 
         See: https://docs.qgis.org/latest/en/docs/server_manual/services/wms.html#wms-getmap
     """
+
     params: Any = parse_qs(options)
+    headers: Dict[str, str] = {}
 
     logger.debug("Preparing map request: %s", params)
 
@@ -72,8 +81,15 @@ def prepare_map_request(project: QgsProject, options: str) -> str:
 
     # NOTE: A bbox should never be set without a crs !!
 
+    # See https://docs.ogc.org/pol/09-048r6.html#toc14 for CURIE notation
     if "crs" not in params:
-        options = f"{options}&crs={crs().authid()}"
+        content_crs = crs().authid()
+        headers["Content-Crs"] = f"[{content_crs}]"  # CURIE notation
+        options = f"{options}&crs={content_crs}"
+    else:
+        content_crs = params[0]
+        headers["Content-Crs"] = content_crs \
+            if content_crs.startswith("http") else f"[{content_crs}]"
 
     if "bbox" not in params:
         # wmsExtent is assumed to be in project crs.
@@ -86,14 +102,17 @@ def prepare_map_request(project: QgsProject, options: str) -> str:
 
         # Assume version 1.3.0
         if output_crs.hasAxisInverted():  # Inversion east/north, long/lata
-            # XXX use r.invert()
-            options = f"{options}&bbox={r.yMinimum()},{r.xMinimum()},{r.yMaximum()},{r.xMaximum()}"
-        else:
-            options = f"{options}&bbox={r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
+            r.invert()
+
+        content_bbox = f"{r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
+        options = f"{options}&bbox={content_bbox}"
 
         inv_aspect_ratio = lambda: r.height()/r.width()   # noqa E731
     else:
+        content_bbox = params["bbox"]
         inv_aspect_ratio = lambda: bbox_inv_aspect_ratio(params)  # noqa E731
+
+    headers["Content-Bbox"] = content_bbox
 
     width = params.get('width')
     height = params.get('height')
@@ -119,4 +138,4 @@ def prepare_map_request(project: QgsProject, options: str) -> str:
         if layers:
             options = f"{options}&layers={layers}"
 
-    return options
+    return MapRequest(headers=headers, options=options)
