@@ -6,8 +6,9 @@ from pathlib import Path
 from qgis.core import QgsProject
 
 from qjazz_cache.storage import load_project_from_uri
+from qjazz_ogc import Collection, OgcEndpoints
 from qjazz_ogc.crs import CrsRef
-from qjazz_ogc.project import Collection
+from qjazz_ogc.stac import CatalogBase
 from qjazz_rpc import messages
 from qjazz_rpc.tests.worker import Worker
 
@@ -76,10 +77,10 @@ async def test_ogc_catalog_api(worker: Worker):
     item = resp.items[0]
     print("\n::test_ogc_api::catalog::item", item)
 
-    coll = Collection.model_validate_json(item.json)
+    coll = CatalogBase.model_validate_json(item.json)
 
     assert coll.id == item.name
-    assert item.endpoints == messages.OgcEndpoints.MAP.value
+    assert item.endpoints == OgcEndpoints.MAP.value
 
 
 def test_ogc_layer_collection(qgis_session: None, data: Path):

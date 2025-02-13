@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 
 use crate::channel::{
-    qjazz_service::{collections_page::CollectionsItem, CollectionsRequest},
+    qjazz_service::{collections_page::CollectionsItem, CollectionsPage, CollectionsRequest},
     Channel,
 };
 use crate::handlers::response::RpcHttpResponseBuilder;
@@ -55,8 +55,14 @@ impl Params {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct Collections<'a> {
+    collections: Vec<serde_json::Value>,
+    links: Vec<Link<'a>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct Catalog<'a> {
-    items: Vec<serde_json::Value>,
     links: Vec<Link<'a>>,
 }
 
@@ -66,73 +72,81 @@ pub async fn catalog_handler(
     channel: web::Data<Channel>,
     params: web::Query<Params>,
 ) -> Result<impl Responder> {
-    collection_request(
+    collection_request_page(
         req,
         channel,
         params,
         None,
         None,
-        |item, page, public_url| {
-            let item_url = item_url(item, public_url);
-            page.links()?
-                .reserve(4)
-                .add(
-                    Link::application_json((&item_url).into(), rel::CHILD)
-                        .title(item.name.as_str()),
-                )?
-                .add(
-                    Link::new(format!("{item_url}/map").into(), rel::OGC_REL_MAP)
-                        .title("Default map"),
-                )?;
-            Ok(())
+        |page, public_url, mut links| {
+            links.reserve(page.items.len());
+            for item in &page.items {
+                let item_url = item_url(item, public_url);
+
+                let mut js = JsonPage::from_item(item)?;
+
+                let mut link = Link::application_json(item_url.into(), rel::ITEM);
+
+                link.title = js.get_into_string("title").map(|s| s.into());
+                link.description = js.get_into_string("description").map(|s| s.into());
+                links.push(link);
+            }
+            Ok(HttpResponse::Ok().json(Catalog { links }))
         },
     )
     .await
 }
 
-// Collections handler
-// Return the collection (layers) of a catalog entry
 pub async fn collections_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     params: web::Query<Params>,
     location: web::Path<String>,
 ) -> Result<impl Responder> {
-    collection_request(
+    collection_request_page(
         req,
         channel,
         params,
         Some(location.into_inner()),
         None,
-        |item, page, public_url| {
-            let item_url = item_url(item, public_url);
-            let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
-            page.add_ogc_endpoints(&item_url, endpoints)?;
-            page.add_legend_links(&item_url)?;
-            let mut links = page.links()?;
-            links.add(
-                Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
-                    .title(item.name.as_str()),
-            )?;
-            Ok(())
+        |page, public_url, links| {
+            Ok(HttpResponse::Ok().json(Collections {
+                collections: page
+                    .items
+                    .iter()
+                    .map(|item| {
+                        let mut page = JsonPage::from_item(item)?;
+
+                        let item_url = item_url(item, public_url);
+                        let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+                        page.add_ogc_endpoints(&item_url, endpoints)?;
+                        page.add_legend_links(&item_url)?;
+                        let mut links = page.links()?;
+                        links.add(
+                            Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
+                                .title(item.name.as_str()),
+                        )?;
+
+                        Ok(page.into_value())
+                    })
+                    .collect::<Result<Vec<serde_json::Value>>>()?,
+                links,
+            }))
         },
     )
     .await
 }
 
-//
-// Handle collection list response
-//
-async fn collection_request<F>(
+async fn collection_request_page<F>(
     req: HttpRequest,
     channel: web::Data<Channel>,
     params: web::Query<Params>,
     location: Option<String>,
     resource: Option<String>,
-    mut with_page: F,
+    mut f: F,
 ) -> Result<impl Responder>
 where
-    F: FnMut(&CollectionsItem, &mut JsonPage, &str) -> Result<()>,
+    F: FnMut(&CollectionsPage, &str, Vec<Link>) -> Result<HttpResponse>,
 {
     let public_url = request::location(&req);
 
@@ -183,18 +197,7 @@ where
                 ));
             }
 
-            Ok(HttpResponse::Ok().json(Catalog {
-                items: page
-                    .items
-                    .iter()
-                    .map(|n| {
-                        let mut page = JsonPage::from_item(n)?;
-                        with_page(n, &mut page, &public_url)?;
-                        Ok(page.into_value())
-                    })
-                    .collect::<Result<Vec<serde_json::Value>>>()?,
-                links,
-            }))
+            f(&page, &public_url, links)
         }
     }
 }

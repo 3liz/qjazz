@@ -1,14 +1,22 @@
 import traceback
 
 from dataclasses import dataclass
+from enum import Flag
 from typing import (
     Dict,
     Iterator,
     Optional,
     Self,
+    Tuple,
     cast,
 )
 from urllib.parse import urlsplit
+
+from qgis.core import (
+    QgsProject,
+    QgsRasterLayer,
+    QgsVectorLayer,
+)
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_cache.storage import load_project_from_uri
@@ -19,6 +27,14 @@ from .project import Collection
 Co = CheckoutStatus
 
 CATALOG_CONTRACTID = '@3liz.org/catalog;1'
+
+
+class OgcEndpoints(Flag):
+    NONE = 0x00
+    MAP = 0x01
+    FEATURES = 0x02
+    COVERAGE = 0x04
+    TILE = 0x08
 
 
 @dataclass(frozen=True)
@@ -35,6 +51,7 @@ class FastLoaderConfig:
 class CatalogItem:
     public_path: str
     md: ProjectMetadata
+    layers: Dict[str, OgcEndpoints]
     coll: Collection
 
 
@@ -78,9 +95,11 @@ class Catalog:
                 try:
                     logger.debug("=Catalog: updating: '%s'", md.uri)
                     project = load_project_from_uri(md.uri, loader_config)
+                    layers = dict(t for t in collect_layers(project))
                     item = CatalogItem(
                         public_path=public_path,
                         md=md,
+                        layers=layers,
                         coll=Collection.from_project(public_path, project),
                     )
                 except Exception:
@@ -115,3 +134,33 @@ class Catalog:
 
     def register_as_service(self):
         componentmanager.register_service(CATALOG_CONTRACTID, self)
+
+
+#
+# Collect layer infos
+#
+def collect_layers(p: QgsProject) -> Iterator[Tuple[str, OgcEndpoints]]:
+    """ Collect layers and corresponding OgcEndpoint
+    """
+    from qgis.server import QgsServerProjectUtils
+
+    restricted_layers = set(QgsServerProjectUtils.wmsRestrictedLayers(p))
+    wfs_layers_id = set(QgsServerProjectUtils.wfsLayerIds(p))
+    wcs_layers_id = set(QgsServerProjectUtils.wcsLayerIds(p))
+
+    # root = project.layerTreeRoot()
+    for layer in p.mapLayers().values():
+        if layer.name() not in restricted_layers:
+            endpoints = OgcEndpoints.NONE
+            match layer:
+                case QgsVectorLayer():
+                    if layer.id() in wfs_layers_id:
+                        endpoints |= OgcEndpoints.FEATURES
+                    if layer.isSpatial():
+                        endpoints |= OgcEndpoints.MAP
+                case QgsRasterLayer():
+                    endpoints |= OgcEndpoints.MAP
+                    if layer.id() in wcs_layers_id:
+                        endpoints |= OgcEndpoints.COVERAGE
+
+            yield (layer.name(), endpoints)

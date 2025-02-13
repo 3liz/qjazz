@@ -59,8 +59,9 @@ pub mod rel {
     pub const SELF: &str = "self";
     pub const NEXT: &str = "next";
     pub const PREV: &str = "prev";
-    pub const RELATED: &str = "related";
-    pub const CHILD: &str = "child";
+    pub const ITEM: &str = "item";
+    pub const COLLECTION: &str = "collection";
+    //pub const RELATED: &str = "related";
     pub const OGC_REL_MAP: &str = "[ogc-rel:map]";
     pub const OGC_REL_ITEM: &str = "[ogc-rel:item]";
     pub const OGC_REL_DATA: &str = "[ogc-rel:data]";

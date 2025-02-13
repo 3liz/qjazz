@@ -22,7 +22,7 @@ struct ChannelItem<'a> {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LandingPage<'a> {
-    endpoints: Vec<ChannelItem<'a>>,
+    catalogs: Vec<ChannelItem<'a>>,
     links: Vec<Link<'a>>,
 }
 
@@ -31,7 +31,7 @@ pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Re
     let public_url = request::public_url(&req, "");
 
     HttpResponse::Ok().json(LandingPage {
-        endpoints: channels
+        catalogs: channels
             .iter()
             .map(|channel| ChannelItem {
                 name: channel.name(),
@@ -41,7 +41,7 @@ pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Re
                 //apis: channel.api_endpoints().iter().map(|n| n.get_ref()).collect(),
                 links: vec![Link::application_json(
                     format!("{public_url}{}/catalog", channel.route()).into(),
-                    rel::RELATED,
+                    rel::COLLECTION,
                 )
                 .title("Catalog")
                 .description("Catalog of datasets from this endpoint")],

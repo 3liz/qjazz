@@ -4,7 +4,7 @@
 import pickle  # nosec
 
 from dataclasses import dataclass, field
-from enum import Flag, IntEnum, StrEnum
+from enum import IntEnum, StrEnum
 from typing import (
     Annotated,
     Any,
@@ -138,20 +138,11 @@ class CollectionsMsg(MsgModel):
     end: int = 50
 
 
-class OgcEndpoints(Flag):
-    NONE = 0x00
-    MAP = 0x01
-    FEATURES = 0x02
-    COVERAGE = 0x04
-    TILE = 0x08
-    STYLE = 0x10
-
-
 @dataclass
 class CollectionsItem:
     name: str
-    json: str
-    endpoints: int  # OgcEndpoints
+    json: str | bytes
+    endpoints: int  # qjazz_ogc.OgcEndpoints
 
 
 @dataclass

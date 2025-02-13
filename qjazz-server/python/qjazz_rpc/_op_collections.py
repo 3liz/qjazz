@@ -6,20 +6,22 @@ from typing import (
     Optional,
 )
 
+from pydantic import TypeAdapter
+
 from qgis.core import (
     QgsMapLayer,
     QgsProject,
-    QgsRasterLayer,
-    QgsVectorLayer,
 )
-from qgis.server import QgsServerProjectUtils
 
 from qjazz_cache.prelude import CacheManager
-from qjazz_ogc import Catalog, Collection
+from qjazz_ogc import Catalog, CatalogItem, Collection, OgcEndpoints
+from qjazz_ogc.stac import CatalogBase
 
 from . import messages as _m
 from ._op_requests import get_project
 from .config import QgisConfig
+
+CatatalogA = TypeAdapter(CatalogBase)
 
 
 def handle_catalog(
@@ -38,7 +40,7 @@ def handle_catalog(
         items = [_m.CollectionsItem(
             name=item.public_path,
             json=item.coll.model_dump_json(),
-            endpoints=_m.OgcEndpoints.MAP.value,
+            endpoints=OgcEndpoints.MAP.value,
         )] if item else []
     else:
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
@@ -47,8 +49,8 @@ def handle_catalog(
 
                 yield _m.CollectionsItem(
                     name=item.public_path,
-                    json=item.coll.model_dump_json(),
-                    endpoints=_m.OgcEndpoints.MAP.value,
+                    json=CatatalogA.dump_json(item.coll),
+                    endpoints=OgcEndpoints.MAP.value,
                 )
 
         items = list(iter_catalog())
@@ -61,20 +63,6 @@ def handle_catalog(
             next=msg.end < len(catalog),
         ),
     )
-
-
-def layer_endpoints(layer: QgsMapLayer) -> _m.OgcEndpoints:
-    match layer:
-        case QgsVectorLayer():
-            endpoints = _m.OgcEndpoints.FEATURES
-            if layer.isSpatial():
-                endpoints |= _m.OgcEndpoints.MAP
-        case QgsRasterLayer():
-            endpoints = _m.OgcEndpoints.MAP | _m.OgcEndpoints.COVERAGE
-        case _:
-            endpoints = _m.OgcEndpoints.NONE
-
-    return endpoints
 
 
 def handle_layers(
@@ -106,19 +94,22 @@ def handle_layers(
     project = entry.project
 
     if msg.resource:
-        layer = get_layer(project, msg.resource)
-        items = [_m.CollectionsItem(
-            name=layer.name(),
-            json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-            endpoints=layer_endpoints(layer).value,
-        )] if layer else []
+        if msg.resource in parent.layers:
+            layer = get_layer(project, msg.resource)
+            items = [_m.CollectionsItem(
+                name=layer.name(),
+                json=Collection.from_layer(layer, parent.coll).model_dump_json(),
+                endpoints=parent.layers[layer.name()].value,
+            )] if layer else []
+        else:
+            items = []
     else:
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
-            for layer in islice(iter_layers(project, cm), msg.start, msg.end):
+            for layer in islice(iter_layers(project, parent), msg.start, msg.end):
                 yield _m.CollectionsItem(
                     name=layer.name(),
                     json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-                    endpoints=layer_endpoints(layer).value,
+                    endpoints=parent.layers[layer.name()].value,
                 )
 
         items = list(iter_catalog())
@@ -130,7 +121,7 @@ def handle_layers(
         _m.CollectionsPage(
             schema=json.dumps(collection_schema),
             items=items,
-            next=(msg.end - msg.start) >= len(items),
+            next=msg.end < len(parent.layers),
         ),
     )
 
@@ -147,19 +138,14 @@ def handle_collection(
         handle_layers(conn, msg, cm, conf)
 
 
-def iter_layers(
-    project: QgsProject,
-    cm: CacheManager,
-) -> Iterator[QgsMapLayer]:
+def iter_layers(project: QgsProject, item: CatalogItem) -> Iterator[QgsMapLayer]:
     """ Return the catalog of layers for this project
     """
-    restricted_layers = QgsServerProjectUtils.wmsRestrictedLayers(project)
-
     # root = project.layerTreeRoot()
     # XXX Show only layers displayable with WMS GetMap.
     # TODO handle legends
     for layer in project.mapLayers(True).values():
-        if layer.name() not in restricted_layers:
+        if layer.name() in item.layers:
             yield layer
 
 
@@ -169,10 +155,8 @@ def get_layer(
 ) -> Optional[QgsMapLayer]:
     """ Return the catalog of layers for this project
     """
-    restricted_layers = QgsServerProjectUtils.wmsRestrictedLayers(project)
-
     layer = project.mapLayersByName(name)
-    if layer and layer not in restricted_layers:
+    if layer:
         return layer[0]
 
     return None

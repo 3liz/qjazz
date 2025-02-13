@@ -8,7 +8,6 @@
 
 from typing import (
     Dict,
-    List,
     Literal,
     Sequence,
 )
@@ -25,7 +24,6 @@ from ..stac import (
     Provider,
     Range,
 )
-from .links import Link
 
 
 class Collection(CatalogBase):
@@ -46,5 +44,3 @@ class Collection(CatalogBase):
     providers: Sequence[Provider] = ()
 
     summaries: Dict[str, Range | JsonDict] = Field({})
-
-    links: List[Link] = Field([])

@@ -4,6 +4,7 @@ STAC Catalog definition
 See https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md
 """
 from typing import (
+    List,
     Literal,
     Sequence,
 )
@@ -14,6 +15,8 @@ from qjazz_contrib.core.models import (
     JsonModel,
     Opt,
 )
+
+from .links import Link
 
 
 class CatalogBase(JsonModel):
@@ -26,6 +29,8 @@ class CatalogBase(JsonModel):
     id: str = Field(description="identifier of the collection used")
     title: Opt[str] = Field(description="human readable title of the collection")
     description: str = Field("", description="human readable title of the collection")
+
+    links: List[Link] = Field([])
 
 
 class Catalog(CatalogBase):
