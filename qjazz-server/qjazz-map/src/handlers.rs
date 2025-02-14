@@ -3,6 +3,7 @@ use actix_web::{http, web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
 
 pub mod catalog;
+pub mod conformance;
 pub mod landing_page;
 pub mod legend;
 pub mod map;

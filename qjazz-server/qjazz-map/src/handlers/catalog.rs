@@ -1,8 +1,9 @@
 //
 // Catalog handler
 //
-use actix_web::{error, web, HttpRequest, HttpResponse, Responder, Result};
+use actix_web::{error, web, Either, HttpRequest, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::cmp;
 
 use crate::channel::{
@@ -16,6 +17,9 @@ use crate::models::{rel, Link};
 
 const MAX_PAGE_LIMIT: u16 = 50;
 
+//
+// Handle page parameters
+//
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Params {
@@ -40,15 +44,32 @@ impl Params {
         self.start() + cmp::min(self.limit, MAX_PAGE_LIMIT)
     }
     #[inline]
-    fn next_page(&self) -> u16 {
-        self.page + 1
+    fn range(&self) -> std::ops::Range<u16> {
+        self.start()..self.end()
     }
-    #[inline]
-    fn prev_page(&self) -> u16 {
+    // Create navigation links
+    fn links(&self, links: &mut Vec<Link>, public_url: &str, next: bool) {
+        links.reserve(3);
+        links.push(Link::application_json(
+            format!("{public_url}?page={}&limit={}", self.page, self.limit,).into(),
+            rel::SELF,
+        ));
+        if next {
+            links.push(Link::application_json(
+                format!("{public_url}?page={}&limit={}", self.page + 1, self.limit,).into(),
+                rel::NEXT,
+            ));
+        }
         if self.page > 0 {
-            self.page - 1
-        } else {
-            0
+            links.push(Link::application_json(
+                format!(
+                    "{public_url}?page={}&limit={}",
+                    if self.page > 0 { self.page - 1 } else { 0 },
+                    self.limit,
+                )
+                .into(),
+                rel::PREV,
+            ));
         }
     }
 }
@@ -72,29 +93,26 @@ pub async fn catalog_handler(
     channel: web::Data<Channel>,
     params: web::Query<Params>,
 ) -> Result<impl Responder> {
-    collection_request_page(
-        req,
-        channel,
-        params,
-        None,
-        None,
-        |page, public_url, mut links| {
-            links.reserve(page.items.len());
+    match execute_collection_request(channel.as_ref(), None, None, params.range()).await {
+        Either::Left(resp) => Ok(resp),
+        Either::Right(page) => {
+            let public_url = request::location(&req);
+            let mut links = Vec::with_capacity(page.items.len());
+
             for item in &page.items {
-                let item_url = item_url(item, public_url);
-
+                let item_url = item_url(item, &public_url);
                 let mut js = JsonPage::from_item(item)?;
-
                 let mut link = Link::application_json(item_url.into(), rel::ITEM);
 
-                link.title = js.get_into_string("title").map(|s| s.into());
-                link.description = js.get_into_string("description").map(|s| s.into());
+                link.title = js.get_into_string("title").map(Cow::from);
+                link.description = js.get_into_string("description").map(Cow::from);
                 links.push(link);
             }
+            // Add navigation links
+            params.links(&mut links, &public_url, page.next);
             Ok(HttpResponse::Ok().json(Catalog { links }))
-        },
-    )
-    .await
+        }
+    }
 }
 
 pub async fn collections_handler(
@@ -103,13 +121,21 @@ pub async fn collections_handler(
     params: web::Query<Params>,
     location: web::Path<String>,
 ) -> Result<impl Responder> {
-    collection_request_page(
-        req,
-        channel,
-        params,
+    match execute_collection_request(
+        channel.as_ref(),
         Some(location.into_inner()),
         None,
-        |page, public_url, links| {
+        params.range(),
+    )
+    .await
+    {
+        Either::Left(resp) => Ok(resp),
+        Either::Right(page) => {
+            let public_url = request::location(&req);
+            let mut links = Vec::new();
+            // Add navigation links
+            params.links(&mut links, &public_url, page.next);
+
             Ok(HttpResponse::Ok().json(Collections {
                 collections: page
                     .items
@@ -117,10 +143,12 @@ pub async fn collections_handler(
                     .map(|item| {
                         let mut page = JsonPage::from_item(item)?;
 
-                        let item_url = item_url(item, public_url);
+                        let item_url = item_url(item, &public_url);
                         let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+
                         page.add_ogc_endpoints(&item_url, endpoints)?;
                         page.add_legend_links(&item_url)?;
+
                         let mut links = page.links()?;
                         links.add(
                             Link::application_json((&item_url).into(), rel::OGC_REL_ITEM)
@@ -132,105 +160,60 @@ pub async fn collections_handler(
                     .collect::<Result<Vec<serde_json::Value>>>()?,
                 links,
             }))
-        },
-    )
-    .await
-}
-
-async fn collection_request_page<F>(
-    req: HttpRequest,
-    channel: web::Data<Channel>,
-    params: web::Query<Params>,
-    location: Option<String>,
-    resource: Option<String>,
-    mut f: F,
-) -> Result<impl Responder>
-where
-    F: FnMut(&CollectionsPage, &str, Vec<Link>) -> Result<HttpResponse>,
-{
-    let public_url = request::location(&req);
-
-    let mut client = channel.client();
-
-    let mut request = tonic::Request::new(CollectionsRequest {
-        start: params.start() as i64,
-        end: params.end() as i64,
-        location,
-        resource,
-    });
-
-    request.set_timeout(channel.timeout());
-
-    match client.collections(request).await {
-        Err(status) => {
-            log::error!("Backend error:\t{}\t{}", channel.name(), status);
-            Ok(RpcHttpResponseBuilder::from_rpc_status(&status, None))
-        }
-
-        Ok(resp) => {
-            let page = resp.into_inner();
-            let mut links = Vec::with_capacity(3);
-            links.push(Link::application_json(
-                format!("{public_url}?page={}&limit={}", params.page, params.limit,).into(),
-                rel::SELF,
-            ));
-            if page.next {
-                links.push(Link::application_json(
-                    format!(
-                        "{public_url}?page={}&limit={}",
-                        params.next_page(),
-                        params.limit,
-                    )
-                    .into(),
-                    rel::NEXT,
-                ));
-            }
-            if params.page > 0 {
-                links.push(Link::application_json(
-                    format!(
-                        "{public_url}?page={}&limit={}",
-                        params.prev_page(),
-                        params.limit,
-                    )
-                    .into(),
-                    rel::PREV,
-                ));
-            }
-
-            f(&page, &public_url, links)
         }
     }
 }
 
-// Handler from catalog item
+// Handler from catalog item (project)
 pub async fn item_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     resource: web::Path<String>,
 ) -> Result<impl Responder> {
-    item_request(
-        req,
-        channel,
-        None,
-        Some(resource.into_inner()),
-        |item, page, public_url| {
-            page.links()?
-                .reserve(3)
-                .add(
-                    Link::application_json((public_url).into(), rel::SELF)
-                        .title(item.name.as_str()),
-                )?
-                .add(
-                    Link::new(format!("{public_url}/map").into(), rel::OGC_REL_MAP)
-                        .title("Default map"),
-                )?
-                .add(
-                    Link::new(format!("{public_url}/maps").into(), rel::OGC_REL_DATA).title("Maps"),
-                )?;
-            Ok(())
-        },
-    )
-    .await
+    match execute_collection_request(channel.as_ref(), None, Some(resource.into_inner()), 0..1)
+        .await
+    {
+        Either::Left(resp) => Ok(resp),
+        Either::Right(page) => {
+            let public_url = request::location(&req);
+            if page.items.is_empty() {
+                Ok(HttpResponse::NotFound()
+                    .content_type(mime::TEXT_PLAIN)
+                    .body("Resource not found"))
+            } else {
+                Ok(HttpResponse::Ok().json({
+                    let item = &page.items[0];
+                    let mut js_item = JsonPage::from_item(item)?;
+                    js_item
+                        .links()?
+                        .reserve(4)
+                        .add(
+                            Link::application_json((&public_url).into(), rel::SELF)
+                                .title(item.name.as_str()),
+                        )?
+                        .add(
+                            Link::new(format!("{public_url}/map").into(), rel::OGC_REL_MAP)
+                                .title("Default map"),
+                        )?
+                        .add(
+                            Link::application_json(
+                                format!("{public_url}/maps").into(),
+                                rel::OGC_REL_DATA,
+                            )
+                            .title("Maps"),
+                        )?
+                        .add(
+                            Link::application_json(
+                                format!("{public_url}/conformance").into(),
+                                rel::CONFORMANCE,
+                            )
+                            .title("OGC API conformance classes"),
+                        )?;
+                    js_item.into_value()
+                }))
+            }
+        }
+    }
 }
 
 // Handler for sub items of catalog (i.e layers)
@@ -240,56 +223,11 @@ pub async fn collections_item_handler(
     resources: web::Path<(String, String)>,
 ) -> Result<impl Responder> {
     let (location, resource) = resources.into_inner();
-    item_request(
-        req,
-        channel,
-        Some(location),
-        Some(resource),
-        |item, page, public_url| {
-            let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
-            page.add_ogc_endpoints(public_url, endpoints)?;
-            page.add_legend_links(public_url)?;
-            let mut links = page.links()?;
-            links.add(
-                Link::application_json((public_url).into(), rel::SELF).title(item.name.as_str()),
-            )?;
-            Ok(())
-        },
-    )
-    .await
-}
 
-// Item handler
-async fn item_request<F>(
-    req: HttpRequest,
-    channel: web::Data<Channel>,
-    location: Option<String>,
-    resource: Option<String>,
-    mut with_page: F,
-) -> Result<impl Responder>
-where
-    F: FnMut(&CollectionsItem, &mut JsonPage, &str) -> Result<()>,
-{
-    let public_url = request::location(&req);
-
-    let mut client = channel.client();
-
-    let mut request = tonic::Request::new(CollectionsRequest {
-        start: 0, // Not applicable
-        end: 1,   // Not applicable
-        location,
-        resource,
-    });
-
-    request.set_timeout(channel.timeout());
-
-    match client.collections(request).await {
-        Err(status) => {
-            log::error!("Backend error:\t{}\t{}", channel.name(), status);
-            Ok(RpcHttpResponseBuilder::from_rpc_status(&status, None))
-        }
-        Ok(resp) => {
-            let page = resp.into_inner();
+    match execute_collection_request(channel.as_ref(), Some(location), Some(resource), 0..1).await {
+        Either::Left(resp) => Ok(resp),
+        Either::Right(page) => {
+            let public_url = request::location(&req);
             if page.items.is_empty() {
                 Ok(HttpResponse::NotFound()
                     .content_type(mime::TEXT_PLAIN)
@@ -297,11 +235,45 @@ where
             } else {
                 Ok(HttpResponse::Ok().json({
                     let item = &page.items[0];
-                    let mut json_page = JsonPage::from_item(item)?;
-                    with_page(item, &mut json_page, &public_url)?;
-                    json_page.into_value()
+                    let mut js_item = JsonPage::from_item(item)?;
+
+                    let endpoints = OgcEndpoints::from_bits_retain(item.endpoints);
+                    js_item.add_ogc_endpoints(&public_url, endpoints)?;
+                    js_item.add_legend_links(&public_url)?;
+
+                    let mut links = js_item.links()?;
+                    links.add(
+                        Link::application_json((&public_url).into(), rel::SELF)
+                            .title(item.name.as_str()),
+                    )?;
+
+                    js_item.into_value()
                 }))
             }
+        }
+    }
+}
+
+async fn execute_collection_request(
+    channel: &Channel,
+    location: Option<String>,
+    resource: Option<String>,
+    range: std::ops::Range<u16>,
+) -> Either<HttpResponse, CollectionsPage> {
+    let mut client = channel.client();
+    let mut request = tonic::Request::new(CollectionsRequest {
+        start: range.start as i64,
+        end: range.end as i64,
+        location,
+        resource,
+    });
+    request.set_timeout(channel.timeout());
+
+    match client.collections(request).await {
+        Ok(resp) => Either::Right(resp.into_inner()),
+        Err(status) => {
+            log::error!("Backend error:\t{}\t{}", channel.name(), status);
+            Either::Left(RpcHttpResponseBuilder::from_rpc_status(&status, None))
         }
     }
 }
@@ -408,9 +380,8 @@ impl JsonPage {
         if let Some(serde_json::Value::Array(v)) = self.0.get_mut("links") {
             Ok(Links(v))
         } else {
-            Err(error::ErrorInternalServerError(
-                "No 'links' array found in json object",
-            ))
+            log::error!("No 'links' array found in json object");
+            Err(error::ErrorInternalServerError("Internal error"))
         }
     }
 }

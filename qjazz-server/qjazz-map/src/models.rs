@@ -61,6 +61,7 @@ pub mod rel {
     pub const PREV: &str = "prev";
     pub const ITEM: &str = "item";
     pub const COLLECTION: &str = "collection";
+    pub const CONFORMANCE: &str = "conformance";
     //pub const RELATED: &str = "related";
     pub const OGC_REL_MAP: &str = "[ogc-rel:map]";
     pub const OGC_REL_ITEM: &str = "[ogc-rel:item]";

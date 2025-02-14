@@ -29,6 +29,7 @@ when dealing with large numbers of projects.
 - Managed project's cache synchronized between workers.
 - S3 storage supports for projects
 - TLS support for server and client authentification
+- *OGC Api Map* support
 
 ### Requirements
 

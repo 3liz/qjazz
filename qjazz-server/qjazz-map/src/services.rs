@@ -2,7 +2,7 @@
 // Services
 //
 use crate::channel::Channel;
-use crate::handlers::{api, catalog, landing_page, legend, map, ows};
+use crate::handlers::{api, catalog, conformance, landing_page, legend, map, ows};
 use crate::resolver::ApiEndPoint;
 use actix_web::{guard, web};
 
@@ -64,7 +64,8 @@ pub fn catalog(cfg: &mut web::ServiceConfig) {
             web::scope("/catalog/{id}")
                 .default_service(web::get().to(catalog::item_handler))
                 .configure(default_map)
-                .configure(maps),
+                .configure(maps)
+                .route("/conformance", web::get().to(conformance::handler)),
         );
 }
 
