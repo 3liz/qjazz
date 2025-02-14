@@ -32,7 +32,7 @@ class CrsRef(crs.CrsRef):
 
     @classmethod
     def default(cls) -> Self:
-        return cls(crs.WGS84)
+        return cls(crs.CRS84)
 
 
 def Crs(inp: QgsCoordinateReferenceSystem) -> Optional[crs.Crs]:

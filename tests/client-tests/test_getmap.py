@@ -4,7 +4,7 @@
 import requests
 
 
-def test_getmap_request( host ):
+def test_getmap_request(host):
     """ Test response from root path
     """
     url = (
@@ -26,7 +26,7 @@ def test_getmap_request( host ):
     rv = requests.get(f"http://{host}{url}")
     assert rv.status_code == 200
 
-def test_getmap_post_request( host ):
+def test_getmap_post_request(host):
     """ Test response from root path
     """
     arguments = { 

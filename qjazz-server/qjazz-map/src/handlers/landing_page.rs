@@ -15,22 +15,42 @@ struct ChannelItem<'a> {
     title: &'a str,
     description: &'a str,
     available: bool,
-    links: Vec<Link<'a>>,
+    links: [Link<'a>; 1],
     //apis: Vec<&'a ApiEndPoint>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LandingPage<'a> {
-    catalogs: Vec<ChannelItem<'a>>,
-    links: Vec<Link<'a>>,
+    links: [Link<'a>; 2],
 }
 
-// Landing page handler
-pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Responder {
+pub async fn handler(req: HttpRequest) -> impl Responder {
     let public_url = request::public_url(&req, "");
 
     HttpResponse::Ok().json(LandingPage {
+        links: [
+            Link::application_json(format!("{public_url}/catalogs").into(), rel::API_CATALOG)
+                .title("Catalog endpoints"),
+            Link::application_json(format!("{public_url}{}", req.path()).into(), rel::SELF),
+        ],
+    })
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Catalogs<'a> {
+    catalogs: Vec<ChannelItem<'a>>,
+    links: [Link<'a>; 1],
+}
+
+//
+// Catalogs handler
+//
+pub async fn catalogs(req: HttpRequest, channels: web::Data<Channels>) -> impl Responder {
+    let public_url = request::public_url(&req, "");
+
+    HttpResponse::Ok().json(Catalogs {
         catalogs: channels
             .iter()
             .map(|channel| ChannelItem {
@@ -39,7 +59,7 @@ pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Re
                 description: channel.description(),
                 available: channel.serving(),
                 //apis: channel.api_endpoints().iter().map(|n| n.get_ref()).collect(),
-                links: vec![Link::application_json(
+                links: [Link::application_json(
                     format!("{public_url}{}/catalog", channel.route()).into(),
                     rel::COLLECTION,
                 )
@@ -47,7 +67,7 @@ pub async fn handler(req: HttpRequest, channels: web::Data<Channels>) -> impl Re
                 .description("Catalog of datasets from this endpoint")],
             })
             .collect(),
-        links: vec![Link::application_json(
+        links: [Link::application_json(
             format!("{public_url}{}", req.path()).into(),
             rel::SELF,
         )],

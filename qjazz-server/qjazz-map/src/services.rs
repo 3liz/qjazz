@@ -49,11 +49,12 @@ pub fn ows_resource(cfg: &mut web::ServiceConfig) {
 // Landing page
 pub fn landing_page(channels: Vec<web::Data<Channel>>) -> impl FnOnce(&mut web::ServiceConfig) {
     move |cfg| {
-        cfg.service(
-            web::resource("/")
-                .app_data(web::Data::new(channels))
-                .get(landing_page::handler),
-        );
+        cfg.route("/", web::get().to(landing_page::handler))
+            .service(
+                web::resource("/catalogs")
+                    .app_data(web::Data::new(channels))
+                    .get(landing_page::catalogs),
+            );
     }
 }
 

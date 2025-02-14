@@ -1,7 +1,6 @@
 """
 QGIS project's collections
 """
-from datetime import datetime as DateTimeType
 from typing import (
     Iterator,
     List,
@@ -66,15 +65,8 @@ def scale_denominators(p: QgsProject) -> Tuple[Optional[float], Optional[float]]
 
 class Collection(collections.Collection):
 
-    # Not required for STAC collection object
-    # but they are qgis project metadata
-    datetime: Opt[DateTimeType]
-    created: Opt[DateTimeType]
-    updated: Opt[DateTimeType]
-
-    # QJazz Addition
-    copyrights: Opt[Sequence[str]] = None
-
+    # Not included in schemas but passed to
+    # map proxy
     styles: Opt[Sequence[str]] = None
     legend_url: Opt[HttpUrl] = None
     legend_format: Opt[str] = None

@@ -35,8 +35,8 @@ class CrsRef(HttpUrl):
         return f"urn:ogc{(self.path or "").replace('/', ':')}"  #
 
 
-WGS84 = CrsRef.from_authority("OGC", "CRS84", version="1.3")
-WGS84h = CrsRef.from_authority("OGC", "CRS84h", version="0")
+CRS84 = CrsRef.from_authority("OGC", "CRS84", version="1.3")
+CRS84h = CrsRef.from_authority("OGC", "CRS84h", version="0")
 
 
 Crs = Union[CrsRef, JsonDict]
