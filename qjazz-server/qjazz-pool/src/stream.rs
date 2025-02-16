@@ -3,7 +3,7 @@
 //!
 use crate::errors::Result;
 use crate::pipes::Pipe;
-use serde::Deserialize;
+use serde::de;
 use std::marker::PhantomData;
 use std::ops::ControlFlow;
 
@@ -46,9 +46,9 @@ pub struct ObjectStream<'a, T> {
     return_type: PhantomData<T>,
 }
 
-impl<'a, 'de, T> ObjectStream<'a, T>
+impl<'a, T> ObjectStream<'a, T>
 where
-    T: Deserialize<'de>,
+    T: de::DeserializeOwned,
 {
     pub(crate) fn new(io: &'a mut Pipe) -> Self {
         Self {

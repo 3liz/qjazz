@@ -12,6 +12,7 @@ from datetime import datetime
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.utils import to_iso8601
 from qjazz_cache.status import CheckoutStatus
+from qjazz_ogc import OgcEndpoints
 from qjazz_rpc.connection import Connection, RendezVous
 from qjazz_rpc import messages as m_
 from time import sleep, time;
@@ -200,7 +201,7 @@ def run(name: str, projects: list[str]) -> None:
                                         name="Test000",
                                         json="",
                                         endpoints=(
-                                            m_.OgcEndpoints.MAP|m_.OgcEndpoints.FEATURES
+                                            OgcEndpoints.MAP|OgcEndpoints.FEATURES
                                         ).value,
                                     ),
                                 ],

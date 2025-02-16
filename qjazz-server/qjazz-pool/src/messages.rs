@@ -224,7 +224,6 @@ bitflags::bitflags! {
     }
 }
 
-// Workaround for https://github.com/birkenfeld/serde-pickle/pull/33
 impl<'de> Deserialize<'de> for OgcEndpoints {
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -449,7 +448,6 @@ pub enum Envelop<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_pickle as pickle;
 
     #[test]
     fn test_serialize_msg() {
@@ -471,6 +469,6 @@ mod tests {
         };
 
         let mut buf = Vec::new();
-        pickle::to_writer(&mut buf, &Message::from(msg), Default::default()).unwrap();
+        rmp_serde::encode::write(&mut buf, &Message::from(msg)).unwrap();
     }
 }

@@ -1,9 +1,6 @@
 """ Messages for communicating with the qgis server
     sub process
 """
-import pickle  # nosec
-
-from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
 from typing import (
     Annotated,
@@ -21,6 +18,7 @@ from typing import (
     Union,
 )
 
+from msgpack import packb
 from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 
 from qjazz_cache.status import CheckoutStatus
@@ -66,19 +64,21 @@ class MsgModel(BaseModel, frozen=True):
     pass
 
 
+class Response(BaseModel):
+    def dump_response(self) -> Dict:
+        return self.model_dump(mode='json', by_alias=True)
+
 #
 # REQUEST
 #
-@dataclass
-class RequestReply:
+class RequestReply(Response):
     status_code: int
     checkout_status: Optional[int]
-    headers: List[Tuple[str, str]] = field(default_factory=list)
+    headers: List[Tuple[str, str]] = Field([])
     cache_id: str = ""
 
 
-@dataclass
-class RequestReport:
+class RequestReport(Response):
     memory: Optional[int]
     timestamp: float
     duration: float
@@ -138,16 +138,14 @@ class CollectionsMsg(MsgModel):
     end: int = 50
 
 
-@dataclass
-class CollectionsItem:
+class CollectionsItem(Response):
     name: str
-    json: str | bytes
+    json_: str | bytes = Field(alias="json")
     endpoints: int  # qjazz_ogc.OgcEndpoints
 
 
-@dataclass
-class CollectionsPage:
-    schema: str
+class CollectionsPage(Response):
+    schema_: str = Field(alias="schema")
     next: bool
     items: List[CollectionsItem]
 
@@ -167,19 +165,18 @@ class QuitMsg(MsgModel):
     msg_id: Literal[MsgType.QUIT] = MsgType.QUIT
 
 
-@dataclass
-class CacheInfo:
+class CacheInfo(Response):
     uri: str
     status: int  # CheckoutStatus
     in_cache: bool
     cache_id: str
-    timestamp: Optional[float] = None
+    timestamp: Optional[int] = None
     name: Optional[str] = None
     storage: Optional[str] = None
     last_modified: Optional[str] = None
     saved_version: Optional[str] = None
-    debug_metadata: Dict[str, int] = field(default_factory=dict)
-    last_hit: float = 0
+    debug_metadata: Dict[str, int] = Field({})
+    last_hit: int = 0
     hits: int = 0
     pinned: bool = False
 
@@ -227,8 +224,7 @@ class UpdateCacheMsg(MsgModel):
 #
 # PLUGINS
 #
-@dataclass
-class PluginInfo:
+class PluginInfo(Response):
     name: str
     path: str
     plugin_type: str
@@ -242,8 +238,7 @@ class PluginsMsg(MsgModel):
 #
 # PROJECT_INFO
 #
-@dataclass
-class LayerInfo:
+class LayerInfo(Response):
     layer_id: str
     name: str
     source: str
@@ -252,8 +247,7 @@ class LayerInfo:
     is_spatial: bool
 
 
-@dataclass
-class ProjectInfo:
+class ProjectInfo(Response):
     status: int  # CheckoutStatus
     uri: str
     filename: str
@@ -285,8 +279,7 @@ class PutConfigMsg(MsgModel):
 #
 # CATALOG
 #
-@dataclass
-class CatalogItem:
+class CatalogItem(Response):
     uri: str
     name: str
     storage: str
@@ -358,32 +351,36 @@ class Connection(Protocol):
 
 def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
     """  Send a reply in a envelope message """
-    conn.send_bytes(pickle.dumps((status, msg)))
+    if isinstance(msg, Response):
+        msg = msg.dump_response()
+    conn.send_bytes(packb((status, msg)))
 
 
 # Send a binary chunk
 def send_chunk(conn: Connection, data: ByteString):
     if len(data) > 0:
-        conn.send_bytes(pickle.dumps(206))
+        conn.send_bytes(packb(206))
         conn.send_bytes(data)
     else:
-        conn.send_bytes(pickle.dumps(204))
+        conn.send_bytes(packb(204))
 
 
 def send_report(conn: Connection, report: RequestReport):
     """ Send report """
-    conn.send_bytes(pickle.dumps(report))
+    conn.send_bytes(packb(report.dump_response()))
 
 
 def stream_data(conn: Connection, stream: Iterable):
     for item in stream:
-        conn.send_bytes(pickle.dumps((206, item)))
+        if isinstance(item, Response):
+            item = item.dump_response()
+        conn.send_bytes(packb((206, item)))
     # EOT
-    conn.send_bytes(pickle.dumps(204))
+    conn.send_bytes(packb(204))
 
 
 def send_nodata(conn: Connection):
-    conn.send_bytes(pickle.dumps(204))
+    conn.send_bytes(packb(204))
 
 #
 # XXX Note that data sent by child *MUST* be retrieved in parent

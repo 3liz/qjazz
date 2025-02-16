@@ -39,6 +39,9 @@ async def test_rpc_io(worker: Worker):
     print("test_worker_io::status", status)
 
     assert status == 200
+
+    resp = messages.RequestReply.model_validate(resp)
+
     assert resp.status_code == 200
 
     print(f"> {resp.headers}")
@@ -81,6 +84,8 @@ async def test_rpc_chunked_response(worker: Worker):
     total_time = time() - start
     print("> time", total_time)
     assert status == 200
+
+    resp = messages.RequestReply.model_validate(resp)
     assert resp.status_code == 200
 
     print("> headers", resp.headers)
@@ -106,6 +111,8 @@ async def test_rpc_cache_api(worker: Worker):
     )
     print("\ntest_cache_api::", resp)
     assert status == 200
+
+    resp = messages.CacheInfo.model_validate(resp)
     assert resp.status == messages.CheckoutStatus.NEW.value
     assert resp.pinned
 
@@ -116,6 +123,8 @@ async def test_rpc_cache_api(worker: Worker):
         messages.CheckoutProjectMsg(uri="/france/france_parts", pull=False),
     )
     assert status == 200
+
+    resp = messages.CacheInfo.model_validate(resp)
     assert resp.status == messages.CheckoutStatus.UNCHANGED.value
 
     # List
@@ -153,6 +162,7 @@ async def test_rpc_catalog(worker: Worker):
     try:
         while status == 206:
             count += 1
+            item = messages.CatalogItem.model_validate(item)
             print("ITEM", item.uri)
             status, item = await worker.io.read_message()
     except NoDataResponse:
@@ -181,6 +191,7 @@ async def test_rpc_ows_chunked_request(worker: Worker):
     )
     assert status == 200
 
+    resp = messages.RequestReply.model_validate(resp)
     assert resp.status_code == 200
     print(f"> {resp.headers}")
 
@@ -212,6 +223,7 @@ async def test_rpc_api_request(worker: Worker):
     )
     assert status == 200
 
+    resp = messages.RequestReply.model_validate(resp)
     assert resp.status_code == 200
     print(f"> {resp.headers}")
 
@@ -244,6 +256,7 @@ async def test_rpc_api_delegate_request(worker: Worker):
     )
     assert status == 200
 
+    resp = messages.RequestReply.model_validate(resp)
     assert resp.status_code == 200
     print(f"> {resp.headers}")
 

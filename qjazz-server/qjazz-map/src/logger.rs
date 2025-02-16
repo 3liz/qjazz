@@ -1,8 +1,11 @@
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Logging {
+    #[serde(deserialize_with = "deserialize_level_filter")]
     level: log::LevelFilter,
 }
 
@@ -55,4 +58,31 @@ impl Logging {
 
         eprintln!("Log level set to {}", log::max_level());
     }
+}
+
+// XXX Workaround: hit by https://github.com/rust-lang/log/issues/532
+fn deserialize_level_filter<'de, D>(des: D) -> Result<log::LevelFilter, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct Visitor;
+
+    impl<'de> de::Visitor<'de> for Visitor {
+        type Value = log::LevelFilter;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("Expecting string in 'error', 'warning', 'debug', 'info'")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            log::LevelFilter::from_str(value).map_err(|e| {
+                de::Error::invalid_value(de::Unexpected::Other(&format!("{}", e)), &self)
+            })
+        }
+    }
+
+    des.deserialize_str(Visitor)
 }

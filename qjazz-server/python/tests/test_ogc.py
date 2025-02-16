@@ -62,13 +62,14 @@ async def test_ogc_catalog_api(worker: Worker):
     status, resp = await worker.io.read_message()
     print("\n::test_ogc_api::catalog", status)
     assert status == 200
-    assert isinstance(resp, messages.CollectionsPage)
+
+    resp = messages.CollectionsPage.model_validate(resp)
 
     assert not resp.next
     assert len(resp.items) > 0
     assert len(resp.items) < 50
 
-    schema = json.loads(resp.schema)
+    schema = json.loads(resp.schema_)
     print("\n::test_ogc_api::catalog::schema\n", schema)
 
     print("\n::test_ogc_api::catalog::items:")
@@ -77,7 +78,7 @@ async def test_ogc_catalog_api(worker: Worker):
     item = resp.items[0]
     print("\n::test_ogc_api::catalog::item", item)
 
-    coll = CatalogBase.model_validate_json(item.json)
+    coll = CatalogBase.model_validate_json(item.json_)
 
     assert coll.id == item.name
     assert item.endpoints == OgcEndpoints.MAP.value

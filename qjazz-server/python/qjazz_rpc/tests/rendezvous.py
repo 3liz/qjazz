@@ -1,6 +1,5 @@
 import asyncio
 import os
-import pickle  # nosec
 
 from io import BytesIO
 from pathlib import Path
@@ -11,11 +10,14 @@ from typing import (
     Tuple,
 )
 
+import msgpack
+
+from pydantic import BaseModel
+
 from .. import messages  # noqa F401
 from ..messages import (
     Message,
     RequestReport,
-    cast_into,
 )
 
 
@@ -35,7 +37,10 @@ class Pipe:
         self._stdout = proc.stdout
 
     async def put_message(self, message: Message):
-        data = pickle.dumps(message)
+        if isinstance(message, BaseModel):
+            data = msgpack.packb(message.model_dump(mode='json'))
+        else:
+            data = msgpack.packb(message)
         self._stdin.write(pack('!i', len(data)))
         self._stdin.write(data)
         await self._stdin.drain()
@@ -48,15 +53,12 @@ class Pipe:
             _ = await self._stdout.read(size)
 
     async def read_report(self) -> RequestReport:
-        return cast_into(
-            pickle.loads(await self.read_bytes()),  # nosec
-            RequestReport,
-        )
+        return RequestReport.model_validate(msgpack.unpackb(await self.read_bytes()))
 
     async def read_message(self) -> Tuple[int, Any]:
         """ Read an Envelop message
         """
-        resp = pickle.loads(await self.read_bytes())  # nosec
+        resp = msgpack.unpackb(await self.read_bytes())
         match resp:
             case (int(status), msg):
                 return (status, msg)
@@ -80,12 +82,12 @@ class Pipe:
         return data
 
     async def stream_bytes(self) -> AsyncIterator[bytes]:
-        resp = pickle.loads(await self.read_bytes())  # nosec
+        resp = msgpack.unpackb(await self.read_bytes())
         while True:
             match resp:
                 case 206:
                     yield await self.read_bytes()
-                    resp = pickle.loads(await self.read_bytes())  # nosec
+                    resp = msgpack.unpackb(await self.read_bytes())
                     continue
                 case 204:
                     break

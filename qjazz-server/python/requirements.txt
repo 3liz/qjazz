@@ -17,6 +17,7 @@ grpcio==1.70.0
 idna==3.10
 jsondiff==2.2.1
 minio==7.2.15
+msgpack==1.1.0
 multidict==6.1.0
 propcache==0.2.1
 protobuf==5.29.3

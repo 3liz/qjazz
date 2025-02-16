@@ -20,6 +20,7 @@ dependencies = [
     "dnspython",
     "jsondiff",
     "ruamel.yaml",
+    "msgpack",
 ]
 version = "0.1.0.dev0"
 

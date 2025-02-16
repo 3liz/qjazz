@@ -1,11 +1,12 @@
 import os
-import pickle  # nosec
 import sys
 
 from io import BytesIO
 from pathlib import Path
 from struct import pack, unpack
-from typing import ByteString, cast
+from typing import ByteString
+
+from msgpack import unpackb
 
 from qjazz_contrib.core import logger
 
@@ -74,11 +75,8 @@ class Connection:
                 buf.write(chunk)
             data = buf.getvalue()
 
-        msg = pickle.loads(data)  # nosec
-        if isinstance(msg, dict):
-            return MessageAdapter.validate_python(msg)
-        else:
-            return cast(Message, msg)
+        msg = unpackb(data)
+        return MessageAdapter.validate_python(msg)
 
     def send_bytes(self, data: ByteString):
         if not self._cancelled:

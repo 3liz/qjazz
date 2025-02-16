@@ -5,8 +5,10 @@
 pub enum Error {
     #[error("IO error")]
     IoError(#[from] std::io::Error),
-    #[error("Pickle error")]
-    PickleError(#[from] serde_pickle::Error),
+    #[error("MsgPack Encode error")]
+    RmpEncodeError(#[from] rmp_serde::encode::Error),
+    #[error("MsgPack Decode error")]
+    RmpDecodeError(#[from] rmp_serde::decode::Error),
     #[error("Json error")]
     JsonError(#[from] serde_json::Error),
     #[error("Response error {0}: {1}")]

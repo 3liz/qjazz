@@ -20,6 +20,7 @@ dependencies = [
     "dnspython",
     "jsondiff",
     "ruamel.yaml",
+    "msgpack",
 ]
 version = "${PIN_VERSION}"
 
