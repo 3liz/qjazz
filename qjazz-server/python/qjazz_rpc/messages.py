@@ -68,6 +68,7 @@ class Response(BaseModel):
     def dump_response(self) -> Dict:
         return self.model_dump(mode='json', by_alias=True)
 
+
 #
 # REQUEST
 #

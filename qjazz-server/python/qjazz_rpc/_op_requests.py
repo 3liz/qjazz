@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
 
 from qgis.core import QgsFeedback
-from qgis.server import QgsServer, QgsServerRequest
+from qgis.server import QgsServer, QgsServerRequest, QgsServerResponse
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_contrib.core import logger
@@ -20,6 +20,7 @@ from ._op_cache import evict_project_from_cache
 from ._op_map import InvalidMapRequest, prepare_map_request
 from .config import QgisConfig
 from .delegate import ROOT_DELEGATE
+from .log import Log
 from .requests import Request, Response, _to_qgis_method
 
 Co = CheckoutStatus
@@ -42,6 +43,7 @@ def handle_ows_request(
 ):
     """ Handle OWS request
     """
+
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
@@ -49,6 +51,8 @@ def handle_ows_request(
         if not target:
             _m.send_reply(conn, "Missing project", 400)
             return
+
+    log = Log()
 
     entry, co_status = get_project(
         conn,
@@ -63,8 +67,12 @@ def handle_ows_request(
     resp_hdrs: Dict[str, str] | None = None
 
     options = msg.options
+    service = msg.service
+    request = msg.request
 
-    if msg.request == 'qjazz-request-map':
+    if request == 'qjazz-request-map':
+        service = "WMS"
+        request = "GetMap"
         try:
             assert_precondition(options is not None)
             map_req = prepare_map_request(entry.project, cast(str, options))
@@ -90,11 +98,11 @@ def handle_ows_request(
         # XXX options is the full query string
         url = f"{msg.url or ''}?{options}"
     else:
-        url = f"{msg.url or ''}?SERVICE={msg.service or 'WMS'}&REQUEST={msg.request}"
+        url = f"{msg.url or ''}?SERVICE={service or 'WMS'}&REQUEST={request}"
         if msg.version:
             url += f"&VERSION={msg.version}"
 
-    _handle_generic_request(
+    resp = _handle_generic_request(
         url,
         entry,
         co_status,
@@ -110,6 +118,14 @@ def handle_ows_request(
         header_prefix=msg.header_prefix,
         content_type=msg.content_type,
         resp_hdrs=resp_hdrs,
+    )
+
+    log.log(
+        msg.request_id or "-",
+        service or "<UNKN>",
+        request or "<UNKN>",
+        target,
+        resp,
     )
 
 
@@ -201,7 +217,7 @@ def _handle_generic_request(
     header_prefix: Optional[str],
     content_type: Optional[str],
     resp_hdrs: Optional[Dict[str, str]] = None,
-):
+) -> QgsServerResponse:
     """ Handle generic Qgis request
     """
     if entry:
@@ -240,11 +256,9 @@ def _handle_generic_request(
     if content_type:
         req_hdrs['Content-Type'] = content_type
 
-    if request_id:
-        logger.log_req("[REQ:%s]", request_id)
-
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
+    return response
 
 
 def get_project(

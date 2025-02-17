@@ -350,7 +350,7 @@ class CacheManager:
         """ Create a new cache entry
         """
         s_time = time()
-        s_mem = self._process.memory_info().vms if self._process else None
+        s_mem = self._process.memory_info().rss if self._process else None
 
         project = handler.project(md, self.conf)
 
@@ -364,9 +364,9 @@ class CacheManager:
         # This is a best effort to get meaningful information
         # about how memory is used by a project. So we
         # keep with last mesured footprint in case of reloading
-        # a project
+        # a project:
         #
-        used_mem = self._process.memory_info().vms - s_mem if self._process else None
+        used_mem = self._process.memory_info().rss - s_mem if self._process else None
         if used_mem is not None and used_mem < last_used_mem:
             used_mem = last_used_mem
 
