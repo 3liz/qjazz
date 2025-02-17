@@ -9,8 +9,6 @@ import traceback
 from time import sleep, time
 from typing import List, Optional, Protocol, assert_never, cast
 
-import psutil
-
 from pydantic import JsonValue
 
 from qgis.core import QgsFeedback
@@ -152,9 +150,6 @@ def qgis_server_run(
 
     load_default_project(cm)
 
-    # For reporting
-    process = psutil.Process() if reporting else None
-
     feedback = Feedback()
 
     def on_sighup(*args, **kwargs):
@@ -185,7 +180,6 @@ def qgis_server_run(
                         server,
                         cm,
                         conf,
-                        process,
                         cache_id=name,
                         feedback=feedback.feedback,
                     )
@@ -196,7 +190,6 @@ def qgis_server_run(
                         server,
                         cm,
                         conf,
-                        process,
                         cache_id=name,
                         feedback=feedback.feedback,
                     )

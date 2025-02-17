@@ -170,7 +170,6 @@ impl QgisServer for QgisServerServicer {
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
                 header_prefix: Some(Self::HEADER_PREFIX),
-                debug_report: false,
                 headers,
                 content_type: req.content_type.as_deref(),
                 method: req
@@ -220,7 +219,6 @@ impl QgisServer for QgisServerServicer {
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
                 header_prefix: Some(Self::HEADER_PREFIX),
-                debug_report: false,
                 headers,
                 content_type: req.content_type.as_deref(),
             })

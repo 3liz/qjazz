@@ -6,8 +6,6 @@ from contextlib import contextmanager
 from time import time
 from typing import Dict, Optional
 
-import psutil
-
 from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
@@ -72,7 +70,6 @@ class Response(QgsServerResponse):
             co_status: Optional[int] = None,
             headers: Optional[Dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
-            process: Optional[psutil.Process] = None,
             cache_id: str = "",
             feedback: Optional[QgsFeedback] = None,
             header_prefix: Optional[str] = None,
@@ -86,35 +83,12 @@ class Response(QgsServerResponse):
         self._header_written = False
         self._headers: Dict[str, str] = {}
         self._co_status = co_status
-        self._process = process
         self._timestamp = time()
         self._extra_headers: Dict[str, str] = headers or {}
         self._chunk_size = chunk_size
         self._cache_id = cache_id
         self._feedback = feedback
         self._header_prefix = header_prefix or ""
-
-        if self._process:
-            self._memory = self._process.memory_info().vms
-
-    def _send_report(self):
-        """ Send a request report
-            after the last chunk of data
-        """
-        if not self._process:
-            return
-
-        memory = self._process.memory_info().vms - self._memory
-
-        logger.trace(">>> Sending request report")
-        _m.send_report(
-            self._conn,
-            _m.RequestReport(
-                memory=memory,
-                timestamp=self._timestamp,
-                duration=time() - self._timestamp,
-            ),
-        )
 
     # Since 3.36
     def feedback(self) -> Optional[QgsFeedback]:
@@ -189,8 +163,6 @@ class Response(QgsServerResponse):
             # Send sentinel to signal end of data
             logger.trace("Sending final chunk")
             _m.send_chunk(self._conn, b'')
-            # Send final report
-            self._send_report()
 
         self._buffer.buffer().clear()
 

@@ -12,7 +12,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::{ChildStdin, ChildStdout};
 
 use crate::errors::{Error, Result};
-use crate::messages::{Envelop, JsonValue, Message, Pickable, RequestReport};
+use crate::messages::{Envelop, JsonValue, Message, Pickable};
 
 pub(crate) struct Pipe {
     //stdin: ChildStdin,
@@ -195,15 +195,6 @@ impl Pipe {
         }
     }
 
-    /// Read report data
-    pub async fn read_report(&mut self) -> Result<RequestReport> {
-        if let Some(bytes) = self.read_bytes().await? {
-            rmp_serde::from_slice(bytes).map_err(Error::RmpDecodeError)
-        } else {
-            Err(Error::ResponseExpected)
-        }
-    }
-
     /// Send a message and wait for return
     pub async fn send_message<R>(&mut self, msg: impl Pickable) -> Result<(i64, R)>
     where
@@ -344,10 +335,11 @@ mod tests {
         let rv_ok: Envelop<PluginInfo> = rmp_serde::decode::from_slice(&buf[..]).unwrap();
         assert_eq!(rv_ok, Envelop::NoData);
 
+        buf.clear();
+
         // Test invalid no data status code
-        //rmp_serde::encode::write(&mut buf, &999).unwrap();
-        //let rv_err: Result<Envelop<PluginInfo>, _> =
-        //    rmp_serde::decode::from_slice(&buf[..]);
-        //assert!(rv_err.is_err());
+        rmp_serde::encode::write(&mut buf, &999).unwrap();
+        let rv_err: Result<Envelop<PluginInfo>, _> = rmp_serde::decode::from_slice(&buf[..]);
+        assert!(rv_err.is_err());
     }
 }

@@ -165,7 +165,6 @@ pub struct OwsRequestMsg<'a> {
     pub headers: Vec<(&'a str, &'a str)>,
     pub request_id: Option<&'a str>,
     pub header_prefix: Option<&'a str>,
-    pub debug_report: bool,
     pub content_type: Option<&'a str>,
     pub method: Option<HTTPMethod>,
     #[serde(with = "serde_bytes")]
@@ -188,7 +187,6 @@ pub struct ApiRequestMsg<'a> {
     pub headers: Vec<(&'a str, &'a str)>,
     pub request_id: Option<&'a str>,
     pub header_prefix: Option<&'a str>,
-    pub debug_report: bool,
     pub content_type: Option<&'a str>,
 }
 
@@ -246,13 +244,6 @@ pub struct CollectionsPage {
     pub schema: String,
     pub next: bool,
     pub items: Vec<CollectionsItem>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RequestReport {
-    pub memory: Option<i64>,
-    pub timestamp: f64,
-    pub duration: f64,
 }
 
 //
@@ -463,7 +454,6 @@ mod tests {
             options: None,
             headers: vec![("content-type", "application/test")],
             request_id: Some("1234"),
-            debug_report: false,
             header_prefix: Some("x-test-"),
             content_type: Some("application/test"),
         };

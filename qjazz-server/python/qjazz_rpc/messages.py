@@ -78,13 +78,6 @@ class RequestReply(Response):
     cache_id: str = ""
 
 
-class RequestReport(Response):
-    memory: Optional[int]
-    timestamp: float
-    duration: float
-
-
-#
 # OWS
 #
 class OwsRequestMsg(MsgModel):
@@ -99,7 +92,6 @@ class OwsRequestMsg(MsgModel):
     headers: List[Tuple[str, str]] = Field([])
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
-    debug_report: bool = False
     content_type: Optional[str] = None
     method: Optional[HTTPMethod] = None
     body: Optional[bytes] = None
@@ -363,11 +355,6 @@ def send_chunk(conn: Connection, data: ByteString):
         conn.send_bytes(data)
     else:
         conn.send_bytes(packb(204))
-
-
-def send_report(conn: Connection, report: RequestReport):
-    """ Send report """
-    conn.send_bytes(packb(report.dump_response()))
 
 
 def stream_data(conn: Connection, stream: Iterable):

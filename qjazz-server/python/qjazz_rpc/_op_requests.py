@@ -7,8 +7,6 @@ from string import capwords
 from typing import Dict, List, Optional, Tuple, assert_never, cast
 from urllib.parse import urlunsplit
 
-import psutil
-
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer, QgsServerRequest
 
@@ -38,7 +36,6 @@ def handle_ows_request(
     server: QgsServer,
     cm: CacheManager,
     config: QgisConfig,
-    process: Optional[psutil.Process],
     *,
     cache_id: str = "",
     feedback: QgsFeedback,
@@ -61,10 +58,6 @@ def handle_ows_request(
         allow_direct=msg.direct,
     )
     if not entry:
-        return
-
-    if msg.debug_report and not process:
-        _m.send_reply(conn, "No report available", 409)
         return
 
     resp_hdrs: Dict[str, str] | None = None
@@ -111,7 +104,6 @@ def handle_ows_request(
         conn,
         server,
         config,
-        process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
@@ -127,7 +119,6 @@ def handle_api_request(
     server: QgsServer,
     cm: CacheManager,
     config: QgisConfig,
-    process: Optional[psutil.Process],
     *,
     cache_id: str = "",
     feedback: QgsFeedback,
@@ -155,10 +146,6 @@ def handle_api_request(
         method = _to_qgis_method(msg.method)
     except ValueError:
         _m.send_reply(conn, "HTTP Method not supported", 405)
-        return
-
-    if msg.debug_report and not process:
-        _m.send_reply(conn, "No report available", 409)
         return
 
     assert_precondition(msg.headers is not None, "Headers are None")
@@ -189,7 +176,6 @@ def handle_api_request(
         conn,
         server,
         config,
-        process if msg.debug_report else None,
         cache_id=cache_id,
         request_id=msg.request_id,
         feedback=feedback,
@@ -208,7 +194,6 @@ def _handle_generic_request(
     conn: _m.Connection,
     server: QgsServer,
     config: QgisConfig,
-    process: Optional[psutil.Process],
     *,
     cache_id: str,
     request_id: Optional[str],
@@ -233,7 +218,6 @@ def _handle_generic_request(
             cast(Co, co_status).value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
-            process=process,
             cache_id=cache_id,
             feedback=feedback,
             header_prefix=header_prefix,
@@ -244,7 +228,6 @@ def _handle_generic_request(
         project = None
         response = Response(
             conn,
-            process=process,
             cache_id=cache_id,
             chunk_size=config.max_chunk_size,
             feedback=feedback,

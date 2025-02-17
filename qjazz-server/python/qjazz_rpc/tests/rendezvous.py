@@ -15,10 +15,7 @@ import msgpack
 from pydantic import BaseModel
 
 from .. import messages  # noqa F401
-from ..messages import (
-    Message,
-    RequestReport,
-)
+from ..messages import Message
 
 
 class NoDataResponse(Exception):
@@ -51,9 +48,6 @@ class Pipe:
         size = unpack('!i', await self._stdout.readexactly(4))
         if size > 0:
             _ = await self._stdout.read(size)
-
-    async def read_report(self) -> RequestReport:
-        return RequestReport.model_validate(msgpack.unpackb(await self.read_bytes()))
 
     async def read_message(self) -> Tuple[int, Any]:
         """ Read an Envelop message

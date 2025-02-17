@@ -31,7 +31,6 @@ async def test_rpc_io(worker: Worker):
             request="GetCapabilities",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
-            debug_report=True,
             header_prefix="x-test-",
         ),
     )
@@ -54,12 +53,6 @@ async def test_rpc_io(worker: Worker):
     async for chunk in worker.io.stream_bytes():
         assert len(chunk) > 0
 
-    # Get final report
-    report = await worker.io.read_report()
-    print(f"> {report.memory}")
-    print(f"> {report.timestamp}")
-    print(f"> {report.duration}")
-
 
 async def test_rpc_chunked_response(worker: Worker):
     """ Test Response with chunk
@@ -77,7 +70,6 @@ async def test_rpc_chunked_response(worker: Worker):
             options="TYPENAME=france_parts_bordure",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
-            debug_report=True,
         ),
     )
 
@@ -93,13 +85,6 @@ async def test_rpc_chunked_response(worker: Worker):
     # Stream remaining bytes
     async for chunk in worker.io.stream_bytes():
         assert len(chunk) > 0
-
-    # Get final report
-    report = await worker.io.read_report()
-    print("> memory   ", report.memory)
-    print("> timestamp", report.timestamp)
-    print("> duration ", report.duration)
-    print("> overhead:", total_time - report.duration)
 
 
 async def test_rpc_cache_api(worker: Worker):

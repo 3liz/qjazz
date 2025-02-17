@@ -61,7 +61,6 @@ async fn test_messages_io() {
             options: None,
             headers: vec![("content-type", "application/test")],
             request_id: None,
-            debug_report: false,
             header_prefix: Some("x-test-"),
             content_type: Some("application/test"),
             method: None,
@@ -103,7 +102,6 @@ async fn test_messages_io() {
             options: None,
             headers: vec![("content-type", "application/test")],
             request_id: None,
-            debug_report: false,
             header_prefix: Some("x-test-"),
             content_type: Some("application/test"),
         })
