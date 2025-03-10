@@ -5,6 +5,8 @@
 from qjazz_contrib.core.qgis import (
     init_qgis_application,
     init_qgis_server,
+    show_qgis_settings,
+    show_all_versions,
 )
 
 from qjazz_contrib.core import logger

@@ -51,6 +51,7 @@ def setup_qgis_application(
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
     server_settings: bool = False,
+    allow_python_embedded: bool = False,
 ) -> str:
     """ Setup qgis application
 
@@ -94,7 +95,11 @@ def setup_qgis_application(
     QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
 
     # Initialize configuration settings
-    options_path = load_qgis_settings(settings, server_settings=server_settings)
+    options_path = load_qgis_settings(
+        settings,
+        server_settings=server_settings,
+        allow_python_embedded=allow_python_embedded,
+    )
 
     # XXX: note, setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
@@ -148,15 +153,6 @@ def install_logger_hook(logprefix: str) -> None:
     messageLog.messageReceived.connect(writelogmessage)
 
 
-def set_qgis_settings(settings: Dict[str, str]):
-    """ Set Qgis settings from dict
-    """
-    from qgis.core import QgsSettings
-    qgsettings = QgsSettings()
-    for k, v in settings.items():
-        qgsettings.setValue(k, v)
-
-
 def init_qgis_application(**kwargs):
     setup_qgis_application(**kwargs)
     qgis_application.initQgis()  # type: ignore [union-attr]
@@ -185,10 +181,15 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
     return server
 
 
-def load_qgis_settings(settings: Optional[Dict[str, str]], server_settings: bool = False) -> str:
+def load_qgis_settings(
+    settings: Optional[Dict[str, str]],
+    *,
+    server_settings: bool = False,
+    allow_python_embedded: bool = False,
+) -> str:
     """ Load qgis settings
     """
-    from qgis.core import QgsSettings
+    from qgis.core import Qgis, QgsSettings
     from qgis.PyQt.QtCore import QSettings
 
     options_path = os.getenv('QGIS_CUSTOM_CONFIG_PATH')
@@ -229,6 +230,11 @@ def load_qgis_settings(settings: Optional[Dict[str, str]], server_settings: bool
         # Initialize custom parameters settings
         for k, v in settings.items():
             qgssettings.setValue(k, v)
+
+    if not allow_python_embedded:
+        # Disable python embedded and override previous settings
+        logger.info("Disabling Python Embedded in QGIS")
+        qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)
 
     return options_path
 

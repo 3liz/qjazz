@@ -135,10 +135,10 @@ class _ExecutorBase:
         self,
         name: str,
         *,
+        destination: Sequence[str],
         broadcast: bool = False,
         reply: bool = True,
-        destination: Sequence[str],
-        **kwargs,
+            **kwargs,
     ) -> JsonValue:
         """ Send an inspect command to one or more service instances """
         if not broadcast:
@@ -241,7 +241,7 @@ class _ExecutorBase:
         task: str,
         run_config: Dict[str, JsonValue],
         *,
-        expiration_timeout: int,
+        pending_timeout: int,
         context: Optional[JsonDict] = None,
         meta: Optional[Mapping[str, JsonValue]] = None,
         priority: int = 0,
@@ -255,7 +255,7 @@ class _ExecutorBase:
             f"{service}.{task}",
             priority=priority,
             queue=f'qjazz.{service}',
-            expires=expiration_timeout,
+            expires=pending_timeout,
             kwargs={
                 '__meta__': meta,
                 '__context__': context,
@@ -315,7 +315,7 @@ class _ExecutorBase:
                 project_path=project,
             ),
             meta=meta,
-            expiration_timeout=pending_timeout,
+            pending_timeout=pending_timeout,
             context=context,
         )
 
@@ -359,7 +359,7 @@ class _ExecutorBase:
     #    the message will not live more than the message
     #    expiration timeout (from the configuration).
     #
-    #    Except from flushing the qeueues, it's not straightforward
+    #    Except from flushing the queues, it's not straightforward
     #    to track or revoke a pending message.
     #
     #    On job creation, a record is set
@@ -671,7 +671,7 @@ class _ExecutorBase:
             destinations = service and self.get_destinations(service, services)
             for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
                 # Get job task info
-                # wich is much faster than checking job status first
+                # which is much faster than checking job status first
                 ti = registry.find_job(self._celery, job_id)
                 if not ti:
                     continue

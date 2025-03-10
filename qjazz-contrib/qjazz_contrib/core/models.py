@@ -23,7 +23,8 @@ from pydantic.aliases import PydanticUndefined
 def Field(
     default: Any = PydanticUndefined,  # noqa ANN401
     *,
-    description: str | None = None, **kwargs,
+    description: str | None = None,
+    **kwargs,
 ) -> Any:  # noqa ANN401
     return pydantic.Field(
         default,

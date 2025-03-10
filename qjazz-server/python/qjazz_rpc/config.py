@@ -64,6 +64,18 @@ class QgisConfig(config.ConfigBase):
             "management tools."
         ),
     )
+    enable_python_embedded: bool = Field(
+        default=False,
+        title="Allow python embedded macros",
+        description=(
+            "Set authorization to run Python Embedded in projects.\n"
+            "If enabled, it will use the QGIS settings value defined in the\n"
+            "QGIS settings options.\n"
+            "If disabled, Python Embedded is completely disabled and QGIS defined\n"
+            "settings will be ignored.\n"
+            "For security reason this is disabled by default."
+        ),
+    )
     plugins: QgisPluginConfig = Field(
         default=QgisPluginConfig(),
         title="Plugins configuration",

@@ -25,12 +25,12 @@ COPY qjazz-processes /python_modules/qjazz-processes
 COPY qjazz-server/python /python_modules/qjazz-server/
 
 # Create virtualenv for installing modules
-RUN mkdir -p /opt/local/ \
+RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
     && /opt/local/qjazz/bin/pip install -U --no-cache-dir pip setuptools wheel requests \
-    && /opt/local/qjazz/bin/pip install --no-cache-dir -r /python_modules/requirements.txt \
-    && /opt/local/qjazz/bin/pip install --no-cache-dir --no-deps \
+    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /python_modules/requirements.txt \
+    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
         -e /python_modules/qjazz-contrib \
         -e /python_modules/qjazz-processes \
         -e /python_modules/qjazz-server \
@@ -43,13 +43,13 @@ RUN mkdir -p /opt/local/ \
 # Install qgis-plugin-manager
 # Note: hit by https://github.com/pypa/setuptools/issues/4501
 # because packaging is installed system wide
-RUN mkdir -p /opt/local/ \
+RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/plugin-manager \
     && cd /usr/local/bin \
     && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
-        --no-cache-dir pip setuptools wheel packaging \
+        --cache-dir=/.python-cache pip setuptools wheel packaging \
     && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
-         --no-cache-dir qgis-plugin-manager \
+         --cache-dir=/.python-cache qgis-plugin-manager \
     && cd /usr/local/bin && ln -s /opt/local/plugin-manager/bin/qgis-plugin-manager
 
 COPY docker/scripts/ /usr/local/bin/
@@ -75,15 +75,6 @@ VOLUME /home/qgis
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
-# =========
-# CI build
-# =========
-FROM base AS ci_build
-
-ARG PIP_OPTIONS
-
-RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS \
-    "py-amqp-client>=2.0.0"
 
 #
 # Server only installation (no-qgis)
@@ -119,15 +110,4 @@ ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 EXPOSE 9443 9080 9876
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
-
-# ===================
-# Front amqp supports
-# ===================
-FROM front AS ci_front
-
-ARG PIP_OPTIONS
-
-RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS \
-    "py-amqp-client>=2.0.0"
-
 

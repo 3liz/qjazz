@@ -203,8 +203,10 @@ class QgisWorker(Worker):
         #
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
         # for task routing
-        self.conf.task_default_queue = f"qjazz.{service_name}"
-        self.conf.task_default_exchange = f"qjazz.{service_name}"
+        routing_name = f"qjazz.{service_name}"
+
+        self.conf.task_default_queue = routing_name
+        self.conf.task_default_exchange = routing_name
 
         # Allow worker to restart pool
         self.conf.worker_pool_restarts = True
