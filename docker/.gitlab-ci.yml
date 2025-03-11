@@ -48,4 +48,4 @@ build-docker:
   extends: .build-docker
   parallel:
     matrix:
-    - QGIS_FLAVOR: ['ltr', 'release']
+    - QGIS_FLAVOR: ['ltr', 'release', '3.34']
