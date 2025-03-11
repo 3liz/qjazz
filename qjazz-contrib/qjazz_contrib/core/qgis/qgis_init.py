@@ -234,7 +234,10 @@ def load_qgis_settings(
     if not allow_python_embedded:
         # Disable python embedded and override previous settings
         logger.info("Disabling Python Embedded in QGIS")
-        qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)
+        if Qgis.QGIS_VERSION_INT < 34000:
+            qgssettings.setEnumValue("qgis/enableMacros", Qgis.PythonMacroMode.Never)
+        else:
+            qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)
 
     return options_path
 

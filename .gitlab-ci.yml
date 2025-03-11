@@ -26,7 +26,7 @@ tests:
   resource_group: qjazz_tests
   parallel:
     matrix:
-    - QGIS_FLAVOR: ['ltr', 'release']
+    - QGIS_FLAVOR: ['ltr', 'release', '3.34']
 
 doc:
   image: ${REGISTRY_URL}/factory-ci-runner:build-doc
