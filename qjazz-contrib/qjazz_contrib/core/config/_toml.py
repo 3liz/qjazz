@@ -34,7 +34,7 @@ def _to_string(v: str | bool | int | float) -> str:
         case int(n) | float(n):
             return f"{n}"
         case _:
-            return str(v)
+            return f'"{str(v)}"'
 
 
 def _field_default_repr(field: FieldInfo) -> str:
@@ -98,26 +98,36 @@ def _unpack_arg(t: Type) -> Type:
             return t
 
 
-def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = False):
+def _dump_section(
+    s: IO,
+    model: Type[BaseModel],
+    section: str,
+    comment: bool = False,
+    is_list: bool = False,
+):
     """ Dump a model as a toml
     """
     deferred_ = []
 
-    if comment:
-        print(f"#[{section}]", file=s)
-    else:
-        print(f"[{section}]", file=s)
+    section_format = f"[{section}]"
+    if is_list:
+        section_format = f"[{section_format}]"
 
-    def defer(name, field, arg):
+    if comment:
+        print(f"#{section_format}", file=s)
+    else:
+        print(f"{section_format}", file=s)
+
+    def defer(name, field, arg, as_list=False):
         arg = _unpack_arg(arg)
         rv = False
         if _is_model(arg):
-            deferred_.append((arg, name.format(key="key"), field))
+            deferred_.append((arg, name.format(key="'key'"), field, as_list))
             rv = True
         elif arg.__name__ == 'Union':
             for i, m in enumerate(arg.__args__):
                 if _is_model(m):
-                    deferred_.append((m, name.format(key=f"key{i}"), field))
+                    deferred_.append((m, name.format(key=f"'key{i}'"), field))
                     rv = True
         return rv
 
@@ -125,13 +135,13 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         a = field.annotation
         if a is None:  # hu ? no annotation
             continue
-        match a.__name__:
-            case 'List' | 'Tuple' | 'Union' | 'Sequence':
-                deferred = defer(f"[[{section}.{name}]]", field, a.__args__[0])
-            case 'Dict':
-                deferred = defer(f"[{section}.{name}.{{key}}]", field, a.__args__[1])
+        match a.__name__.lower():
+            case 'list' | 'tuple' | 'union' | 'sequence':
+                deferred = defer(f"{section}.{name}", field, a.__args__[0], as_list=True)
+            case 'dict':
+                deferred = defer(f"{section}.{name}.{{key}}", field, a.__args__[1])
             case _:
-                deferred = defer(f"[{section}.{name}]", field, a)
+                deferred = defer(f"{section}.{name}", field, a)
 
         if not deferred:
             _print_field_doc(s, field)
@@ -140,11 +150,12 @@ def _dump_section(s: IO, model: Type[BaseModel], section: str, comment: bool = F
         #    _print_field_doc(s, field)
         #    _print_field(s, name, field, comment=True)
 
-    for model, name, field in deferred_:
+    for model, name, field, as_list in deferred_:
         print(file=s)
         _print_field_doc(s, field)
         print("#", file=s)
-        _dump_model(s, model, name, comment=comment)
+        #_dump_model(s, model, name, comment=comment)
+        _dump_section(s, model, name, comment=comment, is_list=as_list)
 
 
 def dump_model_toml(s: IO, model: Type[BaseModel]):

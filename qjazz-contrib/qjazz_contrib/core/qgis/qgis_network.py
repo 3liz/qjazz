@@ -41,9 +41,7 @@ class RequestPolicy(config.ConfigBase):
     cache_policy: Optional[CachePolicy] = Field(
         default=None,
         title="Cache load control",
-        description="""
-            Override QNetworkRequest::CacheLoadControl for request.
-        """,
+        description="Override QNetworkRequest::CacheLoadControl for request.",
     )
     transfer_timeout: Optional[NonNegativeInt] = Field(
         default=None,

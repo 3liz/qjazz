@@ -115,7 +115,8 @@ shutdown_timeout = 30
 # Api delegation allow for using a baseurl different
 # from the expected rootpath of qgis server api.
 # For exemple, wfs3 request may be mapped to a completely different
-# root path. 
+# root path.
+# 
 #delegate_to =   	# Optional
 #
 # Descriptive name
