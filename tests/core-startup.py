@@ -7,6 +7,7 @@ from qjazz_contrib.core.qgis import (
     init_qgis_server,
     show_qgis_settings,
     show_all_versions,
+    qgis_network,
 )
 
 from qjazz_contrib.core import logger

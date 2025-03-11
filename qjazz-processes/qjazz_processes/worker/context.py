@@ -124,6 +124,11 @@ class QgisContext:
             logger.debug(show_qgis_settings())
 
         #
+        # Initialize network configuration
+        #
+        conf.network.configure_network()
+
+        #
         # Initialize cache manager
         #
         logger.info("Initializing cache manager...")

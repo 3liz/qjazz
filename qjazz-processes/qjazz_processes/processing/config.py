@@ -18,7 +18,10 @@ from pydantic import (
 from qjazz_cache.prelude import ProjectsConfig
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigBase, SSLConfig, Template, TemplateStr
-from qjazz_contrib.core.qgis import QgisPluginConfig
+from qjazz_contrib.core.qgis import (
+    QgisNetworkConfig,
+    QgisPluginConfig,
+)
 from qjazz_processes.schemas import WGS84
 
 
@@ -260,3 +263,12 @@ class ProcessingConfig(ConfigBase):
             # Qgis > 33800
 
         return settings
+
+    #
+    # Qgis network settings
+    #
+
+    network: QgisNetworkConfig = Field(
+        QgisNetworkConfig(),
+        title="Qgis network",
+    )

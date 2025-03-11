@@ -66,6 +66,9 @@ def setup_server(conf: QgisConfig) -> QgsServer:
 
     server = init_qgis_server(settings=conf.qgis_settings)
 
+    # Configure QGIS network (trace, timeouts)
+    conf.network.configure_network()
+
     CacheManager.initialize_handlers(projects)
 
     if logger.is_enabled_for(logger.LogLevel.DEBUG):

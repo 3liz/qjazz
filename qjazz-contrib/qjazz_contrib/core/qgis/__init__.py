@@ -14,3 +14,6 @@ from .qgis_plugins import (  # noqa
     QgisPluginService,
     install_plugins,
 )
+from .qgis_network import ( # noqa
+    QgisNetworkConfig,
+)

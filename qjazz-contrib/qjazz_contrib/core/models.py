@@ -28,7 +28,7 @@ def Field(
 ) -> Any:  # noqa ANN401
     return pydantic.Field(
         default,
-        description=dedent(description) if description else None,
+        description=dedent(description.removeprefix('\n')) if description else None,
         **kwargs,
     )
 

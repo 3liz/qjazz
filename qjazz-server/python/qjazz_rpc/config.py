@@ -7,7 +7,7 @@ from pydantic import BeforeValidator, Field
 
 from qjazz_cache.config import ProjectsConfig
 from qjazz_contrib.core import config
-from qjazz_contrib.core.qgis import QgisPluginConfig
+from qjazz_contrib.core.qgis import QgisNetworkConfig, QgisPluginConfig
 
 
 def _validate_qgis_setting(value: str | bool | float | int) -> str:
@@ -103,4 +103,8 @@ class QgisConfig(config.ConfigBase):
             "This is useful when you don't want\n"
             "propagating signal from parent process."
         ),
+    )
+    network: QgisNetworkConfig = Field(
+        QgisNetworkConfig(),
+        title="QGIS Network configuration",
     )
