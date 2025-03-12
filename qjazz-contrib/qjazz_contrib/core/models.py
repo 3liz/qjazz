@@ -46,9 +46,6 @@ JsonDict: TypeAlias = dict[str, JsonValue]
 
 # See https://github.com/pydantic/pydantic/issues/656#
 
-T = TypeVar('T')
-
-
 def one_of(s):
     if 'anyOf' in s:
         s['oneOf'] = s['anyOf']
@@ -58,6 +55,7 @@ def one_of(s):
 # {'oneOf': [{'type': 'string'}, {'type': 'integer'}]} instead of:
 # {'anyOf': ... }
 
+T = TypeVar('T')
 
 OneOf: TypeAlias = Annotated[T, pydantic.Field(json_schema_extra=one_of)]
 

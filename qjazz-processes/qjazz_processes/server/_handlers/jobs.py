@@ -4,7 +4,6 @@ from typing import (
     Annotated,
     Self,
     Sequence,
-    TypeVar,
 )
 from urllib.parse import urlencode
 
@@ -45,10 +44,8 @@ LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
 PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
 BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
 
-T = TypeVar("T")
 
-
-def validate_param(adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
+def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
     try:
         return adapter.validate_python(request.query.get(name, default))
     except ValidationError as err:

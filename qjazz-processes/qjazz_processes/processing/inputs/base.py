@@ -3,7 +3,6 @@
 from typing import (
     Annotated,
     Any,
-    Generic,
     Optional,
     Self,
     TypeAlias,
@@ -32,10 +31,8 @@ from ..context import ProcessingContext
 
 ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
 
-T = TypeVar('T')
 
-
-class InputParameter(Generic[T]):
+class InputParameter[T]:
 
     _ParameterType: TypeAlias | None = None
 

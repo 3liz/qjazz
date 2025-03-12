@@ -4,7 +4,6 @@ import traceback
 from functools import cached_property
 from typing import (
     Annotated,
-    Generic,
     Optional,
     Sequence,
     TypeAlias,
@@ -39,10 +38,8 @@ from ..inputs import InputParameterDef
 
 OutputDefinition = TypeVar('OutputDefinition', bound=QgsProcessingOutputDefinition)
 
-T = TypeVar('T')
 
-
-class OutputParameter(Generic[T]):
+class OutputParameter[T]:
 
     _Model: TypeAlias | None = None
 

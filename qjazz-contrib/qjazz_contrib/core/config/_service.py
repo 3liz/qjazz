@@ -40,11 +40,9 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Generic,
     Optional,
     Type,
     TypeAlias,
-    TypeVar,
     assert_never,
 )
 
@@ -303,10 +301,7 @@ def section(
 # Config Proxy
 #
 
-T = TypeVar('T', bound=ConfigBase)
-
-
-class ConfigProxy(Generic[T]):
+class ConfigProxy[T: ConfigBase]:
     """ Proxy to sub configuration
 
         Give access to sub-configuration from the confservice.

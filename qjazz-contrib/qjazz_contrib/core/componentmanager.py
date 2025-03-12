@@ -21,7 +21,7 @@ import sys
 
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable
 
 
 class ComponentManagerError(Exception):
@@ -40,11 +40,8 @@ class EntryPointNotFoundError(ComponentManagerError):
     pass
 
 
-T = TypeVar('T')
-
-
 @dataclass(frozen=True)
-class FactoryEntry(Generic[T]):
+class FactoryEntry[T]:
     create_instance: Callable[[], T]
     service: T
 
