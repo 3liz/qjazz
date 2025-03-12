@@ -8,12 +8,10 @@ from textwrap import dedent as _D
 from time import time
 from typing import (
     Callable,
-    Dict,
     Iterator,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     assert_never,
     cast,
 )
@@ -67,7 +65,7 @@ class ExecutorConfig(ConfigBase):
 
 PresenceDetails = WorkerPresence
 
-ServiceDict = Dict[str, Tuple[Sequence[str], PresenceDetails]]
+ServiceDict = dict[str, tuple[Sequence[str], PresenceDetails]]
 
 
 #
@@ -87,7 +85,7 @@ class _ExecutorBase:
         self._pending_expiration_timeout = conf.message_expiration_timeout
         self._default_result_expires = conf.celery.result_expires
 
-    def presences(self, destinations: Optional[Sequence[str]] = None) -> Dict[str, PresenceDetails]:
+    def presences(self, destinations: Optional[Sequence[str]] = None) -> dict[str, PresenceDetails]:
         """ Return presence info for online workers
         """
         data = self._celery.control.broadcast(
@@ -239,7 +237,7 @@ class _ExecutorBase:
         self,
         service: str,
         task: str,
-        run_config: Dict[str, JsonValue],
+        run_config: dict[str, JsonValue],
         *,
         pending_timeout: int,
         context: Optional[JsonDict] = None,
@@ -273,7 +271,7 @@ class _ExecutorBase:
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
-    ) -> Tuple[
+    ) -> tuple[
         str,
         Callable[[int | None], JobResults],
         Callable[[], JobStatus],
@@ -597,7 +595,7 @@ class _ExecutorBase:
         kwargs = state['kwargs']
         meta = kwargs.get('__meta__', {})
 
-        details: Dict = {}
+        details: dict = {}
         if with_details:
             details.update(run_config=kwargs.get('request'))
             if finished:
@@ -623,7 +621,7 @@ class _ExecutorBase:
         self,
         job_id: str,
         destinations: Optional[Sequence[str]] = None,
-    ) -> Tuple[Optional[str], Optional[Dict]]:
+    ) -> tuple[Optional[str], Optional[dict]]:
         #
         # schema is: { <destination>: { <job_id>: [state, <info>]}}}
         # state may be 'reserved', 'active', 'scheduled', 'revoked'

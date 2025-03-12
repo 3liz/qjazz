@@ -5,8 +5,6 @@
 
 from typing import (
     Annotated,
-    Dict,
-    List,
     Literal,
     Optional,
     Sequence,
@@ -93,12 +91,12 @@ class ProcessSummary(DescriptionType):
         'async-execute',
         'dismiss',
     )
-    links: List[LinkHttp] = Field(default=[])
+    links: list[LinkHttp] = Field(default=[])
 
 
 class ProcessDescription(ProcessSummary):
-    inputs: Dict[str, InputDescription] = Field(default={})
-    outputs: Dict[str, OutputDescription] = Field(default={})
+    inputs: dict[str, InputDescription] = Field(default={})
+    outputs: dict[str, OutputDescription] = Field(default={})
 
 
 # Adapter for process Summary list

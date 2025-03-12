@@ -4,9 +4,7 @@ import traceback
 from functools import cached_property
 from typing import (
     Annotated,
-    Dict,
     Generic,
-    List,
     Optional,
     Sequence,
     TypeAlias,
@@ -72,11 +70,11 @@ class OutputParameter(Generic[T]):
         return False
 
     @classmethod
-    def metadata(cls, outp: OutputDefinition) -> List[Metadata]:
+    def metadata(cls, outp: OutputDefinition) -> list[Metadata]:
         return [MetadataValue(role="typeName", value=outp.type())]
 
     @classmethod
-    def keywords(cls, outp: OutputDefinition) -> List[str]:
+    def keywords(cls, outp: OutputDefinition) -> list[str]:
         return []
 
     def value_passing(self) -> ValuePassing:
@@ -89,7 +87,7 @@ class OutputParameter(Generic[T]):
         alg: Optional[QgsProcessingAlgorithm],
     ) -> TypeAlias:
 
-        field: Dict = {}
+        field: dict = {}
         _type = cls.create_model(outp, field, alg)
 
         return Annotated[_type, Field(**field)]  # type: ignore [pydantic-field, valid-type]
@@ -98,7 +96,7 @@ class OutputParameter(Generic[T]):
     def create_model(
         cls,
         outp: OutputDefinition,
-        field: Dict,
+        field: dict,
         alg: Optional[QgsProcessingAlgorithm],
     ) -> TypeAlias:
         if cls._Model is None:  # type: ignore [attr-defined]

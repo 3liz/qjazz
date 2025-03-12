@@ -11,7 +11,6 @@ from typing import (
     Callable,
     Iterator,
     Optional,
-    Tuple,
     Type,
 )
 
@@ -173,7 +172,7 @@ class QgisContext:
         feedback: QgsProcessingFeedback,
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
-    ) -> Tuple[JobResults, Optional[QgsProject]]:
+    ) -> tuple[JobResults, Optional[QgsProject]]:
         """ Execute process """
 
         project = self.project(project_path) if project_path else None

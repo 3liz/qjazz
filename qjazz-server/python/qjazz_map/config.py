@@ -3,7 +3,6 @@ import sys
 from glob import glob
 from pathlib import Path
 from typing import (
-    Dict,
     Literal,
     Optional,
     Protocol,
@@ -76,7 +75,7 @@ class Server(ConfigBase):
 
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
-    backends: Dict[str, BackendConfig]
+    backends: dict[str, BackendConfig]
     includes: Optional[str]
 
     def model_dump_json(self, *args, **kwargs) -> str:
@@ -93,7 +92,7 @@ def create_config() -> ConfBuilder:
     # Add the `[backends]` configuration section
     builder.add_section(
         "backends",
-        Dict[str, BackendConfig],
+        dict[str, BackendConfig],
         Field(default={}),
     )
 

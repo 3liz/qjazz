@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import (
     Iterator,
     Optional,
-    Tuple,
     assert_never,
     cast,
 )
@@ -194,7 +193,7 @@ def send_cache_list(
 ):
     co = cm.checkout_iter()
 
-    def collect() -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
+    def collect() -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
         for item in co:
             if conn.cancelled:
                 break
@@ -273,7 +272,7 @@ def send_catalog(
     cm: CacheManager,
     location: str | None,
 ):
-    def collect() -> Iterator[Tuple[ProjectMetadata, str]]:
+    def collect() -> Iterator[tuple[ProjectMetadata, str]]:
         for item in cm.collect_projects(location):
             if conn.cancelled:
                 break

@@ -3,11 +3,9 @@ QGIS project's collections
 """
 from typing import (
     Iterator,
-    List,
     Optional,
     Self,
     Sequence,
-    Tuple,
 )
 
 from pydantic import HttpUrl
@@ -41,11 +39,11 @@ def output_crs_list(p: QgsProject) -> Iterator[Crs]:
             yield output_crs
 
 
-def scale_denominators(p: QgsProject) -> Tuple[Optional[float], Optional[float]]:
+def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]:
     """ Compute scale denominator
     """
     restricted_layers = QgsServerProjectUtils.wmsRestrictedLayers(p)
-    scales: Tuple[float, float] | None = None
+    scales: tuple[float, float] | None = None
 
     for ml in p.mapLayers().values():
         if ml.name() in restricted_layers:
@@ -147,7 +145,7 @@ class Collection(collections.Collection):
                     title="Attribution url",
                 )
 
-        crs_outputs: Optional[List[Crs]] = None
+        crs_outputs: Optional[list[Crs]] = None
         storage_crs: Optional[Crs] = None
         min_scale_denominator: Optional[float] = None
         max_scale_denominator: Optional[float] = None

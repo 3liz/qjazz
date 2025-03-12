@@ -3,10 +3,8 @@
 from ipaddress import IPv4Address, IPv6Address
 from typing import (
     Annotated,
-    List,
     Optional,
     Sequence,
-    Tuple,
     Union,
 )
 
@@ -55,7 +53,7 @@ class Resolver(ConfigBase):
     to multiple ips.
     """
     label: ResolverLabel
-    address: Tuple[ResolverAddress, int] = Field(
+    address: tuple[ResolverAddress, int] = Field(
         default=(IPv6Address("::1"), DEFAULT_PORT),
         title="RPC address",
     )
@@ -106,7 +104,7 @@ class Resolver(ConfigBase):
 
 
 class ResolverConfig(ConfigBase):
-    resolvers: List[Resolver] = Field(
+    resolvers: list[Resolver] = Field(
         default=[],
         title="List of Rpc backends",
     )

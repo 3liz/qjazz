@@ -2,7 +2,6 @@
 from typing import (
     TYPE_CHECKING,
     Callable,
-    List,
     Optional,
     Self,
     Sequence,
@@ -62,7 +61,7 @@ class ServiceItem(swagger.JsonModel):
 
 @swagger.model
 class ServicesResponse(swagger.JsonModel):
-    services: List[ServiceItem]
+    services: list[ServiceItem]
 
 
 class Services(HandlerProto):

@@ -1,16 +1,12 @@
 # import traceback
-from typing import (  # noqa
-    Dict,
-    List,
+from typing import ( # noqa F401
     Literal,
     Optional,
     Self,
-    Set,
-    Type,
 )
 
 from aiohttp import web
-from pydantic import (  # noqa
+from pydantic import (  # noqa F401
     BaseModel,
     Field,
     Json,
@@ -88,7 +84,7 @@ def _link(
 
 
 def _http_error(
-    error_type: Type[web.HTTPException],
+    error_type: type[web.HTTPException],
     message: str,
     details: Optional[Json] = None,
 ):

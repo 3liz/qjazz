@@ -2,7 +2,7 @@ import os
 import sys
 
 from contextlib import closing
-from typing import List, cast
+from typing import cast
 
 from pydantic import ConfigDict, Field
 
@@ -31,7 +31,7 @@ class WorkerConfig(config.ConfigBase):
     )
 
 
-def run(name: str, projects: List[str]) -> None:
+def run(name: str, projects: list[str]) -> None:
 
     rendez_vous = RendezVous()
 

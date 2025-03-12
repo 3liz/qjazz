@@ -3,14 +3,10 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Sequence,
-    Set,
-    Tuple,
     TypeAlias,
 )
 from urllib.parse import urlsplit
@@ -91,7 +87,7 @@ class ParameterMapLayer(InputParameter):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -105,7 +101,7 @@ class ParameterMapLayer(InputParameter):
                 _type = Literal[allowed_sources]
 
         if cls._multiple:
-            _type = Set[_type]
+            _type = set[_type]
 
         return _type
 
@@ -129,7 +125,7 @@ class ParameterMultipleLayers(ParameterMapLayer):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -181,7 +177,7 @@ class ParameterFeatureSource(ParameterMapLayer):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -295,7 +291,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -315,7 +311,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
 
         return Sequence[TileWriter]
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
         _inp = self.validate(inp)
         return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
@@ -362,7 +358,7 @@ class ParameterTinInputLayers(ParameterMapLayer):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -384,7 +380,7 @@ class ParameterTinInputLayers(ParameterMapLayer):
 
         return Sequence[TinInput]
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
         _inp = self.validate(inp)
         return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
@@ -406,7 +402,7 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
     def get_default_value(cls,
         defval: str | QgsProcessingOutputLayerDefinition,
         param: ParameterDefinition,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         #
         # Get the file extension as we need it
         # for writing the resulting file
@@ -429,7 +425,7 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -502,7 +498,7 @@ class ParameterRasterDestination(ParameterLayerDestination):
 class ParameterVectorDestination(ParameterLayerDestination):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterField) -> list[Metadata]:
         md = super(ParameterVectorDestination, cls).metadata(param)
         md.append(
             MetadataValue(
@@ -516,7 +512,7 @@ class ParameterVectorDestination(ParameterLayerDestination):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -591,7 +587,7 @@ else:
 class ParameterField(InputParameter):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterField) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterField) -> list[Metadata]:
         md = super(ParameterField, cls).metadata(param)
         md.append(MetadataValue(role="dataType", value=field_datatype_name(param.dataType())))
         md.append(MetadataValue(role="defaultToAllFields", value=param.defaultToAllFields()))
@@ -611,7 +607,7 @@ class ParameterField(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterField,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -619,7 +615,7 @@ class ParameterField(InputParameter):
         _type: Any = str  #
 
         if param.allowMultiple():
-            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
+            _type = Annotated[list[_type], Field(min_length=1)]  # type: ignore [misc]
 
         return _type
 
@@ -637,7 +633,7 @@ class FieldMapping(BaseModel, extra='allow'):
 class ParameterFieldMapping(InputParameter):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterFieldMapping) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterFieldMapping) -> list[Metadata]:
         md = super(ParameterFieldMapping, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
@@ -654,14 +650,14 @@ class ParameterFieldMapping(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterField,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
 
         return Sequence[FieldMapping]
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
         _inp = self.validate(inp)
         return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
@@ -674,7 +670,7 @@ class ParameterExpression(InputParameter):
     _ParameterType = str
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterExpression) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterExpression) -> list[Metadata]:
         md = super(ParameterExpression, cls).metadata(param)
         md.append(MetadataValue(role="expressionType", value=param.expressionType().name))
         parent_layer_parameter = param.parentLayerParameterName()
@@ -696,7 +692,7 @@ class ParameterExpression(InputParameter):
 class ParameterBand(InputParameter):
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterBand, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
@@ -713,7 +709,7 @@ class ParameterBand(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterBand,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -721,7 +717,7 @@ class ParameterBand(InputParameter):
         _type: Any = Annotated[int, Field(ge=0)]  #
 
         if param.allowMultiple():
-            _type = Annotated[List[_type], Field(min_length=1)]  # type: ignore [misc]
+            _type = Annotated[list[_type], Field(min_length=1)]  # type: ignore [misc]
 
         return _type
 
@@ -747,7 +743,7 @@ class ParameterAggregate(InputParameter):
     _ParameterType = Sequence[AggregateItem]
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterAggregate, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
@@ -760,7 +756,7 @@ class ParameterAggregate(InputParameter):
 
         return md
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
         _inp = self.validate(inp)
         return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)
 
@@ -784,7 +780,7 @@ class ParameterAlignRasterLayers(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterField,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -802,6 +798,6 @@ class ParameterAlignRasterLayers(InputParameter):
 
         return Sequence[_type] | Sequence[AlignRasterItem]  # type: ignore [return-value]
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
         _inp = self.validate(inp)
         return self._model.dump_python(_inp, mode='json', by_alias=True, exclude_none=True)

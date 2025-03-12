@@ -7,7 +7,6 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
-    Tuple,
 )
 
 import redis
@@ -94,7 +93,7 @@ def find_key(
     job_id: str,
     *,
     realm: Optional[str] = None,
-) -> Optional[Tuple[str, str, str]]:
+) -> Optional[tuple[str, str, str]]:
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
@@ -108,7 +107,7 @@ def find_keys(
     service: Optional[str] = None,
     *,
     realm: Optional[str] = None,
-) -> Iterator[Tuple[str, str, str]]:
+) -> Iterator[tuple[str, str, str]]:
     """ Iterate over filtered task infos
     """
     client = app.backend.client

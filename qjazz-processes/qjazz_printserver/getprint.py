@@ -10,13 +10,10 @@ from pydantic import (
 from pydantic.aliases import PydanticUndefined
 from typing_extensions import (
     Annotated,
-    Dict,
     Iterable,
     Iterator,
     Literal,
     Optional,
-    Set,
-    Tuple,
     cast,
 )
 
@@ -159,7 +156,7 @@ class MapOptions(JsonModel):
     layers: Optional[Sequence[str]] = NullField(title="Layers")
     styles: Optional[Sequence[str]] = NullField(title="Styles")
 
-    def to_query_params(self, name: str) -> Iterator[Tuple[str, str]]:
+    def to_query_params(self, name: str) -> Iterator[tuple[str, str]]:
         for field, val in self.dict().items():
             match val:
                 case None:
@@ -235,7 +232,7 @@ class GetPrintParameters(JsonModel):
             """,
         ),
     )
-    selection: Optional[Dict[str, Sequence[FeatureId]]] = NullField(
+    selection: Optional[dict[str, Sequence[FeatureId]]] = NullField(
         title="Highlight features",
         description=_D(
             """
@@ -249,12 +246,12 @@ class GetPrintParameters(JsonModel):
         title="Layers to display",
         description="This parameter allows to specify the layers to display on the map.",
     )
-    map_options: Optional[Dict[str, MapOptions]] = NullField(
+    map_options: Optional[dict[str, MapOptions]] = NullField(
         title="Layout map item options",
         description="Allow specify layout item options",
     )
 
-    def to_query_params(self) -> Iterator[Tuple[str, str]]:
+    def to_query_params(self) -> Iterator[tuple[str, str]]:
         yield "TEMPLATE", self.template
         yield "CRS", self.crs
         if self.format_options:
@@ -296,14 +293,14 @@ class GetPrintProcess:
     def inputs(
         cls,
         project: Optional[QgsProject] = None,
-    ) -> Iterator[Tuple[str, InputDescription]]:
+    ) -> Iterator[tuple[str, InputDescription]]:
         """ Convert fields to InputDescription
         """
         for name, field in GetPrintParameters.model_fields.items():
             type_: object
             match name:
                 case 'layers' if project:
-                    type_ = Optional[Set[Literal[get_wms_layers(project)]]]  # type: ignore [misc]
+                    type_ = Optional[set[Literal[get_wms_layers(project)]]]  # type: ignore [misc]
                 case _:
                     type_ = field.annotation
 
@@ -401,7 +398,7 @@ class GetPrintProcess:
         )
 
     @classmethod
-    def parameters(cls, request: JobExecute) -> Iterator[Tuple[str, str]]:
+    def parameters(cls, request: JobExecute) -> Iterator[tuple[str, str]]:
 
         output = request.outputs.get('output')
         if not output:

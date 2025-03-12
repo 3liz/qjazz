@@ -7,7 +7,6 @@ from struct import pack, unpack
 from typing import (
     Any,
     AsyncIterator,
-    Tuple,
 )
 
 import msgpack
@@ -49,7 +48,7 @@ class Pipe:
         if size > 0:
             _ = await self._stdout.read(size)
 
-    async def read_message(self) -> Tuple[int, Any]:
+    async def read_message(self) -> tuple[int, Any]:
         """ Read an Envelop message
         """
         resp = msgpack.unpackb(await self.read_bytes())
@@ -88,7 +87,7 @@ class Pipe:
                 case _:
                     raise ValueError(f"Byte stream returned {resp}")
 
-    async def send_message(self, msg: Message) -> Tuple[int, Any]:
+    async def send_message(self, msg: Message) -> tuple[int, Any]:
         await self.put_message(msg)
         return await self.read_message()
 

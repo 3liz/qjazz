@@ -8,7 +8,6 @@
 from typing import (
     Annotated,
     Any,
-    Dict,
     Self,
 )
 
@@ -28,14 +27,14 @@ from qjazz_contrib.core.config import ConfigBase
 from ..common import ProtocolHandler
 
 
-def _parse_config_options(val: str | Dict[str, Any]) -> Dict[str, Any]:
+def _parse_config_options(val: str | dict[str, Any]) -> dict[str, Any]:
     if isinstance(val, str):
-        val = TypeAdapter(Dict[str, Any]).validate_json(val)
+        val = TypeAdapter(dict[str, Any]).validate_json(val)
     return val
 
 
 HandlerConfigOptions = Annotated[
-    Dict[str, Any],
+    dict[str, Any],
     BeforeValidator(_parse_config_options),
 ]
 

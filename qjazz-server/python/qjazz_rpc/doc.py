@@ -3,7 +3,6 @@
 #
 from typing import (
     Annotated,
-    List,
     Optional,
     Union,
 )
@@ -16,7 +15,7 @@ from .config import QgisConfig
 
 
 # Parse list from string
-def _parse_list(value: Union[List[str], str]) -> List[str]:
+def _parse_list(value: Union[list[str], str]) -> list[str]:
     if isinstance(value, str):
         if value:
             # Parse comma separated list
@@ -120,7 +119,7 @@ class Worker(ConfigBase):
         ),
     )
     restore_projects: Annotated[
-        List[str],
+        list[str],
         BeforeValidator(_parse_list),
     ] = Field(
         default=[],

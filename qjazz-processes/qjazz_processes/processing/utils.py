@@ -5,11 +5,10 @@ from collections.abc import Container
 from enum import Enum
 from pathlib import Path
 from typing import (
+    Any,
     Iterator,
     Optional,
     Sequence,
-    Tuple,
-    Type,
 )
 from urllib.parse import urlsplit
 
@@ -33,7 +32,7 @@ from qjazz_processes.schemas import (
     mimetypes,
 )
 
-ProcessingSourceType: Type
+ProcessingSourceType: type[Any]
 
 if Qgis.QGIS_VERSION_INT >= 33600:
     # In qgis 3.36+ ProcessingSourceType is a real python enum
@@ -181,7 +180,7 @@ def raw_destination_sink(
     workdir: Path,
     default_extension: str,
     root_path: Optional[Path],
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     #
     # Parse input value as sink
     #

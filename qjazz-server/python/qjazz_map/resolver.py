@@ -2,7 +2,7 @@
 """
 
 from pathlib import PurePosixPath
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import (
     FilePath,
@@ -117,7 +117,7 @@ class BackendConfig(ConfigBase):
             "a timeout error (504) is returned to the client."
         ),
     )
-    forward_headers: List[Annotated[str, StringConstraints(to_lower=True)]] = Field(
+    forward_headers: list[Annotated[str, StringConstraints(to_lower=True)]] = Field(
         default=['x-qgis-*', 'x-lizmap-*'],
         title="Forwarded headers",
         description=(
@@ -125,7 +125,7 @@ class BackendConfig(ConfigBase):
             "This may be useful if you have plugins that may deal with request headers."
         ),
     )
-    api: List[ApiEndpoint] = Field(
+    api: list[ApiEndpoint] = Field(
         default=[],
         title="Api endpoints",
     )

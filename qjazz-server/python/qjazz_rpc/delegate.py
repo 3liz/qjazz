@@ -17,8 +17,6 @@
 """
 import traceback
 
-from typing import List
-
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext
 
@@ -33,7 +31,7 @@ API_ALIASES = {
 
 class ApiDelegate(QgsServerApi):
 
-    __instances: List[QgsServerApi] = []  #  noqa RUF012
+    __instances: list[QgsServerApi] = []  #  noqa RUF012
 
     def __init__(
             self,

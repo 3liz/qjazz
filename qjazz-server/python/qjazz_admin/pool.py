@@ -5,13 +5,10 @@ import traceback
 from contextlib import contextmanager
 from typing import (
     AsyncIterator,
-    Dict,
     Generator,
     Iterator,
-    List,
     Optional,
     Sequence,
-    Tuple,
 )
 
 import grpc
@@ -29,7 +26,7 @@ from .errors import RequestArgumentError, ServiceNotAvailable
 from .resolvers import Resolver
 
 
-def MessageToDict(message: Message) -> Dict[str, JsonValue]:
+def MessageToDict(message: Message) -> dict[str, JsonValue]:
     return json_format.MessageToDict(
         message,
         # including_default_value_fields=True,
@@ -53,9 +50,9 @@ class PoolClient:
 
     def __init__(self, resolver: Resolver):
         self._resolver = resolver
-        self._backends: List[Backend] = []
+        self._backends: list[Backend] = []
         self._shutdown = False
-        self._sync_events: Tuple[asyncio.Event, ...] = ()
+        self._sync_events: tuple[asyncio.Event, ...] = ()
 
     def __len__(self):
         return len(self._backends)
@@ -158,10 +155,10 @@ class PoolClient:
         # Sync watchers
         self._sync()
 
-    async def watch(self) -> AsyncIterator[Tuple[Tuple[str, bool], ...]]:
+    async def watch(self) -> AsyncIterator[tuple[tuple[str, bool], ...]]:
         """ Wait for state change in one of the worker
         """
-        queue: asyncio.Queue[Tuple[Backend, bool]] = asyncio.Queue()
+        queue: asyncio.Queue[tuple[Backend, bool]] = asyncio.Queue()
         exception = None
 
         async def _watch(server):
@@ -178,7 +175,7 @@ class PoolClient:
                 exception = None
                 try:
                     # Resync
-                    statuses: Dict[str, bool] = {}
+                    statuses: dict[str, bool] = {}
                     watchers = tuple(asyncio.create_task(_watch(s)) for s in self._backends)
                     # Populate statuses
                     while len(statuses) != len(self._backends):
@@ -216,7 +213,7 @@ class PoolClient:
                 if not self._shutdown:
                     await asyncio.sleep(RECONNECT_DELAY)
 
-    async def stats(self) -> Sequence[Tuple[Backend, Optional[Dict]]]:
+    async def stats(self) -> Sequence[tuple[Backend, Optional[dict]]]:
         """  Return stats for all servers
         """
         async def _stats(server):
@@ -236,7 +233,7 @@ class PoolClient:
     async def watch_stats(
         self,
         interval: int = 3,
-    ) -> AsyncIterator[Sequence[Tuple[Backend, Optional[Dict]]]]:
+    ) -> AsyncIterator[Sequence[tuple[Backend, Optional[dict]]]]:
         """ Watch service stats
         """
         def _to_dict(item, stats):
@@ -269,14 +266,14 @@ class PoolClient:
     # Cache
     #
 
-    async def cache_content(self) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
+    async def cache_content(self) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
         """ Build view of the cache contents by
             servers in the cluster.
 
             Return a dict of cached status list grouped
             by project's resource.
         """
-        rv: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {}
+        rv: dict[str, dict[str, qjazz_pb2.CacheInfo]] = {}
         serving = False
         try:
             for server in self._backends:
@@ -294,7 +291,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def synchronize_cache(self) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
+    async def synchronize_cache(self) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
         """ Synchronize backends caches
         """
         uris = set()
@@ -314,7 +311,7 @@ class PoolClient:
         # Collect cache for each backends
         await asyncio.gather(*(_collect(s) for s in self._backends))
 
-        result: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {uri: {} for uri in uris}
+        result: dict[str, dict[str, qjazz_pb2.CacheInfo]] = {uri: {} for uri in uris}
 
         async def _pull(server):
             try:
@@ -347,10 +344,10 @@ class PoolClient:
         if not serving:
             raise ServiceNotAvailable(self.address)
 
-    async def pull_projects(self, *uris) -> Dict[str, Dict[str, qjazz_pb2.CacheInfo]]:
+    async def pull_projects(self, *uris) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
         """ Pull/Update projects in all cache
         """
-        rv: Dict[str, Dict[str, qjazz_pb2.CacheInfo]] = {}
+        rv: dict[str, dict[str, qjazz_pb2.CacheInfo]] = {}
         serving = False
 
         for server in self._backends:
@@ -369,7 +366,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def drop_project(self, uri: str) -> Dict[str, qjazz_pb2.CacheInfo]:
+    async def drop_project(self, uri: str) -> dict[str, qjazz_pb2.CacheInfo]:
         """ Pull/Update projects in all cache
         """
         rv = {}
@@ -390,7 +387,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def checkout_project(self, uri: str) -> Dict[str, qjazz_pb2.CacheInfo]:
+    async def checkout_project(self, uri: str) -> dict[str, qjazz_pb2.CacheInfo]:
         """ Pull/Update projects in all cache
         """
         rv = {}
@@ -410,7 +407,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return rv
 
-    async def project_info(self, uri: str) -> Optional[Dict[str, JsonValue]]:
+    async def project_info(self, uri: str) -> Optional[dict[str, JsonValue]]:
         """ Pull/Update projects in all cache
 
             Return None if the project is not found
@@ -467,7 +464,7 @@ class PoolClient:
     # Conf
     #
 
-    async def get_config(self, include_env: bool = False) -> Json | Tuple[Json, Json]:
+    async def get_config(self, include_env: bool = False) -> Json | tuple[Json, Json]:
         """ Return the configuration
         """
         # Find a serving server
@@ -494,7 +491,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
         return None  # Make mypy happy
 
-    async def set_config(self, conf: Dict, return_diff: bool = False) -> Optional[Json]:
+    async def set_config(self, conf: dict, return_diff: bool = False) -> Optional[Json]:
         """ Change backends configuration
             and return diff between current and new config
         """
@@ -536,10 +533,10 @@ class PoolClient:
     # Plugins
     #
 
-    async def list_plugins(self) -> Dict[str, List[qjazz_pb2.PluginInfo]]:
+    async def list_plugins(self) -> dict[str, list[qjazz_pb2.PluginInfo]]:
         """ Pull/Update projects in all cache
         """
-        plugins: Dict[str, List[qjazz_pb2.PluginInfo]] = {}
+        plugins: dict[str, list[qjazz_pb2.PluginInfo]] = {}
         serving = False
 
         for server in self._backends:

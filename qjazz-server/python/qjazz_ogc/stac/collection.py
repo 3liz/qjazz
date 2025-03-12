@@ -7,7 +7,6 @@
 #
 
 from typing import (
-    Dict,
     Literal,
     Sequence,
 )
@@ -43,4 +42,4 @@ class Collection(CatalogBase):
 
     providers: Sequence[Provider] = ()
 
-    summaries: Dict[str, Range | JsonDict] = Field({})
+    summaries: dict[str, Range | JsonDict] = Field({})

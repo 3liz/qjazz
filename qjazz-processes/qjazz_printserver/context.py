@@ -1,11 +1,6 @@
 
 from functools import cached_property
-
-from typing_extensions import (
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Optional
 
 from qgis.core import QgsProcessingFeedback, QgsProject
 
@@ -34,7 +29,7 @@ class QgisPrintServerContext(QgisServerContext):
         feedback: QgsProcessingFeedback,
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
-    ) -> Tuple[JobResults, Optional[QgsProject]]:
+    ) -> tuple[JobResults, Optional[QgsProject]]:
 
         match ident:
             case "getprint":
@@ -61,7 +56,7 @@ class QgisPrintServerContext(QgisServerContext):
         )
 
     @property
-    def processes(self) -> List[ProcessSummary]:
+    def processes(self) -> list[ProcessSummary]:
         """ List proceses """
         return [GetPrintProcess.summary()]
 
@@ -94,5 +89,5 @@ class PrintServerCache(ProcessCache):
             raise ValueError(f"No description found for algorithm {ident}")
         return description
 
-    def _update(self) -> List[ProcessSummary]:
+    def _update(self) -> list[ProcessSummary]:
         return self.context.processes

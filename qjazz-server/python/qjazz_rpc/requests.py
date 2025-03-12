@@ -4,7 +4,7 @@ import traceback
 
 from contextlib import contextmanager
 from time import time
-from typing import Dict, Optional
+from typing import Optional
 
 from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
@@ -41,7 +41,7 @@ class Request(QgsServerRequest):
         self,
         url: str,
         method: QgsServerRequest.Method,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         data: Optional[bytes],
     ):
         self._data = data
@@ -68,7 +68,7 @@ class Response(QgsServerResponse):
             self,
             conn: _m.Connection,
             co_status: Optional[int] = None,
-            headers: Optional[Dict] = None,
+            headers: Optional[dict] = None,
             chunk_size: int = DEFAULT_CHUNK_SIZE,
             cache_id: str = "",
             feedback: Optional[QgsFeedback] = None,
@@ -81,10 +81,10 @@ class Response(QgsServerResponse):
         self._conn = conn
         self._status_code = 200
         self._header_written = False
-        self._headers: Dict[str, str] = {}
+        self._headers: dict[str, str] = {}
         self._co_status = co_status
         self._timestamp = time()
-        self._extra_headers: Dict[str, str] = headers or {}
+        self._extra_headers: dict[str, str] = headers or {}
         self._chunk_size = chunk_size
         self._cache_id = cache_id
         self._feedback = feedback
@@ -169,7 +169,7 @@ class Response(QgsServerResponse):
     def header(self, key: str) -> str:
         return self._headers.get(key) or ""
 
-    def headers(self) -> Dict[str, str]:
+    def headers(self) -> dict[str, str]:
         return self._headers
 
     def io(self) -> QIODevice:

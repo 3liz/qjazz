@@ -1,7 +1,7 @@
 import os
 
 from textwrap import dedent as _D
-from typing import Annotated, Callable, Dict
+from typing import Annotated, Callable
 from urllib.parse import SplitResult, urlsplit
 
 from pydantic import (
@@ -118,7 +118,7 @@ class ProjectsConfig(config.ConfigBase):
             "urls override proxy urls."
         ),
     )
-    search_paths: Dict[str, Url] = Field(
+    search_paths: dict[str, Url] = Field(
         default={},
         title="Scheme mapping definitions",
         description=(
@@ -144,7 +144,7 @@ class ProjectsConfig(config.ConfigBase):
         ),
     )
 
-    handlers: Dict[str, HandlerConfig] = Field(
+    handlers: dict[str, HandlerConfig] = Field(
         {},
         title="Project storage Handler configurations",
         description=(

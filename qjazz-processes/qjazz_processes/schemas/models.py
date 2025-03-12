@@ -3,7 +3,6 @@ import mimetypes
 
 from typing import (
     Annotated,
-    Dict,
     Literal,
     Optional,
     Protocol,
@@ -91,7 +90,7 @@ def MediaType(
     schema: Optional[str] = None,
 ) -> TypeAlias:
 
-    schema_extra: Dict = {'contentMediaType': media_type}
+    schema_extra: dict = {'contentMediaType': media_type}
     if encoding:
         schema_extra.update(contentEncoding=encoding)
     if schema:

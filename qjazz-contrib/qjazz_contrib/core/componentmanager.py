@@ -21,7 +21,7 @@ import sys
 
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Any, Callable, Dict, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 
 class ComponentManagerError(Exception):
@@ -72,7 +72,7 @@ class ComponentManager:
     def __init__(self) -> None:
         """ Component Manager
         """
-        self._contractIDs: Dict[str, FactoryEntry] = {}
+        self._contractIDs: dict[str, FactoryEntry] = {}
 
     def register_entrypoints(self, category: str) -> None:
         """ Load extension modules

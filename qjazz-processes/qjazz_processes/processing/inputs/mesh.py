@@ -1,13 +1,10 @@
 
 from datetime import datetime
 from typing import (
-    Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Sequence,
-    Set,
     Union,
 )
 
@@ -45,7 +42,7 @@ class ParameterMeshLayer(ParameterMapLayer):
 #
 
 class ParameterMeshDatasetGroups(InputParameter):
-    _ParameterType = Set[
+    _ParameterType = set[
         Literal[        # type: ignore [valid-type]
             QgsMeshDatasetGroupMetadata.DataOnFaces,
             QgsMeshDatasetGroupMetadata.DataOnVertices,
@@ -55,7 +52,7 @@ class ParameterMeshDatasetGroups(InputParameter):
     ]
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterMeshDatasetGroups, cls).metadata(param)
         mesh_layer_param = param.meshLayerParameterName()
         if mesh_layer_param:
@@ -107,7 +104,7 @@ class ParameterMeshDatasetTime(InputParameter):
         CurrentContextTime,
     ]
 
-    def json_schema(self) -> Dict[str, JsonValue]:
+    def json_schema(self) -> dict[str, JsonValue]:
         return {
             'oneOf': [
                 _to_json_schema(DefinedDatetime),
@@ -118,7 +115,7 @@ class ParameterMeshDatasetTime(InputParameter):
         }
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterMeshDatasetTime, cls).metadata(param)
         mesh_layer_param = param.meshLayerParameterName()
         if mesh_layer_param:
@@ -143,7 +140,7 @@ class ParameterMeshDatasetTime(InputParameter):
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
-    ) -> QDateTime | Dict:
+    ) -> QDateTime | dict:
 
         _inp = self.validate(inp)
 

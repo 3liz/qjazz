@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Self, assert_never
+from typing import Iterator, Optional, Self, assert_never
 
 from qgis.core import (
     Qgis,
@@ -20,7 +20,7 @@ from .metadata import DateTime
 
 
 # Bbox format is [xmin, ymin [,zmin], xmax, ymax [,zmax]]
-def parse_bbox(r: QgsRectangle, invert_axis: bool = False) -> List[float]:
+def parse_bbox(r: QgsRectangle, invert_axis: bool = False) -> list[float]:
     if invert_axis:
         return [
             r.yMinimum(),
@@ -38,7 +38,7 @@ def parse_bbox(r: QgsRectangle, invert_axis: bool = False) -> List[float]:
 
 
 # Bbox format is [xmin, ymin [,zmin], xmax, ymax [,zmax]]
-def parse_bbox3d(r: QgsBox3D, invert_axis: bool = False) -> List[float]:
+def parse_bbox3d(r: QgsBox3D, invert_axis: bool = False) -> list[float]:
     if invert_axis:
         return [
             r.xMinimum(),
@@ -59,7 +59,7 @@ def parse_bbox3d(r: QgsBox3D, invert_axis: bool = False) -> List[float]:
         ]
 
 
-def parse_extent(extent: QgsRectangle | QgsBox3D, invert_axis: bool = False) -> List[float]:
+def parse_extent(extent: QgsRectangle | QgsBox3D, invert_axis: bool = False) -> list[float]:
     match extent:
         case QgsRectangle():
             return parse_bbox(extent, invert_axis)
@@ -72,7 +72,7 @@ def parse_extent(extent: QgsRectangle | QgsBox3D, invert_axis: bool = False) -> 
             assert_never(unreachable)
 
 
-def extend_bbox_3d(r: List[float], zmin: float, zmax: float):
+def extend_bbox_3d(r: list[float], zmin: float, zmax: float):
     r.insert(2, zmin)
     r.append(zmax)
 

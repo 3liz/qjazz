@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from qgis.core import (
     QgsAbstractMetadataBase,
@@ -9,11 +9,11 @@ from qgis.PyQt.QtCore import QDateTime
 from .stac import links
 
 
-def Keywords(md: QgsAbstractMetadataBase) -> List[str]:
+def Keywords(md: QgsAbstractMetadataBase) -> list[str]:
     return md.categories()
 
 
-def Links(md: QgsAbstractMetadataBase) -> List[links.Link]:
+def Links(md: QgsAbstractMetadataBase) -> list[links.Link]:
     return [links.Link(
         href=link.url(),
         media_type=link.mimeType(),

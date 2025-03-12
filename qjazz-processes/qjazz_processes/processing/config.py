@@ -3,8 +3,6 @@ from pathlib import Path
 from textwrap import dedent as _D
 from typing import (
     Annotated,
-    Dict,
-    List,
     Optional,
 )
 
@@ -70,7 +68,7 @@ class ProcessingConfig(ConfigBase):
             """,
         ),
     )
-    exposed_providers: List[str] = Field(
+    exposed_providers: list[str] = Field(
         default=['script', 'model'],
         title="Internal qgis providers exposed",
         description=_D(
@@ -203,7 +201,7 @@ class ProcessingConfig(ConfigBase):
         title="Project cache size",
         description="The maximum number of projects in cache by process.",
     )
-    qgis_settings: Dict[str, QgisSettingValue] = Field(
+    qgis_settings: dict[str, QgisSettingValue] = Field(
         default={},
         title="Qgis settings",
         description=(
@@ -214,7 +212,7 @@ class ProcessingConfig(ConfigBase):
         ),
     )
 
-    def settings(self) -> Dict[str, str]:
+    def settings(self) -> dict[str, str]:
         """Configure qgis processing settings
         """
         settings = self.qgis_settings.copy()

@@ -3,13 +3,9 @@ import sys
 
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
     Sequence,
-    Set,
-    Type,
     TypeAlias,
 )
 
@@ -75,7 +71,7 @@ class ParameterEnum(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterEnum,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -87,7 +83,7 @@ class ParameterEnum(InputParameter):
         multiple = param.allowMultiple()
 
         if multiple:
-            _type = Set[_type]  # type: ignore [misc]
+            _type = set[_type]  # type: ignore [misc]
 
         if not validation_only:
             default = field.get('default')
@@ -139,7 +135,7 @@ class ParameterEnum(InputParameter):
 # QgsProcessingParameterNumber
 #
 
-def set_number_minmax(param: QgsProcessingParameterNumber, field: Dict):
+def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
 
     minimum = param.minimum()
     maximum = param.maximum()
@@ -159,12 +155,12 @@ class ParameterNumber(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterNumber,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        _type: Type[float | int]
+        _type: type[float | int]
 
         set_number_minmax(param, field)
 
@@ -186,7 +182,7 @@ class ParameterNumber(InputParameter):
 class ParameterDistance(ParameterNumber):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterDistance) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterDistance) -> list[Metadata]:
         md = super(ParameterDistance, cls).metadata(param)
         md.append(MetadataLink(role="ogcType", href=OgcDataType['length'], title="length"))
 
@@ -232,7 +228,7 @@ class ParameterDistance(ParameterNumber):
 class ParameterScale(ParameterNumber):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterScale) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterScale) -> list[Metadata]:
         md = super(ParameterScale, cls).metadata(param)
         md.append(MetadataLink(role="ogcType", href=OgcDataType['scale'], title="scale"))
 
@@ -246,7 +242,7 @@ class ParameterScale(ParameterNumber):
 class ParameterDuration(ParameterNumber):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterDuration) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterDuration) -> list[Metadata]:
         md = super(ParameterDuration, cls).metadata(param)
         md.append(MetadataLink(role="ogcType", href=OgcDataType['time'], title="time"))
 
@@ -290,14 +286,14 @@ class ParameterRange(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterRange,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
 
         default = field.get('default')
 
-        _type: Type
+        _type: type
 
         match param.dataType():
             case NumberParameterType.Integer:
@@ -335,7 +331,7 @@ class ParameterColor(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterColor,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -381,7 +377,7 @@ class ParameterColor(InputParameter):
 class ParameterDatabaseSchema(ParameterString):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterDatabaseSchema) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterDatabaseSchema) -> list[Metadata]:
         md = super(ParameterDatabaseSchema, cls).metadata(param)
         parent_connection_param = param.parentConnectionParameterName()
         if parent_connection_param:
@@ -403,7 +399,7 @@ class ParameterDatabaseSchema(ParameterString):
 class ParameterDatabaseTable(ParameterString):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterDatabaseTable) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterDatabaseTable) -> list[Metadata]:
         md = super(ParameterDatabaseTable, cls).metadata(param)
         md.append(MetadataValue(role="allowNewTableNames", value=param.allowNewTableNames()))
 
@@ -445,7 +441,7 @@ class ParameterLayout(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterLayout,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -469,7 +465,7 @@ class ParameterLayoutItem(InputParameter):
     _ParameterType = str
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterLayoutItem) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterLayoutItem) -> list[Metadata]:
         md = super(ParameterLayoutItem, cls).metadata(param)
         parent_layout_parameter = param.parentLayoutParameterName()
         if parent_layout_parameter:

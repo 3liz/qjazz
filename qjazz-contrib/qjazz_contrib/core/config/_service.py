@@ -40,10 +40,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
     Optional,
-    Tuple,
     Type,
     TypeAlias,
     TypeVar,
@@ -72,7 +70,7 @@ getenv = os.getenv
 ConfigError = ValidationError
 
 
-def dict_merge(dct: Dict, merge_dct: Dict, model: Optional[BaseModel]):
+def dict_merge(dct: dict, merge_dct: dict, model: Optional[BaseModel]):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
@@ -94,7 +92,7 @@ def dict_merge(dct: Dict, merge_dct: Dict, model: Optional[BaseModel]):
             dct[k] = merge_dct[k]
 
 
-def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str, JsonValue]:
+def read_config(cfgfile: Path, loads: Callable[[str], dict], **kwds) -> dict[str, JsonValue]:
     """ Generic config reader
     """
     from string import Template
@@ -110,7 +108,7 @@ def read_config(cfgfile: Path, loads: Callable[[str], Dict], **kwds) -> Dict[str
         return loads(content)
 
 
-def read_config_toml(cfgfile: Path, **kwds) -> Dict:
+def read_config_toml(cfgfile: Path, **kwds) -> dict:
     """ Read toml configuration from file
     """
     from tomllib import loads
@@ -151,7 +149,7 @@ class ConfigSettings(BaseSettings):
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
             env_settings,
@@ -166,7 +164,7 @@ class ConfBuilder:
     # in order to propagate modification of the configuration
     #
 
-    _global_sections: ClassVar[Dict] = {}
+    _global_sections: ClassVar[dict] = {}
 
     _trace_output = TypeAdapter(bool).validate_python(
         os.getenv('PY_QGIS_CONFSERVICE_TRACE', 'no'),
@@ -191,7 +189,7 @@ class ConfBuilder:
 
     def _create_base_model(self) -> Type[BaseModel]:
         def _model(model):
-            assert_precondition(isinstance(model, Tuple))
+            assert_precondition(isinstance(model, tuple))
             match model:
                 case (m,):
                     return (m, m())
@@ -217,7 +215,7 @@ class ConfBuilder:
     def last_modified(self) -> float:
         return self._timestamp
 
-    def validate(self, obj: Dict) -> ConfigSettings:
+    def validate(self, obj: dict) -> ConfigSettings:
         """ Validate the configuration against
             configuration models
         """
@@ -230,7 +228,7 @@ class ConfBuilder:
         self._timestamp = time()
         return conf
 
-    def update_config(self, obj: Optional[Dict] = None) -> ConfigSettings:
+    def update_config(self, obj: Optional[dict] = None) -> ConfigSettings:
         """ Update the configuration
         """
         if self._model_changed or obj:
@@ -244,7 +242,7 @@ class ConfBuilder:
             self.validate(data)
         return self._conf
 
-    def json_schema(self) -> Dict[str, Any]:
+    def json_schema(self) -> dict[str, Any]:
         return self._get_model().model_json_schema()
 
     def dump_toml_schema(self, s: IO):

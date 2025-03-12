@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     ClassVar,
     Sequence,
-    Tuple,
     TypeAlias,
 )
 from urllib.parse import quote, urlencode
@@ -321,7 +320,7 @@ def add_layer_details(
     value: str,
     hint: LayerHint,
     context: QgsProcessingContext,
-) -> Tuple[QgsMapLayer, str]:
+) -> tuple[QgsMapLayer, str]:
     #
     # Create new layer details and call addLayerToLoadOnCompletion
     #

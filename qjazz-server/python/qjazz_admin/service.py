@@ -4,12 +4,10 @@ import traceback
 from contextlib import contextmanager
 from typing import (
     AsyncIterator,
-    Dict,
     Generator,
     Iterable,
     Iterator,
     Sequence,
-    Tuple,
 )
 
 from qjazz_contrib.core import config, logger  # noqa
@@ -25,8 +23,8 @@ class Service:
 
     def __init__(self, resolvers: ResolverConfig):
         self._config = resolvers
-        self._pools: Dict[str, PoolClient] = {}
-        self._sync_events: Tuple[asyncio.Event, ...] = ()
+        self._pools: dict[str, PoolClient] = {}
+        self._sync_events: tuple[asyncio.Event, ...] = ()
         self._shutdown = False
         self.update_pools()
 
@@ -100,7 +98,7 @@ class Service:
         """
         return iter(self._pools.values())
 
-    async def watch(self) -> AsyncIterator[Tuple[PoolClient, Sequence[Tuple[str, bool]]]]:
+    async def watch(self) -> AsyncIterator[tuple[PoolClient, Sequence[tuple[str, bool]]]]:
         """ Wait for state change in one of the worker
         """
         # See https://github.com/python/mypy/issues/4052

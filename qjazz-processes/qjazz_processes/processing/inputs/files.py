@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import (
     IO,
     Any,
-    Dict,
-    List,
     Optional,
     TypeAlias,
     Union,
@@ -62,7 +60,7 @@ class ParameterFile(InputParameter):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -166,7 +164,7 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
             self.output_extension = f".{ext}"
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterFileDestination, cls).metadata(param)
 
         formats = output_file_formats(param)
@@ -240,7 +238,7 @@ def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer:
     if ref.hreflang:
         headers['Accept-Language'] = ref.hreflang
 
-    kwargs: Dict = {}
+    kwargs: dict = {}
     if ref.body:
         kwargs.update(data=ref.body)
 

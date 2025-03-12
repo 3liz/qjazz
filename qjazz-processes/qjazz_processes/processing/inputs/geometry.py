@@ -4,9 +4,7 @@ import re
 from typing import (
     Annotated,
     Any,
-    Dict,
     Iterator,
-    List,
     Optional,
     Sequence,
     TypeAlias,
@@ -100,7 +98,7 @@ class ParameterGeometry(InputParameter):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -204,7 +202,7 @@ class ParameterCrs(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterCrs,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -256,7 +254,7 @@ class ParameterCoordinateOperation(InputParameter):
     _ParameterType = str
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterCoordinateOperation) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterCoordinateOperation) -> list[Metadata]:
         md = super(ParameterCoordinateOperation, cls).metadata(param)
 
         source_crs_param = param.sourceCrsParameterName()
@@ -319,7 +317,7 @@ class ParameterExtent(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterExtent,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:

@@ -1,6 +1,4 @@
 
-from typing import Dict, List
-
 from pydantic import Field
 
 from qjazz_contrib.core import config
@@ -55,8 +53,8 @@ def test_config_update():
     class Test(config.ConfigBase):
         foo: int = 2
         bar: Sub = Sub()
-        simple_list: List[str] = Field(['a', 'b'])
-        simple_dict: Dict[str, int] = Field({
+        simple_list: list[str] = Field(['a', 'b'])
+        simple_dict: dict[str, int] = Field({
             'a': 1,
             'b': 2,
         })

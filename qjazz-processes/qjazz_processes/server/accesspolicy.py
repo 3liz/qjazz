@@ -2,10 +2,8 @@
 from abc import abstractmethod
 from typing import (
     Annotated,
-    Dict,
     Optional,
     Protocol,
-    Type,
     runtime_checkable,
 )
 
@@ -41,7 +39,7 @@ class AccessPolicyConfig(ConfigBase):
             ),
         ),
     ]
-    config: Dict[str, JsonValue] = Field({})
+    config: dict[str, JsonValue] = Field({})
 
 
 class NoConfig(ConfigBase):
@@ -54,7 +52,7 @@ class NoConfig(ConfigBase):
 @runtime_checkable
 class AccessPolicy(Protocol):
 
-    Config: Type[ConfigBase] = NoConfig
+    Config: type[ConfigBase] = NoConfig
 
     executor: Executor
 

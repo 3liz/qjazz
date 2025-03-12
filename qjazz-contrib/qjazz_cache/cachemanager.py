@@ -48,12 +48,10 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from time import time
 from typing import (
-    Dict,
     Iterable,
     Iterator,
     Optional,
     Self,
-    Tuple,
     assert_never,
 )
 
@@ -155,7 +153,7 @@ class CacheManager:
             server: Optional[QgsServer] = None,
     ) -> None:
         self._config = config
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         # For debug metadata
         self._process = psutil.Process() if psutil else None
         self._server = server
@@ -212,10 +210,10 @@ class CacheManager:
         else:
             raise ResourceNotAllowed(str(path))
 
-    def locations(self, location: Optional[str] = None) -> Iterable[Tuple[str, Url]]:
+    def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """ List compatible search paths
         """
-        urls: Iterable[Tuple[str, Url]]
+        urls: Iterable[tuple[str, Url]]
         if location:
             url = self.conf.search_paths.get(location)
             if not url:
@@ -230,7 +228,7 @@ class CacheManager:
 
         return urls
 
-    def collect_projects(self, location: Optional[str] = None) -> Iterator[Tuple[ProjectMetadata, str]]:
+    def collect_projects(self, location: Optional[str] = None) -> Iterator[tuple[ProjectMetadata, str]]:
         """ Collect projects metadata from search paths
 
             Yield tuple of (entry, public_path) for all found  entries
@@ -243,7 +241,7 @@ class CacheManager:
             except Exception:
                 logger.error(traceback.format_exc())
 
-    def checkout(self, url: Url) -> Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
+    def checkout(self, url: Url) -> tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
         """ Checkout status of project from url
 
             Returned status:
@@ -260,7 +258,7 @@ class CacheManager:
             - `(ProjectMetadata, CheckoutStatus.NEW)`
             - `(None, CheckoutStatus.NOTFOUND)`
         """
-        retval: Tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]
+        retval: tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]
         handler = self.get_protocol_handler(url.scheme)
         try:
             md = handler.project_metadata(url)
@@ -282,7 +280,7 @@ class CacheManager:
 
         return retval
 
-    def checkout_entry(self, entry: CacheEntry) -> Tuple[CacheEntry, CheckoutStatus]:
+    def checkout_entry(self, entry: CacheEntry) -> tuple[CacheEntry, CheckoutStatus]:
         """ Checkout from existing entry
         """
         handler = self.get_protocol_handler(entry.scheme)
@@ -302,7 +300,7 @@ class CacheManager:
         md: ProjectMetadata,
         status: CheckoutStatus,
         handler: Optional[ProtocolHandler] = None,
-    ) -> Tuple[CacheEntry, CheckoutStatus]:
+    ) -> tuple[CacheEntry, CheckoutStatus]:
         """ Update cache entry according to status
 
             * `NEW`: (re)load existing project
@@ -380,7 +378,7 @@ class CacheManager:
             ),
         )
 
-    def update_cache(self) -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
+    def update_cache(self) -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
         """ Update all entries in cache
 
             Yield updated cache entries
@@ -413,7 +411,7 @@ class CacheManager:
         """
         return iter(self._cache.values())
 
-    def checkout_iter(self) -> Iterator[Tuple[CacheEntry, CheckoutStatus]]:
+    def checkout_iter(self) -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
         """ Iterate and checkout over all cache entries
         """
         return (self.checkout_entry(e) for e in self.iter())

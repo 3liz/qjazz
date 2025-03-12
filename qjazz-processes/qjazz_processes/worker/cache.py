@@ -5,8 +5,6 @@ import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import (
-    Dict,
-    List,
     Optional,
     Protocol,
     cast,
@@ -35,13 +33,13 @@ POLL_TIMEOUT = 5.
 
 class ProcessCacheProto(Protocol):
     @property
-    def processes(self) -> Dict:
+    def processes(self) -> dict:
         ...
 
     def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:
         ...
 
-    def update(self) -> List[ProcessSummary]:
+    def update(self) -> list[ProcessSummary]:
         ...
 
     def start(self) -> None:
@@ -55,8 +53,8 @@ class ProcessCache(mp.Process):
 
     def __init__(self, config: ProcessingConfig) -> None:
         super().__init__(name="process_cache", daemon=True)
-        self._descriptions: Dict[str, ProcessDescription] = {}
-        self._processes: List[ProcessSummary] = []
+        self._descriptions: dict[str, ProcessDescription] = {}
+        self._processes: list[ProcessSummary] = []
         self._known_processes: set[str] = set()
         self._processing_config = config
 
@@ -67,7 +65,7 @@ class ProcessCache(mp.Process):
         return self._processing_config
 
     @property
-    def processes(self) -> Dict:
+    def processes(self) -> dict:
         return ProcessSummaryList.dump_python(self._processes, mode='json', exclude_none=True)
 
     def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:
@@ -95,7 +93,7 @@ class ProcessCache(mp.Process):
 
         return description.model_dump(mode='json', exclude_none=True)
 
-    def update(self) -> List[ProcessSummary]:
+    def update(self) -> list[ProcessSummary]:
         """ Update process summary list
         """
         if not self.is_alive():
@@ -105,7 +103,7 @@ class ProcessCache(mp.Process):
 
         self._sender.send((MsgType.UPDATE,))
         if self._sender.poll(POLL_TIMEOUT):
-            self._processes = cast(List[ProcessSummary], self._sender.recv())
+            self._processes = cast(list[ProcessSummary], self._sender.recv())
         else:
             raise RuntimeError("Failed to update process descriptions")
 
@@ -163,5 +161,5 @@ class ProcessCache(mp.Process):
         ...
 
     @abstractmethod
-    def _update(self) -> List[ProcessSummary]:
+    def _update(self) -> list[ProcessSummary]:
         ...

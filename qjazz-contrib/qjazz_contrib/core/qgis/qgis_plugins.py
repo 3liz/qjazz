@@ -20,14 +20,10 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Dict,
     Iterator,
-    List,
     Literal,
     Optional,
     Self,
-    Set,
-    Tuple,
     Type,
     assert_never,
     cast,
@@ -71,7 +67,7 @@ def _default_plugin_path() -> Path:
     )
 
 
-def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
+def _validate_plugins_paths(paths: list[Path], _: ValidationInfo) -> list[Path]:
     if not paths:
         path_env = os.getenv("QGIS_PLUGINPATH")
         if path_env:
@@ -89,7 +85,7 @@ def _validate_plugins_paths(paths: List[Path], _: ValidationInfo) -> List[Path]:
 
 class QgisPluginConfig(config.ConfigBase):
     paths: Annotated[
-        List[Path],
+        list[Path],
         AfterValidator(_validate_plugins_paths),
     ] = Field(
         default=[],
@@ -103,7 +99,7 @@ class QgisPluginConfig(config.ConfigBase):
             "variable will be checked."
         ),
     )
-    install: Optional[Set[str]] = Field(
+    install: Optional[set[str]] = Field(
         default=None,
         title="Installable plugins",
         description=(
@@ -149,7 +145,7 @@ class QgisPluginConfig(config.ConfigBase):
     )
 
 
-JsonDict = Dict[str, JsonValue]
+JsonDict = dict[str, JsonValue]
 
 
 @dataclass(frozen=True)
@@ -182,8 +178,8 @@ class QgisPluginService:
 
     def __init__(self, config: QgisPluginConfig) -> None:
         self._config = config
-        self._plugins: Dict[str, Plugin] = {}
-        self._providers: List[str] = []
+        self._plugins: dict[str, Plugin] = {}
+        self._providers: list[str] = []
 
     @property
     def plugins(self) -> Iterator[Plugin]:
@@ -281,7 +277,7 @@ class QgisPluginService:
 def find_plugins(
     path: Path | str,
     plugin_type: PluginType,
-) -> Iterator[Tuple[str, configparser.ConfigParser]]:
+) -> Iterator[tuple[str, configparser.ConfigParser]]:
     """ return list of plugins in given path
     """
     path = Path(path)

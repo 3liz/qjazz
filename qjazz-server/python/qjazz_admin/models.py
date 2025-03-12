@@ -7,15 +7,11 @@ from pydantic import (  # noqa
     ValidationError,
     WithJsonSchema,
 )
-from typing import (  # noqa
+from typing import (
     Annotated,
-    Dict,
-    List,
     Literal,
     Optional,
     Self,
-    Set,
-    Type,
 )
 
 from qjazz_contrib.core.models import (
@@ -54,21 +50,21 @@ class BackendStatus(JsonModel):
 class PoolBackendsResponse(JsonModel):
     label: str
     address: str
-    backends: List[BackendStatus]
+    backends: list[BackendStatus]
 
 
 @swagger.model
 class PoolInfos(JsonModel):
     label: str
     address: str
-    backends: List[str]
+    backends: list[str]
     title: str
     description: Optional[str]
 
-    links: List[swagger.Link]
+    links: list[swagger.Link]
 
     @classmethod
-    def _from_pool(cls: Type[Self], pool: PoolClient, links: List[swagger.Link]) -> Self:
+    def _from_pool(cls: type[Self], pool: PoolClient, links: list[swagger.Link]) -> Self:
         return cls(
             label=pool.label,
             address=pool.address,
@@ -80,7 +76,7 @@ class PoolInfos(JsonModel):
 
 
 PoolListResponse = swagger.model(
-    TypeAdapter(List[PoolInfos]),
+    TypeAdapter(list[PoolInfos]),
     name="PoolListResponse",
 )
 
@@ -126,7 +122,7 @@ class CacheItem(JsonModel):
     status: str
     storage: str
     uri: str
-    debug_metadata: Optional[Dict[str, str]]
+    debug_metadata: Optional[dict[str, str]]
     timestamp: int
     last_hit: int
     hits: int
@@ -134,11 +130,11 @@ class CacheItem(JsonModel):
 
 @swagger.model
 class CacheItemPool(JsonModel):
-    pool: Dict[str, CacheItem]
-    links: List[swagger.Link]
+    pool: dict[str, CacheItem]
+    links: list[swagger.Link]
 
 
 StringList = swagger.model(
-    TypeAdapter(List[str]),
+    TypeAdapter(list[str]),
     name="StringList",
 )

@@ -3,9 +3,7 @@
 from typing import (
     Annotated,
     Any,
-    Dict,
     Generic,
-    List,
     Optional,
     Self,
     TypeAlias,
@@ -84,11 +82,11 @@ class InputParameter(Generic[T]):
             return None
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> List[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         return [MetadataValue(role="typeName", value=param.type())]
 
     @classmethod
-    def keywords(cls, param: ParameterDefinition) -> List[str]:
+    def keywords(cls, param: ParameterDefinition) -> list[str]:
         return []
 
     def value_passing(self) -> ValuePassing:
@@ -121,7 +119,7 @@ class InputParameter(Generic[T]):
         validation_only: bool = False,
     ) -> TypeAlias:
 
-        field: Dict = {}
+        field: dict = {}
 
         if not validation_only:
             default = cls.default_value(param)
@@ -136,7 +134,7 @@ class InputParameter(Generic[T]):
     def create_model(
         cls,
         param: ParameterDefinition,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -166,7 +164,7 @@ class InputParameter(Generic[T]):
         """
         param = self._param
 
-        kwargs: Dict[str, Any] = {}
+        kwargs: dict[str, Any] = {}
 
         if self.optional:
             kwargs.update(min_occurs=0)

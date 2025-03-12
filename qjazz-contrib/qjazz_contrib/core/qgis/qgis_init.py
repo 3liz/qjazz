@@ -8,7 +8,7 @@ import os
 import sys
 
 from pathlib import Path
-from typing import Dict, Iterator, Optional, no_type_check
+from typing import Iterator, Optional, no_type_check
 
 import qgis
 
@@ -47,7 +47,7 @@ def exit_qgis_application():
 @no_type_check
 def setup_qgis_application(
     *,
-    settings: Optional[Dict[str, str]] = None,
+    settings: Optional[dict[str, str]] = None,
     cleanup: bool = False,
     logprefix: str = 'Qgis:',
     server_settings: bool = False,
@@ -182,7 +182,7 @@ def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
 
 
 def load_qgis_settings(
-    settings: Optional[Dict[str, str]],
+    settings: Optional[dict[str, str]],
     *,
     server_settings: bool = False,
     allow_python_embedded: bool = False,

@@ -4,7 +4,6 @@ import traceback
 from importlib import resources
 from pathlib import Path
 from typing import (
-    Dict,
     Optional,
     cast,
 )
@@ -72,7 +71,7 @@ def forwarded_for(request):
 
 def cors_options_headers(
     request: web.Request,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     allow_headers: Optional[str] = None,
 ):
     """  Set correct headers for 'OPTIONS' method
@@ -243,7 +242,7 @@ def serve(conf: ConfigProto):
 
     app['config'] = http
 
-    listen: Dict
+    listen: dict
 
     match http.listen:
         case (str(address), port):

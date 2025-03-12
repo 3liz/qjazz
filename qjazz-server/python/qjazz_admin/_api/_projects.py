@@ -1,6 +1,4 @@
 # import traceback
-from typing import Dict, List
-
 from aiohttp import web
 from pydantic import BaseModel
 
@@ -30,12 +28,12 @@ class ProjectInfo(BaseModel):
     lastModified: str
     storage: str
     hasBadLayers: bool
-    layers: List[LayerInfos]
+    layers: list[LayerInfos]
     cacheId: str
     serverAddress: str
 
 
-def cache_item_pool_response(response: Dict[str, Dict], links: List[swagger.Link] = []) -> str:
+def cache_item_pool_response(response: dict[str, dict], links: list[swagger.Link] = []) -> str:
     return CacheItemPool.validate({'pool': response, 'links': links}).model_dump_json()
 
 

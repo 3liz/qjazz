@@ -5,7 +5,6 @@ from pydantic import TypeAdapter
 from pydantic.config import JsonDict
 from typing_extensions import (
     Any,
-    Dict,
     Optional,
     TypeAlias,
 )
@@ -31,7 +30,7 @@ def model_description(
     """
     schema = TypeAdapter(annotated).json_schema(by_alias=True)
 
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
     if optional:
         kwargs.update(min_occurs=0)
 

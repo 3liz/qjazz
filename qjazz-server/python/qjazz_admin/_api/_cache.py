@@ -1,5 +1,5 @@
 # import traceback
-from typing import Annotated, Dict, List
+from typing import Annotated
 
 from aiohttp import web
 from pydantic import (
@@ -33,20 +33,20 @@ class CatalogItem(BaseModel):
 
 
 CatalogResponse = swagger.model(
-    TypeAdapter(List[CatalogItem]),
+    TypeAdapter(list[CatalogItem]),
     name="CatalogResponse",
 )
 
 
-CacheContentResponse: TypeAdapter[Dict[str, CacheItemPool]] = swagger.model(
-    TypeAdapter(Dict[str, CacheItemPool]),
+CacheContentResponse: TypeAdapter[dict[str, CacheItemPool]] = swagger.model(
+    TypeAdapter(dict[str, CacheItemPool]),
     name="CacheContentResponse",
 )
 
 
 def cache_content_response(
     request: web.Request,
-    label: str, response: Dict[str, JsonValue],
+    label: str, response: dict[str, JsonValue],
 ) -> Json:
     return CacheContentResponse.dump_json(
         CacheContentResponse.validate_python({

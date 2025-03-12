@@ -3,11 +3,9 @@ import traceback
 from dataclasses import dataclass
 from enum import Flag
 from typing import (
-    Dict,
     Iterator,
     Optional,
     Self,
-    Tuple,
     cast,
 )
 from urllib.parse import urlsplit
@@ -51,7 +49,7 @@ class FastLoaderConfig:
 class CatalogItem:
     public_path: str
     md: ProjectMetadata
-    layers: Dict[str, OgcEndpoints]
+    layers: dict[str, OgcEndpoints]
     coll: Collection
 
 
@@ -73,7 +71,7 @@ class Catalog:
     """ Handle Qgis project's catalog
     """
     def __init__(self) -> None:
-        self._catalog: Dict[str, CatalogItem] = {}
+        self._catalog: dict[str, CatalogItem] = {}
         self._schema = Collection.model_json_schema()
 
     def update_items(self, cm: CacheManager, pinned: bool = False) -> Iterator[CatalogItem]:
@@ -139,7 +137,7 @@ class Catalog:
 #
 # Collect layer infos
 #
-def collect_layers(p: QgsProject) -> Iterator[Tuple[str, OgcEndpoints]]:
+def collect_layers(p: QgsProject) -> Iterator[tuple[str, OgcEndpoints]]:
     """ Collect layers and corresponding OgcEndpoint
     """
     from qgis.server import QgsServerProjectUtils

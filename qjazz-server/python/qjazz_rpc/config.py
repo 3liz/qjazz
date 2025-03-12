@@ -1,7 +1,4 @@
-from typing import (
-    Annotated,
-    Dict,
-)
+from typing import Annotated
 
 from pydantic import BeforeValidator, Field
 
@@ -85,7 +82,7 @@ class QgisConfig(config.ConfigBase):
         title="Maximum chunk size",
         description="Set the maximum chunk size for streamed responses.",
     )
-    qgis_settings: Dict[str, QgisSettingValue] = Field(
+    qgis_settings: dict[str, QgisSettingValue] = Field(
         default={},
         title="Qgis settings",
         description=(

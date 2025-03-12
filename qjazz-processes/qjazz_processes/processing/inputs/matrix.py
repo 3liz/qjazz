@@ -2,8 +2,6 @@
 from typing import (
     Annotated,
     Any,
-    Dict,
-    List,
     Optional,
     Sequence,
     TypeAlias,
@@ -70,7 +68,7 @@ def get_default_value(param, default, project, rows, cols):
 class ParameterMatrix(InputParameter):
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterMatrix) -> List[Metadata]:
+    def metadata(cls, param: QgsProcessingParameterMatrix) -> list[Metadata]:
         md = super(ParameterMatrix, cls).metadata(param)
         fixed = param.hasFixedNumberRows()
         md.append(MetadataValue(role="hasFixedNumberRows", value=fixed))
@@ -82,7 +80,7 @@ class ParameterMatrix(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterMatrix,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
@@ -124,7 +122,7 @@ class ParameterMatrix(InputParameter):
     def value(
         self, inp: JsonValue,
         context: Optional[ProcessingContext] = None,
-    ) -> List:
+    ) -> list:
 
         _value = self.validate(inp)
         # Flatten the returned data as required

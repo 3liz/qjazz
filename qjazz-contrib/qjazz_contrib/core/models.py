@@ -3,7 +3,6 @@ from textwrap import dedent
 from typing import (
     Annotated,
     Any,
-    Dict,
     TypeAlias,
     TypeVar,
     cast,
@@ -39,7 +38,7 @@ model_json_properties = dict(
     populate_by_name=True,
 )
 
-JsonDict: TypeAlias = Dict[str, JsonValue]
+JsonDict: TypeAlias = dict[str, JsonValue]
 
 
 # Ensure that union type use `OneOf` in schema

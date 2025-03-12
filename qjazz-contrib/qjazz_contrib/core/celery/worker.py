@@ -7,11 +7,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Iterator,
     Optional,
-    Tuple,
-    Type,
     TypeAlias,
 )
 
@@ -49,7 +46,7 @@ class Worker(Celery):
         # for task routing
 
         self._name = name
-        self._job_context: Dict[str, Any] = {}
+        self._job_context: dict[str, Any] = {}
 
         # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
         self.conf.worker_prefetch_multiplier = 1
@@ -126,7 +123,7 @@ class _Dict(dict):
 
 class Job(celery.Task):
 
-    _worker_job_context: ClassVar[Dict] = {}
+    _worker_job_context: ClassVar[dict] = {}
 
     # To be set in decorator
     run_context: bool = False
@@ -244,13 +241,13 @@ class RunConfig(BaseModel, frozen=True, extra='ignore'):
     pass
 
 
-def create_job_run_config(wrapped: Callable) -> Tuple[Type[RunConfig], TypeAdapter]:
+def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapter]:
     """ Build a RunConfig from fonction signature
     """
     s = inspect.signature(wrapped)
     qualname = wrapped.__qualname__
 
-    def _models() -> Iterator[Tuple[str, Any]]:
+    def _models() -> Iterator[tuple[str, Any]]:
         for p in s.parameters.values():
             match p.kind:
                 case p.POSITIONAL_ONLY | p.VAR_POSITIONAL | p.VAR_KEYWORD:

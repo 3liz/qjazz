@@ -7,7 +7,6 @@ from typing import (
     Optional,
     Self,
     Sequence,
-    Tuple,
     TypeAlias,
 )
 
@@ -205,7 +204,7 @@ class ProcessAlgorithm:
         request: JobExecute,
         feedback: QgsProcessingFeedback,
         context: ProcessingContext,
-    ) -> Tuple[
+    ) -> tuple[
             Mapping[str, Any],
             Mapping[str, InputParameterDef],
             Sequence[OutputParameterDef],

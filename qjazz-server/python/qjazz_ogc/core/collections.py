@@ -9,10 +9,7 @@
 #
 #
 from datetime import datetime as DateTimeType
-from typing import (
-    List,
-    Sequence,
-)
+from typing import Sequence
 
 from qjazz_contrib.core.models import (
     Field,
@@ -27,7 +24,7 @@ class Collection(collection.Collection):
 
     # XXX Check specs for this, this is totally unclear how it relates
     # to spatial extent `crs`
-    crs: Opt[List[Crs]] = Field(
+    crs: Opt[list[Crs]] = Field(
         default=[CRS84],
         description="""
             the list of coordinate reference systems supported by the API;

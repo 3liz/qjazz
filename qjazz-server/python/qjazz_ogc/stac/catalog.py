@@ -4,7 +4,6 @@ STAC Catalog definition
 See https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md
 """
 from typing import (
-    List,
     Literal,
     Sequence,
 )
@@ -30,7 +29,7 @@ class CatalogBase(JsonModel):
     title: Opt[str] = Field(description="human readable title of the collection")
     description: str = Field("", description="human readable title of the collection")
 
-    links: List[Link] = Field([])
+    links: list[Link] = Field([])
 
 
 class Catalog(CatalogBase):

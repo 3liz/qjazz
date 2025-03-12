@@ -26,7 +26,6 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import (
-    Dict,
     Iterator,
     Optional,
     cast,
@@ -113,7 +112,7 @@ class S3ProtocolHandler(ProtocolHandler):
         )
 
         self._download_dir = conf.download_dir
-        self._tmpdirs: Dict[str, TemporaryDirectory] = {}
+        self._tmpdirs: dict[str, TemporaryDirectory] = {}
         self._configured = False
 
     def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):

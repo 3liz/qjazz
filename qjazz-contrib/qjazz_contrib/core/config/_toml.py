@@ -34,7 +34,7 @@ def _to_string(v: str | bool | int | float) -> str:
         case int(n) | float(n):
             return f"{n}"
         case _:
-            return f'"{str(v)}"'
+            return f'"{v!s}"'
 
 
 def _field_default_repr(field: FieldInfo) -> str:
@@ -154,7 +154,6 @@ def _dump_section(
         print(file=s)
         _print_field_doc(s, field)
         print("#", file=s)
-        #_dump_model(s, model, name, comment=comment)
         _dump_section(s, model, name, comment=comment, is_list=as_list)
 
 
@@ -181,7 +180,7 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
                     assert_precondition(_is_model(m))
                     print(file=s)
                     _dump_model(s, m, f"[[{name}]]", comment=True)
-        elif a.__name__ == 'Dict':
+        elif a.__name__.lower() == 'dict':
             arg = a.__args__[1]
             # Only print base model arguments
             if _is_model(arg):

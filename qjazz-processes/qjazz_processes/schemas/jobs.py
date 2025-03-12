@@ -5,8 +5,6 @@
 from datetime import datetime
 from typing import (
     ClassVar,
-    Dict,
-    List,
     Literal,
     Optional,
     TypeAlias,
@@ -79,7 +77,7 @@ class JobStatus(JsonModel):
 
     exception: Optional[JobException] = Null
 
-    links: List[LinkHttp] = Field([])
+    links: list[LinkHttp] = Field([])
 
     #
     # Extra
@@ -97,8 +95,8 @@ class Output(JsonModel):
 
 
 class JobExecute(JsonModel):
-    inputs: Dict[str, JsonValue] = Field(default={})
-    outputs: Dict[str, Output] = Field(default={})
+    inputs: dict[str, JsonValue] = Field(default={})
+    outputs: dict[str, Output] = Field(default={})
 
 
-JobResults: TypeAlias = Dict[str, JsonValue]
+JobResults: TypeAlias = dict[str, JsonValue]

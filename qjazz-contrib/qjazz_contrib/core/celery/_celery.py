@@ -1,9 +1,7 @@
 from typing import (
     ClassVar,
-    Dict,
     Optional,
     Sequence,
-    Tuple,
 )
 
 import celery
@@ -108,7 +106,7 @@ class CeleryConfig(ConfigBase):
     )
 
     # Enable autoscaling
-    autoscale: Optional[Tuple[NonNegativeInt, NonNegativeInt]] = Field(
+    autoscale: Optional[tuple[NonNegativeInt, NonNegativeInt]] = Field(
         default=None,
         title="Autoscale",
         description="Activate concurrency autoscaling",
@@ -214,7 +212,7 @@ class Celery(celery.Celery):
             )
             self.setup_security()
 
-    def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Sequence[Dict]:
+    def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Sequence[dict]:
         """ Return active worker's run configs
         """
         return self.control.broadcast(

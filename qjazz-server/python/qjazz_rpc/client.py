@@ -9,9 +9,7 @@ from pathlib import Path
 from time import sleep, time
 from typing import (
     Generator,
-    List,
     Optional,
-    Type,
     TypeVar,
     overload,
 )
@@ -36,9 +34,9 @@ S = TypeVar("S")
 @contextmanager
 def channel(
     address: str,
-    stub: Type[S],
+    stub: type[S],
     ssl: Optional[SSLConfig] = None,
-    channel_options: Optional[List] = None,
+    channel_options: Optional[list] = None,
 ) -> Generator[S, None, None]:
     # Return a synchronous client channel
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -83,14 +81,14 @@ def MessageToJson(msg: Message) -> str:
 
 @overload
 def connect(
-    stub: Type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
+    stub: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
 ) -> AbstractContextManager[qjazz_pb2_grpc.QgisAdminStub]:
     ...
 
 
 @overload
 def connect(
-    stub: Type[qjazz_pb2_grpc.QgisServerStub],
+    stub: type[qjazz_pb2_grpc.QgisServerStub],
 ) -> AbstractContextManager[qjazz_pb2_grpc.QgisServerStub]:
     ...
 
@@ -173,7 +171,7 @@ def ows_request(
     service: str,
     request: str,
     version: Optional[str],
-    param: List[str],
+    param: list[str],
     headers: bool,
     output: Optional[str],
     url: Optional[str],
@@ -224,7 +222,7 @@ def api_request(
     name: str,
     path: str,
     target: Optional[str],
-    param: List[str],
+    param: list[str],
     headers: bool,
     output: Optional[str],
     url: Optional[str],

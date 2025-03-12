@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from typing import Optional, Type
+from typing import Optional
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -86,7 +86,7 @@ OutputParameterDef = OutputParameterBase
 class _OutputParameter:
 
     @classmethod
-    def get(cls, out: OutputDefinition) -> Type[OutputParameterDef]:
+    def get(cls, out: OutputDefinition) -> type[OutputParameterDef]:
         Output = OutputTypes.get(out.type())
         if Output is None:
             raise ValueError(f"Unsupported input parameter: {out}")

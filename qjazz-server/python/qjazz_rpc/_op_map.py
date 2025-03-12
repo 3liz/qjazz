@@ -2,7 +2,7 @@
 # OGC api 'map' request
 #
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterator
+from typing import Any, Callable, Iterator
 from urllib.parse import parse_qs
 
 from qgis.core import (
@@ -57,7 +57,7 @@ def visible_layers(p: QgsProject) -> Iterator[str]:
 
 @dataclass
 class MapRequest:
-    headers: Dict[str, str]
+    headers: dict[str, str]
     options: str
 
 
@@ -73,7 +73,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
     """
 
     params: Any = parse_qs(options)
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
 
     logger.debug("Preparing map request: %s", params)
 

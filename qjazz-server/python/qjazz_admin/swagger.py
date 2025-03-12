@@ -6,12 +6,8 @@ import sys  # noqa
 
 from inspect import isclass
 from typing import (
-    Dict,
-    List,
     Literal,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -29,11 +25,11 @@ from pydantic import (
 
 from qjazz_contrib.core.models import JsonModel
 
-_Model = Union[Type[BaseModel], TypeAdapter]
+_Model = Union[type[BaseModel], TypeAdapter]
 
 M = TypeVar("M", bound=_Model)
 
-_models: List[Tuple[str, _Model]] = []
+_models: list[tuple[str, _Model]] = []
 
 oapi_title = "Py-Qgis services admin"
 oapi_description = "Manage Py-Qgis services clusters"
@@ -91,9 +87,9 @@ class OpenApiDocument(JsonModel):
     """ Swagger/OpenApi document
     """
     openapi: str = oapi_version
-    paths: Dict[str, Json]
-    definitions: Dict[str, Json]
-    tags: List[Tag]
+    paths: dict[str, Json]
+    definitions: dict[str, Json]
+    tags: list[Tag]
     info: Info
 
 
@@ -109,7 +105,7 @@ def model(model: M, name: Optional[str] = None) -> M:
     return model
 
 
-def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]:  # noqa: RUF027
+def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:  # noqa: RUF027
     """ Build schema definitions dictionnary from models
     """
     schema_definitions = {}
@@ -145,14 +141,14 @@ def _get_method_names_for_handler(route):
         }
 
 
-def paths(app: web.Application) -> Dict:
+def paths(app: web.Application) -> dict:
     """ Extract swagger doc from aiohttp routes handlers
     """
     import ruamel.yaml
 
     yaml = ruamel.yaml.YAML()
 
-    paths: Dict[str, Dict[str, str]] = {}
+    paths: dict[str, dict[str, str]] = {}
     for route in app.router.routes():
 
         methods = {}
@@ -191,7 +187,7 @@ def paths(app: web.Application) -> Dict:
     return paths
 
 
-def doc(app: web.Application, tags: List[Tag], api_version: str) -> OpenApiDocument:
+def doc(app: web.Application, tags: list[Tag], api_version: str) -> OpenApiDocument:
     return OpenApiDocument(
         paths={k: json.dumps(v) for k, v in paths(app).items()},
         definitions={k: json.dumps(v) for k, v in schemas().items()},

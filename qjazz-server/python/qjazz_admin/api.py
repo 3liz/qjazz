@@ -1,8 +1,6 @@
 import asyncio
 import traceback
 
-from typing import Dict
-
 from aiohttp import WSMsgType, web
 from pydantic import BaseModel
 
@@ -20,7 +18,7 @@ from .pool import PoolClient
 class WatchResponse(BaseModel):
     label: str
     address: str
-    backend_status: Dict[str, bool]
+    backend_status: dict[str, bool]
 
 
 class Handlers(

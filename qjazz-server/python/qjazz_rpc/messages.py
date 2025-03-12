@@ -6,15 +6,11 @@ from typing import (
     Annotated,
     Any,
     ByteString,
-    Dict,
     Iterable,
-    List,
     Literal,
     NewType,
     Optional,
     Protocol,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -65,7 +61,7 @@ class MsgModel(BaseModel, frozen=True):
 
 
 class Response(BaseModel):
-    def dump_response(self) -> Dict:
+    def dump_response(self) -> dict:
         return self.model_dump(mode='json', by_alias=True)
 
 
@@ -75,7 +71,7 @@ class Response(BaseModel):
 class RequestReply(Response):
     status_code: int
     checkout_status: Optional[int]
-    headers: List[Tuple[str, str]] = Field([])
+    headers: list[tuple[str, str]] = Field([])
     cache_id: str = ""
 
 
@@ -90,7 +86,7 @@ class OwsRequestMsg(MsgModel):
     version: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: List[Tuple[str, str]] = Field([])
+    headers: list[tuple[str, str]] = Field([])
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
     content_type: Optional[str] = None
@@ -112,7 +108,7 @@ class ApiRequestMsg(MsgModel):
     target: Optional[str] = None
     direct: bool = False
     options: Optional[str] = None
-    headers: List[Tuple[str, str]] = Field([])
+    headers: list[tuple[str, str]] = Field([])
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
     debug_report: bool = False
@@ -140,7 +136,7 @@ class CollectionsItem(Response):
 class CollectionsPage(Response):
     schema_: str = Field(alias="schema")
     next: bool
-    items: List[CollectionsItem]
+    items: list[CollectionsItem]
 
 
 #
@@ -168,7 +164,7 @@ class CacheInfo(Response):
     storage: Optional[str] = None
     last_modified: Optional[str] = None
     saved_version: Optional[str] = None
-    debug_metadata: Dict[str, int] = Field({})
+    debug_metadata: dict[str, int] = Field({})
     last_hit: int = 0
     hits: int = 0
     pinned: bool = False
@@ -248,7 +244,7 @@ class ProjectInfo(Response):
     last_modified: str
     storage: Optional[str]
     has_bad_layers: bool
-    layers: List[LayerInfo]
+    layers: list[LayerInfo]
     cache_id: str = ""
 
 
@@ -266,7 +262,7 @@ class GetConfigMsg(MsgModel):
 
 class PutConfigMsg(MsgModel):
     msg_id: Literal[MsgType.PUT_CONFIG] = MsgType.PUT_CONFIG
-    config: Optional[Dict | str] = None
+    config: Optional[dict | str] = None
 
 
 #
@@ -331,7 +327,7 @@ Message = Annotated[
 MessageAdapter: TypeAdapter[Message] = TypeAdapter(Message)
 
 
-Envelop = NewType('Envelop', Tuple[int, Any])
+Envelop = NewType('Envelop', tuple[int, Any])
 
 
 class Connection(Protocol):
@@ -375,7 +371,7 @@ def send_nodata(conn: Connection):
 # side, otherwise cpu goes wild.
 
 
-def cast_into[T](o: Any, t: Type[T]) -> T:  # noqa ANN401
+def cast_into[T](o: Any, t: type[T]) -> T:  # noqa ANN401
     if not isinstance(o, t):
         raise ValueError(f"Cast failed, Expecting {t}, not {type(o)}")
     return o

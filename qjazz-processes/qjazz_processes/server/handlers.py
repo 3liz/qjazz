@@ -1,6 +1,6 @@
 from importlib import resources
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from aiohttp import web
 
@@ -43,7 +43,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
         self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
 
     @property
-    def routes(self) -> List[web.RouteDef]:
+    def routes(self) -> list[web.RouteDef]:
         prefix = self._accesspolicy.prefix
         _routes = [
             # Processes

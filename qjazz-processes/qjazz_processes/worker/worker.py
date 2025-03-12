@@ -8,9 +8,7 @@ from itertools import chain
 from time import time
 from typing import (
     Callable,
-    Dict,
     Iterator,
-    List,
     Optional,
     Sequence,
     cast,
@@ -90,7 +88,7 @@ def reload_processes_cache(_state):
 
 
 @inspect_command()
-def list_processes(_state) -> Dict:
+def list_processes(_state) -> dict:
     """Return processes list
     """
     app = cast(QgisWorker, _state.consumer.app)
@@ -103,7 +101,7 @@ def list_processes(_state) -> Dict:
 @inspect_command(
     args=[('ident', str), ('project_path', str)],
 )
-def describe_process(_state, ident: str, project_path: str | None) -> Dict | None:
+def describe_process(_state, ident: str, project_path: str | None) -> dict | None:
     """Return process description
     """
     app = cast(QgisWorker, _state.consumer.app)
@@ -114,7 +112,7 @@ def describe_process(_state, ident: str, project_path: str | None) -> Dict | Non
 
 
 @inspect_command()
-def presence(_state) -> Dict:
+def presence(_state) -> dict:
     """Returns informations about the service
     """
     app = cast(QgisWorker, _state.consumer.app)
@@ -229,7 +227,7 @@ class QgisWorker(Worker):
 
         self._cleanup_interval = conf.worker.cleanup_interval
         self._shutdown_event = Event()
-        self._periodic_tasks: List[PeriodicTask] = []
+        self._periodic_tasks: list[PeriodicTask] = []
 
         self._service_name = service_name
         self._service_title = conf.worker.title

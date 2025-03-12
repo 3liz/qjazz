@@ -1,7 +1,7 @@
 """ Postgres storage handler
 """
 from pathlib import Path
-from typing import Annotated, Dict, Optional
+from typing import Annotated, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from pydantic import (
@@ -18,7 +18,7 @@ from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
 from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
 
-def _parameters(url: Url | AnyUrl) -> Dict[str, str]:
+def _parameters(url: Url | AnyUrl) -> dict[str, str]:
     return dict(parse_qsl(url.query))
 
 

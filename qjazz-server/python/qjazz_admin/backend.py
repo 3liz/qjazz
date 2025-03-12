@@ -7,11 +7,8 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import (
     AsyncGenerator,
     AsyncIterator,
-    Dict,
     Optional,
     Self,
-    Tuple,
-    Type,
     overload,
 )
 
@@ -42,7 +39,7 @@ CHANNEL_OPTIONS = [
 
 
 class BackendConfig(config.ConfigBase):
-    server_address: Tuple[IPvAnyAddress, int] = Field(
+    server_address: tuple[IPvAnyAddress, int] = Field(
         title="TCP address",
         description="Address of RPC service",
     )
@@ -159,12 +156,12 @@ class Backend:
     @overload
     def _stub(
         self,
-        factory: Type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
+        factory: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
     ) -> AbstractAsyncContextManager[qjazz_pb2_grpc.QgisAdminStub]:
         ...
 
     @overload
-    def _stub(self, factory: Type[health_pb2_grpc.HealthStub],
+    def _stub(self, factory: type[health_pb2_grpc.HealthStub],
     ) -> AbstractAsyncContextManager[health_pb2_grpc.HealthStub]:
         ...
 
@@ -239,7 +236,7 @@ class Backend:
                 logger.error("%s\t%s\t%s", self._address, rpcerr.code(), rpcerr.details())
                 raise
 
-    async def watch(self) -> AsyncIterator[Tuple[Self, bool]]:
+    async def watch(self) -> AsyncIterator[tuple[Self, bool]]:
         """ Watch service status
         """
         serving = False
@@ -354,7 +351,7 @@ class Backend:
             resp = await stub.GetConfig(qjazz_pb2.Empty())
             return resp.json
 
-    async def set_config(self, config: Dict | Json) -> None:
+    async def set_config(self, config: dict | Json) -> None:
         """ Send CONFIG to remote
         """
         if isinstance(config, dict):
@@ -393,7 +390,7 @@ class Backend:
     async def watch_stats(
         self,
         interval: int = 3,
-    ) -> AsyncIterator[Tuple[Self, Optional[qjazz_pb2.StatsReply]]]:
+    ) -> AsyncIterator[tuple[Self, Optional[qjazz_pb2.StatsReply]]]:
         """ Watch service stats
         """
         while not self._shutdown:

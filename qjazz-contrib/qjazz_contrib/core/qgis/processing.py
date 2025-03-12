@@ -8,8 +8,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
     Sequence,
@@ -32,12 +30,12 @@ BuiltinProviderSet = Set[Literal['grass', 'otb']]
 
 class ProcessesConfig(BaseModel):
     # List of unexposed providers
-    discard: List[str] = []
-    styles: Optional[Dict[str, Dict[str, Path]]] = None
+    discard: list[str] = []
+    styles: Optional[dict[str, dict[str, Path]]] = None
 
 
 class ProcessesLoader:
-    def __init__(self, providers: List[str], allow_scripts: bool = True):
+    def __init__(self, providers: list[str], allow_scripts: bool = True):
 
         self._discard: set[str] = set()
         self._providers = providers
@@ -110,7 +108,7 @@ class ProcessesLoader:
             from processing.core.Processing import RenderingStyles
 
             # Load styles for processing output
-            styles: Dict[str, Dict[str, str]] = {}
+            styles: dict[str, dict[str, str]] = {}
             for alg, keys in conf.styles.items():
                 styles.setdefault(alg, {})
                 for key, qmlpath in keys.items():

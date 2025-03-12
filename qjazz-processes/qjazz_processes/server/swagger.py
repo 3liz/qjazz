@@ -1,12 +1,8 @@
 
 from inspect import isclass
 from typing import (
-    Dict,
-    List,
     Optional,
     Sequence,
-    Tuple,
-    Type,
 )
 
 from aiohttp import web
@@ -45,9 +41,9 @@ class OapiConfig(ConfigBase):
 #
 # Model factory (use as decorator)
 #
-ModelAlias = Type[JsonModel] | TypeAdapter
+ModelAlias = type[JsonModel] | TypeAdapter
 
-_models: List[Tuple[str, ModelAlias]] = []
+_models: list[tuple[str, ModelAlias]] = []
 
 
 def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
@@ -79,13 +75,13 @@ class Info(JsonModel):
 
 class OpenApiDocument(JsonModel):
     openapi: str = OAPI_VERSION
-    paths: Dict[str, Json]
-    definitions: Dict[str, Json]
+    paths: dict[str, Json]
+    definitions: dict[str, Json]
     tags: Sequence[Tag]
     info: Info
 
 
-def doc(app: web.Application, tags: List[Tag], api_version: str, conf: OapiConfig) -> OpenApiDocument:
+def doc(app: web.Application, tags: list[Tag], api_version: str, conf: OapiConfig) -> OpenApiDocument:
     return OpenApiDocument(
         paths={k: dump_json(v) for k, v in paths(app).items()},
         definitions={k: dump_json(v) for k, v in schemas().items()},
@@ -102,7 +98,7 @@ class SwaggerError(Exception):
     pass
 
 
-def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]:  # noqa RUF027
+def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:  # noqa RUF027
     """ Build schema definitions dictionnary from models
     """
     schema_definitions = {}
@@ -123,14 +119,14 @@ def schemas(ref_template: str = "#/definitions/{model}") -> Dict[str, JsonValue]
     return schema_definitions
 
 
-def paths(app: web.Application) -> Dict:
+def paths(app: web.Application) -> dict:
     """ Extract swagger doc from aiohttp routes handlers
     """
     import ruamel.yaml
 
     yaml = ruamel.yaml.YAML()
 
-    paths: Dict[str, Dict[str, str]] = {}
+    paths: dict[str, dict[str, str]] = {}
     for route in app.router.routes():
 
         methods = {}

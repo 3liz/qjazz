@@ -1,8 +1,6 @@
 
 from pathlib import Path
 
-from typing_extensions import Dict
-
 from qgis.PyQt.QtCore import QByteArray, QFile, QIODevice
 from qgis.server import QgsServerResponse
 
@@ -16,7 +14,7 @@ class QgsServerFileResponse(QgsServerResponse):
 
     def __init__(self, path: Path | str):
         super().__init__()
-        self._headers: Dict[str, str] = {}
+        self._headers: dict[str, str] = {}
         self._status_code = 200
         self._output = QFile(str(path))
 
@@ -40,7 +38,7 @@ class QgsServerFileResponse(QgsServerResponse):
     def header(self, key: str) -> str:
         return self._headers.get(key, "")
 
-    def headers(self) -> Dict[str, str]:
+    def headers(self) -> dict[str, str]:
         return self._headers
 
     def headersSent(self) -> bool:

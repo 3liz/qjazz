@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Dict,
     Iterator,
     Optional,
     Protocol,
@@ -84,7 +83,7 @@ class StorageConfig(ConfigBase):
             ),
         ),
     ]
-    config: Dict[str, Any] = Field({})
+    config: dict[str, Any] = Field({})
 
     @model_validator(mode='after')
     def validate_config(self) -> Self:

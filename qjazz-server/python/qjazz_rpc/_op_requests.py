@@ -4,7 +4,7 @@
 import os
 
 from string import capwords
-from typing import Dict, List, Optional, Tuple, assert_never, cast
+from typing import Optional, assert_never, cast
 from urllib.parse import urlunsplit
 
 from qgis.core import QgsFeedback
@@ -64,7 +64,7 @@ def handle_ows_request(
     if not entry:
         return
 
-    resp_hdrs: Dict[str, str] | None = None
+    resp_hdrs: dict[str, str] | None = None
 
     options = msg.options
     service = msg.service
@@ -206,7 +206,7 @@ def _handle_generic_request(
     co_status: Optional[Co],
     data: Optional[bytes],
     method: QgsServerRequest.Method,
-    headers: List[Tuple[str, str]],
+    headers: list[tuple[str, str]],
     conn: _m.Connection,
     server: QgsServer,
     config: QgisConfig,
@@ -216,7 +216,7 @@ def _handle_generic_request(
     feedback: QgsFeedback,
     header_prefix: Optional[str],
     content_type: Optional[str],
-    resp_hdrs: Optional[Dict[str, str]] = None,
+    resp_hdrs: Optional[dict[str, str]] = None,
 ) -> QgsServerResponse:
     """ Handle generic Qgis request
     """
@@ -267,7 +267,7 @@ def get_project(
     config: QgisConfig,
     target:  str,
     allow_direct: bool,
-) -> Tuple[Optional[CacheEntry], Co]:
+) -> tuple[Optional[CacheEntry], Co]:
 
     # XXX Prevent error in cache manager
     if not target.startswith("/"):
@@ -295,7 +295,7 @@ def request_project_from_cache(
     config: QgisConfig,
     target: str,
     allow_direct: bool,
-) -> Tuple[CheckoutStatus, Optional[CacheEntry]]:
+) -> tuple[CheckoutStatus, Optional[CacheEntry]]:
     """ Handle project retrieval from cache
     """
     try:

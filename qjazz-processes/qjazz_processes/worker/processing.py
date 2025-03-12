@@ -3,11 +3,7 @@
 #
 
 from functools import cached_property
-from typing import (
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Optional
 
 from qgis.core import QgsProcessingFeedback, QgsProject
 
@@ -59,7 +55,7 @@ class QgisProcessingContext(QgisContext):
         return QgisPluginService.get_service()
 
     @property
-    def processes(self) -> List[ProcessSummary]:
+    def processes(self) -> list[ProcessSummary]:
         """ List proceses """
         include_deprecated = self.processing_config.expose_deprecated_algorithms
         algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
@@ -108,7 +104,7 @@ class QgisProcessingContext(QgisContext):
         feedback: QgsProcessingFeedback,
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
-    ) -> Tuple[JobResults, Optional[QgsProject]]:
+    ) -> tuple[JobResults, Optional[QgsProject]]:
         """ Execute process """
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
@@ -146,5 +142,5 @@ class ProcessingCache(ProcessCache):
             raise ValueError(f"No description found for algorithm {ident}")
         return description
 
-    def _update(self) -> List[ProcessSummary]:
+    def _update(self) -> list[ProcessSummary]:
         return self.context.processes

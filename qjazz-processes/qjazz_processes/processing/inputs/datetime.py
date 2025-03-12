@@ -1,11 +1,7 @@
 
 import datetime
 
-from typing import (
-    Dict,
-    Optional,
-    Type,
-)
+from typing import Optional
 
 from pydantic import JsonValue
 
@@ -37,12 +33,12 @@ class ParameterDateTime(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterDateTime,
-        field: Dict,
+        field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
-    ) -> Type:
+    ) -> type:
 
-        _type: Type
+        _type: type
 
         def to_py(qdt):
             return qdt.toPyDateTime() if qdt.isValid() else None
