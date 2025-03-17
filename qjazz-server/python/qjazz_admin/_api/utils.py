@@ -1,5 +1,5 @@
 # import traceback
-from typing import ( # noqa F401
+from typing import (  # noqa F401
     Literal,
     Optional,
     Self,
@@ -23,30 +23,29 @@ API_VERSION = "v1"
 
 
 def _public_url(request: web.Request, path: str) -> str:
-    """ Return the public base url
-    """
+    """Return the public base url"""
     host = request.host
     protocol = request.scheme
 
     # Check for X-Forwarded-Host header
-    forwarded_host = request.headers.get('X-Forwarded-Host')
+    forwarded_host = request.headers.get("X-Forwarded-Host")
     if forwarded_host:
         host = forwarded_host
-    forwarded_proto = request.headers.get('X-Forwarded-Proto')
+    forwarded_proto = request.headers.get("X-Forwarded-Proto")
     if forwarded_proto:
         protocol = forwarded_proto
 
     # Check for 'Forwarded headers
-    forwarded = request.headers.get('Forwarded')
+    forwarded = request.headers.get("Forwarded")
     if forwarded:
-        parts = forwarded.split(';')
+        parts = forwarded.split(";")
         for p in parts:
             try:
-                k, v = p.split('=')
-                if k == 'host':
-                    host = v.strip(' ')
-                elif k == 'proto':
-                    protocol = v.strip(' ')
+                k, v = p.split("=")
+                if k == "host":
+                    host = v.strip(" ")
+                elif k == "proto":
+                    protocol = v.strip(" ")
             except Exception as e:
                 logger.error("Forwaded header error: %s", e)
     return f"{protocol}://{host}{path}"
@@ -55,6 +54,7 @@ def _public_url(request: web.Request, path: str) -> str:
 # ====================
 # Services
 # ====================
+
 
 class BaseHandlers:
     def __init__(self, srvc: service.Service):

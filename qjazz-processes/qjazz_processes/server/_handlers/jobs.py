@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import (
     Annotated,
@@ -56,7 +55,6 @@ def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, 
 
 
 class Jobs(HandlerProto):
-
     async def job_status(self, request: web.Request) -> web.Response:
         """
         summary: Get Job status
@@ -86,12 +84,12 @@ class Jobs(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
+        job_id = request.match_info["JobId"]
 
         job_status = await self._executor.job_status(
             job_id,
             realm=self._jobrealm.job_realm(request),
-            with_details=validate_param(BoolParam, request, 'details', False),
+            with_details=validate_param(BoolParam, request, "details", False),
         )
 
         if not job_status:
@@ -114,7 +112,7 @@ class Jobs(HandlerProto):
             )
 
         return web.Response(
-            headers={'Location': href(request, location)},
+            headers={"Location": href(request, location)},
             content_type="application/json",
             text=job_status.model_dump_json(),
         )
@@ -175,14 +173,14 @@ class Jobs(HandlerProto):
         """
         # Allow passing service as query parameter
         # Otherwise returns all jobs for all services
-        service = request.query.get('service')
+        service = request.query.get("service")
 
-        limit = validate_param(LimitParam, request, 'limit', 10)
-        page = validate_param(PageParam, request, 'page', 1)
+        limit = validate_param(LimitParam, request, "limit", 10)
+        page = validate_param(PageParam, request, "page", 1)
 
         # Filters
-        process_ids = request.query.getall('processID', ())
-        filtered_status = request.query.getall('status', ())
+        process_ids = request.query.getall("processID", ())
+        filtered_status = request.query.getall("status", ())
 
         realm = self._jobrealm.job_realm(request)
 
@@ -194,6 +192,7 @@ class Jobs(HandlerProto):
         )
 
         if process_ids or filtered_status:
+
             def filtered_jobs():
                 for st in jobs:
                     if process_ids and st.process_id not in process_ids:
@@ -218,10 +217,10 @@ class Jobs(HandlerProto):
                 )
 
         params = {
-            'processID': process_ids,
-            'status': filtered_status,
-            'limit': limit,
-            'page': page or (),
+            "processID": process_ids,
+            "status": filtered_status,
+            "limit": limit,
+            "page": page or (),
         }
 
         links = [
@@ -289,11 +288,11 @@ class Jobs(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
+        job_id = request.match_info["JobId"]
 
         results = await self._executor.job_results(job_id, realm=self._jobrealm.job_realm(request))
         if not results:
-            return ErrorResponse.response(404, "No results", details={'jobId': job_id})
+            return ErrorResponse.response(404, "No results", details={"jobId": job_id})
         return web.Response(
             content_type="application/json",
             body=JobResultsAdapter.dump_json(results, by_alias=True, exclude_none=True),
@@ -328,11 +327,11 @@ class Jobs(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
+        job_id = request.match_info["JobId"]
 
         st = await self._executor.dismiss(job_id, realm=self._jobrealm.job_realm(request))
         if not st:
-            return ErrorResponse.response(404, "Job not found", details={'jobId': job_id})
+            return ErrorResponse.response(404, "Job not found", details={"jobId": job_id})
 
         return web.Response(
             content_type="application/json",
@@ -368,7 +367,7 @@ class Jobs(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
+        job_id = request.match_info["JobId"]
 
         log_d = await self._executor.log_details(
             job_id,

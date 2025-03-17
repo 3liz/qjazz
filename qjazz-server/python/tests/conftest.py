@@ -14,23 +14,25 @@ def pytest_collection_modifyitems(config, items):
     if keywordexpr or markexpr:
         return  # let pytest handle this
 
-    skip_server = pytest.mark.skip(reason='server tests not enabled')
+    skip_server = pytest.mark.skip(reason="server tests not enabled")
     for item in items:
-        if 'server' in item.keywords:
+        if "server" in item.keywords:
             item.add_marker(skip_server)
 
 
 def pytest_sessionfinish(session, exitstatus):
     try:
         from qjazz_contrib.core import qgis
+
         qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def qgis_session(request: pytest.FixtureRequest) -> None:
     from qjazz_contrib.core import logger, qgis
+
     try:
         print("Initializing qgis application")
         qgis.init_qgis_application()
@@ -42,31 +44,29 @@ def qgis_session(request: pytest.FixtureRequest) -> None:
     return None
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def data(request: pytest.FixtureRequest) -> Path:
-    return Path(request.config.rootdir.strpath, 'data')
+    return Path(request.config.rootdir.strpath, "data")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def projects(data: Path) -> ProjectsConfig:
-    """ Setup configuration
-    """
+    """Setup configuration"""
     return ProjectsConfig(
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
         search_paths={
-            '/tests': f'{data}/samples/',
-            '/france': f'{data}/france_parts/',
-            '/montpellier': f'{data}/montpellier/',
+            "/tests": f"{data}/samples/",
+            "/france": f"{data}/france_parts/",
+            "/montpellier": f"{data}/montpellier/",
         },
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def worker(projects: ProjectsConfig) -> Worker:
-    """ Setup configuration
-    """
+    """Setup configuration"""
     worker = Worker(config=QgisConfig(projects=projects))
     await worker.start()
     yield worker

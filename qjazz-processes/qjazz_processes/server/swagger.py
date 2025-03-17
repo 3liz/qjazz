@@ -1,4 +1,3 @@
-
 from inspect import isclass
 from typing import (
     Optional,
@@ -30,8 +29,8 @@ def dump_json(v: JsonValue) -> str:
 
 @section("oapi")
 class OapiConfig(ConfigBase):
-    """ OAPI configuration
-    """
+    """OAPI configuration"""
+
     title: str = Field("Py-Qgis-Processes")
     description: str = Field(
         "Publish Qgis processing algorithms as OGC api processes",
@@ -47,8 +46,7 @@ _models: list[tuple[str, ModelAlias]] = []
 
 
 def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
-    """ Collect models
-    """
+    """Collect models"""
     if isinstance(model, TypeAdapter):
         if not name:
             raise ValueError(f"Missing 'name' for {type(model)}")
@@ -61,6 +59,7 @@ def model(model: ModelAlias, name: Optional[str] = None) -> ModelAlias:
 #
 # OpenApi Document
 #
+
 
 class Tag(JsonModel):
     description: str
@@ -99,8 +98,7 @@ class SwaggerError(Exception):
 
 
 def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:  # noqa RUF027
-    """ Build schema definitions dictionnary from models
-    """
+    """Build schema definitions dictionnary from models"""
     schema_definitions = {}
     for name, model in _models:
         # print(model, file=sys.stderr)
@@ -110,7 +108,7 @@ def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]
             case _:
                 schema = model.model_json_schema(ref_template=ref_template)
         # Extract subdefinitions
-        defs = schema.pop('$defs', {})
+        defs = schema.pop("$defs", {})
         for n, d in defs.items():
             schema_definitions[n] = d
 
@@ -120,15 +118,13 @@ def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]
 
 
 def paths(app: web.Application) -> dict:
-    """ Extract swagger doc from aiohttp routes handlers
-    """
+    """Extract swagger doc from aiohttp routes handlers"""
     import ruamel.yaml
 
     yaml = ruamel.yaml.YAML()
 
     paths: dict[str, dict[str, str]] = {}
     for route in app.router.routes():
-
         methods = {}
         try:
             if route._resource is None:
@@ -169,12 +165,6 @@ def _get_method_names_for_handler(route):
     # Return all valid method names in handler if the method is *,
     # otherwise return the specific method.
     if route.method == METH_ANY:
-        return {
-            attr for attr in dir(route.handler)
-            if attr.upper() in METH_ALL
-        }
+        return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL}
     else:
-        return {
-            attr for attr in dir(route.handler)
-            if attr.upper() in METH_ALL and attr.upper() == route.method
-        }
+        return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL and attr.upper() == route.method}

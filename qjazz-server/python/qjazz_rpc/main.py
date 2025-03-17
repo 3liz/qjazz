@@ -23,7 +23,7 @@ WORKER_SECTION = "worker"
 # Get the same hierarchy as the main configuration
 # otherwise env variables wont apply
 class WorkerConfig(config.ConfigBase):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
 
     qgis: QgisConfig = Field(
         QgisConfig(),
@@ -32,7 +32,6 @@ class WorkerConfig(config.ConfigBase):
 
 
 def run(name: str, projects: list[str]) -> None:
-
     rendez_vous = RendezVous()
 
     confservice = config.ConfBuilder()
@@ -40,7 +39,7 @@ def run(name: str, projects: list[str]) -> None:
     confservice.validate({})
 
     if os.getenv("QJAZZ_DUMP_CONFIG") == "1":
-        print(   # noqa T201
+        print(  # noqa T201
             "== Configuration ==\n",
             confservice.conf.model_dump_json(indent=4),
             flush=True,
@@ -65,6 +64,7 @@ def run(name: str, projects: list[str]) -> None:
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     run(sys.argv[1], sys.argv[2:])

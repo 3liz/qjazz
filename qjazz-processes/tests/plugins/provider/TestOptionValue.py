@@ -1,5 +1,5 @@
-""" Test just returning simple value
-"""
+"""Test just returning simple value"""
+
 from typing import ClassVar
 
 from qgis.core import (
@@ -11,41 +11,40 @@ from qgis.core import (
 
 
 class TestOptionValue(QgsProcessingAlgorithm):
+    INPUT = "INPUT"
+    OUTPUT = "OUTPUT"
 
-    INPUT = 'INPUT'
-    OUTPUT = 'OUTPUT'
-
-    IN_OPTIONS: ClassVar = ['value1', 'value2', 'value3']
+    IN_OPTIONS: ClassVar = ["value1", "value2", "value3"]
 
     def __init__(self):
         super().__init__()
 
     @staticmethod
-    def tr(string, context=''):
-        return QgsApplication.translate(context or 'Processing', string)
+    def tr(string, context=""):
+        return QgsApplication.translate(context or "Processing", string)
 
     def name(self):
-        return 'testoptionvalue'
+        return "testoptionvalue"
 
     def displayName(self):
-        return 'Test Option Value'
+        return "Test Option Value"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.INPUT,
-                'Values',
+                "Values",
                 optional=True,
                 defaultValue=1,
                 options=self.IN_OPTIONS,
@@ -54,7 +53,6 @@ class TestOptionValue(QgsProcessingAlgorithm):
         self.addOutput(QgsProcessingOutputString(self.OUTPUT, "Output"))
 
     def processAlgorithm(self, parameters, context, feedback):
-
         param = self.parameterAsString(parameters, self.INPUT, context)
 
         return {self.OUTPUT: "selection is %s" % (param)}

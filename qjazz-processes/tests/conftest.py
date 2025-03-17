@@ -28,7 +28,7 @@ def pytest_report_header(config):
     from qgis.core import Qgis
     from qgis.PyQt import Qt
 
-    gdal_version = gdal.VersionInfo('VERSION_NUM')
+    gdal_version = gdal.VersionInfo("VERSION_NUM")
     return (
         f"QGIS : {Qgis.QGIS_VERSION_INT}\n"
         f"Python GDAL : {gdal_version}\n"
@@ -37,19 +37,19 @@ def pytest_report_header(config):
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def rootdir(request: pytest.FixtureRequest) -> Path:
     return Path(request.config.rootdir.strpath)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def data(rootdir: Path) -> Path:
-    return rootdir.joinpath('data')
+    return rootdir.joinpath("data")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def workdir(rootdir: Path) -> Path:
-    path = rootdir.joinpath('__workdir__')
+    path = rootdir.joinpath("__workdir__")
     path.mkdir(exist_ok=True)
     return path
 
@@ -63,60 +63,62 @@ def pytest_collection_modifyitems(config, items):
 
 
 def pytest_sessionstart(session: pytest.Session):
-    workdir = Path(session.startdir).joinpath('__workdir__')
+    workdir = Path(session.startdir).joinpath("__workdir__")
     if workdir.exists():
         import shutil
+
         shutil.rmtree(workdir)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def cache_config(data: Path) -> ProjectsConfig:
-    """ Setup cache configuration
-    """
+    """Setup cache configuration"""
     return ProjectsConfig(
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
         search_paths={
-            '/samples': f'{data}/samples/',
-            '/france': f'{data}/france_parts/',
-            '/montpellier': f'{data}/montpellier/',
-            '/database': 'postgresql://?service=qjazz',
+            "/samples": f"{data}/samples/",
+            "/france": f"{data}/france_parts/",
+            "/montpellier": f"{data}/montpellier/",
+            "/database": "postgresql://?service=qjazz",
         },
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def processing_config(rootdir: Path, workdir: Path, cache_config: ProjectsConfig) -> ProcessingConfig:
     from qjazz_processes.processing.config import QgisPluginConfig
+
     return ProcessingConfig(
         workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
-            paths=[rootdir.joinpath('plugins')],
+            paths=[rootdir.joinpath("plugins")],
         ),
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def processing_raw_config(
     rootdir: Path,
     workdir: Path,
     cache_config: ProjectsConfig,
 ) -> ProcessingConfig:
     from qjazz_processes.processing.config import QgisPluginConfig
+
     return ProcessingConfig(
         workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
-            paths=[rootdir.joinpath('plugins')],
+            paths=[rootdir.joinpath("plugins")],
         ),
         raw_destination_input_sink=True,
         raw_destination_root_path=workdir,
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def qgis_session(processing_config: ProcessingConfig) -> ProcessingConfig:
     try:
         print("Initialising qgis application")
@@ -146,7 +148,7 @@ def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> 
     return context
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def cache_manager(cache_config, qgis_session):
     from qjazz_cache.prelude import CacheManager
 
@@ -154,10 +156,9 @@ def cache_manager(cache_config, qgis_session):
     return CacheManager(cache_config)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def projects(cache_manager):
-    """ Return wrapper around cache manager
-    """
+    """Return wrapper around cache manager"""
     from qgis.core import QgsProject
 
     from qjazz_cache.prelude import CheckoutStatus as Co
@@ -184,25 +185,24 @@ def projects(cache_manager):
     cm.clear()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
-    """
-    """
+    """ """
     plugin_service = qgis.QgisPluginService(qgis_session.plugins)
     plugin_service.load_plugins(qgis.PluginType.PROCESSING, None)
     plugin_service.register_as_service()
     return plugin_service
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def server_app(rootdir: Path) -> web.Application:
     from qjazz_processes.server import cli, server
 
     return server.create_app(
-        cli.load_configuration(rootdir.joinpath('server-config.toml')),
+        cli.load_configuration(rootdir.joinpath("server-config.toml")),
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def http_client(server_app: web.Application, aiohttp_client: Callable) -> TestClient:
     return await aiohttp_client(server_app)

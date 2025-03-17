@@ -26,7 +26,6 @@ from ..stac import (
 
 
 class Collection(CatalogBase):
-
     # Override
     type: Literal["Collection"] = "Collection"
 
@@ -38,7 +37,7 @@ class Collection(CatalogBase):
     keywords: Sequence[str] = ()
 
     # https://github.com/radiantearth/stac-spec/blob/master/commons/common-metadata.md#licensing
-    licence: str = Field("other")   # Required
+    licence: str = Field("other")  # Required
 
     providers: Sequence[Provider] = ()
 

@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from qgis.core import (
@@ -15,7 +14,6 @@ from qjazz_processes.processing.inputs import (
 
 
 def test_parameter_meshlayer():
-
     param = QgsProcessingParameterMeshLayer("Mesh")
 
     inp = InputParameter(param)
@@ -25,7 +23,6 @@ def test_parameter_meshlayer():
 
 
 def test_parameter_meshdatasetgroups():
-
     param = QgsProcessingParameterMeshDatasetGroups("MeshDatasetGroups")
 
     inp = InputParameter(param)
@@ -37,7 +34,6 @@ def test_parameter_meshdatasetgroups():
 
 
 def test_parameter_meshdatasettime():
-
     param = QgsProcessingParameterMeshDatasetTime("MeshDatasetTime")
 
     inp = InputParameter(param)
@@ -47,5 +43,5 @@ def test_parameter_meshdatasettime():
     schema = inp.json_schema()
     print("\ntest_parameter_layer_meshdatasetdatetime::", schema)
 
-    value = inp.value({'type': 'defined-date-time', 'value': datetime.now()})
+    value = inp.value({"type": "defined-date-time", "value": datetime.now()})
     assert param.checkValueIsAcceptable(value)

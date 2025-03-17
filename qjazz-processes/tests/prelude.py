@@ -14,7 +14,7 @@ from qjazz_processes.executor import (
 )
 
 confservice = config.ConfBuilder()
-confservice.add_section('executor', ExecutorConfig)
+confservice.add_section("executor", ExecutorConfig)
 
 logger.setup_log_handler(confservice.conf.logging.level)
 
@@ -24,4 +24,4 @@ def Executor() -> _Executor:
 
 
 # Set config path for worker
-os.environ['PY_QGIS_PROCESSES_WORKER_CONFIG'] = str(Path(__file__).parent / "worker-config.toml")
+os.environ["PY_QGIS_PROCESSES_WORKER_CONFIG"] = str(Path(__file__).parent / "worker-config.toml")

@@ -35,17 +35,15 @@ ALLOW_DEFAULT_HEADERS = "Authorization"
 
 
 REQ_LOG_TEMPLATE = "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}\t"
-REQ_FORMAT = REQ_LOG_TEMPLATE + '{agent}\t{referer}'
+REQ_FORMAT = REQ_LOG_TEMPLATE + "{agent}\t{referer}"
 
 
 class AccessLogger(AbstractAccessLogger):
-    """ Custom access logger
-    """
+    """Custom access logger"""
 
     def log(self, request: web.BaseRequest, response: web.StreamResponse, time: float):
-
-        agent = request.headers.get('User-Agent', "")
-        referer = request.headers.get('Referer', "")
+        agent = request.headers.get("User-Agent", "")
+        referer = request.headers.get("Referer", "")
 
         fmt = REQ_FORMAT.format(
             ip=request.remote,
@@ -62,11 +60,8 @@ class AccessLogger(AbstractAccessLogger):
 
 
 def forwarded_for(request):
-    """ Return the remote ip
-    """
-    return request.headers.get("X-Real-IP") or \
-        request.headers.get("X-Forwarded-For") or \
-        request.remote
+    """Return the remote ip"""
+    return request.headers.get("X-Real-IP") or request.headers.get("X-Forwarded-For") or request.remote
 
 
 def cors_options_headers(
@@ -74,54 +69,51 @@ def cors_options_headers(
     headers: dict[str, str],
     allow_headers: Optional[str] = None,
 ):
-    """  Set correct headers for 'OPTIONS' method
-    """
+    """Set correct headers for 'OPTIONS' method"""
     allow_methods = "PUT, POST, GET, OPTIONS"
     headers["Allow"] = allow_methods
-    headers['Access-Control-Allow-Headers'] = allow_headers or ALLOW_DEFAULT_HEADERS
-    if request.headers.get('Origin'):
+    headers["Access-Control-Allow-Headers"] = allow_headers or ALLOW_DEFAULT_HEADERS
+    if request.headers.get("Origin"):
         # Required in CORS context
         # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
-        headers['Access-Control-Allow-Methods'] = allow_methods
+        headers["Access-Control-Allow-Methods"] = allow_methods
 
 
 def set_access_control_headers(mode):
-    """ Build a response prepare callback
-    """
+    """Build a response prepare callback"""
+
     async def set_access_control_headers_(request, response):
-        """  Handle Access control and cross origin headers (CORS)
-        """
-        origin = request.headers.get('Origin')
+        """Handle Access control and cross origin headers (CORS)"""
+        origin = request.headers.get("Origin")
         if not origin:
             return
         match mode:
-            case 'all':
-                allow_origin = '*'
-            case 'same-origin':
+            case "all":
+                allow_origin = "*"
+            case "same-origin":
                 allow_origin = origin
-                response.headers['Vary'] = 'Origin'
+                response.headers["Vary"] = "Origin"
             case _ as url:
                 allow_origin = str(url)
 
-        response.headers['Access-Control-Allow-Origin'] = allow_origin
+        response.headers["Access-Control-Allow-Origin"] = allow_origin
 
     return set_access_control_headers_
 
 
 @web.middleware
 async def authenticate(request, handler):
-    """ Check token authentication
-    """
-    tokens = request.app['config'].auth_tokens
+    """Check token authentication"""
+    tokens = request.app["config"].auth_tokens
     if tokens is not None:
         # FIXME should not authorize if tokens are requested
-        authorization = request.headers.get('Authorization')
-        if authorization and authorization.startswith('Bearer '):
+        authorization = request.headers.get("Authorization")
+        if authorization and authorization.startswith("Bearer "):
             token = authorization[7:]
             if token not in tokens:
                 # Authentification failed
                 raise web.HTTPUnauthorized(
-                    headers={'WWW-Authenticate': 'Bearer realm="Qgis services admin api access'},
+                    headers={"WWW-Authenticate": 'Bearer realm="Qgis services admin api access'},
                     content_type="application/json",
                     text=ErrorResponse(message="Unauthorized").model_dump_json(),
                 )
@@ -148,9 +140,10 @@ async def unhandled_exceptions(request, handler):
 #  Run server
 #
 
+
 def redirect(path):
-    """ Helper for creating redirect handler
-    """
+    """Helper for creating redirect handler"""
+
     async def _redirect(request):
         raise web.HTTPFound(path)
 
@@ -172,8 +165,8 @@ def _swagger_doc(app):
 
 
 def swagger_model() -> BaseModel:
-    """ Return the swagger model
-        for the REST api
+    """Return the swagger model
+    for the REST api
     """
     handlers = Handlers(cast(Service, None))
     app = web.Application()
@@ -182,8 +175,7 @@ def swagger_model() -> BaseModel:
 
 
 def create_app(conf: ConfigProto) -> web.Application:
-    """ Create a web application
-    """
+    """Create a web application"""
     service = Service(
         cast(
             ResolverConfig,
@@ -201,7 +193,7 @@ def create_app(conf: ConfigProto) -> web.Application:
             authenticate,
         ],
         handler_args={
-            'access_log_class': AccessLogger,
+            "access_log_class": AccessLogger,
         },
     )
 
@@ -218,7 +210,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     staticpath = Path(str(resources.files(PACKAGE_NAME)), "static")
 
     async def index(request: web.Request) -> web.StreamResponse:
-        return web.FileResponse(path=staticpath.joinpath('index.html'))
+        return web.FileResponse(path=staticpath.joinpath("index.html"))
 
     # Create a router for the landing page
     async def landing_page(request: web.Request) -> web.Response:
@@ -227,28 +219,27 @@ def create_app(conf: ConfigProto) -> web.Application:
     async def favicon(request: web.Request) -> web.Response:
         return web.Response(status=204)
 
-    app.router.add_route('GET', '/', landing_page)
-    app.router.add_route('GET', '/api', index)
-    app.router.add_route('GET', '/favicon.ico', favicon)
+    app.router.add_route("GET", "/", landing_page)
+    app.router.add_route("GET", "/api", index)
+    app.router.add_route("GET", "/favicon.ico", favicon)
     return app
 
 
 def serve(conf: ConfigProto):
-    """ Start the web server
-    """
+    """Start the web server"""
     app = create_app(conf)
 
     http = conf.admin_http
 
-    app['config'] = http
+    app["config"] = http
 
     listen: dict
 
     match http.listen:
         case (str(address), port):
-            listen = dict(host=address.strip('[]'), port=port)
+            listen = dict(host=address.strip("[]"), port=port)
         case socket:
-            listen = dict(path=socket[len('unix:'):])
+            listen = dict(path=socket[len("unix:") :])
 
     logger.info(f"Server listening at {http.format_interface()}")
     web.run_app(

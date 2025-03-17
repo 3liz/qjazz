@@ -1,5 +1,5 @@
-""" Postgres storage handler
-"""
+"""Postgres storage handler"""
+
 from pathlib import Path
 from typing import Annotated, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -32,27 +32,26 @@ PostgresURL = Annotated[
 
 
 class PostgresHandlerConfig(ConfigSettings, env_prefix="conf_storage_postgres_"):
-    """ Postgres handler settings
+    """Postgres handler settings
 
-        Qgis takes postgres project storage uri as
-        postgresql://[user[:pass]@]host[:port]/?dbname=X&schema=Y&project=Z
+    Qgis takes postgres project storage uri as
+    postgresql://[user[:pass]@]host[:port]/?dbname=X&schema=Y&project=Z
 
-        Enable database or/and project being specified from path
+    Enable database or/and project being specified from path
     """
+
     uri: PostgresURL = Field(
         title="Base postgresql uri",
         description="The base uri as QGIS postgres storage uri",
     )
 
 
-@componentmanager.register_factory('@3liz.org/cache/protocol-handler;1?scheme=postgresql')
+@componentmanager.register_factory("@3liz.org/cache/protocol-handler;1?scheme=postgresql")
 class PostgresHandler(QgisStorageProtocolHandler):
-
     Config = PostgresHandlerConfig
 
     def __init__(self, conf: Optional[PostgresHandlerConfig] = None):
-
-        super().__init__('postgresql')
+        super().__init__("postgresql")
 
         conf = conf or PostgresHandlerConfig(uri="postgresql://")
 
@@ -74,11 +73,11 @@ class PostgresHandler(QgisStorageProtocolHandler):
         q = self._query.copy()
         q.update(_parameters(url))
 
-        project = q.get('project')
+        project = q.get("project")
         parts = Path(url.path).parts
         match len(parts):
             case 1 if not project:
-                q['project'] = parts[0]
+                q["project"] = parts[0]
             case 0 if project:
                 pass
             case _:
@@ -94,7 +93,7 @@ class PostgresHandler(QgisStorageProtocolHandler):
         q = self._query.copy()
         q.update(_parameters(rooturl))
 
-        project = q.get('project')
+        project = q.get("project")
 
         if isinstance(url, str):
             url = urlsplit(url)
@@ -103,6 +102,6 @@ class PostgresHandler(QgisStorageProtocolHandler):
 
         path = Path(location)
         if not project:
-            path = path.joinpath(params['project'])
+            path = path.joinpath(params["project"])
 
         return f"{path}"

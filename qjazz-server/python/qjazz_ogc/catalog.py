@@ -24,7 +24,7 @@ from .project import Collection
 
 Co = CheckoutStatus
 
-CATALOG_CONTRACTID = '@3liz.org/catalog;1'
+CATALOG_CONTRACTID = "@3liz.org/catalog;1"
 
 
 class OgcEndpoints(Flag):
@@ -54,7 +54,7 @@ class CatalogItem:
 
 
 def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheEntry]:
-    """ Return a pinned project cache entry """
+    """Return a pinned project cache entry"""
     entry, co_status = cm.checkout(urlsplit(md.uri))
     match co_status:
         case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
@@ -68,25 +68,23 @@ def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheE
 
 
 class Catalog:
-    """ Handle Qgis project's catalog
-    """
+    """Handle Qgis project's catalog"""
+
     def __init__(self) -> None:
         self._catalog: dict[str, CatalogItem] = {}
         self._schema = Collection.model_json_schema()
 
     def update_items(self, cm: CacheManager, pinned: bool = False) -> Iterator[CatalogItem]:
-
         catalog = self._catalog
 
         # Iterate over the whole catalog
         loader_config = FastLoaderConfig()
         for md, public_path in cm.collect_projects():
-
             if pinned and not get_pinned_project(md, cm):
                 # Handle only pinned projects
                 continue
 
-            public_path = public_path.removesuffix('.qgs').removesuffix('.qgz')
+            public_path = public_path.removesuffix(".qgs").removesuffix(".qgz")
             item = catalog.get(public_path)
 
             if not item or md.last_modified > item.md.last_modified:
@@ -124,9 +122,9 @@ class Catalog:
 
     @classmethod
     def get_service(cls) -> Self:
-        """ Return cache manager as a service.
-            This require that register_as_service has been called
-            in the current context
+        """Return cache manager as a service.
+        This require that register_as_service has been called
+        in the current context
         """
         return componentmanager.get_service(CATALOG_CONTRACTID)
 
@@ -138,8 +136,7 @@ class Catalog:
 # Collect layer infos
 #
 def collect_layers(p: QgsProject) -> Iterator[tuple[str, OgcEndpoints]]:
-    """ Collect layers and corresponding OgcEndpoint
-    """
+    """Collect layers and corresponding OgcEndpoint"""
     from qgis.server import QgsServerProjectUtils
 
     restricted_layers = set(QgsServerProjectUtils.wmsRestrictedLayers(p))

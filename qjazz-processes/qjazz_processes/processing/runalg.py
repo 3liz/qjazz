@@ -34,7 +34,6 @@ def validate_parameters(
     context: QgsProcessingContext,
     abort_on_error: bool = False,
 ) -> bool:
-
     # Check parameters value
     ok, msg = alg.checkParameterValues(parameters, context)
     if not ok:
@@ -61,18 +60,18 @@ def execute(
     feedback: QgsProcessingFeedback,
     context: QgsProcessingContext,
 ) -> Mapping[str, Any]:
+    """Re-implementation of `Processing.runAlgorithm`
 
-    """ Re-implementation of `Processing.runAlgorithm`
-
-        see https://github.com/qgis/QGIS/blob/master/python/plugins/processing/core/Processing.py
+    see https://github.com/qgis/QGIS/blob/master/python/plugins/processing/core/Processing.py
     """
     validate_parameters(alg, parameters, feedback, context, abort_on_error=True)
 
     # XXX Fix destination names for models
     # Collect destination names for destination parameters for restoring
     # them later
-    destinations = {p: v.destinationName for p, v in parameters.items(
-    ) if isinstance(v, QgsProcessingOutputLayerDefinition)}
+    destinations = {
+        p: v.destinationName for p, v in parameters.items() if isinstance(v, QgsProcessingOutputLayerDefinition)
+    }
 
     # Execute algorithm
     try:
@@ -104,6 +103,7 @@ def execute(
 
     return results
 
+
 #
 #  Post processing
 #
@@ -116,9 +116,9 @@ def process_layer_outputs(
     workdir: Path,
     destination_project: Optional[QgsProject] = None,
 ) -> bool:
-    """ Handle algorithms result layers
+    """Handle algorithms result layers
 
-        Insert result layers into destination project
+    Insert result layers into destination project
     """
     # Transfer layers ownership to destination project
     wrongLayers = []
@@ -164,7 +164,7 @@ def process_layer_outputs(
             wrongLayers.append(str(lyrname))
 
     if wrongLayers:
-        wronglist = '\n'.join(str(lay) for lay in wrongLayers)
+        wronglist = "\n".join(str(lay) for lay in wrongLayers)
         logger.error(
             "The following layers were not correctly generated:\n%s"
             "You can check the log messages to find more information "
@@ -183,9 +183,9 @@ def set_output_layer_style(
     context: QgsProcessingContext,
     workdir: Path,
 ):
-    """ Set layer style
+    """Set layer style
 
-        Original code is from python/plugins/processing/gui/Postprocessing.py
+    Original code is from python/plugins/processing/gui/Postprocessing.py
     """
     # XXX processing is accesible only after qgis initialization
     from processing.core.Processing import ProcessingConfig as QgisProcessingConfig

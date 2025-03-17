@@ -15,7 +15,6 @@ from qjazz_contrib.core.models import (
 
 
 class Provider(JsonModel):
-
     name: str = Field(
         description="The name of the organization or the individual.",
     )

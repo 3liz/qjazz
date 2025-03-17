@@ -1,4 +1,3 @@
-
 from typing import (
     Annotated,
     Literal,
@@ -28,8 +27,7 @@ class _Named(JsonModel):
 
 # Geojson CRS definition
 class NamedCrs(JsonModel):
-
-    type: Literal['name'] = 'name'
+    type: Literal["name"] = "name"
     properties: _Named = Field(default=_Named(name=WGS84))
 
     @classmethod
@@ -50,7 +48,7 @@ PointItem = Annotated[Sequence[float], Field(min_length=2, max_length=4)]
 
 
 class Point(Referenced):
-    type: Literal[POINT]   # type: ignore [valid-type]
+    type: Literal[POINT]  # type: ignore [valid-type]
     coordinates: PointItem
 
     @classmethod
@@ -59,8 +57,9 @@ class Point(Referenced):
 
 
 class MultiPoint(Referenced):
-    type: Literal[MULTIPOINT]   # type: ignore [valid-type]
+    type: Literal[MULTIPOINT]  # type: ignore [valid-type]
     coordinates: Sequence[PointItem]
+
 
 # LineString
 
@@ -69,12 +68,12 @@ LineStringItem = Annotated[Sequence[PointItem], Field(min_length=2, max_length=2
 
 
 class LineString(Referenced):
-    type: Literal[LINESTRING]   # type: ignore [valid-type]
+    type: Literal[LINESTRING]  # type: ignore [valid-type]
     coordinates: LineStringItem
 
 
 class MultiLineString(Referenced):
-    type: Literal[MULTILINESTRING]   # type: ignore [valid-type]
+    type: Literal[MULTILINESTRING]  # type: ignore [valid-type]
     coordinates: Sequence[LineStringItem]
 
 
@@ -85,20 +84,21 @@ PolygonItem = Sequence[Ring]
 
 
 class Polygon(Referenced):
-    type: Literal[POLYGON]   # type: ignore [valid-type]
+    type: Literal[POLYGON]  # type: ignore [valid-type]
     coordinates: PolygonItem
 
 
 class MultiPolygon(Referenced):
-    type: Literal[MULTIPOLYGON]   # type: ignore [valid-type]
+    type: Literal[MULTIPOLYGON]  # type: ignore [valid-type]
     coordinates: Sequence[PolygonItem]
 
 
 # Geometry
 
+
 class GeometryCollection(Referenced):
-    type: Literal[GEOMETRY_COLLECTION]   # type: ignore [valid-type]
-    geometries: Sequence['Geometry']
+    type: Literal[GEOMETRY_COLLECTION]  # type: ignore [valid-type]
+    geometries: Sequence["Geometry"]
 
 
 Geometry = OneOf[

@@ -1,4 +1,3 @@
-
 from celery.signals import worker_process_init
 from typing_extensions import (
     Optional,
@@ -25,8 +24,7 @@ from .context import (
 
 @worker_process_init.connect
 def init_qgis(*args, **kwargs):
-    """ Initialize Qgis context in each process
-    """
+    """Initialize Qgis context in each process"""
     QgisPrintServerContext.setup(app.processing_config)
 
 
@@ -34,8 +32,8 @@ def init_qgis(*args, **kwargs):
 # Qgis Worker
 #
 
-class QgisPrintServerWorker(QgisWorker):
 
+class QgisPrintServerWorker(QgisWorker):
     def create_context(self) -> QgisContext:
         return QgisPrintServerContext(self.processing_config, service_name=self.service_name)
 
@@ -57,8 +55,7 @@ def execute_process(
     request: JobExecute,
     project_path: Optional[str] = None,
 ) -> JobResults:
-    """Execute process
-    """
+    """Execute process"""
     # Optional context attributes
     public_url: str | None
     try:

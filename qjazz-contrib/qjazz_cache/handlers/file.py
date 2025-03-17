@@ -6,8 +6,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-""" File protocol handler
-"""
+"""File protocol handler"""
+
 from itertools import chain
 from pathlib import Path
 from typing import Iterator
@@ -22,7 +22,7 @@ from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 # Allowed files suffix for projects
-PROJECT_SFX = ('.qgs', '.qgz')
+PROJECT_SFX = (".qgs", ".qgz")
 
 
 def file_metadata(path: Path) -> ProjectMetadata:
@@ -30,23 +30,21 @@ def file_metadata(path: Path) -> ProjectMetadata:
     return ProjectMetadata(
         uri=str(path),
         name=path.stem,
-        scheme='file',
-        storage='file',
+        scheme="file",
+        storage="file",
         last_modified=st.st_mtime,
     )
 
 
-@componentmanager.register_factory('@3liz.org/cache/protocol-handler;1?scheme=file')
+@componentmanager.register_factory("@3liz.org/cache/protocol-handler;1?scheme=file")
 class FileProtocolHandler(ProtocolHandler):
-    """ Handle file protocol
-    """
+    """Handle file protocol"""
 
     def __init__(self):
         pass
 
     def _check_filepath(self, path: Path) -> Path:
-        """ Validate Qgis project file path, add necis
-        """
+        """Validate Qgis project file path, add necis"""
         if not path.is_absolute():
             raise ValueError(f"file path must be absolute not {path}")
 
@@ -61,27 +59,23 @@ class FileProtocolHandler(ProtocolHandler):
         return path
 
     def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
-        """ Validate the rooturl format
-        """
+        """Validate the rooturl format"""
         if not Path(rooturl.path).exists():
             raise InvalidCacheRootUrl(f"{rooturl.path} does not exists")
 
     def resolve_uri(self, uri: Url) -> str:
-        """ Override
-        """
+        """Override"""
         return uri.path
 
     def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
-        """ Override
-        """
+        """Override"""
         if isinstance(url, str):
             url = urlsplit(url)
         relpath = Path(url.path).relative_to(rooturl.path)
         return str(Path(location).joinpath(relpath))
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
-        """ Override
-        """
+        """Override"""
         if isinstance(url, ProjectMetadata):
             path = Path(url.uri)
         else:
@@ -91,21 +85,19 @@ class FileProtocolHandler(ProtocolHandler):
         return file_metadata(path)
 
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
-        """ Override
-        """
+        """Override"""
         return load_project_from_uri(md.uri, config)
 
     def projects(self, url: Url) -> Iterator[ProjectMetadata]:
-        """ List all projects availables from the given uri
-        """
+        """List all projects availables from the given uri"""
         path = Path(url.path)
         if not path.exists():
             logger.warning(f"{path} does not exists")
             return
 
         if path.is_dir():
-            globpattern = '**/*.%s'
-            files = chain(*(path.glob(globpattern % sfx) for sfx in ('qgs', 'qgz')))
+            globpattern = "**/*.%s"
+            files = chain(*(path.glob(globpattern % sfx) for sfx in ("qgs", "qgz")))
             for p in files:
                 yield file_metadata(p)
         else:

@@ -7,19 +7,18 @@ import pytest
 from qjazz_rpc import messages
 from qjazz_rpc.tests.worker import Worker, NoDataResponse
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 async def test_rpc_io(worker: Worker):
-    """ Test worker process
-    """
+    """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200
 
     # Test ping message as dict
     status, resp = await worker.io.send_message(
-        {'msg_id': messages.MsgType.PING, 'echo': "hello"},
+        {"msg_id": messages.MsgType.PING, "echo": "hello"},
     )
     assert status == 200
     assert resp == "hello"
@@ -46,7 +45,7 @@ async def test_rpc_io(worker: Worker):
     print(f"> {resp.headers}")
 
     # Check header prefix
-    for (k, _) in resp.headers:
+    for k, _ in resp.headers:
         assert k.startswith("x-test-")
 
     # Stream remaining bytes
@@ -55,8 +54,7 @@ async def test_rpc_io(worker: Worker):
 
 
 async def test_rpc_chunked_response(worker: Worker):
-    """ Test Response with chunk
-    """
+    """Test Response with chunk"""
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200
 
@@ -88,8 +86,7 @@ async def test_rpc_chunked_response(worker: Worker):
 
 
 async def test_rpc_cache_api(worker: Worker):
-    """ Test worker cache api
-    """
+    """Test worker cache api"""
     # Pull
     status, resp = await worker.io.send_message(
         messages.CheckoutProjectMsg(uri="/france/france_parts", pull=True),
@@ -139,8 +136,7 @@ async def test_rpc_cache_api(worker: Worker):
 
 
 async def test_rpc_catalog(worker: Worker):
-    """ Test worker cache api
-    """
+    """Test worker cache api"""
     await worker.io.put_message(messages.CatalogMsg(location="/france"))
     status, item = await worker.io.read_message()
     count = 0
@@ -157,8 +153,7 @@ async def test_rpc_catalog(worker: Worker):
 
 
 async def test_rpc_ows_chunked_request(worker: Worker):
-    """ Test worker process
-    """
+    """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200
@@ -190,8 +185,7 @@ async def test_rpc_ows_chunked_request(worker: Worker):
 
 
 async def test_rpc_api_request(worker: Worker):
-    """ Test worker process
-    """
+    """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200
@@ -222,8 +216,7 @@ async def test_rpc_api_request(worker: Worker):
 
 
 async def test_rpc_api_delegate_request(worker: Worker):
-    """ Test worker process
-    """
+    """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200

@@ -5,8 +5,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-""" Logger
-"""
+"""Logger"""
+
 import logging
 import sys
 
@@ -19,7 +19,7 @@ from pydantic import Field, PlainSerializer, PlainValidator, WithJsonSchema
 
 from . import config
 
-LOGGER = logging.getLogger('qjazz')
+LOGGER = logging.getLogger("qjazz")
 
 
 class LogLevel(Enum):
@@ -34,7 +34,7 @@ class LogLevel(Enum):
     CRITICAL = logging.CRITICAL
 
 
-FORMATSTR = '%(asctime)s.%(msecs)03dZ\t[%(process)d]\t%(levelname)s\t%(message)s'
+FORMATSTR = "%(asctime)s.%(msecs)03dZ\t[%(process)d]\t%(levelname)s\t%(message)s"
 
 
 def _validate_log_level(v: str | LogLevel) -> LogLevel:
@@ -44,23 +44,24 @@ def _validate_log_level(v: str | LogLevel) -> LogLevel:
         raise ValueError(f"Invalid log level value '{v}'")
 
 
-@config.section('logging')
+@config.section("logging")
 class LoggingConfig(config.ConfigBase):
     level: Annotated[
         LogLevel,
         PlainValidator(_validate_log_level),
         PlainSerializer(lambda x: x.name, return_type=str),
-        WithJsonSchema({
-            'enum': [m for m in LogLevel.__members__],
-            'type': 'str',
-        }),
+        WithJsonSchema(
+            {
+                "enum": [m for m in LogLevel.__members__],
+                "type": "str",
+            }
+        ),
         Field(default="INFO", validate_default=True),
     ]
 
 
 def set_log_level(log_level: LogLevel) -> LogLevel:
-    """ Set the log level
-    """
+    """Set the log level"""
     log_level = log_level
     LOGGER.setLevel(log_level.value)
     return log_level
@@ -70,8 +71,7 @@ def setup_log_handler(
     log_level: LogLevel = LogLevel.INFO,
     channel: Optional[logging.Handler] = None,
 ) -> LogLevel:
-    """ Initialize log handler with the given log level
-    """
+    """Initialize log handler with the given log level"""
     logging.addLevelName(LogLevel.TRACE.value, LogLevel.TRACE.name)
     logging.addLevelName(LogLevel.REQ.value, LogLevel.REQ.name)
     logging.addLevelName(LogLevel.RREQ.value, LogLevel.RREQ.name)
@@ -88,8 +88,7 @@ def setup_log_handler(
 
 @contextmanager
 def logfile(workdir: Path, basename: str):
-    """ Temporary logging to file
-    """
+    """Temporary logging to file"""
     logfile = workdir.joinpath(f"{basename}.log")
     channel = logging.FileHandler(logfile)
     formatter = logging.Formatter(FORMATSTR)

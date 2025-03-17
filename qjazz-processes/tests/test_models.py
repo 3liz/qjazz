@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from qgis.core import (
@@ -17,14 +16,13 @@ from .utils import FeedBack
 
 
 def test_model_algorithms(qgis_session, plugins, projects):
-    """ Execute algorithm from a model
-    """
+    """Execute algorithm from a model"""
     registry = QgsApplication.processingRegistry()
 
-    alg = registry.algorithmById('model:centroides')
+    alg = registry.algorithmById("model:centroides")
     assert alg is not None
 
-    project = projects.get('/france/france_parts')
+    project = projects.get("/france/france_parts")
 
     inputs = tuple(InputParameter(p, project) for p in alg.parameterDefinitions())
     outputs = tuple(OutputParameter(p, alg) for p in alg.outputDefinitions())
@@ -39,14 +37,14 @@ def test_model_algorithms(qgis_session, plugins, projects):
     context.workdir.mkdir(exist_ok=True)
 
     values = {
-        'input': 'france_parts',
-        'native:centroids_1:OUTPUT': 'output_layer',
+        "input": "france_parts",
+        "native:centroids_1:OUTPUT": "output_layer",
     }
     # Convert to processing parameters
     parameters = InputParameter.parameters(inputs, values, context)
     print("\ntest_model_algorithms:parameters:", parameters)
 
-    destination_param = parameters['native:centroids_1:OUTPUT']
+    destination_param = parameters["native:centroids_1:OUTPUT"]
 
     # print(
     #    "\ntest_model_algorithms:destination_param",
@@ -55,7 +53,7 @@ def test_model_algorithms(qgis_session, plugins, projects):
     # )
 
     assert isinstance(destination_param, QgsProcessingOutputLayerDefinition)
-    assert destination_param.destinationName == 'output_layer'
+    assert destination_param.destinationName == "output_layer"
 
     # Create a destination project
     destination_project = context.create_project(alg.id())

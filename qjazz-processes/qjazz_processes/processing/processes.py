@@ -1,4 +1,3 @@
-
 from functools import cached_property
 from typing import (
     Any,
@@ -36,7 +35,7 @@ from .context import ProcessingContext
 from .inputs import InputParameter, InputParameterDef
 from .outputs import OutputParameter, OutputParameterDef
 
-ProcessingAlgorithmFlag: TypeAlias   # type: ignore [valid-type]
+ProcessingAlgorithmFlag: TypeAlias  # type: ignore [valid-type]
 ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]
 
 if Qgis.QGIS_VERSION_INT >= 33600:
@@ -71,15 +70,13 @@ else:
 
 
 class ProcessAlgorithm:
-
     @classmethod
     def algorithms(
         cls,
         include_deprecated: bool = False,
         providers: Sequence[str] = (),
     ) -> Iterator[Self]:
-        """ Iterate over all published algorithms
-        """
+        """Iterate over all published algorithms"""
         for provider in QgisPluginService.get_service().providers:
             if providers and provider.id() not in providers:
                 continue
@@ -89,8 +86,7 @@ class ProcessAlgorithm:
 
     @classmethod
     def find_algorithm(cls, ident: str) -> Optional[Self]:
-        """ Retrieve algorithm by {provider}:{id} string
-        """
+        """Retrieve algorithm by {provider}:{id} string"""
         alg = QgsApplication.processingRegistry().algorithmById(ident)
         return alg and cls(alg)
 
@@ -111,8 +107,7 @@ class ProcessAlgorithm:
     def hidden(cls, alg: QgsProcessingAlgorithm) -> bool:
         return cls._check_flags(
             alg,
-            ProcessingAlgorithmFlag.HideFromToolbox
-            | ProcessingAlgorithmFlag.NotAvailableInStandaloneTool,
+            ProcessingAlgorithmFlag.HideFromToolbox | ProcessingAlgorithmFlag.NotAvailableInStandaloneTool,
         )
 
     @classmethod
@@ -133,7 +128,6 @@ class ProcessAlgorithm:
 
     @cached_property
     def _description(self) -> ProcessDescription:
-
         alg = self._alg
 
         description = ProcessDescription(
@@ -187,8 +181,7 @@ class ProcessAlgorithm:
                 yield Output(outp, self._alg)
 
     def description(self, project: Optional[QgsProject] = None) -> ProcessDescription:
-        """ Return a process description including inputs and outputs description
-        """
+        """Return a process description including inputs and outputs description"""
         description = self._description.model_copy(
             update=dict(
                 description=self._alg.shortHelpString() or self._alg.shortDescription(),
@@ -205,12 +198,11 @@ class ProcessAlgorithm:
         feedback: QgsProcessingFeedback,
         context: ProcessingContext,
     ) -> tuple[
-            Mapping[str, Any],
-            Mapping[str, InputParameterDef],
-            Sequence[OutputParameterDef],
-        ]:
-        """ Validate parameters
-        """
+        Mapping[str, Any],
+        Mapping[str, InputParameterDef],
+        Sequence[OutputParameterDef],
+    ]:
+        """Validate parameters"""
         project = context.project()
 
         if self.require_project and not project:
@@ -237,8 +229,7 @@ class ProcessAlgorithm:
         feedback: QgsProcessingFeedback,
         context: ProcessingContext,
     ) -> JobResults:
-        """ Execute request
-        """
+        """Execute request"""
         # Ensure that workdir exists
         assert_precondition(
             context.workdir.is_dir(),

@@ -12,7 +12,7 @@ from qjazz_ogc.stac import CatalogBase
 from qjazz_rpc import messages
 from qjazz_rpc.tests.worker import Worker
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 @dataclass
@@ -30,7 +30,6 @@ def load_project(path: Path) -> QgsProject:
 
 
 def test_ogc_default_crs(qgis_session: None):
-
     crs = CrsRef.default()
     print("\n::test_ogc_default_crs::", crs, "->", crs.to_ogc_urn())
 
@@ -39,8 +38,7 @@ def test_ogc_default_crs(qgis_session: None):
 
 
 def test_ogc_project_collection(qgis_session: None, data: Path):
-
-    project = load_project(data.joinpath('france_parts', 'france_parts.qgs'))
+    project = load_project(data.joinpath("france_parts", "france_parts.qgs"))
 
     coll = Collection.from_project("france_parts", project)
     print("\n::test_project_collection::\n", coll.model_dump_json(indent=4))
@@ -50,8 +48,7 @@ def test_ogc_project_collection(qgis_session: None, data: Path):
 
 
 async def test_ogc_catalog_api(worker: Worker):
-    """ Test worker cache api
-    """
+    """Test worker cache api"""
     await worker.io.put_message(
         messages.CollectionsMsg(
             start=0,
@@ -73,7 +70,7 @@ async def test_ogc_catalog_api(worker: Worker):
     print("\n::test_ogc_api::catalog::schema\n", schema)
 
     print("\n::test_ogc_api::catalog::items:")
-    print('\n'.join(n.name for n in resp.items))
+    print("\n".join(n.name for n in resp.items))
 
     item = resp.items[0]
     print("\n::test_ogc_api::catalog::item", item)
@@ -85,8 +82,7 @@ async def test_ogc_catalog_api(worker: Worker):
 
 
 def test_ogc_layer_collection(qgis_session: None, data: Path):
-
-    project = load_project(data.joinpath('france_parts', 'france_parts.qgs'))
+    project = load_project(data.joinpath("france_parts", "france_parts.qgs"))
 
     coll = Collection.from_project("france_parts", project)
 

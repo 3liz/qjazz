@@ -6,8 +6,7 @@ from qjazz_contrib.core.qgis import (
 
 
 def test_processing_plugin(plugindir):
-    """ Test load processing plugins
-    """
+    """Test load processing plugins"""
     config = QgisPluginConfig(
         paths=[plugindir],
     )
@@ -17,4 +16,4 @@ def test_processing_plugin(plugindir):
 
     providers = list(s.providers)
     assert len(providers) == 3
-    assert 'processing_test' in set(p.id() for p in providers)
+    assert "processing_test" in set(p.id() for p in providers)

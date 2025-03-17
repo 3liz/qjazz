@@ -1,5 +1,4 @@
-""" Test processing Provider
-"""
+"""Test processing Provider"""
 
 import traceback
 
@@ -24,34 +23,33 @@ from .TestUltimateQuestion import TestUltimateQuestion
 
 
 class TestAlgorithmProvider(QgsProcessingProvider):
-
     def __init__(self):
         super().__init__()
 
     def id(self):
-        return 'processes_test'
+        return "processes_test"
 
     def name(self):
         return "Proceses Test"
 
     def loadAlgorithms(self):
         algs = [
-             TestSimpleValue,
-             TestOptionValue,
-             TestMultiOptionValue,
-             TestCopyLayer,
-             TestFileDestination,
-             TestSimpleBuffer,
-             TestInputRasterLayer,
-             TestRaiseError,
-             TestClipRasterLayer,
-             TestInputMultiLayer,
-             TestLongProcess,
-             TestInputFile,
-             TestOutputVectorLayer,
-             TestOutputFile,
-             TestInputGeometry,
-             TestUltimateQuestion,
+            TestSimpleValue,
+            TestOptionValue,
+            TestMultiOptionValue,
+            TestCopyLayer,
+            TestFileDestination,
+            TestSimpleBuffer,
+            TestInputRasterLayer,
+            TestRaiseError,
+            TestClipRasterLayer,
+            TestInputMultiLayer,
+            TestLongProcess,
+            TestInputFile,
+            TestOutputVectorLayer,
+            TestOutputFile,
+            TestInputGeometry,
+            TestUltimateQuestion,
         ]
         try:
             for Alg in algs:
@@ -63,12 +61,11 @@ class TestAlgorithmProvider(QgsProcessingProvider):
 
 
 class DummyAlgorithmProvider(QgsProcessingProvider):
-
     def __init__(self):
         super().__init__()
 
     def id(self):
-        return 'proceses_dummy_test'
+        return "proceses_dummy_test"
 
     def name(self):
         return "Processes Dummy Test"

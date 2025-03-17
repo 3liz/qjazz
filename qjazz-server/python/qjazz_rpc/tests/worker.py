@@ -33,7 +33,6 @@ class WorkerError(Exception):
 
 
 class Worker:
-
     def __init__(self, config: QgisConfig, num_processes: int = 1):
         self._name = "Test"
         self._conf = config
@@ -43,8 +42,7 @@ class Worker:
         self._started = False
 
     async def cancel(self):
-        """ Send a SIGHUP signal to to the process
-        """
+        """Send a SIGHUP signal to to the process"""
         logger.debug("Cancelling job: %s (done: %s)", self.pid, self.task_done)
         if not (self._process is None or self.task_done):
             self._process.send_signal(signal.SIGHUP)
@@ -60,8 +58,8 @@ class Worker:
 
     @property
     def task_done(self) -> bool:
-        """ Return true if there is no processing
-            at hand
+        """Return true if there is no processing
+        at hand
         """
         return not self._rendez_vous.busy
 
@@ -73,10 +71,10 @@ class Worker:
         await self._rendez_vous.wait()
 
     async def consume_until_task_done(self):
-        """ Consume all remaining data that may be send
-            by the worker task.
-            This is required if a client abort the request
-            in the middle.
+        """Consume all remaining data that may be send
+        by the worker task.
+        This is required if a client abort the request
+        in the middle.
         """
         while self._rendez_vous.busy:
             try:
@@ -89,8 +87,8 @@ class Worker:
         status, resp = await self.io.send_message(
             _m.PutConfigMsg(
                 config={
-                    'logging': {'level': logger.log_level()},
-                    'worker': {'qgis': conf.model_dump()},
+                    "logging": {"level": logger.log_level()},
+                    "worker": {"qgis": conf.model_dump()},
                 },
             ),
         )
@@ -99,8 +97,7 @@ class Worker:
         logger.debug(f"Updated config for worker '{self.name}'")
 
     async def start(self):
-        """ Start the worker QGIS subprocess
-        """
+        """Start the worker QGIS subprocess"""
         if self._started:
             return
 
@@ -119,7 +116,10 @@ class Worker:
         )
 
         self._process = await asyncio.create_subprocess_exec(
-            sys.executable, "-m", "qjazz_rpc.main", self._name,
+            sys.executable,
+            "-m",
+            "qjazz_rpc.main",
+            self._name,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             env=env,
@@ -133,7 +133,7 @@ class Worker:
             ) from None
 
     async def terminate(self):
-        """ Terminate the subprocess """
+        """Terminate the subprocess"""
         if not self.is_alive:
             return
 

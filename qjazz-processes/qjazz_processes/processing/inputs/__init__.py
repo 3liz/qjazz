@@ -133,58 +133,60 @@ from .mesh import (
 
 # Type mapping
 
-InputTypes = MappingProxyType({
-    QgsProcessingParameterAggregate.typeName(): ParameterAggregate,
-    QgsProcessingParameterAlignRasterLayers.typeName(): ParameterAlignRasterLayers,
-    QgsProcessingParameterAnnotationLayer.typeName(): ParameterAnnotationLayer,
-    QgsProcessingParameterAuthConfig.typeName(): ParameterAuthConfig,
-    QgsProcessingParameterBand.typeName(): ParameterBand,
-    QgsProcessingParameterBoolean.typeName(): ParameterBool,
-    QgsProcessingParameterColor.typeName(): ParameterColor,
-    QgsProcessingParameterCoordinateOperation.typeName(): ParameterCoordinateOperation,
-    QgsProcessingParameterCrs.typeName(): ParameterCrs,
-    QgsProcessingParameterDatabaseSchema.typeName(): ParameterDatabaseSchema,
-    QgsProcessingParameterDatabaseTable.typeName(): ParameterDatabaseTable,
-    QgsProcessingParameterDateTime.typeName(): ParameterDateTime,
-    QgsProcessingParameterDxfLayers.typeName(): ParameterDxfLayers,
-    QgsProcessingParameterEnum.typeName(): ParameterEnum,
-    QgsProcessingParameterExpression.typeName(): ParameterExpression,
-    QgsProcessingParameterExtent.typeName(): ParameterExtent,
-    QgsProcessingParameterFeatureSource.typeName(): ParameterFeatureSource,
-    QgsProcessingParameterField.typeName(): ParameterField,
-    QgsProcessingParameterFieldMapping.typeName(): ParameterFieldMapping,
-    QgsProcessingParameterFile.typeName(): ParameterFile,
-    QgsProcessingParameterGeometry.typeName(): ParameterGeometry,
-    QgsProcessingParameterLayout.typeName(): ParameterLayout,
-    QgsProcessingParameterLayoutItem.typeName(): ParameterLayoutItem,
-    QgsProcessingParameterMapLayer.typeName(): ParameterMapLayer,
-    QgsProcessingParameterMapTheme.typeName(): ParameterMapTheme,
-    QgsProcessingParameterMatrix.typeName(): ParameterMatrix,
-    QgsProcessingParameterMeshDatasetGroups.typeName(): ParameterMeshDatasetGroups,
-    QgsProcessingParameterMeshDatasetTime.typeName(): ParameterMeshDatasetTime,
-    QgsProcessingParameterMeshLayer.typeName(): ParameterMeshLayer,
-    QgsProcessingParameterMultipleLayers.typeName(): ParameterMultipleLayers,
-    QgsProcessingParameterNumber.typeName(): ParameterNumber,
-    QgsProcessingParameterDistance.typeName(): ParameterDistance,
-    QgsProcessingParameterDuration.typeName(): ParameterDuration,
-    QgsProcessingParameterScale.typeName(): ParameterScale,
-    QgsProcessingParameterPoint.typeName(): ParameterPoint,
-    QgsProcessingParameterPointCloudLayer.typeName(): ParameterPointCloudLayer,
-    QgsProcessingParameterProviderConnection.typeName(): ParameterProviderConnection,
-    QgsProcessingParameterRange.typeName(): ParameterRange,
-    QgsProcessingParameterRasterLayer.typeName(): ParameterRasterLayer,
-    QgsProcessingParameterString.typeName(): ParameterString,
-    QgsProcessingParameterTinInputLayers.typeName(): ParameterTinInputLayers,
-    QgsProcessingParameterVectorLayer.typeName(): ParameterVectorLayer,
-    QgsProcessingParameterVectorTileWriterLayers.typeName(): ParameterVectorTileWriterLayers,
-    QgsProcessingParameterFeatureSink.typeName(): ParameterFeatureSink,
-    QgsProcessingParameterFileDestination.typeName(): ParameterFileDestination,
-    QgsProcessingParameterFolderDestination.typeName(): ParameterFolderDestination,
-    QgsProcessingParameterPointCloudDestination.typeName(): ParameterPointCloudDestination,
-    QgsProcessingParameterRasterDestination.typeName(): ParameterRasterDestination,
-    QgsProcessingParameterVectorDestination.typeName(): ParameterVectorDestination,
-    QgsProcessingParameterVectorTileDestination.typeName(): ParameterVectorTileDestination,
-})
+InputTypes = MappingProxyType(
+    {
+        QgsProcessingParameterAggregate.typeName(): ParameterAggregate,
+        QgsProcessingParameterAlignRasterLayers.typeName(): ParameterAlignRasterLayers,
+        QgsProcessingParameterAnnotationLayer.typeName(): ParameterAnnotationLayer,
+        QgsProcessingParameterAuthConfig.typeName(): ParameterAuthConfig,
+        QgsProcessingParameterBand.typeName(): ParameterBand,
+        QgsProcessingParameterBoolean.typeName(): ParameterBool,
+        QgsProcessingParameterColor.typeName(): ParameterColor,
+        QgsProcessingParameterCoordinateOperation.typeName(): ParameterCoordinateOperation,
+        QgsProcessingParameterCrs.typeName(): ParameterCrs,
+        QgsProcessingParameterDatabaseSchema.typeName(): ParameterDatabaseSchema,
+        QgsProcessingParameterDatabaseTable.typeName(): ParameterDatabaseTable,
+        QgsProcessingParameterDateTime.typeName(): ParameterDateTime,
+        QgsProcessingParameterDxfLayers.typeName(): ParameterDxfLayers,
+        QgsProcessingParameterEnum.typeName(): ParameterEnum,
+        QgsProcessingParameterExpression.typeName(): ParameterExpression,
+        QgsProcessingParameterExtent.typeName(): ParameterExtent,
+        QgsProcessingParameterFeatureSource.typeName(): ParameterFeatureSource,
+        QgsProcessingParameterField.typeName(): ParameterField,
+        QgsProcessingParameterFieldMapping.typeName(): ParameterFieldMapping,
+        QgsProcessingParameterFile.typeName(): ParameterFile,
+        QgsProcessingParameterGeometry.typeName(): ParameterGeometry,
+        QgsProcessingParameterLayout.typeName(): ParameterLayout,
+        QgsProcessingParameterLayoutItem.typeName(): ParameterLayoutItem,
+        QgsProcessingParameterMapLayer.typeName(): ParameterMapLayer,
+        QgsProcessingParameterMapTheme.typeName(): ParameterMapTheme,
+        QgsProcessingParameterMatrix.typeName(): ParameterMatrix,
+        QgsProcessingParameterMeshDatasetGroups.typeName(): ParameterMeshDatasetGroups,
+        QgsProcessingParameterMeshDatasetTime.typeName(): ParameterMeshDatasetTime,
+        QgsProcessingParameterMeshLayer.typeName(): ParameterMeshLayer,
+        QgsProcessingParameterMultipleLayers.typeName(): ParameterMultipleLayers,
+        QgsProcessingParameterNumber.typeName(): ParameterNumber,
+        QgsProcessingParameterDistance.typeName(): ParameterDistance,
+        QgsProcessingParameterDuration.typeName(): ParameterDuration,
+        QgsProcessingParameterScale.typeName(): ParameterScale,
+        QgsProcessingParameterPoint.typeName(): ParameterPoint,
+        QgsProcessingParameterPointCloudLayer.typeName(): ParameterPointCloudLayer,
+        QgsProcessingParameterProviderConnection.typeName(): ParameterProviderConnection,
+        QgsProcessingParameterRange.typeName(): ParameterRange,
+        QgsProcessingParameterRasterLayer.typeName(): ParameterRasterLayer,
+        QgsProcessingParameterString.typeName(): ParameterString,
+        QgsProcessingParameterTinInputLayers.typeName(): ParameterTinInputLayers,
+        QgsProcessingParameterVectorLayer.typeName(): ParameterVectorLayer,
+        QgsProcessingParameterVectorTileWriterLayers.typeName(): ParameterVectorTileWriterLayers,
+        QgsProcessingParameterFeatureSink.typeName(): ParameterFeatureSink,
+        QgsProcessingParameterFileDestination.typeName(): ParameterFileDestination,
+        QgsProcessingParameterFolderDestination.typeName(): ParameterFolderDestination,
+        QgsProcessingParameterPointCloudDestination.typeName(): ParameterPointCloudDestination,
+        QgsProcessingParameterRasterDestination.typeName(): ParameterRasterDestination,
+        QgsProcessingParameterVectorDestination.typeName(): ParameterVectorDestination,
+        QgsProcessingParameterVectorTileDestination.typeName(): ParameterVectorTileDestination,
+    }
+)
 
 
 InputParameterDef = InputParameterBase
@@ -194,7 +196,6 @@ InputParameterDef = InputParameterBase
 # Parameter proxy class
 #
 class _InputParameter:
-
     @classmethod
     def get(cls, param: ParameterDefinition) -> Type[InputParameterDef]:
         Input = InputTypes.get(param.type())
@@ -221,8 +222,8 @@ class _InputParameter:
         params: Mapping[str, JsonValue],
         context: ProcessingContext,
     ) -> Mapping[str, Any]:
-        """  Convert inputs to parameters
-        """
+        """Convert inputs to parameters"""
+
         def _value(inp: InputParameterDef) -> Any:  # noqa ANN401
             v = params.get(inp.name)
             if not (v or inp.optional):

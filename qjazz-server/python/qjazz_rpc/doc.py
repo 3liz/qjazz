@@ -27,6 +27,7 @@ def _parse_list(value: Union[list[str], str]) -> list[str]:
 
 class Listen(ConfigBase):
     """Socket configuration"""
+
     address: str = Field(
         "127.0.0.1:23456",
         title="Socket address",
@@ -128,18 +129,19 @@ class Worker(ConfigBase):
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     import click
 
-    @click.group('commands')
+    @click.group("commands")
     def cli_commands():
         pass
 
-    @cli_commands.command('schema')
+    @cli_commands.command("schema")
     @click.option(
-        "--format", "out_fmt",
+        "--format",
+        "out_fmt",
         type=click.Choice(("json", "yaml", "toml")),
         default="json",
         help="Output format (--schema only)",
@@ -150,27 +152,27 @@ if __name__ == '__main__':
         schema: bool = False,
         pretty: bool = False,
     ):
-        """ Print configuration as json and exit
-        """
+        """Print configuration as json and exit"""
         import json
 
         confservice = ConfBuilder()
 
-        confservice.add_section('server', Server)
-        confservice.add_section('worker', Worker)
+        confservice.add_section("server", Server)
+        confservice.add_section("worker", Worker)
 
         indent = 4 if pretty else None
         match out_fmt:
-            case 'json':
+            case "json":
                 json_schema = confservice.json_schema()
                 indent = 4 if pretty else None
                 click.echo(json.dumps(json_schema, indent=indent))
-            case 'yaml':
+            case "yaml":
                 from ruamel.yaml import YAML
+
                 json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
-            case 'toml':
+            case "toml":
                 confservice.dump_toml_schema(sys.stdout)
 
     cli_commands()

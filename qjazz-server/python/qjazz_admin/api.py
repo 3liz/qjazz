@@ -29,47 +29,40 @@ class Handlers(
     _Projects,
     _Plugins,
 ):
-
     @property
     def routes(self):
         return [
             # backends
-            web.get(f'/{API_VERSION}/pools/', self.get_pools, allow_head=False),
-            web.patch(f'/{API_VERSION}/pools', self.patch_pools),
-            web.get(f'/{API_VERSION}/pools/{{Id}}', self.get_pool_infos, allow_head=False),
-            web.get(f'/{API_VERSION}/pools/{{Id}}/backends', self.get_pool_backends, allow_head=False),
+            web.get(f"/{API_VERSION}/pools/", self.get_pools, allow_head=False),
+            web.patch(f"/{API_VERSION}/pools", self.patch_pools),
+            web.get(f"/{API_VERSION}/pools/{{Id}}", self.get_pool_infos, allow_head=False),
+            web.get(f"/{API_VERSION}/pools/{{Id}}/backends", self.get_pool_backends, allow_head=False),
             # Config
-            web.get(f'/{API_VERSION}/pools/{{Id}}/config', self.get_pool_config, allow_head=False),
-            web.put(f'/{API_VERSION}/pools/{{Id}}/config', self.put_pool_config),
-
+            web.get(f"/{API_VERSION}/pools/{{Id}}/config", self.get_pool_config, allow_head=False),
+            web.put(f"/{API_VERSION}/pools/{{Id}}/config", self.put_pool_config),
             # Test
-            web.get(f'/{API_VERSION}/pools/{{Id}}/test', self.get_pool_test, allow_head=False),
-
+            web.get(f"/{API_VERSION}/pools/{{Id}}/test", self.get_pool_test, allow_head=False),
             # Cache
-            web.get(f'/{API_VERSION}/pools/{{Id}}/catalog', self.get_catalog, allow_head=False),
-            web.get(f'/{API_VERSION}/pools/{{Id}}/cache', self.get_cache, allow_head=False),
-            web.patch(f'/{API_VERSION}/pools/{{Id}}/cache', self.patch_cache),
-            web.put(f'/{API_VERSION}/pools/{{Id}}/cache', self.put_cache),
-            web.delete(f'/{API_VERSION}/pools/{{Id}}/cache', self.delete_cache),
-
+            web.get(f"/{API_VERSION}/pools/{{Id}}/catalog", self.get_catalog, allow_head=False),
+            web.get(f"/{API_VERSION}/pools/{{Id}}/cache", self.get_cache, allow_head=False),
+            web.patch(f"/{API_VERSION}/pools/{{Id}}/cache", self.patch_cache),
+            web.put(f"/{API_VERSION}/pools/{{Id}}/cache", self.put_cache),
+            web.delete(f"/{API_VERSION}/pools/{{Id}}/cache", self.delete_cache),
             # Project
-            web.get(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.get_project, allow_head=False),
-            web.delete(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.delete_project),
-            web.put(f'/{API_VERSION}/pools/{{Id}}/cache/project', self.put_project),
-            web.get(f'/{API_VERSION}/pools/{{Id}}/cache/project/info', self.get_project_info, allow_head=False),
-
+            web.get(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.get_project, allow_head=False),
+            web.delete(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.delete_project),
+            web.put(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.put_project),
+            web.get(f"/{API_VERSION}/pools/{{Id}}/cache/project/info", self.get_project_info, allow_head=False),
             # Plugins
-            web.get(f'/{API_VERSION}/pools/{{Id}}/plugins', self.get_plugins, allow_head=False),
-
+            web.get(f"/{API_VERSION}/pools/{{Id}}/plugins", self.get_plugins, allow_head=False),
             # Config
-            web.patch(f'/{API_VERSION}/config', self.reload_config),
-
+            web.patch(f"/{API_VERSION}/config", self.reload_config),
             # Watch
-            web.get(f'/{API_VERSION}/watch', self.ws_watch),
+            web.get(f"/{API_VERSION}/watch", self.ws_watch),
         ]
 
     def _pool(self, request: web.Request) -> PoolClient:
-        Id = request.match_info['Id']
+        Id = request.match_info["Id"]
         try:
             return self.service[Id]
         except KeyError:
@@ -105,7 +98,6 @@ class Handlers(
         """
         cnf = confservice.conf.admin_config_url
         if await cnf.load_configuration():
-
             # Update log level
             level = logger.set_log_level()
             logger.info("Log level set to %s", level.name)
@@ -166,7 +158,7 @@ class Handlers(
                 match msg.type:
                     case WSMsgType.TEXT:
                         match msg.data:
-                            case 'close':
+                            case "close":
                                 ws.close()
                     case WSMsgType.ERROR:
                         logger.error("WS connection error %s", ws.exception())

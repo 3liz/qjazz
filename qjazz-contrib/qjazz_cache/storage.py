@@ -1,8 +1,8 @@
 #
 # Copyright 2023 3liz
 # all rights reserved
-""" Handle Qgis storage metadata
-"""
+"""Handle Qgis storage metadata"""
+
 from typing import Protocol
 
 from qgis.core import Qgis, QgsProject, QgsProjectBadLayerHandler
@@ -29,8 +29,8 @@ class ProjectLoaderConfig(Protocol):
 
 
 def remove_advertised_urls(project: QgsProject) -> None:
-    """ Remove advertised url's since they
-        may interfere with proxy_urls
+    """Remove advertised url's since they
+    may interfere with proxy_urls
     """
     # Disable ows urls defined in project
     # May be needed because it overrides
@@ -42,10 +42,10 @@ def remove_advertised_urls(project: QgsProject) -> None:
 
 
 def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
-    """ Read project from uri
+    """Read project from uri
 
-        May be used by protocol-handlers to instanciate project
-        from uri.
+    May be used by protocol-handlers to instanciate project
+    from uri.
     """
     logger.debug("Reading Qgis project '%s'", uri)
 
@@ -89,24 +89,22 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
 
 
 class BadLayerHandler(QgsProjectBadLayerHandler):
-
     def __init__(self):
         super().__init__()
         self.badLayerNames = set()
 
     def handleBadLayers(self, layers):
-        """ See https://qgis.org/pyqgis/3.0/core/Project/QgsProjectBadLayerHandler.html
-        """
+        """See https://qgis.org/pyqgis/3.0/core/Project/QgsProjectBadLayerHandler.html"""
         super().handleBadLayers(layers)
 
         nameElements = (lyr.firstChildElement("layername") for lyr in layers if lyr)
         self.badLayerNames = {elem.text() for elem in nameElements if elem}
 
     def validateLayers(self, project: QgsProject) -> bool:
-        """ Check layers
+        """Check layers
 
-            If layers are excluded do not count them as bad layers
-            see https://github.com/qgis/QGIS/pull/33668
+        If layers are excluded do not count them as bad layers
+        see https://github.com/qgis/QGIS/pull/33668
         """
         if self.badLayerNames:
             logger.error("Found bad layers: %s", self.badLayerNames)

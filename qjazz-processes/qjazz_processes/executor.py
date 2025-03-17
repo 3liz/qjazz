@@ -1,4 +1,3 @@
-
 import itertools
 
 from dataclasses import dataclass
@@ -72,24 +71,22 @@ ServiceDict = dict[str, tuple[Sequence[str], PresenceDetails]]
 # Process executor
 #
 
+
 class _ExecutorBase:
-
     def __init__(self, conf: Optional[ExecutorConfig] = None, *, name: Optional[str] = None):
-
         conf = conf or ExecutorConfig()
 
         self._celery = Celery(name, conf.celery)
         self._services: ServiceDict = {}
-        self._last_updated = 0.
+        self._last_updated = 0.0
 
         self._pending_expiration_timeout = conf.message_expiration_timeout
         self._default_result_expires = conf.celery.result_expires
 
     def presences(self, destinations: Optional[Sequence[str]] = None) -> dict[str, PresenceDetails]:
-        """ Return presence info for online workers
-        """
+        """Return presence info for online workers"""
         data = self._celery.control.broadcast(
-            'presence',
+            "presence",
             reply=True,
             destination=destinations,
         )
@@ -97,14 +94,12 @@ class _ExecutorBase:
         return {k: PresenceDetails.model_validate(v) for row in data for k, v in row.items()}
 
     def known_service(self, name: str) -> bool:
-        """ Check if service is known in uploaded presences
-        """
+        """Check if service is known in uploaded presences"""
         return name in self._services
 
     @property
     def services(self) -> Iterator[PresenceDetails]:
-        """ Return uploaded services presences
-        """
+        """Return uploaded services presences"""
         for _, pr in self._services.values():
             yield pr
 
@@ -136,9 +131,9 @@ class _ExecutorBase:
         destination: Sequence[str],
         broadcast: bool = False,
         reply: bool = True,
-            **kwargs,
+        **kwargs,
     ) -> JsonValue:
-        """ Send an inspect command to one or more service instances """
+        """Send an inspect command to one or more service instances"""
         if not broadcast:
             # Pick a destination randomly, so that we can
             # use all availables workers
@@ -175,21 +170,19 @@ class _ExecutorBase:
             raise ServiceNotAvailable(service)
         return dests
 
-    def restart_pool(self, service: str, *, timeout: float = 5.) -> JsonValue:
-        """ Restart worker pool
-        """
+    def restart_pool(self, service: str, *, timeout: float = 5.0) -> JsonValue:
+        """Restart worker pool"""
         return self._celery.control.pool_restart(
             destination=self._dests(service),
             reply=True,
             timeout=timeout,
         )
 
-    def ping(self, service: str, timeout: float = 1.) -> JsonValue:
-        """ Ping service workers
-        """
+    def ping(self, service: str, timeout: float = 1.0) -> JsonValue:
+        """Ping service workers"""
         return self._celery.control.ping(self._dests(service), timeout=timeout)
 
-    def shutdown(self, service: str, *, reply: bool = True, timeout: float = 5.) -> JsonValue:
+    def shutdown(self, service: str, *, reply: bool = True, timeout: float = 5.0) -> JsonValue:
         return self._celery.control.shutdown(
             self._dests(service),
             reply=reply,
@@ -208,12 +201,11 @@ class _ExecutorBase:
         project: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
-
         # Retrieve process description (blocking version)
         res = self.command(
             "describe_process",
             destination=destinations,
-            arguments={'ident': ident, 'project_path': project},
+            arguments={"ident": ident, "project_path": project},
             timeout=timeout,
         )
 
@@ -252,12 +244,12 @@ class _ExecutorBase:
         return self._celery.send_task(
             f"{service}.{task}",
             priority=priority,
-            queue=f'qjazz.{service}',
+            queue=f"qjazz.{service}",
             expires=pending_timeout,
             kwargs={
-                '__meta__': meta,
-                '__context__': context,
-                '__run_config__':  run_config,
+                "__meta__": meta,
+                "__context__": context,
+                "__run_config__": run_config,
             },
         )
 
@@ -276,10 +268,10 @@ class _ExecutorBase:
         Callable[[int | None], JobResults],
         Callable[[], JobStatus],
     ]:
-        """ Send an execute request
+        """Send an execute request
 
-            Returns a synchronous or asynchronous  'Result' object
-            depending on the `sync` parameter.
+        Returns a synchronous or asynchronous  'Result' object
+        depending on the `sync` parameter.
         """
         _, service_details = self._services[service]
 
@@ -297,11 +289,11 @@ class _ExecutorBase:
         created = utc_now()
 
         meta = {
-            'created': created.isoformat(timespec="milliseconds"),
-            'realm': realm,
-            'service': service,
-            'process_id': ident,
-            'expires': expires,
+            "created": created.isoformat(timespec="milliseconds"),
+            "realm": realm,
+            "service": service,
+            "process_id": ident,
+            "expires": expires,
         }
 
         result = self._execute_task(
@@ -309,7 +301,7 @@ class _ExecutorBase:
             "process_execute",
             run_config=dict(
                 ident=ident,
-                request=request.model_dump(mode='json'),
+                request=request.model_dump(mode="json"),
                 project_path=project,
             ),
             meta=meta,
@@ -379,7 +371,6 @@ class _ExecutorBase:
         # NOTE: We expect the expiration timeout beeing larger than the pending
         # timeout
         if not ti.dismissed and now_ts < ti.created + ti.pending_timeout:
-
             st = JobStatus(
                 job_id=ti.job_id,
                 status=JobStatus.PENDING,
@@ -402,7 +393,6 @@ class _ExecutorBase:
 
         # Lock accross multiple server instances
         with registry.lock(self._celery, f"job:{job_id}", timeout=timeout):
-
             # Check if job_id is registered
             ti = registry.find_job(self._celery, job_id, realm=realm)
             if not ti:
@@ -431,7 +421,7 @@ class _ExecutorBase:
             DONE = 3
 
         state = self._celery.backend.get_task_meta(job_id)
-        match state['status']:
+        match state["status"]:
             case Celery.STATE_PENDING:
                 # Retrieve scheduled jobs
                 st, request = self._query_task(job_id, destinations)
@@ -468,14 +458,14 @@ class _ExecutorBase:
                         job_id,
                         destination=destinations,
                         terminate=True,
-                        signal='SIGKILL',
+                        signal="SIGKILL",
                         reply=True,
                         timeout=timeout,
                     )
                     logger.trace("=Revoke returned: %s", rv)
                     # Check the state status:
                     state = self._celery.backend.get_task_meta(job_id)
-                    assert_postcondition(state['status'] == Celery.STATE_REVOKED)
+                    assert_postcondition(state["status"] == Celery.STATE_REVOKED)
                 case _S.DONE | _S.PENDING:
                     # Job is not revokable
                     pass
@@ -532,7 +522,7 @@ class _ExecutorBase:
         updated = None
         message = ""
 
-        match state['status']:
+        match state["status"]:
             case Celery.STATE_PENDING:
                 # Retrieve scheduled jobs
                 status, request = self._query_task(job_id, destinations)
@@ -548,14 +538,14 @@ class _ExecutorBase:
                         status = JobStatus.DISMISSED
                     case _:
                         status = JobStatus.PENDING
-                state['kwargs'] = request['kwargs']
+                state["kwargs"] = request["kwargs"]
             case Celery.STATE_STARTED:
                 status = JobStatus.RUNNING
                 message = "Task started"
             case Celery.STATE_FAILURE:
                 status = JobStatus.FAILED
                 # Result contains the python exception raised
-                match state['result']:
+                match state["result"]:
                     case InputValueError() as err:
                         message = str(err)
                     case DismissedTaskError():
@@ -570,47 +560,47 @@ class _ExecutorBase:
                         message = "Internal worker error"
                     case msg:
                         message = msg
-                finished = state['date_done']
+                finished = state["date_done"]
                 progress = 100
             case Celery.STATE_SUCCESS:
                 status = JobStatus.SUCCESS
-                finished = state['date_done']
+                finished = state["date_done"]
                 message = "Task finished"
                 progress = 100
             case Celery.STATE_REVOKED:
-                finished = state['date_done']
+                finished = state["date_done"]
                 message = "Task dismissed"
                 status = JobStatus.DISMISSED
             case Celery.STATE_UPDATED:
-                result = state['result']
-                progress = result.get('progress')
-                message = result.get('message')
-                updated = result.get('updated')
+                result = state["result"]
+                progress = result.get("progress")
+                message = result.get("message")
+                updated = result.get("updated")
                 status = JobStatus.RUNNING
             case _ as unknown_state:
                 # Unhandled state
                 raise RuntimeError(f"Unhandled celery task state: {unknown_state}")
 
         # Get task arguments
-        kwargs = state['kwargs']
-        meta = kwargs.get('__meta__', {})
+        kwargs = state["kwargs"]
+        meta = kwargs.get("__meta__", {})
 
         details: dict = {}
         if with_details:
-            details.update(run_config=kwargs.get('request'))
+            details.update(run_config=kwargs.get("request"))
             if finished:
                 end_at = DateTime.validate_python(finished).timestamp()
                 details.update(
-                    expires_at=to_utc_datetime(meta['expires'] + end_at),
+                    expires_at=to_utc_datetime(meta["expires"] + end_at),
                 )
 
         return JobStatus(
             job_id=job_id,
             status=status,
             finished=finished,
-            process_id=meta['process_id'],
-            created=meta['created'],
-            started=meta.get('started'),
+            process_id=meta["process_id"],
+            created=meta["created"],
+            started=meta.get("started"),
             updated=updated,
             progress=progress,
             message=message,
@@ -649,8 +639,8 @@ class _ExecutorBase:
             return None
 
         state = self._celery.backend.get_task_meta(job_id)
-        if state['status'] == Celery.STATE_SUCCESS:
-            return state['result']
+        if state["status"] == Celery.STATE_SUCCESS:
+            return state["result"]
         else:
             return None
 
@@ -663,8 +653,8 @@ class _ExecutorBase:
         cursor: int = 0,
         limit: int = 100,
     ) -> Sequence[JobStatus]:
-        """ Iterate over job statuses
-        """
+        """Iterate over job statuses"""
+
         def _pull() -> Iterator[JobStatus]:
             destinations = service and self.get_destinations(service, services)
             for job_id, _, _ in registry.find_keys(self._celery, service, realm=realm):
@@ -693,7 +683,7 @@ class _ExecutorBase:
         timeout: int,
         realm: Optional[str] = None,
     ) -> Optional[ProcessLog]:
-        """ Return process execution logs (blocking) """
+        """Return process execution logs (blocking)"""
         ti = registry.find_job(self._celery, job_id, realm=realm)
         if not ti:
             return None
@@ -704,8 +694,8 @@ class _ExecutorBase:
             raise ServiceNotAvailable(ti.service)
 
         response = self.command(
-            'job_log',
-            arguments={'job_id': job_id},
+            "job_log",
+            arguments={"job_id": job_id},
             destination=destinations,
             timeout=timeout,
         )
@@ -725,7 +715,7 @@ class _ExecutorBase:
         timeout: int,
         realm: Optional[str] = None,
     ) -> Optional[ProcessFiles]:
-        """ Return process execution files (blocking) """
+        """Return process execution files (blocking)"""
         ti = registry.find_job(self._celery, job_id, realm=realm)
         if not ti:
             return None
@@ -736,8 +726,8 @@ class _ExecutorBase:
             raise ServiceNotAvailable(ti.service)
 
         response = self.command(
-            'job_files',
-            arguments={'job_id': job_id, 'public_url': public_url},
+            "job_files",
+            arguments={"job_id": job_id, "public_url": public_url},
             destination=destinations,
             timeout=timeout,
         )
@@ -758,7 +748,7 @@ class _ExecutorBase:
         expiration: int,
         realm: Optional[str] = None,
     ) -> Optional[Link]:
-        """ Return download_url (blocking) """
+        """Return download_url (blocking)"""
         ti = registry.find_job(self._celery, job_id, realm=realm)
         if not ti:
             return None
@@ -769,8 +759,8 @@ class _ExecutorBase:
             raise ServiceNotAvailable(ti.service)
 
         response = self.command(
-            'download_url',
-            arguments={'job_id': job_id, 'resource': resource, 'expiration': expiration},
+            "download_url",
+            arguments={"job_id": job_id, "resource": resource, "expiration": expiration},
             destination=destinations,
             timeout=timeout,
         )
@@ -788,6 +778,7 @@ class _ExecutorBase:
 # Executor; Synchronous version
 # =============================
 
+
 @dataclass
 class Result:
     job_id: str
@@ -796,12 +787,11 @@ class Result:
 
 
 class Executor(_ExecutorBase):
-
     def update_services(self) -> ServiceDict:
-        """ Update services destinations
+        """Update services destinations
 
-            Collapse presence details under unique service
-            name.
+        Collapse presence details under unique service
+        name.
         """
         self._services = self.get_services()
         logger.trace("=update_services %s", self._services)
@@ -816,8 +806,7 @@ class Executor(_ExecutorBase):
         project: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
-        """ Return process description
-        """
+        """Return process description"""
         destinations = self.destinations(service)
         if not destinations:
             raise ServiceNotAvailable(service)
@@ -830,8 +819,7 @@ class Executor(_ExecutorBase):
         )
 
     def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
-        """ Return process description summary
-        """
+        """Return process description summary"""
         destinations = self.destinations(service)
         if not destinations:
             raise ServiceNotAvailable(service)
@@ -849,7 +837,6 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
     ) -> Result:
-
         job_id, _get_result, _get_status = self._execute(
             service,
             ident,
@@ -868,7 +855,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[JobStatus]:
-        """ Delete job """
+        """Delete job"""
         return self._dismiss(
             job_id,
             self._services,
@@ -883,7 +870,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         with_details: bool = False,
     ) -> Optional[JobStatus]:
-        """ Return job status """
+        """Return job status"""
         return self._job_status_ext(
             job_id,
             self._services,
@@ -901,7 +888,7 @@ class Executor(_ExecutorBase):
         cursor: int = 0,
         limit: int = 100,
     ) -> Sequence[JobStatus]:
-        """ Iterate over job statuses """
+        """Iterate over job statuses"""
         return self._jobs(
             self._services,
             service=service,
@@ -917,7 +904,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[ProcessLog]:
-        """ Return process execution logs """
+        """Return process execution logs"""
         return self._log_details(
             job_id,
             self._services,
@@ -933,7 +920,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[ProcessFiles]:
-        """ Return process execution files """
+        """Return process execution files"""
         return self._files(
             job_id,
             self._services,
@@ -951,7 +938,7 @@ class Executor(_ExecutorBase):
         expiration: int,
         realm: Optional[str] = None,
     ) -> Optional[Link]:
-        """ Return download url """
+        """Return download url"""
         return self._download_url(
             job_id,
             self._services,

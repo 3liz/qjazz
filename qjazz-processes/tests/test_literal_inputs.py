@@ -1,4 +1,3 @@
-
 from collections import Counter
 from datetime import datetime
 
@@ -31,7 +30,6 @@ def meta(seq, s):
 
 
 def test_parameter_description():
-
     param = QgsProcessingParameterString(
         "String",
         description="String description",
@@ -46,7 +44,6 @@ def test_parameter_description():
 
 
 def test_parameter_string():
-
     param = QgsProcessingParameterString("String")
 
     inp = InputParameter(param)
@@ -55,7 +52,7 @@ def test_parameter_string():
 
     print("\ntest_parameter_string::", schema)
 
-    assert schema['type'] == 'string'
+    assert schema["type"] == "string"
 
     with pytest.raises(ValidationError):
         value = inp.value(1)
@@ -65,7 +62,6 @@ def test_parameter_string():
 
 
 def test_parameter_enum():
-
     param = QgsProcessingParameterEnum(
         "Enum",
         options=["foo", "bar", "baz"],
@@ -79,8 +75,8 @@ def test_parameter_enum():
 
     print("\ntest_parameter_enum::", schema)
 
-    assert schema['type'] == 'string'
-    assert schema['default'] == 'bar'
+    assert schema["type"] == "string"
+    assert schema["default"] == "bar"
 
     with pytest.raises(ValidationError):
         value = inp.value("not_an_option")
@@ -92,7 +88,6 @@ def test_parameter_enum():
 
 
 def test_parameter_enum_multiple():
-
     param = QgsProcessingParameterEnum(
         "Enum",
         options=["foo", "bar", "baz"],
@@ -105,7 +100,7 @@ def test_parameter_enum_multiple():
 
     print("\ntest_parameter_enum_multiple::", schema)
 
-    assert schema['type'] == 'array'
+    assert schema["type"] == "array"
 
     value = inp.value(["foo", "bar"])
     assert Counter(value) == Counter([0, 1])
@@ -123,7 +118,6 @@ def test_parameter_enum_multiple():
 
 
 def test_parameter_number():
-
     param = QgsProcessingParameterNumber(
         "Number",
         type=NumberParameterType.Integer,
@@ -135,20 +129,20 @@ def test_parameter_number():
 
     print("\ntest_parameter_number::", schema)
 
-    assert schema['type'] == 'integer'
+    assert schema["type"] == "integer"
 
     with pytest.raises(ValidationError):
         value = inp.value("bar")
 
-    value = inp.value(1.)
+    value = inp.value(1.0)
     print("test_parameter_number::integer value::", value)
     assert param.checkValueIsAcceptable(value)
 
     param = QgsProcessingParameterNumber(
         "Number",
         type=NumberParameterType.Double,
-        minValue=0.,
-        maxValue=1.,
+        minValue=0.0,
+        maxValue=1.0,
     )
 
     inp = InputParameter(param)
@@ -157,13 +151,12 @@ def test_parameter_number():
 
     print("\ntest_parameter_number::double::", schema)
 
-    assert schema['type'] == 'number'
-    assert schema['maximum'] == 1.0
-    assert schema['minimum'] == 0.0
+    assert schema["type"] == "number"
+    assert schema["maximum"] == 1.0
+    assert schema["minimum"] == 0.0
 
 
 def test_parameter_distance():
-
     param = QgsProcessingParameterDistance("Distance")
     param.setDefaultUnit(Qgis.DistanceUnit.Meters)
 
@@ -172,17 +165,16 @@ def test_parameter_distance():
     schema = inp.json_schema()
 
     print("\ntest_parameter_distance::", schema)
-    assert schema['type'] == 'number'
+    assert schema["type"] == "number"
 
     metadata = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_scale::metadata", metadata)
 
-    assert metadata['ogcType'].href == ogc.OgcDataType['length']
-    assert metadata['uom'].href == ogc.uom_ref('m')
+    assert metadata["ogcType"].href == ogc.OgcDataType["length"]
+    assert metadata["uom"].href == ogc.uom_ref("m")
 
 
 def test_parameter_scale():
-
     param = QgsProcessingParameterScale("Scale")
 
     inp = InputParameter(param)
@@ -190,32 +182,30 @@ def test_parameter_scale():
     schema = inp.json_schema()
     print("\ntest_parameter_scale::", schema)
 
-    assert schema['type'] == 'number'
+    assert schema["type"] == "number"
 
     metadata = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_scale::metadata", metadata)
 
-    assert metadata['ogcType'].href == ogc.OgcDataType['scale']
+    assert metadata["ogcType"].href == ogc.OgcDataType["scale"]
 
 
 def test_parameter_duration():
-
     param = QgsProcessingParameterDuration("Duration")
 
     inp = InputParameter(param)
 
     schema = inp.json_schema()
     print("\ntest_parameter_duration::", schema)
-    assert schema['type'] == 'number'
+    assert schema["type"] == "number"
 
     metadata = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_duration::metadata", metadata)
 
-    assert metadata['ogcType'].href == ogc.OgcDataType['time']
+    assert metadata["ogcType"].href == ogc.OgcDataType["time"]
 
 
 def test_parameter_range():
-
     param = QgsProcessingParameterRange("Range")
 
     assert param.dataType() == NumberParameterType.Integer
@@ -224,15 +214,14 @@ def test_parameter_range():
 
     schema = inp.json_schema()
     print("\ntest_parameter_range::", schema)
-    assert schema['type'] == 'array'
-    assert schema['format'] == 'x-range'
-    assert schema['items']['type'] == 'integer'
-    assert schema['maxItems'] == 2
-    assert schema['minItems'] == 2
+    assert schema["type"] == "array"
+    assert schema["format"] == "x-range"
+    assert schema["items"]["type"] == "integer"
+    assert schema["maxItems"] == 2
+    assert schema["minItems"] == 2
 
 
 def test_parameter_datetime():
-
     from qgis.PyQt.QtCore import QDateTime
 
     qdt = QDateTime.currentDateTime()
@@ -242,9 +231,9 @@ def test_parameter_datetime():
 
     schema = inp.json_schema()
     print("\ntest_parameter_datetime::", schema)
-    assert schema['type'] == 'string'
-    assert schema['format'] == 'date-time'
-    assert schema['formatMinimum'] == qdt.toPyDateTime().isoformat()
+    assert schema["type"] == "string"
+    assert schema["format"] == "date-time"
+    assert schema["formatMinimum"] == qdt.toPyDateTime().isoformat()
 
     value = inp.value(datetime.now().isoformat())
     assert param.checkValueIsAcceptable(value)
@@ -261,7 +250,7 @@ def test_parameter_datetime():
     )
     inp = InputParameter(param)
     schema = inp.json_schema()
-    assert schema['format'] == 'date'
+    assert schema["format"] == "date"
 
     param = QgsProcessingParameterDateTime(
         "DateTime",
@@ -269,29 +258,27 @@ def test_parameter_datetime():
     )
     inp = InputParameter(param)
     schema = inp.json_schema()
-    assert schema['format'] == 'time'
+    assert schema["format"] == "time"
 
 
 def test_parameter_band():
-
     param = QgsProcessingParameterBand("Band")
 
     inp = InputParameter(param)
 
     schema = inp.json_schema()
     print("\ntest_parameter_band::", schema)
-    assert schema['type'] == 'integer'
-    assert schema['minimum'] == 0
+    assert schema["type"] == "integer"
+    assert schema["minimum"] == 0
 
     param = QgsProcessingParameterBand("Band", allowMultiple=True)
     inp = InputParameter(param)
     schema = inp.json_schema()
     print("\ntest_parameter_band::multiple", schema)
-    assert schema['type'] == 'array'
+    assert schema["type"] == "array"
 
 
 def test_parameter_color():
-
     from qgis.PyQt.QtGui import QColor
 
     param = QgsProcessingParameterColor("Color", defaultValue=QColor(0, 0, 255, 128))
@@ -300,9 +287,9 @@ def test_parameter_color():
 
     schema = inp.json_schema()
     print("\ntest_parameter_color::", schema)
-    assert schema['type'] == 'string'
-    assert schema['format'] == 'color'
-    assert schema['default'] == '#0000ff80'
+    assert schema["type"] == "string"
+    assert schema["format"] == "color"
+    assert schema["default"] == "#0000ff80"
 
     value = inp.value("red")
     assert value == QColor(255, 0, 0)

@@ -30,6 +30,7 @@ def lazy[**P, T](f: Callable[P, T], *args, **kwargs) -> Callable[[], T]:
         if not value:
             value = f(*args, **kwargs)
         return value
+
     return wrapper
 
 
@@ -44,8 +45,8 @@ def get_crs(p: QgsProject) -> QgsCoordinateReferenceSystem:
 
 
 def bbox_inv_aspect_ratio(params):
-    bbox = params['bbox'][0]
-    c = tuple(float(x) for x in bbox.split(','))
+    bbox = params["bbox"][0]
+    c = tuple(float(x) for x in bbox.split(","))
     return abs(c[3] - c[2]) / abs(c[1] - c[0])
 
 
@@ -62,14 +63,14 @@ class MapRequest:
 
 
 def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
-    """ Check for missing required parameters for
-        a proper WMS GetMap request
+    """Check for missing required parameters for
+    a proper WMS GetMap request
 
-        Assume that all given values are valid as validation
-        occured from the client. Otherwise this will trigeer a 500
-        internal error.
+    Assume that all given values are valid as validation
+    occured from the client. Otherwise this will trigeer a 500
+    internal error.
 
-        See: https://docs.qgis.org/latest/en/docs/server_manual/services/wms.html#wms-getmap
+    See: https://docs.qgis.org/latest/en/docs/server_manual/services/wms.html#wms-getmap
     """
 
     params: Any = parse_qs(options)
@@ -88,8 +89,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
         options = f"{options}&crs={content_crs}"
     else:
         content_crs = params[0]
-        headers["Content-Crs"] = content_crs \
-            if content_crs.startswith("http") else f"[{content_crs}]"
+        headers["Content-Crs"] = content_crs if content_crs.startswith("http") else f"[{content_crs}]"
 
     if "bbox" not in params:
         # wmsExtent is assumed to be in project crs.
@@ -107,15 +107,15 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
         content_bbox = f"{r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
         options = f"{options}&bbox={content_bbox}"
 
-        inv_aspect_ratio = lambda: r.height()/r.width()   # noqa E731
+        inv_aspect_ratio = lambda: r.height() / r.width()  # noqa E731
     else:
         content_bbox = params["bbox"]
         inv_aspect_ratio = lambda: bbox_inv_aspect_ratio(params)  # noqa E731
 
     headers["Content-Bbox"] = content_bbox
 
-    width = params.get('width')
-    height = params.get('height')
+    width = params.get("width")
+    height = params.get("height")
 
     match (width, height):
         case None, None:
@@ -134,7 +134,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
     # No layers set, set all visible layers from  treeRoot
     # otherwise we will have a blank image
     if "layers" not in params:
-        layers = ','.join(visible_layers(project))
+        layers = ",".join(visible_layers(project))
         if layers:
             options = f"{options}&layers={layers}"
 

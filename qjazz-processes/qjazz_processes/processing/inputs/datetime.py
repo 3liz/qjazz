@@ -1,4 +1,3 @@
-
 import datetime
 
 from typing import Optional
@@ -28,7 +27,6 @@ else:
 
 
 class ParameterDateTime(InputParameter):
-
     @classmethod
     def create_model(
         cls,
@@ -37,13 +35,12 @@ class ParameterDateTime(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> type:
-
         _type: type
 
         def to_py(qdt):
             return qdt.toPyDateTime() if qdt.isValid() else None
 
-        default = field.pop('default', None)
+        default = field.pop("default", None)
 
         maximum = to_py(param.maximum())
         minimum = to_py(param.minimum())
@@ -71,9 +68,9 @@ class ParameterDateTime(InputParameter):
         if not validation_only:
             schema_extra = {}
             if maximum:
-                schema_extra['formatMaximum'] = maximum.isoformat()
+                schema_extra["formatMaximum"] = maximum.isoformat()
             if minimum:
-                schema_extra['formatMinimum'] = minimum.isoformat()
+                schema_extra["formatMinimum"] = minimum.isoformat()
             field.update(json_schema_extra=schema_extra)
 
             if default:
@@ -86,7 +83,6 @@ class ParameterDateTime(InputParameter):
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QDate | QTime | QDateTime:
-
         _value = self.validate(inp)
 
         match self._param.dataType():

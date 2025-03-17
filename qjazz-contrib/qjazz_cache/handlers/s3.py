@@ -19,6 +19,7 @@ Limitations:
 
 - Not thread safe
 """
+
 import os
 
 from contextlib import contextmanager
@@ -48,21 +49,23 @@ from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 if Qgis.QGIS_VERSION_INT < 33800:
     import warnings
+
     warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})")
 
-gdal_version_info = tuple(int(n) for n in __gdal_version__.split('.'))
+gdal_version_info = tuple(int(n) for n in __gdal_version__.split("."))
 
 # Allowed files suffix for projects
-PROJECT_SFX = '.qgz'
+PROJECT_SFX = ".qgz"
 
 
 @contextmanager
 def s3_storage_preprocessor(prefix: str):
-    """ Convert relative local path to
-        vsis3 handler
+    """Convert relative local path to
+    vsis3 handler
     """
+
     def to_vsis3(path: str) -> str:
-        if path.startswith('./'):
+        if path.startswith("./"):
             logger.debug("[S3] converting --> %s", path)
             path = f"/vsis3/{prefix}/{path[2:]}"
         return path
@@ -78,7 +81,6 @@ def s3_storage_preprocessor(prefix: str):
 
 
 class S3HandlerConfig(ConfigSettings):
-
     endpoint: str
     access_key: str
     secret_key: SecretStr
@@ -92,12 +94,11 @@ class S3HandlerConfig(ConfigSettings):
 
 
 class S3ProtocolHandler(ProtocolHandler):
-    """ Protocol class for protocol handler
-    """
+    """Protocol class for protocol handler"""
+
     Config = S3HandlerConfig
 
     def __init__(self, conf: S3HandlerConfig):
-
         if conf.cafile:
             os.environ["SSL_CERT_FILE"] = str(conf.cafile)
 
@@ -116,8 +117,7 @@ class S3ProtocolHandler(ProtocolHandler):
         self._configured = False
 
     def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
-        """ Validate the rooturl format
-        """
+        """Validate the rooturl format"""
         if not config.force_readonly_layers:
             raise InvalidCacheRootUrl(
                 "S3 handler does not support writable layers, use force_readonly_layers=True",
@@ -125,14 +125,11 @@ class S3ProtocolHandler(ProtocolHandler):
 
         # Check that the bucket exists
         bucket = rooturl.hostname
-        prefix = rooturl.path.strip('/')
+        prefix = rooturl.path.strip("/")
 
         if not bucket:
             raise InvalidCacheRootUrl(
-                (
-                    "Invalid S3 root url '{rooturl.geturl()}', "
-                    "expecting '{scheme}://{bucket}/[prefix/]'"
-                ),
+                ("Invalid S3 root url '{rooturl.geturl()}', expecting '{scheme}://{bucket}/[prefix/]'"),
             )
         if not self._client.bucket_exists(bucket):
             logger.warning(f"S3 Bucket '{bucket}' does not exists on target {self._conf.endpoint}")
@@ -149,12 +146,12 @@ class S3ProtocolHandler(ProtocolHandler):
             # XXX Require GDAL 3.6+
             # See https://gdal.org/en/latest/user/virtual_file_systems.html#vsis3-aws-s3-files
             # for options
-            SetPathSpecificOption(key, 'AWS_S3_ENDPOINT', self._conf.endpoint)
-            SetPathSpecificOption(key, 'AWS_ACCESS_KEY_ID', self._conf.access_key)
-            SetPathSpecificOption(key, 'AWS_SECRET_ACCESS_KEY', secret_key)
-            SetPathSpecificOption(key, 'AWS_REGION', self._conf.region)
-            SetPathSpecificOption(key, 'AWS_VIRTUAL_HOSTING', 'FALSE')
-            SetPathSpecificOption(key, 'AWS_HTTPS', 'YES' if self._conf.secure else 'NO')
+            SetPathSpecificOption(key, "AWS_S3_ENDPOINT", self._conf.endpoint)
+            SetPathSpecificOption(key, "AWS_ACCESS_KEY_ID", self._conf.access_key)
+            SetPathSpecificOption(key, "AWS_SECRET_ACCESS_KEY", secret_key)
+            SetPathSpecificOption(key, "AWS_REGION", self._conf.region)
+            SetPathSpecificOption(key, "AWS_VIRTUAL_HOSTING", "FALSE")
+            SetPathSpecificOption(key, "AWS_HTTPS", "YES" if self._conf.secure else "NO")
         elif not self._configured:
             from osgeo.gdal import SetConfigOption
 
@@ -164,34 +161,34 @@ class S3ProtocolHandler(ProtocolHandler):
 
             secret_key = self._conf.secret_key.get_secret_value()
 
-            SetConfigOption('AWS_S3_ENDPOINT', self._conf.endpoint)
-            SetConfigOption('AWS_ACCESS_KEY_ID', self._conf.access_key)
-            SetConfigOption('AWS_SECRET_ACCESS_KEY', secret_key)
-            SetConfigOption('AWS_REGION', self._conf.region)
-            SetConfigOption('AWS_VIRTUAL_HOSTING', 'FALSE')
-            SetConfigOption('AWS_HTTPS', 'YES' if self._conf.secure else 'NO')
+            SetConfigOption("AWS_S3_ENDPOINT", self._conf.endpoint)
+            SetConfigOption("AWS_ACCESS_KEY_ID", self._conf.access_key)
+            SetConfigOption("AWS_SECRET_ACCESS_KEY", secret_key)
+            SetConfigOption("AWS_REGION", self._conf.region)
+            SetConfigOption("AWS_VIRTUAL_HOSTING", "FALSE")
+            SetConfigOption("AWS_HTTPS", "YES" if self._conf.secure else "NO")
 
             self._configured = True
 
     def resolve_uri(self, url: Url) -> str:
-        """ Sanitize uri for using as catalog key entry
+        """Sanitize uri for using as catalog key entry
 
-            The returned uri must ensure unicity of the
-            resource location
+        The returned uri must ensure unicity of the
+        resource location
 
-            Must be idempotent
+        Must be idempotent
         """
         return url.geturl()
 
     def public_path(self, uri: str | Url, location: str, rooturl: Url) -> str:
-        """ Given a search path and an uri corressponding to
-            a resolved_uri for this handler, it returns the uri
-            usable relative to the search path.
+        """Given a search path and an uri corressponding to
+        a resolved_uri for this handler, it returns the uri
+        usable relative to the search path.
 
-            This is practically the reverse of a
-            `CacheManager::resolve_path + resolve_url` calls
+        This is practically the reverse of a
+        `CacheManager::resolve_path + resolve_url` calls
 
-            Use it if you need to return a public path for callers
+        Use it if you need to return a public path for callers
         """
         if isinstance(uri, str):
             uri = urlsplit(uri)
@@ -199,11 +196,10 @@ class S3ProtocolHandler(ProtocolHandler):
         prefix = PurePosixPath(rooturl.path)
         path = PurePosixPath(uri.path).relative_to(prefix)
         path = Path(location).joinpath(path)
-        return uri._replace(path=f'{path}').geturl()
+        return uri._replace(path=f"{path}").geturl()
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
-        """ Return project metadata
-        """
+        """Return project metadata"""
         if isinstance(url, ProjectMetadata):
             url = urlsplit(url.uri)
 
@@ -240,8 +236,7 @@ class S3ProtocolHandler(ProtocolHandler):
         )
 
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
-        """ Return project associated with metadata
-        """
+        """Return project associated with metadata"""
         assert_precondition(Qgis.QGIS_VERSION_INT >= 33800, "Qgis 3.38+ required")
         assert_precondition(config.force_readonly_layers)
 
@@ -268,7 +263,7 @@ class S3ProtocolHandler(ProtocolHandler):
                 # Result ok
                 pass
 
-        object_path = PurePosixPath(bucket_name, object_name.strip('/'))
+        object_path = PurePosixPath(bucket_name, object_name.strip("/"))
 
         tmpdir = TemporaryDirectory(
             prefix="s3_",
@@ -279,7 +274,7 @@ class S3ProtocolHandler(ProtocolHandler):
         basename = object_path.name
         filename = Path(tmpdir.name).joinpath(basename)
 
-        with filename.open('wb') as fp:
+        with filename.open("wb") as fp:
             for chunk in resp.stream():
                 fp.write(chunk)
 
@@ -295,25 +290,22 @@ class S3ProtocolHandler(ProtocolHandler):
             return load_project_from_uri(f"{filename}", config)
 
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
-        """ List all projects availables from the given uri
-        """
+        """List all projects availables from the given uri"""
         bucket_name = uri.hostname
-        prefix = uri.path.lstrip('/')
+        prefix = uri.path.lstrip("/")
 
         assert_precondition(bucket_name is not None)
         bucket_name = cast(str, bucket_name)
 
         for obj in self._client.list_objects(bucket_name, prefix, recursive=True):
-
             path = PurePosixPath(obj.object_name)
 
-            if path.suffix == '.qgz':
-
+            if path.suffix == ".qgz":
                 assert_precondition(obj.last_modified is not None)
                 last_modified = cast(datetime, obj.last_modified)
 
                 yield ProjectMetadata(
-                    uri=uri._replace(path=f'{path}').geturl(),
+                    uri=uri._replace(path=f"{path}").geturl(),
                     name=path.stem,
                     scheme=uri.scheme,
                     storage="s3",

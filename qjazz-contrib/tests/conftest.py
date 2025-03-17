@@ -8,35 +8,34 @@ from qjazz_cache.prelude import CacheManager, ProjectsConfig
 from qjazz_contrib.core import logger, qgis
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def rootdir(request: pytest.FixtureRequest) -> Path:
     return Path(request.config.rootdir.strpath)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def data(rootdir: Path) -> Path:
-    return rootdir.joinpath('data')
+    return rootdir.joinpath("data")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def plugindir(rootdir: Path) -> Path:
-    return rootdir.joinpath('plugins')
+    return rootdir.joinpath("plugins")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def config(data):
-    """ Setup configuration
-    """
+    """Setup configuration"""
     conf = ProjectsConfig(
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
         search_paths={
-            '/tests': f'{data}/samples/',
-            '/france': f'{data}/france_parts/',
-            '/montpellier': f'{data}/montpellier/',
-            '/database': 'postgresql://?service=qjazz',
-            '/mydb': 'postgresql://user@myddb?dbname=foo&project={path}',
+            "/tests": f"{data}/samples/",
+            "/france": f"{data}/france_parts/",
+            "/montpellier": f"{data}/montpellier/",
+            "/database": "postgresql://?service=qjazz",
+            "/mydb": "postgresql://user@myddb?dbname=foo&project={path}",
         },
     )
     CacheManager.initialize_handlers(conf)
@@ -57,6 +56,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 def pytest_sessionfinish(session, exitstatus):
     try:
         from qjazz_contrib.core import qgis
+
         qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()

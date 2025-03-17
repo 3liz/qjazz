@@ -1,11 +1,9 @@
-
 from qgis.core import QgsProcessingFeedback
 
 from qjazz_contrib.core import logger
 
 
 class FeedBack(QgsProcessingFeedback):
-
     def __init__(self):
         super().__init__(False)
 

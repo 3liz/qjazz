@@ -23,7 +23,7 @@ from qjazz_contrib.core.models import Field, Opt
 
 from .resolver import BackendConfig
 
-HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
+HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 
 
 class Server(ConfigBase):
@@ -48,7 +48,7 @@ class Server(ConfigBase):
         description="Path to the TLS certificat file",
     )
     cross_origin: HttpCORS = Field(
-        default='all',
+        default="all",
         title="CORS origin",
         description=(
             "Allows to specify origin for CORS. If set 'all' will set\n"
@@ -78,16 +78,14 @@ class ConfigProto(Protocol):
     backends: dict[str, BackendConfig]
     includes: Optional[str]
 
-    def model_dump_json(self, *args, **kwargs) -> str:
-        ...
+    def model_dump_json(self, *args, **kwargs) -> str: ...
 
 
 def create_config() -> ConfBuilder:
-
     builder = ConfBuilder()
 
     # Add the `[http]` configuration section
-    builder.add_section('server', Server)
+    builder.add_section("server", Server)
 
     # Add the `[backends]` configuration section
     builder.add_section(
@@ -98,8 +96,8 @@ def create_config() -> ConfBuilder:
 
     # Path to services configuration
     builder.add_section(
-        'includes',
-        Opt[str],   # type: ignore [misc]
+        "includes",
+        Opt[str],  # type: ignore [misc]
         Field(
             title="Path to services configuration files",
             description=(
@@ -133,8 +131,7 @@ class BackendConfigError(Exception):
 
 
 def load_include_config_files(includes: str, conf: ConfigProto):
-    """ Load extra services configuration files
-    """
+    """Load extra services configuration files"""
     for file in glob(includes):
         cnf = read_config_toml(Path(file))
         if BACKENDS_SECTION not in cnf:
@@ -143,7 +140,7 @@ def load_include_config_files(includes: str, conf: ConfigProto):
         backends = cnf[BACKENDS_SECTION]
         if not isinstance(backends, dict):
             raise BackendConfigError(file, "Invalid backends section")
-        for (name, _backend) in backends.items():
+        for name, _backend in backends.items():
             if name in conf.backends:
                 raise BackendConfigError(
                     file,
@@ -153,7 +150,6 @@ def load_include_config_files(includes: str, conf: ConfigProto):
 
 
 def load_configuration(configpath: Optional[Path]) -> ConfigProto:
-
     if configpath:
         cnf = read_config_toml(configpath)
     else:
@@ -171,7 +167,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProto:
         return confservice.conf
 
     except ConfigError as err:
-        print("Configuration error:", err, file=sys.stderr, flush=True) # noqa T201
+        print("Configuration error:", err, file=sys.stderr, flush=True)  # noqa T201
         sys.exit(1)
     except BackendConfigError as err:
         print(err, file=sys.stderr, flush=True)  # noqa T201

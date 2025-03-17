@@ -1,5 +1,5 @@
-""" Configuration common definitions
-"""
+"""Configuration common definitions"""
+
 import ssl
 import string
 import sys
@@ -18,10 +18,10 @@ from pydantic import (
 from ._service import ConfigBase
 
 __all__ = [
-    'NetInterface',
-    'SSLConfig',
-    'Template',
-    'TemplateStr',
+    "NetInterface",
+    "SSLConfig",
+    "Template",
+    "TemplateStr",
 ]
 
 
@@ -31,7 +31,8 @@ def _validate_netinterface(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
             raise ValueError("Invalid socket address")
     else:
         import ipaddress
-        addr = v[0].strip('[]')
+
+        addr = v[0].strip("[]")
         # This raise a ValueError on invalid ip address
         ipaddr = ipaddress.ip_address(addr)
         if isinstance(ipaddr, ipaddress.IPv6Address):
@@ -48,6 +49,7 @@ NetInterface = Annotated[
 #
 # SSL configuration
 #
+
 
 class SSLConfig(ConfigBase):
     cafile: Optional[FilePath] = Field(
@@ -70,7 +72,7 @@ class SSLConfig(ConfigBase):
     #
 
     def create_ssl_context(self, purpose: ssl.Purpose) -> ssl.SSLContext:
-        """ Used for validating server client side """
+        """Used for validating server client side"""
         ssl_context = ssl.create_default_context(
             purpose=purpose,
             cafile=self.cafile.as_posix() if self.cafile else None,
@@ -80,12 +82,13 @@ class SSLConfig(ConfigBase):
         return ssl_context
 
     def create_ssl_client_context(self) -> ssl.SSLContext:
-        """ Used client side """
+        """Used client side"""
         return self.create_ssl_context(ssl.Purpose.SERVER_AUTH)
 
     def create_ssl_server_context(self) -> ssl.SSLContext:
-        """ Used server side """
+        """Used server side"""
         return self.create_ssl_context(ssl.Purpose.CLIENT_AUTH)
+
 
 #
 # Template
@@ -108,5 +111,5 @@ TemplateStr = Annotated[
     Template,
     PlainValidator(_validate_template),
     PlainSerializer(lambda t: t.template, return_type=str),
-    WithJsonSchema({'type': 'str'}),
+    WithJsonSchema({"type": "str"}),
 ]

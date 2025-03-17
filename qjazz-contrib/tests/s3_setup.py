@@ -1,4 +1,3 @@
-
 from qjazz_cache import CacheManager, ProjectsConfig
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.qgis import init_qgis_application
@@ -21,7 +20,6 @@ projects = ProjectsConfig(
             ),
         },
     },
-
 )
 
 CacheManager.initialize_handlers(projects)

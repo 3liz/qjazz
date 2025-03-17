@@ -1,6 +1,7 @@
-""" Command line client
-    For running processinc algorithms
+"""Command line client
+For running processinc algorithms
 """
+
 import sys
 
 from pathlib import Path
@@ -36,7 +37,7 @@ from .config import ProcessingConfig
 
 confservice = config.ConfBuilder()
 
-confservice.add_section('processing', ProcessingConfig, field=...)
+confservice.add_section("processing", ProcessingConfig, field=...)
 
 
 class ConfigProto(Protocol):
@@ -118,7 +119,9 @@ FilePathType = click.Path(
 
 @click.group()
 @click.option(
-    "--config", "-C", "configpath",
+    "--config",
+    "-C",
+    "configpath",
     help="Path to configuration file",
     type=FilePathType,
     envvar="PY_QGIS_PROCESSES_CONFIG",
@@ -136,16 +139,17 @@ def cli_commands(
     )
 
 
-@cli_commands.command('version')
+@cli_commands.command("version")
 def print_versions():
     for v in qgis.show_all_versions():
         echo(v)
 
 
-@cli_commands.command('config')
+@cli_commands.command("config")
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
-    "--format", "out_format",
+    "--format",
+    "out_format",
     type=click.Choice(("json", "yaml", "toml")),
     default="json",
     help="Output format (schema only)",
@@ -156,11 +160,10 @@ def dump_config(
     out_format: str,
     schema: bool = False,
 ):
-    """ Display configuration
-    """
+    """Display configuration"""
     if schema:
         match out_format:
-            case 'json':
+            case "json":
                 json_schema = confservice.json_schema()
                 echo(
                     TypeAdapter(JsonValue).dump_json(
@@ -168,12 +171,13 @@ def dump_config(
                         indent=4,
                     ),
                 )
-            case 'yaml':
+            case "yaml":
                 from ruamel.yaml import YAML
+
                 json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
-            case 'toml':
+            case "toml":
                 confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
@@ -184,13 +188,13 @@ def dump_config(
 # Plugins
 #
 
+
 @cli_commands.command("plugins")
 @click.pass_context
 def processing_plugins(
     ctx: click.Context,
 ):
-    """ List loaded plugins
-    """
+    """List loaded plugins"""
     conf = load_configuration(ctx.obj.configpath)
     plugins = init_qgis(conf.processing, use_projects=False)
 
@@ -200,6 +204,7 @@ def processing_plugins(
         echo(f"{md['general'].get('version', 'n/a'):<10}", nl=False)
         echo(f"{md['general'].get('qgisminimumversion', 'n/a'):<10}", nl=False)
         echo(p.path)
+
 
 #
 # Providers
@@ -213,8 +218,7 @@ def processing_providers(
     ctx: click.Context,
     all_providers: bool,
 ):
-    """ List (published) providers
-    """
+    """List (published) providers"""
     conf = load_configuration(ctx.obj.configpath)
     plugins = init_qgis(conf.processing, use_projects=False)
 
@@ -228,17 +232,17 @@ def processing_providers(
         echo(f"{p.longName():<30}")
         warning = p.warningMessage()
         if warning:
-            echo(style(f"\t{warning}", fg='yellow'))
+            echo(style(f"\t{warning}", fg="yellow"))
 
 
 #
 # Processes
 #
 
-@cli_commands.group('process')
+
+@cli_commands.group("process")
 def processes_commands():
-    """ Processes commands
-    """
+    """Processes commands"""
     pass
 
 
@@ -246,7 +250,8 @@ def processes_commands():
 @click.option("--json", "json_format", is_flag=True, help="Output as json response")
 @click.option("--provider", "-p", help="Select provider")
 @click.option(
-    "--include-deprecated", "deprecated",
+    "--include-deprecated",
+    "deprecated",
     is_flag=True,
     help="Include deprecated algorithms",
 )
@@ -257,8 +262,7 @@ def list_processes(
     provider: str,
     deprecated: bool,
 ):
-    """ List processes
-    """
+    """List processes"""
     from .processes import ProcessAlgorithm
 
     conf = load_configuration(ctx.obj.configpath)
@@ -271,6 +275,7 @@ def list_processes(
 
     if json_format:
         from qjazz_processes.schemas import ProcessSummaryList
+
         body = ProcessSummaryList.dump_json(
             [alg.summary() for alg in algs],
             by_alias=True,
@@ -280,11 +285,11 @@ def list_processes(
     else:
         for alg in algs:
             s = alg.summary()
-            bD = 'D' if alg.deprecated else ' '
-            bP = 'P' if alg.require_project else ' '
-            bI = 'I' if alg.known_issues else ' '
-            echo(style(f" {bD}{bP}{bI} ", fg='yellow'), nl=False)
-            echo(style(f"{s.id_:<40}", fg='green'), nl=False)
+            bD = "D" if alg.deprecated else " "
+            bP = "P" if alg.require_project else " "
+            bI = "I" if alg.known_issues else " "
+            echo(style(f" {bD}{bP}{bI} ", fg="yellow"), nl=False)
+            echo(style(f"{s.id_:<40}", fg="green"), nl=False)
             echo(style(f"{s.title:<20}", bold=True), nl=False)
             echo(style(f"{s.description:<30}", italic=True), nl=False)
             echo()
@@ -301,8 +306,7 @@ def describe_processes(
     project_path: str,
     dont_resolve_layers: bool,
 ):
-    """ Describe process IDENT
-    """
+    """Describe process IDENT"""
     from .processes import ProcessAlgorithm
 
     conf = load_configuration(ctx.obj.configpath)
@@ -336,8 +340,7 @@ def execute_processes(
     project_path: str,
     dry_run: bool,
 ):
-    """ Execute process IDENT
-    """
+    """Execute process IDENT"""
     from qjazz_processes.schemas import (
         InputValueError,
         JobExecute,
@@ -356,7 +359,7 @@ def execute_processes(
 
     if not inputs:
         inputs = "{}"
-    elif inputs.startswith('@'):
+    elif inputs.startswith("@"):
         # File inputs
         try:
             with Path(inputs[1:]).open() as f:
@@ -364,11 +367,12 @@ def execute_processes(
                 request = JobExecute.model_validate_json(f.read())
         except FileNotFoundError as err:
             abort_with_error(ctx, f"{err}")
-    elif inputs == '-':
+    elif inputs == "-":
         # Read from standard input
         import fileinput
 
         from io import StringIO
+
         s = StringIO()
         for line in fileinput.input():
             s.write(line)
@@ -377,13 +381,15 @@ def execute_processes(
     try:
         request = JobExecute.model_validate_json(inputs)
     except ValidationError as err:
-        abort_with_error(ctx, err.json(
-            include_url=False,
-            include_input=False,
-            include_context=False,
-            indent=4,
-        ),
-    )
+        abort_with_error(
+            ctx,
+            err.json(
+                include_url=False,
+                include_input=False,
+                include_context=False,
+                indent=4,
+            ),
+        )
 
     #
     # Initalize
@@ -394,6 +400,7 @@ def execute_processes(
 
     if not jobid:
         from uuid import uuid4
+
         jobid = str(uuid4())
 
     conf = load_configuration(ctx.obj.configpath)
@@ -415,7 +422,7 @@ def execute_processes(
 
     context.job_id = jobid
     context.workdir.mkdir(parents=True, exist_ok=True)
-    context.store_url(Template(str(context.workdir.joinpath('$resource'))))
+    context.store_url(Template(str(context.workdir.joinpath("$resource"))))
 
     if project:
         context.setProject(project)
@@ -424,14 +431,14 @@ def execute_processes(
 
     try:
         if dry_run:
-            echo(style("Dry run, not executing process", fg='yellow'), err=True)
+            echo(style("Dry run, not executing process", fg="yellow"), err=True)
             alg.validate_execute_parameters(request, feedback, context)
             echo(
                 TypeAdapter(JsonDict).dump_json(
                     {
-                        'job_id': jobid,
-                        'workdir': str(context.workdir),
-                        'request': request.model_dump(mode='json'),
+                        "job_id": jobid,
+                        "workdir": str(context.workdir),
+                        "request": request.model_dump(mode="json"),
                     },
                     indent=4,
                 ),
@@ -441,9 +448,9 @@ def execute_processes(
             echo(
                 TypeAdapter(JsonDict).dump_json(
                     {
-                        'job_id': jobid,
-                        'workdir': str(context.workdir),
-                        'result': results,
+                        "job_id": jobid,
+                        "workdir": str(context.workdir),
+                        "result": results,
                     },
                     indent=4,
                 ),
@@ -452,7 +459,7 @@ def execute_processes(
             # Write modified project
             destination_project = context.destination_project
             if destination_project and destination_project.isDirty():
-                echo(style("Writing destination project", fg='green'), err=True)
+                echo(style("Writing destination project", fg="green"), err=True)
                 assert_postcondition(
                     destination_project.write(),
                     f"Failed no save destination project {destination_project.fileName()}",
@@ -465,7 +472,6 @@ def execute_processes(
 
 
 class FeedBack(QgsProcessingFeedback):
-
     def __init__(self):
         super().__init__(False)
 

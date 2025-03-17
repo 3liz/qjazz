@@ -1,4 +1,3 @@
-
 from collections.abc import Sequence
 from textwrap import dedent as _D
 from urllib.parse import urlencode
@@ -56,7 +55,7 @@ def _to_bool_param(b: bool) -> str:
     return "TRUE" if b else "FALSE"
 
 
-def _comma_separated_list(seq: Sequence[str | int | float], sep: str = ',') -> str:
+def _comma_separated_list(seq: Sequence[str | int | float], sep: str = ",") -> str:
     return sep.join(str(v) for v in seq)
 
 
@@ -120,15 +119,13 @@ class PdfFormatOptions(JsonModel):
 
                 yield f"{name.upper()}:{val}"
 
-        return ';'.join(_iter_values())
+        return ";".join(_iter_values())
 
 
 class MapOptions(JsonModel):
     extent: Optional[Extent2D] = NullField(
         title="Extent",
-        description=(
-            "This parameter specifies the extent for a layout map item as [xmin,ymin,xmax,ymax]."
-        ),
+        description=("This parameter specifies the extent for a layout map item as [xmin,ymin,xmax,ymax]."),
     )
     rotation: Optional[float] = NullField(
         title="Rotation",
@@ -214,9 +211,7 @@ class GetPrintParameters(JsonModel):
     )
     styles: Optional[Sequence[str]] = NullField(
         title="Layer's style",
-        description=(
-            "This parameter can be used to specify a layer's style for the rendering step."
-        ),
+        description=("This parameter can be used to specify a layer's style for the rendering step."),
     )
     transparent: Optional[bool] = NullField(
         title="Transparent background",
@@ -265,9 +260,7 @@ class GetPrintParameters(JsonModel):
         if self.opacities:
             yield "OPACITIES", _comma_separated_list(self.opacities)
         if self.selection:
-            val = ';'.join(
-                f"{k}:{_comma_separated_list(ids)}" for k, ids in self.selection.items()
-            )
+            val = ";".join(f"{k}:{_comma_separated_list(ids)}" for k, ids in self.selection.items())
             yield "SELECTION", val
         if self.layers:
             yield "LAYERS", _comma_separated_list(self.layers)
@@ -278,28 +271,25 @@ class GetPrintParameters(JsonModel):
 
 def get_wms_layers(project: QgsProject) -> Sequence[str]:
     restricted_layers = set(QgsServerProjectUtils.wmsRestrictedLayers(project))
-    return tuple(
-        layer.name() for layer in project.mapLayers().values() if layer.name() not in restricted_layers
-    )
+    return tuple(layer.name() for layer in project.mapLayers().values() if layer.name() not in restricted_layers)
 
 
 #
 # GetPrint Process
 #
 
-class GetPrintProcess:
 
+class GetPrintProcess:
     @classmethod
     def inputs(
         cls,
         project: Optional[QgsProject] = None,
     ) -> Iterator[tuple[str, InputDescription]]:
-        """ Convert fields to InputDescription
-        """
+        """Convert fields to InputDescription"""
         for name, field in GetPrintParameters.model_fields.items():
             type_: object
             match name:
-                case 'layers' if project:
+                case "layers" if project:
                     type_ = Optional[set[Literal[get_wms_layers(project)]]]  # type: ignore [misc]
                 case _:
                     type_ = field.annotation
@@ -329,23 +319,23 @@ class GetPrintProcess:
 
     @classmethod
     def output(cls) -> OutputDescription:
-        """ Return output parameter description
-        """
+        """Return output parameter description"""
         if not cls._output_description:
             schema = Link.model_json_schema()
 
             cls._output_description = OutputDescription(
                 title="Output format",
                 description="Select the output document format",
-                value_passing=('byReference',),
+                value_passing=("byReference",),
                 schema={
-                    '$defs': {'Link': schema},
-                    'anyOf': [
+                    "$defs": {"Link": schema},
+                    "anyOf": [
                         {
-                            '$ref': '#/$defs/Link',
-                            'contentMediaType': fmt.media_type,
-                            'title': fmt.title,
-                        } for fmt in cls.output_formats
+                            "$ref": "#/$defs/Link",
+                            "contentMediaType": fmt.media_type,
+                            "title": fmt.title,
+                        }
+                        for fmt in cls.output_formats
                     ],
                 },
             )
@@ -361,10 +351,10 @@ class GetPrintProcess:
     def _description(cls) -> ProcessDescription:
         if not cls._description_summary:
             description = ProcessDescription(
-                id_=cls.process_id,   # type: ignore [call-arg]
+                id_=cls.process_id,  # type: ignore [call-arg]
                 title="GetPrint",
                 description="Create print layout document.",
-                version='.'.join(str(n) for n in cls._version_info),
+                version=".".join(str(n) for n in cls._version_info),
             )
 
             # Update metadata
@@ -399,8 +389,7 @@ class GetPrintProcess:
 
     @classmethod
     def parameters(cls, request: JobExecute) -> Iterator[tuple[str, str]]:
-
-        output = request.outputs.get('output')
+        output = request.outputs.get("output")
         if not output:
             raise InputValueError("Missing output format definition")
 
@@ -423,8 +412,7 @@ class GetPrintProcess:
         context: ProcessingContext,
         server: QgsServer,
     ) -> JobResults:
-        """ Execute GetPrint request
-        """
+        """Execute GetPrint request"""
         _query = urlencode(tuple(cls.parameters(request)))
 
         project = context.project()
@@ -440,14 +428,14 @@ class GetPrintProcess:
         if status_code != 200:
             raise RunProcessException("Getprint failure (code: %s)", status_code)
 
-        media_type = request.outputs['output'].format.media_type
+        media_type = request.outputs["output"].format.media_type
         reference = context.file_reference(output_file)
 
         return {
-            'output': Link(
+            "output": Link(
                 href=reference,
                 mime_type=media_type,
                 title="GetPrint document",
                 length=output_file.stat().st_size,
-            ).model_dump(mode='json', by_alias=True, exclude_none=True),
+            ).model_dump(mode="json", by_alias=True, exclude_none=True),
         }

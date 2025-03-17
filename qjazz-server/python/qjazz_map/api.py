@@ -1,4 +1,3 @@
-
 from typing import Sequence
 
 from qjazz_contrib.core.models import JsonModel, Opt

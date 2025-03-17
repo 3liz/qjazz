@@ -1,4 +1,3 @@
-
 from functools import cached_property
 from typing import Optional
 
@@ -19,7 +18,6 @@ from .getprint import GetPrintProcess
 
 
 class QgisPrintServerContext(QgisServerContext):
-
     def execute(
         self,
         task_id: str,
@@ -30,7 +28,6 @@ class QgisPrintServerContext(QgisServerContext):
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
     ) -> tuple[JobResults, Optional[QgsProject]]:
-
         match ident:
             case "getprint":
                 callee = GetPrintProcess.execute
@@ -57,11 +54,11 @@ class QgisPrintServerContext(QgisServerContext):
 
     @property
     def processes(self) -> list[ProcessSummary]:
-        """ List proceses """
+        """List proceses"""
         return [GetPrintProcess.summary()]
 
     def describe(self, ident: str, project_path: Optional[str]) -> ProcessDescription | None:
-        """ Describe process """
+        """Describe process"""
         match ident:
             case "getprint":
                 return GetPrintProcess.description(project_path)
@@ -73,8 +70,8 @@ class QgisPrintServerContext(QgisServerContext):
 #  Processes cache
 #
 
-class PrintServerCache(ProcessCache):
 
+class PrintServerCache(ProcessCache):
     def initialize(self):
         self.processing_config.projects._dont_resolve_layers = True
         QgisPrintServerContext.setup(self.processing_config)

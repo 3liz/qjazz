@@ -64,9 +64,13 @@ def parse_extent(extent: QgsRectangle | QgsBox3D, invert_axis: bool = False) -> 
         case QgsRectangle():
             return parse_bbox(extent, invert_axis)
         case QgsBox3D():
-            return parse_bbox3d(extent, invert_axis) if extent.is3D() else parse_bbox(
-                extent.toRectangle(),
-                invert_axis,
+            return (
+                parse_bbox3d(extent, invert_axis)
+                if extent.is3D()
+                else parse_bbox(
+                    extent.toRectangle(),
+                    invert_axis,
+                )
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -92,8 +96,7 @@ def compute_extent_from_layers(
     p: QgsProject,
     dest_crs: Optional[QgsCoordinateTransform] = None,
 ) -> QgsRectangle:
-    """  Combine extent from layers
-    """
+    """Combine extent from layers"""
     restricted_layers = Pu.wmsRestrictedLayers(p)
     extent = QgsRectangle()
 
@@ -119,7 +122,6 @@ def layer_extents_from_metadata(
     storage_crs: QgsCoordinateReferenceSystem,
     project: QgsProject,
 ) -> Iterator[QgsBox3D]:
-
     # Trust metadata
     md = provider.layerMetadata()
     for xt in md.extent().spatialExtents():
@@ -136,16 +138,15 @@ def layer_extents_from_metadata(
 
 
 class SpatialExtent(extent.SpatialExtent):
-
     @classmethod
     def from_project(
         cls,
         p: QgsProject,
     ) -> Optional[Self]:
-        """ Build the spatial extent
+        """Build the spatial extent
 
-            bbox_crs is the crs of the bbox property if this one is
-            different from the storage crs.
+        bbox_crs is the crs of the bbox property if this one is
+        different from the storage crs.
         """
         # wmsExtent
         # XXX Check what is the CRS of the wmsExtent
@@ -188,10 +189,10 @@ class SpatialExtent(extent.SpatialExtent):
         cls,
         layer: QgsMapLayer,
     ) -> Optional[Self]:
-        """ Build the spatial extent
+        """Build the spatial extent
 
-            bbox_crs is the crs of the bbox property if this one is
-            different from the storage crs.
+        bbox_crs is the crs of the bbox property if this one is
+        different from the storage crs.
         """
         provider = layer.dataProvider()
         if not provider:
@@ -239,28 +240,35 @@ class SpatialExtent(extent.SpatialExtent):
                         yield transform_extent(box, storage_crs, default_crs_qgis, p)
 
         return cls(
-            bbox=[parse_extent(
-                b,
-                default_crs_qgis.hasAxisInverted(),
-            ) for b in bbox_extents()],
+            bbox=[
+                parse_extent(
+                    b,
+                    default_crs_qgis.hasAxisInverted(),
+                )
+                for b in bbox_extents()
+            ],
             crs=default_crs,
-            storage_crs_bbox=[parse_extent(
-                b,
-                storage_crs.hasAxisInverted(),
-            ) for b in storage_extents],
+            storage_crs_bbox=[
+                parse_extent(
+                    b,
+                    storage_crs.hasAxisInverted(),
+                )
+                for b in storage_extents
+            ],
         )
 
 
 class TemporalExtent(extent.TemporalExtent):
-
     @classmethod
     def from_range(cls, tr: QgsDateTimeRange) -> Optional[Self]:
         if not tr.isEmpty():
             return cls(
-                interval=[[
-                    DateTime(tr.begin()),
-                    DateTime(tr.end()),
-                ]],
+                interval=[
+                    [
+                        DateTime(tr.begin()),
+                        DateTime(tr.end()),
+                    ]
+                ],
             )
         else:
             return None
@@ -275,15 +283,18 @@ class TemporalExtent(extent.TemporalExtent):
 
     @classmethod
     def from_layer(cls, layer: QgsMapLayer) -> Optional[Self]:
-
         if isinstance(layer, QgsVectorLayer) and not layer.isSpatial():
             return None
 
         xt = layer.dataProvider().layerMetadata().extent()
-        interval = [[
-            DateTime(tr.begin()),
-            DateTime(tr.end()),
-        ] for tr in xt.temporalExtents() if not tr.isEmpty()]
+        interval = [
+            [
+                DateTime(tr.begin()),
+                DateTime(tr.end()),
+            ]
+            for tr in xt.temporalExtents()
+            if not tr.isEmpty()
+        ]
 
         if interval:
             return cls(interval=interval)
@@ -292,7 +303,6 @@ class TemporalExtent(extent.TemporalExtent):
 
 
 class Extent(extent.Extent):
-
     @classmethod
     def from_project(cls, p: QgsProject) -> Self:
         return cls(

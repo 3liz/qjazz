@@ -6,7 +6,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-""" Configuration management
+"""Configuration management
 
 Configuration can be done either by using aconfiguration file or with environnement variable.
 
@@ -29,6 +29,7 @@ Source searched for configuration values:
 5. The default field values
 
 """
+
 import os
 import sys
 
@@ -69,7 +70,7 @@ ConfigError = ValidationError
 
 
 def dict_merge(dct: dict, merge_dct: dict, model: Optional[BaseModel]):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
@@ -81,18 +82,16 @@ def dict_merge(dct: dict, merge_dct: dict, model: Optional[BaseModel]):
     like any other field wich is not a model.
     """
     for k, v in merge_dct.items():
-        if (k in model.__dict__ and isinstance(model.__dict__[k], BaseModel)) \
-            and (k in dct and isinstance(dct[k], dict)
-            and isinstance(v, dict)):
-
+        if (k in model.__dict__ and isinstance(model.__dict__[k], BaseModel)) and (
+            k in dct and isinstance(dct[k], dict) and isinstance(v, dict)
+        ):
             dict_merge(dct[k], merge_dct[k], model.__dict__[k])
         else:
             dct[k] = merge_dct[k]
 
 
 def read_config(cfgfile: Path, loads: Callable[[str], dict], **kwds) -> dict[str, JsonValue]:
-    """ Generic config reader
-    """
+    """Generic config reader"""
     from string import Template
 
     cfgfile = Path(cfgfile)
@@ -107,14 +106,14 @@ def read_config(cfgfile: Path, loads: Callable[[str], dict], **kwds) -> dict[str
 
 
 def read_config_toml(cfgfile: Path, **kwds) -> dict:
-    """ Read toml configuration from file
-    """
+    """Read toml configuration from file"""
     from tomllib import loads
+
     return read_config(cfgfile, loads=loads, **kwds)
 
 
 # Base classe for configuration models
-class ConfigBase(BaseModel, frozen=True, extra='forbid'):
+class ConfigBase(BaseModel, frozen=True, extra="forbid"):
     pass
 
 
@@ -124,7 +123,7 @@ class SectionExists(ValueError):
 
 CreateDefault = object()
 
-config_version = metadata.version('qjazz_contrib')
+config_version = metadata.version("qjazz_contrib")
 
 
 #
@@ -133,10 +132,10 @@ config_version = metadata.version('qjazz_contrib')
 class ConfigSettings(BaseSettings):
     model_config = SettingsConfigDict(
         frozen=True,
-        extra='ignore',
-        env_nested_delimiter='__',
-        env_prefix='conf_',
-        secrets_dir=getenv('SETTINGS_SECRETS_DIR', '/run/secrets'),
+        extra="ignore",
+        env_nested_delimiter="__",
+        env_prefix="conf_",
+        secrets_dir=getenv("SETTINGS_SECRETS_DIR", "/run/secrets"),
     )
 
     @classmethod
@@ -165,11 +164,10 @@ class ConfBuilder:
     _global_sections: ClassVar[dict] = {}
 
     _trace_output = TypeAdapter(bool).validate_python(
-        os.getenv('PY_QGIS_CONFSERVICE_TRACE', 'no'),
+        os.getenv("PY_QGIS_CONFSERVICE_TRACE", "no"),
     )
 
     def __init__(self):
-
         self._sections = self._global_sections.copy()
         self._model = None
         self._conf = None
@@ -214,8 +212,8 @@ class ConfBuilder:
         return self._timestamp
 
     def validate(self, obj: dict) -> ConfigSettings:
-        """ Validate the configuration against
-            configuration models
+        """Validate the configuration against
+        configuration models
         """
         BaseConfig = self._get_model()
         conf = BaseConfig.model_validate(obj, strict=True)
@@ -227,8 +225,7 @@ class ConfBuilder:
         return conf
 
     def update_config(self, obj: Optional[dict] = None) -> ConfigSettings:
-        """ Update the configuration
-        """
+        """Update the configuration"""
         if self._model_changed or obj:
             if self._conf:
                 data = self._conf.model_dump()
@@ -244,10 +241,11 @@ class ConfBuilder:
         return self._get_model().model_json_schema()
 
     def dump_toml_schema(self, s: IO):
-        """ Dump the configuration as
-            toml 'schema' for documentation purpose
+        """Dump the configuration as
+        toml 'schema' for documentation purpose
         """
         from . import _toml
+
         _toml.dump_model_toml(s, self._get_model())
 
     def add_section(
@@ -273,19 +271,20 @@ class ConfBuilder:
 # Config service
 #
 
+
 def section(
     name: str,
     *,
     field: Any = CreateDefault,  # noqa ANN401
 ) -> Callable:
-    """ Decorator for config section definition
+    """Decorator for config section definition
 
-        Store section that will be initialized with builder
-        instance
+    Store section that will be initialized with builder
+    instance
 
-        @config.section("server")
-        class ServerConfig(config.ConfigBase):
-            ...
+    @config.section("server")
+    class ServerConfig(config.ConfigBase):
+        ...
     """
     ConfBuilder._trace("Adding section:", name)
     if name in ConfBuilder._global_sections:
@@ -294,6 +293,7 @@ def section(
     def wrapper(model):
         ConfBuilder._global_sections[name] = (model,) if field is CreateDefault else (model, field)
         return model
+
     return wrapper
 
 
@@ -301,27 +301,28 @@ def section(
 # Config Proxy
 #
 
+
 class ConfigProxy[T: ConfigBase]:
-    """ Proxy to sub configuration
+    """Proxy to sub configuration
 
-        Give access to sub-configuration from the confservice.
-        This allows to retrieve configuration changes when reloading
-        the global configuration.
+    Give access to sub-configuration from the confservice.
+    This allows to retrieve configuration changes when reloading
+    the global configuration.
 
-        Some services may be initialised with sub configuration, this allow
-        effective testing without dragging arount all the global configuration managment.
+    Some services may be initialised with sub configuration, this allow
+    effective testing without dragging arount all the global configuration managment.
 
-        The proxy mock acces to a sub-configuration as if it was the configuration itself.
-        Because it access the global service under the hood, changes to global configuration
-        are reflected.
+    The proxy mock acces to a sub-configuration as if it was the configuration itself.
+    Because it access the global service under the hood, changes to global configuration
+    are reflected.
     """
 
     def __init__(
-            self,
-            builder: ConfBuilder,
-            configpath: str,
-            *,
-            default: Optional[T] = None,
+        self,
+        builder: ConfBuilder,
+        configpath: str,
+        *,
+        default: Optional[T] = None,
     ):
         self._timestamp = -1
         self._builder = builder
@@ -350,7 +351,7 @@ class ConfigProxy[T: ConfigBase]:
         if self._builder._timestamp > self._timestamp:
             self._timestamp = self._builder._timestamp
             self._conf = self._builder.conf
-            for attr in self._configpath.split('.'):
+            for attr in self._configpath.split("."):
                 if attr:
                     self._conf = getattr(self._conf, attr)
 
@@ -362,7 +363,7 @@ class ConfigProxy[T: ConfigBase]:
             # Wrap Config instance in ConfigProxy
             attr = ConfigProxy(
                 self._builder,
-                self._configpath + '.' + name,
+                self._configpath + "." + name,
                 default=attr,
             )
         return attr

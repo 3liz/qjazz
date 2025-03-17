@@ -51,7 +51,7 @@ from .watch import WatchFile
 LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
 
 
-FILE_LINKS = 'links.json'
+FILE_LINKS = "links.json"
 
 #
 #  Signals
@@ -78,10 +78,10 @@ def on_worker_before_create_process(sender, *args, **kwargs):
 # Control commands
 #
 
+
 @control_command()
 def reload_processes_cache(_state):
-    """ Reload the processes cache
-    """
+    """Reload the processes cache"""
     app = cast(QgisWorker, _state.consumer.app)
     if app.processes_cache:
         app.processes_cache.update()
@@ -89,8 +89,7 @@ def reload_processes_cache(_state):
 
 @inspect_command()
 def list_processes(_state) -> dict:
-    """Return processes list
-    """
+    """Return processes list"""
     app = cast(QgisWorker, _state.consumer.app)
     if app.processes_cache:
         return app.processes_cache.processes
@@ -99,11 +98,10 @@ def list_processes(_state) -> dict:
 
 
 @inspect_command(
-    args=[('ident', str), ('project_path', str)],
+    args=[("ident", str), ("project_path", str)],
 )
 def describe_process(_state, ident: str, project_path: str | None) -> dict | None:
-    """Return process description
-    """
+    """Return process description"""
     app = cast(QgisWorker, _state.consumer.app)
     if app.processes_cache:
         return app.processes_cache.describe(ident, project_path)
@@ -113,11 +111,11 @@ def describe_process(_state, ident: str, project_path: str | None) -> dict | Non
 
 @inspect_command()
 def presence(_state) -> dict:
-    """Returns informations about the service
-    """
+    """Returns informations about the service"""
     app = cast(QgisWorker, _state.consumer.app)
 
     from qgis.core import Qgis, QgsCommandLineUtils
+
     return WorkerPresenceVersion(
         service=app._service_name,
         title=app._service_title,
@@ -132,34 +130,31 @@ def presence(_state) -> dict:
 
 @control_command()
 def cleanup(state):
-    """Run cleanup task
-    """
+    """Run cleanup task"""
     app = cast(QgisWorker, state.consumer.app)
     app.cleanup_expired_jobs()
 
 
 @inspect_command(
-    args=[('job_id', str)],
+    args=[("job_id", str)],
 )
 def job_log(state, job_id):
-    """Return job log
-    """
+    """Return job log"""
     app = cast(QgisWorker, state.consumer.app)
     return app.job_log(job_id).model_dump()
 
 
 @inspect_command(
-    args=[('job_id', str), ('public_url', str)],
+    args=[("job_id", str), ("public_url", str)],
 )
 def job_files(state, job_id, public_url):
-    """Returns job execution files
-    """
+    """Returns job execution files"""
     app = cast(QgisWorker, state.consumer.app)
     return app.job_files(job_id, public_url).model_dump()
 
 
 @inspect_command(
-    args=[('job_id', str), ('resource', str), ('expiration', int)],
+    args=[("job_id", str), ("resource", str), ("expiration", int)],
 )
 def download_url(state, job_id, resource, expiration):
     try:
@@ -173,17 +168,16 @@ def download_url(state, job_id, resource, expiration):
         logger.error(err)
         return None
 
+
 #
 # Worker
 #
 
 
 class QgisWorker(Worker):
-
     _storage: Storage
 
     def __init__(self, **kwargs) -> None:
-
         conf = load_configuration()
         if logger.is_enabled_for(logger.LogLevel.DEBUG):
             logger.debug("== Worker configuration ==\n%s", conf.model_dump_json(indent=4))
@@ -213,7 +207,7 @@ class QgisWorker(Worker):
         self._store_url = conf.processing.store_url
         self._processing_config = conf.processing
 
-        assert_precondition(not hasattr(QgisWorker, '_storage'))
+        assert_precondition(not hasattr(QgisWorker, "_storage"))
         QgisWorker._storage = conf.storage.create_instance()
 
         #
@@ -241,7 +235,7 @@ class QgisWorker(Worker):
 
         if conf.worker.reload_monitor:
             watch = WatchFile(conf.worker.reload_monitor, self.reload_processes)
-            self.add_periodic_task("reload", watch, 5.)
+            self.add_periodic_task("reload", watch, 5.0)
 
     def add_periodic_task(self, name: str, target: Callable[[], None], timeout: float):
         self._periodic_tasks.append(
@@ -269,8 +263,7 @@ class QgisWorker(Worker):
         )
 
     def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
-        """ Return a proper reference url for the resource
-        """
+        """Return a proper reference url for the resource"""
         return store_reference_url(
             self._store_url,
             job_id,
@@ -279,8 +272,7 @@ class QgisWorker(Worker):
         )
 
     def cleanup_expired_jobs(self) -> None:
-        """ Cleanup all expired jobs
-        """
+        """Cleanup all expired jobs"""
         try:
             with self.lock("cleanup-batch"):
                 logger.debug("Running cleanup task")
@@ -303,7 +295,7 @@ class QgisWorker(Worker):
             pass
 
     def reload_processes(self) -> None:
-        """ Reload processes """
+        """Reload processes"""
         if self.processes_cache:
             self.processes_cache.update()
 
@@ -328,8 +320,7 @@ class QgisWorker(Worker):
             task.join(timeout=5.0)
 
     def job_log(self, job_id: str) -> ProcessLogVersion:
-        """Return job log
-        """
+        """Return job log"""
         logfile = self._workdir.joinpath(job_id, "processing.log")
         if not logfile.exists():
             text = "No log available"
@@ -349,7 +340,7 @@ class QgisWorker(Worker):
             # Update reference according to the given public_url
             def update_ref(link: Link) -> Link:
                 href = self.store_reference_url(job_id, link.title, public_url)
-                return link.model_copy(update={'href': href})
+                return link.model_copy(update={"href": href})
 
             files = ProcessFilesVersion(links=tuple(update_ref(link) for link in links))
         else:
@@ -358,8 +349,7 @@ class QgisWorker(Worker):
         return files
 
     def download_url(self, job_id: str, resource: str, expiration: int) -> Link:
-        """ Returns a temporary download url
-        """
+        """Returns a temporary download url"""
         return self._storage.download_url(
             job_id,
             resource,
@@ -368,8 +358,7 @@ class QgisWorker(Worker):
         )
 
     def store_files(self, job_id: str):
-        """ Move files to storage
-        """
+        """Move files to storage"""
         jobdir = self._workdir.joinpath(job_id)
         files = tuple(QgisContext.published_files(jobdir))
 
@@ -392,7 +381,7 @@ class QgisWorker(Worker):
                     title=name,
                 )
 
-        with jobdir.joinpath(FILE_LINKS).open('w') as f:
+        with jobdir.joinpath(FILE_LINKS).open("w") as f:
             f.write(LinkSequence.dump_json(tuple(_make_links())).decode())
 
         #
@@ -403,12 +392,12 @@ class QgisWorker(Worker):
             workdir=self._workdir,
             files=chain(
                 files,
-                jobdir.glob('**/*.zip'),
-                jobdir.glob('**/*.qgs'),
-                jobdir.glob('**/*.qgz'),
-                jobdir.glob('**/*.qml'),
-                jobdir.glob('**/*.sld'),
-                jobdir.glob('**/*.db'),
+                jobdir.glob("**/*.zip"),
+                jobdir.glob("**/*.qgs"),
+                jobdir.glob("**/*.qgz"),
+                jobdir.glob("**/*.qml"),
+                jobdir.glob("**/*.sld"),
+                jobdir.glob("**/*.db"),
             ),
         )
 
@@ -425,7 +414,6 @@ class QgisWorker(Worker):
 
 
 class QgisJob(Job):
-
     def before_start(self, task_id, args, kwargs):
         # Add qgis context in job context
         self._worker_job_context.update(qgis_context=self.app.create_context())
@@ -433,7 +421,6 @@ class QgisJob(Job):
 
 
 class QgisProcessJob(QgisJob):
-
     def before_start(self, task_id, args, kwargs):
         # Check if task is not dismissed while
         # being pending

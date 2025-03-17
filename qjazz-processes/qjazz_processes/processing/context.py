@@ -21,7 +21,6 @@ from .utils import get_valid_filename
 
 
 class ProcessingContext(QgsProcessingContext):
-
     def __init__(self, config: Optional[ProcessingConfig] = None):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
@@ -46,13 +45,11 @@ class ProcessingContext(QgsProcessingContext):
         self.setTemporaryFolder(str(self._workdir))
 
     def advertised_services_url(self, url: Template):
-        """ Set advertised_services_url template
-        """
+        """Set advertised_services_url template"""
         self._advertised_services_url = url
 
     def store_url(self, url: Template):
-        """ Set store_url template
-        """
+        """Set store_url template"""
         self._store_url = url
 
     @property
@@ -76,9 +73,9 @@ class ProcessingContext(QgsProcessingContext):
         self._destination_project = project
 
     def create_project(self, name: str) -> QgsProject:
-        """ Create a destination project
+        """Create a destination project
 
-            Note: this do NOT set the context destination_project.
+        Note: this do NOT set the context destination_project.
         """
         project = self.project()
         if project:
@@ -101,16 +98,15 @@ class ProcessingContext(QgsProcessingContext):
         destination_project.setFilePathStorage(Qgis.FilePathType.Relative)
 
         # Write advertised URLs
-        destination_project.writeEntry('WMSUrl', '/', self._ows_reference(filename, "WMS"))
-        destination_project.writeEntry('WCSUrl', '/', self._ows_reference(filename, "WCS"))
-        destination_project.writeEntry('WFSUrl', '/', self._ows_reference(filename, "WFS"))
-        destination_project.writeEntry('WMTSUrl', '/', self._ows_reference(filename, "WMTS"))
+        destination_project.writeEntry("WMSUrl", "/", self._ows_reference(filename, "WMS"))
+        destination_project.writeEntry("WCSUrl", "/", self._ows_reference(filename, "WCS"))
+        destination_project.writeEntry("WFSUrl", "/", self._ows_reference(filename, "WFS"))
+        destination_project.writeEntry("WMTSUrl", "/", self._ows_reference(filename, "WMTS"))
 
         return destination_project
 
     def store_reference_url(self, resource: str) -> str:
-        """ Return a proper reference url for the resource
-        """
+        """Return a proper reference url for the resource"""
         return self._store_url.substitute(
             resource=resource,
             jobId=self.job_id,

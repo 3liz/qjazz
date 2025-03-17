@@ -1,4 +1,3 @@
-
 from collections.abc import Callable
 
 from pydantic import TypeAdapter
@@ -26,8 +25,7 @@ def model_description(
     value_passing: Optional[ValuePassing] = None,
     schema_extra: Optional[JsonDict | Callable[[JsonDict], None]] = None,
 ) -> InputDescription:
-    """ Return model as InputDescription
-    """
+    """Return model as InputDescription"""
     schema = TypeAdapter(annotated).json_schema(by_alias=True)
 
     kwargs: dict[str, Any] = {}
@@ -40,7 +38,7 @@ def model_description(
         case Callable():  # type: ignore [misc]
             schema_extra(schema)
 
-    schema.pop('title', None)
+    schema.pop("title", None)
     one_of(schema)
     remove_auto_title(schema)
 
@@ -48,6 +46,6 @@ def model_description(
         title=title,
         description=description,
         schema=schema,
-        value_passing=value_passing or ('byValue',),
-        ** kwargs,
+        value_passing=value_passing or ("byValue",),
+        **kwargs,
     )

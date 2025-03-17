@@ -1,4 +1,3 @@
-
 import random
 import string
 
@@ -19,7 +18,6 @@ from qjazz_processes.processing.inputs import (
 
 
 def test_parameter_file(processing_config: ProcessingConfig):
-
     context = ProcessingContext(processing_config)
     context.job_id = "test_parameter_file"
 
@@ -36,13 +34,13 @@ def test_parameter_file(processing_config: ProcessingConfig):
 
     description = inp.description()
     print("test_parameter_file::description", description)
-    assert description.value_passing == ('byValue', 'byReference')
+    assert description.value_passing == ("byValue", "byReference")
 
-    expected = context.workdir.joinpath(param.name()).with_suffix('.txt')
+    expected = context.workdir.joinpath(param.name()).with_suffix(".txt")
     if expected.exists():
         expected.unlink()
 
-    ascii_content = ''.join(random.choices(string.ascii_letters, k=20))
+    ascii_content = "".join(random.choices(string.ascii_letters, k=20))
 
     value = inp.value(
         {
@@ -55,13 +53,12 @@ def test_parameter_file(processing_config: ProcessingConfig):
 
     assert str(expected) == value
     assert expected.exists()
-    with expected.open('r') as f:
+    with expected.open("r") as f:
         assert f.read() == ascii_content
 
 
 def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
-    """ Test input ref from local file system
-    """
+    """Test input ref from local file system"""
 
     context = ProcessingContext(processing_raw_config)
     context.job_id = "test_parameter_raw_file"
@@ -72,8 +69,8 @@ def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
 
     inp = InputParameter(param)
 
-    input_file = raw_destination_path.joinpath(param.name()).with_suffix('.txt')
-    with input_file.open('w') as f:
+    input_file = raw_destination_path.joinpath(param.name()).with_suffix(".txt")
+    with input_file.open("w") as f:
         f.write("hello world")
 
     value = inp.value(
@@ -87,12 +84,11 @@ def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
 
 
 def test_parameter_filedestination(qgis_session: ProcessingConfig):
-
     context = ProcessingContext(qgis_session)
 
     param = QgsProcessingParameterFileDestination("test_parameter_filedestination")
 
-    param.setFileFilter('Text files (*.txt)')
+    param.setFileFilter("Text files (*.txt)")
 
     inp = InputParameter(param)
 
@@ -101,7 +97,7 @@ def test_parameter_filedestination(qgis_session: ProcessingConfig):
     schema = inp.json_schema()
     print("\ntest_parameter_file::schema", schema)
 
-    expected = context.workdir.joinpath(param.name()).with_suffix('.txt')
+    expected = context.workdir.joinpath(param.name()).with_suffix(".txt")
 
     value = inp.value(param.name(), context)
 

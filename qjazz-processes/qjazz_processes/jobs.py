@@ -37,9 +37,9 @@ from .worker.processing import (
 
 @worker_process_init.connect
 def init_qgis(*args, **kwargs):
-    """ Initialize Qgis context in each process
-    """
+    """Initialize Qgis context in each process"""
     QgisProcessingContext.setup_processing(app.processing_config)
+
 
 #
 # Qgis Worker
@@ -47,7 +47,6 @@ def init_qgis(*args, **kwargs):
 
 
 class QgisProcessingWorker(QgisWorker):
-
     def create_context(self) -> QgisProcessingContext:
         return QgisProcessingContext(self.processing_config, service_name=self.service_name)
 
@@ -73,8 +72,7 @@ def validate_process_inputs(
     request: JobExecute,
     project_path: Optional[str] = None,
 ):
-    """Validate process inputs without executing
-    """
+    """Validate process inputs without executing"""
     ctx.qgis_context.validate(
         ident,
         request,
@@ -92,8 +90,7 @@ def execute_process(
     request: JobExecute,
     project_path: Optional[str] = None,
 ) -> JobResults:
-    """Execute process
-    """
+    """Execute process"""
     # Optional context attributes
     public_url: str | None
     try:

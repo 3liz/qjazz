@@ -1,4 +1,3 @@
-
 import re
 
 from collections.abc import Container
@@ -38,6 +37,7 @@ if Qgis.QGIS_VERSION_INT >= 33600:
     # In qgis 3.36+ ProcessingSourceType is a real python enum
     ProcessingSourceType = Qgis.ProcessingSourceType
 else:
+
     class _ProcessingSourceType(Enum):
         MapLayer = QgsProcessing.TypeMapLayer
         VectorAnyGeometry = QgsProcessing.TypeVectorAnyGeometry
@@ -62,6 +62,7 @@ if Qgis.QGIS_VERSION_INT >= 33600:
     ProcessingFileParameterBehavior = Qgis.ProcessingFileParameterBehavior
 else:
     from qgis.core import QgsProcessingParameterFile
+
     ProcessingFileParameterBehavior = QgsProcessingParameterFile.Behavior
 
 
@@ -74,18 +75,21 @@ else:
 #  since we want to able to use invalid layers from project
 #  loaded with 'dont_resolve_layers' option.
 
+
 def is_compatible_vector_layer(
     layer: QgsVectorLayer,
     dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
 ) -> bool:
     _PT = ProcessingSourceType
 
-    return not dtypes \
-        or (_PT.VectorPoint.value in dtypes and layer.geometryType() == Qgis.GeometryType.Point) \
-        or (_PT.VectorLine.value in dtypes and layer.geometryType() == Qgis.GeometryType.Line) \
-        or (_PT.VectorPolygon.value in dtypes and layer.geometryType() == Qgis.GeometryType.Polygon) \
-        or (_PT.VectorAnyGeometry.value in dtypes and layer.isSpatial()) \
+    return (
+        not dtypes
+        or (_PT.VectorPoint.value in dtypes and layer.geometryType() == Qgis.GeometryType.Point)
+        or (_PT.VectorLine.value in dtypes and layer.geometryType() == Qgis.GeometryType.Line)
+        or (_PT.VectorPolygon.value in dtypes and layer.geometryType() == Qgis.GeometryType.Polygon)
+        or (_PT.VectorAnyGeometry.value in dtypes and layer.isSpatial())
         or _PT.Vector.value in dtypes
+    )
 
 
 def compatible_vector_layers(
@@ -98,6 +102,7 @@ def compatible_vector_layers(
 
 
 # TODO Add plugin and tiled scene layers
+
 
 def compatible_layers(
     project: QgsProject,
@@ -123,13 +128,13 @@ def compatible_layers(
 
 
 def get_valid_filename(s: str) -> str:
-    """ Return a valid filename from input str
+    """Return a valid filename from input str
 
-        Removes all characters which are not letters, not numbers (0-9),
-        not the underscore ('_'), not the dash ('-'), and not the period ('.').
+    Removes all characters which are not letters, not numbers (0-9),
+    not the underscore ('_'), not the dash ('-'), and not the period ('.').
     """
-    s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '_', s)
+    s = str(s).strip().replace(" ", "_")
+    return re.sub(r"(?u)[^-\w.]", "_", s)
 
 
 def resolve_raw_path(
@@ -144,7 +149,7 @@ def resolve_raw_path(
     p = Path(p)
     # Absolute path are stored in root folder
     if p.is_absolute():
-        p = p.relative_to('/')
+        p = p.relative_to("/")
         if root_path:
             p = root_path.joinpath(p)
     else:
@@ -168,7 +173,7 @@ def resolve_raw_reference(
     #
     path: Optional[Path] = None
     url = urlsplit(ref)
-    if url.path and url.scheme.lower() == 'file':
+    if url.path and url.scheme.lower() == "file":
         path = resolve_raw_path(url.path, workdir, root_path, extension)
 
     return path
@@ -189,16 +194,16 @@ def raw_destination_sink(
     #
     # The layername may be specified by appending the '|layername=<name>' to the input string.
     #
-    destination, *rest = destination.split('|', 2)
+    destination, *rest = destination.split("|", 2)
 
     destinationName = None
 
     # Check for layername option
-    if len(rest) > 0 and rest[0].lower().startswith('layername='):
-        destinationName = rest[0].split('=')[1].strip()
+    if len(rest) > 0 and rest[0].lower().startswith("layername="):
+        destinationName = rest[0].split("=")[1].strip()
 
     url = urlsplit(destination)
-    if url.path and url.scheme.lower() in ('', 'file'):
+    if url.path and url.scheme.lower() in ("", "file"):
         p = resolve_raw_path(url.path, workdir, root_path, default_extension)
         destinationName = destinationName or p.stem
         sink = str(p)
@@ -214,7 +219,7 @@ def output_file_formats(param: QgsProcessingParameterFileDestination) -> Sequenc
     # Retrieve format list from file extensions
     #
     formats = []
-    ext_re = re.compile(r'.*([.][a-z]+)')
+    ext_re = re.compile(r".*([.][a-z]+)")
     for filter_ in param.fileFilter().split(";;"):
         m = ext_re.match(filter_)
         if m:

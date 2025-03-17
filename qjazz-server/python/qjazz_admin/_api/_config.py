@@ -8,7 +8,6 @@ from .utils import _http_error
 
 
 class _Config:
-
     async def get_pool_config(self, request):
         """
         summary: "Pool backends configuration"

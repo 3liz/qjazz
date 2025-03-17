@@ -1,4 +1,3 @@
-
 from qgis.core import QgsApplication
 
 from .provider import TestAlgorithmProvider
@@ -17,5 +16,4 @@ class Test:
 
 
 def classFactory(iface: None) -> Test:
-
     return Test()

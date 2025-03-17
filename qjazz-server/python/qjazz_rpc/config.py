@@ -23,7 +23,6 @@ QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
 
 
 class QgisConfig(config.ConfigBase):
-
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
         title="Projects configuration",
@@ -32,10 +31,7 @@ class QgisConfig(config.ConfigBase):
     max_projects: int = Field(
         default=50,
         title="Max number of projects in cache",
-        description=(
-            "The maximum number of projects allowed in cache.\n"
-            "The default value is set to 50 projects. "
-        ),
+        description=("The maximum number of projects allowed in cache.\nThe default value is set to 50 projects. "),
     )
     load_project_on_request: bool = Field(
         default=True,
@@ -96,9 +92,7 @@ class QgisConfig(config.ConfigBase):
         True,
         title="Ignore INT signal in worker",
         description=(
-            "Ignore INT signal in workers.\n"
-            "This is useful when you don't want\n"
-            "propagating signal from parent process."
+            "Ignore INT signal in workers.\nThis is useful when you don't want\npropagating signal from parent process."
         ),
     )
     network: QgisNetworkConfig = Field(

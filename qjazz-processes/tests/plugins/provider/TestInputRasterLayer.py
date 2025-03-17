@@ -1,5 +1,4 @@
-""" Test just returning simple value
-"""
+"""Test just returning simple value"""
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -8,35 +7,34 @@ from qgis.core import (
 
 
 class TestInputRasterLayer(QgsProcessingAlgorithm):
-
-    INPUT = 'INPUT'
+    INPUT = "INPUT"
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'testinputrasterlayer'
+        return "testinputrasterlayer"
 
     def displayName(self):
-        return 'Test Input Raster Layer'
+        return "Test Input Raster Layer"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-           see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
-        self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT, 'Raster Layer'))
+        self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT, "Raster Layer"))
 
     def processAlgorithm(self, parameters, context, feedback):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         _layer = self.parameterAsRasterLayer(parameters, self.INPUT, context)

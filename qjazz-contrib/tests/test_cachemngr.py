@@ -21,16 +21,14 @@ def test_search_paths(config):
 
 
 def test_path_resolution(data, config):
-
     cm = CacheManager(config)
 
-    uri = cm.resolve_path('/tests/project_simple')
-    assert uri.scheme == 'file', f"Expecting 'file' scheme, found '{uri.scheme}'"
-    assert uri.path == f'{data.joinpath("samples/project_simple")}'
+    uri = cm.resolve_path("/tests/project_simple")
+    assert uri.scheme == "file", f"Expecting 'file' scheme, found '{uri.scheme}'"
+    assert uri.path == f"{data.joinpath('samples/project_simple')}"
 
 
 def test_collect_projects(data, config):
-
     cm = CacheManager(config)
 
     collected = list(cm.collect_projects())
@@ -38,9 +36,9 @@ def test_collect_projects(data, config):
     assert len(collected) > 0
     for md, _ in collected:
         match md.scheme:
-            case 'file':
+            case "file":
                 path = Path(md.uri)
-                assert md.storage == 'file'
+                assert md.storage == "file"
                 assert md.name == path.stem
                 assert path.is_relative_to(data)
             case _:
@@ -48,22 +46,20 @@ def test_collect_projects(data, config):
 
 
 def test_collect_projects_from_search_path(data, config):
-
     cm = CacheManager(config)
 
-    collected = list(cm.collect_projects('/france'))
+    collected = list(cm.collect_projects("/france"))
     assert len(collected) > 0
-    print('\n')
+    print("\n")
     for md, public_path in collected:
         print("#", md, public_path)
-        assert public_path.startswith('/france')
+        assert public_path.startswith("/france")
 
 
 def test_checkout_project(config):
-
     cm = CacheManager(config)
 
-    url = cm.resolve_path('/france/france_parts.qgs')
+    url = cm.resolve_path("/france/france_parts.qgs")
 
     md, status = cm.checkout(url)
     assert status == CheckoutStatus.NEW
@@ -77,10 +73,9 @@ def test_checkout_project(config):
 
 
 def test_checkout_invalid_layers(config):
-
     cm = CacheManager(config)
 
-    url = cm.resolve_path('/tests/project_simple_with_invalid.qgs')
+    url = cm.resolve_path("/tests/project_simple_with_invalid.qgs")
 
     md, status = cm.checkout(url)
     assert status == CheckoutStatus.NEW

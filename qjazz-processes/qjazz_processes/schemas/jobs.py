@@ -24,11 +24,12 @@ DateTime = TypeAdapter(datetime)
 
 
 class JobException(JsonModel):
-    type_: str = Field(alias='type')
+    type_: str = Field(alias="type")
     title: Optional[str] = Null
     status: Optional[int] = Null
     detail: Optional[str] = Null
     instance: Optional[str] = Null
+
 
 #
 # Note: the 'pending' state is not part of OGC standards,
@@ -38,34 +39,35 @@ class JobException(JsonModel):
 
 
 JobStatusCode = Literal[
-    'pending',
-    'accepted',
-    'running',
-    'successful',
-    'failed',
-    'dismissed',
+    "pending",
+    "accepted",
+    "running",
+    "successful",
+    "failed",
+    "dismissed",
 ]
 
 
 class JobStatus(JsonModel):
-    """ Conform to OGC api
+    """Conform to OGC api
 
-        See /openapi/schemas/processes-core/statusInfo.yaml
+    See /openapi/schemas/processes-core/statusInfo.yaml
     """
-    PENDING: ClassVar[str] = 'pending'
-    ACCEPTED: ClassVar[str] = 'accepted'
-    RUNNING: ClassVar[str] = 'running'
-    SUCCESS: ClassVar[str] = 'successful'
-    FAILED: ClassVar[str] = 'failed'
-    DISMISSED: ClassVar[str] = 'dismissed'
+
+    PENDING: ClassVar[str] = "pending"
+    ACCEPTED: ClassVar[str] = "accepted"
+    RUNNING: ClassVar[str] = "running"
+    SUCCESS: ClassVar[str] = "successful"
+    FAILED: ClassVar[str] = "failed"
+    DISMISSED: ClassVar[str] = "dismissed"
 
     # Attributes
     job_id: str = Field(title="Job ID")
     process_id: Optional[str] = NullField(title="Process ID")
-    process_type: Literal['process'] = Field(
+    process_type: Literal["process"] = Field(
         title="Job type",
         default="process",
-        alias='type',
+        alias="type",
     )
     status: JobStatusCode
     message: Optional[str] = Null

@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import (
     Iterable,
@@ -41,9 +40,10 @@ class ParameterMeshLayer(ParameterMapLayer):
 # QgsProcessingParameterMeshDatasetGroups
 #
 
+
 class ParameterMeshDatasetGroups(InputParameter):
     _ParameterType = set[
-        Literal[        # type: ignore [valid-type]
+        Literal[  # type: ignore [valid-type]
             QgsMeshDatasetGroupMetadata.DataOnFaces,
             QgsMeshDatasetGroupMetadata.DataOnVertices,
             QgsMeshDatasetGroupMetadata.DataOnVolumes,
@@ -70,29 +70,30 @@ class ParameterMeshDatasetGroups(InputParameter):
 # QgsProcessingParameterMeshDatasetTime
 #
 
+
 class DefinedDatetime(BaseModel):
-    type_: Literal['defined-date-time'] = Field(alias='type')
+    type_: Literal["defined-date-time"] = Field(alias="type")
     value: datetime
 
 
 class DatasetTimeStep(BaseModel):
-    type_: Literal['dataset-time-step'] = Field(alias='type')
+    type_: Literal["dataset-time-step"] = Field(alias="type")
     value: Sequence[int] = Field(max_length=2, min_length=2)
 
 
 class StaticDateTime(BaseModel):
-    type_: Literal['static'] = Field(alias='type')
+    type_: Literal["static"] = Field(alias="type")
 
 
 class CurrentContextTime(BaseModel):
-    type_: Literal['current-context-time'] = Field(alias='type')
+    type_: Literal["current-context-time"] = Field(alias="type")
 
 
 def _to_json_schema(t):
     s = TypeAdapter(t).json_schema(by_alias=True)
-    del s['title']
-    for p in s['properties'].values():
-        del p['title']
+    del s["title"]
+    for p in s["properties"].values():
+        del p["title"]
     return s
 
 
@@ -106,7 +107,7 @@ class ParameterMeshDatasetTime(InputParameter):
 
     def json_schema(self) -> dict[str, JsonValue]:
         return {
-            'oneOf': [
+            "oneOf": [
                 _to_json_schema(DefinedDatetime),
                 _to_json_schema(DatasetTimeStep),
                 _to_json_schema(StaticDateTime),
@@ -141,10 +142,9 @@ class ParameterMeshDatasetTime(InputParameter):
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QDateTime | dict:
-
         _inp = self.validate(inp)
 
         if isinstance(_inp, DefinedDatetime):
             return QDateTime(_inp.value)
         else:
-            return _inp.model_dump(mode='json', by_alias=True)
+            return _inp.model_dump(mode="json", by_alias=True)

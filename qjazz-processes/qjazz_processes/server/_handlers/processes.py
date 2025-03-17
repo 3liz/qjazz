@@ -1,4 +1,3 @@
-
 import re
 
 from typing import (
@@ -41,7 +40,6 @@ class ProcessList(swagger.JsonModel):
 
 
 class Processes(HandlerProto):
-
     async def list_processes(self, request: web.Request) -> web.Response:
         """
         summary: Get available processes
@@ -125,7 +123,7 @@ class Processes(HandlerProto):
         service = self.get_service(request)
         project = self.get_project(request)
 
-        process_id = request.match_info['Ident']
+        process_id = request.match_info["Ident"]
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -210,7 +208,7 @@ class Processes(HandlerProto):
         service = self.get_service(request)
         project = self.get_project(request)
 
-        process_id = request.match_info['Ident']
+        process_id = request.match_info["Ident"]
 
         self.check_process_permission(request, service, process_id, project)
 
@@ -266,8 +264,7 @@ class Processes(HandlerProto):
                     )
                 else:
                     logger.warning(
-                        "Synchronous request timeout: "
-                        "falling back to async response.",
+                        "Synchronous request timeout: falling back to async response.",
                     )
             #
             # Handle parameter error as
@@ -350,8 +347,8 @@ class Processes(HandlerProto):
             )
 
         headers = {
-            'Location': href(request, location),
-            'Preference-Applied': 'respond-async',
+            "Location": href(request, location),
+            "Preference-Applied": "respond-async",
         }
 
         if realm:
@@ -382,27 +379,26 @@ class Processes(HandlerProto):
 # Handle HTTP Prefer header
 #
 
-WAIT_PARAM = re.compile(r',?\s*wait=(\d+)\s*')
+WAIT_PARAM = re.compile(r",?\s*wait=(\d+)\s*")
 
 
 class ExecutePrefs:
-
     execute_async: bool = False
     wait: Optional[int] = None
 
     def __init__(self, request: web.Request):
-        """ Get execution preferences from 'Prefer' header
+        """Get execution preferences from 'Prefer' header
 
-            See https://webconcepts.info/concepts/http-preference/
-            See https://docs.ogc.org/is/18-062r2/18-062r2.html#toc32
+        See https://webconcepts.info/concepts/http-preference/
+        See https://docs.ogc.org/is/18-062r2/18-062r2.html#toc32
         """
-        for prefer in request.headers.getall('Prefer', ()):
-            for pref in (p.strip().lower() for p in prefer.split(';')):
-                if self.wait is None and pref.startswith('wait'):
+        for prefer in request.headers.getall("Prefer", ()):
+            for pref in (p.strip().lower() for p in prefer.split(";")):
+                if self.wait is None and pref.startswith("wait"):
                     m = WAIT_PARAM.fullmatch(pref)
                     if m:
                         self.wait = int(m.groups()[0])
-                if pref.startswith('respond-async'):
+                if pref.startswith("respond-async"):
                     self.execute_async = True
                     m = WAIT_PARAM.fullmatch(pref[13:])
                     if m:

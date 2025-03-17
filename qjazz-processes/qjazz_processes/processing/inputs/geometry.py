@@ -1,4 +1,3 @@
-
 import re
 
 from typing import (
@@ -85,7 +84,6 @@ def geometrytypes_to_model(
 
 
 class ParameterGeometry(InputParameter):
-
     @classmethod
     def get_geometry_type(cls, param: QgsProcessingParameterGeometry) -> TypeAlias:
         geomtypes = param.geometryTypes()
@@ -102,20 +100,19 @@ class ParameterGeometry(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         _type: Any = cls.get_geometry_type(param)
         if not validation_only:
-            default = field.pop('default', None)
+            default = field.pop("default", None)
             g = default and qgsgeometry_to_json(_type, default, project and project.crs())
             if g:
                 field.update(default=g)
 
             _type = Annotated[
                 _type,
-                Field(json_schema_extra={'format': 'geojson-geometry'}),
+                Field(json_schema_extra={"format": "geojson-geometry"}),
             ]
 
-        _type = OneOf[   # type: ignore [misc, valid-type]
+        _type = OneOf[  # type: ignore [misc, valid-type]
             Union[
                 _type,
                 MediaType(str, Formats.WKT.media_type),
@@ -126,10 +123,9 @@ class ParameterGeometry(InputParameter):
         return _type
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> QgsGeometry:
-
         # Check for qualified input
         match inp:
-            case {'value': str(value), 'mediaType': media_type}:
+            case {"value": str(value), "mediaType": media_type}:
                 match media_type:
                     case Formats.WKT.media_type:
                         geom = wkt_to_geometry(value)
@@ -160,17 +156,17 @@ class ParameterGeometry(InputParameter):
 # QgsProcessingParameterPoint
 #
 
-class ParameterPoint(ParameterGeometry):
 
+class ParameterPoint(ParameterGeometry):
     @classmethod
     def get_geometry_type(cls, _: QgsProcessingParameterPoint) -> TypeAlias:
         return geojson.Point
 
     def value(
-        self, inp: JsonValue,
+        self,
+        inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QgsReferencedPointXY | QgsPointXY:
-
         g = super().value(inp, context)
         match g:
             case QgsReferencedGeometry():
@@ -186,7 +182,7 @@ class ParameterPoint(ParameterGeometry):
 #
 # QgsProcessingParameterCrs
 #
-CrsDefinition = OneOf[   # type: ignore [misc, valid-type]
+CrsDefinition = OneOf[  # type: ignore [misc, valid-type]
     Union[
         str,
         AnyUrl,
@@ -197,7 +193,6 @@ CrsDefinition = OneOf[   # type: ignore [misc, valid-type]
 
 
 class ParameterCrs(InputParameter):
-
     @classmethod
     def create_model(
         cls,
@@ -206,9 +201,8 @@ class ParameterCrs(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         if not validation_only:
-            default = field.pop('default', None)
+            default = field.pop("default", None)
             if default:
                 context = QgsProcessingContext()
                 if project:
@@ -222,7 +216,7 @@ class ParameterCrs(InputParameter):
                 if crs.isValid:
                     field.update(default=crs.toOgcUrn())
 
-            field.update(json_schema_extra={'format': "x-ogc-crs"})
+            field.update(json_schema_extra={"format": "x-ogc-crs"})
 
             _type = CrsDefinition
         else:
@@ -231,10 +225,10 @@ class ParameterCrs(InputParameter):
         return _type
 
     def value(
-        self, inp: JsonValue,
+        self,
+        inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QgsCoordinateReferenceSystem:
-
         value = self.validate(inp)
 
         crs = QgsCoordinateReferenceSystem()
@@ -248,6 +242,7 @@ class ParameterCrs(InputParameter):
 #
 # QgsProcessingParameterCoordinateOperation
 #
+
 
 class ParameterCoordinateOperation(InputParameter):
     # Doc says that is should be evaluated as String
@@ -309,8 +304,8 @@ class ParameterCoordinateOperation(InputParameter):
 # QgsProcessingParameterExtent
 #
 
-class ParameterExtent(InputParameter):
 
+class ParameterExtent(InputParameter):
     _ParameterType = BoundingBox(str)
 
     @classmethod
@@ -321,11 +316,10 @@ class ParameterExtent(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         _type = cls._ParameterType
 
         if not validation_only:
-            default = field.pop('default', None)
+            default = field.pop("default", None)
             if default:
                 context = QgsProcessingContext()
                 if project:
@@ -349,23 +343,27 @@ class ParameterExtent(InputParameter):
 
                 if not rect.isEmpty() or rect.isNull():
                     field.update(
-                        default=TypeAdapter(_type).validate_python({
-                            "bbox": [
-                                rect.xMinimum(),
-                                rect.yMinimum(),
-                                rect.xMaximum(),
-                                rect.yMaximum(),
-                            ],
-                        }).model_dump(mode='json', by_alias=True),
+                        default=TypeAdapter(_type)
+                        .validate_python(
+                            {
+                                "bbox": [
+                                    rect.xMinimum(),
+                                    rect.yMinimum(),
+                                    rect.xMaximum(),
+                                    rect.yMaximum(),
+                                ],
+                            }
+                        )
+                        .model_dump(mode="json", by_alias=True),
                     )
 
         return _type
 
     def value(
-        self, inp: JsonValue,
+        self,
+        inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QgsReferencedRectangle:
-
         value = self.validate(inp)
 
         bbox = value.bbox
@@ -386,7 +384,6 @@ def qgsgeometry_to_point(
     g: QgsGeometry,
     crs: Optional[QgsCoordinateReferenceSystem] = None,
 ) -> QgsPointXY | QgsReferencedPointXY:
-
     if g.wkbType() == QgsWkbTypes.Point:
         p = g.asPoint()
     else:
@@ -399,7 +396,7 @@ def crs_to_ogc_urn(crs: QgsCoordinateReferenceSystem) -> str:
     if Qgis.QGIS_VERSION_INT >= 33800:
         return crs.toOgcUrn()
     else:
-        path = (AnyUrl(crs.toOgcUri()).path or "").strip('/').replace('/', ':')
+        path = (AnyUrl(crs.toOgcUri()).path or "").strip("/").replace("/", ":")
         return f"urn:ogc:{path}"
 
 
@@ -408,8 +405,7 @@ def qgsgeometry_to_json(
     g: QgsPointXY | QgsReferencedPointXY | QgsGeometry | QgsReferencedGeometry,
     default_crs: Optional[QgsCoordinateReferenceSystem] = None,
 ) -> Optional[geojson.Geometry]:
-    """ Convert Qgis geometry to GeoJson object
-    """
+    """Convert Qgis geometry to GeoJson object"""
     out: Any
     match g:
         case QgsReferencedPointXY(g):
@@ -440,17 +436,17 @@ WKT_EXPR = re.compile(r"^\s*(?:(CRS|SRID)=(.*);)?(.*?)$")
 
 
 def wkt_to_geometry(wkt: str) -> QgsGeometry | QgsReferencedGeometry:
-    """ Convert wkt to qgis geometry
+    """Convert wkt to qgis geometry
 
-        Handle CRS= prefix
+    Handle CRS= prefix
     """
     m = WKT_EXPR.match(wkt)
     if m:
-        g = QgsGeometry.fromWkt(m.groups('')[2])
+        g = QgsGeometry.fromWkt(m.groups("")[2])
         if not g.isNull():
-            crs_str = m.groups('')[1]
-            if m.groups('')[0] == 'SRID':
-                crs_str = f'POSTGIS:{crs_str}'
+            crs_str = m.groups("")[1]
+            if m.groups("")[0] == "SRID":
+                crs_str = f"POSTGIS:{crs_str}"
 
             crs = QgsCoordinateReferenceSystem(crs_str)
             if crs.isValid():
@@ -463,8 +459,7 @@ SRSNAME_EXPR = re.compile(r'\bsrsname\b="([^"]+)"', re.IGNORECASE)
 
 
 def gml_to_geometry(gml: str) -> QgsGeometry | QgsReferencedGeometry:
-    """ Handle json to qgis geometry
-    """
+    """Handle json to qgis geometry"""
     # Lookup for srsName
     geom = ogr.CreateGeometryFromGML(gml)
     if not geom:
@@ -474,7 +469,7 @@ def gml_to_geometry(gml: str) -> QgsGeometry | QgsReferencedGeometry:
     # Check for crs
     m = SRSNAME_EXPR.search(gml)
     if m:
-        crs = QgsCoordinateReferenceSystem(m.groups('')[0])
+        crs = QgsCoordinateReferenceSystem(m.groups("")[0])
         if crs.isValid():
             geom = QgsReferencedGeometry(geom, crs)
     return geom

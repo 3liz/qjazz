@@ -1,5 +1,5 @@
-""" gRPC Client test
-"""
+"""gRPC Client test"""
+
 import json
 import os
 import sys
@@ -46,7 +46,7 @@ def channel(
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
     def _read_if(f: Optional[Path]) -> Optional[bytes]:
         if f:
-            with f.open('rb') as fp:
+            with f.open("rb") as fp:
                 return fp.read()
         else:
             return None
@@ -82,15 +82,13 @@ def MessageToJson(msg: Message) -> str:
 @overload
 def connect(
     stub: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
-) -> AbstractContextManager[qjazz_pb2_grpc.QgisAdminStub]:
-    ...
+) -> AbstractContextManager[qjazz_pb2_grpc.QgisAdminStub]: ...
 
 
 @overload
 def connect(
     stub: type[qjazz_pb2_grpc.QgisServerStub],
-) -> AbstractContextManager[qjazz_pb2_grpc.QgisServerStub]:
-    ...
+) -> AbstractContextManager[qjazz_pb2_grpc.QgisServerStub]: ...
 
 
 @contextmanager
@@ -109,7 +107,7 @@ def connect(stub=qjazz_pb2_grpc.QgisAdminStub) -> Generator:
 
     address = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
 
-    if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, 'yes', 'true'):
+    if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, "yes", "true"):
         ssl = SSLConfig(
             keyfile=os.getenv("CONF_GRPC_SSL_KEYFILE"),
             certfile=os.getenv("CONF_GRPC_SSL_CERTFILE"),
@@ -141,20 +139,19 @@ def print_metadata(metadata):
         click.echo(f"Return code: {status_code}", err=True)
 
 
-@click.group('commands')
+@click.group("commands")
 def cli_commands():
     pass
 
 
-@cli_commands.group('request')
+@cli_commands.group("request")
 def request_commands():
-    """ Send Qgis requests
-    """
+    """Send Qgis requests"""
     pass
 
 
 @request_commands.command("ows")
-@click.argument('project', nargs=1)
+@click.argument("project", nargs=1)
 @click.option("--service", help="OWS service name", required=True)
 @click.option("--request", help="OWS request name", required=True)
 @click.option("--version", help="OWS service version")
@@ -162,7 +159,8 @@ def request_commands():
 @click.option("--headers", "-H", is_flag=True, help="Show headers")
 @click.option("--url", help="Origin url")
 @click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     help="Destination file",
     type=click.Path(dir_okay=False),
 )
@@ -176,8 +174,7 @@ def ows_request(
     output: Optional[str],
     url: Optional[str],
 ):
-    """ Send OWS request
-    """
+    """Send OWS request"""
     with connect(qjazz_pb2_grpc.QgisServerStub) as stub:
         t_start = time()
         stream = stub.ExecuteOwsRequest(
@@ -186,7 +183,7 @@ def ows_request(
                 request=request,
                 target=project,
                 url=url or "",
-                options='&'.join(param),
+                options="&".join(param),
             ),
             timeout=10,
         )
@@ -209,12 +206,13 @@ def ows_request(
 @request_commands.command("api")
 @click.option("--name", help="Api name", required=True)
 @click.option("--path", help="Api path", default="/")
-@click.option('--target', help="Target project")
+@click.option("--target", help="Target project")
 @click.option("--param", "-p", multiple=True, help="Parameters KEY=VALUE")
 @click.option("--headers", "-H", is_flag=True, help="Show headers")
 @click.option("--url", help="Origin url")
 @click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     help="Destination file",
     type=click.Path(dir_okay=False),
 )
@@ -227,8 +225,7 @@ def api_request(
     output: Optional[str],
     url: Optional[str],
 ):
-    """ Send Api request
-    """
+    """Send Api request"""
     with connect(qjazz_pb2_grpc.QgisServerStub) as stub:
         t_start = time()
         stream = stub.ExecuteApiRequest(
@@ -238,7 +235,7 @@ def api_request(
                 method="GET",
                 url=url or "",
                 target=target,
-                options='&'.join(param),
+                options="&".join(param),
             ),
             timeout=10,
         )
@@ -262,19 +259,18 @@ def api_request(
 # Cache
 #
 
-@cli_commands.group('cache')
+
+@cli_commands.group("cache")
 def cache_commands():
-    """ Commands for cache management
-    """
+    """Commands for cache management"""
     pass
 
 
 @cache_commands.command("checkout")
-@click.argument('project', nargs=1)
-@click.option('--pull', is_flag=True, help="Load project in cache")
+@click.argument("project", nargs=1)
+@click.option("--pull", is_flag=True, help="Load project in cache")
 def checkout_project(project: str, pull: bool):
-    """ CheckoutProject PROJECT from cache
-    """
+    """CheckoutProject PROJECT from cache"""
     with connect() as stub:
         item = stub.CheckoutProject(
             qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
@@ -283,10 +279,9 @@ def checkout_project(project: str, pull: bool):
 
 
 @cache_commands.command("drop")
-@click.argument('project', nargs=1)
+@click.argument("project", nargs=1)
 def drop_project(project: str):
-    """ Drop PROJECT from cache
-    """
+    """Drop PROJECT from cache"""
     with connect() as stub:
         item = stub.DropProject(
             qjazz_pb2.DropRequest(uri=project),
@@ -296,8 +291,7 @@ def drop_project(project: str):
 
 @cache_commands.command("clear")
 def clear_cache():
-    """ Clear cache
-    """
+    """Clear cache"""
     with connect() as stub:
         stub.ClearCache(
             qjazz_pb2.Empty(),
@@ -306,8 +300,7 @@ def clear_cache():
 
 @cache_commands.command("list")
 def list_cache():
-    """ List projects from cache
-    """
+    """List projects from cache"""
     with connect() as stub:
         stream = stub.ListCache(qjazz_pb2.Empty())
         for item in stream:
@@ -316,8 +309,7 @@ def list_cache():
 
 @cache_commands.command("update")
 def update_cache():
-    """ Synchronize cache between processes
-    """
+    """Synchronize cache between processes"""
     with connect() as stub:
         stream = stub.UpdateCache(qjazz_pb2.Empty())
         for item in stream:
@@ -325,10 +317,9 @@ def update_cache():
 
 
 @cache_commands.command("info")
-@click.argument('project', nargs=1)
+@click.argument("project", nargs=1)
 def project_info(project: str):
-    """ Return info from PROJECT in cache
-    """
+    """Return info from PROJECT in cache"""
     with connect() as stub:
         stream = stub.GetProjectInfo(
             qjazz_pb2.ProjectRequest(uri=project),
@@ -342,10 +333,9 @@ def project_info(project: str):
 
 
 @cache_commands.command("catalog")
-@click.option('--location', help="Select location")
+@click.option("--location", help="Select location")
 def catalog(location: Optional[str]):
-    """ List available projects from search paths
-    """
+    """List available projects from search paths"""
     with connect() as stub:
         stream = stub.Catalog(
             qjazz_pb2.CatalogRequest(location=location),
@@ -357,23 +347,23 @@ def catalog(location: Optional[str]):
 
         click.echo(f"Returned {count} items", err=True)
 
+
 #
 # Plugins
 #
 
 
-@cli_commands.group('plugin')
+@cli_commands.group("plugin")
 def plugin_commands():
-    """ Retrive Qgis plugin infos
-    """
+    """Retrive Qgis plugin infos"""
     pass
 
 
 @plugin_commands.command("list")
 def list_plugins():
-    """ List plugins
-    """
+    """List plugins"""
     import json
+
     with connect() as stub:
         stream = stub.ListPlugins(
             qjazz_pb2.Empty(),
@@ -397,29 +387,27 @@ def list_plugins():
 # Config
 #
 
-@cli_commands.group('config')
+
+@cli_commands.group("config")
 def config_commands():
-    """ Commands for configuration management
-    """
+    """Commands for configuration management"""
     pass
 
 
 @config_commands.command("get")
 def get_config():
-    """ Get server configuration
-    """
+    """Get server configuration"""
     with connect() as stub:
         resp = stub.GetConfig(qjazz_pb2.Empty())
         click.echo(resp.json)
 
 
 @config_commands.command("set")
-@click.argument('config', nargs=1)
+@click.argument("config", nargs=1)
 def set_config(config: str):
-    """ Send CONFIG to remote
-    """
+    """Send CONFIG to remote"""
     with connect() as stub:
-        if config.startswith('@'):
+        if config.startswith("@"):
             config = Path(config[1:]).open().read()
 
         # Validate as json
@@ -429,22 +417,21 @@ def set_config(config: str):
         except json.JSONDecodeError as err:
             click.echo(err, err=True)
 
+
 #
 #  status
 #
 
 
-@cli_commands.group('state')
+@cli_commands.group("state")
 def status_commands():
-    """ Commands for retrieving and setting rpc service state
-    """
+    """Commands for retrieving and setting rpc service state"""
     pass
 
 
 @status_commands.command("env")
 def get_status_env():
-    """ Get environment status
-    """
+    """Get environment status"""
     with connect() as stub:
         resp = stub.GetEnv(qjazz_pb2.Empty())
         click.echo(resp.json)
@@ -452,8 +439,7 @@ def get_status_env():
 
 @status_commands.command("disable")
 def disable_server():
-    """ Disable server serving stats
-    """
+    """Disable server serving stats"""
     with connect() as stub:
         _ = stub.SetServerServingStatus(
             qjazz_pb2.ServerStatus(status=qjazz_pb2.ServingStatus.NOT_SERVING),
@@ -462,8 +448,7 @@ def disable_server():
 
 @status_commands.command("enable")
 def enable_server():
-    """ Enable server serving stats
-    """
+    """Enable server serving stats"""
     with connect() as stub:
         _ = stub.SetServerServingStatus(
             qjazz_pb2.ServerStatus(status=qjazz_pb2.ServingStatus.SERVING),
@@ -474,8 +459,7 @@ def enable_server():
 @click.option("--count", default=1, help="Number of requests to send")
 @click.option("--server", is_flag=True, help="Ping qgis server service")
 def ping(count: int, server: bool = False):
-    """ Ping service
-    """
+    """Ping service"""
     stub = qjazz_pb2_grpc.QgisServerStub if server else qjazz_pb2_grpc.QgisAdminStub
     target = "server" if server else "admin"
     with connect(stub) as stub:
@@ -484,8 +468,7 @@ def ping(count: int, server: bool = False):
             resp = stub.Ping(qjazz_pb2.PingRequest(echo=str(n)))
             t_end = time()
             click.echo(
-                f"({target}) "
-                f"seq={n:<5} resp={resp.echo:<5} time={int((t_end - t_start) * 1000.)} ms",
+                f"({target}) seq={n:<5} resp={resp.echo:<5} time={int((t_end - t_start) * 1000.0)} ms",
             )
             sleep(1)
 
@@ -493,8 +476,7 @@ def ping(count: int, server: bool = False):
 @cli_commands.command("healthcheck")
 @click.option("--watch", "-w", is_flag=True, help="Watch status changes")
 def healthcheck_status(watch: bool):
-    """ Check and monitor the status of a GRPC server
-    """
+    """Check and monitor the status of a GRPC server"""
     with connect(stub=health_pb2_grpc.HealthStub) as stub:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
         request = health_pb2.HealthCheckRequest(service="qjazz.QgisServer")
@@ -509,13 +491,13 @@ def healthcheck_status(watch: bool):
 @cli_commands.command("stats")
 @click.option("--watch", "-w", is_flag=True, help="Watch mode")
 @click.option(
-    "--interval", "-i",
+    "--interval",
+    "-i",
     default=1,
     help="Interval in seconds in watch mode",
 )
 def display_stats(watch: bool, interval: int):
-    """ Return information about service processes
-    """
+    """Return information about service processes"""
     with connect() as stub:
         resp = stub.Stats(qjazz_pb2.Empty())
         click.echo(MessageToJson(resp))
@@ -528,8 +510,7 @@ def display_stats(watch: bool, interval: int):
 @cli_commands.command("sleep")
 @click.option("--delay", "-d", type=int, default=3, help="Response delay in seconds")
 def sleep_request(delay: int):
-    """ Execute cancelable request
-    """
+    """Execute cancelable request"""
     # XXX The first request to an rpc worker is never cancelled
     # try to figure out why.
     with connect() as stub:
@@ -543,11 +524,10 @@ def sleep_request(delay: int):
 
 @cli_commands.command("reload")
 def reload():
-    """ Reload QGIS processes
-    """
+    """Reload QGIS processes"""
     with connect() as stub:
         stub.Reload(qjazz_pb2.Empty())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli_commands()

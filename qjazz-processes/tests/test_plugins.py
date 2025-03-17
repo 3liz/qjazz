@@ -1,5 +1,3 @@
-
-
 from qgis.core import (
     QgsApplication,
 )
@@ -42,5 +40,5 @@ def test_plugins_provider(
     print("test_plugins_provider:provider", [a.id() for a in provider.algorithms()])
 
     # Check that models and scripts are published:
-    assert 'model' in plugins._providers
-    assert 'script' in plugins._providers
+    assert "model" in plugins._providers
+    assert "script" in plugins._providers

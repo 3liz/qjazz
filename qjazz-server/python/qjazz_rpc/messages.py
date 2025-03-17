@@ -1,6 +1,7 @@
-""" Messages for communicating with the qgis server
-    sub process
+"""Messages for communicating with the qgis server
+sub process
 """
+
 from enum import IntEnum, StrEnum
 from typing import (
     Annotated,
@@ -41,6 +42,7 @@ class MsgType(IntEnum):
     SLEEP = 18
     COLLECTIONS = 19
 
+
 # Note: HTTPMethod is defined in python 3.11 via http module
 
 
@@ -62,7 +64,7 @@ class MsgModel(BaseModel, frozen=True):
 
 class Response(BaseModel):
     def dump_response(self) -> dict:
-        return self.model_dump(mode='json', by_alias=True)
+        return self.model_dump(mode="json", by_alias=True)
 
 
 #
@@ -102,7 +104,7 @@ class ApiRequestMsg(MsgModel):
     name: str
     path: str
     method: HTTPMethod
-    url: str = '/'
+    url: str = "/"
     data: Optional[bytes] = None
     delegate: bool = False
     target: Optional[str] = None
@@ -113,6 +115,7 @@ class ApiRequestMsg(MsgModel):
     header_prefix: Optional[str] = None
     debug_report: bool = False
     content_type: Optional[str] = None
+
 
 #
 # Collections
@@ -295,6 +298,7 @@ class SleepMsg(MsgModel):
     msg_id: Literal[MsgType.SLEEP] = MsgType.SLEEP
     delay: int
 
+
 #
 # Asynchronous Pipe connection reader
 #
@@ -327,7 +331,7 @@ Message = Annotated[
 MessageAdapter: TypeAdapter[Message] = TypeAdapter(Message)
 
 
-Envelop = NewType('Envelop', tuple[int, Any])
+Envelop = NewType("Envelop", tuple[int, Any])
 
 
 class Connection(Protocol):
@@ -339,7 +343,7 @@ class Connection(Protocol):
 
 
 def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
-    """  Send a reply in a envelope message """
+    """Send a reply in a envelope message"""
     if isinstance(msg, Response):
         msg = msg.dump_response()
     conn.send_bytes(packb((status, msg)))
@@ -365,6 +369,7 @@ def stream_data(conn: Connection, stream: Iterable):
 
 def send_nodata(conn: Connection):
     conn.send_bytes(packb(204))
+
 
 #
 # XXX Note that data sent by child *MUST* be retrieved in parent

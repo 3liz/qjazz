@@ -32,22 +32,18 @@ class Entry:
 
 class CleanupConfProto(Protocol):
     @property
-    def update_interval(self) -> int:
-        ...
+    def update_interval(self) -> int: ...
 
 
 class ServiceCache:
-
     def cleanup_ctx(
         self,
         conf: CleanupConfProto,
         executor: Executor,
     ) -> Callable[[web.Application], AsyncGenerator[None, None]]:
-
         update_interval = conf.update_interval
 
         async def ctx(app: web.Application):
-
             async def update_services() -> bool:
                 try:
                     logger.debug("Updating services")
@@ -103,7 +99,5 @@ def _log_services(services: ServiceDict):
             return f"{dests}\n{details.model_dump_json(indent=4)}"
 
         logger.debug(
-            "\n".join(
-                _format(dests, details) for dests, details in services.values()
-            ),
+            "\n".join(_format(dests, details) for dests, details in services.values()),
         )

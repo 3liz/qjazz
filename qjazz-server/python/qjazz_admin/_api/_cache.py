@@ -21,10 +21,12 @@ from .utils import _http_error, _link
 class CatalogItem(BaseModel):
     lastModified: Annotated[
         str,
-        WithJsonSchema({
-            "type": "string",
-            "format": "date-time",
-        }),
+        WithJsonSchema(
+            {
+                "type": "string",
+                "format": "date-time",
+            }
+        ),
     ]
     name: str
     publicUri: str
@@ -46,35 +48,37 @@ CacheContentResponse: TypeAdapter[dict[str, CacheItemPool]] = swagger.model(
 
 def cache_content_response(
     request: web.Request,
-    label: str, response: dict[str, JsonValue],
+    label: str,
+    response: dict[str, JsonValue],
 ) -> Json:
     return CacheContentResponse.dump_json(
-        CacheContentResponse.validate_python({
-            uri: {
-                "pool": item,
-                "links": [
-                    _link(
-                        request,
-                        rel="related",
-                        path=f"/pools/{label}/cache/project?uri={uri}",
-                        title="Project status",
-                    ),
-                    _link(
-                        request,
-                        rel="related",
-                        path=f"/pools/{label}/cache/project/info?uri={uri}",
-                        title="Project details",
-                    ),
-                ],
+        CacheContentResponse.validate_python(
+            {
+                uri: {
+                    "pool": item,
+                    "links": [
+                        _link(
+                            request,
+                            rel="related",
+                            path=f"/pools/{label}/cache/project?uri={uri}",
+                            title="Project status",
+                        ),
+                        _link(
+                            request,
+                            rel="related",
+                            path=f"/pools/{label}/cache/project/info?uri={uri}",
+                            title="Project details",
+                        ),
+                    ],
+                }
+                for uri, item in response.items()
             }
-            for uri, item in response.items()
-        }),
+        ),
         by_alias=True,
     ).decode()
 
 
 class _Cache:
-
     #
     #  Cache methods
     #
@@ -120,18 +124,18 @@ class _Cache:
 
         resp = web.StreamResponse(
             status=200,
-            reason='OK',
-            headers={'Content-Type': 'application/json'},
+            reason="OK",
+            headers={"Content-Type": "application/json"},
         )
 
         await resp.prepare(request)
-        await resp.write(b'[')
+        await resp.write(b"[")
         count = 0
         length = 0
         try:
             async for item in pool.catalog():
                 if count > 0:
-                    await resp.write(b',')
+                    await resp.write(b",")
                 payload = CatalogItem.model_validate(item).model_dump_json().encode()
                 await resp.write(payload)
                 count += 1
@@ -145,7 +149,7 @@ class _Cache:
         length += 2 + (count - 1)
         resp.content_length = length
 
-        await resp.write(b']')
+        await resp.write(b"]")
         await resp.write_eof()
 
         return resp
@@ -240,7 +244,7 @@ class _Cache:
                     application/json:
                         schema:
                             $ref: '#/definitions/ErrorResponse'
-      """
+        """
         pool = self._pool(request)
         try:
             response = await pool.synchronize_cache()
@@ -301,7 +305,7 @@ class _Cache:
                     application/json:
                         schema:
                             $ref: '#/definitions/ErrorResponse'
-       """
+        """
         pool = self._pool(request)
         try:
             projects = StringList.validate_json(await request.text())

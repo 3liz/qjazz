@@ -4,18 +4,16 @@ import pytest
 
 from qjazz_admin.backend import Backend, BackendConfig
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 def test_clientconfig():
-
-    config = BackendConfig(server_address=('127.0.0.1', 23456))
-    assert config.address_to_string() == '127.0.0.1:23456'
+    config = BackendConfig(server_address=("127.0.0.1", 23456))
+    assert config.address_to_string() == "127.0.0.1:23456"
 
 
 @pytest.mark.server
 async def test_backend():
-
     config = BackendConfig(server_address=("::", 23456))
     backend = Backend(config)
 

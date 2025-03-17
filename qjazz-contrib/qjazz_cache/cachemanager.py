@@ -6,37 +6,38 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-""" Cache manager for Qgis Projects
+"""Cache manager for Qgis Projects
 
-    Usage example
-    ```
-    cm = CacheManager(conf)
-    # Resolve location
-    url = cm.resolve_path("/my/project")
+Usage example
+```
+cm = CacheManager(conf)
+# Resolve location
+url = cm.resolve_path("/my/project")
 
-    # Check status
-    md, status = cm.checkout(url)
+# Check status
+md, status = cm.checkout(url)
 
-    match status:
-        case CheckoutStatus.NEW:
-            print("Project exists and is not loaded")
-        case CheckoutStatus.NEEDUPDATE:
-            print("Project is already loaded and need to be updated")
-        case CheckoutStatus.UNCHANGED:
-            print("Project is loaded and is up to date")
-        case CheckoutStatus.REMOVED:
-            print("Project is loaded but has been removed from storage")
-        case CheckoutStatus.NOTFOUND:
-            print("Project does not exists")
+match status:
+    case CheckoutStatus.NEW:
+        print("Project exists and is not loaded")
+    case CheckoutStatus.NEEDUPDATE:
+        print("Project is already loaded and need to be updated")
+    case CheckoutStatus.UNCHANGED:
+        print("Project is loaded and is up to date")
+    case CheckoutStatus.REMOVED:
+        print("Project is loaded but has been removed from storage")
+    case CheckoutStatus.NOTFOUND:
+        print("Project does not exists")
 
-    # Update the cache according to
-    # the returned status
-    entry, update_status = cm.update(md, status)
+# Update the cache according to
+# the returned status
+entry, update_status = cm.update(md, status)
 
-    myproject = entry.project
-    ```
+myproject = entry.project
+```
 
 """
+
 import traceback
 
 try:
@@ -74,7 +75,7 @@ from .handlers import (
 )
 from .status import CheckoutStatus
 
-CACHE_MANAGER_CONTRACTID = '@3liz.org/cache-manager;1'
+CACHE_MANAGER_CONTRACTID = "@3liz.org/cache-manager;1"
 
 
 @dataclass(frozen=True)
@@ -91,7 +92,7 @@ class CacheEntry:
 
     debug_meta: DebugMetadata
 
-    last_hit: float = 0.
+    last_hit: float = 0.0
     hits: int = 0
     pinned: bool = False
 
@@ -102,24 +103,23 @@ class CacheEntry:
     # Increase the number of hits
     def hit_me(self):
         # Get around frozen
-        self.__dict__['hits'] += 1
-        self.__dict__['last_hit'] = time()
+        self.__dict__["hits"] += 1
+        self.__dict__["last_hit"] = time()
 
     def pin(self):
-        self.__dict__['pinned'] = True
+        self.__dict__["pinned"] = True
 
 
 class CacheManager:
-    """ Handle Qgis project cache
-    """
+    """Handle Qgis project cache"""
+
     StrictCheckingFailure = StrictCheckingFailure
     ResourceNotAllowed = ResourceNotAllowed
     UnreadableResource = UnreadableResource
 
     @classmethod
     def initialize_handlers(cls, config: ProjectsConfig):
-        """ Register handlers to component manager
-        """
+        """Register handlers to component manager"""
         register_default_handlers()
         for scheme, conf in config.handlers.items():
             register_protocol_handler(scheme, conf)
@@ -133,24 +133,23 @@ class CacheManager:
 
     @classmethod
     def get_service(cls) -> Self:
-        """ Return cache manager as a service.
-            This require that register_as_service has been called
-            in the current context
+        """Return cache manager as a service.
+        This require that register_as_service has been called
+        in the current context
         """
         return componentmanager.get_service(CACHE_MANAGER_CONTRACTID)
 
     @classmethod
     def get_protocol_handler(cls, scheme: str) -> ProtocolHandler:
-        """ Find protocol handler for the given scheme
-        """
+        """Find protocol handler for the given scheme"""
         return componentmanager.get_service(
-            f'@3liz.org/cache/protocol-handler;1?scheme={scheme}',
+            f"@3liz.org/cache/protocol-handler;1?scheme={scheme}",
         )
 
     def __init__(
-            self,
-            config: ProjectsConfig,
-            server: Optional[QgsServer] = None,
+        self,
+        config: ProjectsConfig,
+        server: Optional[QgsServer] = None,
     ) -> None:
         self._config = config
         self._cache: dict[str, CacheEntry] = {}
@@ -163,30 +162,28 @@ class CacheManager:
 
     @property
     def conf(self) -> ProjectsConfig:
-        """ Return the current configuration
-        """
+        """Return the current configuration"""
         return self._config
 
     def search_paths(self) -> Iterator[str]:
-        """ Return the list of search paths
-        """
+        """Return the list of search paths"""
         return iter(self.conf.search_paths.keys())
 
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
-        """ Resolve path according to location mapping
+        """Resolve path according to location mapping
 
-            `path` is translated to an url corresponding to
-            a potential storage backend (i.e `file`, `postgresql` ...)
+        `path` is translated to an url corresponding to
+        a potential storage backend (i.e `file`, `postgresql` ...)
 
-            if `allow_direct_path_resolution` configuration is set to true,
-            unresolved path are passed 'as is' and will
-            be directly interpreted by the protocol handler
-            corresponding to the url's scheme.
+        if `allow_direct_path_resolution` configuration is set to true,
+        unresolved path are passed 'as is' and will
+        be directly interpreted by the protocol handler
+        corresponding to the url's scheme.
 
-            If the root url have '{path}' template pattern in the query
-            the it will be replaced by the relative path from the input.
+        If the root url have '{path}' template pattern in the query
+        the it will be replaced by the relative path from the input.
 
-            Otherwise it will simply be appended to the root url path.
+        Otherwise it will simply be appended to the root url path.
         """
         path = Path(path)
         # Find matching path
@@ -211,8 +208,7 @@ class CacheManager:
             raise ResourceNotAllowed(str(path))
 
     def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
-        """ List compatible search paths
-        """
+        """List compatible search paths"""
         urls: Iterable[tuple[str, Url]]
         if location:
             url = self.conf.search_paths.get(location)
@@ -229,9 +225,9 @@ class CacheManager:
         return urls
 
     def collect_projects(self, location: Optional[str] = None) -> Iterator[tuple[ProjectMetadata, str]]:
-        """ Collect projects metadata from search paths
+        """Collect projects metadata from search paths
 
-            Yield tuple of (entry, public_path) for all found  entries
+        Yield tuple of (entry, public_path) for all found  entries
         """
         for location, url in self.locations(location):
             try:
@@ -242,21 +238,21 @@ class CacheManager:
                 logger.error(traceback.format_exc())
 
     def checkout(self, url: Url) -> tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
-        """ Checkout status of project from url
+        """Checkout status of project from url
 
-            Returned status:
-            * `NEW`: Project exists but is not loaded
-            * `NEEDUPDATE`: Project is loaded and is out of date
-            * `REMOVED`: Project is loaded but was removed from storage
-            * `UNCHANGED`: Project is loaded and is up to date
-            * `NOTFOUND` : Project does not exist in storage
+        Returned status:
+        * `NEW`: Project exists but is not loaded
+        * `NEEDUPDATE`: Project is loaded and is out of date
+        * `REMOVED`: Project is loaded but was removed from storage
+        * `UNCHANGED`: Project is loaded and is up to date
+        * `NOTFOUND` : Project does not exist in storage
 
-            Possible return values are:
-            - `(CacheEntry, CheckoutStatus.NEEDUPDATE)`
-            - `(CacheEntry, CheckoutStatus.UNCHANGED)`
-            - `(CacheEntry, CheckoutStatus.REMOVED)`
-            - `(ProjectMetadata, CheckoutStatus.NEW)`
-            - `(None, CheckoutStatus.NOTFOUND)`
+        Possible return values are:
+        - `(CacheEntry, CheckoutStatus.NEEDUPDATE)`
+        - `(CacheEntry, CheckoutStatus.UNCHANGED)`
+        - `(CacheEntry, CheckoutStatus.REMOVED)`
+        - `(ProjectMetadata, CheckoutStatus.NEW)`
+        - `(None, CheckoutStatus.NOTFOUND)`
         """
         retval: tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]
         handler = self.get_protocol_handler(url.scheme)
@@ -281,8 +277,7 @@ class CacheManager:
         return retval
 
     def checkout_entry(self, entry: CacheEntry) -> tuple[CacheEntry, CheckoutStatus]:
-        """ Checkout from existing entry
-        """
+        """Checkout from existing entry"""
         handler = self.get_protocol_handler(entry.scheme)
         try:
             md = handler.project_metadata(validate_url(entry.uri))
@@ -301,18 +296,18 @@ class CacheManager:
         status: CheckoutStatus,
         handler: Optional[ProtocolHandler] = None,
     ) -> tuple[CacheEntry, CheckoutStatus]:
-        """ Update cache entry according to status
+        """Update cache entry according to status
 
-            * `NEW`: (re)load existing project
-            * `NEEDUPDATE`: update loaded project
-            * `REMOVED`: remove loaded project
-            * `UNCHANGED`: do nothing
-            * `NOTFOUND` : do nothing
+        * `NEW`: (re)load existing project
+        * `NEEDUPDATE`: update loaded project
+        * `REMOVED`: remove loaded project
+        * `UNCHANGED`: do nothing
+        * `NOTFOUND` : do nothing
 
-            If the status is NOTFOUND then return None
+        If the status is NOTFOUND then return None
 
-            In all other cases the entry *must* exists in
-            the cache or an exception is raised
+        In all other cases the entry *must* exists in
+        the cache or an exception is raised
         """
         match status:
             case CheckoutStatus.NEW:
@@ -345,8 +340,7 @@ class CacheManager:
         md: ProjectMetadata,
         handler: ProtocolHandler,
     ) -> CacheEntry:
-        """ Create a new cache entry
-        """
+        """Create a new cache entry"""
         s_time = time()
         s_mem = self._process.memory_info().rss if self._process else None
 
@@ -374,14 +368,14 @@ class CacheManager:
             timestamp=time(),
             debug_meta=DebugMetadata(
                 load_memory_bytes=used_mem,
-                load_time_ms=int((time() - s_time) * 1000.),
+                load_time_ms=int((time() - s_time) * 1000.0),
             ),
         )
 
     def update_cache(self) -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
-        """ Update all entries in cache
+        """Update all entries in cache
 
-            Yield updated cache entries
+        Yield updated cache entries
         """
         for e in self._cache.values():
             handler = self.get_protocol_handler(e.md.scheme)
@@ -395,8 +389,7 @@ class CacheManager:
                 yield self.update(e.md, CheckoutStatus.REMOVED, handler)
 
     def clear(self) -> None:
-        """ Clear all projects
-        """
+        """Clear all projects"""
         if self._server:
             iface = self._server.serverInterface()
             for e in self._cache.values():
@@ -407,24 +400,21 @@ class CacheManager:
         self._cache.clear()
 
     def iter(self) -> Iterator[CacheEntry]:
-        """ Iterate over all cache entries
-        """
+        """Iterate over all cache entries"""
         return iter(self._cache.values())
 
     def checkout_iter(self) -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
-        """ Iterate and checkout over all cache entries
-        """
+        """Iterate and checkout over all cache entries"""
         return (self.checkout_entry(e) for e in self.iter())
 
     def __len__(self) -> int:
-        """ Return the number of entries in
-            the cache
+        """Return the number of entries in
+        the cache
         """
         return len(self._cache)
 
     def _delete_cache_entry(self, md: ProjectMetadata) -> CacheEntry:
-        """ Update the server cache
-        """
+        """Update the server cache"""
         entry = self._cache.pop(md.uri)
         if self._server:
             # Update server cache

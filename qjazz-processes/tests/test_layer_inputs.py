@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from qgis.core import (
@@ -41,7 +40,6 @@ def meta(seq, s):
 
 
 def test_parameter_layer_maplayer():
-
     param = QgsProcessingParameterMapLayer("MapLayer")
 
     inp = InputParameter(param)
@@ -52,8 +50,7 @@ def test_parameter_layer_maplayer():
 
 
 def test_parameter_layer_vectorlayer(projects):
-
-    project = projects.get('/france/france_parts')
+    project = projects.get("/france/france_parts")
 
     param = QgsProcessingParameterVectorLayer("VectorLayer")
 
@@ -63,11 +60,10 @@ def test_parameter_layer_vectorlayer(projects):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectorlayer::", schema)
 
-    assert 'france_parts' in schema['enum']
+    assert "france_parts" in schema["enum"]
 
 
 def test_parameter_layer_rasterlayer():
-
     param = QgsProcessingParameterRasterLayer("RasterLayer")
 
     inp = InputParameter(param)
@@ -78,7 +74,6 @@ def test_parameter_layer_rasterlayer():
 
 
 def test_parameter_layer_featuresource(qgis_session):
-
     param = QgsProcessingParameterFeatureSource("FeatureSource")
 
     inp = InputParameter(param)
@@ -87,12 +82,11 @@ def test_parameter_layer_featuresource(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_featuresource::", schema)
 
-    assert schema.get('format') == 'x-feature-source'
+    assert schema.get("format") == "x-feature-source"
 
 
 def test_parameter_layer_multilayers(projects):
-
-    project = projects.get('/france/france_parts')
+    project = projects.get("/france/france_parts")
 
     param = QgsProcessingParameterMultipleLayers("MultipleLayers")
 
@@ -102,11 +96,10 @@ def test_parameter_layer_multilayers(projects):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_multiplelayers::", schema)
 
-    assert 'france_parts' in schema['items']['enum']
+    assert "france_parts" in schema["items"]["enum"]
 
 
 def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
-
     param = QgsProcessingParameterVectorDestination("VectorDestination")
 
     assert QgsProcessingUtils.defaultVectorExtension() == qgis_session.default_vector_file_ext
@@ -125,12 +118,12 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectordestination::schema", schema)
 
-    assert schema.get('default') is None
+    assert schema.get("default") is None
 
     value = inp.value("bar", context)
     assert isinstance(value, QgsProcessingOutputLayerDefinition)
-    assert value.destinationName == 'bar'
-    assert value.sink.staticValue() == str(workdir.joinpath('VectorDestination.fgb'))
+    assert value.destinationName == "bar"
+    assert value.sink.staticValue() == str(workdir.joinpath("VectorDestination.fgb"))
 
     context = ProcessingContext(
         config.model_copy(
@@ -139,34 +132,33 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     )
 
     value = inp.value("/foobar.csv", context)
-    assert value.destinationName == 'foobar'
-    assert value.sink.staticValue() == 'foobar.csv'
+    assert value.destinationName == "foobar"
+    assert value.sink.staticValue() == "foobar.csv"
 
     value = inp.value("/foobar", context)
-    assert value.destinationName == 'foobar'
-    assert value.sink.staticValue() == 'foobar.fgb'
+    assert value.destinationName == "foobar"
+    assert value.sink.staticValue() == "foobar.fgb"
 
     context = ProcessingContext(
         config.model_copy(
             update=dict(
                 raw_destination_input_sink=True,
-                raw_destination_root_path=Path('/unsafe'),
+                raw_destination_root_path=Path("/unsafe"),
             ),
         ),
     )
 
     value = inp.value("file:/path/to/foobar.csv|layername=foobaz", context)
-    assert value.destinationName == 'foobaz'
-    assert value.sink.staticValue() == '/unsafe/path/to/foobar.csv'
+    assert value.destinationName == "foobaz"
+    assert value.sink.staticValue() == "/unsafe/path/to/foobar.csv"
 
     # Use postgres uri as sink
     value = inp.value("postgres://service=foobar|layername=foobaz", context)
-    assert value.destinationName == 'foobaz'
-    assert value.sink.staticValue() == 'postgres://service=foobar'
+    assert value.destinationName == "foobaz"
+    assert value.sink.staticValue() == "postgres://service=foobar"
 
 
 def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
-
     param = QgsProcessingParameterRasterDestination("RasterDestination")
     config = qgis_session
 
@@ -181,7 +173,6 @@ def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
 
 
 def test_parameter_tininputlayers():
-
     param = QgsProcessingParameterTinInputLayers("TinInputLayers")
 
     inp = InputParameter(param)
@@ -193,7 +184,6 @@ def test_parameter_tininputlayers():
 
 
 def test_parameter_field():
-
     param = QgsProcessingParameterField(
         "Field",
         parentLayerParameterName="ParentLayer",
@@ -205,7 +195,7 @@ def test_parameter_field():
 
     schema = inp.json_schema()
     print("\ntest_parameter_field::", schema)
-    assert schema['type'] == 'string'
+    assert schema["type"] == "string"
 
     md = inp.metadata(param)
     print("test_parameter_field::metadata", md)
@@ -217,12 +207,11 @@ def test_parameter_field():
     inp = InputParameter(param)
     schema = inp.json_schema()
     print("\ntest_parameter_field::multiple", schema)
-    assert schema['type'] == 'array'
-    assert schema['minItems'] == 1
+    assert schema["type"] == "array"
+    assert schema["minItems"] == 1
 
 
 def test_parameter_fieldmapping():
-
     param = QgsProcessingParameterFieldMapping(
         "FieldMapping",
         parentLayerParameterName="ParentLayer",
@@ -237,8 +226,7 @@ def test_parameter_fieldmapping():
 
 
 def test_parameter_alignrasterlayers(projects):
-
-    project = projects.get('/samples/raster_layer')
+    project = projects.get("/samples/raster_layer")
 
     param = QgsProcessingParameterAlignRasterLayers("AlignRasterLayers")
 

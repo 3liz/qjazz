@@ -23,7 +23,7 @@ PathType = click.Path(
 @click.option(
     "--loglevel",
     "-l",
-    type=click.Choice(('error', 'warning', 'info', 'debug')),
+    type=click.Choice(("error", "warning", "info", "debug")),
     default="info",
     help="Log level",
 )
@@ -33,9 +33,9 @@ def run_worker(
     loglevel: str,
     dump: bool,
 ):
-    """ Run printserver processes worker
-    """
+    """Run printserver processes worker"""
     from qjazz_processes.worker.config import CONFIG_ENV_PATH
+
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
@@ -44,10 +44,12 @@ def run_worker(
         from typing_extensions import cast
 
         from qjazz_processes.worker.config import load_configuration
+
         conf = cast(BaseModel, load_configuration())
         click.echo(conf.model_dump_json(indent=4))
     else:
         from .jobs import app
+
         app.start_worker(loglevel=loglevel)
 
 

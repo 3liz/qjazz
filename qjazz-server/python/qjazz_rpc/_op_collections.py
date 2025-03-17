@@ -37,16 +37,21 @@ def handle_catalog(
 
     if msg.resource:
         item = catalog.get(msg.resource)
-        items = [_m.CollectionsItem(
-            name=item.public_path,
-            json=item.coll.model_dump_json(),
-            endpoints=OgcEndpoints.MAP.value,
-        )] if item else []
+        items = (
+            [
+                _m.CollectionsItem(
+                    name=item.public_path,
+                    json=item.coll.model_dump_json(),
+                    endpoints=OgcEndpoints.MAP.value,
+                )
+            ]
+            if item
+            else []
+        )
     else:
+
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
-
             for item in islice(catalog.iter(), msg.start, msg.end):
-
                 yield _m.CollectionsItem(
                     name=item.public_path,
                     json=CatatalogA.dump_json(item.coll),
@@ -96,14 +101,21 @@ def handle_layers(
     if msg.resource:
         if msg.resource in parent.layers:
             layer = get_layer(project, msg.resource)
-            items = [_m.CollectionsItem(
-                name=layer.name(),
-                json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-                endpoints=parent.layers[layer.name()].value,
-            )] if layer else []
+            items = (
+                [
+                    _m.CollectionsItem(
+                        name=layer.name(),
+                        json=Collection.from_layer(layer, parent.coll).model_dump_json(),
+                        endpoints=parent.layers[layer.name()].value,
+                    )
+                ]
+                if layer
+                else []
+            )
         else:
             items = []
     else:
+
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
             for layer in islice(iter_layers(project, parent), msg.start, msg.end):
                 yield _m.CollectionsItem(
@@ -139,8 +151,7 @@ def handle_collection(
 
 
 def iter_layers(project: QgsProject, item: CatalogItem) -> Iterator[QgsMapLayer]:
-    """ Return the catalog of layers for this project
-    """
+    """Return the catalog of layers for this project"""
     # root = project.layerTreeRoot()
     # XXX Show only layers displayable with WMS GetMap.
     # TODO handle legends
@@ -153,8 +164,7 @@ def get_layer(
     project: QgsProject,
     name: str,
 ) -> Optional[QgsMapLayer]:
-    """ Return the catalog of layers for this project
-    """
+    """Return the catalog of layers for this project"""
     layer = project.mapLayersByName(name)
     if layer:
         return layer[0]

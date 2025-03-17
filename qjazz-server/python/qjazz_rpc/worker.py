@@ -1,6 +1,7 @@
-""" Implement Qgis server worker
-    as a sub process
+"""Implement Qgis server worker
+as a sub process
 """
+
 import json
 import os
 import signal
@@ -35,8 +36,7 @@ Co = CheckoutStatus
 
 
 def load_default_project(cm: CacheManager):
-    """ Load default project
-    """
+    """Load default project"""
     default_project = os.getenv("QGIS_PROJECT_FILE")
     if default_project:
         url = cm.resolve_path(default_project, allow_direct=True)
@@ -48,21 +48,20 @@ def load_default_project(cm: CacheManager):
 
 
 def setup_server(conf: QgisConfig) -> QgsServer:
-    """ Setup Qgis server and plugins
-    """
+    """Setup Qgis server and plugins"""
     # Enable qgis server debug verbosity
     if logger.is_enabled_for(logger.LogLevel.DEBUG):
-        os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'
-        os.environ['QGIS_DEBUG'] = '1'
+        os.environ["QGIS_SERVER_LOG_LEVEL"] = "0"
+        os.environ["QGIS_DEBUG"] = "1"
 
     projects = conf.projects
     if projects.trust_layer_metadata:
-        os.environ['QGIS_SERVER_TRUST_LAYER_METADATA'] = 'yes'
+        os.environ["QGIS_SERVER_TRUST_LAYER_METADATA"] = "yes"
     if projects.disable_getprint:
-        os.environ['QGIS_SERVER_DISABLE_GETPRINT'] = 'yes'
+        os.environ["QGIS_SERVER_DISABLE_GETPRINT"] = "yes"
 
     # Disable any cache strategy
-    os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
+    os.environ["QGIS_SERVER_PROJECT_CACHE_STRATEGY"] = "off"
 
     server = init_qgis_server(settings=conf.qgis_settings)
 
@@ -83,6 +82,7 @@ def setup_server(conf: QgisConfig) -> QgsServer:
 
 def worker_env() -> JsonValue:
     from qgis.core import Qgis
+
     return dict(
         qgis_version=Qgis.QGIS_VERSION_INT,
         qgis_release=Qgis.QGIS_RELEASE_NAME,
@@ -113,6 +113,7 @@ class Feedback:
 #  Rendez vous
 #
 
+
 class RendezVous(Protocol):
     def busy(self): ...
     def done(self): ...
@@ -121,6 +122,7 @@ class RendezVous(Protocol):
 #
 # Run Qgis server
 #
+
 
 def qgis_server_run(
     server: QgsServer,
@@ -131,8 +133,7 @@ def qgis_server_run(
     projects: Optional[List[str]] = None,
     reporting: bool = True,
 ):
-    """ Run Qgis server and process incoming requests
-    """
+    """Run Qgis server and process incoming requests"""
     cm = CacheManager(conf.projects, server)
 
     # Register the cache manager as a service
@@ -166,7 +167,7 @@ def qgis_server_run(
         logger.debug("%s: Waiting for messages", name)
         try:
             rendez_vous.done()
-            msg = None   # Prevent unbound value if recv() is interrupted
+            msg = None  # Prevent unbound value if recv() is interrupted
             msg = conn.recv()
             rendez_vous.busy()
             logger.debug("Received message: %s", msg.msg_id.name)
@@ -258,7 +259,7 @@ def qgis_server_run(
                         # instance of configuration
                         _m.send_reply(conn, "", 403)
                 case _m.GetConfigMsg():
-                    _m.send_reply(conn, conf.model_dump(mode='json'))
+                    _m.send_reply(conn, conf.model_dump(mode="json"))
                 # --------------------
                 # Status
                 # --------------------
@@ -296,7 +297,7 @@ def qgis_server_run(
                         "%s\t%s\tResponse time: %d ms",
                         name,
                         msg.msg_id.name,
-                        int((time() - t_start) * 1000.),
+                        int((time() - t_start) * 1000.0),
                     )
             # Reset feedback
             feedback.reset()
@@ -305,8 +306,7 @@ def qgis_server_run(
 
 
 def do_sleep(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):
-    """ Feedback test
-    """
+    """Feedback test"""
     done_ts = time() + msg.delay
     canceled = False
     logger.info("Entering sleep mode for %s seconds", msg.delay)

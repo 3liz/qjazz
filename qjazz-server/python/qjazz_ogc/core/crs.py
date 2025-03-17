@@ -1,8 +1,9 @@
-'''
+"""
 CRS schema
 
 See https://schemas.opengis.net/ogcapi/maps/part1/1.0/openapi/schemas/common-geodata/crs.yaml
-'''
+"""
+
 from typing import Optional, Self, Union
 
 from pydantic import HttpUrl
@@ -11,7 +12,6 @@ from qjazz_contrib.core.models import JsonDict
 
 
 class CrsRef(HttpUrl):
-
     @classmethod
     def from_authority(
         cls,
@@ -32,7 +32,7 @@ class CrsRef(HttpUrl):
         return cls.from_authority("EPSG", code)
 
     def to_ogc_urn(self) -> str:
-        return f"urn:ogc{(self.path or "").replace('/', ':')}"  #
+        return f"urn:ogc{(self.path or '').replace('/', ':')}"  #
 
 
 CRS84 = CrsRef.from_authority("OGC", "CRS84", version="1.3")

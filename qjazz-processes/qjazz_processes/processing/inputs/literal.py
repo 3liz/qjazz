@@ -1,4 +1,3 @@
-
 import sys
 
 from typing import (
@@ -57,8 +56,10 @@ class ParameterBool(InputParameter):
 # QgsProcessingParameterString
 #
 
+
 class ParameterString(InputParameter):
     _ParameterType = str
+
 
 #
 # QgsProcessingParameterEnum
@@ -66,7 +67,6 @@ class ParameterString(InputParameter):
 
 
 class ParameterEnum(InputParameter):
-
     @classmethod
     def create_model(
         cls,
@@ -75,7 +75,6 @@ class ParameterEnum(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         opts = tuple(param.options())
 
         _type = Literal[opts]  # type: ignore [valid-type]
@@ -86,12 +85,12 @@ class ParameterEnum(InputParameter):
             _type = set[_type]  # type: ignore [misc]
 
         if not validation_only:
-            default = field.get('default')
+            default = field.get("default")
 
             if default is not None:
                 match default:
                     case str() if multiple:
-                        default = set(default.split(','))
+                        default = set(default.split(","))
                     case [str(), *_]:
                         default = set(default) if multiple else default[0]
                     case [int(), *_]:
@@ -115,7 +114,6 @@ class ParameterEnum(InputParameter):
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> int | Sequence[int]:
-
         _value = self.validate(inp)
 
         opts = self._param.options()
@@ -135,8 +133,8 @@ class ParameterEnum(InputParameter):
 # QgsProcessingParameterNumber
 #
 
-def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
 
+def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
     minimum = param.minimum()
     maximum = param.maximum()
 
@@ -150,7 +148,6 @@ def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
 
 
 class ParameterNumber(InputParameter):
-
     @classmethod
     def create_model(
         cls,
@@ -159,7 +156,6 @@ class ParameterNumber(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         _type: type[float | int]
 
         set_number_minmax(param, field)
@@ -179,12 +175,12 @@ class ParameterNumber(InputParameter):
 # QgsProcessingParameterDistance
 #
 
-class ParameterDistance(ParameterNumber):
 
+class ParameterDistance(ParameterNumber):
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDistance) -> list[Metadata]:
         md = super(ParameterDistance, cls).metadata(param)
-        md.append(MetadataLink(role="ogcType", href=OgcDataType['length'], title="length"))
+        md.append(MetadataLink(role="ogcType", href=OgcDataType["length"], title="length"))
 
         unit = param.defaultUnit()
         if unit != Qgis.DistanceUnit.Unknown:
@@ -226,11 +222,10 @@ class ParameterDistance(ParameterNumber):
 
 
 class ParameterScale(ParameterNumber):
-
     @classmethod
     def metadata(cls, param: QgsProcessingParameterScale) -> list[Metadata]:
         md = super(ParameterScale, cls).metadata(param)
-        md.append(MetadataLink(role="ogcType", href=OgcDataType['scale'], title="scale"))
+        md.append(MetadataLink(role="ogcType", href=OgcDataType["scale"], title="scale"))
 
         return md
 
@@ -239,12 +234,12 @@ class ParameterScale(ParameterNumber):
 # QgsProcessingParameterDuration
 #
 
-class ParameterDuration(ParameterNumber):
 
+class ParameterDuration(ParameterNumber):
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDuration) -> list[Metadata]:
         md = super(ParameterDuration, cls).metadata(param)
-        md.append(MetadataLink(role="ogcType", href=OgcDataType['time'], title="time"))
+        md.append(MetadataLink(role="ogcType", href=OgcDataType["time"], title="time"))
 
         unit = param.defaultUnit()
         if unit != Qgis.TemporalUnit.Unknown:
@@ -269,6 +264,7 @@ class ParameterDuration(ParameterNumber):
 
         return md
 
+
 #
 # QgsProcessingParameterRange
 #
@@ -281,7 +277,6 @@ else:
 
 
 class ParameterRange(InputParameter):
-
     @classmethod
     def create_model(
         cls,
@@ -290,8 +285,7 @@ class ParameterRange(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
-        default = field.get('default')
+        default = field.get("default")
 
         _type: type
 
@@ -309,12 +303,12 @@ class ParameterRange(InputParameter):
                     case [float(), float()] | [int(), int()]:
                         pass
                     case str():
-                        left, right = default.split(':')
+                        left, right = default.split(":")
                         field.update(default=[_type(left), _type(right)])
                     case _:
                         InputValueError(f"Invalid default value for parameter Range: {default}")
 
-            field.update(json_schema_extra={'format': "x-range"})
+            field.update(json_schema_extra={"format": "x-range"})
 
         _type = Sequence[_type]  # type: ignore [valid-type]
         return _type
@@ -323,6 +317,7 @@ class ParameterRange(InputParameter):
 #
 # QgsProcessingParameterColor
 #
+
 
 class ParameterColor(InputParameter):
     # CSS3 color
@@ -335,12 +330,12 @@ class ParameterColor(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         if not validation_only:
-            default = field.pop('default', None)
+            default = field.pop("default", None)
             match default:
                 case str():
                     from qgis.core import QgsSymbolLayerUtils
+
                     default = QgsSymbolLayerUtils.parseColor(default)
                 case QColor():
                     pass
@@ -357,7 +352,6 @@ class ParameterColor(InputParameter):
         return Color
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> QColor:
-
         _value = self.validate(inp)
 
         rgb = _value.as_rgb_tuple()
@@ -375,7 +369,6 @@ class ParameterColor(InputParameter):
 
 
 class ParameterDatabaseSchema(ParameterString):
-
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDatabaseSchema) -> list[Metadata]:
         md = super(ParameterDatabaseSchema, cls).metadata(param)
@@ -397,7 +390,6 @@ class ParameterDatabaseSchema(ParameterString):
 
 
 class ParameterDatabaseTable(ParameterString):
-
     @classmethod
     def metadata(cls, param: QgsProcessingParameterDatabaseTable) -> list[Metadata]:
         md = super(ParameterDatabaseTable, cls).metadata(param)
@@ -419,6 +411,7 @@ class ParameterDatabaseTable(ParameterString):
 #  QgsProcessingParameterProviderConnection
 #
 
+
 class ParameterProviderConnection(ParameterString):
     pass
 
@@ -426,6 +419,7 @@ class ParameterProviderConnection(ParameterString):
 #
 #  QgsProcessingParameterAuthConfig
 #
+
 
 class ParameterAuthConfig(ParameterString):
     pass
@@ -435,8 +429,8 @@ class ParameterAuthConfig(ParameterString):
 # QgisProcessingParameterLayout
 #
 
-class ParameterLayout(InputParameter):
 
+class ParameterLayout(InputParameter):
     @classmethod
     def create_model(
         cls,
@@ -445,7 +439,6 @@ class ParameterLayout(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         _type: Any = str
 
         if project:
@@ -455,6 +448,7 @@ class ParameterLayout(InputParameter):
                 _type = Literal[values]
 
         return _type
+
 
 #
 # QgisProcessingParameterLayoutItem
@@ -477,6 +471,7 @@ class ParameterLayoutItem(InputParameter):
             )
 
         return md
+
 
 #
 # QgisProcessingParameterMapTheme

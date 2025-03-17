@@ -1,5 +1,5 @@
-""" Test just returning simple value
-"""
+"""Test just returning simple value"""
+
 from pathlib import Path
 
 from qgis.core import (
@@ -11,43 +11,42 @@ from qgis.core import (
 
 
 class TestCopyLayer(QgsProcessingAlgorithm):
-
-    INPUT = 'INPUT'
-    OUTPUT = 'OUTPUT'
+    INPUT = "INPUT"
+    OUTPUT = "OUTPUT"
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'testcopylayer'
+        return "testcopylayer"
 
     def displayName(self):
-        return 'Test Copy Layer'
+        return "Test Copy Layer"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-           see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, 'Vector Layer'))
+        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, "Vector Layer"))
         self.addParameter(
-            QgsProcessingParameterVectorDestination(self.OUTPUT, 'Output Layer'),
+            QgsProcessingParameterVectorDestination(self.OUTPUT, "Output Layer"),
         )
 
     def flags(self):
         return super().flags() | QgsProcessingAlgorithm.FlagRequiresProject
 
     def processAlgorithm(self, parameters, context, feedback):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         outlayer = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)

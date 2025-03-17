@@ -1,8 +1,8 @@
 #
 # Copyright 2025 3liz
 #
-""" Utilities for qgis network inspection and
-    settings
+"""Utilities for qgis network inspection and
+settings
 """
 
 from typing import (
@@ -29,12 +29,11 @@ from .. import config, logger
 from ..models import Field
 
 CachePolicy = Literal[
-    'always_network',
-    'prefer_network',
-    'prefer_cache',
-    'alway_cache',
+    "always_network",
+    "prefer_network",
+    "prefer_cache",
+    "alway_cache",
 ]
-
 
 
 class RequestPolicy(config.ConfigBase):
@@ -58,13 +57,13 @@ class RequestPolicy(config.ConfigBase):
     @staticmethod
     def cache_policy_to_load_control(policy: CachePolicy) -> QNetworkRequest.CacheLoadControl:
         match policy:
-            case 'always_network':
+            case "always_network":
                 return QNetworkRequest.CacheLoadControl.AlwaysNetwork
-            case 'prefer_network':
+            case "prefer_network":
                 return QNetworkRequest.CacheLoadControl.PreferNetwork
-            case 'prefer_cache':
+            case "prefer_cache":
                 return QNetworkRequest.CacheLoadControl.PreferCache
-            case 'alway_cache':
+            case "alway_cache":
                 return QNetworkRequest.CacheLoadControl.AlwaysCache
             case _ as unreachable:
                 assert_never(unreachable)
@@ -114,7 +113,6 @@ class QgisNetworkConfig(config.ConfigBase):
             RequestPolicy.set_request_cache_policy(request, self.cache_policy)
 
     def configure_network(self):
-
         nam = QgsNetworkAccessManager.instance()
 
         if not nam.isStrictTransportSecurityEnabled():
@@ -132,23 +130,26 @@ class QgisNetworkConfig(config.ConfigBase):
             nam.finished.connect(on_reply_finished)
 
         if self.cache_policy or self.domain_policy:
+
             def process_request(request: QNetworkRequest):
                 self.process_request(request)
 
             nam.setRequestPreprocessor(process_request)
 
+
 #
 # Hooks
 #
 def on_request_created(params: QgsNetworkRequestParameters):
-    logger.info("NET: Request[%s] created: %s",
+    logger.info(
+        "NET: Request[%s] created: %s",
         params.requestId(),
         params.request().url().toDisplayString(),
     )
 
+
 def on_reply_finished(reply: QgsNetworkReplyContent):
-    """ Run whenever a pending network reply is finished.
-    """
+    """Run whenever a pending network reply is finished."""
     err = reply.error()
     status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
     url: str = reply.request().url().toDisplayString()
@@ -167,4 +168,3 @@ def on_reply_finished(reply: QgsNetworkReplyContent):
             url,
             status,
         )
-

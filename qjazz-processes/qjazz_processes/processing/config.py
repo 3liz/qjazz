@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from textwrap import dedent as _D
 from typing import (
@@ -69,7 +68,7 @@ class ProcessingConfig(ConfigBase):
         ),
     )
     exposed_providers: list[str] = Field(
-        default=['script', 'model'],
+        default=["script", "model"],
         title="Internal qgis providers exposed",
         description=_D(
             """
@@ -213,13 +212,14 @@ class ProcessingConfig(ConfigBase):
     )
 
     def settings(self) -> dict[str, str]:
-        """Configure qgis processing settings
-        """
+        """Configure qgis processing settings"""
         settings = self.qgis_settings.copy()
-        settings.update({
-            "qgis/configuration/prefer-filename-as-layer-name": "false",
-            "Processing/Configuration/PREFER_FILENAME_AS_LAYER_NAME": "false",
-        })
+        settings.update(
+            {
+                "qgis/configuration/prefer-filename-as-layer-name": "false",
+                "Processing/Configuration/PREFER_FILENAME_AS_LAYER_NAME": "false",
+            }
+        )
 
         # Set up folder settings
         paths = self.plugins.paths
@@ -230,12 +230,12 @@ class ProcessingConfig(ConfigBase):
                 if p.is_dir():
                     yield p
 
-        scripts_folders = ';'.join(str(p) for p in _folders('scripts'))
+        scripts_folders = ";".join(str(p) for p in _folders("scripts"))
         if scripts_folders:
             logger.debug("Scripts folders set to %s", scripts_folders)
             settings["Processing/Configuration/SCRIPTS_FOLDERS"] = scripts_folders
 
-        models_folders = ';'.join(str(p) for p in _folders('models'))
+        models_folders = ";".join(str(p) for p in _folders("models"))
         if models_folders:
             logger.debug("Models folders set to %s", models_folders)
             settings["Processing/Configuration/MODELS_FOLDER"] = models_folders
@@ -243,21 +243,23 @@ class ProcessingConfig(ConfigBase):
         # Configure default vector extensions
         if self.default_vector_file_ext:
             from qgis.core import QgsVectorFileWriter
+
             exts = QgsVectorFileWriter.supportedFormatExtensions()
             ext = self.default_vector_file_ext
             idx = exts.index(ext)
-            settings['qgis/configuration/default-output-vector-layer-ext'] = idx
-            settings['qgis/configuration/default-output-vector-ext'] = self.default_vector_file_ext
+            settings["qgis/configuration/default-output-vector-layer-ext"] = idx
+            settings["qgis/configuration/default-output-vector-ext"] = self.default_vector_file_ext
             # Qgis > 33800
 
         # Configure default raster extensions
         if self.default_raster_file_ext:
             from qgis.core import QgsRasterFileWriter
+
             exts = QgsRasterFileWriter.supportedFormatExtensions()
             ext = self.default_raster_file_ext
             idx = exts.index(ext)
-            settings['qgis/configuration/default-output-raster-layer-ext'] = idx
-            settings['qgis/configuration/default-output-raster-ext'] = ext
+            settings["qgis/configuration/default-output-raster-layer-ext"] = idx
+            settings["qgis/configuration/default-output-raster-ext"] = ext
             # Qgis > 33800
 
         return settings

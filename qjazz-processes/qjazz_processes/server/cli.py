@@ -26,7 +26,9 @@ FilePathType = click.Path(
 
 @click.group()
 @click.option(
-    "--config", "-C", "configpath",
+    "--config",
+    "-C",
+    "configpath",
     help="Path to configuration file",
     type=FilePathType,
     envvar="PY_QGIS_PROCESSES_SERVER_CONFIG",
@@ -44,11 +46,10 @@ def cli_commands(
     )
 
 
-@cli_commands.command('serve')
+@cli_commands.command("serve")
 @click.pass_context
 def run_server(ctx: click.Context):
-    """ Run server
-    """
+    """Run server"""
     conf = load_configuration(ctx.obj.configpath)
     logger.setup_log_handler(
         logger.LogLevel.TRACE if ctx.obj.verbose else conf.logging.level,
@@ -57,10 +58,11 @@ def run_server(ctx: click.Context):
     serve(conf)
 
 
-@cli_commands.command('config')
+@cli_commands.command("config")
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
-    "--format", "out_format",
+    "--format",
+    "out_format",
     type=click.Choice(("json", "yaml", "toml")),
     default="json",
     help="Output format (schema only)",
@@ -71,11 +73,10 @@ def dump_config(
     out_format: str,
     schema: bool = False,
 ):
-    """ Display configuration
-    """
+    """Display configuration"""
     if schema:
         match out_format:
-            case 'json':
+            case "json":
                 json_schema = confservice.json_schema()
                 echo(
                     TypeAdapter(JsonValue).dump_json(
@@ -83,28 +84,29 @@ def dump_config(
                         indent=4,
                     ),
                 )
-            case 'yaml':
+            case "yaml":
                 from ruamel.yaml import YAML
+
                 json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
-            case 'toml':
+            case "toml":
                 confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
         echo(conf.model_dump_json(indent=4))
 
 
-@cli_commands.command('openapi')
+@cli_commands.command("openapi")
 @click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
 def dump_swagger_doc(to_yaml: bool):
-    """  Output swagger api documentation
-    """
+    """Output swagger api documentation"""
     from .server import swagger_model
 
     doc = swagger_model()
     if to_yaml:
         from ruamel.yaml import YAML
+
         yaml = YAML()
         yaml.dump(doc.model_dump(), sys.stdout)
     else:

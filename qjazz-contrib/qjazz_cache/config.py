@@ -23,7 +23,7 @@ Bool = TypeAdapter(bool)
 
 
 def _getenv_bool(varname: str) -> bool:
-    return Bool.validate_python(os.getenv(varname, 'no'))
+    return Bool.validate_python(os.getenv(varname, "no"))
 
 
 def validate_url(v: str) -> SplitResult:
@@ -31,7 +31,7 @@ def validate_url(v: str) -> SplitResult:
         raise ValueError("Url must be of type str")
     url = urlsplit(v)
     if not url.scheme:
-        url = url._replace(scheme='file')
+        url = url._replace(scheme="file")
     return url
 
 
@@ -39,20 +39,21 @@ Url = Annotated[
     SplitResult,
     PlainValidator(validate_url),
     PlainSerializer(lambda x: x.geturl(), return_type=str),
-    WithJsonSchema({'type': 'str'}),
+    WithJsonSchema({"type": "str"}),
 ]
 
 
 def _qgis_env_flag_validator(name: str) -> Callable[[bool, ValidationInfo], bool]:
     def validator(v: bool, info: ValidationInfo) -> bool:
         return v or _getenv_bool(name)
+
     return validator
 
 
 class ProjectsConfig(config.ConfigBase):
     trust_layer_metadata: Annotated[
         bool,
-        AfterValidator(_qgis_env_flag_validator('QGIS_TRUST_LAYER_METADATA')),
+        AfterValidator(_qgis_env_flag_validator("QGIS_TRUST_LAYER_METADATA")),
     ] = Field(
         default=False,
         title="Trust layer metadata",
@@ -66,7 +67,7 @@ class ProjectsConfig(config.ConfigBase):
     )
     disable_getprint: Annotated[
         bool,
-        AfterValidator(_qgis_env_flag_validator('QGIS_SERVER_DISABLE_GETPRINT')),
+        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_DISABLE_GETPRINT")),
     ] = Field(
         default=False,
         title="Disable GetPrint requests",
@@ -79,7 +80,7 @@ class ProjectsConfig(config.ConfigBase):
     )
     force_readonly_layers: Annotated[
         bool,
-        AfterValidator(_qgis_env_flag_validator('QGIS_SERVER_FORCE_READONLY_LAYERS')),
+        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_FORCE_READONLY_LAYERS")),
     ] = Field(
         default=True,
         title="Force read only mode",
@@ -87,7 +88,7 @@ class ProjectsConfig(config.ConfigBase):
     )
     ignore_bad_layers: Annotated[
         bool,
-        AfterValidator(_qgis_env_flag_validator('QGIS_SERVER_IGNORE_BAD_LAYERS')),
+        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_IGNORE_BAD_LAYERS")),
     ] = Field(
         default=False,
         title="Ignore bad layers",
@@ -148,9 +149,7 @@ class ProjectsConfig(config.ConfigBase):
         {},
         title="Project storage Handler configurations",
         description=(
-            "Configure storage handlers.\n"
-            "The name will be used as scheme for project's search path\n"
-            "configuration."
+            "Configure storage handlers.\nThe name will be used as scheme for project's search path\nconfiguration."
         ),
         examples=[
             _D(

@@ -1,4 +1,3 @@
-
 from typing import (
     Annotated,
     Any,
@@ -54,7 +53,7 @@ def get_default_value(param, default, project, rows, cols):
 
     if cols:
         try:
-            default = [_value[i:i + cols] for i in range(0, len(_value), cols)]
+            default = [_value[i : i + cols] for i in range(0, len(_value), cols)]
             if rows:
                 assert_postcondition(len(default) == rows, "Invalid number of rows")
         except Exception as e:
@@ -66,7 +65,6 @@ def get_default_value(param, default, project, rows, cols):
 
 
 class ParameterMatrix(InputParameter):
-
     @classmethod
     def metadata(cls, param: QgsProcessingParameterMatrix) -> list[Metadata]:
         md = super(ParameterMatrix, cls).metadata(param)
@@ -84,7 +82,6 @@ class ParameterMatrix(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         headers = param.headers()
         cols = len(headers) if headers else None
 
@@ -104,26 +101,26 @@ class ParameterMatrix(InputParameter):
         if not validation_only:
             default = get_default_value(
                 param,
-                field.pop('default', None),
+                field.pop("default", None),
                 project,
                 rows,
                 cols,
             )
             if default:
                 field.update(default=default)
-            schema_extra = {'format': 'x-matrix'}
+            schema_extra = {"format": "x-matrix"}
             if headers:
-                schema_extra['x-matrix-headers'] = headers
+                schema_extra["x-matrix-headers"] = headers
 
             field.update(json_schema_extra=schema_extra)
 
         return _type
 
     def value(
-        self, inp: JsonValue,
+        self,
+        inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> list:
-
         _value = self.validate(inp)
         # Flatten the returned data as required
         # for Matrix parameter value

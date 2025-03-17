@@ -22,8 +22,9 @@ from qjazz_contrib.core.config import (
 
 class SecurityConfig(ConfigBase):
     """Message signing configuration"""
+
     cert_store: DirectoryPath
-    keyfile:  FilePath
+    keyfile: FilePath
     certfile: FilePath
 
 
@@ -34,6 +35,7 @@ LOCAL_BACKEND = "localhost:6379/0"
 
 class CeleryConfig(ConfigBase):
     """Celery configuration"""
+
     broker_host: str = Field(default=LOCAL_BROKER, title="Celery amqp broker host")
     broker_use_ssl: bool = False
     broker_ssl: Optional[SSLConfig] = None
@@ -70,19 +72,14 @@ class CeleryConfig(ConfigBase):
 
     result_expires: int = Field(
         default=86400,
-        description=(
-            "Time (in seconds), for when after stored task tombstones will\n"
-            "be deleted"
-        ),
+        description=("Time (in seconds), for when after stored task tombstones will\nbe deleted"),
     )
 
     concurrency: Optional[int] = Field(
         default=None,
         ge=1,
         title="Concurrency",
-        description=(
-            "The number of concurrent worker processes executing tasks."
-        ),
+        description=("The number of concurrent worker processes executing tasks."),
     )
 
     max_tasks_per_child: Optional[int] = Field(
@@ -114,9 +111,9 @@ class CeleryConfig(ConfigBase):
 
 
 class Celery(celery.Celery):
-    """ Celery application
+    """Celery application
 
-        See https://docs.celeryq.dev/en/stable/reference/celery.html#celery.Celery
+    See https://docs.celeryq.dev/en/stable/reference/celery.html#celery.Celery
     """
 
     STATE_PENDING: ClassVar[str] = celery.states.PENDING
@@ -132,17 +129,15 @@ class Celery(celery.Celery):
     )
 
     def __init__(self, main: Optional[str], conf: Optional[CeleryConfig] = None, **kwargs):
-        """ Create a Celery instance from
-            configuration.
+        """Create a Celery instance from
+        configuration.
         """
         conf = conf or CeleryConfig(broker_host=LOCAL_BROKER, backend_host=LOCAL_BACKEND)
 
         super().__init__(
             main,
             broker=f"amqp://{conf.broker_host}",
-            backend=f"rediss://{conf.backend_host}"
-                if conf.backend_use_ssl
-                else f"redis://{conf.backend_host}",
+            backend=f"rediss://{conf.backend_host}" if conf.backend_use_ssl else f"redis://{conf.backend_host}",
             broker_connection_retry_on_startup=True,
             redis_backend_health_check_interval=5,
             result_extended=True,
@@ -173,20 +168,23 @@ class Celery(celery.Celery):
             if conf.broker_ssl:
                 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#broker-use-ssl
                 if conf.broker_ssl.cafile:
-                    self.conf.broker_use_ssl = {'ca_certs': conf.broker_ssl.cafile}
+                    self.conf.broker_use_ssl = {"ca_certs": conf.broker_ssl.cafile}
                 if conf.broker_ssl.keyfile and conf.broker_ssl.certfile:
-                    self.conf.broker_use_ssl.update({
-                        'keyfile':  conf.broker_ssl.keyfile.as_posix(),
-                        'certfile': conf.broker_ssl.certfile.as_posix(),
-                    })
+                    self.conf.broker_use_ssl.update(
+                        {
+                            "keyfile": conf.broker_ssl.keyfile.as_posix(),
+                            "certfile": conf.broker_ssl.certfile.as_posix(),
+                        }
+                    )
 
             else:
                 self.conf.broker_use_ssl = True
 
         if conf.backend_use_ssl:
             import ssl
+
             # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#broker-use-ssl
-            self.conf.redis_backend_use_ssl = {'ssl_cert_reqs': ssl.CERT_REQUIRED}
+            self.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
             if conf.backend_ssl:
                 if conf.backend_ssl.cafile:
                     self.conf.redis_backend_use_ssl.update(
@@ -204,19 +202,18 @@ class Celery(celery.Celery):
             self.conf.update(
                 security_key=conf.security.keyfile.as_posix(),
                 security_certificate=conf.security.certfile.as_posix(),
-                security_cert_store=conf.security.cert_store.joinpath('*.pem').as_posix(),
-                security_digest='sha256',
-                task_serializer='auth',
-                event_serializer='auth',
-                accept_content=['auth'],
+                security_cert_store=conf.security.cert_store.joinpath("*.pem").as_posix(),
+                security_digest="sha256",
+                task_serializer="auth",
+                event_serializer="auth",
+                accept_content=["auth"],
             )
             self.setup_security()
 
     def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Sequence[dict]:
-        """ Return active worker's run configs
-        """
+        """Return active worker's run configs"""
         return self.control.broadcast(
-            '_run_configs',
+            "_run_configs",
             reply=True,
             destination=destinations,
         )

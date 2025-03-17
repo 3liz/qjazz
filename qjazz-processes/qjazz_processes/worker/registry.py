@@ -61,14 +61,14 @@ def register(
 
 def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
     return TaskInfo(
-        job_id=m[b'job_id'].decode(),
-        created=int(m[b'created']),
-        service=m[b'service'].decode(),
-        realm=m[b'realm'].decode(),
-        process_id=m[b'process_id'].decode(),
-        dismissed=int(m[b'dismissed']),
-        pending_timeout=int(m[b'pending_timeout']),
-        expires=int(m[b'expires']),
+        job_id=m[b"job_id"].decode(),
+        created=int(m[b"created"]),
+        service=m[b"service"].decode(),
+        realm=m[b"realm"].decode(),
+        process_id=m[b"process_id"].decode(),
+        dismissed=int(m[b"dismissed"]),
+        pending_timeout=int(m[b"pending_timeout"]),
+        expires=int(m[b"expires"]),
     )
 
 
@@ -78,8 +78,7 @@ def find_job(
     *,
     realm: Optional[str] = None,
 ) -> Optional[TaskInfo]:
-    """ Return single task info
-    """
+    """Return single task info"""
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
@@ -97,7 +96,7 @@ def find_key(
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
-        return tuple(keys[0].decode().split('::')[1:4])
+        return tuple(keys[0].decode().split("::")[1:4])
     else:
         return None
 
@@ -108,8 +107,7 @@ def find_keys(
     *,
     realm: Optional[str] = None,
 ) -> Iterator[tuple[str, str, str]]:
-    """ Iterate over filtered task infos
-    """
+    """Iterate over filtered task infos"""
     client = app.backend.client
     pattern = f"qjazz::*::{service or '*'}::{realm or '*'}"
     keys = client.scan_iter(match=pattern)
@@ -122,7 +120,6 @@ def iter_jobs(
     *,
     realm: Optional[str] = None,
 ) -> Iterator[TaskInfo]:
-
     client = app.backend.client
     pattern = f"qjazz::*::{service or '*'}::{realm or '*'}"
     keys = client.scan_iter(match=pattern)
@@ -131,20 +128,18 @@ def iter_jobs(
 
 
 def dismiss(app: Celery, job_id: str, reset: bool = False) -> bool:
-    """ Set state to 'dismissed'
-    """
+    """Set state to 'dismissed'"""
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*")
     if keys:
-        client.hset(keys[0], 'dismissed', 0 if reset else 1)
+        client.hset(keys[0], "dismissed", 0 if reset else 1)
         return True
     else:
         return False
 
 
 def delete(app: Celery, job_id: str) -> int:
-    """ Delete task info
-    """
+    """Delete task info"""
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*")
     if keys:
@@ -160,8 +155,7 @@ def lock(
     timeout: Optional[int],
     expires: Optional[int] = None,
 ) -> redis.lock.Lock:
-    """ Return a redis Lock
-    """
+    """Return a redis Lock"""
     return app.backend.client.lock(
         f"lock:{name}",
         blocking_timeout=timeout,
@@ -171,6 +165,5 @@ def lock(
 
 
 def exists(app: Celery, job_id: str, *, service: Optional[str] = None) -> bool:
-    """ Check if a job is registred
-    """
+    """Check if a job is registred"""
     return bool(app.backend.client.keys(f"qjazz::{job_id}::{service or '*'}"))

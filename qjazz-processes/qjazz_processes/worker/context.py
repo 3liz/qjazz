@@ -43,8 +43,7 @@ def store_reference_url(
     resource: str,
     public_url: Optional[str],
 ) -> str:
-    """ Return a proper reference url for the resource
-    """
+    """Return a proper reference url for the resource"""
     return store_url.substitute(
         resource=resource,
         jobId=job_id,
@@ -56,7 +55,6 @@ ProgressFun = Callable[[Optional[float], Optional[str]], None]
 
 
 class Feedback(QgsProcessingFeedback):
-
     def __init__(self, progress_fun: ProgressFun):
         super().__init__(False)
         self._progress_msg = ""
@@ -101,19 +99,18 @@ Job = Callable[
 
 
 class QgisContext:
-    """Qgis context initializer
-    """
+    """Qgis context initializer"""
 
     PUBLISHED_FILES = ".files"
     EXPIRE_FILE = ".job-expire"
 
     @classmethod
     def setup(cls, conf: ProcessingConfig):
-        """ Initialize qgis """
+        """Initialize qgis"""
 
         debug = logger.is_enabled_for(logger.LogLevel.DEBUG)
         if debug:
-            os.environ['QGIS_DEBUG'] = '1'
+            os.environ["QGIS_DEBUG"] = "1"
 
         #
         # Initialize Qgis application
@@ -149,12 +146,12 @@ class QgisContext:
                     yield p
 
     def __init__(
-            self,
-            conf: ProcessingConfig,
-            *,
-            service_name: Optional[str] = None,
-            with_expiration: bool = True,
-        ):
+        self,
+        conf: ProcessingConfig,
+        *,
+        service_name: Optional[str] = None,
+        with_expiration: bool = True,
+    ):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")
         self._conf = conf
         self._with_expiration = with_expiration
@@ -173,7 +170,7 @@ class QgisContext:
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
     ) -> tuple[JobResults, Optional[QgsProject]]:
-        """ Execute process """
+        """Execute process"""
 
         project = self.project(project_path) if project_path else None
         if not project and require_project:
@@ -190,7 +187,7 @@ class QgisContext:
         workdir.mkdir(parents=True, exist_ok=not self._with_expiration)
         if self._with_expiration:
             # Create a sentinel .job-expire file
-            workdir.joinpath(self.EXPIRE_FILE).open('a').close()
+            workdir.joinpath(self.EXPIRE_FILE).open("a").close()
 
         if project:
             context.setProject(project)
@@ -199,14 +196,13 @@ class QgisContext:
             results = job(request, feedback, context)
 
         # Save list of published files
-        with workdir.joinpath(self.PUBLISHED_FILES).open('w') as files:
+        with workdir.joinpath(self.PUBLISHED_FILES).open("w") as files:
             for file in context.files:
                 print(file, file=files)  # noqa T201
 
         # Write modified project
         destination_project = context.destination_project
         if destination_project and destination_project.isDirty():
-
             self.publish_layers(destination_project)
 
             logger.debug("Writing destination project")
@@ -255,7 +251,7 @@ class QgisContext:
         return project
 
     def publish_layers(self, project: QgsProject):
-        """ Publish layers """
+        """Publish layers"""
 
         LayerType: Type = Qgis.LayerType
 
@@ -269,33 +265,33 @@ class QgisContext:
         for lid in _layers_for(LayerType.Vector):
             project.writeEntry("WFSLayersPrecision", "/" + lid, 6)
 
+
 #
 #  Server context
 #
 
 
 class QgisServerContext(QgisContext):
-    """Qgis server context initializer
-    """
+    """Qgis server context initializer"""
+
     server: QgsServer
 
     @classmethod
     def setup(cls, conf: ProcessingConfig):
-
         debug = logger.is_enabled_for(logger.LogLevel.DEBUG)
         # Enable qgis server debug verbosity
         if debug:
-            os.environ['QGIS_SERVER_LOG_LEVEL'] = '0'
-            os.environ['QGIS_DEBUG'] = '1'
+            os.environ["QGIS_SERVER_LOG_LEVEL"] = "0"
+            os.environ["QGIS_DEBUG"] = "1"
 
         projects = conf.projects
         if projects.trust_layer_metadata:
-            os.environ['QGIS_SERVER_TRUST_LAYER_METADATA'] = 'yes'
+            os.environ["QGIS_SERVER_TRUST_LAYER_METADATA"] = "yes"
         if projects.disable_getprint:
-            os.environ['QGIS_SERVER_DISABLE_GETPRINT'] = 'yes'
+            os.environ["QGIS_SERVER_DISABLE_GETPRINT"] = "yes"
 
         # Disable any cache strategy
-        os.environ['QGIS_SERVER_PROJECT_CACHE_STRATEGY'] = 'off'
+        os.environ["QGIS_SERVER_PROJECT_CACHE_STRATEGY"] = "off"
 
         cls.server = init_qgis_server(settings=conf.qgis_settings)
         if debug:
@@ -310,9 +306,10 @@ class QgisServerContext(QgisContext):
 # Utils
 #
 
+
 @contextmanager
 def execute_context(workdir: Path, task_id: str):
-    with chdir(workdir), logger.logfile(workdir, 'processing'), memlog(task_id):
+    with chdir(workdir), logger.logfile(workdir, "processing"), memlog(task_id):
         yield
 
 
@@ -330,6 +327,7 @@ def chdir(workdir: Path):
 @contextmanager
 def memlog(task_id: str):
     import psutil
+
     process = psutil.Process(os.getpid())
     rss = process.memory_info().rss
     mb = 1024 * 1024.0

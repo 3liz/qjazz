@@ -32,12 +32,11 @@ from .exceptions import (
 
 
 class QgisProcessingContext(QgisContext):
-    """Qgis context initializer
-    """
+    """Qgis context initializer"""
 
     @classmethod
     def setup_processing(cls, conf: ProcessingConfig):
-        """ Initialize qgis """
+        """Initialize qgis"""
 
         cls.setup(conf)
 
@@ -56,13 +55,13 @@ class QgisProcessingContext(QgisContext):
 
     @property
     def processes(self) -> list[ProcessSummary]:
-        """ List proceses """
+        """List proceses"""
         include_deprecated = self.processing_config.expose_deprecated_algorithms
         algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
         return [alg.summary() for alg in algs]
 
     def describe(self, ident: str, project_path: Optional[str]) -> ProcessDescription | None:
-        """ Describe process """
+        """Describe process"""
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg:
             project = self.project(project_path) if project_path else None
@@ -78,7 +77,7 @@ class QgisProcessingContext(QgisContext):
         feedback: QgsProcessingFeedback,
         project_path: Optional[str] = None,
     ):
-        """ validate process parameters """
+        """validate process parameters"""
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
             raise ProcessNotFound(f"Algorithm '{ident}' not found")
@@ -105,7 +104,7 @@ class QgisProcessingContext(QgisContext):
         project_path: Optional[str] = None,
         public_url: Optional[str] = None,
     ) -> tuple[JobResults, Optional[QgsProject]]:
-        """ Execute process """
+        """Execute process"""
         alg = ProcessAlgorithm.find_algorithm(ident)
         if alg is None:
             raise ProcessNotFound(f"Algorithm '{ident}' not found")
@@ -126,8 +125,8 @@ class QgisProcessingContext(QgisContext):
 #  Processes cache
 #
 
-class ProcessingCache(ProcessCache):
 
+class ProcessingCache(ProcessCache):
     def initialize(self):
         self.processing_config.projects._dont_resolve_layers = True
         QgisProcessingContext.setup_processing(self.processing_config)

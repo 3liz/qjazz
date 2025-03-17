@@ -23,8 +23,8 @@ PAGKAGE_NAME = "qjazz_processes"
 
 
 class Handler(Services, Processes, Jobs, WebUI, Storage):
-
-    def __init__(self,
+    def __init__(
+        self,
         *,
         executor: Executor,
         policy: AccessPolicy,
@@ -51,7 +51,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
             web.get(f"{prefix}/processes", redirect_trailing_slash(), allow_head=False),
             web.get(f"{prefix}/processes/{{Ident}}", self.describe_process, allow_head=False),
             web.post(f"{prefix}/processes/{{Ident}}/execution", self.execute_process),
-
             # Jobs
             web.get(f"{prefix}/jobs/", self.list_jobs, allow_head=False),
             web.get(f"{prefix}/jobs", redirect_trailing_slash(), allow_head=False),
@@ -82,10 +81,8 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
                 web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
                 web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
                 web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
-
                 # Log
                 web.get(f"{prefix}/jobs/{{JobId}}/log", self.job_log, allow_head=False),
-
                 # Files
                 web.get(
                     f"{prefix}/jobs/{{JobId}}/files",
@@ -94,7 +91,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
                 ),
                 web.get(f"{prefix}/jobs/{{JobId}}/files/", self.job_files, allow_head=False),
                 web.get(f"{prefix}/jobs/{{JobId}}/files/{{Resource:.+}}", self.job_download),
-
                 # Services
                 web.get(f"{prefix}/services/", self.list_services, allow_head=False),
                 web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),
@@ -121,7 +117,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
         )
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str:
-        """ Get known service name from request """
+        """Get known service name from request"""
         service = self._accesspolicy.get_service(request)
         if raise_error and not self._executor.known_service(service):
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not known")
@@ -130,6 +126,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
     def get_project(self, request: web.Request) -> Optional[str]:
         project = self._accesspolicy.get_project(request)
         # Ensure that project starts with '/'
-        if project and not project.startswith('/'):
+        if project and not project.startswith("/"):
             project = f"/{project}"
         return project

@@ -25,12 +25,11 @@ from qjazz_processes.schemas import LinkHttp
 from ..processing.config import ProcessingConfig
 from .storage import StorageConfig
 
-CONFIG_ENV_PATH = 'PY_QGIS_PROCESSES_WORKER_CONFIG'
+CONFIG_ENV_PATH = "PY_QGIS_PROCESSES_WORKER_CONFIG"
 
 
 def lookup_config_path() -> Optional[Path]:
-    """ Determine config path location
-    """
+    """Determine config path location"""
     p: Optional[Path] = None
     var = os.getenv(CONFIG_ENV_PATH)
     if var:
@@ -40,9 +39,9 @@ def lookup_config_path() -> Optional[Path]:
     else:
         # Search in standards paths
         for search in (
-            '/etc/qjazz/processes/worker.toml',
-            '~/.qjazz/processes/worker.toml',
-            '~/.config/qjazz/processes/worker.toml',
+            "/etc/qjazz/processes/worker.toml",
+            "~/.qjazz/processes/worker.toml",
+            "~/.config/qjazz/processes/worker.toml",
         ):
             p = Path(search).expanduser()
             if p.exists():
@@ -54,13 +53,15 @@ def lookup_config_path() -> Optional[Path]:
 # Worker configuration
 #
 
-@config.section('worker', field=...)
+
+@config.section("worker", field=...)
 class WorkerConfig(CeleryConfig):
     """
     Worker configuration
 
     Configure celery worker settings
     """
+
     service_name: str = Field(
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_\-]+$",
         title="Name of the service",
@@ -113,8 +114,7 @@ class ConfigProto(Protocol):
     worker: WorkerConfig
     storage: StorageConfig
 
-    def model_dump_json(*args, **kwargs) -> str:
-        ...
+    def model_dump_json(*args, **kwargs) -> str: ...
 
 
 confservice = config.ConfBuilder()
@@ -123,13 +123,12 @@ confservice = config.ConfBuilder()
 # Add processing/storage configuration
 #
 
-confservice.add_section('processing', ProcessingConfig, field=...)
-confservice.add_section('storage', StorageConfig)
+confservice.add_section("processing", ProcessingConfig, field=...)
+confservice.add_section("storage", StorageConfig)
 
 
 def load_configuration() -> ConfigProto:
-    """ Load worker configuration
-    """
+    """Load worker configuration"""
     configpath = lookup_config_path()
     if configpath:
         print("=Reading configuration from:", configpath, file=sys.stderr, flush=True)  # noqa T201
@@ -149,6 +148,5 @@ def load_configuration() -> ConfigProto:
 
 
 def dump_worker_config() -> None:
-    """Dump configuration as toml configuration file
-    """
+    """Dump configuration as toml configuration file"""
     confservice.dump_toml_schema(sys.stdout)

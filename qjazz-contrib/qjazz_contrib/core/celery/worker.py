@@ -1,4 +1,3 @@
-
 import inspect
 import types
 
@@ -37,9 +36,7 @@ JobContext: TypeAlias = types.SimpleNamespace
 
 
 class Worker(Celery):
-
     def __init__(self, name: str, conf: CeleryConfig, **kwargs):
-
         super().__init__(name, conf, **kwargs)
 
         # See https://docs.celeryq.dev/en/stable/userguide/routing.html
@@ -60,11 +57,11 @@ class Worker(Celery):
     @cached_property
     def worker_hostname(self) -> str:
         import socket
+
         return f"{self._name}@{socket.gethostname()}"
 
     def start_worker(self, **kwargs) -> None:
-        """ Start the worker
-        """
+        """Start the worker"""
         if self._autoscale:
             # Activate autoscale
             kwargs.update(autoscale=(max(self.autoscale), min(self.autoscale)))
@@ -72,7 +69,7 @@ class Worker(Celery):
         worker = self.Worker(
             hostname=self.worker_hostname,
             prefetch_multiplier=1,
-            optimization='fair',
+            optimization="fair",
             **kwargs,
         )
 
@@ -84,23 +81,23 @@ class Worker(Celery):
         *args,
         **kwargs,
     ) -> celery.Task:
-        """ Decorator for creating job tasks
+        """Decorator for creating job tasks
 
-            Extra options:
+        Extra options:
 
-            'run_context: bool'
-                If set to true
-                the context metadata objet will be passed as the first
-                positional argument.  The argument should be treated
-                as a positional argument only (https://peps.python.org/pep-0570/)
-                in order to not beeing included in the run config model.
+        'run_context: bool'
+            If set to true
+            the context metadata objet will be passed as the first
+            positional argument.  The argument should be treated
+            as a positional argument only (https://peps.python.org/pep-0570/)
+            in order to not beeing included in the run config model.
 
-            Exemple:
-                @app.job(name='echo', bind=True, run_context=True)
-                def main(self, ctx, /, *args, **kwargs):
-                    return f"got customer id : {ctx.customer_id}"
+        Exemple:
+            @app.job(name='echo', bind=True, run_context=True)
+            def main(self, ctx, /, *args, **kwargs):
+                return f"got customer id : {ctx.customer_id}"
         """
-        base = kwargs.pop('base', Job)
+        base = kwargs.pop("base", Job)
         return super().task(
             *args,
             name=f"{self.main}.{name}",
@@ -121,8 +118,8 @@ class _Dict(dict):
 # Celery task override
 #
 
-class Job(celery.Task):
 
+class Job(celery.Task):
     _worker_job_context: ClassVar[dict] = {}
 
     # To be set in decorator
@@ -144,7 +141,7 @@ class Job(celery.Task):
         #
         _, outputs = self.__config__
 
-        meta = kwargs.pop('__meta__')  # Remove metadata from arguments
+        meta = kwargs.pop("__meta__")  # Remove metadata from arguments
 
         if self.run_context:
             args = (meta.__context__,)
@@ -153,7 +150,7 @@ class Job(celery.Task):
 
         out = self.run(*args, **meta.__run_config__.__dict__)
         # Return output as json compatible format
-        return outputs.dump_python(out, mode='json', by_alias=True, exclude_none=True)
+        return outputs.dump_python(out, mode="json", by_alias=True, exclude_none=True)
 
     def before_start(self, task_id, args, kwargs):
         #
@@ -172,18 +169,18 @@ class Job(celery.Task):
         # This is a workaround for adding extra metadata
         # with the stored backend data.
 
-        context = kwargs.pop('__context__', {})
+        context = kwargs.pop("__context__", {})
         context.update(self._worker_job_context)
         context.update(task_id=task_id)
 
-        meta = kwargs.pop('__meta__', {})
+        meta = kwargs.pop("__meta__", {})
         meta.update(
             started=utc_now(),
         )
 
         meta = _Dict(meta)
 
-        run_config = kwargs.pop('__run_config__', kwargs)
+        run_config = kwargs.pop("__run_config__", kwargs)
         # Validate arguments
         #
         # We do not validate arguments in __call__ because
@@ -202,11 +199,14 @@ class Job(celery.Task):
                 kwargs.clear()
                 kwargs.update(run_config)
         except ValidationError as e:
-            errors = [d for d in e.errors(
-                include_url=False,
-                include_input=False,
-                include_context=False,
-            )]
+            errors = [
+                d
+                for d in e.errors(
+                    include_url=False,
+                    include_input=False,
+                    include_context=False,
+                )
+            ]
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
             raise ValueError("Invalid arguments")
@@ -218,8 +218,8 @@ class Job(celery.Task):
         percent_done: Optional[float] = None,
         message: Optional[str] = None,
     ):
-        """ Update progress info
-            percent: the process percent betwee 0. and 1.
+        """Update progress info
+        percent: the process percent betwee 0. and 1.
         """
         self.update_state(
             state=Worker.STATE_UPDATED,
@@ -235,15 +235,15 @@ class Job(celery.Task):
 # Run configs
 #
 
-class RunConfig(BaseModel, frozen=True, extra='ignore'):
-    """Base config model for tasks
-    """
+
+class RunConfig(BaseModel, frozen=True, extra="ignore"):
+    """Base config model for tasks"""
+
     pass
 
 
 def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapter]:
-    """ Build a RunConfig from fonction signature
-    """
+    """Build a RunConfig from fonction signature"""
     s = inspect.signature(wrapped)
     qualname = wrapped.__qualname__
 
@@ -255,13 +255,15 @@ def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapt
                 case p.POSITIONAL_OR_KEYWORD | p.KEYWORD_ONLY:
                     if p.annotation is inspect.Signature.empty:
                         raise TypeError(
-                            "Missing annotation for argument "
-                            f"{p.name} in job {qualname}",
+                            f"Missing annotation for argument {p.name} in job {qualname}",
                         )
                     has_default = p.default is not inspect.Signature.empty
-                    yield p.name, (
-                        p.annotation,
-                        p.default if has_default else ...,
+                    yield (
+                        p.name,
+                        (
+                            p.annotation,
+                            p.default if has_default else ...,
+                        ),
                     )
 
     inputs_ = {name: model for name, model in _models()}

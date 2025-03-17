@@ -25,7 +25,6 @@ PluginListResponse = swagger.model(
 
 
 class _Plugins:
-
     async def get_plugins(self, request):
         """
         summary: "Get backend's plugins"

@@ -1,36 +1,33 @@
-""" Test just returning simple value
-"""
+"""Test just returning simple value"""
 
 from qgis.core import QgsProcessingAlgorithm, QgsProcessingOutputNumber
 
 
 class TestUltimateQuestion(QgsProcessingAlgorithm):
-
-    OUTPUT = 'OUTPUT'
+    OUTPUT = "OUTPUT"
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'ultimate_question'
+        return "ultimate_question"
 
     def displayName(self):
-        return 'Return answer to ultimate question'
+        return "Return answer to ultimate question"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         self.addOutput(QgsProcessingOutputNumber(self.OUTPUT, "Output"))
 
     def processAlgorithm(self, parameters, context, feedback):
-
         return {self.OUTPUT: 42}

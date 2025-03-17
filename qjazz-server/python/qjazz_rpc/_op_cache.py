@@ -63,9 +63,13 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 
 # Convert last modified date to iso8601
 def timestamp_to_iso(timestamp: Optional[float]) -> Optional[str]:
-    return to_iso8601(
-        datetime.fromtimestamp(timestamp),
-    ) if timestamp else None
+    return (
+        to_iso8601(
+            datetime.fromtimestamp(timestamp),
+        )
+        if timestamp
+        else None
+    )
 
 
 #
@@ -78,7 +82,6 @@ def cache_info_from_entry(
     in_cache: bool = True,
     cache_id: str = "",
 ) -> _m.CacheInfo:
-
     return _m.CacheInfo(
         uri=e.uri,
         in_cache=in_cache,
@@ -207,9 +210,11 @@ def send_cache_list(
                 entry,
                 status,
                 cache_id=cache_id,
-            ) for entry, status in collect()
+            )
+            for entry, status in collect()
         ),
     )
+
 
 #
 # Send project info
@@ -288,7 +293,8 @@ def send_catalog(
                 storage=md.storage or "<none>",
                 last_modified=to_iso8601(datetime.fromtimestamp(md.last_modified)),
                 public_uri=public_path,
-            ) for md, public_path in collect()
+            )
+            for md, public_path in collect()
         ),
     )
 
@@ -297,12 +303,13 @@ def send_catalog(
 # Cache eviction
 #
 
-def evict_project_from_cache(cm: CacheManager) -> bool:
-    """ Evict a project from cache based on
-        its `popularity`
 
-        Returns `true` if object has been evicted from the
-        cache, `false` otherwise.
+def evict_project_from_cache(cm: CacheManager) -> bool:
+    """Evict a project from cache based on
+    its `popularity`
+
+    Returns `true` if object has been evicted from the
+    cache, `false` otherwise.
     """
     evicted = evict_by_popularity(cm)
     if evicted:

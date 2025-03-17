@@ -1,4 +1,3 @@
-
 import base64
 import mimetypes
 
@@ -52,9 +51,8 @@ from .base import (
 
 
 class ParameterFile(InputParameter):
-
     def value_passing(self) -> ValuePassing:
-        return ('byValue', 'byReference')
+        return ("byValue", "byReference")
 
     @classmethod
     def create_model(
@@ -64,7 +62,6 @@ class ParameterFile(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         #
         # Input data may be reference or
         # inline data
@@ -80,7 +77,7 @@ class ParameterFile(InputParameter):
         ext = param.extension()
         media_type = mimetypes.types_map.get(ext, Formats.ANY.media_type)
 
-        _type = OneOf[        # type: ignore [misc, valid-type]
+        _type = OneOf[  # type: ignore [misc, valid-type]
             Union[
                 MediaType(str, media_type),
                 LinkReference,
@@ -90,7 +87,6 @@ class ParameterFile(InputParameter):
         return _type
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
-
         param = self._param
 
         if param.behavior() == ProcessingFileParameterBehavior.Folder:
@@ -108,7 +104,7 @@ class ParameterFile(InputParameter):
             #
             _inp = cast(dict, inp)
             p = resolve_raw_reference(
-                cast(str, _inp.get('href', '')),
+                cast(str, _inp.get("href", "")),
                 context.workdir,
                 context.config.raw_destination_root_path,
                 param.extension(),
@@ -125,13 +121,13 @@ class ParameterFile(InputParameter):
         destination = workdir.joinpath(param.name()).with_suffix(param.extension())
 
         try:
-            value: Any   # Makes Mypy happy
+            value: Any  # Makes Mypy happy
 
-            with destination.open('wb') as out:
+            with destination.open("wb") as out:
                 match _inp:
                     case QualifiedInputValue():
                         value = _inp.value
-                        if _inp.encoding in ('base64', 'binary'):
+                        if _inp.encoding in ("base64", "binary"):
                             value = base64.b64decode(value)
                             out.write(value)
                         else:
@@ -155,12 +151,11 @@ class ParameterFile(InputParameter):
 
 
 class ParameterFileDestination(InputParameter, OutputFormatDefinition):
-
     _ParameterType = str
 
     def initialize(self):
         ext = self._param.defaultFileExtension()
-        if ext and ext != 'file':
+        if ext and ext != "file":
             self.output_extension = f".{ext}"
 
     @classmethod
@@ -190,10 +185,11 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
 # QgsProcessingParameterFolderDestination
 #
 
-class ParameterFolderDestination(InputParameter):
 
+class ParameterFolderDestination(InputParameter):
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         return str(resolve_path(self, inp, context or ProcessingContext()))
+
 
 #
 # Utils
@@ -201,14 +197,13 @@ class ParameterFolderDestination(InputParameter):
 
 
 def resolve_path(self: InputParameter, inp: JsonValue, context: ProcessingContext) -> Path:
-
     _inp = self.validate(inp)
 
     if context.config.raw_destination_input_sink:
         value = _inp
     else:
         # Normalize path
-        value = context.workdir.joinpath(_inp.removeprefix('/')).resolve()
+        value = context.workdir.joinpath(_inp.removeprefix("/")).resolve()
         if not value.is_relative_to(context.workdir):
             # Truncate the path to to its single name
             value = Path(value.name)
@@ -224,19 +219,18 @@ def resolve_path(self: InputParameter, inp: JsonValue, context: ProcessingContex
 
 
 def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer: IO):
-    """ Download reference
-    """
-    method = ref.method or 'GET'
+    """Download reference"""
+    method = ref.method or "GET"
     href = str(ref.href)
 
     logger.info("Downloading reference from %s (%s)", href, method)
 
     headers = {}
     if ref.mime_type:
-        headers['Accept'] = ref.mime_type
+        headers["Accept"] = ref.mime_type
 
     if ref.hreflang:
-        headers['Accept-Language'] = ref.hreflang
+        headers["Accept-Language"] = ref.hreflang
 
     kwargs: dict = {}
     if ref.body:

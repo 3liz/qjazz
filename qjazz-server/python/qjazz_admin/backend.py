@@ -1,5 +1,5 @@
-""" Qgis worker client
-"""
+"""Qgis worker client"""
+
 import asyncio
 import json
 
@@ -47,8 +47,7 @@ class BackendConfig(config.ConfigBase):
     ssl: config.SSLConfig = config.SSLConfig()
 
     def address_to_string(self) -> str:
-        """ Returns the address as string
-        """
+        """Returns the address as string"""
         return f"{self.server_address[0]}:{self.server_address[1]}"
 
 
@@ -61,9 +60,9 @@ RECONNECT_DELAY = 3
 
 
 class Backend:
-    """ Client that target a
-        single gRPC instance from its ip address
-        or a unix socket.
+    """Client that target a
+    single gRPC instance from its ip address
+    or a unix socket.
     """
 
     def __init__(
@@ -84,18 +83,21 @@ class Backend:
 
         def _read_if(f):
             if f:
-                with f.open('rb') as fp:
+                with f.open("rb") as fp:
                     return fp.read()
 
-        self._ssl_creds = grpc.ssl_channel_credentials(
-            root_certificates=_read_if(conf.ssl.cafile),
-            certificate_chain=_read_if(conf.ssl.certfile),
-            private_key=_read_if(conf.ssl.keyfile),
-        ) if self._use_ssl else None
+        self._ssl_creds = (
+            grpc.ssl_channel_credentials(
+                root_certificates=_read_if(conf.ssl.cafile),
+                certificate_chain=_read_if(conf.ssl.certfile),
+                private_key=_read_if(conf.ssl.keyfile),
+            )
+            if self._use_ssl
+            else None
+        )
 
     async def shutdown(self):
-        """ Shutdown the server
-        """
+        """Shutdown the server"""
         logger.trace("Shutdown called for", self._address)
         self._shutdown = True
         self._cancel_shutdown_task()
@@ -108,9 +110,9 @@ class Backend:
             self._shutdown_task = None
 
     async def _graceful_shutdown_task(self):
-        """ Perform a shutdown with a grace period
-            If another task has required the connection
-            then the task shutdown should be cancelled
+        """Perform a shutdown with a grace period
+        If another task has required the connection
+        then the task shutdown should be cancelled
         """
         await asyncio.sleep(self._grace_period)
         if self._connected == 0:
@@ -134,13 +136,17 @@ class Backend:
 
         logger.debug("Backend: connecting to %s", self._address)
         try:
-            self._channel = grpc.aio.secure_channel(
-                self._address,
-                self._ssl_creds,
-                options=CHANNEL_OPTIONS,
-            ) if self._use_ssl else grpc.aio.insecure_channel(
-                self._address,
-                options=CHANNEL_OPTIONS,
+            self._channel = (
+                grpc.aio.secure_channel(
+                    self._address,
+                    self._ssl_creds,
+                    options=CHANNEL_OPTIONS,
+                )
+                if self._use_ssl
+                else grpc.aio.insecure_channel(
+                    self._address,
+                    options=CHANNEL_OPTIONS,
+                )
             )
             return self._channel
         except grpc.RpcError as rpcerr:
@@ -157,13 +163,13 @@ class Backend:
     def _stub(
         self,
         factory: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
-    ) -> AbstractAsyncContextManager[qjazz_pb2_grpc.QgisAdminStub]:
-        ...
+    ) -> AbstractAsyncContextManager[qjazz_pb2_grpc.QgisAdminStub]: ...
 
     @overload
-    def _stub(self, factory: type[health_pb2_grpc.HealthStub],
-    ) -> AbstractAsyncContextManager[health_pb2_grpc.HealthStub]:
-        ...
+    def _stub(
+        self,
+        factory: type[health_pb2_grpc.HealthStub],
+    ) -> AbstractAsyncContextManager[health_pb2_grpc.HealthStub]: ...
 
     @asynccontextmanager
     async def _stub(
@@ -203,9 +209,9 @@ class Backend:
         count: int = 1,
         timeout: int = 20,
     ) -> AsyncIterator[Optional[str]]:
-        """ Ping the remote ervice
+        """Ping the remote ervice
 
-            Return none if the service is not reachable
+        Return none if the service is not reachable
         """
         async with self._stub() as stub:
             for _ in range(count):
@@ -222,8 +228,7 @@ class Backend:
                         raise
 
     async def serving(self) -> bool:
-        """  Check if remote is serving
-        """
+        """Check if remote is serving"""
         try:
             async with self._stub(health_pb2_grpc.HealthStub) as stub:
                 request = health_pb2.HealthCheckRequest(service="QgisAdmin")
@@ -237,8 +242,7 @@ class Backend:
                 raise
 
     async def watch(self) -> AsyncIterator[tuple[Self, bool]]:
-        """ Watch service status
-        """
+        """Watch service status"""
         serving = False
         async with self._stub(health_pb2_grpc.HealthStub) as stub:
             while not self._shutdown:
@@ -277,52 +281,45 @@ class Backend:
         project: str,
         pull: bool = False,
     ) -> qjazz_pb2.CacheInfo:
-        """ Checkout PROJECT from cache
-        """
+        """Checkout PROJECT from cache"""
         async with self._stub() as stub:
             return stub.CheckoutProject(
                 qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
             )
 
     async def drop_project(self, project: str) -> qjazz_pb2.CacheInfo:
-        """ Drop PROJECT from cache
-        """
+        """Drop PROJECT from cache"""
         async with self._stub() as stub:
             return stub.DropProject(
                 qjazz_pb2.DropRequest(uri=project),
             )
 
     async def clear_cache(self) -> None:
-        """ Clear cache
-        """
+        """Clear cache"""
         async with self._stub() as stub:
             await stub.ClearCache(qjazz_pb2.Empty())
 
     async def list_cache(self) -> AsyncIterator[qjazz_pb2.CacheInfo]:
-        """ List projects from cache
-        """
+        """List projects from cache"""
         async with self._stub() as stub:
             async for item in stub.ListCache(qjazz_pb2.Empty()):
                 yield item
 
     async def project_info(self, project: str) -> qjazz_pb2.ProjectInfo:
-        """ Return info from PROJECT in cache
-        """
+        """Return info from PROJECT in cache"""
         async with self._stub() as stub:
             return await stub.GetProjectInfo(
                 qjazz_pb2.ProjectRequest(uri=project),
             )
 
     async def pull_projects(self, *uris) -> AsyncIterator[qjazz_pb2.CacheInfo]:
-        """ Pull/Update projects in cache
-        """
+        """Pull/Update projects in cache"""
         async with self._stub() as stub:
             for uri in uris:
                 yield await stub.CheckoutProject(qjazz_pb2.CheckoutRequest(uri=uri, pull=True))
 
     async def catalog(self, location: Optional[str] = None) -> AsyncIterator[qjazz_pb2.CatalogItem]:
-        """ List projects from cache
-        """
+        """List projects from cache"""
         async with self._stub() as stub:
             async for item in stub.Catalog(
                 qjazz_pb2.CatalogRequest(location=location),
@@ -334,8 +331,7 @@ class Backend:
     #
 
     async def list_plugins(self) -> AsyncIterator[qjazz_pb2.PluginInfo]:
-        """ List projects from cache
-        """
+        """List projects from cache"""
         async with self._stub() as stub:
             async for item in stub.ListPlugins(qjazz_pb2.Empty()):
                 yield item
@@ -345,15 +341,13 @@ class Backend:
     #
 
     async def get_config(self) -> Json:
-        """ Get server configuration
-        """
+        """Get server configuration"""
         async with self._stub() as stub:
             resp = await stub.GetConfig(qjazz_pb2.Empty())
             return resp.json
 
     async def set_config(self, config: dict | Json) -> None:
-        """ Send CONFIG to remote
-        """
+        """Send CONFIG to remote"""
         if isinstance(config, dict):
             config = json.dumps(config)
         async with self._stub() as stub:
@@ -363,15 +357,13 @@ class Backend:
     #  status
     #
     async def get_env(self) -> Json:
-        """ Get environment status
-        """
+        """Get environment status"""
         async with self._stub() as stub:
             resp = await stub.GetEnv(qjazz_pb2.Empty())
             return resp.json
 
     async def enable_server(self, enable: bool):
-        """ Enable/Disable qgis server serving state
-        """
+        """Enable/Disable qgis server serving state"""
         async with self._stub() as stub:
             _ = await stub.SetServerServingStatus(
                 qjazz_pb2.ServerStatus(
@@ -391,8 +383,7 @@ class Backend:
         self,
         interval: int = 3,
     ) -> AsyncIterator[tuple[Self, Optional[qjazz_pb2.StatsReply]]]:
-        """ Watch service stats
-        """
+        """Watch service stats"""
         while not self._shutdown:
             try:
                 async with self._stub() as stub:

@@ -34,6 +34,7 @@ class MetadataValue(JsonModel):
     lang: Optional[str] = Null
     value: Optional[JsonValue]
 
+
 #
 # Metadata
 #
@@ -41,7 +42,7 @@ class MetadataValue(JsonModel):
 
 Metadata = Annotated[
     MetadataLink | MetadataValue,
-    Field(union_mode='left_to_right'),
+    Field(union_mode="left_to_right"),
 ]
 
 
@@ -50,6 +51,7 @@ Metadata = Annotated[
 #
 # See openapi/schemas/processes-core
 #
+
 
 class DescriptionType(JsonModel):
     title: str = ""
@@ -66,30 +68,30 @@ ValuePassing = Sequence[Literal["byValue", "byReference"]]
 
 class InputDescription(DescriptionType):
     schema_: JsonValue = Field(alias="schema")
-    value_passing: ValuePassing = ('byValue',)
+    value_passing: ValuePassing = ("byValue",)
     min_occurs: _PositiveInt = 1
     max_occurs: _NonZeroPositiveInt | Literal["unbounded"] = 1
 
 
 class OutputDescription(DescriptionType):
     schema_: JsonValue = Field(alias="schema")
-    value_passing: ValuePassing = ('byValue',)
+    value_passing: ValuePassing = ("byValue",)
 
 
 #
 # Processes
 #
 
-JobControlOptions = Literal['sync-execute', 'async-execute', 'dismiss']
+JobControlOptions = Literal["sync-execute", "async-execute", "dismiss"]
 
 
 class ProcessSummary(DescriptionType):
     id_: str = Field(alias="id", title="Process id")
     version: str
     job_control_options: Sequence[JobControlOptions] = (
-        'sync-execute',
-        'async-execute',
-        'dismiss',
+        "sync-execute",
+        "async-execute",
+        "dismiss",
     )
     links: list[LinkHttp] = Field(default=[])
 

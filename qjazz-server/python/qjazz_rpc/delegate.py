@@ -1,20 +1,21 @@
 """
-    Api Delegation
+Api Delegation
 
-    Define a 'catch all' api used for delegating request execution
-    with a custom rootpath.
+Define a 'catch all' api used for delegating request execution
+with a custom rootpath.
 
-    Atm, the qgis server api does not enable to specify a custom rootpath,
-    this is problematic when running behind a proxy since there is no way
-    to specify a custom URL as for ows api (i.e `X-Qgis-Service-Url` header)
+Atm, the qgis server api does not enable to specify a custom rootpath,
+this is problematic when running behind a proxy since there is no way
+to specify a custom URL as for ows api (i.e `X-Qgis-Service-Url` header)
 
-    Also there is no way to iterate over registered api and check for
-    `accept` method, we only may rely on the api name to fetch the api
+Also there is no way to iterate over registered api and check for
+`accept` method, we only may rely on the api name to fetch the api
 
-    NOTE: template handling is broken in Qgis server: instead of trying
-    to get resource path for api root name it try to resolve the path from
-    the url and this does not work in delegated api url.
+NOTE: template handling is broken in Qgis server: instead of trying
+to get resource path for api root name it try to resolve the path from
+the url and this does not work in delegated api url.
 """
+
 import traceback
 
 from qgis.PyQt.QtCore import QUrl
@@ -22,20 +23,19 @@ from qgis.server import QgsServerApi, QgsServerApiContext
 
 from qjazz_contrib.core import logger
 
-ROOT_DELEGATE = '/__delegate__'
+ROOT_DELEGATE = "/__delegate__"
 
 API_ALIASES = {
-    'WFS3': 'OGC WFS3 (Draft)',
+    "WFS3": "OGC WFS3 (Draft)",
 }
 
 
 class ApiDelegate(QgsServerApi):
-
     __instances: list[QgsServerApi] = []  #  noqa RUF012
 
     def __init__(
-            self,
-            serverIface,
+        self,
+        serverIface,
     ):
         super().__init__(serverIface)
         self.__instances.append(self)
@@ -46,11 +46,10 @@ class ApiDelegate(QgsServerApi):
         return "API Delegate"
 
     def rootPath(self) -> str:
-        return self._rootpath or '/'
+        return self._rootpath or "/"
 
     def accept(self, url: QUrl) -> bool:
-        """ Override the api to actually match the rootpath
-        """
+        """Override the api to actually match the rootpath"""
         path = url.path()
         try:
             index = path.index(ROOT_DELEGATE)
@@ -58,7 +57,7 @@ class ApiDelegate(QgsServerApi):
             return False
 
         self._rootpath = path[:index]
-        self._extra_path = path[index + len(ROOT_DELEGATE):]
+        self._extra_path = path[index + len(ROOT_DELEGATE) :]
         return True
 
     def executeRequest(self, context):

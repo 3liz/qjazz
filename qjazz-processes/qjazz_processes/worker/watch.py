@@ -1,14 +1,12 @@
-
 from pathlib import Path
 from typing import Callable
 
 
 class WatchFile:
-
     def __init__(self, path: Path, target: Callable[[], None]):
         self._path = path
         self._target = target
-        self._last_modified_time = 0.
+        self._last_modified_time = 0.0
         if self._path.exists():
             self._last_modified_time = self._path.stat().st_mtime
 

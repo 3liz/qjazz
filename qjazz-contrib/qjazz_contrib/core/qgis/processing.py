@@ -25,7 +25,7 @@ from qgis.core import QgsApplication, QgsProcessingProvider
 
 from .. import logger
 
-BuiltinProviderSet = Set[Literal['grass', 'otb']]
+BuiltinProviderSet = Set[Literal["grass", "otb"]]
 
 
 class ProcessesConfig(BaseModel):
@@ -36,7 +36,6 @@ class ProcessesConfig(BaseModel):
 
 class ProcessesLoader:
     def __init__(self, providers: list[str], allow_scripts: bool = True):
-
         self._discard: set[str] = set()
         self._providers = providers
         self._register = False
@@ -45,7 +44,7 @@ class ProcessesLoader:
         reg.providerAdded.connect(self._registerProvider)
 
         # Support models and script
-        for ident in (('model', 'script') if allow_scripts else ('model',)):
+        for ident in ("model", "script") if allow_scripts else ("model",):
             if reg.providerById(ident):
                 self._providers.append(ident)
 
@@ -61,14 +60,16 @@ class ProcessesLoader:
             p = None
             try:
                 match n:
-                    case 'grass':
+                    case "grass":
                         logger.info("Registering builtin GRASS provider")
                         from grassprovider.Grass7AlgorithmProvider import Grass7AlgorithmProvider
+
                         p = Grass7AlgorithmProvider()
                         reg.addProvider(p)
-                    case 'otb':
+                    case "otb":
                         logger.info("Registering builtin OTB provider")
                         from otbprovider.OtbAlgorithmProvider import OtbAlgorithmProvider
+
                         p = OtbAlgorithmProvider()
                         reg.addProvider(p)
             except Exception:
@@ -84,17 +85,16 @@ class ProcessesLoader:
         reg.providerAdded.disconnect(self._registerProvider)
 
     def _registerProvider(self, id_: str):
-        """ Called when a provider is added
-            to the registry
+        """Called when a provider is added
+        to the registry
         """
         if self._register and id_ not in self._discard:
             logger.info("* Registering processing provider: %s", id_)
             self._providers.append(id_)
 
     def read_configuration(self, path: Path):
-        """ Read processes configuration as toml file
-        """
-        path = path.joinpath('processes.toml')
+        """Read processes configuration as toml file"""
+        path = path.joinpath("processes.toml")
         if not path.exists():
             return
 
@@ -119,9 +119,8 @@ class ProcessesLoader:
                     logger.warning("Style file not found:  %s", qml)
             RenderingStyles.styles.update(styles)
 
-    def init_processing(self, package: ModuleType) -> Any:  # noqa ANN401 
-        """ Initialize processing plugin
-        """
+    def init_processing(self, package: ModuleType) -> Any:  # noqa ANN401
+        """Initialize processing plugin"""
         self._register = True
         try:
             # module __file__ may be None

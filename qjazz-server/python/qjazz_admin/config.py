@@ -22,7 +22,6 @@ DEFAULT_INTERFACE = ("127.0.0.1", 9871)
 
 
 class HttpConfig(ConfigBase):
-
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
         title="Interfaces to listen to",
@@ -38,8 +37,8 @@ class HttpConfig(ConfigBase):
         title="SSL certificats",
     )
 
-    cross_origin: Literal['all', 'same-origin'] | AnyHttpUrl = Field(
-        default='all',
+    cross_origin: Literal["all", "same-origin"] | AnyHttpUrl = Field(
+        default="all",
         title="CORS origin",
         description=(
             "Allows to specify origin for CORS. If set 'all' will set\n"
@@ -54,8 +53,7 @@ class HttpConfig(ConfigBase):
         default=False,
         title="Enable proxy_configuration",
         description=(
-            "Indicates that the server is behind a reverse proxy.\n"
-            "This enable handling of forwarded proxy headers"
+            "Indicates that the server is behind a reverse proxy.\nThis enable handling of forwarded proxy headers"
         ),
     )
 
@@ -75,6 +73,7 @@ class HttpConfig(ConfigBase):
 
 class ConfigUrl(ConfigBase):
     """Remote configuration settings"""
+
     ssl: SSLConfig = Field(
         default=SSLConfig(),
         title="SSL configuration",
@@ -95,7 +94,7 @@ class ConfigUrl(ConfigBase):
 
         import aiohttp
 
-        use_ssl = self.url.scheme == 'https'
+        use_ssl = self.url.scheme == "https"
 
         async with aiohttp.ClientSession() as session:
             logger.info("Loading configuration from %s", self.url)
@@ -122,9 +121,9 @@ class ConfigProto(Protocol):
 
 confservice = ConfBuilder()
 
-confservice.add_section('admin_http', HttpConfig)
-confservice.add_section('admin_config_url', ConfigUrl)
-confservice.add_section('resolvers', ResolverConfig)
+confservice.add_section("admin_http", HttpConfig)
+confservice.add_section("admin_config_url", ConfigUrl)
+confservice.add_section("resolvers", ResolverConfig)
 
 
-RESOLVERS_SECTION = 'resolvers'
+RESOLVERS_SECTION = "resolvers"

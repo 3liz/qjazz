@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import (
     Self,
@@ -60,7 +59,6 @@ class FilesResponse(swagger.JsonModel):
 
 
 class Storage(HandlerProto):
-
     async def job_files(self, request: web.Request) -> web.Response:
         """
         summary: Get Job process execution files
@@ -90,7 +88,7 @@ class Storage(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
+        job_id = request.match_info["JobId"]
 
         files = await self._executor.files(
             job_id,
@@ -153,8 +151,8 @@ class Storage(HandlerProto):
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        job_id = request.match_info['JobId']
-        resource = request.match_info['Resource']
+        job_id = request.match_info["JobId"]
+        resource = request.match_info["Resource"]
 
         link = await self._executor.download_url(
             job_id,
@@ -171,9 +169,9 @@ class Storage(HandlerProto):
                 {"jobId": job_id, "resource": resource},
             )
 
-        headers = {'Content-Length': f"{link.length}"}
+        headers = {"Content-Length": f"{link.length}"}
 
-        if request.method == 'HEAD':
+        if request.method == "HEAD":
             return web.Response(content_type=link.mime_type, headers=headers)
 
         response = web.StreamResponse(headers=headers)
@@ -182,14 +180,15 @@ class Storage(HandlerProto):
 
         logger.debug("Streaming data from %s", link.href)
         match url.scheme:
-            case 'file':
+            case "file":
                 import aiofiles
+
                 # Local file storage
                 path = Path(str(url.path))
                 assert_precondition(path.is_file())
                 try:
                     await response.prepare(request)
-                    async with aiofiles.open(path, mode='+rb') as fh:
+                    async with aiofiles.open(path, mode="+rb") as fh:
                         chunk = await fh.read(self._storage.chunksize)
                         while chunk:
                             await response.write(chunk)
@@ -198,12 +197,12 @@ class Storage(HandlerProto):
                 except OSError as err:
                     logger.error("Connection cancelled: %s", err)
                     raise
-            case 'http':
+            case "http":
                 if not self._storage.allow_insecure_connection:
                     logger.error("Storage service '%s' returned unauthorized insecure protocol")
                     raise web.HTTPForbidden()
                 await stream_from(link.href, request, response, self._storage.chunksize)
-            case 'https':
+            case "https":
                 await stream_from(
                     link.href,
                     request,

@@ -1,5 +1,5 @@
-""" Qgis server request handler
-"""
+"""Qgis server request handler"""
+
 import traceback
 
 from contextlib import contextmanager
@@ -36,7 +36,6 @@ def _to_qgis_method(method: _m.HTTPMethod) -> QgsServerRequest.Method:
 
 
 class Request(QgsServerRequest):
-
     def __init__(
         self,
         url: str,
@@ -48,8 +47,7 @@ class Request(QgsServerRequest):
         super().__init__(url, method, headers=headers)
 
     def data(self) -> QByteArray:
-        """ Override
-        """
+        """Override"""
         # Make sure that data is valid
         return QByteArray(self._data) if self._data else QByteArray()
 
@@ -59,20 +57,20 @@ DEFAULT_CHUNK_SIZE = 1024 * 1024
 
 
 class Response(QgsServerResponse):
-    """ Adaptor to handler response
+    """Adaptor to handler response
 
-        The data is written at 'flush()' call.
+    The data is written at 'flush()' call.
     """
 
     def __init__(
-            self,
-            conn: _m.Connection,
-            co_status: Optional[int] = None,
-            headers: Optional[dict] = None,
-            chunk_size: int = DEFAULT_CHUNK_SIZE,
-            cache_id: str = "",
-            feedback: Optional[QgsFeedback] = None,
-            header_prefix: Optional[str] = None,
+        self,
+        conn: _m.Connection,
+        co_status: Optional[int] = None,
+        headers: Optional[dict] = None,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        cache_id: str = "",
+        feedback: Optional[QgsFeedback] = None,
+        header_prefix: Optional[str] = None,
     ):
         super().__init__()
         self._buffer = QBuffer()
@@ -104,14 +102,12 @@ class Response(QgsServerResponse):
         return self._status_code
 
     def finish(self) -> None:
-        """ Terminate the request
-        """
+        """Terminate the request"""
         self._finish = True
         self.flush()
 
     def _send_response(self):
-        """ Send response
-        """
+        """Send response"""
         self._headers.update(self._extra_headers)
 
         # Return reply
@@ -135,17 +131,17 @@ class Response(QgsServerResponse):
             self.sendError(500)
 
     def flush(self) -> None:
-        """ Write the data to the queue
-            and flush the socket
+        """Write the data to the queue
+        and flush the socket
 
-            Headers will be written at the first call to flush()
+        Headers will be written at the first call to flush()
         """
         self._buffer.seek(0)
         bytes_avail = self._buffer.bytesAvailable()
 
         if self._finish and bytes_avail and not self._header_written:
             # Make sure that we have Content-length set
-            self._headers['Content-Length'] = f"{bytes_avail}"
+            self._headers["Content-Length"] = f"{bytes_avail}"
 
         if not self._header_written:
             # Send response
@@ -154,7 +150,7 @@ class Response(QgsServerResponse):
         # Send data as chunks
         data = memoryview(self._buffer.data())
         MAX_CHUNK_SIZE = self._chunk_size
-        chunks = (data[i:i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
+        chunks = (data[i : i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
         for chunk in chunks:
             logger.trace("Sending chunk of %s bytes", len(chunk))
             _m.send_chunk(self._conn, chunk)
@@ -162,7 +158,7 @@ class Response(QgsServerResponse):
         if self._finish:
             # Send sentinel to signal end of data
             logger.trace("Sending final chunk")
-            _m.send_chunk(self._conn, b'')
+            _m.send_chunk(self._conn, b"")
 
         self._buffer.buffer().clear()
 
@@ -208,7 +204,6 @@ class Response(QgsServerResponse):
         return self._header_written
 
     def truncate(self) -> None:
-        """ Truncate buffer
-        """
+        """Truncate buffer"""
         self._buffer.seek(0)
         self._buffer.buffer().clear()

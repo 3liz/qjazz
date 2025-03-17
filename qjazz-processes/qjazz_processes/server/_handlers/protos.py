@@ -49,11 +49,9 @@ class HandlerProto(Protocol):
     _jobrealm: JobRealmConfig
     _storage: StorageConfig
 
-    def get_service(self, request: web.Request, raise_error: bool = True) -> str:
-        ...
+    def get_service(self, request: web.Request, raise_error: bool = True) -> str: ...
 
-    def get_project(self, request: web.Request) -> Optional[str]:
-        ...
+    def get_project(self, request: web.Request) -> Optional[str]: ...
 
     def format_path(
         self,
@@ -63,5 +61,4 @@ class HandlerProto(Protocol):
         project: Optional[str] = None,
         *,
         query: Optional[str] = None,
-    ) -> str:
-        ...
+    ) -> str: ...

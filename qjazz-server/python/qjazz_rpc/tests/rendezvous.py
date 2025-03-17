@@ -22,8 +22,8 @@ class NoDataResponse(Exception):
 
 
 class Pipe:
-    """ Wrapper for Connection object that allow reading asynchronously
-    """
+    """Wrapper for Connection object that allow reading asynchronously"""
+
     def __init__(self, proc: asyncio.subprocess.Process):
         if proc.stdin is None:
             raise ValueError("Invalid StreamWriter")
@@ -34,23 +34,21 @@ class Pipe:
 
     async def put_message(self, message: Message):
         if isinstance(message, BaseModel):
-            data = msgpack.packb(message.model_dump(mode='json'))
+            data = msgpack.packb(message.model_dump(mode="json"))
         else:
             data = msgpack.packb(message)
-        self._stdin.write(pack('!i', len(data)))
+        self._stdin.write(pack("!i", len(data)))
         self._stdin.write(data)
         await self._stdin.drain()
 
     async def drain(self):
-        """ Pull out all remaining data from pipe
-        """
-        size = unpack('!i', await self._stdout.readexactly(4))
+        """Pull out all remaining data from pipe"""
+        size = unpack("!i", await self._stdout.readexactly(4))
         if size > 0:
             _ = await self._stdout.read(size)
 
     async def read_message(self) -> tuple[int, Any]:
-        """ Read an Envelop message
-        """
+        """Read an Envelop message"""
         resp = msgpack.unpackb(await self.read_bytes())
         match resp:
             case (int(status), msg):
@@ -61,8 +59,8 @@ class Pipe:
                 raise ValueError(f"Unexpected response format: {resp}")
 
     async def read_bytes(self) -> bytes:
-        size, = unpack('!i', await self._stdout.read(4))
-        data = await self._stdout.read(size) if size else b''
+        (size,) = unpack("!i", await self._stdout.read(4))
+        data = await self._stdout.read(size) if size else b""
         if len(data) < size:
             buf = BytesIO()
             buf.write(data)
@@ -91,13 +89,13 @@ class Pipe:
         await self.put_message(msg)
         return await self.read_message()
 
+
 #
 # Rendez Vous
 #
 
 
 class RendezVous:
-
     def __init__(self, path: Path):
         self._path = path
         self._done = asyncio.Event()
@@ -137,9 +135,9 @@ class RendezVous:
                 await avail.wait()
                 try:
                     match os.read(fd, 1024):
-                        case b'\x00':  # DONE
+                        case b"\x00":  # DONE
                             self._done.set()
-                        case b'\x01':  # BUSY
+                        case b"\x01":  # BUSY
                             self._done.clear()
                 except BlockingIOError:
                     pass

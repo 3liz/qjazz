@@ -1,4 +1,3 @@
-
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -20,7 +19,8 @@ from .protos import (
 
 if TYPE_CHECKING:
     from mypy_extensions import DefaultNamedArg
-    PathFormatter = Callable[[web.Request, str, DefaultNamedArg(Optional[str], 'service')], str]
+
+    PathFormatter = Callable[[web.Request, str, DefaultNamedArg(Optional[str], "service")], str]
 else:
     PathFormatter = Callable[[web.Request, str, str], str]
 
@@ -65,7 +65,6 @@ class ServicesResponse(swagger.JsonModel):
 
 
 class Services(HandlerProto):
-
     async def list_services(self, request: web.Request) -> web.Response:
         """
         summary: "Return availables services"
@@ -87,10 +86,11 @@ class Services(HandlerProto):
             text=ServicesResponse(
                 services=[
                     ServiceItem.from_details(
-                      request,
-                      details,
-                      self.format_path,
-                    ) for details in self._executor.services
+                        request,
+                        details,
+                        self.format_path,
+                    )
+                    for details in self._executor.services
                     if self._accesspolicy.service_permission(request, details.service)
                 ],
             ).model_dump_json(),

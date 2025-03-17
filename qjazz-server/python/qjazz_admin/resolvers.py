@@ -1,5 +1,5 @@
-""" Dns resolver
-"""
+"""Dns resolver"""
+
 from ipaddress import IPv4Address, IPv6Address
 from typing import (
     Annotated,
@@ -32,10 +32,7 @@ ResolverLabel = Annotated[
     Field(
         pattern=r"^[a-zA-Z][0-9a-zA-Z._]*$",
         title="Unique label",
-        description=(
-            "Unique resolver label. "
-            "The label must be compatible with an url path component."
-        ),
+        description=("Unique resolver label. The label must be compatible with an url path component."),
     ),
 ]
 
@@ -52,6 +49,7 @@ class Resolver(ConfigBase):
     Resolver for DNS resolution that may resolve
     to multiple ips.
     """
+
     label: ResolverLabel
     address: tuple[ResolverAddress, int] = Field(
         default=(IPv6Address("::1"), DEFAULT_PORT),
@@ -72,7 +70,7 @@ class Resolver(ConfigBase):
         match self.address[0]:
             case IPv6Address() | IPv4Address():
                 return (
-                     BackendConfig(
+                    BackendConfig(
                         server_address=(self.address[0], self.address[1]),
                         use_ssl=self.use_ssl,
                         ssl=self.ssl,

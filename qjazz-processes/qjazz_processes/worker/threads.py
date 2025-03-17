@@ -1,4 +1,3 @@
-
 import traceback
 
 from threading import Event, Thread
@@ -11,7 +10,6 @@ from qjazz_contrib.core import logger
 # Define threaded wrapper for periodic task
 #
 class PeriodicTask(Thread):
-
     def __init__(
         self,
         name: str,

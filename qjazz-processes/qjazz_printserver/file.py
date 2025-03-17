@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from qgis.PyQt.QtCore import QByteArray, QFile, QIODevice
@@ -8,8 +7,8 @@ from qjazz_contrib.core import logger
 
 
 class QgsServerFileResponse(QgsServerResponse):
-    """ Implement a QgsServerResponse that writes
-        directly to file
+    """Implement a QgsServerResponse that writes
+    directly to file
     """
 
     def __init__(self, path: Path | str):

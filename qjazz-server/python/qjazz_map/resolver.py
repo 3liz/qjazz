@@ -1,5 +1,4 @@
-""" Dns resolver
-"""
+"""Dns resolver"""
 
 from pathlib import PurePosixPath
 from typing import Annotated
@@ -23,15 +22,15 @@ DEFAULT_PORT = 23456
 
 
 def _validate_route(r: str) -> PurePosixPath:
-    """ Validate a path:
-        * Path must be absolute (i.e start with '/')
+    """Validate a path:
+    * Path must be absolute (i.e start with '/')
     """
     if not isinstance(r, str):
         raise ValueError("Expecting string")
-    if not r.startswith('/'):
+    if not r.startswith("/"):
         raise ValueError("Route must starts with a '/'")
-    if r != '/':
-        r = r.removesuffix('/')
+    if r != "/":
+        r = r.removesuffix("/")
     return PurePosixPath(r)
 
 
@@ -39,7 +38,7 @@ Route = Annotated[
     PurePosixPath,
     PlainValidator(_validate_route),
     PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({'type': 'str'}),
+    WithJsonSchema({"type": "str"}),
 ]
 
 
@@ -118,7 +117,7 @@ class BackendConfig(ConfigBase):
         ),
     )
     forward_headers: list[Annotated[str, StringConstraints(to_lower=True)]] = Field(
-        default=['x-qgis-*', 'x-lizmap-*'],
+        default=["x-qgis-*", "x-lizmap-*"],
         title="Forwarded headers",
         description=(
             "Set the headers that will be forwarded to the Qgis server backend.\n"

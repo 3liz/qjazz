@@ -1,4 +1,3 @@
-
 import mimetypes
 
 from pathlib import Path
@@ -12,8 +11,8 @@ from ..storage import Storage
 
 
 class LocalStorage(Storage):
-    """ Local filesystem storage class
-    """
+    """Local filesystem storage class"""
+
     def download_url(
         self,
         job_id: str,
@@ -22,8 +21,7 @@ class LocalStorage(Storage):
         workdir: Path,
         expires: Optional[int],
     ) -> Link:
-        """ Returns an effective download url for the given resource
-        """
+        """Returns an effective download url for the given resource"""
         path = workdir.joinpath(job_id, resource)
         if not path.exists():
             raise FileNotFoundError(f"{path}")

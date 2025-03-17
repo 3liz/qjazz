@@ -1,5 +1,3 @@
-
-
 from typing import (
     Annotated,
     Any,
@@ -29,21 +27,19 @@ from qjazz_processes.schemas.models import one_of
 
 from ..context import ProcessingContext
 
-ParameterDefinition = TypeVar('ParameterDefinition', bound=QgsProcessingParameterDefinition)
+ParameterDefinition = TypeVar("ParameterDefinition", bound=QgsProcessingParameterDefinition)
 
 
 class InputParameter[T]:
-
     _ParameterType: TypeAlias | None = None
 
     def __init__(
-            self,
-            param: ParameterDefinition,
-            project: Optional[QgsProject] = None,
-            *,
-            validation_only: bool = False,
-        ):
-
+        self,
+        param: ParameterDefinition,
+        project: Optional[QgsProject] = None,
+        *,
+        validation_only: bool = False,
+    ):
         annotated = self.model(param, project, validation_only=validation_only)
         self._param = param
         self._model = TypeAdapter(annotated)
@@ -57,8 +53,8 @@ class InputParameter[T]:
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> Self:
-        """ Duplicate the class and rebind it with
-            another project.
+        """Duplicate the class and rebind it with
+        another project.
         """
         return self.__class__(self._param, project, validation_only=validation_only)
 
@@ -67,10 +63,10 @@ class InputParameter[T]:
         return self._param.name()
 
     def optional_default_value(self, context: Optional[ProcessingContext] = None) -> Optional[T]:
-        """ Some optional destination parameters may
-            force create a output value.
-            This is the case with parameters created
-            with the model designer.
+        """Some optional destination parameters may
+        force create a output value.
+        This is the case with parameters created
+        with the model designer.
         """
         # Note: createByDefault is defined for QgsProcessingParameteDestination
         if self._param.isDestination() and self._param.createByDefault():
@@ -87,7 +83,7 @@ class InputParameter[T]:
         return []
 
     def value_passing(self) -> ValuePassing:
-        return ('byValue',)
+        return ("byValue",)
 
     def validate(self, inp: JsonValue) -> T:
         return self._model.validate_python(inp)
@@ -115,7 +111,6 @@ class InputParameter[T]:
         *,
         validation_only: bool = False,
     ) -> TypeAlias:
-
         field: dict = {}
 
         if not validation_only:
@@ -148,17 +143,15 @@ class InputParameter[T]:
         return int(self._param.flags()) & QgsProcessingParameterDefinition.FlagOptional != 0
 
     def json_schema(self) -> JsonDict:
-        """ Create json schema
-        """
+        """Create json schema"""
         schema = self._model.json_schema()
-        schema.pop('title', None)
+        schema.pop("title", None)
         one_of(schema)
         remove_auto_title(schema)
         return schema
 
     def description(self) -> InputDescription:
-        """ Parse processing parameter definition to InputDescription
-        """
+        """Parse processing parameter definition to InputDescription"""
         param = self._param
 
         kwargs: dict[str, Any] = {}
@@ -166,7 +159,7 @@ class InputParameter[T]:
         if self.optional:
             kwargs.update(min_occurs=0)
 
-        title = param.description() or param.name().capitalize().replace('_', ' ')
+        title = param.description() or param.name().capitalize().replace("_", " ")
         description = param.help()
 
         return InputDescription(

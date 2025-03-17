@@ -1,4 +1,3 @@
-
 import traceback
 
 from functools import cached_property
@@ -36,14 +35,14 @@ from qjazz_processes.schemas.models import one_of
 from ..context import ProcessingContext
 from ..inputs import InputParameterDef
 
-OutputDefinition = TypeVar('OutputDefinition', bound=QgsProcessingOutputDefinition)
+OutputDefinition = TypeVar("OutputDefinition", bound=QgsProcessingOutputDefinition)
 
 
 class OutputParameter[T]:
-
     _Model: TypeAlias | None = None
 
-    def __init__(self,
+    def __init__(
+        self,
         out: OutputDefinition,
         alg: Optional[QgsProcessingAlgorithm] = None,
     ):
@@ -75,7 +74,7 @@ class OutputParameter[T]:
         return []
 
     def value_passing(self) -> ValuePassing:
-        return ('byValue',)
+        return ("byValue",)
 
     @classmethod
     def model(
@@ -83,7 +82,6 @@ class OutputParameter[T]:
         outp: OutputDefinition,
         alg: Optional[QgsProcessingAlgorithm],
     ) -> TypeAlias:
-
         field: dict = {}
         _type = cls.create_model(outp, field, alg)
 
@@ -102,7 +100,7 @@ class OutputParameter[T]:
 
     def json_schema(self) -> JsonDict:
         schema = self._model.json_schema()
-        schema.pop('title', None)
+        schema.pop("title", None)
         one_of(schema)
         remove_auto_title(schema)
         return schema
@@ -113,11 +111,10 @@ class OutputParameter[T]:
 
     @property
     def title(self) -> str:
-        return self._out.name().capitalize().replace('_', ' ')
+        return self._out.name().capitalize().replace("_", " ")
 
     def description(self) -> OutputDescription:
-        """ Parse processing output definition to OutputDescription
-        """
+        """Parse processing output definition to OutputDescription"""
         outp = self._out
 
         return OutputDescription(
@@ -135,7 +132,6 @@ class OutputParameter[T]:
         outdef: OutputDefinition,
         alg: QgsProcessingAlgorithm,
     ) -> Sequence[Format]:
-
         return ()
 
     @cached_property
@@ -148,8 +144,8 @@ class OutputParameter[T]:
         out: OutputDefinition,
         alg: Optional[QgsProcessingAlgorithm],
     ) -> Optional[QgsProcessingParameterDefinition]:
-        """ Returns the parameter name of the input destination name
-            that have created this output definition
+        """Returns the parameter name of the input destination name
+        that have created this output definition
         """
         if out.autoCreated():
             return alg and alg.parameterDefinition(out.name())
@@ -165,10 +161,10 @@ class OutputParameter[T]:
         return self if isinstance(self, OutputFormatDefinition) else None
 
     def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
-        """ Validate output json declaration
+        """Validate output json declaration
 
-            Note that output declaration for processes/execute command
-            are limited to a `format` declaration
+        Note that output declaration for processes/execute command
+        are limited to a `format` declaration
         """
         if isinstance(self, OutputFormatDefinition):
             try:
@@ -182,9 +178,8 @@ class OutputParameter[T]:
                 raise InputValueError(f"{self._out.name()}: invalid format '{self.output_format}'")
 
     def dump_json(self, value: T) -> JsonValue:
-        return self._model.dump_python(value, mode='json', by_alias=True, exclude_none=True)
+        return self._model.dump_python(value, mode="json", by_alias=True, exclude_none=True)
 
     def output(self, value: T, context: ProcessingContext) -> JsonValue:
-        """ Dump output value to a json compatible format
-        """
+        """Dump output value to a json compatible format"""
         return self.dump_json(value)

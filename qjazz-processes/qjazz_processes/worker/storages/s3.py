@@ -50,8 +50,7 @@ class S3Config(ConfigSettings, env_prefix="conf_s3_"):
 
 
 def _create_bucket(client: Minio, conf: S3Config):
-    """ Create the storage bucket
-    """
+    """Create the storage bucket"""
     # Create the bucket for the service
     if not client.bucket_exists(conf.bucket_name):
         logger.info("[S3] Creating bucket '%s' on '%s'", conf.bucket_name, conf.endpoint)
@@ -72,8 +71,7 @@ def _create_bucket(client: Minio, conf: S3Config):
 
 
 class S3Storage:
-    """ S3 object Storage support
-    """
+    """S3 object Storage support"""
 
     Config = S3Config
 
@@ -90,8 +88,7 @@ class S3Storage:
 
     @property
     def client(self) -> Minio:
-        """ Lazily create client
-        """
+        """Lazily create client"""
         if not self._client:
             if self._conf.cafile:
                 os.environ["SSL_CERT_FILE"] = str(self._conf.cafile)
@@ -107,8 +104,8 @@ class S3Storage:
         return self._client
 
     def before_create_process(self):
-        """ Called each time just before a process
-            is created. Minio doesn't play well with fork
+        """Called each time just before a process
+        is created. Minio doesn't play well with fork
         """
         # Invalidate client
         self._client = None
@@ -121,8 +118,7 @@ class S3Storage:
         workdir: Path,
         expires: int = 3600,
     ) -> Link:
-        """ Returns an effective download url for the given resource
-        """
+        """Returns an effective download url for the given resource"""
         # Get object info
         object_name = f"{job_id}/{resource}"
 
@@ -166,7 +162,7 @@ class S3Storage:
             stat = file.stat()
 
             logger.debug("[S3] Transferring '%s' (size=%s)", file, stat.st_size)
-            with file.open('rb') as reader:
+            with file.open("rb") as reader:
                 self.client.put_object(
                     self.bucket,
                     object_name,
@@ -186,7 +182,7 @@ class S3Storage:
                 )
 
     def remove(self, job_id: str, *, workdir: Path):
-        """ Delete all resources in prefix 'job_id' """
+        """Delete all resources in prefix 'job_id'"""
         logger.info("[S3] Deleting objects in %s/%s", self.bucket, job_id)
         client = self.client
         delete_object_list = map(

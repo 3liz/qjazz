@@ -1,6 +1,7 @@
 """
 QGIS project's collections
 """
+
 from typing import (
     Iterator,
     Optional,
@@ -40,8 +41,7 @@ def output_crs_list(p: QgsProject) -> Iterator[Crs]:
 
 
 def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]:
-    """ Compute scale denominator
-    """
+    """Compute scale denominator"""
     restricted_layers = QgsServerProjectUtils.wmsRestrictedLayers(p)
     scales: tuple[float, float] | None = None
 
@@ -62,7 +62,6 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 
 
 class Collection(collections.Collection):
-
     # Not included in schemas but passed to
     # map proxy
     styles: Opt[Sequence[str]] = None
@@ -75,8 +74,7 @@ class Collection(collections.Collection):
 
     @classmethod
     def from_project(cls, ident: str, p: QgsProject) -> Self:
-        """ Build a Collection from a QGIS project
-        """
+        """Build a Collection from a QGIS project"""
         md = p.metadata()
 
         title = QgsServerProjectUtils.owsServiceTitle(p)
@@ -114,15 +112,14 @@ class Collection(collections.Collection):
 
     @classmethod
     def from_layer(cls, layer: QgsMapLayer, parent: Self) -> Self:
-        """ Build a Collection from a QGIS project
-        """
+        """Build a Collection from a QGIS project"""
         props = layer.serverProperties()
 
         provider = layer.dataProvider()
         md = provider.layerMetadata()
 
         # XXX Create an SPDX AND expression for all licences in list
-        licence = ' AND '.join(md.licenses()) or 'other'
+        licence = " AND ".join(md.licenses()) or "other"
 
         if Qgis.QGIS_VERSION_INT < 33800:
             title = layer.title()
@@ -180,7 +177,7 @@ class Collection(collections.Collection):
             created=None,
             crs=crs_outputs,
             storage_crs=storage_crs,
-            keywords=[kw for kw in keywords.split(',') if kw],
+            keywords=[kw for kw in keywords.split(",") if kw],
             links=[link for link in layer_links()],
             min_scale_denominator=min_scale_denominator,
             max_scale_denominator=max_scale_denominator,

@@ -34,11 +34,10 @@ class ProjectInfo(BaseModel):
 
 
 def cache_item_pool_response(response: dict[str, dict], links: list[swagger.Link] = []) -> str:
-    return CacheItemPool.validate({'pool': response, 'links': links}).model_dump_json()
+    return CacheItemPool.validate({"pool": response, "links": links}).model_dump_json()
 
 
 class _Projects:
-
     #
     # Projects
     #
@@ -94,7 +93,7 @@ class _Projects:
         """
         pool = self._pool(request)
         try:
-            uri = request.query['uri']
+            uri = request.query["uri"]
         except KeyError:
             _http_error(web.HTTPBadRequest, message="Missing project's uri")
         try:
@@ -160,7 +159,7 @@ class _Projects:
         """
         pool = self._pool(request)
         try:
-            uri = request.query['uri']
+            uri = request.query["uri"]
         except KeyError:
             _http_error(web.HTTPBadRequest, message="Missing project's uri")
         try:
@@ -227,7 +226,7 @@ class _Projects:
         """
         pool = self._pool(request)
         try:
-            uri = request.query['uri']
+            uri = request.query["uri"]
         except KeyError:
             _http_error(web.HTTPBadRequest, message="Missing project's uri")
         try:
@@ -292,10 +291,10 @@ class _Projects:
                     application/json:
                         schema:
                             $ref: '#/definitions/ErrorResponse'
-       """
+        """
         pool = self._pool(request)
         try:
-            uri = request.query['uri']
+            uri = request.query["uri"]
         except KeyError:
             _http_error(web.HTTPBadRequest, message="Missing project's uri")
 

@@ -23,15 +23,18 @@ def cli_commands():
     pass
 
 
-@cli_commands.command('config')
+@cli_commands.command("config")
 @click.option(
-    "--conf", "-C", "configpath",
+    "--conf",
+    "-C",
+    "configpath",
     help="configuration file",
     type=FilePathType,
 )
 @click.option("--schema", is_flag=True, help="Print configuration schema")
 @click.option(
-    "--format", "out_fmt",
+    "--format",
+    "out_fmt",
     type=click.Choice(("json", "yaml", "toml")),
     default="json",
     help="Output format (--schema only)",
@@ -43,27 +46,27 @@ def print_config(
     schema: bool = False,
     pretty: bool = False,
 ):
-    """ Print configuration as json and exit
-    """
+    """Print configuration as json and exit"""
     import json
 
     indent = 4 if pretty else None
     if schema:
         match out_fmt:
-            case 'json':
+            case "json":
                 json_schema = confservice.json_schema()
                 indent = 4 if pretty else None
                 click.echo(json.dumps(json_schema, indent=indent))
-            case 'yaml':
+            case "yaml":
                 from ruamel.yaml import YAML
+
                 json_schema = confservice.json_schema()
                 yaml = YAML()
                 yaml.dump(json_schema, sys.stdout)
-            case 'toml':
+            case "toml":
                 confservice.dump_toml_schema(sys.stdout)
     else:
         click.echo(load_configuration(configpath).model_dump_json(indent=indent))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli_commands()

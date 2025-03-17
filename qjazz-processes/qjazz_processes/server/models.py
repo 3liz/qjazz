@@ -1,4 +1,3 @@
-
 from typing import (
     Awaitable,
     Callable,
@@ -36,7 +35,8 @@ class ErrorResponse(JsonModel):
         )
 
     @classmethod
-    def response(cls,
+    def response(
+        cls,
         status: int,
         message: str,
         details: Optional[JsonValue] = None,

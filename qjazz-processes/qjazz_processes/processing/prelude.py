@@ -1,4 +1,3 @@
-
 from . import runalg
 from .config import ProcessingConfig
 from .context import ProcessingContext

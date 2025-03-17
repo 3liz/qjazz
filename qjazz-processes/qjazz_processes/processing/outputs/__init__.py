@@ -59,22 +59,24 @@ class UnsupportedOutput(OutputParameterBase):
 
 # Type mapping
 
-OutputTypes = MappingProxyType({
-    QgsProcessingOutputBoolean.typeName(): OutputBoolean,
-    QgsProcessingOutputConditionalBranch.typeName(): UnsupportedOutput,
-    QgsProcessingOutputFile.typeName(): OutputFile,
-    QgsProcessingOutputFolder.typeName(): OutputFolder,
-    QgsProcessingOutputHtml.typeName(): OutputHtml,
-    QgsProcessingOutputMapLayer.typeName(): OutputMapLayer,
-    QgsProcessingOutputMultipleLayers.typeName(): OutputMultipleLayers,
-    QgsProcessingOutputNumber.typeName(): OutputNumber,
-    QgsProcessingOutputPointCloudLayer.typeName(): OutputPointCloudLayer,
-    QgsProcessingOutputRasterLayer.typeName(): OutputRasterLayer,
-    QgsProcessingOutputString.typeName(): OutputString,
-    QgsProcessingOutputVariant.typeName(): UnsupportedOutput,
-    QgsProcessingOutputVectorLayer.typeName(): OutputVectorLayer,
-    QgsProcessingOutputVectorTileLayer.typeName(): OutputVectorTileLayer,
-})
+OutputTypes = MappingProxyType(
+    {
+        QgsProcessingOutputBoolean.typeName(): OutputBoolean,
+        QgsProcessingOutputConditionalBranch.typeName(): UnsupportedOutput,
+        QgsProcessingOutputFile.typeName(): OutputFile,
+        QgsProcessingOutputFolder.typeName(): OutputFolder,
+        QgsProcessingOutputHtml.typeName(): OutputHtml,
+        QgsProcessingOutputMapLayer.typeName(): OutputMapLayer,
+        QgsProcessingOutputMultipleLayers.typeName(): OutputMultipleLayers,
+        QgsProcessingOutputNumber.typeName(): OutputNumber,
+        QgsProcessingOutputPointCloudLayer.typeName(): OutputPointCloudLayer,
+        QgsProcessingOutputRasterLayer.typeName(): OutputRasterLayer,
+        QgsProcessingOutputString.typeName(): OutputString,
+        QgsProcessingOutputVariant.typeName(): UnsupportedOutput,
+        QgsProcessingOutputVectorLayer.typeName(): OutputVectorLayer,
+        QgsProcessingOutputVectorTileLayer.typeName(): OutputVectorTileLayer,
+    }
+)
 
 
 OutputParameterDef = OutputParameterBase
@@ -84,7 +86,6 @@ OutputParameterDef = OutputParameterBase
 # Parameter proxy class
 #
 class _OutputParameter:
-
     @classmethod
     def get(cls, out: OutputDefinition) -> type[OutputParameterDef]:
         Output = OutputTypes.get(out.type())

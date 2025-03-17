@@ -58,10 +58,10 @@ class Connection:
         b = os.read(self._in, 4)
         # Take care if the parent close the connection then
         # read() will return an empty buffer (EOF)
-        if b == b'':    # End of file: Parent closed the connection
+        if b == b"":  # End of file: Parent closed the connection
             logger.error("Connection closed by parent")
             raise SystemExit(1)
-        size, = unpack('!i', b)
+        (size,) = unpack("!i", b)
         data = os.read(self._in, size)
 
         # Handle data larger than pipe size
@@ -81,7 +81,7 @@ class Connection:
     def send_bytes(self, data: ByteString):
         if not self._cancelled:
             size = len(data)
-            os.write(self._out, pack('!i', size))
+            os.write(self._out, pack("!i", size))
             if data:
                 written = 0
                 while written < size:
@@ -106,9 +106,9 @@ class RendezVous:
     def busy(self):
         if not self._busy:
             self._busy = True
-            os.write(self.fd, b'\x01')
+            os.write(self.fd, b"\x01")
 
     def done(self):
         if self._busy:
             self._busy = False
-            os.write(self.fd, b'\x00')
+            os.write(self.fd, b"\x00")

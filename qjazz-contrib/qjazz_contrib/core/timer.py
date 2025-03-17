@@ -2,7 +2,6 @@ from time import time
 
 
 class Instant:
-
     def __init__(self):
         self.restart()
 

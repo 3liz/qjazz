@@ -1,4 +1,3 @@
-
 import mimetypes
 
 from typing import (
@@ -55,7 +54,7 @@ class _LinkBase(JsonModel):
 #
 class Link(_LinkBase):
     # Supplies the URI to a remote resource (or resource fragment).
-    href: str = Field(json_schema_extra={'format': 'uri-reference'})
+    href: str = Field(json_schema_extra={"format": "uri-reference"})
 
 
 #
@@ -78,8 +77,7 @@ class LinkReference(LinkHttp):
 
 class MediaTypeProtocol(Protocol):
     @property
-    def media_type(self) -> str:
-        ...
+    def media_type(self) -> str: ...
 
 
 def MediaType(
@@ -89,8 +87,7 @@ def MediaType(
     encoding: Optional[str] = None,
     schema: Optional[str] = None,
 ) -> TypeAlias:
-
-    schema_extra: dict = {'contentMediaType': media_type}
+    schema_extra: dict = {"contentMediaType": media_type}
     if encoding:
         schema_extra.update(contentEncoding=encoding)
     if schema:
@@ -111,6 +108,7 @@ class OutputFormat(JsonModel):
 class QualifiedInputValue(OutputFormat):
     value: JsonValue
 
+
 # Create a typeadapter for Reference/Qualified input
 
 
@@ -127,7 +125,7 @@ AnyFormat = OutputFormat(media_type="application/octet-stream")
 
 class OutputFormatDefinition:
     _output_format: OutputFormat = AnyFormat
-    _output_ext: str = ''
+    _output_ext: str = ""
 
     @property
     def output_format(self) -> OutputFormat:
@@ -137,9 +135,9 @@ class OutputFormatDefinition:
     def output_format(self, value: OutputFormat):
         self._output_format = value
         if value.media_type == AnyFormat.media_type:
-            self.extension = ''
+            self.extension = ""
         else:
-            self._output_ext = mimetypes.guess_extension(value.media_type) or ''
+            self._output_ext = mimetypes.guess_extension(value.media_type) or ""
 
     @property
     def output_extension(self) -> str:
@@ -147,11 +145,10 @@ class OutputFormatDefinition:
 
     @output_extension.setter
     def output_extension(self, ext: str):
-        assert_precondition(ext.startswith('.'), "Suffix should start with a '.'")
+        assert_precondition(ext.startswith("."), "Suffix should start with a '.'")
         self._output_ext = ext
         media_type = mimetypes.types_map.get(ext)
-        self._output_format = OutputFormat(media_type=media_type) \
-            if media_type else AnyFormat
+        self._output_format = OutputFormat(media_type=media_type) if media_type else AnyFormat
 
     def copy_format_from(self, other: Self):
         self._output_format = other._output_format
@@ -161,6 +158,7 @@ class OutputFormatDefinition:
 #
 # Input error
 #
+
 
 class InputValueError(Exception):
     def __init__(

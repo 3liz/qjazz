@@ -1,4 +1,3 @@
-
 from pydantic import (  # noqa
     BaseModel,
     Field,
@@ -23,7 +22,7 @@ from .pool import PoolClient
 
 AnyJson = Annotated[
     Json,
-    WithJsonSchema({'type': 'object'}),
+    WithJsonSchema({"type": "object"}),
 ]
 
 
@@ -35,8 +34,8 @@ class ErrorResponse(JsonModel):
 
 @swagger.model
 class BackendStatus(JsonModel):
-    """ Pool backend status
-    """
+    """Pool backend status"""
+
     address: str
     numWorkers: Optional[int] = None
     request_pressure: Optional[float] = None
@@ -97,8 +96,8 @@ class PoolSetConfigResponse(JsonModel):
 
 
 class JsonValidator(BaseModel):
-    """ A validator for json input body
-    """
+    """A validator for json input body"""
+
     body: AnyJson
 
 
@@ -112,10 +111,12 @@ class CacheItem(JsonModel):
     in_cache: bool
     last_modified: Annotated[
         str,
-        WithJsonSchema({
-            "type": "string",
-            "format": "date-time",
-        }),
+        WithJsonSchema(
+            {
+                "type": "string",
+                "format": "date-time",
+            }
+        ),
     ]
     name: str
     saved_version: str

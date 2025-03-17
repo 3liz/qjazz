@@ -38,14 +38,14 @@ def MessageToDict(message: Message) -> dict[str, JsonValue]:
 
 
 class PoolClient:
-    """ Admin tool for cluster of gRCP servers
+    """Admin tool for cluster of gRCP servers
 
-        All clients sharing a cluster must share the exact same
-        configuration.
+    All clients sharing a cluster must share the exact same
+    configuration.
 
-        Usually these are set of single servers were ips are
-        resolved from single host (scaled docker containers
-        from docker-compose or swarm services).
+    Usually these are set of single servers were ips are
+    resolved from single host (scaled docker containers
+    from docker-compose or swarm services).
     """
 
     def __init__(self, resolver: Resolver):
@@ -81,8 +81,7 @@ class PoolClient:
 
     @contextmanager
     def sync_event(self) -> Generator[asyncio.Event, None, None]:
-        """ Return a new event for synchronization
-        """
+        """Return a new event for synchronization"""
         event = asyncio.Event()
         self._sync_events += (event,)
         try:
@@ -92,8 +91,7 @@ class PoolClient:
             self._sync_events = tuple(e for e in evts if e is not event)  # type: ignore
 
     def _sync(self):
-        """ Set all synchronization events
-        """
+        """Set all synchronization events"""
         for evt in self._sync_events:
             evt.set()
 
@@ -107,13 +105,13 @@ class PoolClient:
             await s.enable_server(enable)
 
     async def update_backends(self) -> None:
-        """ Set up all clients from resolver
-            The network configuration may have changed,
-            in particular when containers ared added/removed
-            from docker services.
+        """Set up all clients from resolver
+        The network configuration may have changed,
+        in particular when containers ared added/removed
+        from docker services.
 
-            We ask for a new updated list of servers from
-            the resolver.
+        We ask for a new updated list of servers from
+        the resolver.
         """
         # Get backends from resolvers
         configs = {conf.address_to_string(): conf for conf in await self._resolver.backends}
@@ -156,8 +154,7 @@ class PoolClient:
         self._sync()
 
     async def watch(self) -> AsyncIterator[tuple[tuple[str, bool], ...]]:
-        """ Wait for state change in one of the worker
-        """
+        """Wait for state change in one of the worker"""
         queue: asyncio.Queue[tuple[Backend, bool]] = asyncio.Queue()
         exception = None
 
@@ -214,8 +211,8 @@ class PoolClient:
                     await asyncio.sleep(RECONNECT_DELAY)
 
     async def stats(self) -> Sequence[tuple[Backend, Optional[dict]]]:
-        """  Return stats for all servers
-        """
+        """Return stats for all servers"""
+
         async def _stats(server):
             try:
                 msg = MessageToDict(await server.stats())
@@ -234,8 +231,8 @@ class PoolClient:
         self,
         interval: int = 3,
     ) -> AsyncIterator[Sequence[tuple[Backend, Optional[dict]]]]:
-        """ Watch service stats
-        """
+        """Watch service stats"""
+
         def _to_dict(item, stats):
             if stats:
                 resp = MessageToDict(stats)
@@ -267,11 +264,11 @@ class PoolClient:
     #
 
     async def cache_content(self) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
-        """ Build view of the cache contents by
-            servers in the cluster.
+        """Build view of the cache contents by
+        servers in the cluster.
 
-            Return a dict of cached status list grouped
-            by project's resource.
+        Return a dict of cached status list grouped
+        by project's resource.
         """
         rv: dict[str, dict[str, qjazz_pb2.CacheInfo]] = {}
         serving = False
@@ -292,8 +289,7 @@ class PoolClient:
         return rv
 
     async def synchronize_cache(self) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
-        """ Synchronize backends caches
-        """
+        """Synchronize backends caches"""
         uris = set()
 
         async def _collect(server):
@@ -328,8 +324,7 @@ class PoolClient:
         return result
 
     async def clear_cache(self) -> None:
-        """ Clear cache for all servers
-        """
+        """Clear cache for all servers"""
         serving = False
         for server in self._backends:
             try:
@@ -345,8 +340,7 @@ class PoolClient:
             raise ServiceNotAvailable(self.address)
 
     async def pull_projects(self, *uris) -> dict[str, dict[str, qjazz_pb2.CacheInfo]]:
-        """ Pull/Update projects in all cache
-        """
+        """Pull/Update projects in all cache"""
         rv: dict[str, dict[str, qjazz_pb2.CacheInfo]] = {}
         serving = False
 
@@ -367,8 +361,7 @@ class PoolClient:
         return rv
 
     async def drop_project(self, uri: str) -> dict[str, qjazz_pb2.CacheInfo]:
-        """ Pull/Update projects in all cache
-        """
+        """Pull/Update projects in all cache"""
         rv = {}
         serving = False
         for server in self._backends:
@@ -388,8 +381,7 @@ class PoolClient:
         return rv
 
     async def checkout_project(self, uri: str) -> dict[str, qjazz_pb2.CacheInfo]:
-        """ Pull/Update projects in all cache
-        """
+        """Pull/Update projects in all cache"""
         rv = {}
         serving = False
         for server in self._backends:
@@ -408,9 +400,9 @@ class PoolClient:
         return rv
 
     async def project_info(self, uri: str) -> Optional[dict[str, JsonValue]]:
-        """ Pull/Update projects in all cache
+        """Pull/Update projects in all cache
 
-            Return None if the project is not found
+        Return None if the project is not found
         """
         serving = False
         for server in self._backends:
@@ -441,8 +433,7 @@ class PoolClient:
         self,
         location: Optional[str] = None,
     ) -> AsyncIterator[qjazz_pb2.CatalogItem]:
-        """ Return the catalog
-        """
+        """Return the catalog"""
         # Find a serving server
         # All servers share the same config so
         # find a serving to get the catalog
@@ -465,8 +456,7 @@ class PoolClient:
     #
 
     async def get_config(self, include_env: bool = False) -> Json | tuple[Json, Json]:
-        """ Return the configuration
-        """
+        """Return the configuration"""
         # Find a serving server
         # All servers share the same config
         serving = False
@@ -492,8 +482,8 @@ class PoolClient:
         return None  # Make mypy happy
 
     async def set_config(self, conf: dict, return_diff: bool = False) -> Optional[Json]:
-        """ Change backends configuration
-            and return diff between current and new config
+        """Change backends configuration
+        and return diff between current and new config
         """
         # All servers share the same config
         serving = False
@@ -505,7 +495,7 @@ class PoolClient:
                         prev_conf = json.loads(await s.get_config())
                         await s.set_config(conf)
                         new_conf = json.loads(await s.get_config())
-                        diff_conf = json.dumps(jsondiff.diff(prev_conf, new_conf, syntax='symmetric'))
+                        diff_conf = json.dumps(jsondiff.diff(prev_conf, new_conf, syntax="symmetric"))
                         return_diff = False  # Only need to make it once
                 else:
                     await s.set_config(conf)
@@ -534,8 +524,7 @@ class PoolClient:
     #
 
     async def list_plugins(self) -> dict[str, list[qjazz_pb2.PluginInfo]]:
-        """ Pull/Update projects in all cache
-        """
+        """Pull/Update projects in all cache"""
         plugins: dict[str, list[qjazz_pb2.PluginInfo]] = {}
         serving = False
 

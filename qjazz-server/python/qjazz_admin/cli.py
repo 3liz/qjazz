@@ -1,5 +1,5 @@
-""" QGIS gRCP CLI administration
-"""
+"""QGIS gRCP CLI administration"""
+
 import asyncio
 import json
 import sys
@@ -46,8 +46,7 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
 
 
 def get_pool(conf: ResolverConfig, name: str) -> Optional[PoolClient]:
-    """ Create a pool client from config
-    """
+    """Create a pool client from config"""
     for resolver in conf.resolvers:
         if resolver.label == name or resolver.address == name:
             return PoolClient(resolver)
@@ -62,14 +61,18 @@ def global_options():
         @wraps(f)
         @click.option("--verbose", "-v", is_flag=True, help="Set verbose mode")
         @click.option(
-            "--conf", "-C", "configpath",
+            "--conf",
+            "-C",
+            "configpath",
             envvar="QGIS_GRPC_ADMIN_CONFIGFILE",
             help="configuration file",
             type=FilePathType,
         )
         def _inner(*args, **kwargs):
             return f(*args, **kwargs)
+
         return _inner
+
     return _wrapper
 
 
@@ -85,19 +88,20 @@ def print_pool_status(pool, statuses):
         status = "ok" if statuses[s.address] else "unavailable"
         click.echo(f"{i + 1:>2}. {s.address:<20} {status}")
 
+
 #
 # Watch
 #
 
 
-@cli_commands.command('watch')
+@cli_commands.command("watch")
 @click.option("--host", help="Watch specific hostname")
 @global_options()
 def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
-    """ Watch a cluster of qgis gRPC services
-    """
+    """Watch a cluster of qgis gRPC services"""
     conf = load_configuration(configpath, verbose)
     if host:
+
         async def _watch1(pool):
             await pool.update_backends()
             async for statuses in pool.watch():
@@ -126,11 +130,11 @@ def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
 # Stats
 #
 
-@cli_commands.command('pools')
+
+@cli_commands.command("pools")
 @global_options()
 def list_pools(verbose: bool, configpath: Optional[Path]):
-    """ List all pools
-    """
+    """List all pools"""
     conf: Any = load_configuration(configpath, verbose)
     service = Service(conf.resolvers)
     if not service.num_pools():
@@ -147,23 +151,24 @@ def list_pools(verbose: bool, configpath: Optional[Path]):
     asyncio.run(_display())
 
 
-@cli_commands.command('stats')
+@cli_commands.command("stats")
 @click.option("--host", help="Watch specific hostname", required=True)
 @click.option("--watch", is_flag=True, help="Check periodically")
 @click.option("--interval", help="Check interval (seconds)", default=3)
 @global_options()
 def stats(verbose: bool, host: str, watch: bool, interval: int, configpath: Optional[Path]):
-    """ Output  qgis gRPC services stats
-    """
+    """Output  qgis gRPC services stats"""
     conf: Any = load_configuration(configpath, verbose)
 
     if watch:
+
         async def _watch(pool):
             await pool.update_backends()
             async for stats in pool.watch_stats(interval):
                 click.echo(json.dumps([r for _, r in stats], indent=4, sort_keys=True))
 
     else:
+
         async def _watch(pool):
             await pool.update_backends()
             stats = await pool.stats()
@@ -175,25 +180,24 @@ def stats(verbose: bool, host: str, watch: bool, interval: int, configpath: Opti
     else:
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
+
 #
 # Configuration
 #
 
 
-@cli_commands.group('conf')
+@cli_commands.group("conf")
 def conf_commands():
-    """  Configuration management
-    """
+    """Configuration management"""
     pass
 
 
-@conf_commands.command('get')
+@conf_commands.command("get")
 @click.option("--format", "indent", is_flag=True, help="Display formatted")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def get_conf(indent: bool, verbose: bool, host: str, configpath: Optional[Path]):
-    """ Output gRPC services configuration
-    """
+    """Output gRPC services configuration"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _conf(pool):
@@ -211,10 +215,10 @@ def get_conf(indent: bool, verbose: bool, host: str, configpath: Optional[Path])
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@conf_commands.command('set')
-@click.argument('newconf', nargs=1)
-@click.option('--validate', is_flag=True, help="Validate before sending")
-@click.option('--diff', is_flag=True, help="Output config diff")
+@conf_commands.command("set")
+@click.argument("newconf", nargs=1)
+@click.option("--validate", is_flag=True, help="Validate before sending")
+@click.option("--diff", is_flag=True, help="Output config diff")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def set_conf(
@@ -225,12 +229,12 @@ def set_conf(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Change gRPC services configuration
+    """Change gRPC services configuration
 
-        if NEWCONF starts with a '@' then load the configuration from
-        file whose path follow '@'.
+    if NEWCONF starts with a '@' then load the configuration from
+    file whose path follow '@'.
     """
-    if newconf.startswith('@'):
+    if newconf.startswith("@"):
         newconf = Path(newconf[1:]).open().read()
 
     if validate:
@@ -262,7 +266,8 @@ def set_conf(
 # Catalog
 #
 
-@cli_commands.command('catalog')
+
+@cli_commands.command("catalog")
 @click.option("--location", help="Catalog location")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
@@ -272,8 +277,7 @@ def print_catalog(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Print catalog for 'host'
-    """
+    """Print catalog for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _catalog(pool):
@@ -287,15 +291,15 @@ def print_catalog(
     else:
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
+
 #
 # Cache commands
 #
 
 
-@cli_commands.group('cache')
+@cli_commands.group("cache")
 def cache_commands():
-    """  Cache management
-    """
+    """Cache management"""
     pass
 
 
@@ -303,12 +307,12 @@ def cache_commands():
 # Cache list
 #
 
-@cache_commands.command('list')
+
+@cache_commands.command("list")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def print_cache_content(verbose: bool, host: str, configpath: Optional[Path]):
-    """ Print cache content for 'host'
-    """
+    """Print cache content for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _cache_list(pool):
@@ -326,12 +330,12 @@ def print_cache_content(verbose: bool, host: str, configpath: Optional[Path]):
 # Sync cache
 #
 
-@cache_commands.command('sync')
+
+@cache_commands.command("sync")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def sync_cache(verbose: bool, host: str, configpath: Optional[Path]):
-    """ Synchronize cache content for 'host'
-    """
+    """Synchronize cache content for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _sync_cache(pool):
@@ -344,17 +348,17 @@ def sync_cache(verbose: bool, host: str, configpath: Optional[Path]):
     else:
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
+
 #
 # Cache clear
 #
 
 
-@cache_commands.command('clear')
+@cache_commands.command("clear")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def clear_cache(verbose: bool, host: str, configpath: Optional[Path]):
-    """ Clear cache content for 'host'
-    """
+    """Clear cache content for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _cache_clear(pool):
@@ -373,8 +377,9 @@ def clear_cache(verbose: bool, host: str, configpath: Optional[Path]):
 # Pull projects
 #
 
-@cache_commands.command('pull')
-@click.argument('projects', nargs=-1)
+
+@cache_commands.command("pull")
+@click.argument("projects", nargs=-1)
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
 def pull_projects(
@@ -383,8 +388,7 @@ def pull_projects(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Pull projects in cache for 'host'
-    """
+    """Pull projects in cache for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _pull_projects(pool):
@@ -398,8 +402,8 @@ def pull_projects(
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@cache_commands.command('checkout')
-@click.argument('project', nargs=1)
+@cache_commands.command("checkout")
+@click.argument("project", nargs=1)
 @click.option("--host", help="Checkout project status", required=True)
 @global_options()
 def checkout_project(
@@ -408,8 +412,7 @@ def checkout_project(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Pull projects in cache for 'host'
-    """
+    """Pull projects in cache for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _checkout_project(pool):
@@ -423,8 +426,8 @@ def checkout_project(
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@cache_commands.command('drop')
-@click.argument('project', nargs=1)
+@cache_commands.command("drop")
+@click.argument("project", nargs=1)
 @click.option("--host", help="Drop project from cache", required=True)
 @global_options()
 def drop_project(
@@ -433,8 +436,7 @@ def drop_project(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Drop PROJECT from cache for 'host'
-    """
+    """Drop PROJECT from cache for 'host'"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _drop_project(pool):
@@ -448,8 +450,8 @@ def drop_project(
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@cache_commands.command('info')
-@click.argument('project', nargs=1)
+@cache_commands.command("info")
+@click.argument("project", nargs=1)
 @click.option("--host", help="Return project's informations", required=True)
 @global_options()
 def project_info(
@@ -458,8 +460,7 @@ def project_info(
     host: str,
     configpath: Optional[Path],
 ):
-    """ Get project's details
-    """
+    """Get project's details"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _project_info(pool):
@@ -472,12 +473,13 @@ def project_info(
     else:
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
+
 #
 # Plugins commands
 #
 
 
-@cli_commands.command('plugins')
+@cli_commands.command("plugins")
 @click.option("--host", help="Return project's informations", required=True)
 @global_options()
 def list_plugins(
@@ -485,8 +487,7 @@ def list_plugins(
     host: str,
     configpath: Optional[Path],
 ):
-    """ List backend's loaded plugins
-    """
+    """List backend's loaded plugins"""
     conf: Any = load_configuration(configpath, verbose)
 
     async def _list_plugins(pool):
@@ -500,62 +501,61 @@ def list_plugins(
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@cli_commands.group('doc')
+@cli_commands.group("doc")
 def doc_commands():
-    """ Manage documentation
-    """
+    """Manage documentation"""
     pass
 
 
-@doc_commands.command('openapi')
+@doc_commands.command("openapi")
 @click.option("--yaml", "to_yaml", is_flag=True, help="Output as yaml (default: json)")
 def dump_swagger_doc(to_yaml: bool):
-    """  Output swagger api documentation
-    """
+    """Output swagger api documentation"""
     from .server import swagger_model
 
     doc = swagger_model()
     if to_yaml:
         from ruamel.yaml import YAML
+
         yaml = YAML()
         yaml.dump(doc.model_dump(), sys.stdout)
     else:
         click.echo(doc.model_dump_json())
 
 
-@doc_commands.command('config')
+@doc_commands.command("config")
 @click.option(
-    "--format", "out_fmt",
-    type=click.Choice(('json', 'yaml', 'toml')),
+    "--format",
+    "out_fmt",
+    type=click.Choice(("json", "yaml", "toml")),
     default="json",
     help="Select output format",
 )
 @click.option("--pretty", is_flag=True, help="Pretty format")
 def dump_config_schema(out_fmt: str, pretty: bool):
-    """  Output configuration schema
-    """
+    """Output configuration schema"""
     match out_fmt:
-        case 'json':
+        case "json":
             json_schema = confservice.json_schema()
             indent = 4 if pretty else None
             click.echo(json.dumps(json_schema, indent=indent))
-        case 'yaml':
+        case "yaml":
             from ruamel.yaml import YAML
+
             json_schema = confservice.json_schema()
             yaml = YAML()
             yaml.dump(json_schema, sys.stdout)
-        case 'toml':
+        case "toml":
             confservice.dump_toml_schema(sys.stdout)
 
 
-@cli_commands.command('serve')
+@cli_commands.command("serve")
 @global_options()
 def serve(
     verbose: bool,
     configpath: Optional[Path],
 ):
-    """ Run admin server
-    """
+    """Run admin server"""
     from . import server
 
     conf: Any = load_configuration(configpath, verbose)

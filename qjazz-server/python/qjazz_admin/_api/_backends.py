@@ -12,7 +12,6 @@ from .utils import _http_error, _link
 
 
 class _Backends:
-
     async def get_pools(self, request):
         """
         summary: Return the list of managed pools
@@ -29,18 +28,21 @@ class _Backends:
                         schema:
                             $ref: '#/definitions/PoolListResponse'
         """
-        body = [PoolInfos._from_pool(
-            pool,
-            [
-                _link(
-                    request,
-                    "item",
-                    f"/pools/{pool.label}",
-                    title=pool.title,
-                    description=pool.description,
-                ),
-            ],
-        ) for pool in self.service.pools]
+        body = [
+            PoolInfos._from_pool(
+                pool,
+                [
+                    _link(
+                        request,
+                        "item",
+                        f"/pools/{pool.label}",
+                        title=pool.title,
+                        description=pool.description,
+                    ),
+                ],
+            )
+            for pool in self.service.pools
+        ]
         return web.Response(
             content_type="application/json",
             text=PoolListResponse.dump_json(body, by_alias=True, exclude_none=True).decode(),
@@ -67,10 +69,13 @@ class _Backends:
         """
         await self.service.synchronize()
 
-        body = [PoolInfos._from_pool(
-            pool,
-            [_link(request, "item", f"/pools/{pool.label}")],
-        ) for pool in self.service.pools]
+        body = [
+            PoolInfos._from_pool(
+                pool,
+                [_link(request, "item", f"/pools/{pool.label}")],
+            )
+            for pool in self.service.pools
+        ]
         return web.Response(
             content_type="application/json",
             text=PoolListResponse.dump_json(body, by_alias=True, exclude_none=True).decode(),
@@ -218,7 +223,7 @@ class _Backends:
         """
         pool = self._pool(request)
         try:
-            delay = TypeAdapter(int).validate_json(request.query['delay'])
+            delay = TypeAdapter(int).validate_json(request.query["delay"])
         except KeyError:
             _http_error(web.HTTPBadRequest, message="Missing 'delay' parameter")
         except ValidationError:

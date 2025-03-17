@@ -8,7 +8,9 @@ extend-exclude = [
 
 [lint]
 extend-select = ["E", "F", "I", "ANN", "W", "T", "COM", "RUF"]
-ignore = ["ANN002", "ANN003", "RUF100", "RUF029", "RUF052"]
+# Removing COM812 which conflict with the formatter
+# See https://docs.astral.sh/ruff/rules/missing-trailing-comma/#ruff-format
+ignore = ["ANN002", "ANN003", "RUF100", "RUF029", "RUF052", "COM812"]
 
 [format]
 indent-style = "space"

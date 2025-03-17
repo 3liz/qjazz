@@ -18,11 +18,11 @@ class Data(JsonModel):
 
 
 class Log:
-
     def __init__(self) -> None:
         self._instant = Instant()
 
-    def log(self,
+    def log(
+        self,
         request_id: str,
         service: str,
         request: str,

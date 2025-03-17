@@ -46,7 +46,6 @@ LayerHint: TypeAlias = QgsProcessingUtils.LayerHint
 
 
 class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
-
     _Model = Link
 
     _ServiceFormats: ClassVar[Sequence[Format]] = ()
@@ -57,7 +56,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
             self.output_format = OutputFormat(media_type=self._ServiceFormats[0].media_type)
 
     def value_passing(self) -> ValuePassing:
-        return ('byReference',)
+        return ("byReference",)
 
     def json_schema(self) -> JsonDict:
         schema = super().json_schema()
@@ -65,13 +64,14 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
         formats = self.allowed_formats
         if formats:
             schema = {
-                '$defs': {'Link': schema},
-                'anyOf': [
+                "$defs": {"Link": schema},
+                "anyOf": [
                     {
-                        '$ref': '#/$defs/Link',
-                        'contentMediaType': fmt.media_type,
-                        'title': fmt.title,
-                    } for fmt in formats
+                        "$ref": "#/$defs/Link",
+                        "contentMediaType": fmt.media_type,
+                        "title": fmt.title,
+                    }
+                    for fmt in formats
                 ],
             }
 
@@ -90,7 +90,6 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
         value: str,
         context: ProcessingContext,
     ) -> JsonValue:
-
         layer, name = add_layer_to_load_on_completion(
             value,
             self.name,
@@ -105,7 +104,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
         reference_url = context.ows_reference(
             service=Format.service(media_type),
             version=Format.version(media_type),
-            query=urlencode((('LAYERS', name),), quote_via=quote),
+            query=urlencode((("LAYERS", name),), quote_via=quote),
         )
 
         return Link(
@@ -113,11 +112,10 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
             mime_type=media_type,
             title=self.title,
             description=self._out.description(),
-        ).model_dump(mode='json', by_alias=True, exclude_none=True)
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
     def advertise_layer(self, layer: QgsMapLayer, name: str, context: ProcessingContext):
-        """ Advertised layer for server GetCapabilities requests
-        """
+        """Advertised layer for server GetCapabilities requests"""
         datasource = Path(layer.source())
 
         if datasource.exists() and datasource.is_relative_to(context.workdir):
@@ -135,8 +133,8 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 # QgsProcessingOutputMapLayer
 #
 
-class OutputMapLayer(OutputLayerBase):
 
+class OutputMapLayer(OutputLayerBase):
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -150,8 +148,8 @@ class OutputMapLayer(OutputLayerBase):
 # QgsProcessingOutputRasterLayer
 #
 
-class OutputRasterLayer(OutputLayerBase):
 
+class OutputRasterLayer(OutputLayerBase):
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -170,8 +168,8 @@ class OutputRasterLayer(OutputLayerBase):
 # QgsProcessingOutputVectorLayer
 #
 
-class OutputVectorLayer(OutputLayerBase):
 
+class OutputVectorLayer(OutputLayerBase):
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -185,13 +183,13 @@ class OutputVectorLayer(OutputLayerBase):
 
     _LayerHint = LayerHint.Vector
 
+
 #
 # QgsProcessingOutputVectorTileLayer
 #
 
 
 class OutputVectorTileLayer(OutputLayerBase):
-
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -202,13 +200,13 @@ class OutputVectorTileLayer(OutputLayerBase):
 
     _LayerHint = LayerHint.VectorTile
 
+
 #
 # QgsProcessingOutputPointCloudLayer
 #
 
 
 class OutputPointCloudLayer(OutputLayerBase):
-
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -219,13 +217,13 @@ class OutputPointCloudLayer(OutputLayerBase):
 
     _LayerHint = LayerHint.PointCloud
 
+
 #
 # QgsProcessingOutputMultipleLayers
 #
 
 
 class OutputMultipleLayers(OutputLayerBase):
-
     _ServiceFormats = (
         Formats.WMS,
         Formats.WMS111,
@@ -239,22 +237,23 @@ class OutputMultipleLayers(OutputLayerBase):
         value: Sequence[str],
         context: ProcessingContext,
     ) -> JsonValue:
-
-        layers = ','.join(
-            layer.name for layer, name in (
+        layers = ",".join(
+            layer.name
+            for layer, name in (
                 add_layer_details(
                     self.name,
                     v,
                     self._LayerHint,
                     context,
-                ) for v in value
+                )
+                for v in value
             )
         )
 
         media_type = self.output_format.media_type
         reference_url = context.ows_reference(
             service=Format.service(media_type),
-            query=urlencode((('LAYERS', layers),), quote_via=quote),
+            query=urlencode((("LAYERS", layers),), quote_via=quote),
         )
 
         return Link(
@@ -262,12 +261,13 @@ class OutputMultipleLayers(OutputLayerBase):
             mime_type=media_type,
             title=self.title,
             description=self._out.description(),
-        ).model_dump(mode='json', by_alias=True, exclude_none=True)
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 #
 #  Utils
 #
+
 
 def add_layer_to_load_on_completion(
     value: str,
@@ -275,10 +275,10 @@ def add_layer_to_load_on_completion(
     context: QgsProcessingContext,
     hint: LayerHint,
 ) -> QgsMapLayer:
-    """ Add layer to load on completion
-        The layer will be added to the destination project
+    """Add layer to load on completion
+    The layer will be added to the destination project
 
-        Return the name of the layer
+    Return the name of the layer
     """
     if context.willLoadLayerOnCompletion(value):
         # Do not add the layer twice: may be already added

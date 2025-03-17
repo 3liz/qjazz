@@ -48,7 +48,7 @@ from .models import ErrorResponse, RequestHandler
 from .storage import StorageConfig
 
 try:
-    __version__ = version('qjazz_processes')
+    __version__ = version("qjazz_processes")
 except PackageNotFoundError:
     __version__ = "dev"
 
@@ -61,12 +61,11 @@ SERVER_HEADER = f"Py-Qgis-Http-Processes {__version__}"
 
 DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 
-HttpCORS: TypeAlias = Literal['all', 'same-origin'] | AnyHttpUrl
+HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 
 
-@section('http')
+@section("http")
 class HttpConfig(ConfigBase):
-
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
         title="Interfaces to listen to",
@@ -80,7 +79,7 @@ class HttpConfig(ConfigBase):
         title="SSL configuration",
     )
     cross_origin: HttpCORS = Field(
-        default='all',
+        default="all",
         title="CORS origin",
         description=_D(
             """
@@ -133,15 +132,13 @@ class ConfigProto(Protocol):
     job_realm: JobRealmConfig
     storage: StorageConfig
 
-    def model_dump_json(self, *args, **kwargs) -> str:
-        ...
+    def model_dump_json(self, *args, **kwargs) -> str: ...
 
 
 # Configuration loader helper
 def load_configuration(
     configpath: Optional[Path],
 ) -> ConfigProto:
-
     if configpath:
         cnf = read_config_toml(configpath)
     else:
@@ -156,21 +153,17 @@ def load_configuration(
 #
 
 
-REQ_FORMAT = (
-    "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}"
-    "\t{agent}\t{referer}"
-)
+REQ_FORMAT = "{ip}\t{code}\t{method}\t{url}\t{time}\t{length}\t{agent}\t{referer}"
 REQ_ID_FORMAT = "REQ-ID:{request_id}"
 
 
 class AccessLogger(AbstractAccessLogger):
-    """ Custom access logger
-    """
-    def log(self, request: web.BaseRequest, response: web.StreamResponse, duration: float):
+    """Custom access logger"""
 
-        length = response.headers.get('Content-Length') or -1
-        agent = request.headers.get('User-Agent', "")
-        referer = request.headers.get('Referer', "")
+    def log(self, request: web.BaseRequest, response: web.StreamResponse, duration: float):
+        length = response.headers.get("Content-Length") or -1
+        agent = request.headers.get("User-Agent", "")
+        referer = request.headers.get("Referer", "")
 
         fmt = REQ_FORMAT.format(
             ip=request.remote,
@@ -184,11 +177,12 @@ class AccessLogger(AbstractAccessLogger):
         )
 
         # See https://docs.aiohttp.org/en/stable/web_advanced.html#request-s-storage
-        request_id = request.get('request_id')
+        request_id = request.get("request_id")
         if request_id:
             fmt += f"\t{REQ_ID_FORMAT.format(request_id=request_id)}"
 
         logger.log_req(fmt)
+
 
 #
 # CORS
@@ -200,17 +194,16 @@ async def cors_options_handler(
     allow_methods: str,
     allow_headers: str,
 ) -> web.Response:
-    """  Set correct headers for 'OPTIONS' method
-    """
+    """Set correct headers for 'OPTIONS' method"""
     allow_methods = allow_methods
     headers = {
-        "Allow":  allow_methods,
+        "Allow": allow_methods,
         "Access-Control-Allow-Headers": allow_headers,
     }
-    if request.headers.get('Origin'):
+    if request.headers.get("Origin"):
         # Required in CORS context
         # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
-        headers['Access-Control-Allow-Methods'] = allow_methods
+        headers["Access-Control-Allow-Methods"] = allow_methods
 
     return web.Response(headers=headers)
 
@@ -218,26 +211,25 @@ async def cors_options_handler(
 def set_access_control_headers(
     mode: HttpCORS,
 ) -> Callable[[web.Request, web.StreamResponse], Awaitable[None]]:
-    """ Build a response prepare callback
-    """
+    """Build a response prepare callback"""
+
     async def set_access_control_headers_(
         request: web.Request,
         response: web.StreamResponse,
     ):
-        """  Handle Access control and cross origin headers (CORS)
-        """
-        origin = request.headers.get('Origin')
+        """Handle Access control and cross origin headers (CORS)"""
+        origin = request.headers.get("Origin")
         if origin:
             match mode:
-                case 'all':
-                    allow_origin = '*'
-                case 'same-origin':
+                case "all":
+                    allow_origin = "*"
+                case "same-origin":
                     allow_origin = origin
-                    response.headers['Vary'] = 'Origin'
+                    response.headers["Vary"] = "Origin"
                 case _ as url:
                     allow_origin = str(url)
 
-            response.headers['Access-Control-Allow-Origin'] = allow_origin
+            response.headers["Access-Control-Allow-Origin"] = allow_origin
 
     return set_access_control_headers_  # typing: ignore [return-value]
 
@@ -246,14 +238,14 @@ def set_access_control_headers(
 #  Headers
 #
 
-async def set_server_headers(request: web.Request, response: web.StreamResponse):
-    """ Set server headers
-    """
-    response.headers['Server'] = SERVER_HEADER
 
-    request_id = request.get('request_id')
+async def set_server_headers(request: web.Request, response: web.StreamResponse):
+    """Set server headers"""
+    response.headers["Server"] = SERVER_HEADER
+
+    request_id = request.get("request_id")
     if request_id:
-        response.headers['X-Request-ID'] = request_id
+        response.headers["X-Request-ID"] = request_id
 
 
 #
@@ -268,11 +260,11 @@ async def log_incoming_request(
     request: web.Request,
     handler: RequestHandler,
 ) -> web.StreamResponse:
-    request_id = request.headers.get('X-Request-ID', "")
+    request_id = request.headers.get("X-Request-ID", "")
     if request_id:
-        request['request_id'] = request_id
-        agent = request.headers.get('User-Agent', "")
-        referer = request.headers.get('Referer', "")
+        request["request_id"] = request_id
+        agent = request.headers.get("User-Agent", "")
+        referer = request.headers.get("Referer", "")
 
         fmt = RREQ_FORMAT.format(
             ip=request.remote,
@@ -280,7 +272,7 @@ async def log_incoming_request(
             url=request.path,
             referer=referer,
             agent=agent,
-            request_id=request.get('request_id', ""),
+            request_id=request.get("request_id", ""),
         )
 
         logger.log_rreq(fmt)
@@ -291,6 +283,7 @@ async def log_incoming_request(
 #
 # Unhandled exceptions
 #
+
 
 @web.middleware
 async def unhandled_exceptions(
@@ -313,6 +306,7 @@ async def unhandled_exceptions(
             ).model_dump_json(),
         ) from None
 
+
 #
 # Server
 #
@@ -322,7 +316,6 @@ Site: TypeAlias = web.TCPSite | web.UnixSite
 
 
 def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
-
     ssl_context = http.ssl.create_ssl_server_context() if http.use_ssl else None
 
     site: Site
@@ -331,14 +324,14 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
         case (str(address), int(port)):
             site = web.TCPSite(
                 runner,
-                host=address.strip('[]'),
+                host=address.strip("[]"),
                 port=port,
                 ssl_context=ssl_context,
             )
         case str(socket):
             site = web.UnixSite(
                 runner,
-                socket[len('unix:'):],
+                socket[len("unix:") :],
                 ssl_context=ssl_context,
             )
 
@@ -346,7 +339,6 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
 
 
 def create_app(conf: ConfigProto) -> web.Application:
-
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
@@ -354,7 +346,7 @@ def create_app(conf: ConfigProto) -> web.Application:
             forwarded(conf.http.proxy),
         ],
         handler_args={
-            'access_log_class': AccessLogger,
+            "access_log_class": AccessLogger,
         },
     )
 
@@ -393,7 +385,8 @@ def create_app(conf: ConfigProto) -> web.Application:
             content_type="application/json",
             text=doc.model_dump_json(),
         )
-    app.router.add_route('GET', '/', landing_page)
+
+    app.router.add_route("GET", "/", landing_page)
 
     # Add executor context
     app.cleanup_ctx.append(cache.cleanup_ctx(conf.http, executor))
@@ -414,8 +407,8 @@ def _swagger_doc(app: web.Application, oapi: swagger.OapiConfig) -> swagger.Open
 
 
 def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
-    """ Return the swagger model
-        for the REST api
+    """Return the swagger model
+    for the REST api
     """
     handler = Handler(
         executor=cast(Executor, None),
@@ -431,8 +424,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
 
 
 async def _serve(conf: ConfigProto):
-    """ Start the web server
-    """
+    """Start the web server"""
     app = create_app(conf)
 
     runner = web.AppRunner(app, handler_cancellation=True)

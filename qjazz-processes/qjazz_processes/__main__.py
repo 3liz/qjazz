@@ -18,7 +18,7 @@ def main():
     pass
 
 
-@main.command('worker')
+@main.command("worker")
 @click.option(
     "--conf",
     "-C",
@@ -29,7 +29,7 @@ def main():
 @click.option(
     "--loglevel",
     "-l",
-    type=click.Choice(('error', 'warning', 'info', 'debug')),
+    type=click.Choice(("error", "warning", "info", "debug")),
     default="info",
     help="Log level",
 )
@@ -39,9 +39,9 @@ def run_worker(
     loglevel: str,
     dump: bool,
 ):
-    """ Run processes worker
-    """
+    """Run processes worker"""
     from .worker.config import CONFIG_ENV_PATH
+
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
@@ -51,14 +51,16 @@ def run_worker(
         from pydantic import BaseModel
 
         from .worker.config import load_configuration
+
         conf = cast(BaseModel, load_configuration())
         click.echo(conf.model_dump_json(indent=4))
     else:
         from .jobs import app
+
         app.start_worker(loglevel=loglevel)
 
 
-@main.command('serve')
+@main.command("serve")
 @click.option(
     "--conf",
     "-C",
@@ -71,8 +73,7 @@ def run_server(
     configpath: Path,
     verbose: bool,
 ):
-    """ Run server
-    """
+    """Run server"""
     from qjazz_contrib.core import logger
 
     from .server import load_configuration, serve
@@ -84,12 +85,13 @@ def run_server(
 
     serve(conf)
 
+
 #
 #  Control commands
 #
 
 
-@main.group('control')
+@main.group("control")
 @click.option(
     "--conf",
     "-C",
@@ -100,8 +102,7 @@ def run_server(
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
 @click.pass_context
 def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
-    """ Control commands
-    """
+    """Control commands"""
     from types import SimpleNamespace
     from typing import cast
 
@@ -113,7 +114,7 @@ def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
             logger.LogLevel.DEBUG if verbose else logger.LogLevel.ERROR,
         )
         confservice = config.ConfBuilder()
-        confservice.add_section('executor', ExecutorConfig)
+        confservice.add_section("executor", ExecutorConfig)
         if configpath:
             cnf = config.read_config_toml(configpath)
         else:
@@ -130,11 +131,10 @@ def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
     )
 
 
-@control.command('services')
+@control.command("services")
 @click.pass_context
 def list_services(ctx: click.Context):
-    """ List available services
-    """
+    """List available services"""
     from pydantic import TypeAdapter
 
     from qjazz_processes.executor import ServiceDict
@@ -146,13 +146,13 @@ def list_services(ctx: click.Context):
     click.echo(resp)
 
 
-@control.command('reload')
+@control.command("reload")
 @click.argument("service")
 @click.pass_context
 def reload_service(ctx: click.Context, service: str):
-    """ Reload worker pool for SERVICE
-    """
+    """Reload worker pool for SERVICE"""
     from pydantic import JsonValue, TypeAdapter
+
     executor = ctx.obj.setup()
     executor.update_services()
     result = executor.restart_pool(service)
@@ -161,13 +161,13 @@ def reload_service(ctx: click.Context, service: str):
     click.echo(resp)
 
 
-@control.command('shutdown')
+@control.command("shutdown")
 @click.argument("service")
 @click.pass_context
 def shutdown_service(ctx: click.Context, service: str):
-    """ Shutdown service
-    """
+    """Shutdown service"""
     from pydantic import JsonValue, TypeAdapter
+
     executor = ctx.obj.setup()
     executor.update_services()
     result = executor.shutdown(service)
@@ -176,14 +176,14 @@ def shutdown_service(ctx: click.Context, service: str):
     click.echo(resp)
 
 
-@control.command('ping')
+@control.command("ping")
 @click.argument("service")
 @click.option("--repeat", "-n", type=int, default=0, help="Ping every <repeat> seconds")
 @click.pass_context
 def ping_service(ctx: click.Context, service: str, repeat: int):
-    """ Ping service
-    """
+    """Ping service"""
     from pydantic import JsonValue, TypeAdapter
+
     executor = ctx.obj.setup()
     executor.update_services()
 
@@ -194,6 +194,7 @@ def ping_service(ctx: click.Context, service: str, repeat: int):
 
     if repeat > 0:
         from time import sleep
+
         while True:
             _ping()
             sleep(repeat)

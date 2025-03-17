@@ -18,6 +18,7 @@ def inspect_plugins(
                 path=p.path.as_posix(),
                 plugin_type=p.plugin_type.value,
                 metadata=p.metadata,
-            ) for p in s.plugins
+            )
+            for p in s.plugins
         ),
     )

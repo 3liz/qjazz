@@ -1,4 +1,3 @@
-
 from typing import (
     Optional,
     Sequence,
@@ -17,7 +16,6 @@ from ..models import ErrorResponse
 #  Default acces policy
 #
 class DefaultAccessPolicyConfig(ConfigBase):
-
     service_order: Sequence[str] = Field(
         default=(),
         description=(
@@ -32,12 +30,12 @@ class DefaultAccessPolicyConfig(ConfigBase):
 
 
 class DefaultAccessPolicy(AccessPolicy):
-    """ Default access policy
+    """Default access policy
 
-        The default access policy select services from request
-        query 'service' parameter.
-        If no parameter is present, the service is determined from
-        availables services with an optional priority order.
+    The default access policy select services from request
+    query 'service' parameter.
+    If no parameter is present, the service is determined from
+    availables services with an optional priority order.
     """
 
     Config = DefaultAccessPolicyConfig
@@ -58,9 +56,8 @@ class DefaultAccessPolicy(AccessPolicy):
         return True
 
     def get_service(self, request: web.Request) -> str:
-        """ Return the defined service for the request
-        """
-        service = request.query.get('service')
+        """Return the defined service for the request"""
+        service = request.query.get("service")
         if not service:
             for service in self._service_order:
                 if self.executor.known_service(service):
@@ -76,9 +73,8 @@ class DefaultAccessPolicy(AccessPolicy):
         return service
 
     def get_project(self, request: web.Request) -> Optional[str]:
-        """ Return the project path (map)
-        """
-        return request.query.get('map') or request.query.get('MAP')
+        """Return the project path (map)"""
+        return request.query.get("map") or request.query.get("MAP")
 
     def format_path(
         self,
@@ -89,12 +85,11 @@ class DefaultAccessPolicy(AccessPolicy):
         *,
         query: Optional[str] = None,
     ) -> str:
-        """ Format a path including service paths
-        """
+        """Format a path including service paths"""
         if service:
             service = f"service={service}"
         if project:
             project = f"map={project}"
 
-        query = '&'.join(p for p in (query, service, project) if p)
+        query = "&".join(p for p in (query, service, project) if p)
         return f"{path}?{query}" if query else path

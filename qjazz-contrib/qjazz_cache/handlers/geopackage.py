@@ -1,5 +1,5 @@
-""" Postgres storage handler
-"""
+"""Postgres storage handler"""
+
 from pathlib import Path
 from typing import Optional
 from urllib.parse import parse_qsl, urlsplit
@@ -23,26 +23,23 @@ def _parameters(url: Url) -> dict[str, str]:
 
 
 class GeopackageHandlerConfig(ConfigSettings, env_prefix="conf_storage_geopackage_"):
-    """ Geopackage handler settings
-    """
+    """Geopackage handler settings"""
+
     path: FilePath = Field(title="Path to geopackage")
 
 
-@componentmanager.register_factory('@3liz.org/cache/protocol-handler;1?scheme=geopackage')
+@componentmanager.register_factory("@3liz.org/cache/protocol-handler;1?scheme=geopackage")
 class GeoPackageHandler(QgisStorageProtocolHandler):
-
     Config = GeopackageHandlerConfig
 
     def __init__(self, conf: Optional[GeopackageHandlerConfig] = None):
-
-        super().__init__('geopackage')
+        super().__init__("geopackage")
 
         self._path: Optional[FilePath] = None
         if conf:
             self._path = conf.path
 
     def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
-
         if rooturl.path and self._path:
             raise InvalidCacheRootUrl(
                 f"Path redefiniton in geopackage root url configuration: {rooturl.geturl()}",
@@ -66,7 +63,7 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
         q = _parameters(url)
 
         # Allow overriding config project Name
-        project = q.get('projectName')
+        project = q.get("projectName")
         path = Path(url.path) if url.path else self._path
 
         assert_postcondition(bool(path), "No geopackage path defined !")
@@ -75,14 +72,13 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
         return f"geopackage:{path}?projectName={project}"
 
     def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
-
         path = Path(location)
 
         if isinstance(url, str):
             url = urlsplit(url)
 
-        if _parameters(rooturl).get('projectName') == '{path}':  # noqa RUF027
-            project = _parameters(url)['projectName']
+        if _parameters(rooturl).get("projectName") == "{path}":  # noqa RUF027
+            project = _parameters(url)["projectName"]
             path = path.joinpath(project)
 
         return f"{path}"

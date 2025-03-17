@@ -21,7 +21,6 @@ from .crs import CRS84, Crs
 
 
 class Collection(collection.Collection):
-
     # XXX Check specs for this, this is totally unclear how it relates
     # to spatial extent `crs`
     crs: Opt[list[Crs]] = Field(

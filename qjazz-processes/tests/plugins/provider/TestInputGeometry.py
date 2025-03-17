@@ -1,5 +1,4 @@
-""" Test Geomtry parameter
-"""
+"""Test Geomtry parameter"""
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -9,39 +8,38 @@ from qgis.core import (
 
 
 class TestInputGeometry(QgsProcessingAlgorithm):
-
-    INPUT = 'INPUT'
-    OUTPUT = 'OUTPUT'
+    INPUT = "INPUT"
+    OUTPUT = "OUTPUT"
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'testinputgeometry'
+        return "testinputgeometry"
 
     def displayName(self):
-        return 'Test Input Raster Layer'
+        return "Test Input Raster Layer"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-           see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
-        self.addParameter(QgsProcessingParameterGeometry(self.INPUT, 'Geometry'))
+        self.addParameter(QgsProcessingParameterGeometry(self.INPUT, "Geometry"))
 
         self.addOutput(QgsProcessingOutputString(self.OUTPUT, "Output"))
 
     def processAlgorithm(self, parameters, context, feedback):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         geom = self.parameterAsGeometry(parameters, self.INPUT, context)
 

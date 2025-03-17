@@ -1,8 +1,9 @@
-'''
+"""
 OGC Extend
 
 Schema: https://schemas.opengis.net/ogcapi/maps/part1/1.0/openapi/schemas/common-geodata/
-'''
+"""
+
 from datetime import datetime
 from typing import (
     Annotated,
@@ -109,9 +110,9 @@ class TemporalExtent(JsonModel):
           to access the first item in each array.
         """,
     )
-    trs: Literal[
-        'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
-    ] = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
+    trs: Literal["http://www.opengis.net/def/uom/ISO-8601/0/Gregorian",] = (
+        "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+    )
 
 
 class Extent(JsonModel):

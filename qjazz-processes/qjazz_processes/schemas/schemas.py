@@ -1,4 +1,3 @@
-
 from typing import NamedTuple
 
 from pydantic import AnyUrl

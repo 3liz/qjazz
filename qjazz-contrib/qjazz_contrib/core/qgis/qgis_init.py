@@ -2,8 +2,8 @@
 # Copyright 2018-2023 3liz
 #
 
-""" Start qgis application
-"""
+"""Start qgis application"""
+
 import os
 import sys
 
@@ -17,18 +17,17 @@ from ..condition import assert_precondition
 
 
 def setup_qgis_paths(prefix: str) -> None:
-    """ Init qgis paths
-    """
+    """Init qgis paths"""
     qgis_pluginpath = os.path.join(
         prefix,
-        os.getenv('QGIS3_PLUGINPATH', '/usr/share/qgis/python/plugins/'),
+        os.getenv("QGIS3_PLUGINPATH", "/usr/share/qgis/python/plugins/"),
     )
     sys.path.append(qgis_pluginpath)
 
 
 # We need to keep a reference instance of the qgis_application object
 # and not make this object garbage collected
-qgis_application: Optional['qgis.core.QgsApplication'] = None
+qgis_application: Optional["qgis.core.QgsApplication"] = None
 
 
 def qgis_initialized():
@@ -49,22 +48,22 @@ def setup_qgis_application(
     *,
     settings: Optional[dict[str, str]] = None,
     cleanup: bool = False,
-    logprefix: str = 'Qgis:',
+    logprefix: str = "Qgis:",
     server_settings: bool = False,
     allow_python_embedded: bool = False,
 ) -> str:
-    """ Setup qgis application
+    """Setup qgis application
 
-         :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
-             Note that prevents qgis to segfault when exiting. Default to True.
+    :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
+        Note that prevents qgis to segfault when exiting. Default to True.
     """
     global qgis_application
     assert_precondition(qgis_application is None, "Qgis application already initialized")
 
-    os.environ['QGIS_NO_OVERRIDE_IMPORT'] = '1'
-    os.environ['QGIS_DISABLE_MESSAGE_HOOKS'] = '1'
+    os.environ["QGIS_NO_OVERRIDE_IMPORT"] = "1"
+    os.environ["QGIS_DISABLE_MESSAGE_HOOKS"] = "1"
 
-    qgis_prefix = os.environ.get('QGIS3_HOME', '/usr')
+    qgis_prefix = os.environ.get("QGIS3_HOME", "/usr")
     setup_qgis_paths(qgis_prefix)
 
     from qgis.core import Qgis, QgsApplication
@@ -77,16 +76,16 @@ def setup_qgis_application(
 
     #  We MUST set the QT_QPA_PLATFORM to prevent
     #  Qt trying to connect to display in containers
-    display = os.environ.get('DISPLAY')
+    display = os.environ.get("DISPLAY")
     if display is None:
         logger.info("Setting offscreen mode")
-        os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
     else:
         logger.info(f"Using DISPLAY: {display}")
 
     # XXX Set QGIS_PREFIX_PATH, it seems that setPrefixPath
     # does not do the job correctly
-    os.environ['QGIS_PREFIX_PATH'] = qgis_prefix
+    os.environ["QGIS_PREFIX_PATH"] = qgis_prefix
 
     # From qgis server
     # Will enable us to read qgis setting file
@@ -133,14 +132,13 @@ def setup_qgis_application(
 
 
 def install_logger_hook(logprefix: str) -> None:
-    """ Install message log hook
-    """
+    """Install message log hook"""
     from qgis.core import Qgis, QgsApplication
 
     # Add a hook to qgis  message log
 
     def writelogmessage(message, tag, level):
-        arg = f'{logprefix} {tag}: {message}'
+        arg = f"{logprefix} {tag}: {message}"
         if level == Qgis.Warning:
             logger.warning(arg)
         elif level == Qgis.Critical:
@@ -159,18 +157,18 @@ def init_qgis_application(**kwargs):
 
 
 def init_qgis_processing() -> None:
-    """ Initialize processing
-    """
+    """Initialize processing"""
     from processing.core.Processing import Processing
+
     Processing.initialize()
 
 
-def init_qgis_server(**kwargs) -> 'qgis.server.QgsServer':
-    """ Init Qgis server
-    """
+def init_qgis_server(**kwargs) -> "qgis.server.QgsServer":
+    """Init Qgis server"""
     setup_qgis_application(server_settings=True, **kwargs)
 
     from qgis.server import QgsServer
+
     server = QgsServer()
 
     # Update the network configuration
@@ -187,23 +185,22 @@ def load_qgis_settings(
     server_settings: bool = False,
     allow_python_embedded: bool = False,
 ) -> str:
-    """ Load qgis settings
-    """
+    """Load qgis settings"""
     from qgis.core import Qgis, QgsSettings
     from qgis.PyQt.QtCore import QSettings
 
-    options_path = os.getenv('QGIS_CUSTOM_CONFIG_PATH')
+    options_path = os.getenv("QGIS_CUSTOM_CONFIG_PATH")
     if not options_path:
         # Set config path in current directory
-        path = Path.cwd().joinpath('.qjazz-settings')
+        path = Path.cwd().joinpath(".qjazz-settings")
         # InitQgis use settings in 'profiles/default'
-        settings_path = path.joinpath('profiles', 'default')
+        settings_path = path.joinpath("profiles", "default")
         settings_path.mkdir(parents=True, exist_ok=True)
         options_path = str(path)
-        os.environ['QGIS_CUSTOM_CONFIG_PATH'] = options_path
-        os.environ['QGIS_OPTIONS_PATH'] = options_path
+        os.environ["QGIS_CUSTOM_CONFIG_PATH"] = options_path
+        os.environ["QGIS_OPTIONS_PATH"] = options_path
     else:
-        settings_path = Path(options_path).joinpath('profiles', 'default')
+        settings_path = Path(options_path).joinpath("profiles", "default")
         if not settings_path.is_dir():
             raise FileNotFoundError(f"{settings_path}")
 
@@ -217,8 +214,8 @@ def load_qgis_settings(
     if server_settings:
         # Use default profile as main config path (for server)
         options_path = str(settings_path)
-        os.environ['QGIS_CUSTOM_CONFIG_PATH'] = options_path
-        os.environ['QGIS_OPTIONS_PATH'] = options_path
+        os.environ["QGIS_CUSTOM_CONFIG_PATH"] = options_path
+        os.environ["QGIS_OPTIONS_PATH"] = options_path
 
     QSettings.setDefaultFormat(QSettings.IniFormat)
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
@@ -243,8 +240,7 @@ def load_qgis_settings(
 
 
 def set_proxy_configuration() -> None:
-    """ Display proxy configuration
-    """
+    """Display proxy configuration"""
     from qgis.core import QgsNetworkAccessManager
     from qgis.PyQt.QtNetwork import QNetworkProxy
 
@@ -258,20 +254,20 @@ def set_proxy_configuration() -> None:
 
     logger.info(
         "QGIS Proxy configuration enabled: %s:%s, type: %s",
-        proxy.hostName(), proxy.port(),
+        proxy.hostName(),
+        proxy.port(),
         {
-            QNetworkProxy.DefaultProxy: 'DefaultProxy',
-            QNetworkProxy.Socks5Proxy: 'Socks5Proxy',
-            QNetworkProxy.HttpProxy: 'HttpProxy',
-            QNetworkProxy.HttpCachingProxy: 'HttpCachingProxy',
-            QNetworkProxy.HttpCachingProxy: 'FtpCachingProxy',
-        }.get(proxy_type, 'Undetermined'),
+            QNetworkProxy.DefaultProxy: "DefaultProxy",
+            QNetworkProxy.Socks5Proxy: "Socks5Proxy",
+            QNetworkProxy.HttpProxy: "HttpProxy",
+            QNetworkProxy.HttpCachingProxy: "HttpCachingProxy",
+            QNetworkProxy.HttpCachingProxy: "FtpCachingProxy",
+        }.get(proxy_type, "Undetermined"),
     )
 
 
 def print_qgis_version(verbose: bool = False) -> None:
-    """ Output the qgis version
-    """
+    """Output the qgis version"""
     from qgis.core import QgsCommandLineUtils
 
     print(QgsCommandLineUtils.allVersions())
@@ -284,7 +280,8 @@ def print_qgis_version(verbose: bool = False) -> None:
 
 def show_all_versions() -> Iterator[str]:
     from qgis.core import QgsCommandLineUtils
-    versions = QgsCommandLineUtils.allVersions().split('\n')
+
+    versions = QgsCommandLineUtils.allVersions().split("\n")
     return (v for v in versions if v)
 
 

@@ -48,11 +48,10 @@ from .base import (
 
 
 class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
-
     _Model = Link
 
     def value_passing(self) -> ValuePassing:
-        return ('byReference',)
+        return ("byReference",)
 
     def json_schema(self) -> JsonDict:
         schema = super().json_schema()
@@ -60,13 +59,14 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
         formats = self.allowed_formats
         if formats:
             schema = {
-                '$defs': {'Link': schema},
-                'anyOf': [
+                "$defs": {"Link": schema},
+                "anyOf": [
                     {
-                        '$ref': '#/$defs/Link',
-                        'contentMediaType': fmt.media_type,
-                        'title': fmt.title,
-                    } for fmt in formats
+                        "$ref": "#/$defs/Link",
+                        "contentMediaType": fmt.media_type,
+                        "title": fmt.title,
+                    }
+                    for fmt in formats
                 ],
             }
 
@@ -78,7 +78,6 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
         outdef: OutputDefinition,
         alg: QgsProcessingAlgorithm,
     ) -> Sequence[Format]:
-
         inputdef = cls.get_input_definition(outdef, alg)
         if isinstance(inputdef, QgsProcessingParameterFileDestination):
             return output_file_formats(inputdef)
@@ -86,22 +85,23 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
             return ()
 
     def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
-        """ Override
-        """
+        """Override"""
         super().validate_output(out, param)
 
         # Pass format definition to file parameter
         format_definition = self.format_definition
-        if format_definition \
-            and format_definition.output_format != AnyFormat \
-            and isinstance(param, OutputFormatDefinition):
+        if (
+            format_definition
+            and format_definition.output_format != AnyFormat
+            and isinstance(param, OutputFormatDefinition)
+        ):
             param.copy_format_from(format_definition)
 
     def output(
-        self, value: str,
+        self,
+        value: str,
         context: ProcessingContext,
     ) -> JsonValue:
-
         path = resolve_path(value, context)
         if not path.is_file():
             raise FileNotFoundError(value)
@@ -118,22 +118,21 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
             title=self.title,
             description=self._out.description,
             length=path.stat().st_size,
-        ).model_dump(mode='json', by_alias=True, exclude_none=True)
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 #
 # QgsProcessingOutputFolder
 #
 
-class OutputFolder(OutputParameter):
 
+class OutputFolder(OutputParameter):
     _Model = str
 
     def value_passing(self) -> ValuePassing:
-        return ('byReference',)
+        return ("byReference",)
 
     def output(self, value: str, context: Optional[ProcessingContext] = None) -> JsonValue:
-
         context = context or ProcessingContext()
 
         path = resolve_path(value, context)
@@ -146,15 +145,15 @@ class OutputFolder(OutputParameter):
             href=reference_url,
             title=self.title,
             description=self._out.description,
-        ).model_dump(mode='json', by_alias=True, exclude_none=True)
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 #
 # QgsProcessingOutputHtml
 #
 
-class OutputHtml(OutputFile):
 
+class OutputHtml(OutputFile):
     _OutputFormat = Format(media_type="text/html", suffix=".html")
 
     def initialize(self):
@@ -175,11 +174,9 @@ class OutputHtml(OutputFile):
         outdef: OutputDefinition,
         alg: QgsProcessingAlgorithm,
     ) -> Sequence[Format]:
-
         return (cls._OutputFormat,)
 
     def output(self, value: str, context: Optional[ProcessingContext] = None) -> JsonValue:
-
         context = context or ProcessingContext()
 
         path = resolve_path(value, context)
@@ -192,22 +189,20 @@ class OutputHtml(OutputFile):
             href=reference_url,
             title=self.title,
             description=self._out.description,
-        ).model_dump(mode='json', by_alias=True, exclude_none=True)
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 #
 # Utils
 #
 def resolve_path(value: str, context: Optional[ProcessingContext]) -> Path:
-    """ Return either a relative workdir path or an absolute raw path
-    """
+    """Return either a relative workdir path or an absolute raw path"""
     workdir = (context and context.workdir) or Path()
 
     p = Path(value)
     if context and context.config.raw_destination_input_sink:
         assert_postcondition(
-            p.is_relative_to(context.raw_destination_root_path) or
-            p.is_relative_to(workdir),
+            p.is_relative_to(context.raw_destination_root_path) or p.is_relative_to(workdir),
             f"Invalid path: {p}",
         )
     else:

@@ -1,4 +1,3 @@
-
 from time import time
 from typing import Optional
 
@@ -16,11 +15,11 @@ from .cachemanager import (
 
 
 def evict_by_popularity(cm: CacheManager) -> Optional[CacheEntry]:
-    """ Evict a project from cache based on
-        its `popularity`
+    """Evict a project from cache based on
+    its `popularity`
 
-        Returns `true` if object has been evicted from the
-        cache, `false` otherwise.
+    Returns `true` if object has been evicted from the
+    cache, `false` otherwise.
     """
     # Evaluate an euristics based on last_hit timestamp
     # and hits number

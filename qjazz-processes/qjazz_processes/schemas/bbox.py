@@ -23,18 +23,17 @@ BboxCoordinates = OneOf[Extent2D | Extent3D]
 # OGC bounding box definition
 # See https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/bbox.yaml
 def BoundingBox(crsdef: Optional[TypeAlias] = None) -> TypeAlias:
-
     if not crsdef:
         crsdef = Annotated[str, Field(WGS84)]
 
     class _BBox(JsonModel):
         bbox: BboxCoordinates
-        crs: crsdef    # type: ignore [valid-type]
+        crs: crsdef  # type: ignore [valid-type]
 
     return Annotated[
         _BBox,
         Field(
             title="OGCboundingbox",
-            json_schema_extra={'format': 'ogc-bbox'},
+            json_schema_extra={"format": "ogc-bbox"},
         ),
     ]

@@ -1,4 +1,3 @@
-
 import pytest
 
 from pydantic import ValidationError
@@ -26,7 +25,6 @@ from qjazz_processes.schemas import (
 
 
 def test_parameter_point_json(qgis_session):
-
     param = QgsProcessingParameterPoint("Point")
 
     inp = InputParameter(param)
@@ -39,8 +37,8 @@ def test_parameter_point_json(qgis_session):
     value = inp.value(data)
 
     assert isinstance(value, QgsPointXY)
-    assert value.x() == 4.
-    assert value.y() == 42.
+    assert value.x() == 4.0
+    assert value.y() == 42.0
 
     data = {
         "type": "Point",
@@ -56,7 +54,6 @@ def test_parameter_point_json(qgis_session):
 
 
 def test_parameter_point_gml(qgis_session):
-
     param = QgsProcessingParameterPoint("Point")
 
     inp = InputParameter(param)
@@ -66,24 +63,19 @@ def test_parameter_point_gml(qgis_session):
 
     data = QualifiedInputValue(
         media_type=Formats.GML.media_type,
-        value=(
-            '<gml:Point srsName="EPSG:4326">'
-            '<gml:coordinates>4,42</gml:coordinates>'
-            '</gml:Point>'
-        ),
-    ).model_dump(mode='json', by_alias=True)
+        value=('<gml:Point srsName="EPSG:4326"><gml:coordinates>4,42</gml:coordinates></gml:Point>'),
+    ).model_dump(mode="json", by_alias=True)
 
     value = inp.value(data)
 
     assert isinstance(value, QgsReferencedPointXY)
-    assert value.x() == 4.
-    assert value.y() == 42.
+    assert value.x() == 4.0
+    assert value.y() == 42.0
     assert value.crs().authid() == "EPSG:4326"
 
 
 def test_parameter_point_wkt(qgis_session):
-    """ Test input point from wkt
-    """
+    """Test input point from wkt"""
     param = QgsProcessingParameterPoint("POINT")
 
     inp = InputParameter(param)
@@ -93,41 +85,40 @@ def test_parameter_point_wkt(qgis_session):
 
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
-        value='CRS=EPSG:4326;POINT(6 10)',
-    ).model_dump(mode='json', by_alias=True)
+        value="CRS=EPSG:4326;POINT(6 10)",
+    ).model_dump(mode="json", by_alias=True)
 
     value = inp.value(data)
 
     assert isinstance(value, QgsReferencedPointXY)
-    assert value.crs().authid() == 'EPSG:4326'
+    assert value.crs().authid() == "EPSG:4326"
     assert value.asWkt() == "POINT(6 10)"
 
     # postgis SRID
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
-        value='SRID=3785;POINT(365340 3161978)',
-    ).model_dump(mode='json', by_alias=True)
+        value="SRID=3785;POINT(365340 3161978)",
+    ).model_dump(mode="json", by_alias=True)
 
     value = inp.value(data)
 
     assert isinstance(value, QgsReferencedPointXY)
-    assert value.crs().authid() == 'EPSG:3785'
-    assert value.asWkt() == 'POINT(365340 3161978)'
+    assert value.crs().authid() == "EPSG:3785"
+    assert value.asWkt() == "POINT(365340 3161978)"
 
     # no CRS
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
-        value='POINT(6 10)',
-    ).model_dump(mode='json', by_alias=True)
+        value="POINT(6 10)",
+    ).model_dump(mode="json", by_alias=True)
 
     value = inp.value(data)
     assert isinstance(value, QgsPointXY)
-    assert value.asWkt() == 'POINT(6 10)'
+    assert value.asWkt() == "POINT(6 10)"
 
 
 def test_parameter_geometry_json(qgis_session):
-    """ Test passing crs from json
-    """
+    """Test passing crs from json"""
     param = QgsProcessingParameterGeometry("Geometry")
 
     inp = InputParameter(param)
@@ -152,8 +143,7 @@ def test_parameter_geometry_json(qgis_session):
 
 
 def test_parameter_geometry_with_types():
-    """ Test geometry with paramater types
-    """
+    """Test geometry with paramater types"""
     # Single geometry type
     param = QgsProcessingParameterGeometry("Geometry", geometryTypes=[Qgis.GeometryType.Line])
 
@@ -186,8 +176,7 @@ def test_parameter_geometry_with_types():
 
 
 def test_parameter_crs(qgis_session):
-    """ Test CRS input
-    """
+    """Test CRS input"""
     param = QgsProcessingParameterCrs("Crs")
 
     inp = InputParameter(param)
@@ -206,7 +195,6 @@ def test_parameter_crs(qgis_session):
 
 
 def test_parameter_extent(qgis_session):
-
     param = QgsProcessingParameterExtent("Extent")
 
     inp = InputParameter(param)
@@ -214,11 +202,10 @@ def test_parameter_extent(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_crs::", schema)
 
-    assert schema['format'] == 'ogc-bbox'
+    assert schema["format"] == "ogc-bbox"
 
 
 def test_parameter_extent_with_default(qgis_session):
-
     param = QgsProcessingParameterExtent(
         "Extent",
         defaultValue=QgsRectangle(15, 50, 16, 51),
@@ -229,15 +216,15 @@ def test_parameter_extent_with_default(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_crs::", schema)
 
-    assert schema['format'] == 'ogc-bbox'
-    assert schema['default'] == {
-        'bbox': [15.0, 50.0, 16.0, 51.0],
-        'crs': 'urn:ogc:def:crs:OGC:1.3:CRS84',
+    assert schema["format"] == "ogc-bbox"
+    assert schema["default"] == {
+        "bbox": [15.0, 50.0, 16.0, 51.0],
+        "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
     }
 
-    data = schema['default']
+    data = schema["default"]
 
     value = inp.value(data)
 
     assert isinstance(value, QgsReferencedRectangle)
-    assert value.crs().authid() == 'OGC:CRS84'
+    assert value.crs().authid() == "OGC:CRS84"

@@ -1,46 +1,44 @@
-""" Test file destination parsing
-"""
+"""Test file destination parsing"""
 
 from qgis.core import QgsProcessingAlgorithm, QgsProcessingParameterFileDestination
 
 
 class TestFileDestination(QgsProcessingAlgorithm):
-
-    OUTPUT = 'OUTPUT'
+    OUTPUT = "OUTPUT"
 
     def __init__(self):
         super().__init__()
 
     def name(self):
-        return 'testfiledestination'
+        return "testfiledestination"
 
     def displayName(self):
-        return 'Test input file destination'
+        return "Test input file destination"
 
     def createInstance(self, config={}):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
     def initAlgorithm(self, config=None):
-        """ Virtual override
+        """Virtual override
 
-            see https://qgis.org/api/classQgsProcessingAlgorithm.html
+        see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
-        param = QgsProcessingParameterFileDestination(self.OUTPUT,
-            'JSON file',
-            fileFilter='JSON files (*.json);; TEXT files (*.text)',
+        param = QgsProcessingParameterFileDestination(
+            self.OUTPUT,
+            "JSON file",
+            fileFilter="JSON files (*.json);; TEXT files (*.text)",
         )
         self.addParameter(param)
 
     def processAlgorithm(self, parameters, context, feedback):
-
         value = parameters[self.OUTPUT]
 
         # Create the output file
-        with open(value, 'w') as fp:
+        with open(value, "w") as fp:
             fp.write('{ "title": "hello json" }')
 
         return {self.OUTPUT: value}

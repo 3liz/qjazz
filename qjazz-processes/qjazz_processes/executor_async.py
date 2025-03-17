@@ -1,4 +1,3 @@
-
 import asyncio
 
 from dataclasses import dataclass
@@ -42,12 +41,11 @@ class Result:
 
 
 class Executor(_ExecutorBase):
-
     async def update_services(self) -> ServiceDict:
-        """ Update services destinations
+        """Update services destinations
 
-            Collapse presence details under unique service
-            name.
+        Collapse presence details under unique service
+        name.
         """
         self._services = await asyncio.to_thread(self.get_services)
         logger.trace("=update_services %s", self._services)
@@ -62,8 +60,7 @@ class Executor(_ExecutorBase):
         project: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
-        """ Return process description
-        """
+        """Return process description"""
         destinations = self.destinations(service)
         if not destinations:
             raise ServiceNotAvailable(service)
@@ -77,8 +74,7 @@ class Executor(_ExecutorBase):
         )
 
     async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
-        """ Return process description summary
-        """
+        """Return process description summary"""
         destinations = self.destinations(service)
         if not destinations:
             raise ServiceNotAvailable(service)
@@ -100,8 +96,8 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
     ) -> Result:
-        """ Send an execute request
-            Returns an asynchronous  'Result' object
+        """Send an execute request
+        Returns an asynchronous  'Result' object
         """
         job_id, _get_result, _get_status = self._execute(
             service,
@@ -126,8 +122,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[JobStatus]:
-        """ Delete job
-        """
+        """Delete job"""
         return await asyncio.to_thread(
             self._dismiss,
             job_id,
@@ -143,8 +138,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         with_details: bool = False,
     ) -> Optional[JobStatus]:
-        """ Return job status
-        """
+        """Return job status"""
         return await asyncio.to_thread(
             self._job_status_ext,
             job_id,
@@ -159,8 +153,7 @@ class Executor(_ExecutorBase):
         *,
         realm: Optional[str] = None,
     ) -> Optional[JobResults]:
-        """ Return job results
-        """
+        """Return job results"""
         return await asyncio.to_thread(self._job_results, job_id, realm=realm)
 
     async def jobs(
@@ -171,8 +164,7 @@ class Executor(_ExecutorBase):
         cursor: int = 0,
         limit: int = 100,
     ) -> Sequence[JobStatus]:
-        """ Iterate over job statuses
-        """
+        """Iterate over job statuses"""
         return await asyncio.to_thread(
             self._jobs,
             self._services,
@@ -189,7 +181,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[ProcessLog]:
-        """ Return process execution logs """
+        """Return process execution logs"""
         return await asyncio.to_thread(
             self._log_details,
             job_id,
@@ -206,7 +198,7 @@ class Executor(_ExecutorBase):
         realm: Optional[str] = None,
         timeout: int = 20,
     ) -> Optional[ProcessFiles]:
-        """ Return process execution files """
+        """Return process execution files"""
         return await asyncio.to_thread(
             self._files,
             job_id,
@@ -225,7 +217,7 @@ class Executor(_ExecutorBase):
         expiration: int,
         realm: Optional[str] = None,
     ) -> Optional[Link]:
-        """ Return download url """
+        """Return download url"""
         return await asyncio.to_thread(
             self._download_url,
             job_id,

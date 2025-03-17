@@ -6,9 +6,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-""" Qgis server plugin managment
+"""Qgis server plugin managment"""
 
-"""
 import configparser
 import os
 import sys
@@ -52,18 +51,17 @@ class PluginType(Enum):
     SERVER = "server"
 
 
-QGIS_PLUGIN_SERVICE_CONTRACTID = '@3liz.org/qgis-plugin-service;1'
+QGIS_PLUGIN_SERVICE_CONTRACTID = "@3liz.org/qgis-plugin-service;1"
 
 
 def _default_plugin_path() -> Path:
-    """ Return the default plugin's path
-    """
+    """Return the default plugin's path"""
     return Path(
-        os.getenv('QGIS_OPTIONS_PATH')
-        or os.getenv('QGIS_CUSTOM_CONFIG_PATH')
-        or os.getenv('QGIS_HOME')
-        or Path.home().joinpath('.qgis-server'),
-        'plugins',
+        os.getenv("QGIS_OPTIONS_PATH")
+        or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
+        or os.getenv("QGIS_HOME")
+        or Path.home().joinpath(".qgis-server"),
+        "plugins",
     )
 
 
@@ -75,7 +73,7 @@ def _validate_plugins_paths(paths: list[Path], _: ValidationInfo) -> list[Path]:
     paths.append(_default_plugin_path())
     for path in paths:
         if not path.exists() or not path.is_dir():
-            print(   # noqa T201
+            print(  # noqa T201
                 f"WARNING: '{path}' is not a valid plugin directory",
                 file=sys.stderr,
                 flush=True,
@@ -112,9 +110,9 @@ class QgisPluginConfig(config.ConfigBase):
             "i.e, *no* installed plugins."
         ),
     )
-    install_mode: Literal['auto', 'external'] = Field(
-        default='external',
-        title='Plugin installation mode',
+    install_mode: Literal["auto", "external"] = Field(
+        default="external",
+        title="Plugin installation mode",
         description=(
             "If set to 'auto', plugins installation\n"
             "will be checked at startup. Otherwise,\n"
@@ -130,10 +128,7 @@ class QgisPluginConfig(config.ConfigBase):
     extra_builtin_providers: BuiltinProviderSet = Field(
         default=set(),
         title="Extra builtins providers",
-        description=(
-            "Load extra builtin processing providers\n"
-            "such as 'grass' and 'otb'."
-        ),
+        description=("Load extra builtin processing providers\nsuch as 'grass' and 'otb'."),
     )
     plugin_manager: Path = Field(
         default=Path("/usr/local/bin/qgis-plugin-manager"),
@@ -157,24 +152,22 @@ class Plugin:
 
     @property
     def metadata(self) -> JsonDict:
-        """ Return plugin metadata
-        """
+        """Return plugin metadata"""
         # Read metadata
-        metadatafile = self.path / 'metadata.txt'
+        metadatafile = self.path / "metadata.txt"
         if not metadatafile.exists():
             return {}
 
-        with metadatafile.open(mode='rt') as f:
+        with metadatafile.open(mode="rt") as f:
             cp = configparser.ConfigParser()
             cp.read_file(f)
             metadata = {s: dict(p.items()) for s, p in cp.items()}
-            metadata.pop('DEFAULT', None)
+            metadata.pop("DEFAULT", None)
             return cast(JsonDict, metadata)
 
 
 class QgisPluginService:
-    """ Manage qgis plugins
-    """
+    """Manage qgis plugins"""
 
     def __init__(self, config: QgisPluginConfig) -> None:
         self._config = config
@@ -194,17 +187,17 @@ class QgisPluginService:
 
     @classmethod
     def get_service(cls: Type[Self]) -> Self:
-        """ Return QgisPluginService instance as a service.
-            This require that register_as_service has been called
-            in the current context
+        """Return QgisPluginService instance as a service.
+        This require that register_as_service has been called
+        in the current context
         """
         return componentmanager.get_service(QGIS_PLUGIN_SERVICE_CONTRACTID)
 
-    def load_plugins(self, plugin_type: PluginType, interface: Optional['qgis.server.QgsServerInterface']):
-        """ Load all plugins found
-        """
+    def load_plugins(self, plugin_type: PluginType, interface: Optional["qgis.server.QgsServerInterface"]):
+        """Load all plugins found"""
         if plugin_type == PluginType.PROCESSING:
             from .processing import ProcessesLoader
+
             processes = ProcessesLoader(self._providers, allow_scripts=self._config.enable_scripts)
             # Load extra builtins
             extras = self._config.extra_builtin_providers
@@ -214,7 +207,6 @@ class QgisPluginService:
         white_list = self._config.install
 
         for plugin_path in self._config.paths:
-
             sys.path.append(str(plugin_path))
 
             if plugin_type == PluginType.PROCESSING:
@@ -224,7 +216,7 @@ class QgisPluginService:
                 # noinspection PyBroadException
                 try:
                     # Check white list
-                    name = meta['general']['name']
+                    name = meta["general"]["name"]
                     if white_list is not None and name not in white_list:
                         continue
 
@@ -255,7 +247,7 @@ class QgisPluginService:
 
                     self._plugins[plugin] = Plugin(
                         name=name,
-                        path=Path(package.__file__).parent,   # type: ignore
+                        path=Path(package.__file__).parent,  # type: ignore
                         plugin_type=plugin_type,
                         init=init,
                     )
@@ -266,10 +258,10 @@ class QgisPluginService:
                     ) from None
 
     @property
-    def providers(self) -> Iterator['qgis.core.QgsProcessingProvider']:
-        """ Return published providers
-        """
+    def providers(self) -> Iterator["qgis.core.QgsProcessingProvider"]:
+        """Return published providers"""
         from qgis.core import QgsApplication
+
         reg = QgsApplication.processingRegistry()
         return (reg.providerById(_id) for _id in self._providers)
 
@@ -278,11 +270,9 @@ def find_plugins(
     path: Path | str,
     plugin_type: PluginType,
 ) -> Iterator[tuple[str, configparser.ConfigParser]]:
-    """ return list of plugins in given path
-    """
+    """return list of plugins in given path"""
     path = Path(path)
     for plugin in path.glob("*"):
-
         if not plugin.is_dir():
             # Warn about dangling symlink
             # This occurs when running in docker container
@@ -298,37 +288,37 @@ def find_plugins(
 
         logger.debug(f"Looking for plugin in '{plugin}'")
 
-        metadata_file = plugin / 'metadata.txt'
+        metadata_file = plugin / "metadata.txt"
         if not metadata_file.exists():
             # Do not log here
             continue
 
-        if not (plugin / '__init__.py').exists():
+        if not (plugin / "__init__.py").exists():
             logger.warning(f"'{plugin}' : Found metadata file but no Python entry point !")
             continue
 
         cp = configparser.ConfigParser()
 
         try:
-            with metadata_file.open(mode='rt') as f:
+            with metadata_file.open(mode="rt") as f:
                 cp.read_file(f)
 
-            general = cp['general']
+            general = cp["general"]
 
             match plugin_type:
                 case PluginType.SERVER:
-                    if not general.getboolean('server'):
+                    if not general.getboolean("server"):
                         logger.warning(f"'{plugin}' is not a server plugin")
                         continue
                 case PluginType.PROCESSING:
-                    if not general.getboolean('hasProcessingProvider'):
+                    if not general.getboolean("hasProcessingProvider"):
                         logger.warning(f"'{plugin}' is not a processing plugin")
                         continue
                 case _:
                     continue
 
-            min_ver = general.get('qgisMinimumVersion')
-            max_ver = general.get('qgisMaximumVersion')
+            min_ver = general.get("qgisMinimumVersion")
+            max_ver = general.get("qgisMaximumVersion")
 
         except Exception as exc:
             logger.error(f"'{plugin}' : Error reading plugin metadata '{metadata_file}': {exc}")
@@ -345,7 +335,7 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
     from qgis.core import Qgis
 
     def to_int(ver):
-        major, *ver = ver.split('.')
+        major, *ver = ver.split(".")
         major = int(major)
         minor = int(ver[0]) if len(ver) > 0 else 0
         rev = int(ver[1]) if len(ver) > 1 else 0
@@ -356,7 +346,7 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
             rev = 99
         return int(f"{major:d}{minor:02d}{rev:02d}")
 
-    version = to_int(Qgis.QGIS_VERSION.split('-')[0])
+    version = to_int(Qgis.QGIS_VERSION.split("-")[0])
     minver = to_int(minver) if minver else version
     maxver = to_int(maxver) if maxver else version
 
@@ -364,8 +354,7 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
 
 
 def install_plugins(conf: QgisPluginConfig):
-    """ Install required plugins from installation
-    """
+    """Install required plugins from installation"""
     plugins = conf.install
     if not plugins:
         # Nothing to install
@@ -389,7 +378,7 @@ def install_plugins(conf: QgisPluginConfig):
         if res.returncode > 0:
             raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
 
-    sources_list = Path(os.getenv('QGIS_PLUGIN_MANAGER_SOURCES_FILE', install_path / 'sources.list'))
+    sources_list = Path(os.getenv("QGIS_PLUGIN_MANAGER_SOURCES_FILE", install_path / "sources.list"))
     if not sources_list.exists():
         _run("init")
 

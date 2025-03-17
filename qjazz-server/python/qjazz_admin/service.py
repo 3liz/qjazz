@@ -18,8 +18,7 @@ from .resolvers import ResolverConfig
 
 
 class Service:
-    """ Handle all pools (clusters) of gRPC servers
-    """
+    """Handle all pools (clusters) of gRPC servers"""
 
     def __init__(self, resolvers: ResolverConfig):
         self._config = resolvers
@@ -38,10 +37,11 @@ class Service:
         return len(self._pools)
 
     def update_pools(self) -> Iterable[str]:
-        """ Update resolvers
+        """Update resolvers
 
-            Returns removed pools label
+        Returns removed pools label
         """
+
         def _resolve():
             for resolver in self._config.get_resolvers():
                 resolver_id = resolver.label
@@ -76,8 +76,7 @@ class Service:
 
     @contextmanager
     def sync_event(self) -> Generator[asyncio.Event, None, None]:
-        """ Return a new event for synchronization
-        """
+        """Return a new event for synchronization"""
         event = asyncio.Event()
         self._sync_events += (event,)
         try:
@@ -87,20 +86,17 @@ class Service:
             self._sync_events = tuple(e for e in evts if e is not event)
 
     def _sync(self):
-        """ Set all synchronization events
-        """
+        """Set all synchronization events"""
         for evt in self._sync_events:
             evt.set()
 
     @property
     def pools(self) -> Iterator[PoolClient]:
-        """ Return the list of server pools
-        """
+        """Return the list of server pools"""
         return iter(self._pools.values())
 
     async def watch(self) -> AsyncIterator[tuple[PoolClient, Sequence[tuple[str, bool]]]]:
-        """ Wait for state change in one of the worker
-        """
+        """Wait for state change in one of the worker"""
         # See https://github.com/python/mypy/issues/4052
         queue: asyncio.Queue = asyncio.Queue()
         exception = None

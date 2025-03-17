@@ -6,8 +6,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-""" Generic protocol handler for Qgis storage
-"""
+"""Generic protocol handler for Qgis storage"""
 
 from datetime import datetime
 from typing import Iterator
@@ -33,18 +32,16 @@ __all__ = []  # type: ignore
 
 
 class QgisStorageProtocolHandler(ProtocolHandler):
-    """ Handle Qgis storage
-    """
+    """Handle Qgis storage"""
+
     def __init__(self, storage: str):
-        """ Retrieve the QgsProjectStorage
-        """
+        """Retrieve the QgsProjectStorage"""
         sr = QgsApplication.projectStorageRegistry()
         self._storage: QgsProjectStorage = sr.projectStorageFromType(storage)
         assert_postcondition(self._storage is not None)
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
-        """ Override
-        """
+        """Override"""
         if isinstance(url, ProjectMetadata):
             uri = url.uri
         else:
@@ -60,13 +57,11 @@ class QgisStorageProtocolHandler(ProtocolHandler):
         return self._project_storage_metadata(uri, url.scheme)
 
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
-        """ Override
-        """
+        """Override"""
         return load_project_from_uri(md.uri, config)
 
     def projects(self, url: Url) -> Iterator[ProjectMetadata]:
-        """ Override
-        """
+        """Override"""
         uri = urlunsplit(url)
         # Precondition
         # If there is problem here, then it comes from the
@@ -80,8 +75,7 @@ class QgisStorageProtocolHandler(ProtocolHandler):
             yield self._project_storage_metadata(_uri, url.scheme)
 
     def _project_storage_metadata(self, uri: str, scheme: str) -> ProjectMetadata:
-        """ Read metadata about project
-        """
+        """Read metadata about project"""
         res, md = self._storage.readProjectStorageMetadata(uri)
         if not res:
             logger.error("Failed to read storage metadata for %s", uri)

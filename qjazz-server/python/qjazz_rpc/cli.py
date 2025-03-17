@@ -1,4 +1,3 @@
-
 import os
 
 from pathlib import Path
@@ -19,21 +18,20 @@ class ConfigProtocol(Protocol):
     logging: logger.LoggingConfig
     worker: Worker
 
-    def model_dump_json(self, indent: Optional[int] = None):
-        ...
+    def model_dump_json(self, indent: Optional[int] = None): ...
 
 
 def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
-
     confservice = config.ConfBuilder()
-    confservice.add_section('worker', Worker)
+    confservice.add_section("worker", Worker)
 
     if configpath:
         confservice.validate(config.read_config_toml(configpath))
     else:
-        env_config = os.getenv('QJAZZ_CONFIG_JSON')
+        env_config = os.getenv("QJAZZ_CONFIG_JSON")
         if env_config:
             import json
+
             confservice.validate(json.loads(env_config))
         else:
             confservice.validate({})
@@ -46,11 +44,10 @@ def cli_commands():
     pass
 
 
-@cli_commands.command('version')
+@cli_commands.command("version")
 @click.option("--settings", is_flag=True, help="Show Qgis settings")
 def print_version(settings: bool):
-    """ Print version and exit
-    """
+    """Print version and exit"""
     from qjazz_contrib.core import manifest, qgis
 
     short_commit = manifest.get_manifest().commit_id
@@ -71,35 +68,37 @@ FilePathType = click.Path(
 )
 
 
-@cli_commands.command('config')
+@cli_commands.command("config")
 @click.option(
-    "--conf", "-C",
+    "--conf",
+    "-C",
     help="configuration file",
     type=FilePathType,
 )
 @click.option("--pretty", is_flag=True, help="Pretty format")
 def print_config(conf: Optional[Path], pretty: bool = False):
-    """ Print configuration as json and exit
-    """
+    """Print configuration as json and exit"""
     indent = 4 if pretty else None
     click.echo(load_configuration(conf).model_dump_json(indent=indent))
 
 
 @cli_commands.command("install-plugins")
 @click.option(
-    "--conf", "-C", "configpath",
+    "--conf",
+    "-C",
+    "configpath",
     help="configuration file",
     type=FilePathType,
 )
 @click.option("--force", is_flag=True, help="Force installation")
 def install_plugins(configpath: Optional[Path], force: bool):
-    """ Install plugins
-    """
+    """Install plugins"""
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
     from qjazz_contrib.core.qgis import install_plugins
-    if force or conf.worker.qgis.plugins.install_mode == 'auto':
+
+    if force or conf.worker.qgis.plugins.install_mode == "auto":
         install_plugins(conf.worker.qgis.plugins)
     else:
         click.echo("Plugin installation set to manual: no plugins to install...")
@@ -109,5 +108,5 @@ def main():
     cli_commands()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

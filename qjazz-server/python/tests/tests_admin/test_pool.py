@@ -8,7 +8,7 @@ from qjazz_admin.resolvers import (
     ResolverConfig,
 )
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 async def test_resolver_config():
@@ -62,9 +62,9 @@ async def test_pool():
     rv = await pool.pull_projects("/france/france_parts.qgs")
     assert len(rv) == 1
     uri, items = next(iter(rv.items()))
-    assert items[0]['uri'] == uri
-    assert items[0]['status'] == 'NEW'
-    assert items[0]['serverAddress'] == '127.0.0.1:23456'
+    assert items[0]["uri"] == uri
+    assert items[0]["status"] == "NEW"
+    assert items[0]["serverAddress"] == "127.0.0.1:23456"
 
     # Synchronize
     # If there is only one server in the pool
@@ -72,6 +72,6 @@ async def test_pool():
     rv = await pool.synchronize_cache()
     assert len(rv) == 1
     uri, items = next(iter(rv.items()))
-    assert items[0]['uri'] == uri
-    assert items[0]['status'] == 'UNCHANGED'
-    assert items[0]['serverAddress'] == '127.0.0.1:23456'
+    assert items[0]["uri"] == uri
+    assert items[0]["status"] == "UNCHANGED"
+    assert items[0]["serverAddress"] == "127.0.0.1:23456"

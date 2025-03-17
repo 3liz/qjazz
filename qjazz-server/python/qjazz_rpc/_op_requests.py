@@ -41,8 +41,7 @@ def handle_ows_request(
     cache_id: str = "",
     feedback: QgsFeedback,
 ):
-    """ Handle OWS request
-    """
+    """Handle OWS request"""
 
     target = msg.target
     if not target:
@@ -70,7 +69,7 @@ def handle_ows_request(
     service = msg.service
     request = msg.request
 
-    if request == 'qjazz-request-map':
+    if request == "qjazz-request-map":
         service = "WMS"
         request = "GetMap"
         try:
@@ -139,8 +138,7 @@ def handle_api_request(
     cache_id: str = "",
     feedback: QgsFeedback,
 ):
-    """ Handle api request
-    """
+    """Handle api request"""
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
@@ -173,7 +171,7 @@ def handle_api_request(
         url = f"{msg.url.removesuffix('/')}{ROOT_DELEGATE}/{msg.path.removeprefix('/')}"
         # Pass api name as header
         # to api delegate
-        headers.append(('x-qgis-api', msg.name))
+        headers.append(("x-qgis-api", msg.name))
     else:
         url = msg.url
         if msg.path:
@@ -218,16 +216,17 @@ def _handle_generic_request(
     content_type: Optional[str],
     resp_hdrs: Optional[dict[str, str]] = None,
 ) -> QgsServerResponse:
-    """ Handle generic Qgis request
-    """
+    """Handle generic Qgis request"""
     if entry:
         assert_precondition(co_status is not None)
         project = entry.project
         resp_hdrs = resp_hdrs or {}
-        resp_hdrs.update((
-            ('x-qgis-last-modified', to_rfc822(entry.last_modified)),
-            ('x-qgis-cache', 'MISS' if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else 'HIT'),
-        ))
+        resp_hdrs.update(
+            (
+                ("x-qgis-last-modified", to_rfc822(entry.last_modified)),
+                ("x-qgis-cache", "MISS" if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else "HIT"),
+            )
+        )
 
         response = Response(
             conn,
@@ -252,9 +251,9 @@ def _handle_generic_request(
 
     # XXX QGIS does not complies to standard and handle X-Qgis-* headers
     # in case sensitive way
-    req_hdrs = {capwords(k, sep='-'): v for k, v in headers if not k.startswith('grpc-')}
+    req_hdrs = {capwords(k, sep="-"): v for k, v in headers if not k.startswith("grpc-")}
     if content_type:
-        req_hdrs['Content-Type'] = content_type
+        req_hdrs["Content-Type"] = content_type
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     server.handleRequest(request, response, project=project)
@@ -265,10 +264,9 @@ def get_project(
     conn: _m.Connection,
     cm: CacheManager,
     config: QgisConfig,
-    target:  str,
+    target: str,
     allow_direct: bool,
 ) -> tuple[Optional[CacheEntry], Co]:
-
     # XXX Prevent error in cache manager
     if not target.startswith("/"):
         target = f"/{target}"
@@ -296,8 +294,7 @@ def request_project_from_cache(
     target: str,
     allow_direct: bool,
 ) -> tuple[CheckoutStatus, Optional[CacheEntry]]:
-    """ Handle project retrieval from cache
-    """
+    """Handle project retrieval from cache"""
     try:
         entry: Optional[CacheEntry] = None
         url = cm.resolve_path(target, allow_direct)

@@ -1,4 +1,3 @@
-
 import multiprocessing as mp
 import traceback
 
@@ -28,19 +27,16 @@ class MsgType(Enum):
     READY = auto()
 
 
-POLL_TIMEOUT = 5.
+POLL_TIMEOUT = 5.0
 
 
 class ProcessCacheProto(Protocol):
     @property
-    def processes(self) -> dict:
-        ...
+    def processes(self) -> dict: ...
 
-    def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:
-        ...
+    def describe(self, ident: str, project: Optional[str]) -> JsonDict | None: ...
 
-    def update(self) -> list[ProcessSummary]:
-        ...
+    def update(self) -> list[ProcessSummary]: ...
 
     def start(self) -> None:
         pass
@@ -50,7 +46,6 @@ class ProcessCacheProto(Protocol):
 
 
 class ProcessCache(mp.Process):
-
     def __init__(self, config: ProcessingConfig) -> None:
         super().__init__(name="process_cache", daemon=True)
         self._descriptions: dict[str, ProcessDescription] = {}
@@ -66,11 +61,10 @@ class ProcessCache(mp.Process):
 
     @property
     def processes(self) -> dict:
-        return ProcessSummaryList.dump_python(self._processes, mode='json', exclude_none=True)
+        return ProcessSummaryList.dump_python(self._processes, mode="json", exclude_none=True)
 
     def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:
-        """ Return process description
-        """
+        """Return process description"""
         if not self.is_alive():
             return None
 
@@ -78,7 +72,7 @@ class ProcessCache(mp.Process):
             logger.error("Unknown process '%s'", ident)
             return None
 
-        key = f'{ident}@{project}'
+        key = f"{ident}@{project}"
 
         description = self._descriptions.get(key)
         if not description:
@@ -91,11 +85,10 @@ class ProcessCache(mp.Process):
             else:
                 raise RuntimeError(f"Failed to get process description {ident} ({project})")
 
-        return description.model_dump(mode='json', exclude_none=True)
+        return description.model_dump(mode="json", exclude_none=True)
 
     def update(self) -> list[ProcessSummary]:
-        """ Update process summary list
-        """
+        """Update process summary list"""
         if not self.is_alive():
             return []
 
@@ -116,7 +109,7 @@ class ProcessCache(mp.Process):
         super().start()
         # Wait for the process to be ready
         self._sender.send((MsgType.READY,))
-        if self._sender.poll(10.):
+        if self._sender.poll(10.0):
             self._sender.recv()
         else:
             raise RuntimeError("Failed to start process cache")
@@ -153,13 +146,10 @@ class ProcessCache(mp.Process):
         logger.info("Leaving process cache")
 
     @abstractmethod
-    def initialize(self):
-        ...
+    def initialize(self): ...
 
     @abstractmethod
-    def _describe(self, ident: str, project: Optional[str]) -> ProcessDescription:
-        ...
+    def _describe(self, ident: str, project: Optional[str]) -> ProcessDescription: ...
 
     @abstractmethod
-    def _update(self) -> list[ProcessSummary]:
-        ...
+    def _update(self) -> list[ProcessSummary]: ...
