@@ -28,6 +28,12 @@ lint-fix::
 lint-fix-preview::
 	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
 
+format-diff::
+	@ruff format --diff $(PYTHON_PKG) $(TESTDIR)
+
+format::
+	@ruff format $(PYTHON_PKG) $(TESTDIR)
+
 install::
 	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
