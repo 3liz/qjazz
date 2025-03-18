@@ -80,7 +80,7 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 # Server only installation (no-qgis)
 #
 
-FROM ubuntu:24.04 AS front
+FROM ubuntu:24.04 AS noqgis
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \

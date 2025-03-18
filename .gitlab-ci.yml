@@ -1,8 +1,10 @@
 stages:
   - test
+  - doc 
   - build
   - docker
-  - doc 
+  - deploy
+  - release
 
 #-----------------
 # Tests

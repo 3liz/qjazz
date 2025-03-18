@@ -25,8 +25,7 @@ build-binaries:
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: docker
   script:
-  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR BUILD_TARGET=base
-  - make -C docker build-front deliver-front FLAVOR=$QGIS_FLAVOR FRONT_BUILD_TARGET=front
+  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:
@@ -35,8 +34,7 @@ build-binaries:
       - build-binaries
   artifacts:
     paths:
-    - "docker/factory.manifest"
-    - "docker/front.manifest"
+    - "docker/factory-${QGIS_FLAVOR}.manifest"
   only:
     refs:
     - tags
@@ -44,8 +42,107 @@ build-binaries:
   tags:
   - factory-dind
 
-build-docker:
+# XXX Matrix build does not allow using dependencies
+
+build-docker:ltr:
   extends: .build-docker
-  parallel:
-    matrix:
-    - QGIS_FLAVOR: ['ltr', 'release', '3.34']
+  variables:
+    QGIS_FLAVOR: "ltr"
+
+build-docker:release:
+  extends: .build-docker
+  variables:
+    QGIS_FLAVOR: "release"
+
+build-docker:3.34:
+  extends: .build-docker
+  variables:
+    QGIS_FLAVOR: "3.34"
+
+#
+# No QGIS
+#
+
+build-docker:noqgis:
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  stage: docker
+  script:
+  - make -C docker build-noqgis deliver-noqgis
+  only:
+    refs:
+    - tags
+    - main
+  tags:
+  - factory-dind
+  artifacts:
+    paths:
+    - "docker/noqgis.manifest"
+
+# -----------
+# release
+# ----------
+
+.release:
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  stage: release
+  script:
+    - release-image qjazz-$QGIS_FLAVOR
+    - push-to_docker-hub --clean
+  environment:
+    name: production
+  only:
+    refs:
+      - tags
+  variables:
+    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
+  when: manual
+  # See https://about.gitlab.com/blog/2021/05/20/dag-manual-fix/#what-if-i-dont-want-this-new-behavior
+  allow_failure: false
+  tags:
+    - factory-dind
+
+release:release:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: release
+  dependencies:
+    - build-docker:release
+
+release:ltr:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: ltr
+  dependencies:
+    - build-docker:ltr
+
+release:3.34:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: "3.34"
+  dependencies:
+    - build-docker:3.34
+
+#
+# No QGIS
+#
+
+release:noqgis:
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  stage: release
+  script:
+    - release-image qjazz-noqgis
+    - push-to_docker-hub --clean
+  environment:
+    name: production
+  only:
+    refs:
+      - tags
+  variables:
+    FACTORY_MANIFEST: "docker/factory-noqgis.manifest"
+  when: manual
+  allow_failure: false
+  tags:
+    - factory-dind
+  dependencies:
+    - build-docker:noqgis
+

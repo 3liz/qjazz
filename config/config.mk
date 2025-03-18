@@ -1,9 +1,15 @@
 
 topsrcdir:=$(shell realpath $(DEPTH))
 
+QJAZZ_VERSION=0.1.0
+
+ifndef CI_COMMIT_TAG
+QJAZZ_VERSION_RC_TAG=dev0
+VERSION=$(QJAZZ_VERSION).$(QJAZZ_VERSION_RC_TAG)
 # Global project version
-VERSION=0.1.0.dev0
-VERSION_SHORT=0.1.0dev0
+else 
+VERSION=$(QJAZZ_VERSION)
+endif
 
 REQUIREMENTS=requirements.txt
 
