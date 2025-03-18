@@ -397,6 +397,8 @@ impl QgisAdmin for QgisAdminServicer {
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
 
+        // Remember pid (for testing)
+        w.remember().await;
         w.sleep(request.into_inner().delay)
             .await
             .map_err(Self::error)?;
