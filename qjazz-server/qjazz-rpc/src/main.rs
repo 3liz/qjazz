@@ -1,5 +1,6 @@
 mod config;
 mod logger;
+mod oom;
 mod server;
 mod service;
 mod signals;

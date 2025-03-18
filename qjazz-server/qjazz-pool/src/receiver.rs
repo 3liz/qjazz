@@ -32,6 +32,12 @@ impl ScopedWorker {
         self.done = true;
     }
 
+    pub async fn remember(&self) {
+        // Remember the worker's pid
+        // so that we can inspect the process
+        self.queue.remember_pid(self.id()).await
+    }
+
     pub(crate) fn recycle(&mut self) -> Option<JoinHandle<Result<()>>> {
         self.item
             .take()

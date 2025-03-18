@@ -157,6 +157,9 @@ impl QgisServer for QgisServerServicer {
     ) -> Result<Response<Self::ExecuteOwsRequestStream>, Status> {
         let mut w = self.inner.get_worker().await?;
 
+        // Remember pid
+        w.remember().await;
+
         let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();
         let resp = w
@@ -202,6 +205,10 @@ impl QgisServer for QgisServerServicer {
         let mut w = self.inner.get_worker().await?;
         let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();
+
+        // Remember pid
+        w.remember().await;
+
         let resp = w
             .request(qjazz_pool::messages::ApiRequestMsg {
                 name: &req.name,

@@ -9,32 +9,33 @@
 """Cache manager for Qgis Projects
 
 Usage example
-```
-cm = CacheManager(conf)
-# Resolve location
-url = cm.resolve_path("/my/project")
 
-# Check status
-md, status = cm.checkout(url)
+.. code-block:: python
 
-match status:
-    case CheckoutStatus.NEW:
-        print("Project exists and is not loaded")
-    case CheckoutStatus.NEEDUPDATE:
-        print("Project is already loaded and need to be updated")
-    case CheckoutStatus.UNCHANGED:
-        print("Project is loaded and is up to date")
-    case CheckoutStatus.REMOVED:
-        print("Project is loaded but has been removed from storage")
-    case CheckoutStatus.NOTFOUND:
-        print("Project does not exists")
+    cm = CacheManager(conf)
+    # Resolve location
+    url = cm.resolve_path("/my/project")
 
-# Update the cache according to
-# the returned status
-entry, update_status = cm.update(md, status)
+    # Check status
+    md, status = cm.checkout(url)
 
-myproject = entry.project
-```
+    match status:
+        case CheckoutStatus.NEW:
+            print("Project exists and is not loaded")
+        case CheckoutStatus.NEEDUPDATE:
+            print("Project is already loaded and need to be updated")
+        case CheckoutStatus.UNCHANGED:
+            print("Project is loaded and is up to date")
+        case CheckoutStatus.REMOVED:
+            print("Project is loaded but has been removed from storage")
+        case CheckoutStatus.NOTFOUND:
+            print("Project does not exists")
+
+    # Update the cache according to
+    # the returned status
+    entry, update_status = cm.update(md, status)
+
+    myproject = entry.project
 
 """
 

@@ -141,6 +141,16 @@ def print_metadata(metadata):
 
 @click.group("commands")
 def cli_commands():
+    """Send gRPC commands to the QGIS gRPC server
+
+    \b
+    Environment variables:
+        QGIS_GRPC_HOST: address of the gRPC server - default  "localhost:23456"
+        CONF_GRPC_USE_TLS: Use tls
+        CONF_GRPC_TLS_KEYFILE: Path to TLS client  key file
+        CONF_GRPC_TLS_CERTFILE: Path to TLS client certificat
+        CONF_GRPC_TLS_CAFILE: Path no CA server certficatae
+    """
     pass
 
 

@@ -68,6 +68,13 @@ pub struct Rpc {
     /// If the failure pressure exceed this value then
     /// the service will exit with critical error condition
     max_failure_pressure: f64,
+    /// Set memory high water mark as fraction of total memory.
+    /// Workers are restarted if total memory percent usage of workers
+    /// exceed that value.
+    high_water_mark: f64,
+    /// Interval in seconds between two check of the out-of-memory
+    /// handler.
+    oom_period: u64,
 }
 
 impl Default for Rpc {
@@ -78,12 +85,24 @@ impl Default for Rpc {
             shutdown_grace_period: 10,
             enable_admin_services: true,
             max_failure_pressure: 0.9,
+            high_water_mark: 0.9,
+            oom_period: 5,
         }
     }
 }
 
 impl Rpc {
     pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.high_water_mark <= 0. || self.high_water_mark > 1. {
+            return Err(ConfigError::Message(
+                "'high_water_mark' value must be between 0 and 1".to_string(),
+            ));
+        }
+        if self.oom_period < 3 {
+            return Err(ConfigError::Message(
+                "'oom_period' must be higher than 3s".to_string(),
+            ));
+        }
         self.listen.validate()
     }
     pub fn listen(&self) -> &ListenConfig {
@@ -115,6 +134,12 @@ impl Rpc {
             .tls_client_cafile
             .as_deref()
             .map(fs::read_to_string)
+    }
+    pub fn high_water_mark(&self) -> f64 {
+        self.high_water_mark
+    }
+    pub fn oom_period(&self) -> Duration {
+        Duration::from_secs(self.oom_period)
     }
 }
 

@@ -8,8 +8,9 @@ use crate::config::WorkerOptions;
 use crate::errors::{Error, Result};
 use crate::queue::Queue;
 use crate::restore::Restore;
-use crate::worker::Worker;
+use crate::worker::{Worker, WorkerId};
 use futures::future::try_join_all;
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -22,6 +23,10 @@ pub(crate) struct WorkerQueue {
     generation: AtomicUsize,
     failures: AtomicUsize,
     restore: RwLock<Restore>,
+    // Keep a list of busy worker's pid
+    // used for checking processe's resources
+    // of busy workers.
+    pids: RwLock<HashSet<u32>>,
 }
 
 impl WorkerQueue {
@@ -35,6 +40,18 @@ impl WorkerQueue {
 
     pub fn next_generation(&self) -> usize {
         self.generation.fetch_add(1, Ordering::Relaxed)
+    }
+
+    pub async fn remember_pid(&self, id: WorkerId) {
+        if let Some(pid) = id.value {
+            self.pids.write().await.insert(pid);
+        }
+    }
+
+    async fn forget_pid(&self, id: WorkerId) {
+        if let Some(pid) = id.value {
+            self.pids.write().await.remove(&pid);
+        }
     }
 
     pub async fn recv(&self) -> Result<Worker> {
@@ -77,7 +94,10 @@ impl WorkerQueue {
         mut worker: Worker,
         done_hint: bool,
     ) -> Result<()> {
-        log::debug!("Recycling worker [{}]", worker.id());
+        let pid = worker.id();
+        log::debug!("Recycling worker [{}]", pid);
+
+        self.forget_pid(pid).await;
 
         // Check if worker must be replaced
         if worker.generation < self.generation() {
@@ -143,6 +163,7 @@ impl Pool {
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
                 failures: AtomicUsize::new(0),
+                pids: RwLock::new(HashSet::new()),
             }),
             builder,
             num_processes: 0,
@@ -201,6 +222,26 @@ impl Pool {
     /// the number of created workers
     pub fn failure_pressure(&self) -> f64 {
         self.failures() as f64 / self.num_processes as f64
+    }
+
+    /// Inspect memoized pids
+    pub async fn inspect_pids<F>(&self, mut f: F)
+    where
+        F: FnMut(Vec<i32>),
+    {
+        // Ensure acquiring the locks during the shortest time
+        // as possible.
+        let processes = {
+            self.queue
+                .pids
+                .write()
+                .await
+                .iter()
+                .map(|id| *id as i32)
+                .collect::<Vec<_>>()
+        };
+
+        f(processes);
     }
 
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {

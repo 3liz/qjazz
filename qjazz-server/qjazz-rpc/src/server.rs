@@ -50,6 +50,13 @@ pub(crate) async fn serve(
         settings.rpc.max_failure_pressure(),
     )?;
 
+    let oom_killer = crate::oom::handle_oom(
+        pool_owned.clone(),
+        token.clone(),
+        settings.rpc.high_water_mark(),
+        settings.rpc.oom_period(),
+    )?;
+
     let grace_period = settings.rpc.shutdown_grace_period();
 
     // NOTE Do not use serve_with_shutdown since
@@ -89,11 +96,16 @@ pub(crate) async fn serve(
 
     token.cancelled().await;
 
+    // Wait for oom killer termination
+    oom_killer.abort();
+    let _ = oom_killer.await;
+
     log::debug!("Closing signal handle");
     signal_handle.close();
 
     // Close queue
     pool_owned.write().await.close(grace_period).await;
+
     // Notify that we are not serving anymore.
     health_reporter
         .set_not_serving::<QgisServerServer<QgisServerServicer>>()

@@ -199,7 +199,7 @@ impl Worker {
         log::debug!(
             "Cancelling job {}:{:?}",
             &self.name,
-            self.process.child.id()
+            self.process.child.id(),
         );
         self.process.send_signal(signal::SIGHUP)?;
         // Pull output from current job.
