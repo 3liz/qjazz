@@ -47,7 +47,10 @@ if [ "$(id -u)" = '0' ]; then
         chown $CONF_USER $HOME
         chmod 755 $HOME
     fi
-    exec gosu $CONF_USER  "$BASH_SOURCE" "$@"
+    
+    REUID=`echo $CONF_USER|cut -d: -f1`
+    REGID=`echo $CONF_USER|cut -d: -f2` 
+    exec setpriv --clear-groups --reuid=$REUID --regid=$REGID "$BASH_SOURCE" "$@"
 fi
 
 

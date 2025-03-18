@@ -106,7 +106,7 @@ BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION)
 
 NOQGIS_BUILD_TARGET:=noqgis
 
-build-noqgis: noqgis-manifest
+build-noqgis: noqgis-manifest requirements
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager  -f Dockerfile  ..
@@ -117,13 +117,13 @@ noqgis-manifest:
 	@{ \
 	set -e; \
 	echo name=$(NAME) > $(NOQGIS_MANIFEST) && \
-	echo version=nogqis-$(VERSION) >> $(NOQGIS_MANIFEST) && \
-    echo version_short=nogqis  >> $(NOQGIS_MANIFEST) && \
+	echo version=noqgis-$(VERSION) >> $(NOQGIS_MANIFEST) && \
+    echo version_short=noqgis  >> $(NOQGIS_MANIFEST) && \
     echo buildid=$(BUILDID)   >> $(NOQGIS_MANIFEST) && \
     echo commitid=$(COMMITID) >> $(NOQGIS_MANIFEST); }
 	@cat $(NOQGIS_MANIFEST)
 
-deliver-nogqis: tag-noqgis push-noqgis
+deliver-noqgis: tag-noqgis push-noqgis
 
 ifdef QJAZZ_VERSION_RC_TAG
 tag-noqgis:
