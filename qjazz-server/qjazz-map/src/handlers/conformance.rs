@@ -7,7 +7,7 @@ use actix_web::{HttpRequest, HttpResponse};
 use serde::Serialize;
 
 use crate::handlers::utils::request;
-use crate::models::{rel, Link};
+use crate::models::{Link, rel};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

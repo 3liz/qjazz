@@ -3,10 +3,10 @@
 //!
 //!
 use signal_hook::consts::signal::{SIGCHLD, SIGINT, SIGTERM};
-use signal_hook::iterator::{backend::Handle, Signals};
+use signal_hook::iterator::{Signals, backend::Handle};
 use std::error::Error;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 use tokio::time;
 use tokio_util::sync::CancellationToken;

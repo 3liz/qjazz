@@ -8,9 +8,9 @@ use tonic_health::server::HealthReporter;
 use super::*;
 
 use qjazz_service::{
-    project_info, CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty,
-    JsonConfig, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest, ServerStatus,
-    ServingStatus, SleepRequest, StatsReply,
+    CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty, JsonConfig,
+    PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest, ServerStatus, ServingStatus,
+    SleepRequest, StatsReply, project_info,
 };
 
 use qjazz_service::qgis_admin_server::QgisAdmin;

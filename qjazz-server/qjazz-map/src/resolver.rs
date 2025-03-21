@@ -3,8 +3,8 @@
 //!
 use config::ConfigError;
 use regex::{Regex, RegexBuilder};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{btree_map, BTreeMap};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use std::collections::{BTreeMap, btree_map};
 use std::path::PathBuf;
 use std::time::Duration;
 use std::{fmt, fs, io};

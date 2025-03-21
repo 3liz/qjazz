@@ -1,5 +1,5 @@
 use crate::channel::{ApiEndPoint, Channel};
-use actix_web::{http, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest, HttpResponse, Responder, http, web};
 use serde::Deserialize;
 
 pub mod catalog;
@@ -11,7 +11,7 @@ pub mod response;
 pub mod utils;
 
 use crate::channel::qjazz_service::{ApiRequest, OwsRequest};
-use response::{metadata, StreamedResponse};
+use response::{StreamedResponse, metadata};
 use utils::request;
 
 //

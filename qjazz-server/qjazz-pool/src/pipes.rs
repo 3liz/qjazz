@@ -3,7 +3,7 @@
 //!
 //!
 use nix::{errno::Errno, unistd};
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 use std::fmt;
 use std::marker::PhantomData;
 use std::ops::ControlFlow;
@@ -205,7 +205,7 @@ impl Pipe {
     }
 
     /// Send a message that expect no return data
-    pub async fn send_nodata_message(&mut self, msg: impl Pickable) -> Result<()> {
+    pub async fn send_noreply_message(&mut self, msg: impl Pickable) -> Result<()> {
         self.put_message(msg.into()).await?;
         self.read_nodata().await
     }

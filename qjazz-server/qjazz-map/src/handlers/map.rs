@@ -4,12 +4,12 @@
 // The map api is implemented as a mapping to ows WMS/GetMap request
 //
 use actix_web::http::header::{self, Header};
-use actix_web::{error, web, HttpRequest, Responder, Result};
+use actix_web::{HttpRequest, Responder, Result, error, web};
 use serde::Deserialize;
 use std::fmt::{self, Write};
 
-use crate::channel::qjazz_service::OwsRequest;
 use crate::channel::Channel;
+use crate::channel::qjazz_service::OwsRequest;
 use crate::handlers::response::execute_ows_request;
 use crate::handlers::utils::request;
 

@@ -1,7 +1,7 @@
 //
 // Parsing bounding box from request arguments
 //
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 use std::str::FromStr;
 use std::{error, fmt};
 

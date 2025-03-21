@@ -1,9 +1,9 @@
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest, HttpResponse, Responder, web};
 use serde::Serialize;
 
 use crate::channel::Channel;
 use crate::handlers::utils::request;
-use crate::models::{rel, Link};
+use crate::models::{Link, rel};
 //use crate::resolver::ApiEndPoint;
 
 type Channels = Vec<web::Data<Channel>>;

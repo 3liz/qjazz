@@ -27,8 +27,8 @@ macro_rules! rootdir {
 //
 //  Test messages
 //
-use crate::messages as msg;
 use crate::Builder;
+use crate::messages as msg;
 use std::collections::HashMap;
 
 #[tokio::test]
@@ -120,12 +120,16 @@ async fn test_messages_io() {
     assert_eq!(resp.next, false);
     assert_eq!(resp.items.len(), 1);
     assert!(resp.items[0].endpoints.contains(msg::OgcEndpoints::MAP));
-    assert!(resp.items[0]
-        .endpoints
-        .contains(msg::OgcEndpoints::FEATURES));
-    assert!(!resp.items[0]
-        .endpoints
-        .contains(msg::OgcEndpoints::COVERAGE));
+    assert!(
+        resp.items[0]
+            .endpoints
+            .contains(msg::OgcEndpoints::FEATURES)
+    );
+    assert!(
+        !resp.items[0]
+            .endpoints
+            .contains(msg::OgcEndpoints::COVERAGE)
+    );
 
     // CheckoutProjectMsg
     let resp = w.checkout_project("checkout", true).await.unwrap();

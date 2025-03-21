@@ -1,8 +1,8 @@
 use actix_web::{
-    body,
+    App, HttpResponse, HttpServer, Result, body,
     body::EitherBody,
     dev::{ServiceRequest, ServiceResponse},
-    middleware, web, App, HttpResponse, HttpServer, Result,
+    middleware, web,
 };
 
 use futures::future::try_join_all;

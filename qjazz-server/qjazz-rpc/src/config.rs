@@ -147,8 +147,8 @@ impl Rpc {
 // Global settings
 //
 use config::{
-    builder::{ConfigBuilder, DefaultState},
     Config, ConfigError, Environment, FileFormat,
+    builder::{ConfigBuilder, DefaultState},
 };
 
 /// Global settings

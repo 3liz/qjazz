@@ -279,7 +279,7 @@ impl Worker {
     /// Send sleep
     pub async fn sleep(&mut self, delay: i64) -> Result<()> {
         self.io()?
-            .send_nodata_message(msg::SleepMsg { delay })
+            .send_noreply_message(msg::SleepMsg { delay })
             .await
     }
 

@@ -11,8 +11,8 @@ use crate::restore::Restore;
 use crate::worker::{Worker, WorkerId};
 use futures::future::try_join_all;
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 

@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Some(conf) => Settings::from_file_template(conf)?,
                 None => Settings::from_env(CONF_ENV)?,
             };
-            let mapserv_args = std::env::var_os("QJAZZ_MAPSERV_ARGS");
+            let mapserv_args = std::env::var_os("QJAZZ_RPC_ARGS");
 
             settings.init_logger();
             tokio::runtime::Builder::new_current_thread()

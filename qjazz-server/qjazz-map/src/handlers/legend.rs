@@ -3,10 +3,10 @@
 //
 // The map/legend api is implemented as a mapping to ows WMS/GetLegendGraphic request
 //
-use actix_web::{web, HttpRequest, Responder, Result};
+use actix_web::{HttpRequest, Responder, Result, web};
 
-use crate::channel::qjazz_service::OwsRequest;
 use crate::channel::Channel;
+use crate::channel::qjazz_service::OwsRequest;
 use crate::handlers::response::execute_ows_request;
 use crate::handlers::utils::request;
 

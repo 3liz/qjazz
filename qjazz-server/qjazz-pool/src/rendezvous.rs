@@ -6,8 +6,8 @@
 //!
 use nix::{errno::Errno, fcntl, fcntl::OFlag, sys::stat, unistd};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
+use std::sync::atomic::{self, AtomicBool};
 use tempfile::TempDir;
 use tokio::io::unix::AsyncFd;
 use tokio::sync::Notify;
@@ -76,7 +76,7 @@ impl RendezVous {
         self.tmp_dir.path()
     }
 
-    /// Return the path of the name pipe
+    /// Return the path of the named pipe
     pub fn path(&self) -> &Path {
         &self.path
     }
@@ -138,7 +138,7 @@ impl RendezVous {
             let mut buf = [1u8; 1];
             let mut eof = 0u16;
             loop {
-                // XXX: If the other-side of the pip
+                // XXX: If the other-side of the pipe
                 // is closed then readable mode is always true
                 // In order to detect such a case and discriminate
                 // from incidental eof return, we check that *N* consecutive

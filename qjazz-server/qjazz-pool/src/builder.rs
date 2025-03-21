@@ -1,9 +1,9 @@
 //! Builder
-use crate::config::{get_log_level, python_executable, WorkerOptions};
+use crate::Worker;
+use crate::config::{WorkerOptions, get_log_level, python_executable};
 use crate::errors::Result;
 use crate::messages::JsonValue;
 use crate::utils::json_merge;
-use crate::Worker;
 use std::ffi::OsStr;
 use std::process::Stdio;
 use tokio::process::Command;

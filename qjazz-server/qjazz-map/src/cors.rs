@@ -1,7 +1,7 @@
 // See https://docs.rs/actix-cors/latest/actix_cors/index.html
 use actix_cors::Cors;
 use actix_web::{http, http::header};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt;
 use std::str::FromStr;
 

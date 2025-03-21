@@ -1,8 +1,9 @@
 // Web utils
 
 use actix_web::{
+    HttpRequest,
     http::header::{AsHeaderName, HeaderMap},
-    web, HttpRequest,
+    web,
 };
 
 pub mod request {

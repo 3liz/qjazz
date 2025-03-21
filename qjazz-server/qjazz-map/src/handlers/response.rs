@@ -2,8 +2,9 @@
 // Handle RPC responses
 //
 use actix_web::{
+    HttpRequest, HttpResponse, HttpResponseBuilder, Responder,
     http::{self, StatusCode},
-    web, HttpRequest, HttpResponse, HttpResponseBuilder, Responder,
+    web,
 };
 use futures::stream::StreamExt;
 use std::str::FromStr;
@@ -13,8 +14,8 @@ use tonic::{
 };
 
 use crate::channel::{
-    qjazz_service::{OwsRequest, ResponseChunk},
     Channel,
+    qjazz_service::{OwsRequest, ResponseChunk},
 };
 
 struct AnyError;

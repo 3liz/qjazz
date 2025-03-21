@@ -1,19 +1,19 @@
 //
 // Catalog handler
 //
-use actix_web::{error, web, Either, HttpRequest, HttpResponse, Responder, Result};
+use actix_web::{Either, HttpRequest, HttpResponse, Responder, Result, error, web};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::cmp;
 
 use crate::channel::{
-    qjazz_service::{collections_page::CollectionsItem, CollectionsPage, CollectionsRequest},
     Channel,
+    qjazz_service::{CollectionsPage, CollectionsRequest, collections_page::CollectionsItem},
 };
 use crate::handlers::response::RpcHttpResponseBuilder;
 use crate::handlers::utils::request;
 use crate::models::apis::OgcEndpoints;
-use crate::models::{rel, Link};
+use crate::models::{Link, rel};
 
 const MAX_PAGE_LIMIT: u16 = 50;
 

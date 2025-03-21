@@ -21,7 +21,7 @@ pub(crate) async fn serve(
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
 
     let mut pool = Pool::new(qjazz_pool::Builder::from_options(
-        args.split_ascii_whitespace(),
+        args.split_whitespace(),
         settings.worker.clone(),
     ));
     pool.maintain_pool().await?;

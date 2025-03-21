@@ -3,7 +3,7 @@
 //! Defines messages and reply for worker processes
 //! communication
 //!
-use serde::{de, Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer, de};
 use std::collections::HashMap;
 
 use crate::errors;

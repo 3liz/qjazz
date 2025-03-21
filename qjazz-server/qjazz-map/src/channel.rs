@@ -6,12 +6,12 @@ use actix_web::web;
 use ginepro::{LoadBalancedChannel, ServiceDefinition};
 use tonic::{Code, Status};
 use tonic_health::pb::{
-    health_check_response::ServingStatus, health_client::HealthClient, HealthCheckRequest,
+    HealthCheckRequest, health_check_response::ServingStatus, health_client::HealthClient,
 };
 
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;

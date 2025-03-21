@@ -1,7 +1,7 @@
 use std::pin::Pin;
 use std::time::Instant;
 use tokio::sync::mpsc;
-use tokio_stream::{wrappers::ReceiverStream, Stream};
+use tokio_stream::{Stream, wrappers::ReceiverStream};
 use tonic::{Request, Response, Status};
 
 use crate::config::Settings;
@@ -15,8 +15,8 @@ pub mod qjazz_service {
 }
 
 use qjazz_service::{
-    collections_page::CollectionsItem, ApiRequest, CollectionsPage, CollectionsRequest, OwsRequest,
-    PingReply, PingRequest, ResponseChunk,
+    ApiRequest, CollectionsPage, CollectionsRequest, OwsRequest, PingReply, PingRequest,
+    ResponseChunk, collections_page::CollectionsItem,
 };
 
 pub mod admin;

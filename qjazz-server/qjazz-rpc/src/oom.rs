@@ -2,7 +2,7 @@
 // Helpers to kill processes if the memory occupied
 //
 use nix::{sys::signal, unistd::Pid};
-use procfs::{process::Process, Current, Meminfo, ProcResult};
+use procfs::{Current, Meminfo, ProcResult, process::Process};
 use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -19,7 +19,7 @@ pub(crate) fn handle_oom(
     throttle_duration: time::Duration,
 ) -> Result<JoinHandle<()>, Box<dyn Error>> {
     // RSS is returned in number of memory pages
-    // so we need the pagesize from sysconf 
+    // so we need the pagesize from sysconf
     // NOTE: on linux x64 the page size is 4096
     let pagesize = sysconf::pagesize() as u64;
     let total_mem = Meminfo::current()?.mem_total as f64;
@@ -61,16 +61,20 @@ pub fn kill_out_of_memory_processes(
         .iter()
         .filter_map(|pid| Process::new(*pid).ok())
         .filter_map(|proc| {
-            // NOTE: procfs hold the /proc/<pi> directory so that 
+            // NOTE: procfs hold the /proc/<pi> directory so that
             // the pid will not be reused as long as `proc` exists.
             if let Ok(st) = proc.stat() {
                 // Consistency check: make sure the process is a child
-                // of `this` and is not terminated or zombi
+                // of `this` and is not terminated or zombified
                 if st.ppid != this || st.state == 'Z' || st.state == 'X' {
                     return None;
                 }
                 let memory_percent = (st.rss * pagesize) as f64 / total_mem;
-                log::debug!("=Processes memory usage [{}]: {:.6}", proc.pid, memory_percent);
+                log::debug!(
+                    "=Processes memory usage [{}]: {:.6}",
+                    proc.pid,
+                    memory_percent
+                );
                 Some((memory_percent, proc))
             } else {
                 None
