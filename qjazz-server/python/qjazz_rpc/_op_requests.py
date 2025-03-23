@@ -102,7 +102,7 @@ def handle_ows_request(
             url += f"&VERSION={msg.version}"
 
     if msg.request_id:
-        log.accept(msg.request_id, entry and entry.uri)
+        log.accept(msg.request_id, entry.uri if entry else None)
 
     resp = _handle_generic_request(
         url,
@@ -146,7 +146,7 @@ def handle_api_request(
         target = os.getenv("QGIS_PROJECT_FILE", "")
 
     log = Log()
-    
+
     if target:
         entry, co_status = get_project(
             conn,
@@ -185,7 +185,7 @@ def handle_api_request(
         url += f"?{msg.options}"
 
     if msg.request_id:
-        log.accept(msg.request_id, entry and entry.uri)
+        log.accept(msg.request_id, entry.uri if entry else None)
 
     resp = _handle_generic_request(
         url,

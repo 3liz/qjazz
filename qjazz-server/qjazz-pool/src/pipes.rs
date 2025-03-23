@@ -51,9 +51,7 @@ impl Pipe {
     {
         self.buf.clear();
         rmp_serde::encode::write_named(&mut self.buf, &msg)?;
-        self.stdin
-            .write_all(&(self.buf.len() as i32).to_be_bytes())
-            .await?;
+        self.stdin.write_i32(self.buf.len() as i32).await?;
         self.stdin.write_all(self.buf.as_slice()).await?;
         Ok(())
     }

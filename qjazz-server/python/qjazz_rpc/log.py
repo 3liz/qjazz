@@ -24,14 +24,14 @@ class Log:
     def accept(
         self,
         request_id: str,
-        project_location: str,
+        project_location: str|None,
     ):
         logger.info(
             "QGIS Request accepted\tMAP:%s\tREQ_ID:%s",
             project_location or "<notset>",
             request_id,
         )
-        
+
     def log(
         self,
         request_id: str,
