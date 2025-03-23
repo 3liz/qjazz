@@ -1,0 +1,30 @@
+[package]
+name = "qjazz-mon"
+version = "0.1.0"
+edition = "2024"
+keywords.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+
+[dependencies]
+log = { workspace = true }
+rmp-serde = { workspace = true }
+serde = { workspace = true,  features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dependencies.tokio]
+workspace = true
+features = [
+    "process",
+    "io-util",
+    "sync",
+    "time",
+]
+
+[dev-dependencies]
+rmp = "0.8"
+

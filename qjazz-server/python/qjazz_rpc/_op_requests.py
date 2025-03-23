@@ -101,6 +101,9 @@ def handle_ows_request(
         if msg.version:
             url += f"&VERSION={msg.version}"
 
+    if msg.request_id:
+        log.accept(msg.request_id, entry and entry.uri)
+
     resp = _handle_generic_request(
         url,
         entry,
@@ -112,7 +115,6 @@ def handle_ows_request(
         server,
         config,
         cache_id=cache_id,
-        request_id=msg.request_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
         content_type=msg.content_type,
@@ -143,6 +145,8 @@ def handle_api_request(
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
 
+    log = Log()
+    
     if target:
         entry, co_status = get_project(
             conn,
@@ -180,7 +184,10 @@ def handle_api_request(
     if msg.options:
         url += f"?{msg.options}"
 
-    _handle_generic_request(
+    if msg.request_id:
+        log.accept(msg.request_id, entry and entry.uri)
+
+    resp = _handle_generic_request(
         url,
         entry,
         co_status,
@@ -191,10 +198,17 @@ def handle_api_request(
         server,
         config,
         cache_id=cache_id,
-        request_id=msg.request_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
         content_type=msg.content_type,
+    )
+
+    log.log(
+        msg.request_id or "-",
+        msg.name,
+        "OAPI",
+        target,
+        resp,
     )
 
 
@@ -210,7 +224,6 @@ def _handle_generic_request(
     config: QgisConfig,
     *,
     cache_id: str,
-    request_id: Optional[str],
     feedback: QgsFeedback,
     header_prefix: Optional[str],
     content_type: Optional[str],

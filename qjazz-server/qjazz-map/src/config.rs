@@ -123,7 +123,7 @@ impl Server {
 //
 
 use rustls::server::{ServerConfig as TlsServerConfig, WebPkiClientVerifier};
-use rustls_pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+use rustls_pki_types::{CertificateDer, PrivateKeyDer, pem::PemObject};
 use std::sync::Arc;
 
 impl Server {
@@ -186,8 +186,8 @@ impl Server {
 // Global settings
 //
 use config::{
-    builder::{ConfigBuilder, DefaultState},
     Config, ConfigError, Environment, FileFormat,
+    builder::{ConfigBuilder, DefaultState},
 };
 
 /// Global settings
@@ -197,6 +197,9 @@ pub struct Settings {
     pub logging: Logging,
     pub server: Server,
     pub backends: Channels,
+    /// The Monitor configuration
+    #[cfg(feature = "monitor")]
+    pub monitor: Option<qjazz_mon::Config>,
 }
 
 impl Settings {

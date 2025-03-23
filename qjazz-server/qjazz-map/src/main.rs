@@ -4,6 +4,7 @@ mod cors;
 mod handlers;
 mod logger;
 mod models;
+mod monitor;
 mod resolver;
 mod server;
 mod services;

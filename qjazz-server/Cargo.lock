@@ -2200,6 +2200,7 @@ dependencies = [
  "num_cpus",
  "percent-encoding",
  "prost",
+ "qjazz-mon",
  "regex",
  "rustls",
  "rustls-pki-types",
@@ -2215,11 +2216,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "qjazz-mon"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "rmp",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
+]
+
+[[package]]
 name = "qjazz-pool"
 version = "0.1.0"
 dependencies = [
  "bitflags",
- "bytes",
  "env_logger",
  "futures",
  "log",

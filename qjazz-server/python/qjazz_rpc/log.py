@@ -21,6 +21,17 @@ class Log:
     def __init__(self) -> None:
         self._instant = Instant()
 
+    def accept(
+        self,
+        request_id: str,
+        project_location: str,
+    ):
+        logger.info(
+            "QGIS Request accepted\tMAP:%s\tREQ_ID:%s",
+            project_location or "<notset>",
+            request_id,
+        )
+        
     def log(
         self,
         request_id: str,

@@ -30,8 +30,6 @@ name = "Features OGC Api (WFS3)"
 endpoint = "lizmap"
 name = "Lizmap API"
 
-
-
 [backends.worker]
 title = "Backend to host 'worker'"
 description = "Backend for test"
@@ -50,3 +48,7 @@ route = "/worker"
 # Api endpoints
 # XXX html templates require that you
 # use wfs3 as api name
+
+[monitor]
+command = "python"
+args = ["tests/monitor.py"]

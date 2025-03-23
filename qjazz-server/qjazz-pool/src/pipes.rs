@@ -19,6 +19,7 @@ pub(crate) struct Pipe {
     stdin: ChildStdin,
     stdout: ChildStdout,
     buffer: Vec<u8>,
+    buf: Vec<u8>,
 }
 
 /// Options for Pipe
@@ -37,6 +38,9 @@ impl Pipe {
             stdin,
             stdout,
             buffer: vec![0; options.buffer_size],
+            // Reusable output buffer
+            // for serializing messages
+            buf: vec![0; 1024],
         }
     }
 
@@ -45,11 +49,12 @@ impl Pipe {
     where
         T: Pickable,
     {
-        let buf = rmp_serde::encode::to_vec(&msg)?;
+        self.buf.clear();
+        rmp_serde::encode::write_named(&mut self.buf, &msg)?;
         self.stdin
-            .write_all(&(buf.len() as i32).to_be_bytes())
+            .write_all(&(self.buf.len() as i32).to_be_bytes())
             .await?;
-        self.stdin.write_all(buf.as_slice()).await?;
+        self.stdin.write_all(self.buf.as_slice()).await?;
         Ok(())
     }
 

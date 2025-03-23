@@ -10,5 +10,8 @@ DIRS= \
 build-release:
 	cargo build --release  --bins
 
+build-release-monitor:
+	cargo build --release  --bins --features monitor
+
 include $(topsrcdir)/config/rules.mk
 

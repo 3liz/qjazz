@@ -6,7 +6,6 @@ use actix_web::{
 };
 
 use futures::future::try_join_all;
-use tokio_util::sync::CancellationToken;
 
 use crate::channel::{self, Channel};
 use crate::config::Settings;
@@ -19,8 +18,6 @@ const LOGGER_FORMAT: &str =
     r#"[REQ:%{x-request-id}i] %a "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D"#;
 
 pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>> {
-    let token = CancellationToken::new();
-
     // Handle channel's connection
     let backends = Backends::connect(settings.backends).await?;
 
@@ -37,7 +34,17 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
 
     let cors = server_conf.cors;
 
-    backends.watch(token);
+    #[cfg(feature = "monitor")]
+    let (tx, token) = crate::monitor::consume(settings.monitor)
+        .await
+        .inspect_err(|e| {
+            log::error!("Failed to start monitor process: {e}");
+        })?;
+
+    #[cfg(not(feature = "monitor"))]
+    let tx = crate::monitor::Sender {};
+
+    backends.watch();
 
     let server = HttpServer::new(move || {
         App::new()
@@ -47,17 +54,33 @@ pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>>
             .app_data(web::ThinData(proxy_headers))
             .configure(backends.clone().configure())
             .wrap(middleware::Logger::new(LOGGER_FORMAT))
+            .app_data(web::ThinData(tx.clone()))
     })
     .shutdown_timeout(shutdown_timeout);
 
-    if let Some(tls_config) = tls_config {
+    let serv = if let Some(tls_config) = tls_config {
         server.bind_rustls_0_23(&bind_address, tls_config)
     } else {
         server.bind(&bind_address)
     }?
     .workers(num_workers)
-    .run()
-    .await?;
+    .run();
+
+    #[cfg(feature = "monitor")]
+    if let Some(tok) = token {
+        match tok.run_until_cancelled(serv).await {
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Monitor failure",
+            )),
+            Some(result) => result,
+        }?;
+    } else {
+        serv.await?;
+    }
+
+    #[cfg(not(feature = "monitor"))]
+    serv.await?;
 
     Ok(())
 }
@@ -123,12 +146,10 @@ impl Backends {
         }
     }
 
-    fn watch(&self, token: CancellationToken) {
+    fn watch(&self) {
         match self {
-            Self::Single(channel) => channel.watch(token),
-            Self::Multi(channels) => channels
-                .iter()
-                .for_each(|channel| channel.watch(token.clone())),
+            Self::Single(channel) => channel.watch(),
+            Self::Multi(channels) => channels.iter().for_each(|channel| channel.watch()),
         }
     }
 

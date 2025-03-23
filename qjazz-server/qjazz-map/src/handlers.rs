@@ -39,6 +39,8 @@ pub mod ows {
         channel: web::Data<Channel>,
         args: Ows,
         data: web::Bytes,
+        // Prevent clippy warning when monitor is disabled
+        _mon: web::ThinData<crate::monitor::Sender>,
     ) -> impl Responder {
         let mut client = channel.client();
 
@@ -47,6 +49,13 @@ pub mod ows {
             request::header_as_str(&req, http::header::CONTENT_TYPE).map(String::from);
 
         let data = data.to_vec();
+
+        #[cfg(feature = "monitor")]
+        let msg = _mon.new_message(
+            args.map.as_deref().unwrap_or("__notset__"),
+            &args.service,
+            args.request.as_deref().unwrap_or_default(),
+        );
 
         let mut request = tonic::Request::new(OwsRequest {
             service: args.service,
@@ -69,12 +78,17 @@ pub mod ows {
             channel.allow_header(h)
         });
 
-        StreamedResponse::new(
+        let resp = StreamedResponse::new(
             client.execute_ows_request(request).await,
             channel.name(),
             request_id,
         )
-        .into_response(channel)
+        .into_response(channel);
+
+        #[cfg(feature = "monitor")]
+        let _ = _mon.send(msg, resp.status());
+
+        resp
     }
 
     // Handle request with query arguments
@@ -84,8 +98,9 @@ pub mod ows {
         channel: web::Data<Channel>,
         args: web::Query<Ows>,
         bytes: web::Bytes,
+        mon: web::ThinData<crate::monitor::Sender>,
     ) -> impl Responder {
-        ows_response(req, channel, args.into_inner(), bytes).await
+        ows_response(req, channel, args.into_inner(), bytes, mon).await
     }
 
     // Handle www-form-data request
@@ -94,6 +109,7 @@ pub mod ows {
         req: HttpRequest,
         channel: web::Data<Channel>,
         bytes: web::Bytes,
+        mon: web::ThinData<crate::monitor::Sender>,
     ) -> web::Either<HttpResponse, impl Responder> {
         // NOTE: we cannot have both Bytes and Form at the same time
         // since Form will consume data
@@ -106,7 +122,7 @@ pub mod ows {
             Ok(args) => args,
         };
 
-        web::Either::Right(ows_response(req, channel, args, bytes).await)
+        web::Either::Right(ows_response(req, channel, args, bytes, mon).await)
     }
 }
 
@@ -131,6 +147,7 @@ pub mod api {
         args: web::Query<Map>,
         data: web::Bytes,
         endpoint: web::Data<ApiEndPoint>,
+        _mon: web::ThinData<crate::monitor::Sender>,
     ) -> impl Responder {
         let mut client = channel.client();
 
@@ -142,6 +159,9 @@ pub mod api {
             .delegate_to
             .clone()
             .unwrap_or(endpoint.endpoint.clone());
+
+        #[cfg(feature = "monitor")]
+        let msg = _mon.new_message(args.map.as_deref().unwrap_or("__notset__"), &name, &path);
 
         let mut request = tonic::Request::new(ApiRequest {
             name,
@@ -164,12 +184,17 @@ pub mod api {
             channel.allow_header(h)
         });
 
-        StreamedResponse::new(
+        let resp = StreamedResponse::new(
             client.execute_api_request(request).await,
             channel.name(),
             request_id,
         )
-        .into_response(channel)
+        .into_response(channel);
+
+        #[cfg(feature = "monitor")]
+        let _ = _mon.send(msg, resp.status());
+
+        resp
     }
 
     // Handlers
@@ -181,8 +206,9 @@ pub mod api {
         map: web::Query<Map>,
         data: web::Bytes,
         endpoint: web::Data<ApiEndPoint>,
+        mon: web::ThinData<crate::monitor::Sender>,
     ) -> impl Responder {
-        api_response(req, channel, path.into_inner(), map, data, endpoint).await
+        api_response(req, channel, path.into_inner(), map, data, endpoint, mon).await
     }
 
     #[inline]
@@ -192,7 +218,8 @@ pub mod api {
         map: web::Query<Map>,
         data: web::Bytes,
         endpoint: web::Data<ApiEndPoint>,
+        mon: web::ThinData<crate::monitor::Sender>,
     ) -> impl Responder {
-        api_response(req, channel, String::default(), map, data, endpoint).await
+        api_response(req, channel, String::default(), map, data, endpoint, mon).await
     }
 }

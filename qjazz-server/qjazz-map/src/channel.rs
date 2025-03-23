@@ -14,7 +14,6 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
-use tokio_util::sync::CancellationToken;
 
 // Reexport
 pub use crate::resolver::{ApiEndPoint, ChannelConfig};
@@ -140,7 +139,7 @@ impl Channel {
     ///
     /// Run in background, watching for health check status
     /// of the service.
-    pub fn watch(&self, token: CancellationToken) {
+    pub fn watch(&self) {
         let request = HealthCheckRequest {
             service: "qjazz.QgisServer".into(),
         };
@@ -201,6 +200,6 @@ impl Channel {
             }
         };
 
-        actix_web::rt::spawn(async move { token.run_until_cancelled(future).await });
+        actix_web::rt::spawn(future);
     }
 }
