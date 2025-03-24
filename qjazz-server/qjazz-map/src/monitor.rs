@@ -117,6 +117,9 @@ mod mon {
     //
     //  Monitor middleware for ows requests
     //
+    //  NOTE: we expect thah the request has `service`, `request` and `map` as
+    //  query params (either for POST and GET)
+    //
     pub async fn middleware(
         mut req: ServiceRequest,
         next: middleware::Next<impl body::MessageBody>,
