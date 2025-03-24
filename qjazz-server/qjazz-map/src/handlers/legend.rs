@@ -3,7 +3,7 @@
 //
 // The map/legend api is implemented as a mapping to ows WMS/GetLegendGraphic request
 //
-use actix_web::{HttpRequest, Responder, Result, web};
+use actix_web::{HttpRequest, Responder, web};
 
 use crate::channel::Channel;
 use crate::channel::qjazz_service::OwsRequest;
@@ -17,7 +17,7 @@ pub async fn default_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     location: web::Path<(String, String)>,
-) -> Result<impl Responder> {
+) -> impl Responder {
     let (target, layer) = location.into_inner();
     legend_request(req, channel, target, layer, None).await
 }
@@ -29,7 +29,7 @@ pub async fn styled_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
     location: web::Path<(String, String, String)>,
-) -> Result<impl Responder> {
+) -> impl Responder {
     let (target, layer, style) = location.into_inner();
     legend_request(req, channel, target, layer, Some(style)).await
 }
@@ -40,7 +40,7 @@ pub async fn legend_request(
     target: String,
     layer: String,
     style: Option<String>,
-) -> Result<impl Responder> {
+) -> impl Responder {
     let request_id = request::request_id(&req).map(String::from);
 
     let mut options = format!(
@@ -69,5 +69,8 @@ pub async fn legend_request(
         content_type: None,
     };
 
-    execute_ows_request(req, channel, request_id, request).await
+    execute_ows_request(req, &channel, request_id, request)
+        .await
+        .into_oapi_error_response(channel)
+        .await
 }

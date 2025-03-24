@@ -6,6 +6,9 @@ use crate::handlers::{api, catalog, conformance, landing_page, legend, map, ows}
 use crate::resolver::ApiEndPoint;
 use actix_web::{guard, web};
 
+#[cfg(feature = "monitor")]
+use actix_web::middleware;
+
 // Configuration for api endpoint
 pub fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig) {
     let path = format!("/{}", api.endpoint);
@@ -32,8 +35,14 @@ pub fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceCo
 
 // Configuration for handling OWS resources
 pub fn ows_resource(cfg: &mut web::ServiceConfig) {
+    #[cfg(feature = "monitor")]
+    let resource = web::resource("").wrap(middleware::from_fn(crate::monitor::middleware));
+
+    #[cfg(not(feature = "monitor"))]
+    let resource = web::resource("");
+
     cfg.service(
-        web::resource("")
+        resource
             .route(
                 web::post()
                     .guard(guard::Header(
@@ -58,7 +67,10 @@ pub fn landing_page(channels: Vec<web::Data<Channel>>) -> impl FnOnce(&mut web::
     }
 }
 
+//
 // Catalog
+//
+//
 pub fn catalog(cfg: &mut web::ServiceConfig) {
     cfg.route("/catalog", web::get().to(catalog::catalog_handler))
         .service(
@@ -70,7 +82,10 @@ pub fn catalog(cfg: &mut web::ServiceConfig) {
         );
 }
 
+//
 // OGG api 'Map' services
+//
+//
 pub fn default_map(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/map").get(map::default_handler).route(

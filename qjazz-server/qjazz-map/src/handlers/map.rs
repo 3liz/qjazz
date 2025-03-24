@@ -163,7 +163,10 @@ pub async fn map_request(
         content_type: None,
     };
 
-    execute_ows_request(req, channel, request_id, request).await
+    Ok(execute_ows_request(req, &channel, request_id, request)
+        .await
+        .into_oapi_error_response(channel)
+        .await)
 }
 
 // WMS options builder

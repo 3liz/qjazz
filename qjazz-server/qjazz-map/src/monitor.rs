@@ -1,12 +1,24 @@
+//!
+//! Implement monitoring for OWS requests
+//!
+
+
 #[cfg(feature = "monitor")]
 mod mon {
-    use actix_web::http::StatusCode;
+    use actix_web::{
+        body,
+        dev::{ServiceRequest, ServiceResponse},
+        http::StatusCode,
+        middleware, web,
+    };
     use qjazz_mon::{Config, Error, Monitor};
     use serde::Serialize;
     use std::collections::HashMap;
     use std::sync::Arc;
     use tokio::time::Instant;
     use tokio_util::sync::CancellationToken;
+
+    use crate::handlers::ows::Ows;
 
     // The real message to be sent
     #[derive(Serialize)]
@@ -20,13 +32,19 @@ mod mon {
         tags: Arc<HashMap<String, String>>,
     }
 
-    // Public message
     #[derive(Debug)]
-    pub struct Message {
-        map: String,
-        service: String,
-        request: String,
+    pub struct Params {
+        args: Ows,
         instant: Instant,
+    }
+
+    impl Params {
+        fn from(args: Ows) -> Self {
+            Self {
+                args,
+                instant: Instant::now(),
+            }
+        }
     }
 
     // Wrap sender into Option and set to None
@@ -40,37 +58,30 @@ mod mon {
     #[derive(Clone)]
     pub struct Sender(Option<Inner>);
 
+    static NOTSET: &str = "<notset>";
+
     impl Sender {
-        pub fn new_message(&self, map: &str, service: &str, request: &str) -> Option<Message> {
-            if self.0.is_some() {
-                Some(Message {
-                    map: map.to_string(),
-                    service: service.to_string(),
-                    request: request.to_string(),
-                    instant: Instant::now(),
-                })
-            } else {
-                None
-            }
+        pub fn is_configured(&self) -> bool {
+            self.0.is_some()
         }
 
-        pub fn send(&self, message: Option<Message>, status: StatusCode) -> Result<(), Error> {
-            log::debug!("[Monitor] sending message {:?}", message);
+        pub fn send(&self, params: Params, status: StatusCode) -> Result<(), Error> {
+            log::debug!("[Monitor] sending message {:?}", params);
             if let Some(tx) = &self.0 {
-                let m = message.ok_or(Error::MessageRequired)?;
                 let msg = Msg {
-                    map: m.map,
-                    service: m.service,
-                    request: m.request,
-                    response_time: m.instant.elapsed().as_millis() as u64,
+                    service: params.args.service,
+                    request: params.args.request.unwrap_or(NOTSET.to_string()),
+                    map: params.args.map.unwrap_or(NOTSET.to_string()),
+                    response_time: params.instant.elapsed().as_millis() as u64,
                     response_status: status.as_u16(),
                     tags: tx.tags.clone(),
                 };
-                let _ = tx.tx.try_send(msg).inspect_err(|e| {
-                    log::error!("Monitor: failed to send message: {e}");
-                });
+                tx.tx
+                    .try_send(msg)
+                    .map_err(|e| Error::SendError(format!("{e}")))
+            } else {
+                Err(Error::SendError("Monitor is not configured".to_string()))
             }
-            Ok(())
         }
     }
 
@@ -89,10 +100,10 @@ mod mon {
             let token = CancellationToken::new();
             let tok = token.clone();
 
-            let fut = monitor.run().await?;
+            let task = monitor.run().await?;
 
             actix_web::rt::spawn(async move {
-                if let Err(e) = fut.await {
+                if let Err(e) = task.await {
                     log::error!("FATAL: Unrecoverable monitor failure: {e}");
                     token.cancel();
                 }
@@ -101,6 +112,37 @@ mod mon {
         } else {
             Ok((Sender(None), None))
         }
+    }
+
+    //
+    //  Monitor middleware for ows requests
+    //
+    pub async fn middleware(
+        mut req: ServiceRequest,
+        next: middleware::Next<impl body::MessageBody>,
+    ) -> actix_web::Result<ServiceResponse<impl body::MessageBody>> {
+        let mon = req
+            .app_data::<web::ThinData<Sender>>()
+            .expect("Sender must be declared as thin application data!")
+            .clone();
+
+        let params = if mon.is_configured() {
+            req.extract::<web::Query<Ows>>()
+                .await
+                .ok()
+                .map(|args| Params::from(args.into_inner()))
+        } else {
+            None
+        };
+
+        let resp = next.call(req).await?;
+
+        if let Some(params) = params {
+            let _ = mon.send(params, resp.status()).inspect_err(|e| {
+                log::error!("Monitor: failed to send message: {e}");
+            });
+        }
+        Ok(resp)
     }
 }
 

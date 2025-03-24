@@ -2,7 +2,7 @@
 // Handle RPC responses
 //
 use actix_web::{
-    HttpRequest, HttpResponse, HttpResponseBuilder, Responder,
+    HttpRequest, HttpResponse, HttpResponseBuilder,
     http::{self, StatusCode},
     web,
 };
@@ -15,7 +15,7 @@ use tonic::{
 
 use crate::channel::{
     Channel,
-    qjazz_service::{OwsRequest, ResponseChunk},
+    qjazz_service::{ApiRequest, OwsRequest, ResponseChunk},
 };
 
 struct AnyError;
@@ -267,6 +267,39 @@ impl StreamedResponse {
         }
     }
 
+    // Transform an ows error response to an oapi error response
+    pub async fn into_oapi_error_response(self, channel: web::Data<Channel>) -> HttpResponse {
+        match self {
+            Self::Fail(resp) => resp,
+            Self::Succ(mut builder, resp) => {
+                // Check return code
+                // XXX: Need to check the returned content type ?
+                if builder.status_code().is_success() {
+                    builder.stream_bytes(resp, channel)
+                } else {
+                    let data = collect_payload(resp).await;
+                    let text = data
+                        .as_deref()
+                        .map(|b| std::str::from_utf8(b).unwrap_or("<binary data>"));
+                    log::error!(
+                        "{}: Request returned error: {:?}\n{:?}",
+                        channel.name(),
+                        builder.status_code(),
+                        text,
+                    );
+                    builder.content_type(mime::TEXT_PLAIN).body(
+                        match text {
+                            Ok(msg) => service_exception_msg(msg),
+                            Err(_) => None,
+                        }
+                        .unwrap_or("Request error")
+                        .to_string(),
+                    )
+                }
+            }
+        }
+    }
+
     // Stream response chunks
     pub fn new(
         response: std::result::Result<ResponseStream, tonic::Status>,
@@ -320,17 +353,10 @@ mod tests {
 }
 
 //
-// Send an OWS request
+// Prepare the RPC request
 //
-pub async fn execute_ows_request(
-    req: HttpRequest,
-    channel: web::Data<Channel>,
-    request_id: Option<String>,
-    ows_request: OwsRequest,
-) -> actix_web::Result<impl Responder> {
-    let mut client = channel.client();
-
-    let mut request = tonic::Request::new(ows_request);
+fn prepare_request<T>(req: HttpRequest, message: T, channel: &Channel) -> tonic::Request<T> {
+    let mut request = tonic::Request::new(message);
 
     request.set_timeout(channel.timeout());
 
@@ -339,37 +365,45 @@ pub async fn execute_ows_request(
         channel.allow_header(h)
     });
 
-    match StreamedResponse::new(
-        client.execute_ows_request(request).await,
+    request
+}
+
+//
+// Send an OWS request
+//
+#[inline]
+pub async fn execute_ows_request(
+    req: HttpRequest,
+    channel: &Channel,
+    request_id: Option<String>,
+    ows_request: OwsRequest,
+) -> StreamedResponse {
+    let mut client = channel.client();
+    StreamedResponse::new(
+        client
+            .execute_ows_request(prepare_request(req, ows_request, channel))
+            .await,
         channel.name(),
         request_id,
-    ) {
-        StreamedResponse::Fail(resp) => Ok(resp),
-        StreamedResponse::Succ(mut builder, resp) => {
-            // Check return code
-            // XXX: Need to check the returned content type ?
-            if builder.status_code().is_success() {
-                Ok(builder.stream_bytes(resp, channel.clone()))
-            } else {
-                let data = collect_payload(resp).await;
-                let text = data
-                    .as_deref()
-                    .map(|b| std::str::from_utf8(b).unwrap_or("<binary data>"));
-                log::error!(
-                    "{}: Map request returned error: {:?}\n{:?}",
-                    channel.name(),
-                    builder.status_code(),
-                    text,
-                );
-                Ok(builder.content_type(mime::TEXT_PLAIN).body(
-                    match text {
-                        Ok(msg) => service_exception_msg(msg),
-                        Err(_) => None,
-                    }
-                    .unwrap_or("Map request error")
-                    .to_string(),
-                ))
-            }
-        }
-    }
+    )
+}
+
+//
+// Send an API request
+//
+#[inline]
+pub async fn execute_api_request(
+    req: HttpRequest,
+    channel: &Channel,
+    request_id: Option<String>,
+    api_request: ApiRequest,
+) -> StreamedResponse {
+    let mut client = channel.client();
+    StreamedResponse::new(
+        client
+            .execute_api_request(prepare_request(req, api_request, channel))
+            .await,
+        channel.name(),
+        request_id,
+    )
 }
