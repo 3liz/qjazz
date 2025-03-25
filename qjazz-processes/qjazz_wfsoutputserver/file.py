@@ -1,5 +1,3 @@
-
-
 from pathlib import Path
 
 from qgis.PyQt.QtCore import QByteArray, QFile, QIODevice

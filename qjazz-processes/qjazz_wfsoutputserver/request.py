@@ -44,12 +44,9 @@ class WfsOutputParameters(JsonModel):
     layer: str = Field(
         title="Layer",
         description="""Specifiy the layer to get features from""",
-        pattern="^[^,]+$"  # Exclude comma from name which will be seen as a separator
+        pattern="^[^,]+$",  # Exclude comma from name which will be seen as a separator
     )
-    propertyname: Option[str] = Field(
-        title="Property",
-        description="""Specify a property to return."""
-    )
+    propertyname: Option[str] = Field(title="Property", description="Specify a property to return.")
     maxfeatures: Option[PositiveInt] = Field(
         title="Feature limit",
         description="Max number of features returned",
@@ -66,9 +63,9 @@ class WfsOutputParameters(JsonModel):
     filter: Option[str] = Field(
         title="OGC Filter",
         description="""
-            Allows to filter the response with the `Filter Encoding language`
-            defined by the OGC Filter Encoding standard.
-        """
+        Allows to filter the response with the `Filter Encoding language`
+        defined by the OGC Filter Encoding standard.
+        """,
     )
     sort_by: Option[str] = Field(
         title="Sort by",
@@ -88,12 +85,12 @@ class WfsOutputParameters(JsonModel):
     name: Option[str] = Field(
         title="Output name",
         description="""
-            A custom output name identifier.
-            This identifier will be used as basename
-            for the generated files.
-            The identitfier must be a letter followed by
-            letters, digits and may include underscore or
-            ascii dash (-).
+        A custom output name identifier.
+        This identifier will be used as basename
+        for the generated files.
+        The identitfier must be a letter followed by
+        letters, digits and may include underscore or
+        ascii dash (-).
         """,
         pattern="^[a-zA-Z][a-zA-Z0-9_-]+$",
     )
@@ -128,11 +125,10 @@ class WfsOutputParameters(JsonModel):
         self,
         output_format: WfsOutputFormat,
     ) -> Iterator[tuple[str, str]]:
-
         if output_format.value.is_native():
             OUTPUTFORMAT = output_format.value.media_type
         else:
-            OUTPUTFORMAT = 'GML2'
+            OUTPUTFORMAT = "GML2"
 
         yield "SERVICE", "WFS"
         yield "REQUEST", "GetFeature"
@@ -145,6 +141,7 @@ class WfsOutputParameters(JsonModel):
 # GetFeture Request
 #
 
+
 def getfeature_request(
     basename: str,
     feedback: QgsProcessingFeedback,
@@ -154,7 +151,6 @@ def getfeature_request(
     query: str,
     output_format: WfsOutputFormat,
 ) -> Path:
-
     is_native = output_format.value.is_native()
 
     output_file = context.workdir.joinpath(basename)
@@ -192,7 +188,6 @@ def download_xsd(
     server: QgsServer,
     project: QgsProject,
 ) -> Optional[Path]:
-
     output_file = context.workdir.joinpath(basename).with_suffix(".xsd")
     logger.info("Downloading XSD file")
 

@@ -314,8 +314,8 @@ def do_sleep(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):
         sleep(1.0)
         canceled = feedback.isCanceled()
         if canceled:
-           logger.info("** Sleep cancelled **")
-           break
+            logger.info("** Sleep cancelled **")
+            break
     if not canceled:
         logger.info("** Worker is now awake  **")
         _m.send_nodata(conn)

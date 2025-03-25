@@ -54,8 +54,10 @@ def test_getprint_parameters():
     assert query["TRANSPARENT"] == "TRUE"
     assert query["FORMAT"] == "application/pdf"
 
+
 @pytest.mark.parametrize(
-    "output_format", (of for of in GetPrintProcess.output_formats),
+    "output_format",
+    (of for of in GetPrintProcess.output_formats),
 )
 def test_getprint_execute(
     output_format: Format,
@@ -71,9 +73,9 @@ def test_getprint_execute(
         template="Landscape A4",
         crs="EPSG:3857",
         transparent=False,
-        #layers=[
+        # layers=[
         #    "Quartiers",
-        #],
+        # ],
     )
 
     outputs = {

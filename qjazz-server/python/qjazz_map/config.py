@@ -56,7 +56,7 @@ class Server(ConfigBase):
         the same value as the 'Origin' request header.
         A url may may be specified, restricting allowed origin to
         this url.
-        """
+        """,
     )
     num_workers: Option[int] = Field(
         title="Workers",

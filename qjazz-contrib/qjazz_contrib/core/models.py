@@ -105,10 +105,8 @@ def fix_nullable_schema(s):
     fix_optional_schema(s)
     s.update(nullable=True)
 
-Option = Annotated[T | None, Field(default=None, json_schema_extra=fix_optional_schema)]
 
-# XXX Deprecated: use Option
-# Opt = Annotated[T | None, Field(default=None, json_schema_extra=fix_optional_schema)]
+Option = Annotated[T | None, Field(default=None, json_schema_extra=fix_optional_schema)]
 
 # nullable = true
 Nullable = Annotated[T | None, Field(json_schema_extra=fix_nullable_schema)]

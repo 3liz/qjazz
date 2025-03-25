@@ -28,7 +28,6 @@ def test_wfsoutput_process_description(projects: Projects):
 
 
 def test_wfsoutput_parameters():
-
     inputs = dict(
         layer="france_parts",
     )
@@ -50,9 +49,7 @@ def test_wfsoutput_parameters():
     assert query["TYPENAME"] == "france_parts"
 
 
-@pytest.mark.parametrize(
-    "output_format", (of for of in WfsOutputFormat)
-)
+@pytest.mark.parametrize("output_format", (of for of in WfsOutputFormat))
 def test_wfsoutput_execute(
     output_format: WfsOutputFormat,
     context: ProcessingContext,

@@ -54,9 +54,7 @@ from .request import WfsOutputParameters, download_xsd, getfeature_request
 
 def get_wfs_layers(project: QgsProject) -> Sequence[str]:
     allowed_layers = set(QgsServerProjectUtils.wfsLayerIds(project))
-    return tuple(
-        layer.name() for layer in project.mapLayers().values() if layer.id() in allowed_layers
-    )
+    return tuple(layer.name() for layer in project.mapLayers().values() if layer.id() in allowed_layers)
 
 
 #
@@ -93,9 +91,7 @@ class WfsOutputProcess:
                 ),
             )
 
-    output_formats: Sequence[Format] = tuple(
-        of.value.as_format() for of in WfsOutputFormat
-    )
+    output_formats: Sequence[Format] = tuple(of.value.as_format() for of in WfsOutputFormat)
 
     _output_description: OutputDescription | None = None
 
@@ -263,6 +259,7 @@ class WfsOutputProcess:
             # Compress if required
             if output_format.value.archive:
                 from .archive import archive_files
+
                 output_file = archive_files(output_file, output_format.value, feedback, context)
         else:
             # Nothing else to do

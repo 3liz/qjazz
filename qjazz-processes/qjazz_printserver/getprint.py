@@ -271,6 +271,7 @@ def get_print_templates(project: QgsProject) -> Sequence[str]:
     manager = project.layoutManager()
     return tuple(layout.name() for layout in manager.printLayouts())
 
+
 #
 # GetPrint Process
 #

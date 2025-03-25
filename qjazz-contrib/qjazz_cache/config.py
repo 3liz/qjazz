@@ -63,7 +63,7 @@ class ProjectsConfig(config.ConfigBase):
         like primary key unicity, geometry type and
         srid and by using estimated metadata on layer load.
         Since QGIS 3.16
-        """
+        """,
     )
     disable_getprint: Annotated[
         bool,
@@ -94,9 +94,9 @@ class ProjectsConfig(config.ConfigBase):
         title="Ignore bad layers",
         description="""
         Allow projects to be loaded with event if it contains
-        layers that cannot be loaded
+        layers that cannot be loaded.
         Note that the 'dont_resolve_layers flag' trigger automatically
-        this option."
+        this option.
         """,
     )
 
