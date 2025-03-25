@@ -9,7 +9,7 @@ import traceback
 from datetime import timedelta
 from pathlib import Path
 from typing import (
-    Iterator,
+    Iterable,
     Optional,
 )
 
@@ -143,13 +143,17 @@ class S3Storage:
         job_id: str,
         *,
         workdir: Path,
-        files: Iterator[Path],
+        files: Iterable[Path],
     ):
         for file in files:
             #
             # Get object name
             #
-            if file.is_absolute():
+            if not file.exists():
+                # Do not transfer what does not exist
+                logger.warning("File %s does not exists", file)
+                continue
+            elif file.is_absolute():
                 if not file.is_relative_to(workdir):
                     logger.warning("Cannot transfer non-relative file %s", file)
                     continue

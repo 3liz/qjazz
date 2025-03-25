@@ -1,6 +1,12 @@
-from qgis.core import QgsProcessingFeedback
+from typing import Protocol
+
+from qgis.core import QgsProcessingFeedback, QgsProject
 
 from qjazz_contrib.core import logger
+
+
+class Projects(Protocol):
+    def get(self, name: str) -> QgsProject: ...
 
 
 class FeedBack(QgsProcessingFeedback):

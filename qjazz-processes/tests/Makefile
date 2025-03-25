@@ -3,7 +3,7 @@ SHELL:=bash
 
 .PHONY: env
 
-DEPTH=../../..
+DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
@@ -22,7 +22,7 @@ workdir:
 
 
 clean:
-	rm -r __workdir__/*
+	rm -rf __workdir__/*
 
 FLAVOR:=release
 
@@ -60,7 +60,3 @@ run-all: up
 restart-worker: 
 	$(DOCKER_COMPOSE) up -d --force-recreate worker
 
-# Equivalent run using celery config
-run-celery: export PY_QGIS_PROCESSES_CONFIG=$(CURDIR)/worker-config.toml
-run-celery: workdir
-	celery -A qjazz_processes.jobs  worker -l $(LOGLEVEL) --hostname dev1@%h -Ofair $(CELERY_ARGS)

@@ -32,6 +32,7 @@ from .formats import (  # noqa F401
 )
 from .models import (  # noqa F401
     AnyFormat,
+    Field,
     Link,
     LinkHttp,
     LinkReference,
@@ -44,6 +45,7 @@ from .models import (  # noqa F401
     MediaType,
     Null,
     NullField,
+    Opt,
     InputValueError,
     QualifiedInputValue,
     RefOrQualifiedInput,

@@ -5,9 +5,11 @@ import mimetypes
 import shutil
 
 from itertools import chain
+from pathlib import Path
 from time import time
 from typing import (
     Callable,
+    Iterable,
     Iterator,
     Optional,
     Sequence,
@@ -357,8 +359,12 @@ class QgisWorker(Worker):
             expires=expiration,
         )
 
-    def store_files(self, job_id: str):
-        """Move files to storage"""
+    def store_files(self, job_id: str, add_auxiliary_files: bool = True):
+        """Move files to storage
+
+        If add_auxiliary_files is false then all attached files created
+        by the jobs are ignored and only published files are transferred.
+        """
         jobdir = self._workdir.joinpath(job_id)
         files = tuple(QgisContext.published_files(jobdir))
 
@@ -384,13 +390,9 @@ class QgisWorker(Worker):
         with jobdir.joinpath(FILE_LINKS).open("w") as f:
             f.write(LinkSequence.dump_json(tuple(_make_links())).decode())
 
-        #
-        # Import published files and auxiliary files
-        #
-        self._storage.move_files(
-            job_id,
-            workdir=self._workdir,
-            files=chain(
+        files_to_store: Iterable[Path]
+        if add_auxiliary_files:
+            files_to_store = chain(
                 files,
                 jobdir.glob("**/*.zip"),
                 jobdir.glob("**/*.qgs"),
@@ -398,7 +400,17 @@ class QgisWorker(Worker):
                 jobdir.glob("**/*.qml"),
                 jobdir.glob("**/*.sld"),
                 jobdir.glob("**/*.db"),
-            ),
+            )
+        else:
+            files_to_store = files
+
+        #
+        # Import published files and auxiliary files
+        #
+        self._storage.move_files(
+            job_id,
+            workdir=self._workdir,
+            files=files_to_store,
         )
 
     def create_context(self) -> QgisContext:

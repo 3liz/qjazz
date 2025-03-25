@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Iterator,
+    Iterable,
     Optional,
     Protocol,
     Self,
@@ -47,7 +47,7 @@ class Storage(Protocol):
         job_id: str,
         *,
         workdir: Path,
-        files: Iterator[Path],
+        files: Iterable[Path],
     ):
         """Move files to storage"""
         ...

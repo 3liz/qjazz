@@ -2,7 +2,7 @@ import mimetypes
 
 from pathlib import Path
 from typing import (
-    Iterator,
+    Iterable,
     Optional,
 )
 
@@ -40,7 +40,7 @@ class LocalStorage(Storage):
         job_id: str,
         *,
         workdir: Path,
-        files: Iterator[Path],
+        files: Iterable[Path],
     ):
         # No-op
         pass

@@ -14,7 +14,6 @@ from typing import (
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
-    Field,
     JsonValue,
     TypeAdapter,
     ValidationError,
@@ -22,11 +21,13 @@ from pydantic import (
 
 from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.models import (
+    Field,
     JsonDict,
     JsonModel,
     Null,
     NullField,
     OneOf,  # noqa F401
+    Opt,  # noqa F401
     one_of,  # noqa F401
     remove_auto_title,  # noqa F401
 )

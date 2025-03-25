@@ -111,7 +111,7 @@ class PdfFormatOptions(JsonModel):
 
     def to_query_param(model: JsonModel) -> str:
         def _iter_values() -> Iterable[str]:
-            for name, val in model.dict().items():
+            for name, val in model.model_dump().items():
                 if val is None:
                     continue
                 if isinstance(val, bool):

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing_extensions import Callable
 from qgis.core import (
     QgsProcessingFeedback,
 )
+from qgis.server import QgsServer
 
 from qjazz_cache.prelude import ProjectsConfig
 from qjazz_contrib.core import qgis
@@ -19,7 +21,7 @@ from qjazz_processes.processing.prelude import (
     ProcessingContext,
 )
 
-from .utils import FeedBack
+from .utils import FeedBack, Projects
 
 
 def pytest_report_header(config):
@@ -54,14 +56,6 @@ def workdir(rootdir: Path) -> Path:
     return path
 
 
-def pytest_collection_modifyitems(config, items):
-    if not qgis.qgis_initialized():
-        skip_qgis = pytest.mark.skip(reason="No qgis environment")
-        for item in items:
-            if "qgis" in item.keywords:
-                item.add_marker(skip_qgis)
-
-
 def pytest_sessionstart(session: pytest.Session):
     workdir = Path(session.startdir).joinpath("__workdir__")
     if workdir.exists():
@@ -77,11 +71,13 @@ def cache_config(data: Path) -> ProjectsConfig:
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
+        ignore_bad_layers=True,
         search_paths={
             "/samples": f"{data}/samples/",
             "/france": f"{data}/france_parts/",
             "/montpellier": f"{data}/montpellier/",
             "/database": "postgresql://?service=qjazz",
+            "/lines": f"{data}/lines/",
         },
     )
 
@@ -148,6 +144,12 @@ def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> 
     return context
 
 
+@pytest.fixture(scope="function")
+def server(qgis_session: ProcessingConfig) -> QgsServer:
+    os.environ["QGIS_SERVER_PROJECT_CACHE_STRATEGY"] = "off"
+    return QgsServer()
+
+
 @pytest.fixture(scope="session")
 def cache_manager(cache_config, qgis_session):
     from qjazz_cache.prelude import CacheManager
@@ -165,7 +167,7 @@ def projects(cache_manager):
 
     cm = cache_manager
 
-    class Project:
+    class ProjectsImpl(Projects):
         def get(self, name: str) -> QgsProject:
             # Resolve location
             url = cm.resolve_path(name)
@@ -179,7 +181,7 @@ def projects(cache_manager):
                     project = entry.project
             return project
 
-    yield Project()
+    yield ProjectsImpl()
 
     print("Deleting projects cache")
     cm.clear()

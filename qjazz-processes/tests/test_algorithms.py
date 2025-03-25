@@ -128,7 +128,7 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
 
     # Check output
     out = results["OUTPUT"]
-    assert out["type"] == "application/x-ogc-wms"
+    assert out["type"] == "application/x-ogc-wms+xml"
     assert out["href"] == context.ows_reference(
         service="WMS",
         request="GetCapabilities",
@@ -221,7 +221,7 @@ def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
             "DISTANCE": 0.05,
         },
         outputs={
-            "OUTPUT": {"format": {"mediaType": "application/x-ogc-wfs"}},
+            "OUTPUT": {"format": {"mediaType": "application/x-ogc-wfs+xml"}},
         },
     )
 
@@ -233,7 +233,7 @@ def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
     assert context.destination_project.count() == 1
 
     out = results.get("OUTPUT")
-    assert out["type"] == "application/x-ogc-wfs"
+    assert out["type"] == "application/x-ogc-wfs+xml"
 
 
 def test_algorithms_selectfeatures(qgis_session, plugins, projects):

@@ -17,15 +17,15 @@ from qjazz_processes.worker.prelude import (
 )
 
 from .context import (
-    PrintServerCache,
-    QgisPrintServerContext,
+    QgisWfsOutputServerContext,
+    WfsOutputServerCache,
 )
 
 
 @worker_process_init.connect
 def init_qgis(*args, **kwargs):
     """Initialize Qgis context in each process"""
-    QgisPrintServerContext.setup(app.processing_config)
+    QgisWfsOutputServerContext.setup(app.processing_config)
 
 
 #
@@ -33,17 +33,17 @@ def init_qgis(*args, **kwargs):
 #
 
 
-class QgisPrintServerWorker(QgisWorker):
+class QgisWfsOutputServerWorker(QgisWorker):
     def create_context(self) -> QgisContext:
-        return QgisPrintServerContext(self.processing_config, service_name=self.service_name)
+        return QgisWfsOutputServerContext(self.processing_config, service_name=self.service_name)
 
     def create_processes_cache(self) -> Optional[ProcessCacheProto]:
-        processes_cache = PrintServerCache(self.processing_config)
+        processes_cache = WfsOutputServerCache(self.processing_config)
         processes_cache.start()
         return processes_cache
 
 
-app = QgisPrintServerWorker()
+app = QgisWfsOutputServerWorker()
 
 
 @app.job(name="process_execute", bind=True, run_context=True, base=QgisProcessJob)

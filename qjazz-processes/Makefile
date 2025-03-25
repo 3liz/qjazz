@@ -6,6 +6,7 @@ include $(DEPTH)/config/config.mk
 PYTHON_PKG= \
 	qjazz_processes   \
 	qjazz_printserver \
+	qjazz_wfsoutputserver \
 	$(NULL)
 
 
