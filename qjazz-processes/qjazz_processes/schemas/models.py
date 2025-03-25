@@ -24,10 +24,8 @@ from qjazz_contrib.core.models import (
     Field,
     JsonDict,
     JsonModel,
-    Null,
-    NullField,
     OneOf,  # noqa F401
-    Opt,  # noqa F401
+    Option,  # noqa F401
     one_of,  # noqa F401
     remove_auto_title,  # noqa F401
 )
@@ -35,19 +33,19 @@ from qjazz_contrib.core.models import (
 
 class _LinkBase(JsonModel):
     # The type or semantics of the relation.
-    rel: Optional[str] = Null
+    rel: Option[str] = None
     # Mime type of the data returne by the link
-    mime_type: Optional[str] = NullField(serialization_alias="type")
+    mime_type: Option[str] = Field(serialization_alias="type")
     # human-readable identifier for the link
     title: str = ""
     # A long description for the link
-    description: Optional[str] = Null
+    description: Option[str] = None
     # Estimated size (in bytes) of the online resource response
-    length: Optional[int] = Null
+    length: Option[int] = None
     # Is the link templated with '{?<keyword>}'
     templated: bool = False
     # Language of the resource referenced
-    hreflang: Optional[str] = Null
+    hreflang: Option[str] = None
 
 
 #
@@ -73,7 +71,7 @@ class LinkReference(LinkHttp):
     # Http method
     method: Literal["GET", "POST"] = "GET"
     # Request body
-    body: Optional[str] = Null
+    body: Option[str] = None
 
 
 class MediaTypeProtocol(Protocol):
@@ -99,8 +97,8 @@ def MediaType(
 
 class OutputFormat(JsonModel):
     media_type: str
-    encoding: Optional[str] = Null
-    schema_: Optional[AnyUrl | JsonDict] = NullField(alias="schema")
+    encoding: Option[str] = None
+    schema_: Option[AnyUrl | JsonDict] = Field(alias="schema")
 
     def __eq__(self, other: object) -> bool:
         return self.media_type == cast(MediaTypeProtocol, other).media_type

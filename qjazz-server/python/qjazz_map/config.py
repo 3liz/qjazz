@@ -19,7 +19,7 @@ from qjazz_contrib.core.config import (
     ConfigError,
     read_config_toml,
 )
-from qjazz_contrib.core.models import Field, Opt
+from qjazz_contrib.core.models import Field, Option
 
 from .resolver import BackendConfig
 
@@ -35,30 +35,30 @@ class Server(ConfigBase):
         default=False,
         title="Use TLS",
     )
-    tls_client_cafile: Opt[FilePath] = Field(
+    tls_client_cafile: Option[FilePath] = Field(
         title="Client CA file",
         description="Certificat for client authentification",
     )
-    tls_cert_file: Opt[FilePath] = Field(
+    tls_cert_file: Option[FilePath] = Field(
         title="TLS  key",
         description="Path to the TLS key file",
     )
-    tls_key_file: Opt[FilePath] = Field(
+    tls_key_file: Option[FilePath] = Field(
         title="SSL/TLS Certificat",
         description="Path to the TLS certificat file",
     )
     cross_origin: HttpCORS = Field(
         default="all",
         title="CORS origin",
-        description=(
-            "Allows to specify origin for CORS. If set 'all' will set\n"
-            "Access-Control-Allow-Origin to '*'; 'same-origin' return\n"
-            "the same value as the 'Origin' request header.\n"
-            "A url may may be specified, restricting allowed origin to\n"
-            "this url."
-        ),
+        description="""
+        Allows to specify origin for CORS. If set 'all' will set
+        Access-Control-Allow-Origin to '*'; 'same-origin' return
+        the same value as the 'Origin' request header.
+        A url may may be specified, restricting allowed origin to
+        this url.
+        """
     )
-    num_workers: Opt[int] = Field(
+    num_workers: Option[int] = Field(
         title="Workers",
         description="Numbers of worker threads",
     )
@@ -97,14 +97,14 @@ def create_config() -> ConfBuilder:
     # Path to services configuration
     builder.add_section(
         "includes",
-        Opt[str],  # type: ignore [misc]
+        Option[str],  # type: ignore [misc]
         Field(
             title="Path to services configuration files",
-            description=(
-                "Path or globbing to services configuration files.\n"
-                "Note that this section is ignored if remote configuration\n"
-                "is used."
-            ),
+            description="""
+            Path or globbing to services configuration files.
+            Note that this section is ignored if remote configuration
+            is used.
+            """,
         ),
     )
 

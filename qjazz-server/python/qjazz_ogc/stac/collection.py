@@ -14,7 +14,7 @@ from typing import (
 from qjazz_contrib.core.models import (
     Field,
     JsonDict,
-    Opt,
+    Option,
 )
 
 from ..core.extent import Extent
@@ -29,7 +29,7 @@ class Collection(CatalogBase):
     # Override
     type: Literal["Collection"] = "Collection"
 
-    attribution: Opt[str] = Field(description="attribution for the collection")
+    attribution: Option[str] = Field(description="attribution for the collection")
 
     # Use OGC extent definition
     extent: Extent

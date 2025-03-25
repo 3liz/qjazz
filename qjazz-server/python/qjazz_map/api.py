@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from qjazz_contrib.core.models import JsonModel, Opt
+from qjazz_contrib.core.models import JsonModel, Option
 from qjazz_ogc.core.collections import Collection
 from qjazz_ogc.stac import Link
 
@@ -12,8 +12,8 @@ class LandinPage(JsonModel):
 # Catalog description
 class CatalogDesc(JsonModel):
     name: str
-    title: Opt[str]
-    description: Opt[str]
+    title: Option[str]
+    description: Option[str]
     available: bool
 
 

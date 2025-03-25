@@ -6,17 +6,16 @@ from datetime import datetime
 from typing import (
     ClassVar,
     Literal,
-    Optional,
     TypeAlias,
 )
 
-from pydantic import Field, JsonValue, TypeAdapter
+from pydantic import JsonValue, TypeAdapter
 
 from .models import (
+    Field,
     JsonModel,
     LinkHttp,
-    Null,
-    NullField,
+    Option,
     OutputFormat,
 )
 
@@ -25,10 +24,10 @@ DateTime = TypeAdapter(datetime)
 
 class JobException(JsonModel):
     type_: str = Field(alias="type")
-    title: Optional[str] = Null
-    status: Optional[int] = Null
-    detail: Optional[str] = Null
-    instance: Optional[str] = Null
+    title: Option[str] = None
+    status: Option[int] = None
+    detail: Option[str] = None
+    instance: Option[str] = None
 
 
 #
@@ -63,21 +62,21 @@ class JobStatus(JsonModel):
 
     # Attributes
     job_id: str = Field(title="Job ID")
-    process_id: Optional[str] = NullField(title="Process ID")
+    process_id: Option[str] = Field(title="Process ID")
     process_type: Literal["process"] = Field(
         title="Job type",
         default="process",
         alias="type",
     )
     status: JobStatusCode
-    message: Optional[str] = Null
+    message: Option[str] = None
     created: datetime
-    started: Optional[datetime] = Null
-    finished: Optional[datetime] = Null
-    updated: Optional[datetime] = Null
-    progress: Optional[int] = NullField(ge=0, le=100)
+    started: Option[datetime] = None
+    finished: Option[datetime] = None
+    updated: Option[datetime] = None
+    progress: Option[int] = Field(ge=0, le=100)
 
-    exception: Optional[JobException] = Null
+    exception: Option[JobException] = None
 
     links: list[LinkHttp] = Field([])
 
@@ -86,10 +85,10 @@ class JobStatus(JsonModel):
     #
 
     # Run configuraton
-    run_config: Optional[JsonValue] = Null
+    run_config: Option[JsonValue] = None
 
     # Expiration timestamp
-    expires_at: Optional[datetime] = Null
+    expires_at: Option[datetime] = None
 
 
 class Output(JsonModel):

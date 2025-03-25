@@ -8,15 +8,15 @@ from pydantic import HttpUrl
 from qjazz_contrib.core.models import (
     Field,
     JsonModel,
-    Opt,
+    Option,
 )
 
 
 class Link(JsonModel):
     href: HttpUrl
     rel: str
-    media_type: Opt[str] = Field(alias="type")
-    title: Opt[str] = None
-    description: Opt[str] = None
-    templated: Opt[bool] = None
-    hreflang: Opt[str] = None
+    media_type: Option[str] = Field(alias="type")
+    title: Option[str] = None
+    description: Option[str] = None
+    templated: Option[bool] = None
+    hreflang: Option[str] = None

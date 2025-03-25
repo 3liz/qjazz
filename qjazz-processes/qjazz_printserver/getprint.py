@@ -1,11 +1,7 @@
 from collections.abc import Sequence
-from textwrap import dedent as _D
 from urllib.parse import urlencode
 
-from pydantic import (
-    Field,
-    alias_generators,
-)
+from pydantic import alias_generators
 from pydantic.aliases import PydanticUndefined
 from typing_extensions import (
     Annotated,
@@ -28,6 +24,7 @@ from qjazz_processes.processing.prelude import (
     ProcessingContext,
 )
 from qjazz_processes.schemas import (
+    Field,
     Format,
     InputDescription,
     InputValueError,
@@ -36,7 +33,7 @@ from qjazz_processes.schemas import (
     JsonModel,
     Link,
     MetadataValue,
-    NullField,
+    Option,
     OutputDescription,
     ProcessDescription,
     ProcessSummary,
@@ -60,51 +57,51 @@ def _comma_separated_list(seq: Sequence[str | int | float], sep: str = ",") -> s
 
 
 class PdfFormatOptions(JsonModel):
-    rasterize_whole_image: Optional[bool] = NullField(
+    rasterize_whole_image: Option[bool] = Field(
         title="Export as image",
         description="Whether the whole pdf should be exported as an image,",
     )
-    force_vector_output: Optional[bool] = NullField(
+    force_vector_output: Option[bool] = Field(
         title="Export as vector",
         description="Whether pdf should be exported as vector.",
     )
-    append_georeference: Optional[bool] = NullField(
+    append_georeference: Option[bool] = Field(
         title="Add georeference",
         description="Whether georeference info shall be added to the pdf.",
     )
-    export_metadata: Optional[bool] = NullField(
+    export_metadata: Option[bool] = Field(
         title="Export metadata",
         description="Whether metadata shall be added to the pdf.",
     )
-    text_render_format: Optional[Literal["AlwaysOutline", "AlwaysText"]] = Field(
+    text_render_format: Option[Literal["AlwaysOutline", "AlwaysText"]] = Field(
         title="Text render format",
         description="Sets the text render format for pdf export",
     )
-    simplify_geometry: Optional[bool] = NullField(
+    simplify_geometry: Option[bool] = Field(
         title="Simplify geometries",
     )
-    write_geo_pdf: Optional[bool] = NullField(
+    write_geo_pdf: Option[bool] = Field(
         title="Export as GeoPDF",
     )
-    use_iso_32000_extension_format_georeferencing: Optional[bool] = NullField(
+    use_iso_32000_extension_format_georeferencing: Option[bool] = Field(
         title="Use Iso32000 georeferencing",
     )
-    use_ogc_best_practice_format_georeferencing: Optional[bool] = NullField(
+    use_ogc_best_practice_format_georeferencing: Option[bool] = Field(
         title="Use ogc best practice georeferencing",
     )
-    export_themes: Optional[str] = NullField(
+    export_themes: Option[str] = Field(
         title="Exported themes",
         description="A comma separated list of map themes to use for a GeoPDF export",
     )
-    predefined_map_scales: Optional[str] = NullField(
+    predefined_map_scales: Option[str] = Field(
         title="Map scales",
         description="A comma separated list of map scales to render the map.",
     )
-    lossless_image_compression: Optional[bool] = NullField(
+    lossless_image_compression: Option[bool] = Field(
         title="Use lossless compression",
         description="Whether images embedded in pdf must be compressed using a lossless algorithm.",
     )
-    disable_tiled_raster_rendering: Optional[bool] = NullField(
+    disable_tiled_raster_rendering: Option[bool] = Field(
         title="Disable raster tiling",
         description="Whether rasters shall be untiled in the pdf.",
     )
@@ -123,35 +120,36 @@ class PdfFormatOptions(JsonModel):
 
 
 class MapOptions(JsonModel):
-    extent: Optional[Extent2D] = NullField(
+    extent: Option[Extent2D] = Field(
         title="Extent",
-        description=("This parameter specifies the extent for a layout map item as [xmin,ymin,xmax,ymax]."),
+        description="""
+        This parameter specifies the extent for a layout map item
+        as [xmin,ymin,xmax,ymax].
+        """,
     )
-    rotation: Optional[float] = NullField(
+    rotation: Option[float] = Field(
         title="Rotation",
         description="This parameter specifies the map rotation in degrees.",
     )
-    grid_interval_x: Optional[int] = NullField(
+    grid_interval_x: Option[int] = Field(
         title="Grid interval X",
         description="This parameter specifies the grid line density in the X direction.",
     )
-    grid_interval_y: Optional[int] = NullField(
+    grid_interval_y: Option[int] = Field(
         title="Grid interval Y",
         description="This parameter specifies the grid line density in the Y direction.",
     )
-    scale: Optional[float] = NullField(
+    scale: Option[float] = Field(
         title="Scale",
-        description=_D(
-            """
-            This parameter specifies the map scale for a layout map item.
-            This is useful to ensure scale based visibility of layers and labels
-            even if client and server may have different algorithms to calculate
-            the scale denominator.
-            """,
-        ),
+        description="""
+        This parameter specifies the map scale for a layout map item.
+        This is useful to ensure scale based visibility of layers and labels
+        even if client and server may have different algorithms to calculate
+        the scale denominator.
+        """,
     )
-    layers: Optional[Sequence[str]] = NullField(title="Layers")
-    styles: Optional[Sequence[str]] = NullField(title="Styles")
+    layers: Option[Sequence[str]] = Field(title="Layers")
+    styles: Option[Sequence[str]] = Field(title="Styles")
 
     def to_query_params(self, name: str) -> Iterator[tuple[str, str]]:
         for field, val in self.dict().items():
@@ -186,62 +184,57 @@ class GetPrintParameters(JsonModel):
     )
     crs: str = Field(
         title="Coordinate reference system",
-        description=_D(
-            """
+        description="""
             This parameter allows to indicate the map output
             Coordinate Reference System.
-            """,
-        ),
+        """,
     )
-    format_options: Optional[PdfFormatOptions] = NullField(
+    format_options: Option[PdfFormatOptions] = Field(
         title="Pdf format options",
         description="Options for pdf output format only",
     )
-    atlas_pk: Optional[str] = NullField(
+    atlas_pk: Option[str] = Field(
         title="Atlas features",
-        description=_D(
-            """
-            This parameter allows activation of Atlas rendering by indicating
-            which features we want to print.
-            In order to retrieve an atlas with all features, the * symbol
-            may be used (according to the maximum number of features allowed
-            in the project configuration).
-            """,
-        ),
+        description="""
+        This parameter allows activation of Atlas rendering by indicating
+        which features we want to print.
+        In order to retrieve an atlas with all features, the * symbol
+        may be used (according to the maximum number of features allowed
+        in the project configuration).
+        """,
     )
-    styles: Optional[Sequence[str]] = NullField(
+    styles: Option[Sequence[str]] = Field(
         title="Layer's style",
-        description=("This parameter can be used to specify a layer's style for the rendering step."),
+        description="""
+        This parameter can be used to specify a layer's style
+        for the rendering step.
+        """,
     )
-    transparent: Optional[bool] = NullField(
+    transparent: Option[bool] = Field(
         title="Transparent background",
         description="This parameter can be used to specify the background transparency.",
     )
-    opacities: Optional[Sequence[OpacityValue]] = NullField(
+    opacities: Option[Sequence[OpacityValue]] = Field(
         title="Opacity for layer or group",
-        description=_D(
-            """
-            List of opacity values.
-            Opacity can be set on layer or group level.
-            Allowed values range from 0 (fully transparent) to 255 (fully opaque).
-            """,
-        ),
+        description="""
+        List of opacity values.
+        Opacity can be set on layer or group level.
+        Allowed values range from 0 (fully transparent) to 255 (fully opaque).
+        """,
     )
-    selection: Optional[dict[str, Sequence[FeatureId]]] = NullField(
+    selection: Option[dict[str, Sequence[FeatureId]]] = Field(
         title="Highlight features",
-        description=_D(
-            """
-            This parameter can highlight features from one or more layers.
-            Vector features can be selected by passing comma separated lists
-            with feature ids.
-            """,
-        ),
+        description="""
+        This parameter can highlight features from one or more layers.
+        Vector features can be selected by passing comma separated lists
+        with feature ids.
+        """,
     )
-    layers: Optional[Sequence[str]] = NullField(
+    layers: Option[Sequence[str]] = Field(
         title="Layers to display",
         description="This parameter allows to specify the layers to display on the map.",
     )
-    map_options: Optional[dict[str, MapOptions]] = NullField(
+    map_options: Option[dict[str, MapOptions]] = Field(
         title="Layout map item options",
         description="Allow specify layout item options",
     )
@@ -274,6 +267,10 @@ def get_wms_layers(project: QgsProject) -> Sequence[str]:
     return tuple(layer.name() for layer in project.mapLayers().values() if layer.name() not in restricted_layers)
 
 
+def get_print_templates(project: QgsProject) -> Sequence[str]:
+    manager = project.layoutManager()
+    return tuple(layout.name() for layout in manager.printLayouts())
+
 #
 # GetPrint Process
 #
@@ -289,6 +286,8 @@ class GetPrintProcess:
         for name, field in GetPrintParameters.model_fields.items():
             type_: object
             match name:
+                case "template" if project:
+                    type_ = Literal[get_print_templates(project)]  # type: ignore [misc]
                 case "layers" if project:
                     type_ = Optional[set[Literal[get_wms_layers(project)]]]  # type: ignore [misc]
                 case _:
@@ -418,7 +417,15 @@ class GetPrintProcess:
         project = context.project()
         assert_precondition(project is not None)
 
-        output_file = context.workdir.joinpath(f"getprint-{context.job_id}")
+        def find_format() -> Format:
+            of = request.outputs["output"].format
+            for f in cls.output_formats:
+                if f == of:
+                    return f
+            raise RunProcessException(f"Unexpected output format: {of}")
+
+        output_format = find_format()
+        output_file = context.workdir.joinpath(f"getprint-{context.job_id}{output_format.suffix}")
 
         req = QgsServerRequest(f"?{_query}", QgsServerRequest.GetMethod)
         response = QgsServerFileResponse(output_file)
@@ -428,13 +435,12 @@ class GetPrintProcess:
         if status_code != 200:
             raise RunProcessException("Getprint failure (code: %s)", status_code)
 
-        media_type = request.outputs["output"].format.media_type
         reference = context.file_reference(output_file)
 
         return {
             "output": Link(
                 href=reference,
-                mime_type=media_type,
+                mime_type=output_format.media_type,
                 title="GetPrint document",
                 length=output_file.stat().st_size,
             ).model_dump(mode="json", by_alias=True, exclude_none=True),

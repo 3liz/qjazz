@@ -1,5 +1,4 @@
 from pathlib import Path
-from textwrap import dedent as _D
 from typing import (
     Annotated,
     Optional,
@@ -9,12 +8,12 @@ from pydantic import (
     AfterValidator,
     BeforeValidator,
     DirectoryPath,
-    Field,
 )
 
 from qjazz_cache.prelude import ProjectsConfig
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigBase, SSLConfig, Template, TemplateStr
+from qjazz_contrib.core.models import Field
 from qjazz_contrib.core.qgis import (
     QgisNetworkConfig,
     QgisPluginConfig,
@@ -59,78 +58,64 @@ class ProcessingConfig(ConfigBase):
         AfterValidator(_validate_absolute_path),
     ] = Field(
         title="Working directory",
-        description=_D(
-            """
-            Parent working directory where processes are executed.
-            Each processes will create a working directory for storing
-            result files and logs.
-            """,
-        ),
+        description="""
+        Parent working directory where processes are executed.
+        Each processes will create a working directory for storing
+        result files and logs.
+        """,
     )
     exposed_providers: list[str] = Field(
         default=["script", "model"],
         title="Internal qgis providers exposed",
-        description=_D(
-            """
-            List of exposed QGIS processing internal providers.
-            NOTE: It is not recommended exposing all providers like
-            `qgis` or `native`, instead provide your own wrapping
-            algorithm, script or model.
-            """,
-        ),
+        description="""
+        List of exposed QGIS processing internal providers.
+        NOTE: It is not recommended exposing all providers like
+        `qgis` or `native`, instead provide your own wrapping
+        algorithm, script or model.
+        """,
     )
     expose_deprecated_algorithms: bool = Field(
         default=True,
         title="Expose deprecated algorithms",
-        description=_D(
-            """
-            Expose algorithm wich have the `Deprecated`
-            flag set.
-            """,
-        ),
+        description="""
+        Expose algorithm wich have the `Deprecated`
+        flag set.
+        """,
     )
     # XXX Must set in Settings `default-output-vector-layer-ext`
     default_vector_file_ext: Optional[str] = Field(
         default="fgb",
         title="Default vector file extension",
-        description=_D(
-            """
-            Define the default vector file extensions for vector destination
-            parameters. If not specified, then the QGIS default value is used.
-            """,
-        ),
+        description="""
+        Define the default vector file extensions for vector destination
+        parameters. If not specified, then the QGIS default value is used.
+        """,
     )
     # XXX Must set in Settings `default-output-raster-layer-ext`
     default_raster_file_ext: Optional[str] = Field(
         default=None,
         title="Default vector file extension",
-        description=_D(
-            """
-            Define the default raster file extensions for raster destination
-            parameters. If not specified, then the QGIS default value is used.
-            """,
-        ),
+        description="""
+        Define the default raster file extensions for raster destination
+        parameters. If not specified, then the QGIS default value is used.
+        """,
     )
     adjust_ellipsoid: bool = Field(
         default=False,
         title="Force ellipsoid imposed by the source project",
-        description=_D(
-            """
-            Force the ellipsoid from the src project into the destination project.
-            This only apply if the src project has a valid CRS.
-            """,
-        ),
+        description="""
+        Force the ellipsoid from the src project into the destination project.
+        This only apply if the src project has a valid CRS.
+        """,
     )
     default_crs: str = Field(
         default=WGS84,
         title="Set default CRS",
-        description=_D(
-            """
-            Set the CRS to use when no source map is specified.
-            For more details on supported formats see the GDAL method
-            'GdalSpatialReference::SetFromUserInput()'
-            """,
-        ),
+        description="""
+        Set the CRS to use when no source map is specified.
+        For more details on supported formats see the GDAL method
+        'GdalSpatialReference::SetFromUserInput()'
+        """,
     )
     advertised_services_url: TemplateStr = Field(
         default=Template("ows:$jobId/$name"),
@@ -142,38 +127,34 @@ class ProcessingConfig(ConfigBase):
         default=Template("${public_url}/jobs/$jobId/files/$resource"),
         validate_default=True,
         title="Public download url",
-        description=_D(
-            """
-            Url template for downloading resources.
-            This is the public base url that will be seen in
-            referenced responses.
-            This url will need to be translated by the front end
-            executor to an effective download url.
-            """,
-        ),
+        description="""
+        Url template for downloading resources.
+        This is the public base url that will be seen in
+        referenced responses.
+        This url will need to be translated by the front end
+        executor to an effective download url.
+        """,
     )
     raw_destination_input_sink: bool = Field(
         default=False,
         title="Use destination input as sink",
-        description=_D(
-            """
-            Allow input value as sink for destination layers.
-            This allow value passed as input value to be interpreted as
-            path or uri sink definition. This enable passing any string
-            that QGIS may use a input source but without open options except for the
-            'layername=<name>' option.
+        description="""
+        Allow input value as sink for destination layers.
+        This allow value passed as input value to be interpreted as
+        path or uri sink definition. This enable passing any string
+        that QGIS may use a input source but without open options except for the
+        'layername=<name>' option.
 
-            NOTE: Running concurrent jobs with this option may result in unpredictable
-            behavior.
+        NOTE: Running concurrent jobs with this option may result in unpredictable
+        behavior.
 
-            For that reason it is considered as an UNSAFE OPTION and you should never enable
-            this option if you are exposing the service publicly.
+        For that reason it is considered as an UNSAFE OPTION and you should never enable
+        this option if you are exposing the service publicly.
 
-            File path inputs prefixed with '/' will correspond to path located in the root
-            directory specified by the `raw_destination_root_path` option.
-            Otherwise, they will be stored in the job folder.
-            """,
-        ),
+        File path inputs prefixed with '/' will correspond to path located in the root
+        directory specified by the `raw_destination_root_path` option.
+        Otherwise, they will be stored in the job folder.
+        """,
     )
     raw_destination_root_path: Annotated[
         Optional[DirectoryPath],
@@ -181,13 +162,11 @@ class ProcessingConfig(ConfigBase):
     ] = Field(
         default=None,
         title="Raw destination root path",
-        description=_D(
-            """
-            Specify the root directory for storing destination layers files when
-            the `raw_destination_input_sink` option is enabled.
-            If not specified, files will be stored in the job folder.
-            """,
-        ),
+        description="""
+        Specify the root directory for storing destination layers files when
+        the `raw_destination_input_sink` option is enabled.
+        If not specified, files will be stored in the job folder.
+        """,
     )
     certificats: SSLConfig = Field(
         default=SSLConfig(),
@@ -203,12 +182,12 @@ class ProcessingConfig(ConfigBase):
     qgis_settings: dict[str, QgisSettingValue] = Field(
         default={},
         title="Qgis settings",
-        description=(
-            "Qgis settings override.\n"
-            "Use the syntax '<section>/<path>' for keys.\n"
-            "Not that values defined here will override those\n"
-            "from QGIS3.ini file."
-        ),
+        description="""
+        Qgis settings override.
+        Use the syntax '<section>/<path>' for keys.
+        Not that values defined here will override those
+        from QGIS3.ini file."
+        """,
     )
 
     def settings(self) -> dict[str, str]:

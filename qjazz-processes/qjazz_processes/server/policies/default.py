@@ -4,9 +4,9 @@ from typing import (
 )
 
 from aiohttp import web
-from pydantic import Field
 
 from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.models import Field
 
 from ..accesspolicy import AccessPolicy
 from ..models import ErrorResponse
@@ -18,14 +18,14 @@ from ..models import ErrorResponse
 class DefaultAccessPolicyConfig(ConfigBase):
     service_order: Sequence[str] = Field(
         default=(),
-        description=(
-            "Set the order of services resolution\n."
-            "Services will be picked in the order\n"
-            "of the list; the first available service\n"
-            "will be choosen."
-            "If no services are defined then a service will"
-            "be picked from the available services."
-        ),
+        description="""
+        Set the order of services resolution.
+        Services will be picked in the order
+        of the list; the first available service
+        will be choosen.
+        If no services are defined then a service will
+        be picked from the available services.
+        """,
     )
 
 

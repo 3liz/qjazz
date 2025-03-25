@@ -12,7 +12,7 @@ from pydantic import (
 )
 
 from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import Field, Opt
+from qjazz_contrib.core.models import Field, Option
 
 DEFAULT_PORT = 23456
 
@@ -47,7 +47,7 @@ class ApiEndpoint(ConfigBase):
         pattern=r"^[^\/]+",
         title="Api endpoint",
     )
-    delegate_to: Opt[str] = Field(
+    delegate_to: Option[str] = Field(
         title="Api name to delegate to",
         description="""
           Api delegation allow for using a baseurl different
@@ -83,14 +83,14 @@ class BackendConfig(ConfigBase):
         False,
         title="Enable TLS",
     )
-    cafile: Opt[FilePath] = Field(
+    cafile: Option[FilePath] = Field(
         title="CA file",
     )
-    client_key_file: Opt[FilePath] = Field(
+    client_key_file: Option[FilePath] = Field(
         title="TLS  key file",
         description="Path to the TLS key file",
     )
-    client_cert_file: Opt[FilePath] = Field(
+    client_cert_file: Option[FilePath] = Field(
         title="TLS Certificat",
         description="Path to the TLS certificat file",
     )

@@ -69,7 +69,7 @@ def cache_config(data: Path) -> ProjectsConfig:
     """Setup cache configuration"""
     return ProjectsConfig(
         trust_layer_metadata=True,
-        disable_getprint=True,
+        disable_getprint=False,
         force_readonly_layers=True,
         ignore_bad_layers=True,
         search_paths={

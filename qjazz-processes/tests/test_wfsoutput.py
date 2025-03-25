@@ -94,6 +94,3 @@ def test_wfsoutput_execute(
         assert output_file.suffix == ".zip"
     else:
         assert output_file.suffix == output_format.value.suffix
-
-
-

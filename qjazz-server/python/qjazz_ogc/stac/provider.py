@@ -10,7 +10,7 @@ from pydantic import HttpUrl
 from qjazz_contrib.core.models import (
     Field,
     JsonModel,
-    Opt,
+    Option,
 )
 
 
@@ -19,7 +19,7 @@ class Provider(JsonModel):
         description="The name of the organization or the individual.",
     )
 
-    description: Opt[str] = Field(
+    description: Option[str] = Field(
         description="""
         Multi-line description to add further provider information such
         as processing details for processors and producers,
@@ -38,7 +38,7 @@ class Provider(JsonModel):
         ],
     ] = Field(description="Role of the provider")
 
-    url: Opt[HttpUrl] = Field(
+    url: Option[HttpUrl] = Field(
         description="""
             Homepage on which the provider describes the dataset
             and publishes contact information.

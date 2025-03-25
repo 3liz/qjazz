@@ -4,7 +4,6 @@ import traceback
 
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from textwrap import dedent as _D
 from typing import (
     Awaitable,
     Callable,
@@ -81,15 +80,13 @@ class HttpConfig(ConfigBase):
     cross_origin: HttpCORS = Field(
         default="all",
         title="CORS origin",
-        description=_D(
-            """
-            Allows to specify origin for CORS. If set 'all' will set
-            Access-Control-Allow-Origin to '*'; 'same-origin' return
-            the same value as the 'Origin' request header.
-            A url may may be specified, restricting allowed origin to
-            this url.
-            """,
-        ),
+        description="""
+        Allows to specify origin for CORS. If set 'all' will set
+        Access-Control-Allow-Origin to '*'; 'same-origin' return
+        the same value as the 'Origin' request header.
+        A url may may be specified, restricting allowed origin to
+        this url.
+        """,
     )
     proxy: ForwardedConfig = Field(default=ForwardedConfig())
 

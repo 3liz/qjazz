@@ -19,7 +19,7 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils
 
-from qjazz_contrib.core.models import Opt
+from qjazz_contrib.core.models import Option
 
 from .core import collections
 from .core.crs import Crs
@@ -64,9 +64,9 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 class Collection(collections.Collection):
     # Not included in schemas but passed to
     # map proxy
-    styles: Opt[Sequence[str]] = None
-    legend_url: Opt[HttpUrl] = None
-    legend_format: Opt[str] = None
+    styles: Option[Sequence[str]] = None
+    legend_url: Option[HttpUrl] = None
+    legend_format: Option[str] = None
 
     #
     # Compute catalog entry form QGIS project

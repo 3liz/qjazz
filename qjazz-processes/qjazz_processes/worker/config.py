@@ -5,7 +5,6 @@ import os
 import sys
 
 from pathlib import Path
-from textwrap import dedent as _D
 from typing import (
     Optional,
     Protocol,
@@ -13,13 +12,12 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
-
 from qjazz_contrib.core import config, logger
 from qjazz_contrib.core.celery import CeleryConfig
 from qjazz_contrib.core.condition import (
     assert_precondition,
 )
+from qjazz_contrib.core.models import Field
 from qjazz_processes.schemas import LinkHttp
 
 from ..processing.config import ProcessingConfig
@@ -65,12 +63,10 @@ class WorkerConfig(CeleryConfig):
     service_name: str = Field(
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_\-]+$",
         title="Name of the service",
-        description=_D(
-            """
-            Name used as location service name
-            for initializing Celery worker.
-            """,
-        ),
+        description="""
+        Name used as location service name
+        for initializing Celery worker.
+        """,
     )
 
     title: str = Field("", title="Service short title")
@@ -86,25 +82,21 @@ class WorkerConfig(CeleryConfig):
         default=3600,
         ge=300,
         title="Cleanup interval",
-        description=_D(
-            """
-            Interval is seconds between two cleanup of expired jobs.
-            The minimun is 300s (5mn).
-            """,
-        ),
+        description="""
+        Interval is seconds between two cleanup of expired jobs.
+        The minimun is 300s (5mn).
+        """,
     )
 
     reload_monitor: Optional[Path] = Field(
         default=None,
         title="Reload watch file",
-        description=_D(
-            """
-            The file to watch for reloading processing plugins.
-            When the the modified time of the file is changed, processing
-            providers are reloaded.
-            The restart is graceful, all running jobs are terminated normally.
-            """,
-        ),
+        description="""
+        The file to watch for reloading processing plugins.
+        When the the modified time of the file is changed, processing
+        providers are reloaded.
+        The restart is graceful, all running jobs are terminated normally.
+        """,
     )
 
 

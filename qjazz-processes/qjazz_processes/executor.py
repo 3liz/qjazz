@@ -3,7 +3,6 @@ import itertools
 from dataclasses import dataclass
 from enum import IntEnum
 from random import randint
-from textwrap import dedent as _D
 from time import time
 from typing import (
     Callable,
@@ -52,13 +51,11 @@ class ExecutorConfig(ConfigBase):
     message_expiration_timeout: int = Field(
         default=600,
         title="Message expiration timeout",
-        description=_D(
-            """
-            The amount of time an execution message
-            can wait on queue before beeing processed
-            with asynchronous response.
-            """,
-        ),
+        description="""
+        The amount of time an execution message
+        can wait on queue before beeing processed
+        with asynchronous response.
+        """,
     )
 
 

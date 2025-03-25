@@ -32,15 +32,18 @@ class JobRealmConfig(ConfigBase):
     enabled: bool = Field(
         default=False,
         title="Enable job realm header",
-        description=(
-            f"When enabled, use the '{JOB_REALM_HEADER}' http header\n"
-            "as a client identification token for retrieving jobs status and results."
-        ),
+        description=f"""
+            When enabled, use the '{JOB_REALM_HEADER}' http header
+            as a client identification token for retrieving jobs status and results.
+        """,
     )
     admin_tokens: Sequence[str] = Field(
         default=(),
         title="Admininistrator realm jobs tokens",
-        description=("Define catch all tokens for listing and retrieve status and results\nfor all jobs."),
+        description="""
+        Define catch all tokens for listing and retrieve status and results
+        for all jobs.
+        """,
     )
 
     def validate_realm(self, realm: str) -> str:

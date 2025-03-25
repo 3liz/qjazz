@@ -13,7 +13,7 @@ from typing import Sequence
 
 from qjazz_contrib.core.models import (
     Field,
-    Opt,
+    Option,
 )
 
 from ..stac import collection
@@ -23,7 +23,7 @@ from .crs import CRS84, Crs
 class Collection(collection.Collection):
     # XXX Check specs for this, this is totally unclear how it relates
     # to spatial extent `crs`
-    crs: Opt[list[Crs]] = Field(
+    crs: Option[list[Crs]] = Field(
         default=[CRS84],
         description="""
             the list of coordinate reference systems supported by the API;
@@ -31,7 +31,7 @@ class Collection(collection.Collection):
         """,
     )
 
-    storage_crs: Opt[Crs] = Field(
+    storage_crs: Option[Crs] = Field(
         description="""
             the native coordinate reference system (i.e., the most efficient CRS in
             which to request the data, possibly how the data is stored on the server);
@@ -40,7 +40,7 @@ class Collection(collection.Collection):
         """,
     )
 
-    geometry_dimension: Opt[int] = Field(
+    geometry_dimension: Option[int] = Field(
         description="""
             The geometry dimension of the features shown in this layer (
             0: points, 1: curves, 2: surfaces, 3: solids), unspecified: mixed or unknown'
@@ -49,10 +49,10 @@ class Collection(collection.Collection):
         le=3,
     )
 
-    min_scale_denominator: Opt[float] = Field(
+    min_scale_denominator: Option[float] = Field(
         description="Minimum scale denominator for usage of the collection",
     )
-    max_scale_denominator: Opt[float] = Field(
+    max_scale_denominator: Option[float] = Field(
         description="Maximum scale denominator for usage of the collection",
     )
 
@@ -60,9 +60,9 @@ class Collection(collection.Collection):
 
     # Not required for STAC collection object
     # but they are qgis project metadata
-    datetime: Opt[DateTimeType] = Field(description="DateTime associated no this resource")
-    created: Opt[DateTimeType] = Field(description="Creation DateTime")
-    updated: Opt[DateTimeType] = Field(description="Update DateTime")
+    datetime: Option[DateTimeType] = Field(description="DateTime associated no this resource")
+    created: Option[DateTimeType] = Field(description="Creation DateTime")
+    updated: Option[DateTimeType] = Field(description="Update DateTime")
 
     # QJazz Addition
-    copyrights: Opt[Sequence[str]] = None
+    copyrights: Option[Sequence[str]] = None

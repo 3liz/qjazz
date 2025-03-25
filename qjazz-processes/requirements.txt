@@ -21,7 +21,7 @@ pydantic-extra-types==2.10.3
 pydantic-settings==2.8.1
 pydantic==2.10.6
 pydantic_core==2.27.2
-python-dotenv==1.0.1
+python-dotenv==1.1.0
 requests==2.32.3
 ruamel.yaml.clib==0.2.12
 ruamel.yaml==0.18.10

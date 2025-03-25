@@ -25,7 +25,7 @@ from qjazz_processes.processing.prelude import (
 from qjazz_processes.schemas import (
     Field,
     JsonModel,
-    Opt,
+    Option,
     RunProcessException,
 )
 from qjazz_processes.schemas.bbox import BboxCoordinates
@@ -46,31 +46,31 @@ class WfsOutputParameters(JsonModel):
         description="""Specifiy the layer to get features from""",
         pattern="^[^,]+$"  # Exclude comma from name which will be seen as a separator
     )
-    propertyname: Opt[str] = Field(
+    propertyname: Option[str] = Field(
         title="Property",
         description="""Specify a property to return."""
     )
-    maxfeatures: Opt[PositiveInt] = Field(
+    maxfeatures: Option[PositiveInt] = Field(
         title="Feature limit",
         description="Max number of features returned",
     )
-    startindex: Opt[PositiveInt] = Field(
+    startindex: Option[PositiveInt] = Field(
         title="Paging index",
     )
-    srsname: Opt[str] = Field(
+    srsname: Option[str] = Field(
         title="Output SRS",
     )
-    bbox: Opt[BboxCoordinates] = Field(
+    bbox: Option[BboxCoordinates] = Field(
         title="Map extent",
     )
-    filter: Opt[str] = Field(
+    filter: Option[str] = Field(
         title="OGC Filter",
         description="""
             Allows to filter the response with the `Filter Encoding language`
             defined by the OGC Filter Encoding standard.
         """
     )
-    sort_by: Opt[str] = Field(
+    sort_by: Option[str] = Field(
         title="Sort by",
         description="Property name to sort by",
     )
@@ -78,14 +78,14 @@ class WfsOutputParameters(JsonModel):
         default="ascending",
         title="Sort order",
     )
-    geometryname: Opt[str] = Field(
+    geometryname: Option[str] = Field(
         title="Geometry type",
     )
     exp_filter: Sequence[str] = Field(
         [],
         title="QGIS expression filters",
     )
-    name: Opt[str] = Field(
+    name: Option[str] = Field(
         title="Output name",
         description="""
             A custom output name identifier.

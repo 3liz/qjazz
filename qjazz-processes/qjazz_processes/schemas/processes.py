@@ -20,18 +20,18 @@ from .models import (
     JsonModel,
     Link,
     LinkHttp,
-    Null,
+    Option,
 )
 
 
 class MetadataLink(Link):
-    role: Optional[str] = Null
+    role: Option[str] = None
 
 
 class MetadataValue(JsonModel):
-    role: Optional[str] = Null
-    title: Optional[str] = Null
-    lang: Optional[str] = Null
+    role: Option[str] = None
+    title: Option[str] = None
+    lang: Option[str] = None
     value: Optional[JsonValue]
 
 
@@ -55,7 +55,7 @@ Metadata = Annotated[
 
 class DescriptionType(JsonModel):
     title: str = ""
-    description: Optional[str] = Null
+    description: Option[str] = None
     keywords: Sequence[str] = ()
     metadata: Sequence[Metadata] = ()
 

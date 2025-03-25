@@ -10,7 +10,7 @@ from typing import (
 )
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Extra, Field, JsonValue
+from pydantic import BaseModel, Extra, JsonValue
 
 from qgis.core import (
     Qgis,
@@ -32,10 +32,10 @@ from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     WGS84,
     BoundingBox,
+    Field,
     InputValueError,
     JsonModel,
-    Null,
-    NullField,
+    Option,
     OutputFormatDefinition,
 )
 
@@ -195,11 +195,13 @@ class ParameterFeatureSource(ParameterMapLayer):
 
         class _Model(JsonModel):
             source: _type
-            intersect: Optional[BoundingBox(Annotated[str, Field(crsdef)])] = NullField(  # type: ignore [valid-type]
+            intersect: Option[   # type: ignore [valid-type]
+                BoundingBox(Annotated[str, Field(crsdef)]),
+            ] = Field(
                 title="BoundingBox intersection",
                 description="BoundingBox for selecting intersecting features",
             )
-            expression: Optional[str] = NullField(
+            expression: Option[str] = Field(
                 title="Qgis expression",
                 description="Qgis expression for selecting features",
             )
@@ -729,13 +731,13 @@ class ParameterBand(InputParameter):
 class AggregateItem(BaseModel, extra="allow"):
     name: str
     type_: str = Field(alias="type")
-    type_name: Optional[str] = Null
-    sub_type: Optional[int] = Null
+    type_name: Option[str] = None
+    sub_type: Option[int] = None
     input_: str = Field(alias="input")
     aggregate: str
-    length: Optional[int] = Null
-    precision: Optional[int] = Null
-    delimiter: Optional[str] = Null
+    length: Option[int] = None
+    precision: Option[int] = None
+    delimiter: Option[str] = None
 
 
 class ParameterAggregate(InputParameter):

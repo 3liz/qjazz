@@ -26,10 +26,10 @@ pycryptodome==3.22.0
 pydantic-settings==2.8.1
 pydantic==2.10.6
 pydantic_core==2.27.2
-python-dotenv==1.0.1
+python-dotenv==1.1.0
 ruamel.yaml.clib==0.2.12
 ruamel.yaml==0.18.10
-setuptools==77.0.3
+setuptools==78.0.2
 typing_extensions==4.12.2
 urllib3==2.3.0
 yarl==1.18.3

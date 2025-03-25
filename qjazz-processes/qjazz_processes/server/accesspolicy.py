@@ -8,7 +8,6 @@ from typing import (
 
 from aiohttp import web
 from pydantic import (
-    Field,
     ImportString,
     JsonValue,
     WithJsonSchema,
@@ -17,6 +16,7 @@ from pydantic import (
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_contrib.core.config import ConfigBase, section
+from qjazz_contrib.core.models import Field
 
 from .executor import Executor
 
@@ -33,7 +33,10 @@ class AccessPolicyConfig(ConfigBase):
             default="qjazz_processes.server.policies.DefaultAccessPolicy",
             validate_default=True,
             title="Access policy module",
-            description=("The module implementing the access policy for\nprocesses execution."),
+            description="""
+            The module implementing the access policy for
+            processes execution.
+            """,
         ),
     ]
     config: dict[str, JsonValue] = Field({})

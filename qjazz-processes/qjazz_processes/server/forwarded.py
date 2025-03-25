@@ -1,9 +1,9 @@
 from typing import Callable
 
 from aiohttp import web
-from pydantic import Field
 
 from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.models import Field
 
 from .models import RequestHandler
 
@@ -14,12 +14,12 @@ class ForwardedConfig(ConfigBase):
     enable: bool = Field(
         default=False,
         title="Enabled Forwarded headers",
-        description=(
-            "Enable proxy headers resolution.\n"
-            "Include support for 'Forwarded' headers\n"
-            "and 'X-Forwarded' headers if allow_x_headers is \n"
-            "enabled."
-        ),
+        description="""
+        Enable proxy headers resolution.
+        Include support for 'Forwarded' headers
+        and 'X-Forwarded' headers if allow_x_headers is
+        enabled."
+        """,
     )
     allow_x_headers: bool = Field(
         default=False,

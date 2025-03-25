@@ -18,5 +18,8 @@ INSTALL_DEPENDENCIES=[server,minio]
 
 export PYTEST_ADDOPTS=-m "not services" 
 
+test::
+	$(MAKE) -C tests clean
+
 include $(topsrcdir)/config/rules.mk
 

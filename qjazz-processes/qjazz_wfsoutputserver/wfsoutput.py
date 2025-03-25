@@ -258,7 +258,6 @@ class WfsOutputProcess:
                 # For shapefile add the codepage file
                 output_file.with_suffix(".cpg").write_text(f"{wr_opts.fileEncoding}\n")
 
-
             media_type = output_format.value.media_type
 
             # Compress if required

@@ -12,7 +12,6 @@ from typing import (
 
 from pydantic import (
     BaseModel,
-    Field,
     ImportString,
     WithJsonSchema,
     model_validator,
@@ -20,6 +19,7 @@ from pydantic import (
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.models import Field
 
 from .models import Link
 
@@ -74,7 +74,10 @@ class StorageConfig(ConfigBase):
             default="qjazz_processes.worker.storages.local.LocalStorage",
             validate_default=True,
             title="Storage module",
-            description=("The module implementing storage accesses for\njob's files."),
+            description="""
+            The module implementing storage accesses for
+            job's files.
+            """,
         ),
     ]
     config: dict[str, Any] = Field({})

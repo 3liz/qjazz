@@ -18,7 +18,7 @@ from qjazz_contrib.core.models import (
     JsonModel,
     Nullable,
     OneOf,
-    Opt,
+    Option,
 )
 
 from .crs import Crs
@@ -49,7 +49,7 @@ class SpatialExtent(JsonModel):
           only need to access the first item in each array.
         """,
     )
-    crs: Opt[Crs] = Field(
+    crs: Option[Crs] = Field(
         description="""
           Coordinate reference system of the coordinates of the `bbox` property.
           The default reference system is WGS 84 longitude/latitude.
@@ -57,7 +57,7 @@ class SpatialExtent(JsonModel):
           For non-terrestrial coordinate reference system, another CRS may be specified.
         """,
     )
-    storage_crs_bbox: Opt[Sequence[Bbox]] = Field(
+    storage_crs_bbox: Option[Sequence[Bbox]] = Field(
         min_length=1,
         description="""
           One or more bounding boxes that describe the spatial extent
@@ -116,9 +116,9 @@ class TemporalExtent(JsonModel):
 
 
 class Extent(JsonModel):
-    spatial: Opt[SpatialExtent] = Field(
+    spatial: Option[SpatialExtent] = Field(
         description="The spatial extend of the data in the collection.",
     )
-    temporal: Opt[TemporalExtent] = Field(
+    temporal: Option[TemporalExtent] = Field(
         description="The temporal extent of the features in the collection.",
     )
