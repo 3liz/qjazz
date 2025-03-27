@@ -21,7 +21,7 @@ install_mode= "auto"
 
 [worker.qgis.projects]
 trust_layer_metadata = true
-disable_getprint = true
+disable_getprint = false
 force_readonly_layers = true
 
 [worker.qgis.projects.search_paths]

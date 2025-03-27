@@ -73,9 +73,13 @@ def test_getprint_execute(
         template="Landscape A4",
         crs="EPSG:3857",
         transparent=False,
-        # layers=[
-        #    "Quartiers",
-        # ],
+        layers=[
+            "SousQuartiers",
+            "VilleMTP_MTP_Quartiers_2011_4326",
+            "Quartiers",
+            "bus",
+            "bus_stops"
+        ],
     )
 
     outputs = {
