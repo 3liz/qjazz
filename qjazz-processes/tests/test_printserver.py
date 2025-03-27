@@ -12,8 +12,7 @@ from qjazz_printserver.getprint import (
 )
 from qjazz_processes.processing.prelude import ProcessingContext
 from qjazz_processes.schemas import JobExecute
-
-from .utils import FeedBack, Projects
+from qjazz_processes.tests.utils import FeedBack, Projects
 
 
 def test_getprint_description(projects: Projects):

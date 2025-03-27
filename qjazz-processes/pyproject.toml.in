@@ -31,7 +31,6 @@ email = "dmarteau@3liz.org"
 [project.scripts]
 qjazz-processes = "qjazz_processes.__main__:main"
 qjazz-printserver = "qjazz_printserver.__main__:main"
-qjazz-wfsoutputserver = "qjazz_wfsoutputserver.__main__:main"
 
 [tool.setuptools.packages.find]
 exclude = [ "tests/*" ]
@@ -40,8 +39,6 @@ include = [
     "qjazz_processes.*",
     "qjazz_printserver",
     "qjazz_printserver.*",
-    "qjazz_wfsoutputserver",
-    "qjazz_wfsoutputserver.*",
 ]
 
 #
@@ -57,6 +54,7 @@ extend-exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]
+"qjazz_processes/tests/*" = ["T201"]
 "qjazz_processes/server/_handlers/protos.py" = ["F401"]
 "qjazz_processes/processing/prelude.py" = ["F401"]
- 
+

@@ -41,7 +41,7 @@ typing:: $(PYTHON_PKG)
 	$(MYPY) $(foreach pkg,$^,-p $(pkg))
 
 scan::
-	bandit -r $(PYTHON_PKG)
+	bandit -r $(PYTHON_PKG) $(SCAN_OPTS)
 
 
 .PHONY: $(REQUIREMENTS)

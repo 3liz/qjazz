@@ -219,7 +219,7 @@ class GetPrintParameters(JsonModel):
     )
     custom_variables: Option[dict[str, str]] = Field(
         title="Variables",
-        descriptions="Print context custom variables.",
+        description="Print context custom variables.",
     )
 
     @contextmanager

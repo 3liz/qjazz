@@ -6,7 +6,6 @@ include $(DEPTH)/config/config.mk
 PYTHON_PKG= \
 	qjazz_processes   \
 	qjazz_printserver \
-	qjazz_wfsoutputserver \
 	$(NULL)
 
 
@@ -18,8 +17,7 @@ INSTALL_DEPENDENCIES=[server,minio]
 
 export PYTEST_ADDOPTS=-m "not services" 
 
-test::
-	$(MAKE) -C tests clean
+SCAN_OPTS=-x qjazz_processes/tests
 
 include $(topsrcdir)/config/rules.mk
 
