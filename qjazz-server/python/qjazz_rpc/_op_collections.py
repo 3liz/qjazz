@@ -7,6 +7,8 @@ from typing import (
 )
 
 from pydantic import TypeAdapter
+from qjazz_ogc import Catalog, CatalogItem, Collection, OgcEndpoints
+from qjazz_ogc.stac import CatalogBase
 
 from qgis.core import (
     QgsMapLayer,
@@ -14,8 +16,6 @@ from qgis.core import (
 )
 
 from qjazz_cache.prelude import CacheManager
-from qjazz_ogc import Catalog, CatalogItem, Collection, OgcEndpoints
-from qjazz_ogc.stac import CatalogBase
 
 from . import messages as _m
 from ._op_requests import get_project

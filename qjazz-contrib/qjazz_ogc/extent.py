@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Self, assert_never
+from typing import Iterable, Iterator, Optional, Self, assert_never
 
 from qgis.core import (
     Qgis,
@@ -95,6 +95,7 @@ def transform_extent(
 def compute_extent_from_layers(
     p: QgsProject,
     dest_crs: Optional[QgsCoordinateTransform] = None,
+    layers: Optional[Iterable[str]] = None
 ) -> QgsRectangle:
     """Combine extent from layers"""
     restricted_layers = Pu.wmsRestrictedLayers(p)
@@ -103,8 +104,13 @@ def compute_extent_from_layers(
     if not dest_crs:
         dest_crs = p.crs()
 
+    layer_names = set(layers) if layers else None
+
     for layer in p.mapLayers().values():
-        if layer.name() in restricted_layers:
+        name = layer.name()
+        if name in restricted_layers:
+            continue
+        if layer_names and name not in layer_names:
             continue
 
         layer_extent = layer.extent()
@@ -142,6 +148,7 @@ class SpatialExtent(extent.SpatialExtent):
     def from_project(
         cls,
         p: QgsProject,
+        layers: Optional[Iterable[str]] = None
     ) -> Optional[Self]:
         """Build the spatial extent
 
@@ -154,7 +161,7 @@ class SpatialExtent(extent.SpatialExtent):
         extent = Pu.wmsExtent(p)
         if extent.isEmpty():
             # Compute extent from layers
-            extent = compute_extent_from_layers(p)
+            extent = compute_extent_from_layers(p, layers)
 
         if extent.isEmpty():
             return None

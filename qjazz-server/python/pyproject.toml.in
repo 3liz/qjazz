@@ -46,8 +46,6 @@ include = [
     "qjazz_map.*",
     "qjazz_admin",
     "qjazz_admin.*",
-    "qjazz_ogc",
-    "qjazz_ogc.*",
 ]
 
 

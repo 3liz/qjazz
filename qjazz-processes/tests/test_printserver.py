@@ -2,6 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from pydantic import TypeAdapter
+
 from qgis.server import QgsServer
 
 from qjazz_printserver.getprint import (
@@ -14,7 +16,7 @@ from qjazz_processes.schemas import JobExecute
 from .utils import FeedBack, Projects
 
 
-def test_getprint_process_description(projects):
+def test_getprint_description(projects: Projects):
     project = projects.get("/montpellier/montpellier.qgs")
 
     proc = GetPrintProcess.description(project)
@@ -30,7 +32,24 @@ def test_getprint_process_description(projects):
     template_schema = proc.inputs["template"].schema_
     print("\n==test_getprint_parameters:template::schema\n", template_schema)
     assert template_schema["type"] == "string"
-    assert len(template_schema["enum"]) == 2
+    assert len(template_schema["enum"]) == 3
+
+
+def test_getprint_composers(projects: Projects):
+    from qjazz_printserver.composers import Composer, get_composers
+
+    project = projects.get("/montpellier/montpellier.qgs")
+
+    composers = tuple(get_composers(project))
+    print("\n==test_getprint_composers::\n",
+        TypeAdapter(tuple[Composer, ...]).dump_json(
+            composers,
+            indent=4,
+            exclude_none=True,
+        ).decode(),
+    )
+
+    assert len(composers) == 3
 
 
 def test_getprint_parameters():
@@ -40,6 +59,9 @@ def test_getprint_parameters():
         template="Landscape A4",
         crs="EPSG:3857",
         transparent=True,
+        map_options={
+            "map0": dict(layers=["Quartiers"]),
+        }
     )
 
     outputs = {
@@ -66,20 +88,34 @@ def test_getprint_execute(
     feedback: FeedBack,
     server: QgsServer,
 ):
+    """Test execution with no extent specified.
+    The result should show the default extent from the composer definition
+    """
     context.job_id = f"test_getprint_{output_format.suffix.removeprefix('.')}"
     context.workdir.mkdir(exist_ok=True)
+
+    layers = [
+            "Quartiers",
+            "publicbuildings",
+            "tramway",
+            "tramstop",
+            "points_of_interest",
+    ]
 
     inputs = dict(
         template="Landscape A4",
         crs="EPSG:3857",
-        transparent=False,
-        layers=[
-            "SousQuartiers",
-            "VilleMTP_MTP_Quartiers_2011_4326",
-            "Quartiers",
-            "bus",
-            "bus_stops"
-        ],
+        transparent=True,
+        dpi=72,
+        map_options={
+            "map0": dict(
+                layers=layers,
+                # extent=[417006.6137375999, 5394910.340902998, 447158.04891101, 5414844.9948054],
+            ),
+            "map1": dict(
+                # extent=[427360.3486143679, 5403429.440561879, 433285.3486143679, 5408204.440561879],
+            ),
+        }
     )
 
     outputs = {

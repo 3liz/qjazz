@@ -3,12 +3,13 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from qgis.core import QgsProject
-
-from qjazz_cache.storage import load_project_from_uri
 from qjazz_ogc import Collection, OgcEndpoints
 from qjazz_ogc.crs import CrsRef
 from qjazz_ogc.stac import CatalogBase
+
+from qgis.core import QgsProject
+
+from qjazz_cache.storage import load_project_from_uri
 from qjazz_rpc import messages
 from qjazz_rpc.tests.worker import Worker
 

@@ -11,6 +11,7 @@ from time import sleep, time
 from typing import List, Optional, Protocol, assert_never, cast
 
 from pydantic import JsonValue
+from qjazz_ogc import Catalog
 
 from qgis.core import QgsFeedback
 from qgis.server import QgsServer
@@ -25,7 +26,6 @@ from qjazz_contrib.core.qgis import (
     show_all_versions,
     show_qgis_settings,
 )
-from qjazz_ogc import Catalog
 
 from . import _op_cache, _op_collections, _op_plugins, _op_requests
 from . import messages as _m

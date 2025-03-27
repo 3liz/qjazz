@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from typing import Any, Callable, Iterator
 from urllib.parse import parse_qs
 
+from qjazz_ogc.crs import CrsRef
+from qjazz_ogc.extent import compute_extent_from_layers, transform_extent
+
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsProject,
@@ -12,8 +15,6 @@ from qgis.core import (
 from qgis.server import QgsServerProjectUtils
 
 from qjazz_contrib.core import logger
-from qjazz_ogc.crs import CrsRef
-from qjazz_ogc.extent import compute_extent_from_layers, transform_extent
 
 DEFAULT_WITH = 1024
 

@@ -61,7 +61,8 @@ class QgisPrintServerContext(QgisServerContext):
         """Describe process"""
         match ident:
             case "getprint":
-                return GetPrintProcess.description(project_path)
+                project = self.project(project_path) if project_path else None
+                return GetPrintProcess.description(project)
             case _:
                 return None
 

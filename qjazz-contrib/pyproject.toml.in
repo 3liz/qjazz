@@ -35,6 +35,8 @@ include = [
     "qjazz_contrib.*",
     "qjazz_cache",
     "qjazz_cache.*",
+    "qjazz_ogc",
+    "qjazz_ogc.*",
 ]
 
 #

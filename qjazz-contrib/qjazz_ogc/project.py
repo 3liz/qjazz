@@ -30,7 +30,7 @@ from .stac import links
 
 
 def output_crs_list(p: QgsProject) -> Iterator[Crs]:
-    # The spec says that the first CRS in the lint should
+    # The spec says that the first CRS in the list should
     # be the native one. But since QGIS users have full control
     # over the configuration, we let that choice to the project owner.
     # Note that an empty list will default to CRS84
