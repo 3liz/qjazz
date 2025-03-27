@@ -264,12 +264,15 @@ class GetPrintParameters(JsonModel):
 
 def get_wms_layers(project: QgsProject) -> Sequence[str]:
     restricted_layers = set(QgsServerProjectUtils.wmsRestrictedLayers(project))
-    return tuple(layer.name() for layer in project.mapLayers().values() if layer.name() not in restricted_layers)
+    return tuple(layer.name() for layer in project.mapLayers().values()
+        if layer.name() not in restricted_layers)
 
 
 def get_print_templates(project: QgsProject) -> Sequence[str]:
+    restricted_composers = set(QgsServerProjectUtils.wmsRestrictedComposers(project))
     manager = project.layoutManager()
-    return tuple(layout.name() for layout in manager.printLayouts())
+    return tuple(layout.name() for layout in manager.printLayouts()
+        if layout.name() not in restricted_composers)
 
 
 #
@@ -434,7 +437,7 @@ class GetPrintProcess:
 
         status_code = response.statusCode()
         if status_code != 200:
-            raise RunProcessException("Getprint failure (code: %s)", status_code)
+            raise RunProcessException(f"Getprint failure (code: {status_code})")
 
         reference = context.file_reference(output_file)
 

@@ -30,7 +30,7 @@ def test_getprint_process_description(projects):
     template_schema = proc.inputs["template"].schema_
     print("\n==test_getprint_parameters:template::schema\n", template_schema)
     assert template_schema["type"] == "string"
-    assert len(template_schema["enum"]) == 3
+    assert len(template_schema["enum"]) == 2
 
 
 def test_getprint_parameters():
