@@ -17,7 +17,7 @@ RUN apt-get update -y \
         bash-completion \
         jq \
         less \
-        ${NULL}
+    && apt-get clean
 
 COPY docker/requirements.txt /python_modules/
 COPY qjazz-contrib /python_modules/qjazz-contrib
@@ -91,7 +91,7 @@ RUN apt-get update -y \
         bash-completion \
         jq \
         less \
-        ${NULL}
+    && apt-get clean
 
 COPY --from=base /python_modules /python_modules
 COPY --from=base /opt/local/qjazz /opt/local/qjazz
@@ -110,4 +110,46 @@ ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 EXPOSE 9443 9080 9876
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
+
+#
+# CI dev environment
+#
+# Build an image usable as CI image for 
+# testing qjazz based services 
+#
+
+FROM base AS ci
+
+RUN apt-get update -y \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y --fix-missing --no-install-recommends \
+        git \
+        make \
+    && apt-get clean
+
+# XXX See values in ansible
+ARG factory_runner_uid=2024
+ARG factory_gid=2011
+ARG operator_uid=2001
+
+# Create runner user
+RUN useradd --uid=${factory_runner_uid} --home-dir=/home/factory-runner factory-runner \
+    && groupadd -g ${factory_gid} factory \
+    && groupadd -g ${operator_uid} devel \
+    && /usr/sbin/usermod -a -G factory,devel factory-runner \
+    && mkdir -p /home/factory-runner \
+    && chown -R factory-runner:factory-runner /home/factory-runner \
+    ${NULL}
+
+COPY dev-requirements.txt /dev-requirements.txt
+RUN --mount=type=cache,target=/.python-cache \
+    /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /dev-requirements.txt
+
+RUN chown -R factory-runner: /opt/local/qjazz /python_modules
+
+ENV QJAZZ_HOME=/python_modules
+ENV PATH=$PATH:/opt/local/qjazz/bin
+    
+USER factory-runner 
+
 

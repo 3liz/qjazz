@@ -38,7 +38,6 @@ build: manifest requirements
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
 
-
 MANIFEST=factory-$(FLAVOR).manifest
 
 manifest:
@@ -58,7 +57,7 @@ manifest:
 # Merge requirement files
 requirements: $(REQUIREMENTS)
 	@echo "Merging requirements files"
-	@cat ../qjazz-contrib/$< ../qjazz-process/$< ../qjazz-server/python/$< | sort | uniq > ./$<
+	@cat ../qjazz-contrib/$< ../qjazz-processes/$< ../qjazz-server/python/$< | sort | uniq > ./$<
 
 
 deliver: tag push
@@ -150,4 +149,20 @@ endif
 #
 push-eager-noqgis:
 	docker push 3liz/$(NAME):noqgis-eager
+
+#
+# CI image build
+# 
+
+CI_IMAGE=$(REGISTRY_PREFIX)factory-ci-runner:qjazz-$(FLAVOR)
+
+build-ci:
+	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target ci \
+	--build-arg QGIS_VERSION=$(FLAVOR) \
+	--build-arg factory_runner_uid=$$(id -u) \
+	-t $(CI_IMAGE) -f Dockerfile ..
+
+
+deliver-ci: 
+	docker push $(CI_IMAGE) 
 

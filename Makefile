@@ -13,6 +13,6 @@ docker-%:
 	$(MAKE) -C docker $*
 
 install-dev::
-	pip install -U --upgrade-strategy=eager -r tests/requirements.txt
+	pip install -U --upgrade-strategy=eager -r dev-requirements.txt
 
 include $(topsrcdir)/config/rules.mk

@@ -26,6 +26,7 @@ build-binaries:
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR
+  - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:

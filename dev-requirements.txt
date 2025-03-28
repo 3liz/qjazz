@@ -1,10 +1,10 @@
-pytest
+pytest >= 5.3
 pytest-asyncio
 pytest-aiohttp
 ruff
 mypy
 mypy-extensions
-types-protobuf<5
+types-protobuf < 6
 types-psutil
 types-PyYAML
 types-toml
@@ -18,3 +18,4 @@ grpcio-tools
 pipdeptree
 bandit
 build >= 1.2.2
+twine
