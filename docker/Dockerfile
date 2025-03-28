@@ -38,6 +38,7 @@ RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-printserver \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
+    && rm -r /python_modules/**/*.egg-info \
     ${NULL}
 
 # Install qgis-plugin-manager

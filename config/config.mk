@@ -1,14 +1,19 @@
 
 topsrcdir:=$(shell realpath $(DEPTH))
 
-QJAZZ_VERSION=0.1.0
+VERSION=0.1.0
 
-ifndef CI_COMMIT_TAG
+ifdef CI_COMMIT_TAG
+ifeq ($(shell echo $(CI_COMMIT_TAG) | head -c 8), release-)
+	BUILD_RELEASE=$(shell date -u +%Y-%m-%dT%H-%M-%SZ)
+endif
+endif
+
+ifndef BUILD_RELEASE
 QJAZZ_VERSION_RC_TAG=dev0
-VERSION=$(QJAZZ_VERSION).$(QJAZZ_VERSION_RC_TAG)
-# Global project version
-else 
-VERSION=$(QJAZZ_VERSION)
+VERSION_TAG=$(VERSION).$(QJAZZ_VERSION_RC_TAG)
+else
+VERSION_TAG=$(VERSION)
 endif
 
 REQUIREMENTS=requirements.txt
