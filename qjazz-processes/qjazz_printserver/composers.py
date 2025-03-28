@@ -74,7 +74,10 @@ class Composer(JsonModel):
                 if QgsServerProjectUtils.wmsUseLayerIds(project):
                     atlas_coverage_layer = coverage_layer.id()
                 else:
-                    atlas_coverage_layer = coverage_layer.serverProperties().shortName()
+                    if Qgis.QGIS_VERSION_INT < 33800:
+                        atlas_coverage_layer = coverage_layer.shortName()
+                    else:
+                        atlas_coverage_layer = coverage_layer.serverProperties().shortName()
                     if not atlas_coverage_layer:
                         atlas_coverage_layer = coverage_layer.name()
         else:

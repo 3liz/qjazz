@@ -62,7 +62,10 @@ def get_wms_layers(project: QgsProject) -> Iterator[str]:
         if use_layer_ids:
             yield layer.id()
         else:
-            name = layer.serverProperties().shortName()
+            if Qgis.QGIS_VERSION_INT < 33800:
+                name = layer.shortName()
+            else:
+                name = layer.serverProperties().shortName()
             if not name:
                 name = layer.name()
             yield name
