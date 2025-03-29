@@ -46,8 +46,7 @@ manifest:
 	version=`docker run --rm -v $$(pwd)/scripts:/scripts $(QGIS_IMAGE)  /scripts/qgis-version.sh`; \
 	echo name=$(NAME) > $(MANIFEST) && \
     echo version=qgis-$$version-$(VERSION) >> $(MANIFEST) && \
-    echo version_short=qgis-$$version >> $(MANIFEST) && \
-    echo release_tag=qgis-`echo $$version | cut -d- -f1 |cut -d. -f1-2` >> $(MANIFEST) && \
+    echo version_short=qgis-`echo $$version | cut -d- -f1 |cut -d. -f1-2` >> $(MANIFEST) && \
     echo buildid=$(BUILDID)   >> $(MANIFEST) && \
     echo commitid=$(COMMITID) >> $(MANIFEST); }
 	@cat $(MANIFEST)
@@ -66,13 +65,11 @@ ifdef QJAZZ_VERSION_RC_TAG
 tag: 
 	{ set -e; source $(MANIFEST); \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version_short-$(QJAZZ_VERSION_RC_TAG); \
-	docker tag $(BUILDIMAGE) $(BUILDNAME):$$release_tag-$(QJAZZ_VERSION_RC_TAG); \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):qgis-$(FLAVOR)-$(QJAZZ_VERSION_RC_TAG); \
 	}
 push:
 	{ set -e; source $(MANIFEST); \
 	docker push $(BUILDNAME):$$version_short-$(QJAZZ_VERSION_RC_TAG); \
-	docker push $(BUILDNAME):$$release_tag-$(QJAZZ_VERSION_RC_TAG); \
 	docker push $(BUILDNAME):qgis-$(FLAVOR)-$(QJAZZ_VERSION_RC_TAG); \
 	}
 else
@@ -80,14 +77,12 @@ tag:
 	{ set -e; source $(MANIFEST); \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version; \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version_short; \
-	docker tag $(BUILDIMAGE) $(BUILDNAME):$$release_tag; \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):qgis-$(FLAVOR); \
 	}
 push:
 	{ set -e; source $(MANIFEST); \
 	docker push $(BUILDNAME):$$version; \
 	docker push $(BUILDNAME):$$version_short; \
-	docker push $(BUILDNAME):$$release_tag; \
 	docker push $(BUILDNAME):qgis-$(FLAVOR); \
 	}
 endif
