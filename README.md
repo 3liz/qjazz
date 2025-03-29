@@ -6,8 +6,7 @@
 QJazz is a suite of QGIS based services including:
 
 * QGIS server as microservices and proxy
-* OGC Processes server on top of  QGIS processing
-* QGIS print server
+* OGC Processes server on top of QGIS processing
 
 This is as set of modules for deploying QGIS based servers and processing services
 as OGC processes compliant API
@@ -44,7 +43,6 @@ required:
 - [RabbitMQ](https://www.rabbitmq.com/) version 3+
 
 
-Note that no direct support for Windows or OSX are *not* planned as we do not use these platforms
-for deployment. 
-So if it appears not to work on these platforms, consider using VM or containers.
+Note that support for Windows or OSX are *not* planned. If you want to deploy
+Qjazz on these platforms, consider using VMs or containers.
 

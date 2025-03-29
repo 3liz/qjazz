@@ -118,8 +118,7 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 # Build an image usable as CI image for 
 # testing qjazz based services 
 #
-
-FROM base AS ci
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} AS ci
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
@@ -142,15 +141,17 @@ RUN useradd --uid=${factory_runner_uid} --home-dir=/home/factory-runner factory-
     && chown -R factory-runner:factory-runner /home/factory-runner \
     ${NULL}
 
+COPY --from=base --chown=factory-runner:factory-runner /python_modules /python_modules
+COPY --from=base --chown=factory-runner:factory-runner /opt/local/qjazz /opt/local/qjazz
+
+USER factory-runner 
+
 COPY dev-requirements.txt /dev-requirements.txt
 RUN --mount=type=cache,target=/.python-cache \
     /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /dev-requirements.txt
 
-RUN chown -R factory-runner: /opt/local/qjazz /python_modules
-
 ENV QJAZZ_HOME=/python_modules
-ENV PATH=$PATH:/opt/local/qjazz/bin
+ENV PATH=/opt/local/qjazz/bin:$PATH
     
-USER factory-runner 
 
 
