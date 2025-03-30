@@ -36,7 +36,7 @@ from qjazz_contrib.core.utils import to_utc_datetime
 
 from ..processing.config import ProcessingConfig
 from . import registry
-from .cache import ProcessCacheProto
+from .cache import ProcessCacheProtocol
 from .config import load_configuration
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
@@ -90,13 +90,13 @@ def reload_processes_cache(_state):
 
 
 @inspect_command()
-def list_processes(_state) -> dict:
+def list_processes(_state) -> list:
     """Return processes list"""
     app = cast(QgisWorker, _state.consumer.app)
     if app.processes_cache:
         return app.processes_cache.processes
     else:
-        return {}
+        return []
 
 
 @inspect_command(
@@ -416,7 +416,7 @@ class QgisWorker(Worker):
     def create_context(self) -> QgisContext:
         return QgisContext(self.processing_config, service_name=self.service_name)
 
-    def create_processes_cache(self) -> Optional[ProcessCacheProto]:
+    def create_processes_cache(self) -> Optional[ProcessCacheProtocol]:
         return None
 
 

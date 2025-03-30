@@ -4,7 +4,7 @@ from .processing import (  # noqa F401
     ProjectRequired,
 )
 from .worker import (  # noqa F401
-    ProcessCacheProto,
+    ProcessCacheProtocol,
     QgisJob,
     QgisProcessJob,
     QgisWorker,

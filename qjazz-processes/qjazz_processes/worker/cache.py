@@ -14,6 +14,7 @@ from qjazz_contrib.core import logger
 from ..processing.config import ProcessingConfig
 from ..schemas import (
     JsonDict,
+    JsonValue,
     ProcessDescription,
     ProcessSummary,
     ProcessSummaryList,
@@ -29,10 +30,11 @@ class MsgType(Enum):
 
 POLL_TIMEOUT = 5.0
 
+# Protocol for processes cache description implementations
 
-class ProcessCacheProto(Protocol):
+class ProcessCacheProtocol(Protocol):
     @property
-    def processes(self) -> dict: ...
+    def processes(self) -> list[JsonValue]: ...
 
     def describe(self, ident: str, project: Optional[str]) -> JsonDict | None: ...
 
@@ -44,6 +46,16 @@ class ProcessCacheProto(Protocol):
     def stop(self) -> None:
         pass
 
+# NOTE: DEPRECATED
+ProcessCacheProto = ProcessCacheProtocol
+
+#
+# Processes cache
+#
+# ProcessCache implement description cache computation as a stand alone
+# child process. It allows for using QGIS (or other libs that
+# are not fork friendly) used when computing job descriptions.
+#
 
 class ProcessCache(mp.Process):
     def __init__(self, config: ProcessingConfig) -> None:
@@ -60,7 +72,7 @@ class ProcessCache(mp.Process):
         return self._processing_config
 
     @property
-    def processes(self) -> dict:
+    def processes(self) -> list[JsonValue]:
         return ProcessSummaryList.dump_python(self._processes, mode="json", exclude_none=True)
 
     def describe(self, ident: str, project: Optional[str]) -> JsonDict | None:

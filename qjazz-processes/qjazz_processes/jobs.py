@@ -17,7 +17,7 @@ from .schemas import (
 )
 from .worker.prelude import (
     Feedback,
-    ProcessCacheProto,
+    ProcessCacheProtocol,
     QgisJob,
     QgisProcessJob,
     QgisWorker,
@@ -50,7 +50,7 @@ class QgisProcessingWorker(QgisWorker):
     def create_context(self) -> QgisProcessingContext:
         return QgisProcessingContext(self.processing_config, service_name=self.service_name)
 
-    def create_processes_cache(self) -> Optional[ProcessCacheProto]:
+    def create_processes_cache(self) -> Optional[ProcessCacheProtocol]:
         processes_cache = ProcessingCache(self.processing_config)
         processes_cache.start()
         return processes_cache
