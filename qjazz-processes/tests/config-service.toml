@@ -3,7 +3,7 @@
 level = "debug"
 
 [worker]
-#service_name = "Test"
+service_name = "Test"
 title="Test service"
 description="""
 Qgis service running test algorithms
@@ -12,7 +12,8 @@ concurrency = 1
 result_expires = 900
 cleanup_interval = 300
 reload_monitor = "$location/.reloadmon"
-
+broker_host = "localhost"
+backend_host = "localhost:6379/0"
 
 [processing]
 workdir = "$location/__workdir__"
@@ -30,4 +31,23 @@ force_readonly_layers = true
 '/france' = "$location/data/france_parts/"
 '/montpellier' = "$location/data/montpellier/"
 '/database' = "postgresql://?service=qjazz"
+
+[storage]
+#storage_class = "qjazz_processes.worker.storages.s3.S3Storage"
+
+# In docker use environment variables:
+# CONF_S3_ENDPOINT: "minio:9000"
+# CONF_S3_ACCESS_KEY: minioadmin
+# CONF_S3_SECRET_KEY: minioadmin
+# CONF_S3_BUCKET_NAME: test
+# CONF_S3_SECURE: no
+
+[storage.config]
+endpoint = "localhost:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+bucket_name = "test"
+secure = false
+
+
 

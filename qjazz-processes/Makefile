@@ -4,7 +4,8 @@ DEPTH=..
 include $(DEPTH)/config/config.mk
 
 PYTHON_PKG= \
-	qjazz_processes   \
+	qjazz_processes  \
+	qjazz_processing \
 	$(NULL)
 
 

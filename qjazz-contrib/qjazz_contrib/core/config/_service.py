@@ -45,6 +45,7 @@ from typing import (
     Type,
     TypeAlias,
     assert_never,
+    cast,
 )
 
 from pydantic import (
@@ -126,6 +127,13 @@ CreateDefault = object()
 config_version = metadata.version("qjazz_contrib")
 
 
+def secrets_dir() -> str | None:
+    secrets_dir: str | None = getenv("SETTINGS_SECRETS_DIR", "/run/secrets")
+    if not Path(cast(str, secrets_dir)).exists():
+        secrets_dir = None
+
+    return secrets_dir
+
 #
 # The base model for the config settings
 #
@@ -135,7 +143,7 @@ class ConfigSettings(BaseSettings):
         extra="ignore",
         env_nested_delimiter="__",
         env_prefix="conf_",
-        secrets_dir=getenv("SETTINGS_SECRETS_DIR", "/run/secrets"),
+        secrets_dir=secrets_dir(),
     )
 
     @classmethod

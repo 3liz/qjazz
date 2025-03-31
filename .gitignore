@@ -21,3 +21,5 @@ __output__
 
 *.swp
 *.qgs~
+
+/.env

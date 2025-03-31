@@ -13,9 +13,8 @@ from qjazz_contrib.core.qgis import (
     QgisPluginService,
     init_qgis_processing,
 )
-
-from ..processing.config import ProcessingConfig
-from ..processing.prelude import (
+from qjazz_processes.processing.config import ProcessingConfig
+from qjazz_processes.processing.prelude import (
     JobExecute,
     JobResults,
     ProcessAlgorithm,
@@ -23,9 +22,9 @@ from ..processing.prelude import (
     ProcessingContext,
     ProcessSummary,
 )
-from .cache import ProcessCache
-from .context import QgisContext
-from .exceptions import (
+from qjazz_processes.worker.cache import ProcessCache
+from qjazz_processes.worker.context import QgisContext
+from qjazz_processes.worker.exceptions import (
     ProcessNotFound,
     ProjectRequired,
 )

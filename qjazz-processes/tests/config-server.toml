@@ -1,0 +1,8 @@
+
+[celery]
+broker_host = "localhost"
+backend_host = "localhost:6379/0"
+
+[http]
+listen = ["127.0.0.1", 4000]
+

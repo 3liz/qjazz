@@ -25,5 +25,3 @@ def cache_config(data: Path) -> ProjectsConfig:
             "/lines": f"{data}/lines/",
         },
     )
-
-

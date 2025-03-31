@@ -30,12 +30,15 @@ email = "dmarteau@3liz.org"
 
 [project.scripts]
 qjazz-processes = "qjazz_processes.__main__:main"
+qjazz-processing = "qjazz_processing.__main__:main"
 
 [tool.setuptools.packages.find]
 exclude = [ "tests/*" ]
 include = [
     "qjazz_processes", 
     "qjazz_processes.*",
+    "qjazz_processing",
+    "qjazz_processing.*",
 ]
 
 #

@@ -32,6 +32,7 @@ POLL_TIMEOUT = 5.0
 
 # Protocol for processes cache description implementations
 
+
 class ProcessCacheProtocol(Protocol):
     @property
     def processes(self) -> list[JsonValue]: ...
@@ -46,6 +47,7 @@ class ProcessCacheProtocol(Protocol):
     def stop(self) -> None:
         pass
 
+
 # NOTE: DEPRECATED
 ProcessCacheProto = ProcessCacheProtocol
 
@@ -56,6 +58,7 @@ ProcessCacheProto = ProcessCacheProtocol
 # child process. It allows for using QGIS (or other libs that
 # are not fork friendly) used when computing job descriptions.
 #
+
 
 class ProcessCache(mp.Process):
     def __init__(self, config: ProcessingConfig) -> None:

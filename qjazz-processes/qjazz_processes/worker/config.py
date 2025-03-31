@@ -23,7 +23,7 @@ from qjazz_processes.schemas import LinkHttp
 from ..processing.config import ProcessingConfig
 from .storage import StorageConfig
 
-CONFIG_ENV_PATH = "PY_QGIS_PROCESSES_WORKER_CONFIG"
+CONFIG_ENV_PATH = "QJAZZ_PROCESSES_CONFIG"
 
 
 def lookup_config_path() -> Optional[Path]:
@@ -37,13 +37,14 @@ def lookup_config_path() -> Optional[Path]:
     else:
         # Search in standards paths
         for search in (
-            "/etc/qjazz/processes/worker.toml",
-            "~/.qjazz/processes/worker.toml",
-            "~/.config/qjazz/processes/worker.toml",
+            "/etc/qjazz/processes/service.toml",
+            "~/.qjazz/processes/service.toml",
+            "~/.config/qjazz/processes/service.toml",
         ):
             p = Path(search).expanduser()
             if p.exists():
                 break
+
     return p
 
 
@@ -102,6 +103,7 @@ class WorkerConfig(CeleryConfig):
 
 # Allow type validation
 class ConfigProto(Protocol):
+    logging: logger.LoggingConfig
     processing: ProcessingConfig
     worker: WorkerConfig
     storage: StorageConfig

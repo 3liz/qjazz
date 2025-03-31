@@ -2,7 +2,6 @@
 # Processing jobs
 #
 
-
 from typing import (
     Optional,
 )
@@ -10,19 +9,19 @@ from typing import (
 from celery.signals import worker_process_init
 
 from qjazz_contrib.core.celery import Job, JobContext
-
-from .schemas import (
+from qjazz_processes.schemas import (
     JobExecute,
     JobResults,
 )
-from .worker.prelude import (
+from qjazz_processes.worker.prelude import (
     Feedback,
     ProcessCacheProtocol,
     QgisJob,
     QgisProcessJob,
     QgisWorker,
 )
-from .worker.processing import (
+
+from .processing import (
     ProcessingCache,
     QgisProcessingContext,
 )

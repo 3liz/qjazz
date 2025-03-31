@@ -1,7 +1,6 @@
-import os
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import click
 
@@ -18,47 +17,9 @@ def main():
     pass
 
 
-@main.command("worker")
-@click.option(
-    "--conf",
-    "-C",
-    "configpath",
-    type=PathType,
-    help="Path to configuration file",
-)
-@click.option(
-    "--loglevel",
-    "-l",
-    type=click.Choice(("error", "warning", "info", "debug")),
-    default="info",
-    help="Log level",
-)
-@click.option("--dump", is_flag=True, help="Dump config and exit")
-def run_worker(
-    configpath: Path,
-    loglevel: str,
-    dump: bool,
-):
-    """Run processes worker"""
-    from .worker.config import CONFIG_ENV_PATH
-
-    if configpath:
-        os.environ[CONFIG_ENV_PATH] = str(configpath)
-
-    if dump:
-        from typing import cast
-
-        from pydantic import BaseModel
-
-        from .worker.config import load_configuration
-
-        conf = cast(BaseModel, load_configuration())
-        click.echo(conf.model_dump_json(indent=4))
-    else:
-        from .jobs import app
-
-        app.start_worker(loglevel=loglevel)
-
+#
+# Server
+#
 
 @main.command("serve")
 @click.option(
@@ -73,7 +34,7 @@ def run_server(
     configpath: Path,
     verbose: bool,
 ):
-    """Run server"""
+    """Start server"""
     from qjazz_contrib.core import logger
 
     from .server import load_configuration, serve
@@ -87,11 +48,10 @@ def run_server(
 
 
 #
-#  Control commands
+#  Service commands
 #
 
-
-@main.group("control")
+@main.group("service")
 @click.option(
     "--conf",
     "-C",
@@ -102,9 +62,8 @@ def run_server(
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
 @click.pass_context
 def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
-    """Control commands"""
+    """Service commands"""
     from types import SimpleNamespace
-    from typing import cast
 
     from qjazz_contrib.core import config, logger
     from qjazz_processes.executor import Executor, ExecutorConfig
@@ -131,7 +90,7 @@ def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
     )
 
 
-@control.command("services")
+@control.command("ls")
 @click.pass_context
 def list_services(ctx: click.Context):
     """List available services"""
