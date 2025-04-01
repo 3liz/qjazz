@@ -142,22 +142,24 @@ class ProcessCache(mp.Process):
         logger.info("Starting process cache")
 
         self.initialize()
-
-        while True:
-            msg_id, *data = self._conn.recv()
-            try:
-                match msg_id:
-                    case MsgType.QUIT:
-                        break
-                    case MsgType.UPDATE:
-                        self._conn.send(self._update())
-                    case MsgType.DESCRIBE:
-                        self._conn.send(self._describe(*data))
-                    case MsgType.READY:
-                        logger.info("Process cache ready")
-                        self._conn.send(True)
-            except Exception as e:
-                logger.error("%s\nCache error: %s", traceback.format_exc, e)
+        try:
+            while True:
+                msg_id, *data = self._conn.recv()
+                try:
+                    match msg_id:
+                        case MsgType.QUIT:
+                            break
+                        case MsgType.UPDATE:
+                            self._conn.send(self._update())
+                        case MsgType.DESCRIBE:
+                            self._conn.send(self._describe(*data))
+                        case MsgType.READY:
+                            logger.info("Process cache ready")
+                            self._conn.send(True)
+                except Exception as e:
+                    logger.error("%s\nCache error: %s", traceback.format_exc, e)
+        except (KeyboardInterrupt, SystemExit):
+            pass
         logger.info("Leaving process cache")
 
     @abstractmethod

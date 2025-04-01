@@ -49,6 +49,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
         _routes = [
             # Landing page
             web.get(f"{prefix}/", self.landing_page, allow_head=False),
+            web.get(f"{prefix}/conformance", self.conformance, allow_head=False),
             # Processes
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
             web.get(f"{prefix}/processes", redirect_trailing_slash(), allow_head=False),

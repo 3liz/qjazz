@@ -40,7 +40,7 @@ class ServiceItem(swagger.JsonModel):
         links.append(
             make_link(
                 request,
-                rel="related",
+                rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
                 path=format_path(request, "/processes/", service=details.service),
                 title="Services processes",
             ),
