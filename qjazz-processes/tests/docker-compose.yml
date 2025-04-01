@@ -9,6 +9,18 @@
 #
 
 services:
+  processes:
+    image: 3liz/qjazz:qgis-release-eager
+    command: qjazz-processes serve
+    environment:
+      CONF_CELERY__BROKER_HOST: rabbitmq
+      CONF_CELERY__BACKEND_HOST: redis:6379/0
+    ports:
+    - 127.0.0.1:4000:9180
+    depends: [rabbitmq, redis]
+    profiles:
+    - server
+
   rabbitmq:
     image: rabbitmq:3-alpine
     ports:

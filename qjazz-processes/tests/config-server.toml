@@ -1,3 +1,5 @@
+[logging]
+level = "debug"
 
 [celery]
 broker_host = "localhost"

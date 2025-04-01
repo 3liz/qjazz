@@ -5,9 +5,8 @@ level = "INFO"
 
 
 # OAPI configuration
-# 
 [oapi]
-title = "Py-Qgis-Processes"
+title = "Qjazz-Processes"
 description = "Publish Qgis processing algorithms as OGC api processes"
 
 
@@ -18,6 +17,7 @@ description = "Publish Qgis processing algorithms as OGC api processes"
 #
 # The module implementing the access policy for
 # processes execution.
+# 
 policy_class = "qjazz_processes.server.policies.DefaultAccessPolicy"
 config = {}
 
@@ -29,14 +29,18 @@ config = {}
 #
 # Enable job realm header
 #
-# When enabled, use the 'X-Job-Realm' http header
-# as a client identification token for retrieving jobs status and results.
+# 
+#             When enabled, use the 'X-Job-Realm' http header
+#             as a client identification token for retrieving jobs status and results.
+#         
 enabled = false
 #
 # Admininistrator realm jobs tokens
 #
-# Define catch all tokens for listing and retrieve status and results
-# for all jobs.
+# 
+#         Define catch all tokens for listing and retrieve status and results
+#         for all jobs.
+#         
 admin_tokens = []
 
 
@@ -51,18 +55,18 @@ use_ssl = false
 # CORS origin
 #
 # 
-# Allows to specify origin for CORS. If set 'all' will set
-# Access-Control-Allow-Origin to '*'; 'same-origin' return
-# the same value as the 'Origin' request header.
-# A url may may be specified, restricting allowed origin to
-# this url.
-# 
+#         Allows to specify origin for CORS. If set 'all' will set
+#         Access-Control-Allow-Origin to '*'; 'same-origin' return
+#         the same value as the 'Origin' request header.
+#         A url may may be specified, restricting allowed origin to
+#         this url.
+#         
 cross_origin = "all"
 #
 # Service update interval
 #
 # Interval in seconds between update of available services
-update_interval = 60
+update_interval = 30
 #
 # Backend request timeout
 timeout = 20
@@ -78,26 +82,26 @@ enable_ui = true
 # CA file
 #cafile =   	# Optional
 #
-# SSL/TLS  key
+# TLS  certificat
 #
-# Path to the SSL key file
+# Path to the TLS cert file
 #certfile =   	# Optional
 #
-# SSL/TLS Certificat
+# TLS key file
 #
-# Path to the SSL certificat file
+# Path to the TLS key file
 #keyfile =   	# Optional
 
 #
-# Forwarded Configuration
 [http.proxy]
 #
 # Enabled Forwarded headers
 #
 # Enable proxy headers resolution.
 # Include support for 'Forwarded' headers
-# and 'X-Forwarded' headers if allow_x_headers is 
-# enabled.
+# and 'X-Forwarded' headers if allow_x_headers is
+# enabled."
+# 
 enable = false
 #
 # Support for 'X-Forwarded' headers
@@ -109,26 +113,22 @@ allow_x_headers = false
 # Message expiration timeout
 #
 # 
-# The amount of time an execution message
-# can wait on queue before beeing processed
-# with asynchronous response.
-# 
+#         The amount of time an execution message
+#         can wait on queue before beeing processed
+#         with asynchronous response.
+#         
 message_expiration_timeout = 600
 
 #
-# Celery configuration
 [executor.celery]
 #
 # Celery amqp broker host
 broker_host = ""
 broker_use_ssl = false
-#broker_ssl =   	# Optional
 #
 # Celery redis backend host
 backend_host = "localhost:6379/0"
 backend_use_ssl = false
-#backend_ssl =   	# Optional
-#security =   	# Optional
 #
 # Task hard time limit in seconds.
 # The worker processing the task will be killed
@@ -168,6 +168,44 @@ result_expires = 86400
 # Activate concurrency autoscaling
 #autoscale =   	# Optional
 
+#
+[executor.celery.broker_ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# TLS  certificat
+#
+# Path to the TLS cert file
+#certfile =   	# Optional
+#
+# TLS key file
+#
+# Path to the TLS key file
+#keyfile =   	# Optional
+
+#
+[executor.celery.backend_ssl]
+#
+# CA file
+#cafile =   	# Optional
+#
+# TLS  certificat
+#
+# Path to the TLS cert file
+#certfile =   	# Optional
+#
+# TLS key file
+#
+# Path to the TLS key file
+#keyfile =   	# Optional
+
+#
+[executor.celery.security]
+#cert_store =   	# Required
+#keyfile =   	# Required
+#certfile =   	# Required
+
 
 # The storage configuration is used for configuring the
 # connections to storage backends used by workers.
@@ -197,13 +235,13 @@ download_url_expiration = 3600
 # CA file
 #cafile =   	# Optional
 #
-# SSL/TLS  key
+# TLS  certificat
 #
-# Path to the SSL key file
+# Path to the TLS cert file
 #certfile =   	# Optional
 #
-# SSL/TLS Certificat
+# TLS key file
 #
-# Path to the SSL certificat file
+# Path to the TLS key file
 #keyfile =   	# Optional
 

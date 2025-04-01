@@ -51,7 +51,7 @@ try:
 except PackageNotFoundError:
     __version__ = "dev"
 
-SERVER_HEADER = f"Py-Qgis-Http-Processes {__version__}"
+SERVER_HEADER = f"Qjazz-Processes {__version__}"
 
 
 #
@@ -91,8 +91,8 @@ class HttpConfig(ConfigBase):
     proxy: ForwardedConfig = Field(default=ForwardedConfig())
 
     update_interval: int = Field(
-        default=60,
-        gt=0,
+        default=30,
+        gt=1,
         title="Service update interval",
         description="Interval in seconds between update of available services",
     )
@@ -376,14 +376,14 @@ def create_app(conf: ConfigProto) -> web.Application:
     # Create documentation model
     doc = _swagger_doc(app, conf.oapi)
 
-    # Create router for the landing page
-    async def landing_page(request: web.Request) -> web.Response:
+    # Create router for the service description
+    async def service_desc(request: web.Request) -> web.Response:
         return web.Response(
             content_type="application/json",
             text=doc.model_dump_json(),
         )
 
-    app.router.add_route("GET", "/", landing_page)
+    app.router.add_route("GET", "/api", service_desc)
 
     # Add executor context
     app.cleanup_ctx.append(cache.cleanup_ctx(conf.http, executor))
@@ -398,6 +398,7 @@ def _swagger_doc(app: web.Application, oapi: swagger.OapiConfig) -> swagger.Open
             swagger.Tag(name="processes", description="Processes"),
             swagger.Tag(name="jobs", description="Jobs"),
             swagger.Tag(name="services", description="Services"),
+            swagger.Tag(name="api", description="Api"),
         ],
         conf=oapi,
     )

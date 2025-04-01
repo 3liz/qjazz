@@ -44,15 +44,22 @@ class ServiceCache:
         update_interval = conf.update_interval
 
         async def ctx(app: web.Application):
+
+            service_names: set[str] = set()
+
             async def update_services() -> bool:
+                nonlocal service_names
                 try:
-                    logger.debug("Updating services")
+                    logger.trace("Updating services")
                     services = await executor.update_services()
-                    if services:
-                        _log_services(services)
-                        return True
-                    else:
-                        logger.warning("No services availables")
+                    current = set(services.keys())
+                    if current != service_names:
+                        service_names = current
+                        if services:
+                            _log_services(services)
+                            return True
+                        else:
+                            logger.warning("No services availables")
                 except Exception:
                     logger.error("Failed to update services: %s", traceback.format_exc())
 
@@ -67,7 +74,7 @@ class ServiceCache:
             #
 
             async def update_cache(ok: bool):
-                logger.debug("# Starting update task with interval of %s s", update_interval)
+                logger.debug("Starting update task with interval of %s s", update_interval)
                 interval = update_interval if ok else 2
                 while True:
                     await asyncio.sleep(interval)
@@ -91,13 +98,11 @@ class ServiceCache:
 
 
 def _log_services(services: ServiceDict):
-    logger.info("Availables services: %s", tuple(services.keys()))
 
-    if logger.is_enabled_for(logger.LogLevel.DEBUG):
+    def _format(key, dests, p):
+        return f"* {key:<15}{p.title:<30}{dests}"
 
-        def _format(dests, details):
-            return f"{dests}\n{details.model_dump_json(indent=4)}"
-
-        logger.debug(
-            "\n".join(_format(dests, details) for dests, details in services.values()),
-        )
+    logger.info(
+        "Availables services:\n%s",
+        "\n".join(_format(k, dests, details) for k, (dests, details) in services.items()),
+    )

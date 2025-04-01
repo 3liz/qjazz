@@ -6,6 +6,7 @@ from aiohttp import web
 
 from ._handlers import (
     Jobs,
+    LandingPage,
     Processes,
     Services,
     Storage,
@@ -22,7 +23,7 @@ API_VERSION = "v1"
 PAGKAGE_NAME = "qjazz_processes"
 
 
-class Handler(Services, Processes, Jobs, WebUI, Storage):
+class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
     def __init__(
         self,
         *,
@@ -46,6 +47,8 @@ class Handler(Services, Processes, Jobs, WebUI, Storage):
     def routes(self) -> list[web.RouteDef]:
         prefix = self._accesspolicy.prefix
         _routes = [
+            # Landing page
+            web.get(f"{prefix}/", self.landing_page, allow_head=False),
             # Processes
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
             web.get(f"{prefix}/processes", redirect_trailing_slash(), allow_head=False),

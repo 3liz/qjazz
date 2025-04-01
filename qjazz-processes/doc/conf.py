@@ -39,7 +39,7 @@ html_static_path = [
 # See https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = 'index'
 
-ProjectName = "Py-Qgis-Processes"
+ProjectName = "Qjazz-Processes"
 
 rst_epilog = f"""
 .. |ProjectName| replace:: {ProjectName}
@@ -49,7 +49,7 @@ rst_epilog = f"""
 
 swagger = [
     {
-        "name": "Py-Qgis-Processes API",
+        "name": "Qjazz-Processes API",
         "page": "openapi",
         "options" : { "url": "_static/openapi.yml" },
     },

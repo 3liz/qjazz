@@ -7,6 +7,7 @@ from pydantic import TypeAdapter
 from ...worker.exceptions import (
     ProcessNotFound,
     ProjectRequired,
+    ServiceNotAvailable,
 )
 from .. import swagger
 from ..accesspolicy import AccessPolicy
@@ -48,6 +49,7 @@ class HandlerProto(Protocol):
     _staticpath: Path
     _jobrealm: JobRealmConfig
     _storage: StorageConfig
+    _enable_ui: bool
 
     def get_service(self, request: web.Request, raise_error: bool = True) -> str: ...
 

@@ -1,7 +1,6 @@
 from typing import (
-    TYPE_CHECKING,
-    Callable,
     Optional,
+    Protocol,
     Self,
     Sequence,
 )
@@ -17,12 +16,9 @@ from .protos import (
     swagger,
 )
 
-if TYPE_CHECKING:
-    from mypy_extensions import DefaultNamedArg
 
-    PathFormatter = Callable[[web.Request, str, DefaultNamedArg(Optional[str], "service")], str]
-else:
-    PathFormatter = Callable[[web.Request, str, str], str]
+class PathFormatter(Protocol):
+    def __call__(self, request: web.Request, path: str, service: Optional[str] = None) -> str: ...
 
 
 class ServiceItem(swagger.JsonModel):

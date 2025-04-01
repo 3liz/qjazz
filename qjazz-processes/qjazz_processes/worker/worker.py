@@ -277,7 +277,7 @@ class QgisWorker(Worker):
         """Cleanup all expired jobs"""
         try:
             with self.lock("cleanup-batch"):
-                logger.debug("Running cleanup task")
+                logger.trace("Running cleanup task")
                 # Search for expirable jobs resources
                 for p in self._workdir.glob(f"*/.job-expire-{self.service_name}"):
                     jobdir = p.parent

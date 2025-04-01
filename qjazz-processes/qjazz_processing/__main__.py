@@ -19,7 +19,7 @@ def main():
     pass
 
 
-@main.command("start")
+@main.command("serve")
 @click.option(
     "--conf",
     "-C",

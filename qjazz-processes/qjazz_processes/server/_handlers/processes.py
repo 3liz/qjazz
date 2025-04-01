@@ -26,6 +26,7 @@ from .protos import (
     ProcessSummary,
     ProjectRequired,
     RunProcessException,
+    ServiceNotAvailable,
     href,
     make_link,
     public_url,
@@ -63,6 +64,12 @@ class Processes(HandlerProto):
             processes = await self._executor.processes(service, timeout=self._timeout)
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
+        except ServiceNotAvailable:
+            ErrorResponse.raises(
+                web.HTTPForbidden,
+                "Service not available",
+                details={"service": service},
+            )
 
         def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
             if self._accesspolicy.execute_permission(request, service, td.id_):

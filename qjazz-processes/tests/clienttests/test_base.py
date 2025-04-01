@@ -17,4 +17,4 @@ def test_root_request(host):
     assert 'definitions' in data
     assert 'info' in data
 
-    assert data['info']['title'] == "Py-Qgis-Processes"
+    assert data['info']['title'] == "Qjazz-Processes"

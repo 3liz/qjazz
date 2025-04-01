@@ -31,7 +31,7 @@ def dump_json(v: JsonValue) -> str:
 class OapiConfig(ConfigBase):
     """OAPI configuration"""
 
-    title: str = Field("Py-Qgis-Processes")
+    title: str = Field("Qjazz-Processes")
     description: str = Field(
         "Publish Qgis processing algorithms as OGC api processes",
     )
