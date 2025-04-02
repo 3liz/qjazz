@@ -156,8 +156,8 @@ class ConfigSettings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
-            init_settings,
             env_settings,
+            init_settings,
             file_secret_settings,
         )
 

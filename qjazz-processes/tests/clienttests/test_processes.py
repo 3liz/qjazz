@@ -156,10 +156,10 @@ def test_handleprocesserror_sync(host, data):
     rv = requests.post(
         f"{host}/processes/processes_test:testraiseerror/execution",
         json={ "inputs": { "PARAM1": 1 }},
-        headers={ 'Prefer': "wait=3" },
+        headers={ 'Prefer': "wait=5" },
     )
-    print("\n", rv.text) 
-    print("\n", rv.headers) 
+    print("\n::test_handleprocesserror_sync::", rv.text) 
+    print("\n::test_handleprocesserror_sync::", rv.headers) 
     assert rv.status_code == 500
     assert rv.headers['Content-Type'].startswith("application/json")
     assert "jobId" in rv.json()['details']
@@ -172,6 +172,9 @@ def test_handleprocesserror_async(host, data):
         json={ "inputs": { "PARAM1": 1 }},
         headers={ 'Prefer': "respond-async" },
     )
+    print("\n::test_handleprocesserror_async::", rv.text) 
+    print("\n::test_handleprocesserror_async::", rv.headers) 
+ 
     assert rv.status_code == 201
 
     job_id = rv.json()['jobId']

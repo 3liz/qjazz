@@ -25,7 +25,7 @@ def test_execute_clipbyextent(host):
         "outputs": {
             "OUTPUT": {
                 "format": {
-                    "mediaType": "application/x-ogc-wms; version=1.3.0",
+                    "mediaType": "application/x-ogc-wms+xml; version=1.3.0",
                 },
             },
         }
@@ -39,7 +39,7 @@ def test_execute_clipbyextent(host):
     assert rv.status_code == 200
 
     resp = rv.json()
-    assert resp['OUTPUT']['type'] == "application/x-ogc-wms; version=1.3.0"
+    assert resp['OUTPUT']['type'] == "application/x-ogc-wms+xml; version=1.3.0"
 
     href = resp['OUTPUT']['href']
     print("\n::test_execute_clipbyextent::OUTPUT::href", href)

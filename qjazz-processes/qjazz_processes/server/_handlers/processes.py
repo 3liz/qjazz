@@ -247,7 +247,7 @@ class Processes(HandlerProto):
             pending_timeout=prefer.wait,
         )
 
-        if not prefer.execute_async or (prefer.execute_async and prefer.wait is not None):
+        if not prefer.execute_async or prefer.wait is not None:
             try:
                 job_result = await result.get(prefer.wait or self._timeout)
                 headers = {JOB_ID_HEADER: result.job_id}

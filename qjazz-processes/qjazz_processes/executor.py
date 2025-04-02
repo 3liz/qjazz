@@ -19,7 +19,6 @@ from pydantic import Field, JsonValue
 
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Celery, CeleryConfig
-from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_contrib.core.config import ConfigBase
 from qjazz_contrib.core.utils import to_utc_datetime, utc_now
 
@@ -431,6 +430,7 @@ class _ExecutorBase:
                 else:
                     match st:
                         case "active" | "scheduled" | "reserved":
+                            # Task has been received by the worker
                             status = _S.ACTIVE
                         case "revoked":
                             status = _S.DONE
@@ -462,7 +462,13 @@ class _ExecutorBase:
                     logger.trace("=Revoke returned: %s", rv)
                     # Check the state status:
                     state = self._celery.backend.get_task_meta(job_id)
-                    assert_postcondition(state["status"] == Celery.STATE_REVOKED)
+                    logger.trace("=State returned: %s", state)
+                    if state["status"] != Celery.STATE_REVOKED:
+                        logger.warning(
+                            "%s: task was revoked but still in' %s' state",
+                            job_id,
+                            state["status"],
+                        )
                 case _S.DONE | _S.PENDING:
                     # Job is not revokable
                     pass

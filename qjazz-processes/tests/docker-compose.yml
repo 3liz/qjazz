@@ -17,7 +17,7 @@ services:
       CONF_CELERY__BACKEND_HOST: redis:6379/0
     ports:
     - 127.0.0.1:4000:9180
-    depends: [rabbitmq, redis]
+    depends_on: [rabbitmq, redis]
     profiles:
     - server
 

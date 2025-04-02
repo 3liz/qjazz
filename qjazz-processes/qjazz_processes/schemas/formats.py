@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-SERVICE_MATCH = re.compile(r"^application/x-ogc-(wms|wcs|wfs|wmts)")
+SERVICE_MATCH = re.compile(r"^application/x-ogc-(wms|wcs|wfs|wmts)\+xml")
 VERSION_MATCH = re.compile(r";\s+version=([^;\s]+)")
 
 
