@@ -122,9 +122,13 @@ function add_process( pr_data ) {
  
     link.setAttribute('href', `../jobs/${ pr_data.jobId }.html`)
 
+    // Job tag
+    set_label( pr, 'job-tag', pr_data.tag === undefined ? "": pr_data.tag)
+
     // Get the start-date label
     set_label( pr, 'start-date' , format_iso_date(pr_data.created))
     set_label( pr, 'finish-date', format_iso_date(pr_data.finished))
+
 
     // Set actions 
     pr.querySelector("[role=pr-delete]").addEventListener('click', function() {
@@ -149,6 +153,7 @@ function update_process( pr_data ) {
         if (pr.getAttribute("status") != st) {
             pr.setAttribute("status", st)
             pr.setAttribute("title" , pr_data.message)
+            set_label( pr, 'job-tag', pr_data.tag === undefined ? "": pr_data.tag)
             set_label( pr, 'start-date' , format_iso_date(pr_data.created))
             set_label( pr, 'finish-date', format_iso_date(pr_data.finished))
         }
@@ -212,11 +217,15 @@ function show_details( pr_data ) {
         el = document.querySelector('#lbl-'+key)
         if (el) {
             let value = pr_data[key]
-            let dtype = el.getAttribute("dtype")
-            if (dtype == "date") {
-                value = format_iso_date(value)
+            if (value !== undefined) {
+                let dtype = el.getAttribute("dtype")
+                if (dtype == "date") {
+                    value = format_iso_date(value)
+                }
+            } else {
+                value = ""
             }
-            el.dataset.value = value 
+            el.dataset.value = value
         }
     }
 }

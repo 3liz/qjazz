@@ -1,6 +1,7 @@
 import re
 
 from typing import (
+    Annotated,
     Optional,
     Sequence,
 )
@@ -8,7 +9,7 @@ from typing import (
 import celery.exceptions
 
 from aiohttp import web
-from pydantic import ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 from qjazz_contrib.core import logger
 
@@ -31,6 +32,7 @@ from .protos import (
     make_link,
     public_url,
     swagger,
+    validate_param,
 )
 
 
@@ -38,6 +40,11 @@ from .protos import (
 class ProcessList(swagger.JsonModel):
     processes: Sequence[ProcessSummary]
     links: Sequence[Link]
+
+
+TagParam: TypeAdapter[Optional[str]] = TypeAdapter(
+    Annotated[Optional[str], Field(max_length=36)]
+)
 
 
 class Processes(HandlerProto):
@@ -191,7 +198,14 @@ class Processes(HandlerProto):
               schema:
                 type: string
               required: true
-              description: Process  identifier
+              description: Process identifier
+            - in: query
+              name: Tag
+              schema:
+                type: string
+                maxLength: 36
+              required: false
+              description: job tag
         tags:
           - processes
         requestBody:
@@ -212,6 +226,8 @@ class Processes(HandlerProto):
                         schema:
                             $ref: '#/definitions/JobStatus'
         """
+        tag = validate_param(TagParam, request, "tag", None)
+
         service = self.get_service(request)
         project = self.get_project(request)
 
@@ -245,6 +261,7 @@ class Processes(HandlerProto):
             realm=realm,
             # Set the pending timeout to the wait preference
             pending_timeout=prefer.wait,
+            tag=tag,
         )
 
         if not prefer.execute_async or prefer.wait is not None:

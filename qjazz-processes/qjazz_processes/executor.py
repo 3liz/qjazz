@@ -259,6 +259,7 @@ class _ExecutorBase:
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
+        tag: Optional[str] = None,
     ) -> tuple[
         str,
         Callable[[int | None], JobResults],
@@ -290,6 +291,7 @@ class _ExecutorBase:
             "service": service,
             "process_id": ident,
             "expires": expires,
+            "tag": tag,
         }
 
         result = self._execute_task(
@@ -313,6 +315,7 @@ class _ExecutorBase:
             status=JobStatus.PENDING,
             process_id=ident,
             created=created,
+            tag=meta['tag'],
         )
 
         # Register pending task info
@@ -588,7 +591,7 @@ class _ExecutorBase:
         kwargs = state["kwargs"]
         meta = kwargs.get("__meta__", {})
 
-        details: dict = {}
+        details: dict = { 'tag': meta.get('tag') }
         if with_details:
             details.update(run_config=kwargs.get("request"))
             if finished:
@@ -839,6 +842,7 @@ class Executor(_ExecutorBase):
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
+        tag: Optional[str] = None,
     ) -> Result:
         job_id, _get_result, _get_status = self._execute(
             service,
@@ -848,6 +852,7 @@ class Executor(_ExecutorBase):
             context=context,
             realm=realm,
             pending_timeout=pending_timeout,
+            tag=tag,
         )
         return Result(job_id=job_id, get=_get_result, status=_get_status)
 

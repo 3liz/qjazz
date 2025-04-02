@@ -4,6 +4,10 @@ body {
   background-color: #eee;
 }
 
+#pr-container {
+  max-width: 80%;
+}
+
 /*
  * CSS widgets
  */

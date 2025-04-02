@@ -95,6 +95,7 @@ class Executor(_ExecutorBase):
         context: Optional[JsonDict] = None,
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
+        tag: Optional[str] = None,
     ) -> Result:
         """Send an execute request
         Returns an asynchronous  'Result' object
@@ -107,6 +108,7 @@ class Executor(_ExecutorBase):
             context=context,
             realm=realm,
             pending_timeout=pending_timeout,
+            tag=tag,
         )
 
         return Result(

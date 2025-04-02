@@ -7,7 +7,7 @@ from typing import (
 from urllib.parse import urlencode
 
 from aiohttp import web
-from pydantic import Field, TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter
 
 from .protos import (
     ErrorResponse,
@@ -19,6 +19,7 @@ from .protos import (
     href,
     make_link,
     swagger,
+    validate_param,
 )
 
 
@@ -42,16 +43,6 @@ class LogResponse(swagger.JsonModel):
 LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
 PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
 BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
-
-
-def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
-    try:
-        return adapter.validate_python(request.query.get(name, default))
-    except ValidationError as err:
-        raise web.HTTPBadRequest(
-            content_type="application/json",
-            text=err.json(include_context=False, include_url=False),
-        )
 
 
 class Jobs(HandlerProto):

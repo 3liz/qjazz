@@ -4,22 +4,25 @@ import os
 import pytest
 
 from time import sleep
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import requests
 
 
-def _execute_process(host: str, *, respond_async: bool):
+def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = None):
     """ Execute a process and return its status json
     """
     headers = {}
     if respond_async:
         headers.update(Prefer="respond-async")
 
+    tag_param=f"&tag={tag}" if tag else ""
+
     resp = requests.post(
         (
             f"{host}/processes/processes_test:testcopylayer/execution"
-            f"?map=france/france_parts"
+            f"?map=france/france_parts{tag_param}"
         ),
         json={
             "inputs": {
@@ -54,6 +57,7 @@ def test_executeprocess_async(host):
         (
             f"{host}/processes/processes_test:testcopylayer/execution"
             f"?map=france/france_parts"
+            f"&tag=test_executeprocess_async"
         ),
         json={
             "inputs": {
@@ -70,7 +74,7 @@ def test_executeprocess_async(host):
 def test_executeprocess_sync(host):
     """  Test execute process """
 
-    result = _execute_process(host, respond_async=False)
+    result = _execute_process(host, respond_async=False, tag="test_executeprocess_sync")
 
     job_id = result['jobId']
 
@@ -106,6 +110,7 @@ def test_executetimeout(host, data):
         (
             f"{host}/processes/processes_test:testlongprocess/execution"
             f"?map=france/france_parts"
+            f"&tag=test_executetimeout"
         ),
         json={ "inputs": { "DELAY": 1 }},
         headers={"Prefer": "wait=3"},
@@ -135,7 +140,7 @@ def test_executedelete(host, data):
     """ Test delete process
     """
     # Execute a process
-    status= _execute_process(host, respond_async=True)
+    status= _execute_process(host, respond_async=True, tag="test_executedelete")
 
     job_id = status['jobId']
 
@@ -168,7 +173,10 @@ def test_handleprocesserror_sync(host, data):
 def test_handleprocesserror_async(host, data):
     """  Test execute error """
     rv = requests.post(
-        f"{host}/processes/processes_test:testraiseerror/execution",
+        (
+            f"{host}/processes/processes_test:testraiseerror/execution"
+            f"?tag=test_handleprocesserror_async"
+        ),
         json={ "inputs": { "PARAM1": 1 }},
         headers={ 'Prefer': "respond-async" },
     )
@@ -204,7 +212,10 @@ def test_badparameter_sync(host):
     """ Test parameter enums
     """
     rv = requests.post(
-        f"{host}/processes/processes_test:testmultioptionvalue/execution",
+        (
+            f"{host}/processes/processes_test:testmultioptionvalue/execution"
+            f"?tag=test_badparameter_sync"
+        ),
         json={ "inputs": { "INPUT": "badparam" }},
 
     )
@@ -215,7 +226,10 @@ def test_badparameter_async(host):
     """ Test parameter enums
     """
     rv = requests.post(
-        f"{host}/processes/processes_test:testmultioptionvalue/execution",
+        (
+            f"{host}/processes/processes_test:testmultioptionvalue/execution"
+            f"?tag=test_badparameter_async"
+        ),
         json={ "inputs": { "INPUT": "badparam" }},
         headers={'Prefer': 'respond-async' },
 

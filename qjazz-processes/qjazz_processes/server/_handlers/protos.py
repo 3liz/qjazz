@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, Protocol
 
 from aiohttp import web
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from ...worker.exceptions import (
     ProcessNotFound,
@@ -64,3 +64,14 @@ class HandlerProto(Protocol):
         *,
         query: Optional[str] = None,
     ) -> str: ...
+
+
+def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
+    """Validate query param"""
+    try:
+        return adapter.validate_python(request.query.get(name, default))
+    except ValidationError as err:
+        raise web.HTTPBadRequest(
+            content_type="application/json",
+            text=err.json(include_context=False, include_url=False),
+        )

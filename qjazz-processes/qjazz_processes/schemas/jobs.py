@@ -90,6 +90,9 @@ class JobStatus(JsonModel):
     # Expiration timestamp
     expires_at: Option[datetime] = None
 
+    # Job tag
+    tag: Option[str] = None
+
 
 class Output(JsonModel):
     format: OutputFormat
