@@ -41,6 +41,8 @@ build: manifest requirements
 MANIFEST=factory-$(FLAVOR).manifest
 
 manifest:
+	# Update the Qjazz build manifest
+	$(MAKE) -C $(topsrcdir)/qjazz-contrib manifest
 	@{ \
 	set -e; \
 	version=`docker run --rm -v $$(pwd)/scripts:/scripts $(QGIS_IMAGE)  /scripts/qgis-version.sh`; \

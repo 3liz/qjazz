@@ -6,6 +6,8 @@ from typing import Optional
 
 import click
 
+from qjazz_contrib.core import config, manifest
+
 PathType = click.Path(
     exists=True,
     readable=True,
@@ -15,8 +17,19 @@ PathType = click.Path(
 
 
 @click.group()
-def main():
-    pass
+@click.version_option(
+    package_name="qjazz-processes",
+    message=f"Qjazz version: %(version)s ({manifest.short_commit_id() or 'n/a'})",
+)
+@click.option(
+    "--env-settings",
+    type=click.Choice(("disabled", "last", "first")),
+    default="first",
+    help="Environment variables precedence",
+    show_default=True,
+)
+def main(env_settings: config.EnvSettingsOption):
+    config.set_env_settings_option(env_settings)
 
 
 @main.command("serve")
@@ -33,9 +46,11 @@ def main():
     type=click.Choice(("error", "warning", "info", "debug")),
     default="info",
     help="Log level",
+    show_default=True,
 )
 @click.option("--dump", is_flag=True, help="Dump config and exit")
 def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
+    """Start service"""
     from qjazz_processes.worker.config import CONFIG_ENV_PATH
 
     if configpath:
@@ -85,6 +100,18 @@ def install_plugins(configpath: Optional[Path], force: bool):
         install_plugins(conf.processing.plugins)
     else:
         click.echo("Plugin installation set to manual: no plugins to install...")
+
+
+@main.command("version")
+@click.option("--settings", is_flag=True, help="Show QGIS settings")
+def print_version(settings: bool):
+    """Show GIS library versions"""
+    from qjazz_contrib.core import manifest, qgis
+
+    short_commit = manifest.short_commit_id() or "n/a"
+
+    click.echo(f"Qjazz version: {config.config_version} ({short_commit})\n")
+    qgis.print_qgis_version(settings)
 
 
 main()

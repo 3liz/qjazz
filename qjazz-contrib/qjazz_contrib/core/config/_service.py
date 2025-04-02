@@ -41,6 +41,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Literal,
     Optional,
     Type,
     TypeAlias,
@@ -134,10 +135,31 @@ def secrets_dir() -> str | None:
 
     return secrets_dir
 
+
+type EnvSettingsOption = Literal["first", "last", "disabled"]
+
+
+def set_env_settings_option(opt: EnvSettingsOption):
+    print("Environment precedence set to:", opt)   # noqa T210
+    ConfigSettings.env_settings_precedence = opt
+
 #
 # The base model for the config settings
 #
 class ConfigSettings(BaseSettings):
+
+    #
+    # Configure the precedence of
+    # environment variable in the global
+    # settings
+    # * 'first': environment variables have precedence over configuration
+    # initialisation (files) and secrets.
+    # * 'last': configuration files and secrets will have precedence over
+    # environment variables.
+    # * 'disabled': environment variables have no effects on configuration.
+    #
+    env_settings_precedence: ClassVar[EnvSettingsOption] = "first"
+
     model_config = SettingsConfigDict(
         frozen=True,
         extra="ignore",
@@ -155,11 +177,23 @@ class ConfigSettings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        return (
-            env_settings,
-            init_settings,
-            file_secret_settings,
-        )
+        match cls.env_settings_precedence:
+            case "first":
+                return (
+                    env_settings,
+                    init_settings,
+                    file_secret_settings,
+                )
+            case "last":
+                return (
+                    init_settings,
+                    file_secret_settings,
+                    env_settings,
+                )
+            case "disabled":
+                return (init_settings, file_secret_settings)
+            case unreachable:
+                assert_never(unreachable)
 
 
 class ConfBuilder:

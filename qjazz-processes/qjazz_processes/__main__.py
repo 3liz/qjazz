@@ -4,6 +4,8 @@ from typing import Optional, cast
 
 import click
 
+from qjazz_contrib.core import config, manifest
+
 PathType = click.Path(
     exists=True,
     readable=True,
@@ -13,8 +15,19 @@ PathType = click.Path(
 
 
 @click.group()
-def main():
-    pass
+@click.version_option(
+    package_name="qjazz-processes",
+    message=f"Qjazz version: %(version)s ({manifest.short_commit_id() or 'n/a'})",
+)
+@click.option(
+    "--env-settings",
+    type=click.Choice(("disabled", "last", "first")),
+    default="first",
+    help="Environment variables precedence",
+    show_default=True,
+)
+def main(env_settings: config.EnvSettingsOption):
+    config.set_env_settings_option(env_settings)
 
 
 #
@@ -30,10 +43,7 @@ def main():
     help="Path to configuration file",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
-def run_server(
-    configpath: Path,
-    verbose: bool,
-):
+def run_server(configpath: Path, verbose: bool):
     """Start server"""
     from qjazz_contrib.core import logger
 
@@ -61,7 +71,11 @@ def run_server(
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
 @click.pass_context
-def control(ctx: click.Context, configpath: Optional[Path], verbose: bool):
+def control(
+    ctx: click.Context,
+    configpath: Optional[Path],
+    verbose: bool,
+):
     """Service commands"""
     from types import SimpleNamespace
 
@@ -137,7 +151,12 @@ def shutdown_service(ctx: click.Context, service: str):
 
 @control.command("ping")
 @click.argument("service")
-@click.option("--repeat", "-n", type=int, default=0, help="Ping every <repeat> seconds")
+@click.option(
+    "--repeat", "-n",
+    type=int, default=0,
+    help="Ping every <REPEAT> seconds",
+    metavar="REPEAT",
+)
 @click.pass_context
 def ping_service(ctx: click.Context, service: str, repeat: int):
     """Ping service"""

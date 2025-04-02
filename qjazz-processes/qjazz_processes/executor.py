@@ -591,7 +591,7 @@ class _ExecutorBase:
         kwargs = state["kwargs"]
         meta = kwargs.get("__meta__", {})
 
-        details: dict = { 'tag': meta.get('tag') }
+        details: dict = {'tag': meta.get('tag')}
         if with_details:
             details.update(run_config=kwargs.get("request"))
             if finished:

@@ -26,3 +26,8 @@ def get_manifest() -> Manifest:
             traceback.print_exc()
 
     return Manifest()
+
+
+def short_commit_id() -> Optional[str]:
+    short_commit = get_manifest().commit_id
+    return short_commit[:12] if short_commit else None

@@ -45,16 +45,12 @@ def cli_commands():
 
 
 @cli_commands.command("version")
-@click.option("--settings", is_flag=True, help="Show Qgis settings")
+@click.option("--settings", is_flag=True, help="Show QGIS settings")
 def print_version(settings: bool):
     """Print version and exit"""
     from qjazz_contrib.core import manifest, qgis
 
-    short_commit = manifest.get_manifest().commit_id
-    if short_commit:
-        short_commit = short_commit[:12]
-    else:
-        short_commit = "n/a"
+    short_commit = manifest.short_commit_id() or "n/a"
 
     click.echo(f"Qjazz version: {config.config_version} ({short_commit})\n")
     qgis.print_qgis_version(settings)
