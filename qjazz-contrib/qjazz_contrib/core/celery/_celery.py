@@ -29,19 +29,26 @@ class SecurityConfig(ConfigBase):
 
 
 # Use this on local setup
-LOCAL_BROKER = ""
+LOCAL_BROKER = "localhost"
 LOCAL_BACKEND = "localhost:6379/0"
 
 
 class CeleryConfig(ConfigBase):
     """Celery configuration"""
 
-    broker_host: str = Field(default=LOCAL_BROKER, title="Celery amqp broker host")
+    broker_host: str = Field(
+        default=LOCAL_BROKER,
+        title="Celery amqp broker host",
+        min_length=1,
+    )
     broker_use_tls: bool = False
+    broker_user: Optional[str] = None
+    broker_password: Optional[str] = None
     broker_tls: Optional[TLSConfig] = None
 
     backend_host: str = Field(default=LOCAL_BACKEND, title="Celery redis backend host")
     backend_use_tls: bool = False
+    backend_password: Optional[str] = None
     backend_tls: Optional[TLSConfig] = None
 
     # https://docs.celeryq.dev/en/stable/userguide/security.html
@@ -109,6 +116,22 @@ class CeleryConfig(ConfigBase):
         description="Activate concurrency autoscaling",
     )
 
+    def broker_url(self) -> str:
+        match (self.broker_user, self.broker_password):
+            case (str(name), str(passwd)):
+                return f"amqp://{name}:{passwd}@{self.broker_host}"
+            case (str(name), None):
+                return f"amqp://{name}@{self.broker_host}"
+            case _:
+                return f"amqp://{self.broker_host}"
+
+    def backend_url(self) -> str:
+        scheme = "rediss" if self.backend_use_tls else "redis"
+        if self.backend_password:
+            return f"{scheme}://:{self.backend_password}@{self.backend_host}"
+        else:
+            return f"{scheme}://{self.backend_host}"
+
 
 class Celery(celery.Celery):
     """Celery application
@@ -136,8 +159,8 @@ class Celery(celery.Celery):
 
         super().__init__(
             main,
-            broker=f"amqp://{conf.broker_host}",
-            backend=f"rediss://{conf.backend_host}" if conf.backend_use_tls else f"redis://{conf.backend_host}",
+            broker=conf.broker_url(),
+            backend=conf.backend_url(),
             broker_connection_retry_on_startup=True,
             redis_backend_health_check_interval=5,
             result_extended=True,
