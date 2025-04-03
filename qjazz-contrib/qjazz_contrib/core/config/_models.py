@@ -19,7 +19,7 @@ from ._service import ConfigBase
 
 __all__ = [
     "NetInterface",
-    "SSLConfig",
+    "TLSConfig",
     "Template",
     "TemplateStr",
 ]
@@ -47,11 +47,11 @@ NetInterface = Annotated[
 
 
 #
-# SSL configuration
+# TLS configuration
 #
 
 
-class SSLConfig(ConfigBase):
+class TLSConfig(ConfigBase):
     cafile: Optional[FilePath] = Field(
         default=None,
         title="CA file",
@@ -68,7 +68,7 @@ class SSLConfig(ConfigBase):
     )
 
     #
-    # Convenient methods for creating ssl context
+    # Convenient methods for creating ssl/tls context
     #
 
     def create_ssl_context(self, purpose: ssl.Purpose) -> ssl.SSLContext:

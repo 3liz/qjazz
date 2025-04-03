@@ -13,7 +13,7 @@ from qjazz_contrib.core.config import (
     ConfBuilder,
     ConfigBase,
     NetInterface,
-    SSLConfig,
+    TLSConfig,
 )
 
 from .resolvers import ResolverConfig
@@ -32,9 +32,9 @@ class HttpConfig(ConfigBase):
         title="Use ssl",
     )
 
-    ssl: SSLConfig = Field(
-        default=SSLConfig(),
-        title="SSL certificats",
+    ssl: TLSConfig = Field(
+        default=TLSConfig(),
+        title="TLS certificats",
     )
 
     cross_origin: Literal["all", "same-origin"] | AnyHttpUrl = Field(
@@ -74,9 +74,9 @@ class HttpConfig(ConfigBase):
 class ConfigUrl(ConfigBase):
     """Remote configuration settings"""
 
-    ssl: SSLConfig = Field(
-        default=SSLConfig(),
-        title="SSL configuration",
+    ssl: TLSConfig = Field(
+        default=TLSConfig(),
+        title="TLS configuration",
     )
     url: Optional[AnyHttpUrl] = Field(
         default=None,

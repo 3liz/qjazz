@@ -44,7 +44,7 @@ class BackendConfig(config.ConfigBase):
         description="Address of RPC service",
     )
     use_ssl: bool = False
-    ssl: config.SSLConfig = config.SSLConfig()
+    ssl: config.TLSConfig = config.TLSConfig()
 
     def address_to_string(self) -> str:
         """Returns the address as string"""

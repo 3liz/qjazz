@@ -1,7 +1,7 @@
 #
 from pydantic import Field
 
-from qjazz_contrib.core.config import ConfigBase, SSLConfig
+from qjazz_contrib.core.config import ConfigBase, TLSConfig
 
 # Config
 #
@@ -17,8 +17,8 @@ class StorageConfig(ConfigBase):
 
     allow_insecure_connection: bool = Field(
         default=True,
-        title="Allow only secure downloads",
-        description="Only TLS encrypted downloads are allowed",
+        title="Allow insecure downloads",
+        description="If set to false, only TLS encrypted downloads are allowed",
     )
 
     chunksize: int = Field(
@@ -27,8 +27,8 @@ class StorageConfig(ConfigBase):
         title="Download chunksize",
     )
 
-    ssl: SSLConfig = Field(
-        default=SSLConfig(),
+    ssl: TLSConfig = Field(
+        default=TLSConfig(),
         title="TLS certifificats",
         description="Certificats required for TLS downloads connections",
     )

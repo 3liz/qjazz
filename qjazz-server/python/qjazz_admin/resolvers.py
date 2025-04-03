@@ -16,7 +16,7 @@ from pydantic import Field, IPvAnyAddress, TypeAdapter
 from qjazz_contrib.core import logger  # noqa
 from qjazz_contrib.core.config import (
     ConfigBase,
-    SSLConfig,
+    TLSConfig,
 )
 
 from .backend import BackendConfig
@@ -57,7 +57,7 @@ class Resolver(ConfigBase):
     )
     ipv6: bool = Field(default=False, title="Check for ipv6")
     use_ssl: bool = Field(default=False, title="Use ssl connection")
-    ssl: SSLConfig = Field(default=SSLConfig(), title="SSL certificats")
+    ssl: TLSConfig = Field(default=TLSConfig(), title="TLS certificats")
 
     title: str = ""
     description: Optional[str] = None

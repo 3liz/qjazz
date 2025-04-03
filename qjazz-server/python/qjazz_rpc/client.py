@@ -24,7 +24,7 @@ from grpc_health.v1 import (
     health_pb2_grpc,  # HealthStub
 )
 
-from qjazz_contrib.core.config import SSLConfig
+from qjazz_contrib.core.config import TLSConfig
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 
@@ -35,7 +35,7 @@ S = TypeVar("S")
 def channel(
     address: str,
     stub: type[S],
-    ssl: Optional[SSLConfig] = None,
+    ssl: Optional[TLSConfig] = None,
     channel_options: Optional[list] = None,
 ) -> Generator[S, None, None]:
     # Return a synchronous client channel
@@ -107,11 +107,11 @@ def connect(stub=qjazz_pb2_grpc.QgisAdminStub) -> Generator:
 
     address = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
 
-    if os.getenv("CONF_GRPC_USE_SSL", "").lower() in (1, "yes", "true"):
-        ssl = SSLConfig(
-            keyfile=os.getenv("CONF_GRPC_SSL_KEYFILE"),
-            certfile=os.getenv("CONF_GRPC_SSL_CERTFILE"),
-            cafile=os.getenv("CONF_GRPC_SSL_CAFILE"),
+    if os.getenv("CONF_GRPC_USE_TLS", "").lower() in (1, "yes", "true"):
+        ssl = TLSConfig(
+            keyfile=os.getenv("CONF_GRPC_TLS_KEYFILE"),
+            certfile=os.getenv("CONF_GRPC_TLS_CERTFILE"),
+            cafile=os.getenv("CONF_GRPC_TLS_CAFILE"),
         )
     else:
         ssl = None

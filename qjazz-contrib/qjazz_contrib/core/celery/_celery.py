@@ -16,7 +16,7 @@ from pydantic import (
 
 from qjazz_contrib.core.config import (
     ConfigBase,
-    SSLConfig,
+    TLSConfig,
 )
 
 
@@ -37,12 +37,12 @@ class CeleryConfig(ConfigBase):
     """Celery configuration"""
 
     broker_host: str = Field(default=LOCAL_BROKER, title="Celery amqp broker host")
-    broker_use_ssl: bool = False
-    broker_ssl: Optional[SSLConfig] = None
+    broker_use_tls: bool = False
+    broker_tls: Optional[TLSConfig] = None
 
     backend_host: str = Field(default=LOCAL_BACKEND, title="Celery redis backend host")
-    backend_use_ssl: bool = False
-    backend_ssl: Optional[SSLConfig] = None
+    backend_use_tls: bool = False
+    backend_tls: Optional[TLSConfig] = None
 
     # https://docs.celeryq.dev/en/stable/userguide/security.html
     security: Optional[SecurityConfig] = None
@@ -137,7 +137,7 @@ class Celery(celery.Celery):
         super().__init__(
             main,
             broker=f"amqp://{conf.broker_host}",
-            backend=f"rediss://{conf.backend_host}" if conf.backend_use_ssl else f"redis://{conf.backend_host}",
+            backend=f"rediss://{conf.backend_host}" if conf.backend_use_tls else f"redis://{conf.backend_host}",
             broker_connection_retry_on_startup=True,
             redis_backend_health_check_interval=5,
             result_extended=True,
@@ -162,38 +162,38 @@ class Celery(celery.Celery):
         if conf.max_memory_per_child:
             self.conf.worker_max_memory_per_child = conf.max_memory_per_child
 
-        # SSL configuration
+        # TLS configuration
 
-        if conf.broker_use_ssl:
-            if conf.broker_ssl:
+        if conf.broker_use_tls:
+            if conf.broker_tls:
                 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#broker-use-ssl
-                if conf.broker_ssl.cafile:
-                    self.conf.broker_use_ssl = {"ca_certs": conf.broker_ssl.cafile}
-                if conf.broker_ssl.keyfile and conf.broker_ssl.certfile:
+                if conf.broker_tls.cafile:
+                    self.conf.broker_use_ssl = {"ca_certs": conf.broker_tls.cafile}
+                if conf.broker_tls.keyfile and conf.broker_tls.certfile:
                     self.conf.broker_use_ssl.update(
                         {
-                            "keyfile": conf.broker_ssl.keyfile.as_posix(),
-                            "certfile": conf.broker_ssl.certfile.as_posix(),
+                            "keyfile": conf.broker_tls.keyfile.as_posix(),
+                            "certfile": conf.broker_tls.certfile.as_posix(),
                         }
                     )
 
             else:
                 self.conf.broker_use_ssl = True
 
-        if conf.backend_use_ssl:
+        if conf.backend_use_tls:
             import ssl
 
             # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#broker-use-ssl
             self.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
-            if conf.backend_ssl:
-                if conf.backend_ssl.cafile:
+            if conf.backend_tls:
+                if conf.backend_tls.cafile:
                     self.conf.redis_backend_use_ssl.update(
-                        ssl_ca_certs=conf.backend_ssl.cafile,
+                        ssl_ca_certs=conf.backend_tls.cafile,
                     )
-                if conf.backend_ssl.keyfile and conf.backend_ssl.certfile:
+                if conf.backend_tls.keyfile and conf.backend_tls.certfile:
                     self.conf.redis_backend_use_ssl.update(
-                        ssl_keyfile=conf.backend_ssl.keyfile.as_posix(),
-                        ssl_certfile=conf.backend_ssl.certfile.as_posix(),
+                        ssl_keyfile=conf.backend_tls.keyfile.as_posix(),
+                        ssl_certfile=conf.backend_tls.certfile.as_posix(),
                     )
 
         if conf.security:

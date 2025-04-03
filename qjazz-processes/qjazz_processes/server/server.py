@@ -27,7 +27,7 @@ from qjazz_contrib.core.config import (
     ConfBuilder,
     ConfigBase,
     NetInterface,
-    SSLConfig,
+    TLSConfig,
     read_config_toml,
     section,
 )
@@ -73,9 +73,9 @@ class HttpConfig(ConfigBase):
         default=False,
         title="Use ssl",
     )
-    ssl: SSLConfig = Field(
-        default=SSLConfig(),
-        title="SSL configuration",
+    ssl: TLSConfig = Field(
+        default=TLSConfig(),
+        title="TLS configuration",
     )
     cross_origin: HttpCORS = Field(
         default="all",

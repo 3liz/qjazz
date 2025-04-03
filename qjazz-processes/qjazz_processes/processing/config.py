@@ -12,7 +12,7 @@ from pydantic import (
 
 from qjazz_cache.prelude import ProjectsConfig
 from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigBase, SSLConfig, Template, TemplateStr
+from qjazz_contrib.core.config import ConfigBase, Template, TemplateStr, TLSConfig
 from qjazz_contrib.core.models import Field
 from qjazz_contrib.core.qgis import (
     QgisNetworkConfig,
@@ -168,10 +168,10 @@ class ProcessingConfig(ConfigBase):
         If not specified, files will be stored in the job folder.
         """,
     )
-    certificats: SSLConfig = Field(
-        default=SSLConfig(),
-        title="SSL Certificates",
-        description="SSL credentials to use for references inputs",
+    certificats: TLSConfig = Field(
+        default=TLSConfig(),
+        title="TLS Certificates",
+        description="TLS credentials to use for references inputs",
     )
     max_cached_projects: int = Field(
         default=10,
