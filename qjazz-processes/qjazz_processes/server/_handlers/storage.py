@@ -208,7 +208,7 @@ class Storage(HandlerProto):
                     request,
                     response,
                     self._storage.chunksize,
-                    self._storage.ssl.create_ssl_client_context(),
+                    self._storage.tls.create_ssl_client_context(),
                 )
             case _:
                 logger.error("Unsupported storage url scheme %s", url.scheme)

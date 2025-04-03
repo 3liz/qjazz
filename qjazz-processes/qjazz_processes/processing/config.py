@@ -94,7 +94,7 @@ class ProcessingConfig(ConfigBase):
     # XXX Must set in Settings `default-output-raster-layer-ext`
     default_raster_file_ext: Optional[str] = Field(
         default=None,
-        title="Default vector file extension",
+        title="Default raster file extension",
         description="""
         Define the default raster file extensions for raster destination
         parameters. If not specified, then the QGIS default value is used.

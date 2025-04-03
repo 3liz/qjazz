@@ -69,11 +69,11 @@ class HttpConfig(ConfigBase):
         default=DEFAULT_INTERFACE,
         title="Interfaces to listen to",
     )
-    use_ssl: bool = Field(
+    use_tls: bool = Field(
         default=False,
-        title="Use ssl",
+        title="Use tls",
     )
-    ssl: TLSConfig = Field(
+    tls: TLSConfig = Field(
         default=TLSConfig(),
         title="TLS configuration",
     )
@@ -313,7 +313,7 @@ Site: TypeAlias = web.TCPSite | web.UnixSite
 
 
 def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
-    ssl_context = http.ssl.create_ssl_server_context() if http.use_ssl else None
+    ssl_context = http.tls.create_ssl_server_context() if http.use_tls else None
 
     site: Site
 

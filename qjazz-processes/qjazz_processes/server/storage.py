@@ -27,7 +27,7 @@ class StorageConfig(ConfigBase):
         title="Download chunksize",
     )
 
-    ssl: TLSConfig = Field(
+    tls: TLSConfig = Field(
         default=TLSConfig(),
         title="TLS certifificats",
         description="Certificats required for TLS downloads connections",

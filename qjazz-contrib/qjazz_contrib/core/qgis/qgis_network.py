@@ -32,7 +32,7 @@ CachePolicy = Literal[
     "always_network",
     "prefer_network",
     "prefer_cache",
-    "alway_cache",
+    "always_cache",
 ]
 
 
@@ -63,7 +63,7 @@ class RequestPolicy(config.ConfigBase):
                 return QNetworkRequest.CacheLoadControl.PreferNetwork
             case "prefer_cache":
                 return QNetworkRequest.CacheLoadControl.PreferCache
-            case "alway_cache":
+            case "always_cache":
                 return QNetworkRequest.CacheLoadControl.AlwaysCache
             case _ as unreachable:
                 assert_never(unreachable)

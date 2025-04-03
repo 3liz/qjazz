@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
         -e /python_modules/qjazz-server \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
-    && ln -s /opt/local/qjazz/bin/qjazz-printserver \
+    && ln -s /opt/local/qjazz/bin/qjazz-processing \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
     && rm -r /python_modules/**/*.egg-info \
     ${NULL}
@@ -54,7 +54,9 @@ RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && cd /usr/local/bin && ln -s /opt/local/plugin-manager/bin/qgis-plugin-manager
 
 COPY docker/scripts/ /usr/local/bin/
-RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh && mkdir -p /home/qgis && chmod 777 /home/qgis
+RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh \
+    && mkdir -p /home/qgis && chmod 777 /home/qgis \
+    && mkdir -p /var/qjazz && chmod 777 /var/qjazz
 
 # Install binaries
 COPY qjazz-server/target/release/qjazz-rpc-bin \
@@ -73,6 +75,9 @@ EXPOSE 23456 9080 9443
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
 
 VOLUME /home/qgis
+VOLUME /var/qjazz
+
+ENV QJAZZ_VOLUME=/var/qjazz
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 

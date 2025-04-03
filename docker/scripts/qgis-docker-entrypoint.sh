@@ -45,7 +45,12 @@ if [ "$(id -u)" = '0' ]; then
 
     if [[ "$(stat -c '%u' $HOME)" == "0" ]] ; then
         chown $CONF_USER $HOME
-        chmod 755 $HOME
+        chmod 750 $HOME
+    fi
+ 
+    if [[ "$(stat -c '%u' $QJAZZ_VOLUME)" == "0" ]] ; then
+        chown $CONF_USER $QJAZZ_VOLUME
+        chmod 750 $QJAZZ_VOLUME
     fi
     
     REUID=`echo $CONF_USER|cut -d: -f1`
