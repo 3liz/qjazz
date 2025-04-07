@@ -119,13 +119,13 @@ class QgisNetworkConfig(config.ConfigBase):
             # QGIS enable strict transport security by default
             logger.warning("NET: Strict transport security is DISABLED")
 
-        logger.info("NET: setting transfer timeout to %s ms", self.transfer_timeout)
+        logger.debug("NET: setting transfer timeout to %s ms", self.transfer_timeout)
         nam.setTransferTimeout(self.transfer_timeout)
 
         if self.trace:
-            # XXX signals requestCreated or requestAbountToBeCreated
+            # XXX signals requestCreated or requestAboutToBeCreated
             # segfault whenever trying to connect a Python method.
-            logger.info("NET: trace is ON")
+            logger.debug("NET: trace is ON")
             nam.requestCreated.connect(on_request_created)
             nam.finished.connect(on_reply_finished)
 

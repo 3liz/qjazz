@@ -26,7 +26,6 @@ PYPISERVER_SCHEME ?= https
 PIP_OPTIONS="--extra-index-url=$(PYPISERVER_SCHEME)://$(PYPISERVER) --trusted-host=$(PYPISERVER)"
 BUILD_ARGS += --build-arg PIP_OPTIONS=$(PIP_OPTIONS) $(DOCKER_BUILD_ARGS)
 endif
-
 FLAVOR:=release
 BUILD_TARGET:=base
 
@@ -102,7 +101,7 @@ BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION)
 
 NOQGIS_BUILD_TARGET:=noqgis
 
-build-noqgis: noqgis-manifest requirements
+noqgis-build: noqgis-manifest requirements
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_VERSION=$(FLAVOR) \
 		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager  -f Dockerfile  ..
@@ -119,32 +118,30 @@ noqgis-manifest:
     echo commitid=$(COMMITID) >> $(NOQGIS_MANIFEST); }
 	@cat $(NOQGIS_MANIFEST)
 
-deliver-noqgis: tag-noqgis push-noqgis
+noqgis-deliver: noqgis-tag noqgis-push
 
 ifdef QJAZZ_VERSION_RC_TAG
-tag-noqgis:
+noqgis-tag:
 	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):noqgis-$(QJAZZ_VERSION_RC_TAG)
-push-noqgis:
+noqgis-push:
 	docker push $(BUILDNAME):noqgis-$(QJAZZ_VERSION_RC_TAG)
 else
-tag-noqgis:
+noqgis-tag:
 	{ set -e; source $(NOQGIS_MANIFEST); \
 	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):$$version; \
 	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):$$version_short; \
-	docker tag $(BUILDNOQGISTIMAGE) $(BUILDNAME):$$release_tag; \
 	}
-push-noqgis:
+noqgis-push:
 	{ set -e; source $(NOQGIS_MANIFEST); \
 	docker push $(BUILDNAME):$$version; \
 	docker push $(BUILDNAME):$$version_short; \
-	docker push $(BUILDNAME):$$release_tag; \
 	}
 endif
 
 #
 # Push eager to docker-hub
 #
-push-eager-noqgis:
+noqgis-push-eager:
 	docker push 3liz/$(NAME):noqgis-eager
 
 #

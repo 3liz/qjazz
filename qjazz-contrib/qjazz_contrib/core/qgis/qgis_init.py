@@ -78,10 +78,10 @@ def setup_qgis_application(
     #  Qt trying to connect to display in containers
     display = os.environ.get("DISPLAY")
     if display is None:
-        logger.info("Setting offscreen mode")
+        logger.debug("Setting offscreen mode")
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
     else:
-        logger.info(f"Using DISPLAY: {display}")
+        logger.debug(f"Using DISPLAY: {display}")
 
     # XXX Set QGIS_PREFIX_PATH, it seems that setPrefixPath
     # does not do the job correctly
@@ -117,7 +117,7 @@ def setup_qgis_application(
         # XXX Doesn't seem necessary anymore
         import atexit
 
-        logger.info(f"{logprefix} Installing cleanup hook")
+        logger.debug(f"{logprefix} Installing cleanup hook")
 
         @atexit.register
         def exitQgis():
@@ -126,7 +126,7 @@ def setup_qgis_application(
     # Install logger hook
     install_logger_hook(logprefix)
 
-    logger.info("Qgis application configured......")
+    logger.debug("Qgis application configured......")
 
     return options_path
 
@@ -221,7 +221,7 @@ def load_qgis_settings(
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
 
     qgssettings = QgsSettings()
-    logger.info("Settings loaded from %s", qgssettings.fileName())
+    logger.debug("Settings loaded from %s", qgssettings.fileName())
 
     if settings:
         # Initialize custom parameters settings

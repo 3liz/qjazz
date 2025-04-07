@@ -127,7 +127,7 @@ class QgisContext:
         #
         # Initialize cache manager
         #
-        logger.info("Initializing cache manager...")
+        logger.debug("Initializing cache manager...")
 
         CacheManager.initialize_handlers(conf.projects)
         cm = CacheManager(conf.projects)

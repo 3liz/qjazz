@@ -56,7 +56,8 @@ RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
 COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh \
     && mkdir -p /home/qgis && chmod 777 /home/qgis \
-    && mkdir -p /var/qjazz && chmod 777 /var/qjazz
+    && mkdir -p /var/qjazz && chmod 777 /var/qjazz \
+    && mkdir -p /etc/qjazz && chmod 755 /etc/qjazz 
 
 # Install binaries
 COPY qjazz-server/target/release/qjazz-rpc-bin \
@@ -106,6 +107,7 @@ RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-http \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
+    && mkdir -p /etc/qjazz && chmod 755 /etc/qjazz \
     ${NULL}
 
 COPY docker/scripts/ /usr/local/bin/

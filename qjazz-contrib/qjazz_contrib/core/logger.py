@@ -32,7 +32,7 @@ class LogLevel(Enum):
     WARNING = logging.WARNING
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
-
+    NOTICE = logging.CRITICAL + 1
 
 FORMATSTR = "%(asctime)s.%(msecs)03dZ\t[%(process)d]\t%(levelname)s\t%(message)s"
 
@@ -75,6 +75,7 @@ def setup_log_handler(
     logging.addLevelName(LogLevel.TRACE.value, LogLevel.TRACE.name)
     logging.addLevelName(LogLevel.REQ.value, LogLevel.REQ.name)
     logging.addLevelName(LogLevel.RREQ.value, LogLevel.RREQ.name)
+    logging.addLevelName(LogLevel.NOTICE.value, LogLevel.NOTICE.name)
 
     log_level = set_log_level(log_level)
 
@@ -83,6 +84,7 @@ def setup_log_handler(
     channel.setFormatter(formatter)
 
     LOGGER.addHandler(channel)
+    LOGGER.log(LogLevel.NOTICE.value, "Log level set to %s", log_level.name)
     return log_level
 
 
@@ -128,6 +130,10 @@ def log_req(msg, *args, **kwargs):
 
 def log_rreq(msg, *args, **kwargs):
     LOGGER.log(LogLevel.RREQ.value, msg, *args, **kwargs)
+
+
+def log_notice(msg, *args, **kwargs):
+    LOGGER.log(LogLevel.NOTICE.value, msg, *args, **kwargs)
 
 
 def is_enabled_for(level: LogLevel) -> bool:

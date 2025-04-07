@@ -68,7 +68,7 @@ build-docker:noqgis:
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: docker
   script:
-  - make -C docker build-noqgis deliver-noqgis
+  - make -C docker noqgis-build noqgis-deliver
   only:
     refs:
     - tags

@@ -42,7 +42,7 @@ class QgisProcessingContext(QgisContext):
         #
         # Init Qgis processing and plugins
         #
-        logger.info("Initializing qgis processing...")
+        logger.debug("Initializing qgis processing...")
         init_qgis_processing()
         plugin_s = QgisPluginService(conf.plugins)
         plugin_s.load_plugins(PluginType.PROCESSING, None)
