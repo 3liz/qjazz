@@ -39,7 +39,7 @@ from .accesspolicy import (
     create_access_policy,
 )
 from .cache import ServiceCache
-from .executor import Executor, ExecutorConfig
+from .executor import AsyncExecutor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, Handler
 from .jobrealm import JobRealmConfig
@@ -354,7 +354,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     app.on_response_prepare.append(set_server_headers)
 
     # Executor
-    executor = Executor(conf.executor)
+    executor = AsyncExecutor(conf.executor)
 
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
@@ -409,7 +409,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     for the REST api
     """
     handler = Handler(
-        executor=cast(Executor, None),
+        executor=cast(AsyncExecutor, None),
         policy=DummyAccessPolicy(),
         timeout=0,
         enable_ui=False,

@@ -1,8 +1,6 @@
 import itertools
 
-from dataclasses import dataclass
 from enum import IntEnum
-from random import randint
 from time import time
 from typing import (
     Callable,
@@ -11,18 +9,16 @@ from typing import (
     Optional,
     Sequence,
     assert_never,
-    cast,
 )
 
 from celery.result import AsyncResult
-from pydantic import Field, JsonValue
+from pydantic import JsonValue
 
 from qjazz_contrib.core import logger
-from qjazz_contrib.core.celery import Celery, CeleryConfig
-from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.celery import Celery
 from qjazz_contrib.core.utils import to_utc_datetime, utc_now
 
-from .schemas import (
+from ..schemas import (
     DateTime,
     InputValueError,
     JobExecute,
@@ -34,160 +30,21 @@ from .schemas import (
     ProcessSummaryList,
     RunProcessException,
 )
-from .worker import registry
-from .worker.exceptions import (
+from ..worker import registry
+from ..worker.exceptions import (
     DismissedTaskError,
     ProcessesException,
     ServiceNotAvailable,
-    UnreachableDestination,
 )
-from .worker.models import Link, ProcessFiles, ProcessLog, WorkerPresence
-
-
-class ExecutorConfig(ConfigBase):
-    celery: CeleryConfig = CeleryConfig()
-
-    message_expiration_timeout: int = Field(
-        default=600,
-        title="Message expiration timeout",
-        description="""
-        The amount of time an execution message
-        can wait on queue before beeing processed
-        with asynchronous response.
-        """,
-    )
-
-
-PresenceDetails = WorkerPresence
-
-ServiceDict = dict[str, tuple[Sequence[str], PresenceDetails]]
-
+from ..worker.models import Link, ProcessFiles, ProcessLog
+from .protocols import ExecutorProtocol, ServiceDict
 
 #
-# Process executor
+#  Processes
 #
 
 
-class _ExecutorBase:
-    def __init__(self, conf: Optional[ExecutorConfig] = None, *, name: Optional[str] = None):
-        conf = conf or ExecutorConfig()
-
-        self._celery = Celery(name, conf.celery)
-        self._services: ServiceDict = {}
-        self._last_updated = 0.0
-
-        self._pending_expiration_timeout = conf.message_expiration_timeout
-        self._default_result_expires = conf.celery.result_expires
-
-    def presences(self, destinations: Optional[Sequence[str]] = None) -> dict[str, PresenceDetails]:
-        """Return presence info for online workers"""
-        data = self._celery.control.broadcast(
-            "presence",
-            reply=True,
-            destination=destinations,
-        )
-
-        return {k: PresenceDetails.model_validate(v) for row in data for k, v in row.items()}
-
-    def known_service(self, name: str) -> bool:
-        """Check if service is known in uploaded presences"""
-        return name in self._services
-
-    @property
-    def services(self) -> Iterator[PresenceDetails]:
-        """Return uploaded services presences"""
-        for _, pr in self._services.values():
-            yield pr
-
-    def get_services(self) -> ServiceDict:
-        # Return services destinations (blocking)
-        presences = self.presences()
-        services: ServiceDict = {}
-        for dest, pr in presences.items():
-            dests, _ = services.setdefault(pr.service, ([], pr))
-            cast(list, dests).append(dest)
-        return {k: (tuple(dests), pr) for k, (dests, pr) in services.items()}
-
-    @property
-    def last_updated(self) -> float:
-        return self._last_updated
-
-    @classmethod
-    def get_destinations(cls, service: str, services: ServiceDict) -> Optional[Sequence[str]]:
-        item = services.get(service)
-        return item and item[0]
-
-    def destinations(self, service: str) -> Optional[Sequence[str]]:
-        return self.get_destinations(service, self._services)
-
-    def command(
-        self,
-        name: str,
-        *,
-        destination: Sequence[str],
-        broadcast: bool = False,
-        reply: bool = True,
-        **kwargs,
-    ) -> JsonValue:
-        """Send an inspect command to one or more service instances"""
-        if not broadcast:
-            # Pick a destination randomly, so that we can
-            # use all availables workers
-            index = randint(0, len(destination) - 1)  # nosec B311
-            destination = (destination[index],)
-
-        resp = self._celery.control.broadcast(
-            name,
-            destination=destination,
-            reply=reply,
-            **kwargs,
-        )
-
-        logger.trace("=command '%s': %s", name, resp)
-
-        if reply and not resp:
-            raise UnreachableDestination(f"{destination}")
-
-        if not reply:
-            return None
-
-        if not broadcast:
-            return next(iter(resp[0].values()))
-        else:
-            return dict(next(iter(r.items())) for r in resp)
-
-    #
-    # Control commands
-    #
-
-    def _dests(self, service: str) -> Sequence[str]:
-        dests = self.destinations(service)
-        if not dests:
-            raise ServiceNotAvailable(service)
-        return dests
-
-    def restart_pool(self, service: str, *, timeout: float = 5.0) -> JsonValue:
-        """Restart worker pool"""
-        return self._celery.control.pool_restart(
-            destination=self._dests(service),
-            reply=True,
-            timeout=timeout,
-        )
-
-    def ping(self, service: str, timeout: float = 1.0) -> JsonValue:
-        """Ping service workers"""
-        return self._celery.control.ping(self._dests(service), timeout=timeout)
-
-    def shutdown(self, service: str, *, reply: bool = True, timeout: float = 5.0) -> JsonValue:
-        return self._celery.control.shutdown(
-            self._dests(service),
-            reply=reply,
-            timeout=timeout,
-        )
-
-    #
-    # Processes
-    #
+class Processes(ExecutorProtocol):
 
     def _describe(
         self,
@@ -778,180 +635,3 @@ class _ExecutorBase:
                 return None
             case _:
                 return Link.model_validate(response)
-
-
-# =============================
-# Executor; Synchronous version
-# =============================
-
-
-@dataclass
-class Result:
-    job_id: str
-    get: Callable[[int | None], JobResults]
-    status: Callable[[], JobStatus]
-
-
-class Executor(_ExecutorBase):
-    def update_services(self) -> ServiceDict:
-        """Update services destinations
-
-        Collapse presence details under unique service
-        name.
-        """
-        self._services = self.get_services()
-        logger.trace("=update_services %s", self._services)
-        self._last_updated = time()
-        return self._services
-
-    def describe(
-        self,
-        service: str,
-        ident: str,
-        *,
-        project: Optional[str] = None,
-        timeout: Optional[int] = None,
-    ) -> Optional[ProcessDescription]:
-        """Return process description"""
-        destinations = self.destinations(service)
-        if not destinations:
-            raise ServiceNotAvailable(service)
-
-        return self._describe(
-            destinations,
-            ident,
-            project=project,
-            timeout=timeout,
-        )
-
-    def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
-        """Return process description summary"""
-        destinations = self.destinations(service)
-        if not destinations:
-            raise ServiceNotAvailable(service)
-
-        return self._processes(destinations, timeout)
-
-    def execute(
-        self,
-        service: str,
-        ident: str,
-        request: JobExecute,
-        *,
-        project: Optional[str] = None,
-        context: Optional[JsonDict] = None,
-        realm: Optional[str] = None,
-        pending_timeout: Optional[int] = None,
-        tag: Optional[str] = None,
-    ) -> Result:
-        job_id, _get_result, _get_status = self._execute(
-            service,
-            ident,
-            request,
-            project=project,
-            context=context,
-            realm=realm,
-            pending_timeout=pending_timeout,
-            tag=tag,
-        )
-        return Result(job_id=job_id, get=_get_result, status=_get_status)
-
-    def dismiss(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        timeout: int = 20,
-    ) -> Optional[JobStatus]:
-        """Delete job"""
-        return self._dismiss(
-            job_id,
-            self._services,
-            realm=realm,
-            timeout=timeout,
-        )
-
-    def job_status(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        with_details: bool = False,
-    ) -> Optional[JobStatus]:
-        """Return job status"""
-        return self._job_status_ext(
-            job_id,
-            self._services,
-            realm,
-            with_details,
-        )
-
-    job_results = _ExecutorBase._job_results
-
-    def jobs(
-        self,
-        service: Optional[str] = None,
-        *,
-        realm: Optional[str] = None,
-        cursor: int = 0,
-        limit: int = 100,
-    ) -> Sequence[JobStatus]:
-        """Iterate over job statuses"""
-        return self._jobs(
-            self._services,
-            service=service,
-            realm=realm,
-            cursor=cursor,
-            limit=limit,
-        )
-
-    def log_details(
-        self,
-        job_id: str,
-        *,
-        realm: Optional[str] = None,
-        timeout: int = 20,
-    ) -> Optional[ProcessLog]:
-        """Return process execution logs"""
-        return self._log_details(
-            job_id,
-            self._services,
-            realm=realm,
-            timeout=timeout,
-        )
-
-    def files(
-        self,
-        job_id: str,
-        *,
-        public_url: Optional[str] = None,
-        realm: Optional[str] = None,
-        timeout: int = 20,
-    ) -> Optional[ProcessFiles]:
-        """Return process execution files"""
-        return self._files(
-            job_id,
-            self._services,
-            public_url=public_url,
-            realm=realm,
-            timeout=timeout,
-        )
-
-    def download_url(
-        self,
-        job_id: str,
-        *,
-        resource: str,
-        timeout: int,
-        expiration: int,
-        realm: Optional[str] = None,
-    ) -> Optional[Link]:
-        """Return download url"""
-        return self._download_url(
-            job_id,
-            self._services,
-            resource=resource,
-            expiration=expiration,
-            timeout=timeout,
-            realm=realm,
-        )

@@ -12,7 +12,7 @@ from ...worker.exceptions import (
 from .. import swagger
 from ..accesspolicy import AccessPolicy
 from ..executor import (
-    Executor,
+    AsyncExecutor,
     InputValueError,
     JobExecute,
     JobResults,
@@ -43,7 +43,7 @@ swagger.model(JobResultsAdapter, "JobResults")
 
 
 class HandlerProto(Protocol):
-    _executor: Executor
+    _executor: AsyncExecutor
     _accesspolicy: AccessPolicy
     _timeout: int
     _staticpath: Path

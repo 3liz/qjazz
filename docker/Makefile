@@ -31,6 +31,12 @@ BUILD_TARGET:=base
 
 #BUILD_CACHE:=--force-rm --no-cache
 
+
+build-all: build noqgis-build
+
+tag-all: tag noqgis-tag
+
+
 build: manifest requirements
 	$(MAKE) -C .. configure
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \

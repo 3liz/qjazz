@@ -15,7 +15,7 @@ from aiohttp import web
 from qjazz_contrib.core import logger
 
 from .executor import (
-    Executor,
+    AsyncExecutor,
     ProcessSummary,
     ServiceDict,
 )
@@ -39,7 +39,7 @@ class ServiceCache:
     def cleanup_ctx(
         self,
         conf: CleanupConfProto,
-        executor: Executor,
+        executor: AsyncExecutor,
     ) -> Callable[[web.Application], AsyncGenerator[None, None]]:
         update_interval = conf.update_interval
 

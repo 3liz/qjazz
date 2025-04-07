@@ -12,10 +12,12 @@ from typing import (
 
 from qjazz_contrib.core import logger
 
-# Reimports
+from .commands import Commands
+
+# Reexports
 from .executor import (  # noqa F401
+    ExecutorBase,
     ExecutorConfig,
-    InputValueError,
     JobExecute,
     JobResults,
     JobStatus,
@@ -26,10 +28,13 @@ from .executor import (  # noqa F401
     ProcessFiles,
     ProcessLog,
     ProcessSummary,
-    RunProcessException,
     ServiceDict,
     ServiceNotAvailable,
-    _ExecutorBase,
+)
+from .processes import (  # noqa F401
+    InputValueError,
+    Processes,
+    RunProcessException,
 )
 
 
@@ -40,7 +45,12 @@ class Result:
     status: Callable[[], Awaitable[JobStatus]]
 
 
-class Executor(_ExecutorBase):
+class AsyncExecutor(
+    ExecutorBase,
+    Commands,
+    Processes,
+):
+
     async def update_services(self) -> ServiceDict:
         """Update services destinations
 

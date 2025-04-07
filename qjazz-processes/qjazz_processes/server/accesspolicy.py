@@ -18,7 +18,7 @@ from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_contrib.core.config import ConfigBase, section
 from qjazz_contrib.core.models import Field
 
-from .executor import Executor
+from .executor import AsyncExecutor
 
 
 @section("access_policy")
@@ -54,7 +54,7 @@ class NoConfig(ConfigBase):
 class AccessPolicy(Protocol):
     Config: type[ConfigBase] = NoConfig
 
-    executor: Executor
+    executor: AsyncExecutor
 
     def setup(self, app: web.Application):
         return
@@ -105,7 +105,7 @@ class AccessPolicy(Protocol):
 
 
 class DummyAccessPolicy(AccessPolicy):
-    executor: Executor
+    executor: AsyncExecutor
 
     def service_permission(self, request: web.Request, service: str) -> bool:
         return False
@@ -148,7 +148,7 @@ class DummyAccessPolicy(AccessPolicy):
 def create_access_policy(
     conf: AccessPolicyConfig,
     app: web.Application,
-    executor: Executor,
+    executor: AsyncExecutor,
 ) -> AccessPolicy:
     """Create access policy"""
     logger.info("Creating access policy %s", str(conf.policy_class))

@@ -13,7 +13,7 @@ from ._handlers import (
     WebUI,
 )
 from .accesspolicy import AccessPolicy
-from .executor import Executor
+from .executor import AsyncExecutor
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse
 from .storage import StorageConfig
@@ -27,7 +27,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
     def __init__(
         self,
         *,
-        executor: Executor,
+        executor: AsyncExecutor,
         policy: AccessPolicy,
         timeout: int,
         enable_ui: bool,
