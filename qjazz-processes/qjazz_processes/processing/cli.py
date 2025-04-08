@@ -1,5 +1,5 @@
-"""Command line client
-For running processinc algorithms
+"""
+Client for running processing algorithms directly (No Celery)
 """
 
 import sys

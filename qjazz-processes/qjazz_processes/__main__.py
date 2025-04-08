@@ -1,4 +1,6 @@
 
+import sys
+
 from pathlib import Path
 from typing import Optional, cast
 
@@ -43,18 +45,56 @@ def main(env_settings: config.EnvSettingsOption):
     help="Path to configuration file",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
-def run_server(configpath: Path, verbose: bool):
+@click.option("--dump-config", is_flag=True, help="Dump config and exit")
+def run_server(configpath: Path, verbose: bool, dump_config: bool):
     """Start server"""
     from qjazz_contrib.core import logger
 
     from .server import load_configuration, serve
 
     conf = load_configuration(configpath)
+    if dump_config:
+        click.echo(conf.model_dump_json(indent=4))
+        return
+
     logger.setup_log_handler(
         logger.LogLevel.TRACE if verbose else conf.logging.level,
     )
 
     serve(conf)
+
+#
+
+def setup_executor_context(
+    ctx: click.Context,
+    configpath: Optional[Path],
+    verbose: bool,
+):
+    from types import SimpleNamespace
+
+    from qjazz_contrib.core import config, logger
+    from qjazz_processes.executor import Executor, ExecutorConfig
+
+    def executor_setup() -> Executor:
+        logger.set_log_level(
+            logger.LogLevel.DEBUG if verbose else logger.LogLevel.ERROR,
+        )
+        confservice = config.ConfBuilder()
+        confservice.add_section("executor", ExecutorConfig)
+        if configpath:
+            cnf = config.read_config_toml(configpath)
+        else:
+            cnf = {}
+        confservice.validate(cnf)
+        if verbose:
+            click.echo(confservice.conf)
+        return Executor(cast(ExecutorConfig, confservice.conf.executor))
+
+    ctx.obj = SimpleNamespace(
+        configpath=configpath,
+        verbose=verbose,
+        setup=executor_setup,
+    )
 
 
 #
@@ -77,32 +117,7 @@ def control(
     verbose: bool,
 ):
     """Service commands"""
-    from types import SimpleNamespace
-
-    from qjazz_contrib.core import config, logger
-    from qjazz_processes.executor import Executor, ExecutorConfig
-
-    def control_setup() -> Executor:
-        logger.set_log_level(
-            logger.LogLevel.DEBUG if verbose else logger.LogLevel.ERROR,
-        )
-        confservice = config.ConfBuilder()
-        confservice.add_section("executor", ExecutorConfig)
-        if configpath:
-            cnf = config.read_config_toml(configpath)
-        else:
-            cnf = {}
-        confservice.validate(cnf)
-        if verbose:
-            click.echo(confservice.conf)
-        return Executor(cast(ExecutorConfig, confservice.conf.executor))
-
-    ctx.obj = SimpleNamespace(
-        configpath=configpath,
-        verbose=verbose,
-        setup=control_setup,
-    )
-
+    setup_executor_context(ctx, configpath, verbose)
 
 @control.command("ls")
 @click.pass_context
@@ -179,5 +194,136 @@ def ping_service(ctx: click.Context, service: str, repeat: int):
     else:
         _ping()
 
+#
+#  Processes commands
+#
+
+@main.group("processes")
+@click.option(
+    "--conf",
+    "-C",
+    "configpath",
+    type=PathType,
+    help="Path to configuration file",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
+@click.pass_context
+def processes(
+    ctx: click.Context,
+    configpath: Optional[Path],
+    verbose: bool,
+):
+    """ Processes commands"""
+    setup_executor_context(ctx, configpath, verbose)
+
+
+@processes.command("ls")
+@click.argument("service")
+@click.pass_context
+def list_processes(ctx: click.Context, service: str):
+    """List processes"""
+    from typing import Sequence
+
+    from pydantic import TypeAdapter
+
+    from .executor import ProcessSummary, ServiceNotAvailable
+
+    executor = ctx.obj.setup()
+    executor.update_services()
+
+    try:
+        processes = executor.processes(service)
+        resp = TypeAdapter(Sequence[ProcessSummary]).dump_json(
+            processes,
+            by_alias=True,
+            indent=4,
+        )
+        click.echo(resp)
+    except ServiceNotAvailable:
+        click.echo("Service not available", err=True)
+        sys.exit(1)
+
+@processes.command("describe")
+@click.argument("service")
+@click.argument("ident")
+@click.option("--project", help="Project name")
+@click.pass_context
+def describe_processes(ctx: click.Context, service: str, ident: str, project: Optional[str]):
+    """Describe processes"""
+    from pydantic import TypeAdapter
+
+    from .executor import ProcessDescription, ServiceNotAvailable
+
+    executor = ctx.obj.setup()
+    executor.update_services()
+
+    try:
+        processes = executor.describe(service, ident, project=project)
+        resp = TypeAdapter(ProcessDescription).dump_json(
+            processes,
+            by_alias=True,
+            indent=4,
+        )
+        click.echo(resp)
+    except ServiceNotAvailable:
+        click.echo("Service not available", err=True)
+        sys.exit(1)
+
+#
+# Jobs
+#
+
+@main.group("jobs")
+@click.option(
+    "--conf",
+    "-C",
+    "configpath",
+    type=PathType,
+    help="Path to configuration file",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Verbose mode (trace)")
+@click.pass_context
+def jobs(
+    ctx: click.Context,
+    configpath: Optional[Path],
+    verbose: bool,
+):
+    """ Jobs commands"""
+    setup_executor_context(ctx, configpath, verbose)
+
+
+@jobs.command("ls")
+@click.option("--service", help="Filter by service")
+@click.option("--realm",  help="Filter by realm")
+@click.pass_context
+def list_jobs(
+    ctx: click.Context,
+    service: Optional[str],
+    realm: Optional[str],
+):
+    """List jobs"""
+    from typing import Sequence
+
+    from pydantic import TypeAdapter
+
+    from .executor import JobStatus, ServiceNotAvailable
+
+    executor = ctx.obj.setup()
+    executor.update_services()
+
+    try:
+        jobs = executor.jobs(service, realm=realm)
+        resp = TypeAdapter(Sequence[JobStatus]).dump_json(
+            jobs,
+            by_alias=True,
+            indent=4,
+        )
+        click.echo(resp)
+    except ServiceNotAvailable:
+        click.echo("Service not available", err=True)
+        sys.exit(1)
+
+
+#
 
 main()

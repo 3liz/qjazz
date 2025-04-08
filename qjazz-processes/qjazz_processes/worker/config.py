@@ -44,6 +44,8 @@ def lookup_config_path() -> Optional[Path]:
             p = Path(search).expanduser()
             if p.exists():
                 break
+        else:
+            p = None
 
     return p
 

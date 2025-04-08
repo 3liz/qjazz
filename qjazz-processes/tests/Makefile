@@ -7,13 +7,6 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
-start: 
-	docker compose up -d
-
-stop:
-	docker compose --profile=all down -v --remove-orphans
-
-
 LOGLEVEL:=info
 
 

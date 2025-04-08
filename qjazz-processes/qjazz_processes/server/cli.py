@@ -12,9 +12,7 @@ from pydantic import (
     TypeAdapter,
 )
 
-from qjazz_contrib.core import logger
-
-from .server import confservice, load_configuration, serve
+from .server import confservice, load_configuration
 
 FilePathType = click.Path(
     exists=True,
@@ -31,7 +29,6 @@ FilePathType = click.Path(
     "configpath",
     help="Path to configuration file",
     type=FilePathType,
-    envvar="PY_QGIS_PROCESSES_SERVER_CONFIG",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Set verbose output")
 @click.pass_context
@@ -44,18 +41,6 @@ def cli_commands(
         configpath=configpath,
         verbose=verbose,
     )
-
-
-@cli_commands.command("serve")
-@click.pass_context
-def run_server(ctx: click.Context):
-    """Run server"""
-    conf = load_configuration(ctx.obj.configpath)
-    logger.setup_log_handler(
-        logger.LogLevel.TRACE if ctx.obj.verbose else conf.logging.level,
-    )
-
-    serve(conf)
 
 
 @cli_commands.command("config")

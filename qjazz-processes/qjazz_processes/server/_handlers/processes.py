@@ -150,6 +150,12 @@ class Processes(HandlerProto):
             )
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, f"Service {service} is not available")
+        except ServiceNotAvailable:
+            ErrorResponse.raises(
+                web.HTTPForbidden,
+                "Service not available",
+                details={"service": service},
+            )
 
         if not td:
             ErrorResponse.raises(web.HTTPForbidden, f"{process_id} not available")

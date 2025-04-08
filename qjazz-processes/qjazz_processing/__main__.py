@@ -45,7 +45,7 @@ def main(env_settings: config.EnvSettingsOption):
     "-l",
     type=click.Choice(("error", "warning", "info", "debug")),
     default="info",
-    help="Log level",
+    help="Celery log level",
     show_default=True,
 )
 @click.option("--dump", is_flag=True, help="Dump config and exit")
