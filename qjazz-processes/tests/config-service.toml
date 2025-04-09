@@ -15,6 +15,9 @@ reload_monitor = "$location/.reloadmon"
 broker_host = "localhost"
 backend_host = "localhost:6379/0"
 
+[worker.scheduler]
+#enabled = true
+
 [processing]
 workdir = "$location/__workdir__"
 

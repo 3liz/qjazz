@@ -70,6 +70,33 @@ def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
         app.start_worker(loglevel=loglevel)
 
 
+@main.command("beat")
+@click.option(
+    "--conf",
+    "-C",
+    "configpath",
+    type=PathType,
+    help="Path to configuration file",
+)
+@click.option(
+    "--loglevel",
+    "-l",
+    type=click.Choice(("error", "warning", "info", "debug")),
+    default="info",
+    help="Celery log level",
+    show_default=True,
+)
+def run_scheduler(configpath: Optional[Path], loglevel: str):
+    """Start worker scheduler as a  service"""
+    from qjazz_processes.worker.config import CONFIG_ENV_PATH
+
+    if configpath:
+        os.environ[CONFIG_ENV_PATH] = str(configpath)
+
+    from .jobs import app
+    app.run_scheduler(loglevel=loglevel)
+
+
 @main.command("install-plugins")
 @click.option(
     "--conf",

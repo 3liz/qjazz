@@ -1,3 +1,5 @@
+
+from pathlib import Path
 from typing import (
     ClassVar,
     Optional,
@@ -31,6 +33,38 @@ class SecurityConfig(ConfigBase):
 # Use this on local setup
 LOCAL_BROKER = "localhost"
 LOCAL_BACKEND = "localhost:6379/0"
+
+class CeleryScheduler(ConfigBase):
+    """Scheduler configuration"""
+
+    enabled: bool = Field(
+        default=False,
+        title="Enable scheduler",
+        description=(
+            "Enable embedded scheduler.\n"
+            "Prefer scheduler as a service if more\n"
+            "than one worker node is used."
+        ),
+    )
+    max_interval: Optional[int] = Field(
+        default=None,
+        title="Max interval",
+        description="Max seconds to sleep between schedule iterations.",
+    )
+    # NOTE: Celery scheduler database use a shelve db
+    # to store schedule info
+    # See https://docs.python.org/3/library/shelve.html
+    database: Optional[Path] = Field(
+        default=None,
+        title="Scheduler database path",
+        description=(
+            "Path to the schedule database.\n"
+            "Defaults to `celerybeat-schedule` (from Celery doc)."
+        ),
+    )
+
+    def database_filename(self) -> Optional[str]:
+        return str(self.database) if self.database else None
 
 
 class CeleryConfig(ConfigBase):
@@ -116,6 +150,9 @@ class CeleryConfig(ConfigBase):
         description="Activate concurrency autoscaling",
     )
 
+    # Scheduler
+    scheduler: CeleryScheduler = Field(default=CeleryScheduler())
+
     def broker_url(self) -> str:
         match (self.broker_user, self.broker_password):
             case (str(name), str(passwd)):
@@ -186,7 +223,6 @@ class Celery(celery.Celery):
             self.conf.worker_max_memory_per_child = conf.max_memory_per_child
 
         # TLS configuration
-
         if conf.broker_use_tls:
             if conf.broker_tls:
                 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#broker-use-ssl

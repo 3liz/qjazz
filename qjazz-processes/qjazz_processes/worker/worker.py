@@ -231,13 +231,20 @@ class QgisWorker(Worker):
         self._service_links = conf.worker.links
         self._online_since = time()
 
+        self._reload_monitor = conf.worker.reload_monitor
+
+        self.processes_cache = None
+
+    def start_worker(self, **kwargs):
         self.processes_cache = self.create_processes_cache()
 
         self.add_periodic_task("cleanup", self.cleanup_expired_jobs, self._cleanup_interval)
 
-        if conf.worker.reload_monitor:
-            watch = WatchFile(conf.worker.reload_monitor, self.reload_processes)
+        if self._reload_monitor:
+            watch = WatchFile(self._reload_monitor, self.reload_processes)
             self.add_periodic_task("reload", watch, 5.0)
+
+        super().start_worker(**kwargs)
 
     def add_periodic_task(self, name: str, target: Callable[[], None], timeout: float):
         self._periodic_tasks.append(

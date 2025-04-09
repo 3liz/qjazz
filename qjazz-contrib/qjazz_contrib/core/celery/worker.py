@@ -43,6 +43,7 @@ class Worker(Celery):
         # for task routing
 
         self._name = name
+        self._scheduler = conf.scheduler
         self._job_context: dict[str, Any] = {}
 
         # See https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
@@ -66,6 +67,13 @@ class Worker(Celery):
             # Activate autoscale
             kwargs.update(autoscale=(max(self.autoscale), min(self.autoscale)))
 
+        if self._scheduler.enabled:
+            kwargs.update(
+                beat=True,
+                schedule=self._scheduler.database_filename(),
+                heartbeat_interval=self._scheduler.max_interval,
+        )
+
         worker = self.Worker(
             hostname=self.worker_hostname,
             prefetch_multiplier=1,
@@ -74,6 +82,18 @@ class Worker(Celery):
         )
 
         worker.start()
+
+    def run_scheduler(self, **kwargs) -> None:
+        """Start the scheduler"""
+        schedule = kwargs.pop("schedule", self._scheduler.database_filename())
+        max_interval = kwargs.pop("max_interval", self._scheduler.max_interval)
+        beat = self.Beat(
+            schedule=schedule,
+            max_interval=max_interval,
+            **kwargs,
+        )
+
+        beat.run()
 
     def job(
         self,
