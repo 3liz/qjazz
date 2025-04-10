@@ -3,14 +3,14 @@ services:
   #
   # Processes stack
   #
-
-  processes-worker:
-    image: 3liz/qjazz:qgis-ltr-eager
+  processing:
+    image: 3liz/qjazz:qgis-release-eager
+    command: ["qjazz-processing", "serve", "-C", "/conf/worker.toml"]
     environment:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
-      CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9180/results/$$jobId/$$name"
+      CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9080/results/?MAP=$$jobId/$$name"
     depends_on:
     - rabbitmq
     - redis
@@ -18,10 +18,9 @@ services:
     volumes:
     - { type: bind, source: "./", target: /conf } 
     - { type: bind, source: "../../", target: /src } 
-    command: ["qjazz-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
   
-  processes-server:
-    image: 3liz/qjazz:qgis-ltr-eager
+  processes:
+    image: 3liz/qjazz:qgis-release-eager
     ports:
     - 127.0.0.1:9180:9080
     command: ["qjazz-processes", "serve", "-v"]
@@ -33,20 +32,21 @@ services:
     - redis
 
   rabbitmq:
-    image: rabbitmq:3
+    image: rabbitmq:3-alpine
+  
   redis:
     image: redis:6-alpine
-w
+
   #
   # Map server stack
   #
- 
   qgis-rpc:
-    image: 3liz/qjazz:qgis-ltr-eager
+    image: 3liz/qjazz:qgis-release-eager
     environment:
       CONF_DISPLAY_XVFB: ON
       CONF_LOGGING__LEVEL: debug
       CONF_WORKER__NAME: worker
+      # Configure search to s3 'example' bucket
       CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
         { 
           "/": "/workdir"
@@ -56,7 +56,7 @@ w
     command: ["qjazz-rpc", "serve"]
 
   map:
-    image: 3liz/qjazz:qgis-ltr-eager
+    image: 3liz/qjazz:qgis-release-eager
     environment:
       CONF_LOGGING__LEVEL: debug
       CONF_BACKENDS__jOBS__TITLE: "Jobs backends"

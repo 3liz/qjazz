@@ -1,21 +1,26 @@
 services:
 
-  worker:
-    image: 3liz/qjazz:qgis-ltr-eager
+  #
+  # Processes stack
+  #
+  processing:
+    image: 3liz/qjazz:qgis-release-eager
+    command: ["qjazz-processing", "serve", "-C", "/conf/worker.toml"]
     environment:
       CONF_LOGGING__LEVEL: DEBUG
       CONF_WORKER__BROKER_HOST: rabbitmq
       CONF_WORKER__BACKEND_HOST: redis:6379/0
+      CONF_PROCESSING__ADVERTISED_SERVICES_URL: "ows://$$jobId/$$name"
     depends_on:
     - rabbitmq
+    - redis
     working_dir: /conf
     volumes:
     - { type: bind, source: "./", target: /conf } 
     - { type: bind, source: "../../", target: /src } 
-    command: ["qjazz-processes", "worker", "-l", "error","-C", "/conf/worker.toml"]
   
-  server:
-    image: 3liz/qjazz:qgis-ltr-eager
+  processes:
+    image: 3liz/qjazz:qgis-release-eager
     ports:
     - 127.0.0.1:9180:9080
     command: ["qjazz-processes", "serve", "-v"]
@@ -23,8 +28,13 @@ services:
       CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
       CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
     depends_on:
-    - worker
+    - rabbitmq
+    - redis
+
   rabbitmq:
-    image: rabbitmq:3
+    image: rabbitmq:3-alpine
+  
   redis:
     image: redis:6-alpine
+
+

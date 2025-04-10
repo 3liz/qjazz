@@ -1,6 +1,4 @@
-version: "3.9"
 services:
-
   qgis-rpc:
     image: 3liz/qjazz:qgis-ltr-eager
     environment:

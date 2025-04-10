@@ -5,7 +5,7 @@
 """
 import os
 
-CONF_URL = os.getenv('QJAZZ_CONFIG_REMOTE_URL')
+CONF_URL = os.getenv('QJAZZ_REMOTE_CONFIG_URL')
 
 if CONF_URL:
     import json
@@ -15,6 +15,8 @@ if CONF_URL:
     import requests
 
     kwargs: dict = {}
+
+    print("Loading remote config from", CONF_URL, file=sys.stderr)
 
     # CA file
     ca = os.getenv('QJAZZ_REMOTE_CAFILE')

@@ -193,10 +193,9 @@ class S3ProtocolHandler(ProtocolHandler):
         if isinstance(uri, str):
             uri = urlsplit(uri)
 
-        prefix = PurePosixPath(rooturl.path)
-        path = PurePosixPath(uri.path).relative_to(prefix)
-        path = Path(location).joinpath(path)
-        return uri._replace(path=f"{path}").geturl()
+        prefix = rooturl.path.strip("/")
+        relpath = PurePosixPath(uri.path).relative_to(prefix or "/")
+        return str(Path(location).joinpath(relpath))
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Return project metadata"""

@@ -16,8 +16,12 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
-from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
-from qjazz_cache.storage import load_project_from_uri
+from qjazz_cache.prelude import (
+    CacheEntry,
+    CacheManager,
+    CheckoutStatus,
+    ProjectMetadata,
+)
 from qjazz_contrib.core import componentmanager, logger
 
 from .project import Collection
@@ -79,7 +83,7 @@ class Catalog:
 
         # Iterate over the whole catalog
         loader_config = FastLoaderConfig()
-        for md, public_path in cm.collect_projects():
+        for md, public_path, handler in cm.collect_projects_ex():
             if pinned and not get_pinned_project(md, cm):
                 # Handle only pinned projects
                 continue
@@ -90,7 +94,7 @@ class Catalog:
             if not item or md.last_modified > item.md.last_modified:
                 try:
                     logger.debug("=Catalog: updating: '%s'", md.uri)
-                    project = load_project_from_uri(md.uri, loader_config)
+                    project = handler.project(md, loader_config)
                     layers = dict(t for t in collect_layers(project))
                     item = CatalogItem(
                         public_path=public_path,
@@ -100,7 +104,7 @@ class Catalog:
                     )
                 except Exception:
                     logger.error(
-                        "Error loading project snapshot:%s\n%s",
+                        "Error loading project snapshot %s\n%s",
                         md.uri,
                         traceback.format_exc(),
                     )

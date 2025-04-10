@@ -225,18 +225,32 @@ class CacheManager:
 
         return urls
 
-    def collect_projects(self, location: Optional[str] = None) -> Iterator[tuple[ProjectMetadata, str]]:
+    def collect_projects_ex(
+        self,
+        location: Optional[str] = None,
+    ) -> Iterator[tuple[ProjectMetadata, str, ProtocolHandler]]:
         """Collect projects metadata from search paths
 
-        Yield tuple of (entry, public_path) for all found  entries
+        Yield tuple of (entry, public_path, handler) for all found  entries
         """
         for location, url in self.locations(location):
             try:
                 handler = self.get_protocol_handler(url.scheme)
                 for md in handler.projects(url):
-                    yield md, handler.public_path(md.uri, location, url)
+                    yield md, handler.public_path(md.uri, location, url), handler
             except Exception:
                 logger.error(traceback.format_exc())
+
+    def collect_projects(
+        self,
+        location: Optional[str] = None,
+    ) -> Iterator[tuple[ProjectMetadata, str]]:
+        """Collect projects metadata from search paths
+
+        Yield tuple of (entry, public_path) for all found  entries
+        """
+        for md, public_path, _ in self.collect_projects_ex(location):
+            yield md, public_path
 
     def checkout(self, url: Url) -> tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:
         """Checkout status of project from url

@@ -5,7 +5,7 @@
   "backends": {
     "basic": {
       "title": "Basic backends",
-      "address": "tcp://qgis-rpc",
+      "host": "qgis-rpc",
       "route": "/basic"    
     }  
   }

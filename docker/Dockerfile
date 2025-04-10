@@ -71,6 +71,8 @@ ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
 # Allow us to run Xvfb when the container runs with '-u' option
 RUN chmod u+s /usr/bin/Xvfb
 
+ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
+
 EXPOSE 23456 9080 9443
 
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
@@ -102,6 +104,7 @@ RUN apt-get update -y \
 
 COPY --from=base /python_modules /python_modules
 COPY --from=base /opt/local/qjazz /opt/local/qjazz
+COPY --from=base /usr/local/bin/qjazz-map-bin /usr/local/bin/qjazz-map-bin
 
 RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \

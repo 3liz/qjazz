@@ -39,10 +39,17 @@ def get_crs(p: QgsProject) -> QgsCoordinateReferenceSystem:
     # Check from advertised crs list
     crs_list = QgsServerProjectUtils.wmsOutputCrsList(p)
     if crs_list:
-        return QgsCoordinateReferenceSystem.fromOgcWmsCrs(crs_list[0])
-    else:
-        # Default to CRS84 (conformance)
-        return CrsRef.default().to_qgis()
+        # NOTE: The returned list is not checked by QGIS and may return
+        # garbage
+        for crs in crs_list:
+            qgis_crs = QgsCoordinateReferenceSystem.fromOgcWmsCrs(crs)
+            if qgis_crs.isValid():
+                return qgis_crs
+            else:
+                logger.warning("Invalid WMS advertised CRS: %s (%s)", crs, p.fileName())
+
+    # Default to CRS84 (conformance)
+    return CrsRef.default().to_qgis()
 
 
 def bbox_inv_aspect_ratio(params):
@@ -85,6 +92,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
 
     # See https://docs.ogc.org/pol/09-048r6.html#toc14 for CURIE notation
     if "crs" not in params:
+
         content_crs = crs().authid()
         headers["Content-Crs"] = f"[{content_crs}]"  # CURIE notation
         options = f"{options}&crs={content_crs}"
@@ -102,13 +110,15 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
             r = transform_extent(r, project.crs(), output_crs, project)
 
         # Assume version 1.3.0
-        if output_crs.hasAxisInverted():  # Inversion east/north, long/lata
+        if output_crs.hasAxisInverted():  # Inversion east/north, long/lat
+            inv_aspect_ratio = lambda: r.width() / r.height()  # noqa E731
             r.invert()
+        else:
+            inv_aspect_ratio = lambda: r.height() / r.width()  # noqa E731
 
         content_bbox = f"{r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
         options = f"{options}&bbox={content_bbox}"
 
-        inv_aspect_ratio = lambda: r.height() / r.width()  # noqa E731
     else:
         content_bbox = params["bbox"]
         inv_aspect_ratio = lambda: bbox_inv_aspect_ratio(params)  # noqa E731
@@ -139,4 +149,5 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
         if layers:
             options = f"{options}&layers={layers}"
 
+    logger.debug("Map request options: %s", options)
     return MapRequest(headers=headers, options=options)
