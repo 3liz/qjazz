@@ -33,7 +33,7 @@ def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = Non
         headers=headers,
     )
 
-    expected = 201 if respond_async else 200
+    expected = 202 if respond_async else 200
 
     assert resp.status_code == expected
     data = resp.json()
@@ -68,7 +68,27 @@ def test_executeprocess_async(host):
         headers={'Prefer':'respond-async'}
     )
 
-    assert rv.status_code == 201
+    assert rv.status_code == 202
+
+
+def test_executeprocess_with_delay(host):
+    """  Test execute process """
+    rv = requests.post(
+        (
+            f"{host}/processes/processes_test:testcopylayer/execution"
+            f"?map=france/france_parts"
+            f"&tag=test_executeprocess_with_delay"
+        ),
+        json={
+            "inputs": {
+                "INPUT": "france_parts",
+                "OUTPUT": "france_parts2",
+            }
+        },
+        headers={'Prefer':'respond-async, delay=60'}
+    )
+
+    assert rv.status_code == 202
 
 
 def test_executeprocess_sync(host):
@@ -133,7 +153,7 @@ def test_verylongprocess(host, data):
     )
 
     print(rv.text)
-    assert rv.status_code == 201
+    assert rv.status_code == 202
 
 
 def test_executedelete(host, data):
@@ -183,7 +203,7 @@ def test_handleprocesserror_async(host, data):
     print("\n::test_handleprocesserror_async::", rv.text) 
     print("\n::test_handleprocesserror_async::", rv.headers) 
  
-    assert rv.status_code == 201
+    assert rv.status_code == 202
 
     job_id = rv.json()['jobId']
 
@@ -235,7 +255,7 @@ def test_badparameter_async(host):
 
     )
     print(rv.text)
-    assert rv.status_code == 201
+    assert rv.status_code == 202
 
 
 

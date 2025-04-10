@@ -230,6 +230,11 @@ body {
   -webkit-mask-size: 1em;
 }
 
+[status="wait"] .pr-trash-btn {
+    display: inline-block
+}
+
+
 /* status pending */
 [status="pending"] .pr-st-box {
   background-color: rgb(220,220,220);
@@ -253,6 +258,11 @@ body {
   -webkit-mask-repeat:  no-repeat;
   -webkit-mask-size: 1em;
 }
+
+[status="pending"] .pr-trash-btn {
+    display: inline-block
+}
+
 
 
 /*

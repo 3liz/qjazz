@@ -26,6 +26,7 @@ class TaskInfo:
     dismissed: int
     pending_timeout: int
     expires: int
+    tag: Optional[str]
 
 
 def register(
@@ -52,6 +53,7 @@ def register(
             dismissed=0,
             pending_timeout=pending_timeout,
             expires=expires,
+            tag=status.tag or "",
         ),
     )
     expiration_ts = created + expires + pending_timeout
@@ -69,6 +71,7 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
         dismissed=int(m[b"dismissed"]),
         pending_timeout=int(m[b"pending_timeout"]),
         expires=int(m[b"expires"]),
+        tag=m[b"tag"].decode(),
     )
 
 

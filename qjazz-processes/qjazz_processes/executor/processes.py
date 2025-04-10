@@ -5,9 +5,9 @@ from time import time
 from typing import (
     Callable,
     Iterator,
-    Mapping,
     Optional,
     Sequence,
+    TypedDict,
     assert_never,
 )
 
@@ -42,6 +42,14 @@ from .protocols import ExecutorProtocol, ServiceDict
 #
 #  Processes
 #
+
+class JobMeta(TypedDict):
+    created: str
+    realm: Optional[str]
+    service: str
+    process_id: str
+    expires: int
+    tag: Optional[str]
 
 
 class Processes(ExecutorProtocol):
@@ -85,13 +93,13 @@ class Processes(ExecutorProtocol):
         run_config: dict[str, JsonValue],
         *,
         pending_timeout: int,
+        meta: JobMeta,
         context: Optional[JsonDict] = None,
-        meta: Optional[Mapping[str, JsonValue]] = None,
         priority: int = 0,
+        countdown: Optional[int] = None,
     ) -> AsyncResult:
         # Execute process (blocking)
 
-        meta = meta or {}
         context = context or {}
 
         return self._celery.send_task(
@@ -104,7 +112,74 @@ class Processes(ExecutorProtocol):
                 "__context__": context,
                 "__run_config__": run_config,
             },
+            countdown=countdown,
         )
+
+    # Helper for creating job meta and job registration
+    class JobBuilder:
+        def __init__(
+            self,
+            this: 'Processes',
+            service: str,
+            ident: str,
+            *,
+            pending_timeout: Optional[int],
+            realm: Optional[str],
+            tag: Optional[str],
+            countdown: Optional[int],
+        ):
+            _, service_details = this._services[service]
+
+            # Get the expiration time
+            expires = service_details.result_expires
+
+            # In synchronous mode, set the pending timeout
+            # to the passed value or fallback to default
+            pending_timeout = pending_timeout or this._pending_expiration_timeout
+
+            # Takes countdown into account in expiration
+            if countdown is not None:
+                pending_timeout += countdown
+
+            created = utc_now()
+
+            meta: JobMeta = {
+                "created": created.isoformat(timespec="milliseconds"),
+                "realm": realm,
+                "service": service,
+                "process_id": ident,
+                "expires": expires,
+                "tag": tag,
+            }
+
+            self.created = created
+            self.meta = meta
+            self.expires = expires
+            self.pending_timeout = pending_timeout
+
+        def register(self, this: 'Processes', job_id: str) -> JobStatus:
+            """Register job"""
+
+            # create PENDING default state
+            status = JobStatus(
+                job_id=job_id,
+                status=JobStatus.PENDING,
+                process_id=self.meta['process_id'],
+                created=self.created,
+                tag=self.meta['tag'],
+            )
+
+            # Register pending task info
+            registry.register(
+                this._celery,
+                self.meta['service'],
+                self.meta['realm'],
+                status,
+                self.expires,
+                self.pending_timeout,
+            )
+
+            return status
 
     def _execute(
         self,
@@ -117,6 +192,8 @@ class Processes(ExecutorProtocol):
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
         tag: Optional[str] = None,
+        priority: int = 0,
+        countdown: Optional[int] = None,
     ) -> tuple[
         str,
         Callable[[int | None], JobResults],
@@ -127,29 +204,16 @@ class Processes(ExecutorProtocol):
         Returns a synchronous or asynchronous  'Result' object
         depending on the `sync` parameter.
         """
-        _, service_details = self._services[service]
 
-        # Get the expiration time
-        expires = service_details.result_expires
-
-        # In synchronous mode, set the pending timeout
-        # to the passed value or fallback to default
-        pending_timeout = pending_timeout or self._pending_expiration_timeout
-
-        if pending_timeout > expires:
-            # XXX Pending timeout must be lower than expiration timeout
-            pending_timeout = expires
-
-        created = utc_now()
-
-        meta = {
-            "created": created.isoformat(timespec="milliseconds"),
-            "realm": realm,
-            "service": service,
-            "process_id": ident,
-            "expires": expires,
-            "tag": tag,
-        }
+        builder = Processes.JobBuilder(
+            self,
+            service,
+            ident,
+            pending_timeout=pending_timeout,
+            realm=realm,
+            tag=tag,
+            countdown=countdown,
+        )
 
         result = self._execute_task(
             service,
@@ -159,31 +223,15 @@ class Processes(ExecutorProtocol):
                 request=request.model_dump(mode="json"),
                 project_path=project,
             ),
-            meta=meta,
-            pending_timeout=pending_timeout,
+            meta=builder.meta,
+            pending_timeout=builder.pending_timeout,
             context=context,
+            countdown=countdown,
         )
 
         job_id = result.id
 
-        # create PENDING default state
-        status = JobStatus(
-            job_id=job_id,
-            status=JobStatus.PENDING,
-            process_id=ident,
-            created=created,
-            tag=meta['tag'],
-        )
-
-        # Register pending task info
-        registry.register(
-            self._celery,
-            service,
-            realm,
-            status,
-            expires,
-            pending_timeout,
-        )
+        status = builder.register(self, job_id)
 
         def _get_status() -> JobStatus:
             return self._job_status(job_id, self.destinations(service)) or status
@@ -192,6 +240,8 @@ class Processes(ExecutorProtocol):
             return result.get(timeout=timeout)
 
         return (job_id, _get_result, _get_status)
+
+
 
     # ==============================================
     #
@@ -224,14 +274,14 @@ class Processes(ExecutorProtocol):
         st: JobStatus | None
         now_ts = time()
 
-        # NOTE: We expect the expiration timeout beeing larger than the pending
-        # timeout
         if not ti.dismissed and now_ts < ti.created + ti.pending_timeout:
             st = JobStatus(
                 job_id=ti.job_id,
                 status=JobStatus.PENDING,
                 process_id=ti.process_id,
                 created=to_utc_datetime(ti.created),
+                message="Task pending",
+                tag=ti.tag,
             )
         else:
             # Job has expired/dismissed
@@ -378,7 +428,7 @@ class Processes(ExecutorProtocol):
         # Get the state from the backend
         state = self._celery.backend.get_task_meta(job_id)
 
-        logger.trace("=Job status %s", state)
+        logger.trace("=Job status %s:  %s", job_id, state)
 
         finished = None
         progress = None
@@ -395,12 +445,16 @@ class Processes(ExecutorProtocol):
                 match status:
                     case "active":
                         status = JobStatus.RUNNING
+                        message = f"Task {status}"
                     case "scheduled" | "reserved":
                         status = JobStatus.ACCEPTED
+                        message = f"Task {status}"
                     case "revoked":
                         status = JobStatus.DISMISSED
+                        message = f"Task {status}"
                     case _:
                         status = JobStatus.PENDING
+                        message = "Task pending"
                 state["kwargs"] = request["kwargs"]
             case Celery.STATE_STARTED:
                 status = JobStatus.RUNNING
@@ -526,6 +580,8 @@ class Processes(ExecutorProtocol):
                 ti = registry.find_job(self._celery, job_id)
                 if not ti:
                     continue
+
+                logger.trace("=pull: %s", ti)
 
                 if not service:
                     destinations = self.get_destinations(ti.service, services)

@@ -1,7 +1,7 @@
-import re
 
 from typing import (
     Annotated,
+    Callable,
     Optional,
     Sequence,
 )
@@ -9,7 +9,7 @@ from typing import (
 import celery.exceptions
 
 from aiohttp import web
-from pydantic import Field, TypeAdapter, ValidationError
+from pydantic import Field, PositiveInt, TypeAdapter, ValidationError
 
 from qjazz_contrib.core import logger
 
@@ -206,7 +206,7 @@ class Processes(HandlerProto):
               required: true
               description: Process identifier
             - in: query
-              name: Tag
+              name: tag
               schema:
                 type: string
                 maxLength: 36
@@ -256,6 +256,14 @@ class Processes(HandlerProto):
         # Set job realm
         realm = self._jobrealm.get_job_realm(request)
 
+        # Allow setting priority only if admin
+        if prefer.priority is not None and self._jobrealm.is_admin(realm):
+            priority = prefer.priority
+        else:
+            priority = 0
+
+        execute_sync = not prefer.execute_async or prefer.wait is not None
+
         result = self._executor.execute(
             service,
             process_id,
@@ -268,9 +276,12 @@ class Processes(HandlerProto):
             # Set the pending timeout to the wait preference
             pending_timeout=prefer.wait,
             tag=tag,
+            priority=priority,
+            # Set execution delay only if asynchronous execution
+            countdown=prefer.delay if not execute_sync else None,
         )
 
-        if not prefer.execute_async or prefer.wait is not None:
+        if execute_sync:
             try:
                 job_result = await result.get(prefer.wait or self._timeout)
                 headers = {JOB_ID_HEADER: result.job_id}
@@ -384,8 +395,9 @@ class Processes(HandlerProto):
         if realm:
             headers[JOB_REALM_HEADER] = realm
 
+        # Return 'Accepted' response
         return web.Response(
-            status=201,
+            status=202,
             headers=headers,
             content_type="application/json",
             text=job_status.model_dump_json(),
@@ -409,12 +421,16 @@ class Processes(HandlerProto):
 # Handle HTTP Prefer header
 #
 
-WAIT_PARAM = re.compile(r",?\s*wait=(\d+)\s*")
-
-
 class ExecutePrefs:
     execute_async: bool = False
     wait: Optional[int] = None
+    priority: Optional[int] = None
+    delay: Optional[int] = None
+
+    as_seconds: Callable[[str], int] = TypeAdapter(PositiveInt).validate_python
+    as_priority: Callable[[str], int] = TypeAdapter(
+        Annotated[int, Field(ge=0, lt=10)]
+    ).validate_python
 
     def __init__(self, request: web.Request):
         """Get execution preferences from 'Prefer' header
@@ -423,13 +439,15 @@ class ExecutePrefs:
         See https://docs.ogc.org/is/18-062r2/18-062r2.html#toc32
         """
         for prefer in request.headers.getall("Prefer", ()):
-            for pref in (p.strip().lower() for p in prefer.split(";")):
-                if self.wait is None and pref.startswith("wait"):
-                    m = WAIT_PARAM.fullmatch(pref)
-                    if m:
-                        self.wait = int(m.groups()[0])
-                if pref.startswith("respond-async"):
-                    self.execute_async = True
-                    m = WAIT_PARAM.fullmatch(pref[13:])
-                    if m:
-                        self.wait = int(m.groups()[0])
+            for pref in (p.strip().lower() for p in prefer.split(",")):
+                try:
+                    if pref == "respond-async":
+                        self.execute_async = True
+                    elif pref.startswith("wait="):
+                        self.wait = self.as_seconds(pref[5:])
+                    elif pref.startswith("priority="):
+                        self.priority = self.as_priority(pref[9:])
+                    elif pref.startswith("delay="):
+                        self.delay = self.as_seconds(pref[6:])
+                except ValidationError:
+                    logger.error("Invalid value in Prefer header: %s", pref)

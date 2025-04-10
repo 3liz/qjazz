@@ -56,7 +56,6 @@ class ExecutorBase:
         self._celery = Celery(name, conf.celery)
         self._services: ServiceDict = {}
         self._pending_expiration_timeout = conf.message_expiration_timeout
-        self._default_result_expires = conf.celery.result_expires
         self._last_updated = 0.
 
     def presences(self,
@@ -169,6 +168,8 @@ class Executor(
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
         tag: Optional[str] = None,
+        countdown: Optional[int] = None,
+        priority: int = 0,
     ) -> Result:
         job_id, _get_result, _get_status = self._execute(
             service,
@@ -179,6 +180,8 @@ class Executor(
             realm=realm,
             pending_timeout=pending_timeout,
             tag=tag,
+            countdown=countdown,
+            priority=priority,
         )
         return Result(job_id=job_id, get=_get_result, status=_get_status)
 

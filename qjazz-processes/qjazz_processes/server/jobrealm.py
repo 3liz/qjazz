@@ -46,6 +46,9 @@ class JobRealmConfig(ConfigBase):
         """,
     )
 
+    def is_admin(self, realm: Optional[str]) -> bool:
+        return realm is None or realm in self.admin_tokens
+
     def validate_realm(self, realm: str) -> str:
         try:
             return RealmToken.validate_python(realm)

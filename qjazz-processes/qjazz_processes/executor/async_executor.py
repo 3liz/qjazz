@@ -106,6 +106,8 @@ class AsyncExecutor(
         realm: Optional[str] = None,
         pending_timeout: Optional[int] = None,
         tag: Optional[str] = None,
+        countdown: Optional[int] = None,
+        priority: int = 0,
     ) -> Result:
         """Send an execute request
         Returns an asynchronous  'Result' object
@@ -119,6 +121,8 @@ class AsyncExecutor(
             realm=realm,
             pending_timeout=pending_timeout,
             tag=tag,
+            countdown=countdown,
+            priority=priority,
         )
 
         return Result(
