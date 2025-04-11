@@ -40,26 +40,6 @@ def href(request: web.Request, path: str) -> str:
     return public_url(request, f"{path}")
 
 
-def redirect(path):
-    """Helper for creating redirect handler"""
-
-    async def _redirect(request):  # noqa RUF029
-        raise web.HTTPFound(path)
-
-    return _redirect
-
-
-def redirect_trailing_slash():
-    """Redirect with a trailing slash"""
-
-    async def _redirect(request):  # noqa RUF029
-        qs = request.query_string
-        path = f"{request.path}/?{qs}" if qs else f"{request.path}/"
-        raise web.HTTPFound(path)
-
-    return _redirect
-
-
 async def stream_from(
     href: str,
     request: web.Request,

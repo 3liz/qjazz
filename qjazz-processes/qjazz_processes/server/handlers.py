@@ -17,10 +17,20 @@ from .executor import AsyncExecutor
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse
 from .storage import StorageConfig
-from .utils import redirect_trailing_slash
 
 API_VERSION = "v1"
 PAGKAGE_NAME = "qjazz_processes"
+
+
+def redirect_trailing_slash():
+    """Redirect with a trailing slash"""
+
+    async def _redirect(request):  # noqa RUF029
+        qs = request.query_string
+        path = f"{request.path}/?{qs}" if qs else f"{request.path}/"
+        raise web.HTTPPermanentRedirect(path)
+
+    return _redirect
 
 
 class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
