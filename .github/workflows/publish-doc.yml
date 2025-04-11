@@ -52,9 +52,9 @@ jobs:
       run: touch doc/build/html/.nojekyll qjazz-processes/doc/build/html/.nojekyll
 
     - name: Deploy Qjazz server doc  to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@4.7.3
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
-        branch: gh-doc-pages
+        branch: gh-pages
         folder: doc/build/html
         target-folder: qjazz-server
         token: ${{ secrets.BOT_HUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
         git-config-email: ${{ secrets.BOT_MAIL }}
 
     - name: Deploy Qjazz Processes doc to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@4.7.3
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: gh-pages
         folder: qjazz-processes/doc/build/html
