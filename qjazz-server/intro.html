@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Description &mdash; qjazz ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="QGIS RPC services" href="rpc_config.html" />
+    <link rel="prev" title="Welcome to qjazz’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Description</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#quick-setup">Quick setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#docker-compose-setup">Docker compose setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scaling-your-services">Scaling your services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scaling-qgis-services">Scaling Qgis services</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaling-the-web-service">Scaling the web service</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#managing-qgis-services">Managing Qgis services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#managing-individual-service">Managing individual service</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#configuration-setup">Configuration setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#using-configuration-file">Using configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-environment-variables">Using environment variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Description</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/intro.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="description">
+<span id="project-description"></span><h1>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h1>
+<p>QJazz is a suite of QGIS based services including:</p>
+<ul class="simple">
+<li><p>QGIS serverr as microservice</p></li>
+<li><p>OGC Processes server on top of QGIS processing</p></li>
+</ul>
+<p>This is as set of modules for deploying QGIS based servers and processing services
+as OGC processes compliant API</p>
+<p>It aims to provide support for scalable deployment of QGIS based services
+on medium or large infrastructure and has been developped to solve some issues
+when dealing with large numbers of projects.</p>
+<p>The services are implemented as  wrappers around the QGIS Server api
+and the Processing QGIS api and because of this, it supports all
+QGIS Server features and options.</p>
+<p>The qjazz-server setup is splitted in 3 different services:</p>
+<ul class="simple">
+<li><p>Services using gRCP protocols for running qgis servers processes</p></li>
+<li><p>Middleware asynchronous HTTP proxy for routing requests to differents worker backends</p></li>
+<li><p>Admin tools and service for inspectings worker’s pool and health checking.</p></li>
+</ul>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>--------------------                 -------------------
+|                  | n             n |                 |
+|  Http            |&lt;---------------&gt;|   Qgis rpc      |
+|  frontend/proxy  |                 |   service pools |
+|                  |                 |                 |
+--------------------                 -------------------
+                                            n |
+                                              |
+                                            1 |
+                                     -------------------
+                                     |                 |
+                                     |     Management  |
+                                     |     service     |
+                                     |                 |
+                                     -------------------
+</pre></div>
+</div>
+</section>
+<section id="features">
+<span id="project-features"></span><h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<p>These services have been designed after experimenting with version 1.x of
+<a class="reference external" href="https://https://github.com/3liz/qjazz-server">qjazz-server</a>
+on production infrastructure.</p>
+<p>It aims at bringing better scaling managment, cache managment and healtcheck/fault tolerance
+support.</p>
+<p>Integrated features:</p>
+<ul class="simple">
+<li><p>Standalone Qgis server as microservice over gRPC protocol</p></li>
+<li><p>Managed project’s cache that may be synchronized between Qgis services from the same pool.</p></li>
+<li><p>SSL support between all components</p></li>
+<li><p>Hot scaling with Docker stack (no restart needed)</p></li>
+<li><p>Hot (re)configuration from remote or local config</p></li>
+</ul>
+</section>
+</section>
+<section id="quick-setup">
+<span id="id1"></span><h1>Quick setup<a class="headerlink" href="#quick-setup" title="Link to this heading"></a></h1>
+<section id="docker-compose-setup">
+<span id="id2"></span><h2>Docker compose setup<a class="headerlink" href="#docker-compose-setup" title="Link to this heading"></a></h2>
+<p>This is the recommended way to install and run the services:</p>
+<p>Note that most of the examples in this documentation assumes
+docker deployment.</p>
+<p>All services are runnable from a single image:
+<a class="reference external" href="https://hub.docker.com/3liz/qjazz">3liz/qjazz</a></p>
+<p>Running workers with docker compose:</p>
+<p>The simplest configuration for basic working installation is the following</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="c1">#</span>
+<span class="w">  </span><span class="c1"># The worker service run the grpc service that run</span>
+<span class="w">  </span><span class="c1"># qgis server</span>
+<span class="w">  </span><span class="c1">#</span>
+<span class="w">  </span><span class="nt">qgis-rpc</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_DISPLAY_XVFB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ON</span>
+<span class="w">      </span><span class="nt">CONF_LOGGING__LEVEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debug</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">basic_worker</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">{</span>
+<span class="w">          </span><span class="no">&quot;/&quot;:/&quot;qgis-projects&quot;</span>
+<span class="w">        </span><span class="no">}</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/projects/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="c1"># The web service communicate to (multiple) backends and route</span>
+<span class="w">    </span><span class="c1"># request to the appropriate backend.</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_LOGGING__LEVEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debug</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__TITLE</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Basic</span><span class="nv"> </span><span class="s">backends&quot;</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__HOST</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qgis-rpc&quot;</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__ROUTE</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/&quot;</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:9080:9080</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-map&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p>Run the stack with:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker compose up -d
+</pre></div>
+</div>
+<p>From here, open your navigator at <a class="reference external" href="http://localhost:9080/?MAP=/my_project&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities">http://localhost:9080/?MAP=/my_project&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities</a>
+in order to get the WMS Capabilities if your project is wms-enabled.</p>
+<p>See the working example in <cite>examples/basic</cite></p>
+</section>
+<section id="scaling-your-services">
+<span id="docker-scaling"></span><h2>Scaling your services<a class="headerlink" href="#scaling-your-services" title="Link to this heading"></a></h2>
+<section id="scaling-qgis-services">
+<h3>Scaling Qgis services<a class="headerlink" href="#scaling-qgis-services" title="Link to this heading"></a></h3>
+<p>You may scale the Qgis services with the following command:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker compose up -d --scale qgis-rpc=2
+</pre></div>
+</div>
+<p><em>Note</em>: you may run this command while your stack is up, increasing or decreasing the numbers
+of backend workers without any service interruption.</p>
+<p>This will set up 2 new workers from the previous single worker state.</p>
+<p>The web service will automatically detect and handle the new backends and will round-robin
+the requests to them.</p>
+</section>
+<section id="scaling-the-web-service">
+<h3>Scaling the web service<a class="headerlink" href="#scaling-the-web-service" title="Link to this heading"></a></h3>
+<p>In the same way you may scale the web service. Take care that you cannot publish directly on host
+with multiple instances, you will need a load-balancer handling dns resolution with multiple ips.</p>
+</section>
+</section>
+<section id="managing-qgis-services">
+<span id="managing-rpc-services"></span><h2>Managing Qgis services<a class="headerlink" href="#managing-qgis-services" title="Link to this heading"></a></h2>
+<section id="managing-individual-service">
+<h3>Managing individual service<a class="headerlink" href="#managing-individual-service" title="Link to this heading"></a></h3>
+<p>One way to manage workers individually is to use cli commands
+from inside running containers:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker compose exec [--index=n] qgis-rpc qjazz-server-cli
+</pre></div>
+</div>
+<p>The <cite>qjazz-server-cli</cite> enables you to retrieve various information
+about the running service:</p>
+<ul class="simple">
+<li><p>Get environment state</p></li>
+<li><p>Monitor healthcheck</p></li>
+<li><p>Issue request directly to qgis</p></li>
+<li><p>List plugins</p></li>
+<li><p>Set and get configuration live</p></li>
+<li><p>Display and manage project’s cache</p></li>
+</ul>
+<p>Note that this command only manage one qgis services at a time.
+In order to manage multiple backend pools you will need another
+tool dedicated to this purpose.</p>
+<p>You may also run this command outside the service container by
+defining the <cite>QGIS_GRPC_HOST</cite> variable with the remote worker instance
+address.</p>
+</section>
+</section>
+</section>
+<section id="configuration-setup">
+<h1>Configuration setup<a class="headerlink" href="#configuration-setup" title="Link to this heading"></a></h1>
+<p>All services use configuration file in <a class="reference external" href="https://toml.io/en/">toml</a>  format by default,
+but json and yaml may also be used.</p>
+<section id="using-configuration-file">
+<h2>Using configuration file<a class="headerlink" href="#using-configuration-file" title="Link to this heading"></a></h2>
+<p>You may specify a configuration file with the <cite>–conf</cite> or <cite>-C</cite> option:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>qjazz-rpc  serve -C path/to/config/file.toml
+</pre></div>
+</div>
+</section>
+<section id="using-environment-variables">
+<h2>Using environment variables<a class="headerlink" href="#using-environment-variables" title="Link to this heading"></a></h2>
+<p>Configuration defaults may by overriden by environment variables.</p>
+<p>This is useful for playing nicely with docker-compose with small
+configuration settings.</p>
+<p>Configuration structure may be composed of simple values but also of more nested
+complex type.</p>
+<p>All configuration variables will start with the prefix <cite>CONF_</cite> followed by the field
+name (or toml section). Nested fields are separated by ‘__’ and so on.</p>
+<p>If the nested type is too complex, the environment variable may contains the Json
+representation of the field.</p>
+<p>Examples:</p>
+<p>Environment variables:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CONF_LOGGING__LEVEL=trace
+CONF_WORKER__NAME=worker
+CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS=&#39;{ &quot;/&quot;: &quot;/qgis-projects/france_parts&quot; }&#39;
+</pre></div>
+</div>
+<p>Which gives the toml equivalent:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[loggin]</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span>
+
+<span class="k">[worker]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;worker&quot;</span>
+
+<span class="k">[worker.projects.search_paths]</span>
+<span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-projects/france_parts&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to qjazz’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rpc_config.html" class="btn btn-neutral float-right" title="QGIS RPC services" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTP frontend &mdash; qjazz ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Advanced managment" href="managment.html" />
+    <link rel="prev" title="QGIS RPC services" href="rpc_config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-setup">Quick setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#configuration-setup">Configuration setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HTTP frontend</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#routing-ows-requests-to-qgis-pools">Routing OWS requests to Qgis pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-endpoints">Api endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#service-configuration">Service configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">HTTP frontend</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/server_config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="http-frontend">
+<span id="server-service"></span><h1>HTTP frontend<a class="headerlink" href="#http-frontend" title="Link to this heading"></a></h1>
+<p>The http frontend is a middleware proxy for routing  requests to
+Qgis worker pool backends.</p>
+<p>Each backend is a gRPC client that will route incoming requests to the
+configured backend by defining a path root prefix similar to the <cite>root</cite>
+directive of a proxy server.</p>
+<section id="routing-ows-requests-to-qgis-pools">
+<span id="server-routing"></span><h2>Routing OWS requests to Qgis pools<a class="headerlink" href="#routing-ows-requests-to-qgis-pools" title="Link to this heading"></a></h2>
+<p>Each backend is configured with a <a class="reference internal" href="#server-config"><span class="std std-ref">backend.&lt;id&gt;</span></a> settings.</p>
+<p>Passing request for a particular backend is done with the route as leading path:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">backend</span><span class="o">.</span><span class="n">pool1</span><span class="p">]</span>
+<span class="n">route</span> <span class="o">=</span> <span class="s2">&quot;/route_path&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Project may be specified in serveral way:</p>
+<ul>
+<li><p>Use <cite>MAP</cite> parameter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://test.com/route_path?MAP=/search_path/project_path&amp;SERVICE=...
+</pre></div>
+</div>
+</li>
+<li><p>Add project’s search path to url path:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="o">//</span><span class="n">test</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">route_path</span><span class="o">/</span><span class="n">search_path</span><span class="o">/</span><span class="c1">#/project_path?SERVICE=...</span>
+</pre></div>
+</div>
+</li>
+<li><p>Or specify the full project’s search path  with the <strong>X-Qgis-Project</strong> header.</p></li>
+</ul>
+</div>
+</section>
+<section id="api-endpoints">
+<h2>Api endpoints<a class="headerlink" href="#api-endpoints" title="Link to this heading"></a></h2>
+<p>Qgis api endpoints must be declared explicitly in order to be requested by client:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="n">backends</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">api</span><span class="p">]]</span>
+<span class="n">endpoint</span> <span class="o">=</span> <span class="s2">&quot;wfs3&quot;</span>
+<span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Feature OGC Api (WFS3 Draft)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Project is specified the same way as for OWS endpoints</p>
+<p>With the <cite>MAP</cite> parameter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://test.com/route_path/api/path/&gt;?MAP=/search_path/project_path
+</pre></div>
+</div>
+<p>or the <strong>X-Qgis-Project</strong> header.</p>
+<p>If you want to pass the project full search path in the url path, it must be done
+in a way to disambiguate the api path from the project’s path. This is achieved
+by separating the search path from the api path with a <cite>_</cite>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">test</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">route_path</span><span class="o">/</span><span class="n">search_path</span><span class="o">/</span><span class="n">project_path</span><span class="o">/</span><span class="n">_</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">path</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="service-configuration">
+<span id="server-config"></span><h2>Service configuration<a class="headerlink" href="#service-configuration" title="Link to this heading"></a></h2>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[logging]</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span>
+
+
+<span class="k">[server]</span>
+<span class="c1">#</span>
+<span class="c1"># Interfaces to listen to</span>
+<span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;127.0.0.1:9080&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Use TLS</span>
+<span class="n">enable_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Client CA file</span>
+<span class="c1">#</span>
+<span class="c1"># Certificat for client authentification</span>
+<span class="c1">#tls_client_cafile =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># TLS  key</span>
+<span class="c1">#</span>
+<span class="c1"># Path to the TLS key file</span>
+<span class="c1">#tls_cert_file =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># SSL/TLS Certificat</span>
+<span class="c1">#</span>
+<span class="c1"># Path to the TLS certificat file</span>
+<span class="c1">#tls_key_file =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># CORS origin</span>
+<span class="c1">#</span>
+<span class="c1"># Allows to specify origin for CORS. If set &#39;all&#39; will set</span>
+<span class="c1"># Access-Control-Allow-Origin to &#39;*&#39;; &#39;same-origin&#39; return</span>
+<span class="c1"># the same value as the &#39;Origin&#39; request header.</span>
+<span class="c1"># A url may may be specified, restricting allowed origin to</span>
+<span class="c1"># this url.</span>
+<span class="c1"># </span>
+<span class="n">cross_origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;all&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Workers</span>
+<span class="c1">#</span>
+<span class="c1"># Numbers of worker threads</span>
+<span class="c1">#num_workers =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># Request timeout</span>
+<span class="n">backends_request_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span>
+<span class="c1">#</span>
+<span class="c1"># Shutdown timeout</span>
+<span class="c1">#</span>
+<span class="c1"># Shutdown grace period</span>
+<span class="n">shutdown_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span>
+
+<span class="c1">#[backends.key]</span>
+<span class="c1">#</span>
+<span class="c1"># Hostname</span>
+<span class="c1">#host = &quot;localhost&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Port</span>
+<span class="c1">#port = 23456</span>
+<span class="c1">#</span>
+<span class="c1"># Enable TLS</span>
+<span class="c1">#enable_tls = false</span>
+<span class="c1">#</span>
+<span class="c1"># CA file</span>
+<span class="c1">#cafile =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># TLS  key file</span>
+<span class="c1">#</span>
+<span class="c1"># Path to the TLS key file</span>
+<span class="c1">#client_key_file =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># TLS Certificat</span>
+<span class="c1">#</span>
+<span class="c1"># Path to the TLS certificat file</span>
+<span class="c1">#client_cert_file =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># A descriptive title</span>
+<span class="c1">#title = &quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># A description of the service</span>
+<span class="c1">#description = &quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Route to service</span>
+<span class="c1">#route =   	# Required</span>
+<span class="c1">#</span>
+<span class="c1"># Request timeout</span>
+<span class="c1">#</span>
+<span class="c1"># Set the timeout for Qgis response in seconds.</span>
+<span class="c1"># If a Qgis worker takes more than the corresponding value</span>
+<span class="c1"># a timeout error (504) is returned to the client.</span>
+<span class="c1">#timeout = 20</span>
+<span class="c1">#</span>
+<span class="c1"># Forwarded headers</span>
+<span class="c1">#</span>
+<span class="c1"># Set the headers that will be forwarded to the Qgis server backend.</span>
+<span class="c1"># This may be useful if you have plugins that may deal with request headers.</span>
+<span class="c1">#forward_headers = [&quot;x-qgis-*&quot;,&quot;x-lizmap-*&quot;]</span>
+<span class="c1">#</span>
+<span class="c1"># Allow direct path resolution</span>
+<span class="c1">#</span>
+<span class="c1"># Allow remote worker to use direct project path resolution.</span>
+<span class="c1"># WARNING: allowing this may be a security vulnerabilty.</span>
+<span class="c1"># See worker configuration for details.</span>
+<span class="c1">#allow_direct_resolution = false</span>
+
+<span class="c1">#</span>
+<span class="c1"># Api endpoints</span>
+<span class="c1">#</span>
+<span class="c1">#[[backends.key.api]]</span>
+<span class="c1">#</span>
+<span class="c1"># Api endpoint</span>
+<span class="c1">#endpoint =   	# Required</span>
+<span class="c1">#</span>
+<span class="c1"># Api name to delegate to</span>
+<span class="c1">#</span>
+<span class="c1"># Api delegation allow for using a baseurl different</span>
+<span class="c1"># from the expected rootpath of qgis server api.</span>
+<span class="c1"># For exemple, wfs3 request may be mapped to a completely different</span>
+<span class="c1"># root path.</span>
+<span class="c1"># </span>
+<span class="c1">#delegate_to =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># Descriptive name</span>
+<span class="c1">#name = &quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Api description</span>
+<span class="c1">#description = &quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Enable html in delegated endpoint</span>
+<span class="c1">#</span>
+<span class="c1"># Enable fetching html resources in delegated endpoints.</span>
+<span class="c1"># Enable this if the delegated api handle correctly html</span>
+<span class="c1"># template resource resolution in Qgis server when using</span>
+<span class="c1"># delegated api endpoint.</span>
+<span class="c1">#enable_html_delegate = false</span>
+
+<span class="c1">#</span>
+<span class="c1"># Path to services configuration files</span>
+<span class="c1">#</span>
+<span class="c1"># Path or globbing to services configuration files.</span>
+<span class="c1"># Note that this section is ignored if remote configuration</span>
+<span class="c1"># is used.</span>
+<span class="c1"># </span>
+<span class="c1">#</span>
+<span class="c1"># Path to services configuration files</span>
+<span class="c1">#</span>
+<span class="c1"># Path or globbing to services configuration files.</span>
+<span class="c1"># Note that this section is ignored if remote configuration</span>
+<span class="c1"># is used.</span>
+<span class="c1"># </span>
+<span class="c1">#includes =   	# Optional</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rpc_config.html" class="btn btn-neutral float-left" title="QGIS RPC services" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="managment.html" class="btn btn-neutral float-right" title="Advanced managment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

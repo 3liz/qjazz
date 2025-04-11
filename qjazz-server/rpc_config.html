@@ -1,0 +1,684 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QGIS RPC services &mdash; qjazz ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="HTTP frontend" href="server_config.html" />
+    <link rel="prev" title="Description" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-setup">Quick setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#configuration-setup">Configuration setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">QGIS RPC services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#qgis-processes">QGIS processes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#life-cycle-and-pressure-conditions">Life cycle and pressure conditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-timeout">Process timeout</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#toml-configuration">TOML configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-configuration-setup">Dynamic configuration setup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#qgis-project-s-cache-overview">Qgis project’s cache overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#managing-cache">Managing cache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#project-checkout">Project checkout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cache-restoration">Cache restoration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-cache-restoration">Dynamic cache restoration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">QGIS RPC services</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/rpc_config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="qgis-rpc-services">
+<span id="rpc-services"></span><h1>QGIS RPC services<a class="headerlink" href="#qgis-rpc-services" title="Link to this heading"></a></h1>
+<p>RPC services runs QGIS server processes and expose <a class="reference external" href="https://grpc.io/">gRPC</a> interfaces.
+for requesting and managing the QGIS processes.</p>
+<p>Workers may be grouped by <em>pools</em> that share the exact same configuration and network
+address.</p>
+<p>For examples, scaling a docker container with a running rpc-server in a docker compose
+stack automatically create a <em>pool</em> of workers.</p>
+<p>That is, a pool is addressed by a gRPC client as a single endpoint. (i.e <cite>qgis-rpc</cite> like in
+the <a class="reference internal" href="intro.html#docker-compose-setup"><span class="std std-ref">Docker compose setup</span></a> example.</p>
+<section id="qgis-processes">
+<h2>QGIS processes<a class="headerlink" href="#qgis-processes" title="Link to this heading"></a></h2>
+<p>A worker may run a configurable number of QGIS processes.  Incoming QGIS requests
+to the gRPC service are distributed with a fair-queuing dispatching algorithm to
+the child QGIS server processes.</p>
+<p>You may increase or decrease the number of processes but another strategy is to
+scale the number of worker services while keeping the number of sub-processes relatively
+small.</p>
+<p>Depending of the situation it may be better to choose one or another strategy.</p>
+<section id="life-cycle-and-pressure-conditions">
+<h3>Life cycle and pressure conditions<a class="headerlink" href="#life-cycle-and-pressure-conditions" title="Link to this heading"></a></h3>
+<p>If a processes crash, the worker is then in a <em>degraded</em>
+state that can be monitored.</p>
+<p>In <em>degraded state</em>, the RPC service will try to restore dead workers so as to keep
+the number of live QGIS processes constante.</p>
+<p>In some situation the number of dead process exceed some limite will
+stop with an error code.</p>
+<p>There is one condition for a worker to deliberatly exit
+with a error condition: the <em>process failure pressure</em>.</p>
+<p>The process failure pressure is the ratio of failed processes over the initial
+number of configured processes. If this ratio raise above some configured limit,
+then the service will exit with critical error condition.</p>
+</section>
+<section id="process-timeout">
+<h3>Process timeout<a class="headerlink" href="#process-timeout" title="Link to this heading"></a></h3>
+<p>A process may be deliberatly killed (and thus increase the pressure) on long
+running requests.</p>
+<p>If the response time exceed the request <cite>server.timeout</cite> then the process processing the request
+is considered as stalled and asked to abort gracefully the request.
+The grace timeout is controlled by the <cite>worker.cancel_timeout</cite>; if the process fail to abort
+the request then process is killed, which will increase the failure
+pressure.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">When a worker die, the service will try to maintain the initial number of workers.
+Nevertherless, if too many workers die in a short amount the pressure can increase
+too much and the worker will exit.</div>
+<div class="line">If this occurs, this is usually because there is something wrong with the treatment of
+the  qgis request that must be investigated.</div>
+<div class="line">On production, Monitoring workers lifecycle may be useful to detect such situations.</div>
+</div>
+</div>
+</section>
+</section>
+<section id="configuration">
+<span id="rpc-configuration"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>When reading configuration from file, the format is TOML
+by default.</p>
+<p>Check the <a class="reference download internal" download="" href="_downloads/e4b6be81c985546d6bf55aa48979828d/rpc-config.json"><code class="xref download docutils literal notranslate"><span class="pre">configuration</span> <span class="pre">json</span> <span class="pre">schema</span></code></a>.</p>
+<section id="toml-configuration">
+<span id="rpc-configuration-toml"></span><h3>TOML configuration<a class="headerlink" href="#toml-configuration" title="Link to this heading"></a></h3>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[logging]</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span>
+
+
+<span class="k">[server]</span>
+<span class="c1">#</span>
+<span class="c1"># Use admin services</span>
+<span class="n">enable_admin_services</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="c1">#</span>
+<span class="c1"># Timeout for requests in seconds</span>
+<span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="c1">#</span>
+<span class="c1"># Request timeout</span>
+<span class="c1">#</span>
+<span class="c1"># The maximum amount of time to wait in seconds before</span>
+<span class="c1"># closing connections. During this period,</span>
+<span class="c1"># no new connections are allowed.</span>
+<span class="n">shutdown_grace_period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="c1">#</span>
+<span class="c1"># The maximum allowed failure pressure.</span>
+<span class="c1"># If the failure pressure exceed this value then</span>
+<span class="c1"># the service will exit with critical error condition,</span>
+<span class="n">max_failure_pressure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.9</span>
+
+<span class="c1">#</span>
+<span class="k">[server.listen]</span>
+<span class="c1">#</span>
+<span class="c1"># Socket address</span>
+<span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;127.0.0.1:23456&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Enable TLS</span>
+<span class="c1">#</span>
+<span class="c1"># Enable TLS, require certificat and key</span>
+<span class="n">enable_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Path to TLS key file</span>
+<span class="c1">#tls_key_file =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># Path to TLS cert PEM file</span>
+<span class="c1">#tls_cert_file =   	# Optional</span>
+
+
+<span class="k">[worker]</span>
+<span class="c1">#</span>
+<span class="c1"># Name of the worker instance</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Number of simultanous workers</span>
+<span class="n">num_processes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="c1">#</span>
+<span class="c1"># Timeout for starting child process</span>
+<span class="n">process_start_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
+<span class="c1">#</span>
+<span class="c1"># Cancel timeout</span>
+<span class="c1">#</span>
+<span class="c1"># The grace period to apply on worker timeout</span>
+<span class="c1"># when attempting to cancel the actual request</span>
+<span class="c1"># This number should be kept small (a few seconds) since it</span>
+<span class="c1"># will be used after the response timeout.</span>
+<span class="c1"># </span>
+<span class="n">cancel_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<span class="c1">#</span>
+<span class="c1"># Maximum queued requests</span>
+<span class="c1">#</span>
+<span class="c1"># The maximum number of requests that can be</span>
+<span class="c1"># queued. If the number of waiting requests reach the limit,</span>
+<span class="c1"># the subsequent requests will be returned with a `service unavailable`</span>
+<span class="c1"># error.</span>
+<span class="n">max_waiting_requests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span>
+<span class="c1">#</span>
+<span class="c1"># Max failure pressure</span>
+<span class="c1">#</span>
+<span class="c1"># The maximum allowed failure pressure.</span>
+<span class="c1"># If the failure pressure exceed this value then</span>
+<span class="c1"># the service will exit with critical error condition.</span>
+<span class="n">max_failure_pressure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span>
+<span class="c1">#</span>
+<span class="c1"># Startup projects</span>
+<span class="c1">#</span>
+<span class="c1"># Projects to restore at startup</span>
+<span class="n">restore_projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
+<span class="c1">#</span>
+<span class="c1"># Qgis configuration</span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis]</span>
+<span class="c1">#</span>
+<span class="c1"># Max number of projects in cache</span>
+<span class="c1">#</span>
+<span class="c1"># The maximum number of projects allowed in cache.</span>
+<span class="c1"># The default value is set to 50 projects. </span>
+<span class="n">max_projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span>
+<span class="c1">#</span>
+<span class="c1"># Load project in cache when requested</span>
+<span class="c1">#</span>
+<span class="c1"># Load project in cache at request.</span>
+<span class="c1"># If set to &#39;false&#39;, project not loaded in cache will</span>
+<span class="c1"># return a 403 HTTP code when requested.</span>
+<span class="c1"># Thus, adding project&#39;s to cache will require a specific</span>
+<span class="c1"># action from another service or admininstrative</span>
+<span class="c1"># management tools.</span>
+<span class="n">load_project_on_request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="c1">#</span>
+<span class="c1"># Reload outdated project when requested</span>
+<span class="c1">#</span>
+<span class="c1"># Reload outdated project at request.</span>
+<span class="c1"># If set to &#39;false&#39;, outdated project in cache will</span>
+<span class="c1"># not be refreshed when requested.</span>
+<span class="c1"># Thus, refreshing project&#39;s to cache will require a specific</span>
+<span class="c1"># action from another service or admininstrative</span>
+<span class="c1"># management tools.</span>
+<span class="n">reload_outdated_project_on_request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Allow python embedded macros</span>
+<span class="c1">#</span>
+<span class="c1"># Set authorization to run Python Embedded in projects.</span>
+<span class="c1"># If enabled, it will use the QGIS settings value defined in the</span>
+<span class="c1"># QGIS settings options.</span>
+<span class="c1"># If disabled, Python Embedded is completely disabled and QGIS defined</span>
+<span class="c1"># settings will be ignored.</span>
+<span class="c1"># For security reason this is disabled by default.</span>
+<span class="n">enable_python_embedded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Maximum chunk size</span>
+<span class="c1">#</span>
+<span class="c1"># Set the maximum chunk size for streamed responses.</span>
+<span class="n">max_chunk_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1048576</span>
+<span class="c1">#</span>
+<span class="c1"># Qgis settings</span>
+<span class="c1">#</span>
+<span class="c1"># Qgis settings override.</span>
+<span class="c1"># Use the syntax &#39;&lt;section&gt;/&lt;path&gt;&#39; for keys.</span>
+<span class="c1"># Not that values defined here will override those</span>
+<span class="c1"># from QGIS3.ini file.</span>
+<span class="n">qgis_settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="c1">#</span>
+<span class="c1"># Ignore INT signal in worker</span>
+<span class="c1">#</span>
+<span class="c1"># Ignore INT signal in workers.</span>
+<span class="c1"># This is useful when you don&#39;t want</span>
+<span class="c1"># propagating signal from parent process.</span>
+<span class="n">ignore_interrupt_signal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+
+<span class="c1">#</span>
+<span class="c1"># Projects configuration</span>
+<span class="c1">#</span>
+<span class="c1"># Projects and cache configuration</span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis.projects]</span>
+<span class="c1">#</span>
+<span class="c1"># Trust layer metadata</span>
+<span class="c1">#</span>
+<span class="c1"># Trust layer metadata.</span>
+<span class="c1"># Improves layer load time by skipping expensive checks</span>
+<span class="c1"># like primary key unicity, geometry type and</span>
+<span class="c1"># srid and by using estimated metadata on layer load.</span>
+<span class="c1"># Since QGIS 3.16</span>
+<span class="c1"># </span>
+<span class="n">trust_layer_metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Disable GetPrint requests</span>
+<span class="c1">#</span>
+<span class="c1"># Don&#39;t load print layouts.</span>
+<span class="c1"># Improves project read time if layouts are not required,</span>
+<span class="c1"># and allows projects to be safely read in background threads</span>
+<span class="c1"># (since print layouts are not thread safe).</span>
+<span class="c1"># </span>
+<span class="n">disable_getprint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Force read only mode</span>
+<span class="c1">#</span>
+<span class="c1"># Force layers to open in read only mode</span>
+<span class="n">force_readonly_layers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="c1">#</span>
+<span class="c1"># Ignore bad layers</span>
+<span class="c1">#</span>
+<span class="c1"># Allow projects to be loaded with event if it contains</span>
+<span class="c1"># layers that cannot be loaded.</span>
+<span class="c1"># Note that the &#39;dont_resolve_layers flag&#39; trigger automatically</span>
+<span class="c1"># this option.</span>
+<span class="c1"># </span>
+<span class="n">ignore_bad_layers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Disable OWS advertised urls</span>
+<span class="c1">#</span>
+<span class="c1"># Disable ows urls defined in projects.</span>
+<span class="c1"># This may be necessary because Qgis projects</span>
+<span class="c1"># urls override proxy urls.</span>
+<span class="n">disable_advertised_urls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Scheme mapping definitions</span>
+<span class="c1">#</span>
+<span class="c1"># Defines mapping betweeen location base path and storage handler root url.</span>
+<span class="c1"># Resource path relative to location will be joined the the root url path.</span>
+<span class="c1"># In the case of Qgis storage, the handler is responsible for transforming</span>
+<span class="c1"># the result url into a comprehensive format for the corresponding</span>
+<span class="c1"># QgsProjectStorage implementation.</span>
+<span class="c1"># This is handled by the default storage implementation for Qgis native</span>
+<span class="c1"># project storage.</span>
+<span class="c1"># In case of custom QgsProjectStorage, if the scheme does not allow passing</span>
+<span class="c1"># project as path component, it is possible to specify a custom resolver function.</span>
+<span class="c1"># </span>
+<span class="n">search_paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="c1">#</span>
+<span class="c1"># Allow direct path resolution</span>
+<span class="c1">#</span>
+<span class="c1"># Allow direct path resolution if there is</span>
+<span class="c1"># no matching from the search paths.</span>
+<span class="c1"># Uri are directly interpreted as valid Qgis project&#39;s path.</span>
+<span class="c1"># WARNING: allowing this may be a security vulnerabilty.&quot;</span>
+<span class="c1"># </span>
+<span class="n">allow_direct_path_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+
+<span class="c1">#</span>
+<span class="c1"># Project storage Handler configurations</span>
+<span class="c1">#</span>
+<span class="c1"># Configure storage handlers.</span>
+<span class="c1"># The name will be used as scheme for project&#39;s search path</span>
+<span class="c1"># configuration.</span>
+<span class="c1"># </span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis.projects.handlers.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="c1">#handler =   	# Required</span>
+<span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="c1">#</span>
+<span class="c1"># Plugins configuration</span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis.plugins]</span>
+<span class="c1">#</span>
+<span class="c1"># Plugin paths</span>
+<span class="c1">#</span>
+<span class="c1"># The list of search paths for plugins.</span>
+<span class="c1"># Qgis plugins found will be loaded according to</span>
+<span class="c1"># the &#39;install&#39; list.</span>
+<span class="c1"># If the list is empty, the &#39;QGIS_PLUGINPATH&#39;</span>
+<span class="c1"># variable will be checked.</span>
+<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="c1">#</span>
+<span class="c1"># Installable plugins</span>
+<span class="c1">#</span>
+<span class="c1"># The list of installable plugins.</span>
+<span class="c1"># Note: if the plugin directory contains other plugins</span>
+<span class="c1"># plugins not in the list will NOT be loaded !</span>
+<span class="c1"># The Plugins will be installed at startup</span>
+<span class="c1"># if the &#39;install_mode&#39; is set to &#39;auto&#39;.</span>
+<span class="c1"># Note that an empty list means what it is:</span>
+<span class="c1"># i.e, *no* installed plugins.</span>
+<span class="c1">#install =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># Plugin installation mode</span>
+<span class="c1">#</span>
+<span class="c1"># If set to &#39;auto&#39;, plugins installation</span>
+<span class="c1"># will be checked at startup. Otherwise,</span>
+<span class="c1"># Installation will be done from already available</span>
+<span class="c1"># plugins.</span>
+<span class="n">install_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;external&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># Enable processing scripts</span>
+<span class="c1">#</span>
+<span class="c1"># Enable publication of processing scripts</span>
+<span class="n">enable_scripts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="c1">#</span>
+<span class="c1"># Extra builtins providers</span>
+<span class="c1">#</span>
+<span class="c1"># Load extra builtin processing providers</span>
+<span class="c1"># such as &#39;grass&#39; and &#39;otb&#39;.</span>
+<span class="n">extra_builtin_providers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="c1">#</span>
+<span class="c1"># Path to plugin manager executable</span>
+<span class="c1">#</span>
+<span class="c1"># The absolute path to the qgis-plugin_manager executable</span>
+<span class="c1"># that will be used for installing plugin in automatic mode.</span>
+<span class="n">plugin_manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/qgis-plugin-manager&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># QGIS Network configuration</span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis.network]</span>
+<span class="c1">#</span>
+<span class="c1"># Transfer timeout in ms</span>
+<span class="c1">#</span>
+<span class="c1"># Transfers are aborted if no bytes are transferred before</span>
+<span class="c1"># the timeout expires.</span>
+<span class="c1"># If set to 0, the timeout is disobled.</span>
+<span class="c1"># Default value is set to 10000 milliseconds.</span>
+<span class="c1"># </span>
+<span class="n">transfer_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10000</span>
+<span class="c1">#</span>
+<span class="c1"># Trace network activity</span>
+<span class="n">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># Global cache policy</span>
+<span class="c1">#</span>
+<span class="c1"># Set a global cache policy for all requests&quot;</span>
+<span class="c1"># If set, this will override requests cache policy&quot;.</span>
+<span class="c1"># </span>
+<span class="c1">#cache_policy =   	# Optional</span>
+
+<span class="c1">#</span>
+<span class="c1"># Domain policies</span>
+<span class="c1">#</span>
+<span class="c1"># Set per domain policy</span>
+<span class="c1">#</span>
+<span class="k">[worker.qgis.network.domain_policy.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="c1">#</span>
+<span class="c1"># Cache load control</span>
+<span class="c1">#</span>
+<span class="c1"># Override QNetworkRequest::CacheLoadControl for request.</span>
+<span class="c1">#cache_policy =   	# Optional</span>
+<span class="c1">#</span>
+<span class="c1"># Transfer timeout in ms</span>
+<span class="c1">#transfer_timeout =   	# Optional</span>
+</pre></div>
+</div>
+</section>
+<section id="dynamic-configuration-setup">
+<h3>Dynamic configuration setup<a class="headerlink" href="#dynamic-configuration-setup" title="Link to this heading"></a></h3>
+<p>This is only available if you are running the service throught the official docker image.</p>
+<p>The configuration may be set dynamically at startup by running an executable returning
+a configuration in <em>JSon</em> format.</p>
+<p>The executable is controlled by the <cite>QJAZZ_CONFIG_EXEC</cite> variable.</p>
+<p>The default settings allow you to define a remote URL for downloading the configuration at startup.
+See the <cite>basic-with-config-server</cite> example for an example of remote configuration setup.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">You may define your own config setup by inheriting from the official Docker image
+and define a setting a custom QJAZZ_CONFIG_EXEC executable.</div>
+<div class="line">This may be useful if your are using alternate storage for your configuration settings.</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="qgis-project-s-cache-overview">
+<span id="rpc-cache-overview"></span><h1>Qgis project’s cache overview<a class="headerlink" href="#qgis-project-s-cache-overview" title="Link to this heading"></a></h1>
+<p>Each processes manage its own cache. This is due to a limitation in Qgis that
+prevent sharing resources between differents processes and the fact that Qgis server
+runtime is essentialy single threaded.</p>
+<p>The cache in Qgis services do not use the default internal cache of Qgis server but
+its own caching system based on <cite>QgisProjectStorage</cite> objects. This ensure that any
+storage backends implemented or added in Qgis with plugins is supported.</p>
+<p>Project’s access is <em>uniform</em>: the cache configuration define search paths which are indirection
+to the corresponding backends:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[worker.projects.search_paths]</span>
+<span class="s1">&#39;/a_path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/path/to/projects/&quot;</span><span class="w">                  </span><span class="c1"># Path to files volume</span>
+<span class="s1">&#39;/another/path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;file:///other/projects/&quot;</span><span class="w">       </span><span class="c1"># With explicit scheme</span>
+<span class="s1">&#39;/path/to/postgres&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgres://?service=name&quot;</span><span class="w">  </span><span class="c1"># projects stored in postgres</span>
+</pre></div>
+</div>
+<p>Any following subpath to a search path is considered as the relative project’s path
+or the projects name user for url resolution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">postgres</span><span class="o">/</span><span class="n">projname</span>
+</pre></div>
+</div>
+<p>will be resolved to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>postgres://?service=name&amp;project=projname
+</pre></div>
+</div>
+<p>From client perspective, a project is always refered by its search path followed by the (relative)
+project’s path or name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/&lt;</span><span class="n">search_path</span><span class="o">&gt;/&lt;</span><span class="n">project_path</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<section id="managing-cache">
+<h2>Managing cache<a class="headerlink" href="#managing-cache" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">As with the <cite>load_project_on_request</cite> option, there is an eviction strategy implemented
+in worker cache only for projects loaded <em>on the fly</em>. Managed cache entries are not
+subject to eviction.</div>
+<div class="line">This is not the recommended option if your projects are bigs (many layers) and you should
+always prefer managed cache for such projects.</div>
+<div class="line">This is mainly because Qgis projects are not simple static resource but instead
+heavily dynamic resource with a lot of side effects (connecting to external source,
+loading metadata, …) and this makes sense if you think in term of a publishing process.</div>
+</div>
+</div>
+<p>Cache can be managed with the <a class="reference internal" href="intro.html#managing-rpc-services"><span class="std std-ref">service cli command</span></a>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>Usage:<span class="w"> </span>qjazz-server-cli<span class="w"> </span>cache<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
+
+<span class="w">  </span>Commands<span class="w"> </span><span class="k">for</span><span class="w"> </span>cache<span class="w"> </span>management
+
+Options:
+<span class="w">  </span>--help<span class="w">  </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+
+Commands:
+<span class="w">  </span>catalog<span class="w">   </span>List<span class="w"> </span>available<span class="w"> </span>projects<span class="w"> </span>from<span class="w"> </span>search<span class="w"> </span>paths
+<span class="w">  </span>checkout<span class="w">  </span>CheckoutProject<span class="w"> </span>PROJECT<span class="w"> </span>from<span class="w"> </span>cache
+<span class="w">  </span>clear<span class="w">     </span>Clear<span class="w"> </span>cache
+<span class="w">  </span>drop<span class="w">      </span>Drop<span class="w"> </span>PROJECT<span class="w"> </span>from<span class="w"> </span>cache
+<span class="w">  </span>info<span class="w">      </span>Return<span class="w"> </span>info<span class="w"> </span>from<span class="w"> </span>PROJECT<span class="w"> </span><span class="k">in</span><span class="w"> </span>cache
+<span class="w">  </span>list<span class="w">      </span>List<span class="w"> </span>projects<span class="w"> </span>from<span class="w"> </span>cache
+<span class="w">  </span>update<span class="w">    </span>Synchronize<span class="w"> </span>cache<span class="w"> </span>between<span class="w"> </span>processes
+</pre></div>
+</div>
+</section>
+<section id="project-checkout">
+<h2>Project checkout<a class="headerlink" href="#project-checkout" title="Link to this heading"></a></h2>
+<p>Whenever a project is checked out from cache, a cache status is returned</p>
+<dl class="field-list simple">
+<dt class="field-odd">NEW<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Project exists and is not loaded in cache</p>
+</dd>
+<dt class="field-even">NEEDUPDATE<span class="colon">:</span></dt>
+<dd class="field-even"><p>Project is already loaded and need to be updated because source storage has been modified</p>
+</dd>
+<dt class="field-odd">UNCHANGED<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Project is loaded and is up to date</p>
+</dd>
+<dt class="field-even">REMOVED<span class="colon">:</span></dt>
+<dd class="field-even"><p>Project is loaded but has been removed from storage</p>
+</dd>
+<dt class="field-odd">NOTFOUND<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Project does not exists</p>
+</dd>
+</dl>
+<p>You may <em>pull</em> the project to make it change state depending on its inital state:</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Pull state changes</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Initial state</p></th>
+<th class="head"><p>State after <em>pull</em></p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>NEW</p></td>
+<td><p>UNCHANGED</p></td>
+<td><p>Project is loaded in cache</p></td>
+</tr>
+<tr class="row-odd"><td><p>NEEDUPDATE</p></td>
+<td><p>UNCHANGED</p></td>
+<td><p>Cached project is updated with new version</p></td>
+</tr>
+<tr class="row-even"><td><p>UNCHANGED</p></td>
+<td><p>UNCHANGED</p></td>
+<td><p>No action</p></td>
+</tr>
+<tr class="row-odd"><td><p>REMOVED</p></td>
+<td><p>NOTFOUND</p></td>
+<td><p>Project is removed from cache</p></td>
+</tr>
+<tr class="row-even"><td><p>NOTFOUND</p></td>
+<td><p>NOTFOUND</p></td>
+<td><p>No action</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cache-restoration">
+<span id="rpc-cache-restoration"></span><h2>Cache restoration<a class="headerlink" href="#cache-restoration" title="Link to this heading"></a></h2>
+<p>Projects loaded with the cache managment api are <cite>pinned</cite> in the cache: they cannot leave the cache
+except if removed explicitely.</p>
+<p>Operations on cache are recorded internally and a when a QGIS processes is restored, all pinned
+projects are loaded.</p>
+<p>The cache may be restored at startup either from the <cite>worker.restore_projects</cite> setting
+(or the <cite>CONF_WORKER__RESTORE_PROJECTS</cite> env variables).</p>
+<section id="dynamic-cache-restoration">
+<h3>Dynamic cache restoration<a class="headerlink" href="#dynamic-cache-restoration" title="Link to this heading"></a></h3>
+<p>Dynamic restoration is only available with the official Docker image.</p>
+<p>The cache restoration configuration may be set from remote location and indepedantly of
+the remote configuration setup using the <cite>QJAZZ_RESTORE_PROJECTS_EXEC</cite> env varible.
+The executable must return a comma separated list of projects to load at startup (internally
+it use the <cite>CONF_WORKER__RESTORE_PROJECTS</cite>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">By default, the restoration list may by downloaded from a remote URL given by
+<cite>QJAZZ_REMOTE_RESTORE_PROJECTS_URL</cite> env variable.</div>
+<div class="line">You may define your own restoration setup by inheriting from the official Docker image
+and define a setting a custom QJAZZ_REMOTE_RESTORE_PROJECTS_EXEC  executable.
+This may be useful if your are using alternate storage for your restoration settings.</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">Using a dynamic cache restoration could be useful when synchronizing cache from a pool
+of RPC services: if you keep a live version of the cache configuration accessible from
+a remote location then all rpc services of your pool will by synchronized at startup.</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-left" title="Description" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="server_config.html" class="btn btn-neutral float-right" title="HTTP frontend" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
