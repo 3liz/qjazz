@@ -77,7 +77,7 @@ build-docker:noqgis:
   - factory-dind
   artifacts:
     paths:
-    - "docker/noqgis.manifest"
+    - "docker/factory-noqgis.manifest"
 
 # -----------
 # release
@@ -88,7 +88,7 @@ build-docker:noqgis:
   stage: release
   script:
     - release-image qjazz-$QGIS_FLAVOR
-    - push-to_docker-hub --clean
+    - push-to-docker-hub --clean
   environment:
     name: production
   only:
@@ -132,7 +132,7 @@ release:noqgis:
   stage: release
   script:
     - release-image qjazz-noqgis
-    - push-to_docker-hub --clean
+    - push-to-docker-hub --clean
   environment:
     name: production
   only:

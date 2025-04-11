@@ -80,10 +80,16 @@ required:
 Note that support for Windows or OSX are *not* planned. If you want to deploy
 Qjazz on these platforms, consider using VMs or containers.
 
+### Documentation
+
+Look at the latest documentation:
+
+* [Qjazz server documetation](https://docs.3liz.org/qjazz/qjazz-server/index.html)
+* [Qjazz processes documentation](https://docs.3liz.org/qjazz/qjazz-processes/index.html)
+
 
 ### Getting started 
 
-Have a look to the examples on how to use the services using our published Docker
+Have a look to the [examples](./examples) on how to use the services using our published Docker
 images.
-
 
