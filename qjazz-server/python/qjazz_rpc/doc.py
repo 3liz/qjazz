@@ -149,7 +149,6 @@ if __name__ == "__main__":
     @click.option("--pretty", is_flag=True, help="Pretty format")
     def print_schema(
         out_fmt: str,
-        schema: bool = False,
         pretty: bool = False,
     ):
         """Print configuration as json and exit"""

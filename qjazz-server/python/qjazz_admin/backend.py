@@ -266,7 +266,6 @@ class Backend:
                     if rpcerr.code() != grpc.StatusCode.UNAVAILABLE:
                         logger.error("%s\t%s\t%s", self._address, rpcerr.code(), rpcerr.details())
                         raise
-                        logger.trace("Backend: %s: UNAVAILABLE", self._address)
                 # Attempt reconnection
                 if not self._shutdown:
                     logger.debug("Waiting for reconnection of %s", self._address)

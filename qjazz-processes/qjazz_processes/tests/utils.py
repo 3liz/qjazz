@@ -13,7 +13,7 @@ class FeedBack(QgsProcessingFeedback):
     def __init__(self):
         super().__init__(False)
 
-    def pushFormattedMessage(html: str, text: str):
+    def pushFormattedMessage(_html: str, text: str):
         logger.info(text)
 
     def setProgressText(self, message: str):

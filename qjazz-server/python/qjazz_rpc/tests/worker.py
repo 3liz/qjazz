@@ -33,7 +33,7 @@ class WorkerError(Exception):
 
 
 class Worker:
-    def __init__(self, config: QgisConfig, num_processes: int = 1):
+    def __init__(self, config: QgisConfig):
         self._name = "Test"
         self._conf = config
         self._tmpdir = TemporaryDirectory(prefix="qserv_")

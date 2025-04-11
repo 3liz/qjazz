@@ -10,12 +10,9 @@ types-PyYAML
 types-toml
 types-requests
 types-aiofiles
-sphinx
-sphinx-rtd-theme
-sphinxcontrib-httpdomain
-swagger-plugin-for-sphinx
 grpcio-tools
 pipdeptree
 bandit
 build >= 1.2.2
 twine
+vulture

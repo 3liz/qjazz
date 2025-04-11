@@ -145,7 +145,7 @@ def process_layer_outputs(
                 details.project = destination_project
 
             # Seek style for layer
-            set_output_layer_style(alg, lyrname, layer, details, context, workdir)
+            set_output_layer_style(alg, layer, details, context, workdir)
 
             # Add layer to destination project
             if details.project:
@@ -177,7 +177,6 @@ def process_layer_outputs(
 
 def set_output_layer_style(
     alg: QgsProcessingAlgorithm,
-    layerName: str,
     layer: QgsMapLayer,
     details: QgsProcessingContext.LayerDetails,
     context: QgsProcessingContext,

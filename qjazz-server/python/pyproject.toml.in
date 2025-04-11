@@ -36,7 +36,6 @@ email = "dmarteau@3liz.org"
 qjazz-server-admin = "qjazz_admin.cli:main"
 qjazz-config = "qjazz_rpc.cli:main"
 
-
 [tool.setuptools.packages.find]
 exclude = [ "tests/*" ]
 include = [
@@ -48,13 +47,15 @@ include = [
     "qjazz_admin.*",
 ]
 
-
-[tool.autopep8]
-exclude = "*_pb2.py, *_pb2_grpc.py"
-
 [tool.ruff]
 extend = "../../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]
 "qjazz_http/config.py" = ["T201"]
+
+[tool.vulture]
+exclude = ["_grpc/"]
+
+
+

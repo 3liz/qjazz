@@ -72,7 +72,7 @@ class Feedback(QgsProcessingFeedback):
     def _on_progress_changed(self, progress: float):
         self._progress_fun(progress, self._progress_msg)
 
-    def pushFormattedMessage(html: str, text: str):
+    def pushFormattedMessage(_html: str, text: str):
         logger.info(text)
 
     def setProgressText(self, message: str):

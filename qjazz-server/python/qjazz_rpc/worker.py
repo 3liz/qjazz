@@ -131,7 +131,6 @@ def qgis_server_run(
     rendez_vous: RendezVous,
     name: str = "",
     projects: Optional[List[str]] = None,
-    reporting: bool = True,
 ):
     """Run Qgis server and process incoming requests"""
     cm = CacheManager(conf.projects, server)

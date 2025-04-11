@@ -163,7 +163,7 @@ def init_qgis_processing() -> None:
     Processing.initialize()
 
 
-def init_qgis_server(**kwargs) -> "qgis.server.QgsServer":
+def init_qgis_server(**kwargs) -> qgis.server.QgsServer:
     """Init Qgis server"""
     setup_qgis_application(server_settings=True, **kwargs)
 

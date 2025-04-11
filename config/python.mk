@@ -43,6 +43,9 @@ typing:: $(PYTHON_PKG)
 scan::
 	bandit -r $(PYTHON_PKG) $(SCAN_OPTS)
 
+deadcode:: 
+	vulture $(PYTHON_PKG) --min-confidence 70
+
 
 .PHONY: $(REQUIREMENTS)
 
@@ -58,6 +61,6 @@ requirements: $(REQUIREMENTS)
 ifndef TESTDIR
 test::
 else
-test:: lint typing scan
+test:: lint typing scan deadcode
 	cd $(TESTDIR) && pytest -v 
 endif

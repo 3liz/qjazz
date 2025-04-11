@@ -3,7 +3,20 @@ TOPTARGET:=test
 
 .PHONY: $(DIRS)
 
-TOPTARGETS:=test lint lint-preview typing configure build dist deliver install install-dev scan
+TOPTARGETS:=\
+test \
+lint \
+lint-preview \
+typing \
+configure \
+build \
+dist \
+deliver \
+install \
+install-dev \
+scan \
+deadcode \
+$(NULL)
 
 $(TOPTARGETS):: $(DIRS)
 
