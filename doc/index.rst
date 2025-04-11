@@ -12,7 +12,7 @@ Welcome to qjazz's documentation!
  
    intro
    rpc_config
-   proxy_config
+   server_config
    managment
    managment-api
 

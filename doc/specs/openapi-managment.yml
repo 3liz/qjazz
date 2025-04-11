@@ -604,7 +604,7 @@ definitions:
     title: ErrorResponse
     type: object
   BackendStatus:
-    description: "Pool backend status\n    "
+    description: Pool backend status
     properties:
       address:
         type: string

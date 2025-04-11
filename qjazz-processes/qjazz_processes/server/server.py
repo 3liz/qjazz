@@ -19,7 +19,6 @@ from aiohttp.abc import AbstractAccessLogger
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
-    Field,
 )
 
 from qjazz_contrib.core import logger
@@ -31,6 +30,7 @@ from qjazz_contrib.core.config import (
     read_config_toml,
     section,
 )
+from qjazz_contrib.core.models import Field
 
 from . import swagger
 from .accesspolicy import (

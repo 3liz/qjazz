@@ -29,18 +29,16 @@ config = {}
 #
 # Enable job realm header
 #
+# When enabled, use the 'X-Job-Realm' http header
+# as a client identification token for retrieving jobs status and results.
 # 
-#             When enabled, use the 'X-Job-Realm' http header
-#             as a client identification token for retrieving jobs status and results.
-#         
 enabled = false
 #
 # Admininistrator realm jobs tokens
 #
+# Define catch all tokens for listing and retrieve status and results
+# for all jobs.
 # 
-#         Define catch all tokens for listing and retrieve status and results
-#         for all jobs.
-#         
 admin_tokens = []
 
 
@@ -49,18 +47,17 @@ admin_tokens = []
 # Interfaces to listen to
 listen = ["127.0.0.1",9180]
 #
-# Use ssl
-use_ssl = false
+# Use tls
+use_tls = false
 #
 # CORS origin
 #
+# Allows to specify origin for CORS. If set 'all' will set
+# Access-Control-Allow-Origin to '*'; 'same-origin' return
+# the same value as the 'Origin' request header.
+# A url may may be specified, restricting allowed origin to
+# this url.
 # 
-#         Allows to specify origin for CORS. If set 'all' will set
-#         Access-Control-Allow-Origin to '*'; 'same-origin' return
-#         the same value as the 'Origin' request header.
-#         A url may may be specified, restricting allowed origin to
-#         this url.
-#         
 cross_origin = "all"
 #
 # Service update interval
@@ -75,9 +72,9 @@ timeout = 20
 enable_ui = true
 
 #
-# SSL configuration
+# TLS configuration
 #
-[http.ssl]
+[http.tls]
 #
 # CA file
 #cafile =   	# Optional
@@ -112,23 +109,25 @@ allow_x_headers = false
 #
 # Message expiration timeout
 #
+# The amount of time an execution message
+# can wait on queue before beeing processed
+# with asynchronous response.
 # 
-#         The amount of time an execution message
-#         can wait on queue before beeing processed
-#         with asynchronous response.
-#         
 message_expiration_timeout = 600
 
 #
 [executor.celery]
 #
 # Celery amqp broker host
-broker_host = ""
-broker_use_ssl = false
+broker_host = "localhost"
+broker_use_tls = false
+#broker_user =   	# Optional
+#broker_password =   	# Optional
 #
 # Celery redis backend host
 backend_host = "localhost:6379/0"
-backend_use_ssl = false
+backend_use_tls = false
+#backend_password =   	# Optional
 #
 # Task hard time limit in seconds.
 # The worker processing the task will be killed
@@ -169,7 +168,7 @@ result_expires = 86400
 #autoscale =   	# Optional
 
 #
-[executor.celery.broker_ssl]
+[executor.celery.broker_tls]
 #
 # CA file
 #cafile =   	# Optional
@@ -185,7 +184,7 @@ result_expires = 86400
 #keyfile =   	# Optional
 
 #
-[executor.celery.backend_ssl]
+[executor.celery.backend_tls]
 #
 # CA file
 #cafile =   	# Optional
@@ -206,15 +205,36 @@ result_expires = 86400
 #keyfile =   	# Required
 #certfile =   	# Required
 
+#
+[executor.celery.scheduler]
+#
+# Enable scheduler
+#
+# Enable embedded scheduler.
+# Prefer scheduler as a service if more
+# than one worker node is used.
+enabled = false
+#
+# Max interval
+#
+# Max seconds to sleep between schedule iterations.
+#max_interval =   	# Optional
+#
+# Scheduler database path
+#
+# Path to the schedule database.
+# Defaults to `celerybeat-schedule` (from Celery doc).
+#database =   	# Optional
+
 
 # The storage configuration is used for configuring the
 # connections to storage backends used by workers.
 # 
 [storage]
 #
-# Allow only secure downloads
+# Allow insecure downloads
 #
-# Only TLS encrypted downloads are allowed
+# If set to false, only TLS encrypted downloads are allowed
 allow_insecure_connection = true
 #
 # Download chunksize
@@ -230,7 +250,7 @@ download_url_expiration = 3600
 #
 # Certificats required for TLS downloads connections
 #
-[storage.ssl]
+[storage.tls]
 #
 # CA file
 #cafile =   	# Optional

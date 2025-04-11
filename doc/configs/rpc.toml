@@ -157,6 +157,7 @@ ignore_interrupt_signal = true
 # like primary key unicity, geometry type and
 # srid and by using estimated metadata on layer load.
 # Since QGIS 3.16
+# 
 trust_layer_metadata = false
 #
 # Disable GetPrint requests
@@ -165,6 +166,7 @@ trust_layer_metadata = false
 # Improves project read time if layouts are not required,
 # and allows projects to be safely read in background threads
 # (since print layouts are not thread safe).
+# 
 disable_getprint = false
 #
 # Force read only mode
@@ -175,9 +177,10 @@ force_readonly_layers = true
 # Ignore bad layers
 #
 # Allow projects to be loaded with event if it contains
-# layers that cannot be loaded
+# layers that cannot be loaded.
 # Note that the 'dont_resolve_layers flag' trigger automatically
 # this option.
+# 
 ignore_bad_layers = false
 #
 # Disable OWS advertised urls
@@ -195,8 +198,10 @@ disable_advertised_urls = false
 # the result url into a comprehensive format for the corresponding
 # QgsProjectStorage implementation.
 # This is handled by the default storage implementation for Qgis native
-# project storage. In case of custom QgsProjectStorage, if the scheme does not allow passing
+# project storage.
+# In case of custom QgsProjectStorage, if the scheme does not allow passing
 # project as path component, it is possible to specify a custom resolver function.
+# 
 search_paths = {}
 #
 # Allow direct path resolution
@@ -204,8 +209,9 @@ search_paths = {}
 # Allow direct path resolution if there is
 # no matching from the search paths.
 # Uri are directly interpreted as valid Qgis project's path.
-# WARNING: allowing this may be a security vulnerabilty.
-allow_direct_path_resolution = true
+# WARNING: allowing this may be a security vulnerabilty."
+# 
+allow_direct_path_resolution = false
 
 #
 # Project storage Handler configurations
@@ -213,6 +219,7 @@ allow_direct_path_resolution = true
 # Configure storage handlers.
 # The name will be used as scheme for project's search path
 # configuration.
+# 
 #
 [worker.qgis.projects.handlers.'key']
 #handler =   	# Required

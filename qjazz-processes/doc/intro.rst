@@ -28,12 +28,11 @@ Features
 Requirements and limitations
 ----------------------------
 
-- Python 3.10+ only
-- Windows not officially supported (may work ...or not)
+- Linux/Posix OS
+- Python 3.12+ only
 - Redis server
 - RabbitMQ server
-- Qgis 3.34+
-
+- QGIS 3.34+
 
 Overview
 --------
@@ -146,7 +145,7 @@ The simplest configuration for basic working installation is the following
           CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
           CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
       rabbitmq:
-        image: rabbitmq:3
+        image: rabbitmq:3-alpine
       redis:
         image: redis:6-alpine
 
@@ -175,7 +174,7 @@ Alternatively you may use a configuration file:
           CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
           CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
       rabbitmq:
-        image: rabbitmq:3
+        image: rabbitmq:3-alpine
       redis:
         image: redis:6-alpine
 
@@ -216,7 +215,7 @@ Running the worker and the server is as simple as:
 
 .. code-block:: bash
 
-   qjazz-processes worker -C <worker-configuration-file>
+   qjazz-processing serve -C <worker-configuration-file>
 
 and
 

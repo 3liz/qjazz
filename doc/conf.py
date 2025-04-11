@@ -6,6 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+# -- Swagger ---
+# Note: for reading swagger doc one must use http server:
+# ex  'python -m http.server -d doc/build/html'
+
 import sphinx_rtd_theme
 
 project = 'qjazz'
@@ -37,15 +41,4 @@ html_static_path = [
 # Fix for read the doc
 # See https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = 'index'
-
-# -- Swagger ---
-# Note: for reading swagger doc one must use http server:
-# ex  'python -m http.server -d doc/build/html'
-swagger = [
-    {
-        "name": "Managment API",
-        "page": "managment-api",
-        "options": {"url": "_static/openapi-managment.yml"},
-    },
-]
 

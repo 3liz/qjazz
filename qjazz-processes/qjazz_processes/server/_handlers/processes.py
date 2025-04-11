@@ -224,9 +224,18 @@ class Processes(HandlerProto):
                     schema:
                         $ref: '#/definitions/JobExecute'
         responses:
-            "201":
+            "200":
                 description: >
-                    Process accepted
+                    Process executed succesfully.
+                    Only returned in case of synchronous execution.
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/JobResults'
+            "202":
+                description: >
+                    Process accepted.
+                    Returned in case of asynchronous execution.
                 content:
                     application/json:
                         schema:
@@ -262,7 +271,9 @@ class Processes(HandlerProto):
         else:
             priority = 0
 
-        execute_sync = not prefer.execute_async or prefer.wait is not None
+        # Check if processes allows for async execution
+
+        execute_sync = prefer.execute_sync()
 
         result = self._executor.execute(
             service,
@@ -387,10 +398,7 @@ class Processes(HandlerProto):
                 ),
             )
 
-        headers = {
-            "Location": href(request, location),
-            "Preference-Applied": "respond-async",
-        }
+        headers = { "Location": href(request, location) }
 
         if realm:
             headers[JOB_REALM_HEADER] = realm
@@ -431,6 +439,9 @@ class ExecutePrefs:
     as_priority: Callable[[str], int] = TypeAdapter(
         Annotated[int, Field(ge=0, lt=10)]
     ).validate_python
+
+    def execute_sync(self) -> bool:
+        return self.delay is None and (not self.execute_async or self.wait is not None)
 
     def __init__(self, request: web.Request):
         """Get execution preferences from 'Prefer' header

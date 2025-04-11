@@ -9,11 +9,10 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
-
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Celery, CeleryConfig
 from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.models import Field 
 
 from ..schemas import (
     JobExecute,

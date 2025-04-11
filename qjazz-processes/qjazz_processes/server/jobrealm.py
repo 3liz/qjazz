@@ -5,9 +5,10 @@ from typing import Annotated, Optional, Sequence
 from uuid import uuid4
 
 from aiohttp import web
-from pydantic import Field, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from qjazz_contrib.core.config import ConfigBase, section
+from qjazz_contrib.core.models import Field
 
 from .models import ErrorResponse
 
@@ -33,8 +34,8 @@ class JobRealmConfig(ConfigBase):
         default=False,
         title="Enable job realm header",
         description=f"""
-            When enabled, use the '{JOB_REALM_HEADER}' http header
-            as a client identification token for retrieving jobs status and results.
+        When enabled, use the '{JOB_REALM_HEADER}' http header
+        as a client identification token for retrieving jobs status and results.
         """,
     )
     admin_tokens: Sequence[str] = Field(

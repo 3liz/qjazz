@@ -1,5 +1,31 @@
 openapi: 3.0.0
 paths:
+  /:
+    get:
+      summary: Landing page
+      description: "Landing page for Qjazz processes api\n"
+      tags:
+      - api
+      responses:
+        '200':
+          description: "Returns the Landing page data as JSon\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#definitions/LandingPageModel'
+  /conformance:
+    get:
+      summary: Conformances classes
+      description: "The list of conformance classes\n"
+      tags:
+      - api
+      responses:
+        '200':
+          description: "Returns the list of conformance classes\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#definitions/Conformance'
   /processes/:
     get:
       summary: Get available processes
@@ -44,7 +70,14 @@ paths:
         schema:
           type: string
         required: true
-        description: Process  identifier
+        description: Process identifier
+      - in: query
+        name: tag
+        schema:
+          type: string
+          maxLength: 36
+        required: false
+        description: job tag
       tags:
       - processes
       requestBody:
@@ -56,8 +89,15 @@ paths:
             schema:
               $ref: '#/definitions/JobExecute'
       responses:
-        '201':
-          description: "Process accepted\n"
+        '200':
+          description: "Process executed succesfully. Only returned in case of synchronous
+            execution.\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/JobResults'
+        '202':
+          description: "Process accepted. Returned in case of asynchronous execution.\n"
           content:
             application/json:
               schema:
@@ -460,6 +500,8 @@ definitions:
       expiresAt:
         format: date-time
         type: string
+      tag:
+        type: string
     required:
     - jobId
     - status
@@ -811,6 +853,31 @@ definitions:
     - links
     title: FilesResponse
     type: object
+  Conformance:
+    properties:
+      conformsTo:
+        default:
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/core
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/ogc-process-description
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/json
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss
+        items:
+          type: string
+        type: array
+    title: Conformance
+    type: object
+  LandingPageModel:
+    properties:
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - links
+    title: LandingPageModel
+    type: object
 tags:
 - description: Processes
   name: processes
@@ -818,6 +885,8 @@ tags:
   name: jobs
 - description: Services
   name: services
+- description: Api
+  name: api
 info:
   title: Qjazz-Processes
   description: Publish Qgis processing algorithms as OGC api processes

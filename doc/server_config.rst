@@ -1,5 +1,5 @@
 
-.. _proxy_service:
+.. _server_service:
 
 HTTP frontend
 =============
@@ -12,12 +12,12 @@ configured backend by defining a path root prefix similar to the `root`
 directive of a proxy server.
 
 
-.. _proxy_routing:
+.. _server_routing:
 
 Routing OWS requests to Qgis pools
 ----------------------------------
 
-Each backend is configured with a :ref:`backend.\<id\> <proxy_config>` settings.
+Each backend is configured with a :ref:`backend.\<id\> <server_config>` settings.
 
 Passing request for a particular backend is done with the route as leading path::
 
@@ -66,18 +66,12 @@ Qgis api endpoints must be declared explicitly in order to be requested by clien
         https://test.com/route_path/search_path/project_path/_/api/path
 
 
-.. _proxy_config:
+.. _server_config:
 
 Service configuration
 ---------------------
 
-.. literalinclude:: configs/proxy.toml
+.. literalinclude:: configs/server.toml
      :language: toml
 
-
-Scalability:
-------------
-
-The proxy service may be scaled as long as you provide load balancing facility (like the `ingress`
-mode in Docker Swarm)
 

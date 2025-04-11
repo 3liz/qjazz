@@ -65,6 +65,7 @@ def run_server(configpath: Path, verbose: bool, dump_config: bool):
 
 #
 
+
 def setup_executor_context(
     ctx: click.Context,
     configpath: Optional[Path],
@@ -118,6 +119,7 @@ def control(
 ):
     """Service commands"""
     setup_executor_context(ctx, configpath, verbose)
+
 
 @control.command("ls")
 @click.pass_context
@@ -198,6 +200,7 @@ def ping_service(ctx: click.Context, service: str, repeat: int):
 #  Processes commands
 #
 
+
 @main.group("processes")
 @click.option(
     "--conf",
@@ -243,6 +246,7 @@ def list_processes(ctx: click.Context, service: str):
         click.echo("Service not available", err=True)
         sys.exit(1)
 
+
 @processes.command("describe")
 @click.argument("service")
 @click.argument("ident")
@@ -273,6 +277,7 @@ def describe_processes(ctx: click.Context, service: str, ident: str, project: Op
 # Jobs
 #
 
+
 @main.group("jobs")
 @click.option(
     "--conf",
@@ -294,7 +299,7 @@ def jobs(
 
 @jobs.command("ls")
 @click.option("--service", help="Filter by service")
-@click.option("--realm",  help="Filter by realm")
+@click.option("--realm", help="Filter by realm")
 @click.pass_context
 def list_jobs(
     ctx: click.Context,

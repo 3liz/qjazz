@@ -6,6 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+# -- Swagger ---
+# Note: for reading swagger doc one must use http server:
+# ex  'python -m http.server -d doc/build/html'
+
 import sphinx_rtd_theme
 
 project = 'qjazz-processes'
@@ -44,14 +48,4 @@ ProjectName = "Qjazz-Processes"
 rst_epilog = f"""
 .. |ProjectName| replace:: {ProjectName}
 """
-
-# -- Swagger ---
-
-swagger = [
-    {
-        "name": "Qjazz-Processes API",
-        "page": "openapi",
-        "options" : { "url": "_static/openapi.yml" },
-    },
-]
 

@@ -30,7 +30,7 @@ proxy_conf = false
 auth_tokens = []
 
 #
-# SSL certificats
+# TLS certificats
 #
 [admin_http.ssl]
 #
@@ -59,7 +59,7 @@ auth_tokens = []
 #url =   	# Optional
 
 #
-# SSL configuration
+# TLS configuration
 #
 [admin_config_url.ssl]
 #
@@ -101,7 +101,7 @@ title = ""
 #description =   	# Optional
 
 #
-# SSL certificats
+# TLS certificats
 #
 [resolvers.resolvers.ssl]
 #

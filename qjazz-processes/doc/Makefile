@@ -50,4 +50,6 @@ export CI_PROJECT_NAME=qjazz-processes
 deploy-ci:
 	deploy-doc build/html/ doc.manifest
 
-
+# Serve documentation
+serve:
+	python3 -m http.server -d ./build/html

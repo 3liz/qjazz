@@ -43,6 +43,7 @@ from .protocols import ExecutorProtocol, ServiceDict
 #  Processes
 #
 
+
 class JobMeta(TypedDict):
     created: str
     realm: Optional[str]
@@ -240,8 +241,6 @@ class Processes(ExecutorProtocol):
             return result.get(timeout=timeout)
 
         return (job_id, _get_result, _get_status)
-
-
 
     # ==============================================
     #

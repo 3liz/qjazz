@@ -5,7 +5,21 @@
 Description
 ===========
 
-QJazz is a set of services for serving Qgis 3.34+ server requests.
+QJazz is a suite of QGIS based services including:
+
+- QGIS serverr as microservice
+- OGC Processes server on top of QGIS processing
+
+This is as set of modules for deploying QGIS based servers and processing services
+as OGC processes compliant API
+
+It aims to provide support for scalable deployment of QGIS based services 
+on medium or large infrastructure and has been developped to solve some issues
+when dealing with large numbers of projects.
+
+The services are implemented as  wrappers around the QGIS Server api 
+and the Processing QGIS api and because of this, it supports all 
+QGIS Server features and options.
 
 The qjazz-server setup is splitted in 3 different services: 
     
@@ -97,7 +111,7 @@ The simplest configuration for basic working installation is the following
             }
         volumes:
         - { type: bind, source: "/path/to/projects/", target: /qgis-projects } 
-        command: ["qjazz-server-rpc", "serve"]
+        command: ["qjazz-rpc", "serve"]
       web:
         #
         # The web service communicate to (multiple) backends and route
@@ -108,16 +122,16 @@ The simplest configuration for basic working installation is the following
           CONF_LOGGING__LEVEL: debug
           CONF_BACKENDS__BASIC__TITLE: "Basic backends"
           CONF_BACKENDS__BASIC__HOST: "qgis-rpc"
-          CONF_BACKENDS__BASIC__ROUTE: "/basic"
+          CONF_BACKENDS__BASIC__ROUTE: "/"
         ports:
-        - 127.0.0.1:80:80
+        - 127.0.0.1:9080:9080
         command: ["qjazz-map", "serve"]
 
 Run the stack with::
 
     docker compose up -d
 
-From here, open your navigator at http://localhost/basic/my_project?SERVICE=WMS&REQUEST=GetCapabilities
+From here, open your navigator at http://localhost:9080/?MAP=/my_project&SERVICE=WMS&REQUEST=GetCapabilities
 in order to get the WMS Capabilities if your project is wms-enabled.
 
 See the working example in `examples/basic`
@@ -195,7 +209,7 @@ Using configuration file
 
 You may specify a configuration file with the `--conf` or `-C` option::
         
-    qjazz-server-rpc  serve -C path/to/config/file.toml
+    qjazz-rpc  serve -C path/to/config/file.toml
 
 
 Using environment variables
@@ -236,51 +250,3 @@ Which gives the toml equivalent:
     [worker.projects.search_paths]
     '/' = "/qgis-projects/france_parts"
 
-
-
-Live configuration
-------------------
-
-Configuration may be modified live either by pushing configuration
-modifications from command line or fetching configuration 
-from remote location.
-
-Live configuration may be partial changes (configuration fragments)
-
-The following example change the logging level a running qgis service
-instance::
-
-        > qjazz-server-cli config set '{ "logging": { "level": "trace" }}'
-
-Configuration fragments must be in json format.
-
-
-Remote configuration
---------------------
-
-:ref:`Qgis services <rpc_services>` and :ref:`Proxy services <proxy_service>` 
-may fetch their configuration from remote server.
-
-You can check the examples from the source repository (FIXME) for
-remote config samples.
-
-.. _install_from_source:
-
-Installing from source
-======================
-
-It requires that Qgis and PyQgis python bindings are already
-installed.  The services will no run with Qgis version lower
-than 3.4.
-
-Module may be installed from source by installing all required
-modules::
-
-    > make install
-
-Running the services require python 10+ and it is strongly recommended
-to install it in a `venv <https://docs.python.org/fr/3/library/venv.html>`_ 
-environment with the `--system-site-packages` option.
-
-For running the services you may rely on tools like `Supervisor <http://supervisord.org/>`_
-or `systemd <https://systemd.io/>`_.

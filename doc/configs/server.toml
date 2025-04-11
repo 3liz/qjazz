@@ -34,6 +34,7 @@ enable_tls = false
 # the same value as the 'Origin' request header.
 # A url may may be specified, restricting allowed origin to
 # this url.
+# 
 cross_origin = "all"
 #
 # Workers
@@ -139,11 +140,13 @@ shutdown_timeout = 30
 # Path or globbing to services configuration files.
 # Note that this section is ignored if remote configuration
 # is used.
+# 
 #
 # Path to services configuration files
 #
 # Path or globbing to services configuration files.
 # Note that this section is ignored if remote configuration
 # is used.
+# 
 #includes =   	# Optional
 

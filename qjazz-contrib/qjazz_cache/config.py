@@ -135,7 +135,7 @@ class ProjectsConfig(config.ConfigBase):
         """,
     )
     allow_direct_path_resolution: bool = Field(
-        default=True,
+        default=False,
         title="Allow direct path resolution",
         description="""
         Allow direct path resolution if there is
