@@ -1,0 +1,939 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration Settings &mdash; qjazz-processes ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Job access" href="jobrealm.html" />
+    <link rel="prev" title="Running QGIS Algorithms" href="processing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz-processes
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Running QGIS Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html#exposing-processing-algorithms">Exposing processing algorithms</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#environment-variables">Environment variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#secret-files">Secret files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-precedence">Configuration precedence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#worker-configuration">Worker configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#server-configuration">Server configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="standards.html">Compliance to OGC standards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution.html">Job execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">Qjazz-Processes API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz-processes</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration Settings</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/configuration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration-settings">
+<span id="id1"></span><h1>Configuration Settings<a class="headerlink" href="#configuration-settings" title="Link to this heading"></a></h1>
+<p>Configuration can be done either by using a <a class="reference external" href="https://toml.io/en/">toml</a> configuration file,
+environnement variable or secret files.</p>
+<p>The configuration framework is based on the [pydantic settings](<a class="reference external" href="https://docs.pydantic.dev/latest/concepts/pydantic_settings/?query=Settings">https://docs.pydantic.dev/latest/concepts/pydantic_settings/?query=Settings</a>) package which provides strong validation for configuration
+data.</p>
+<section id="environment-variables">
+<h2>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading"></a></h2>
+<p>The mapping of configuration values follows the following pattern:</p>
+<ul class="simple">
+<li><p>Environment variable names are case-insensitive.</p></li>
+<li><p>Environment variables must be prefixed with <code class="docutils literal notranslate"><span class="pre">CONF_</span></code></p></li>
+<li><p>Nested settings are separated by <code class="docutils literal notranslate"><span class="pre">__</span></code> (double underscore)</p></li>
+<li><p>List and dictionnaries are populated from environnement by
+treating the environnement variable’s value as JSON-encoded strinf.</p></li>
+</ul>
+<p>Example:</p>
+<blockquote>
+<div><p>Consider the following the toml configuration:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[logging]</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;DEBUG&quot;</span>
+
+<span class="k">[worker]</span>
+<span class="n">service_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;MyService&quot;</span>
+<span class="n">broker_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;rabbitmq&quot;</span>
+<span class="n">broker_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;redis:6370/0&quot;</span>
+
+<span class="k">[processing]</span>
+<span class="n">workdir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-workdir&quot;</span>
+
+<span class="k">[processing.plugins]</span>
+<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/qgis-plugins&quot;</span><span class="p">]</span>
+
+<span class="k">[processing.projects.search_paths]</span>
+<span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-projects&quot;</span>
+</pre></div>
+</div>
+<p>And the corresponding configuration with  environment variables:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CONF_LOGGING__LEVEL</span><span class="o">=</span><span class="n">DEBUG</span>
+<span class="n">CONF_WORKER__SERVICE_NAME</span><span class="o">=</span><span class="n">MyService</span>
+<span class="n">CONF_WORKER__BROKER_HOST</span><span class="o">=</span><span class="n">rabbitmq</span>
+<span class="n">CONF_WORKER__BACKEND_HOST</span><span class="o">=</span><span class="n">redis</span><span class="p">:</span><span class="mi">6379</span><span class="o">/</span><span class="mi">0</span>
+<span class="n">CONF_PROCESSING__WORKDIR</span><span class="o">=/</span><span class="n">qgis</span><span class="o">-</span><span class="n">workdir</span>
+<span class="n">CONF_PROCESSING__PLUGINS__PATHS</span><span class="o">=</span><span class="s1">&#39;[&quot;/qgis-plugins&quot;]&#39;</span>
+<span class="n">CONF_PROCESSING__PROJECTS__SEARCH_PATHS</span><span class="p">:</span> <span class="s1">&#39;{&quot;/&quot;:&quot;/qgis-projects&quot;}&#39;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="secret-files">
+<h2>Secret files<a class="headerlink" href="#secret-files" title="Link to this heading"></a></h2>
+<p>Instead of using exposed environment variables or configuration files,
+values may be stored in files that contains a single value and where the name of
+the file is the configuration.</p>
+<p>A common usecase is to allow for storing sensitive values in Docker encrypted
+secret files.</p>
+</section>
+<section id="configuration-precedence">
+<h2>Configuration precedence<a class="headerlink" href="#configuration-precedence" title="Link to this heading"></a></h2>
+<p>Configuration precedence is (by decreasing priority):</p>
+<ul class="simple">
+<li><p>Configuration file</p></li>
+<li><p>Environment variables</p></li>
+<li><p>Secret files</p></li>
+<li><p>Default values</p></li>
+</ul>
+</section>
+<section id="worker-configuration">
+<h2>Worker configuration<a class="headerlink" href="#worker-configuration" title="Link to this heading"></a></h2>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="k">[logging]</span>
+<span class="linenos">  2</span><span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span>
+<span class="linenos">  3</span>
+<span class="linenos">  4</span>
+<span class="linenos">  5</span><span class="c1"># Worker configuration</span>
+<span class="linenos">  6</span><span class="c1"># </span>
+<span class="linenos">  7</span><span class="c1"># Configure celery worker settings</span>
+<span class="linenos">  8</span><span class="c1"># </span>
+<span class="linenos">  9</span><span class="k">[worker]</span>
+<span class="linenos"> 10</span><span class="c1">#</span>
+<span class="linenos"> 11</span><span class="c1"># Celery amqp broker host</span>
+<span class="linenos"> 12</span><span class="n">broker_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+<span class="linenos"> 13</span><span class="n">broker_use_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 14</span><span class="c1">#broker_user =   	# Optional</span>
+<span class="linenos"> 15</span><span class="c1">#broker_password =   	# Optional</span>
+<span class="linenos"> 16</span><span class="c1">#</span>
+<span class="linenos"> 17</span><span class="c1"># Celery redis backend host</span>
+<span class="linenos"> 18</span><span class="n">backend_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost:6379/0&quot;</span>
+<span class="linenos"> 19</span><span class="n">backend_use_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 20</span><span class="c1">#backend_password =   	# Optional</span>
+<span class="linenos"> 21</span><span class="c1">#</span>
+<span class="linenos"> 22</span><span class="c1"># Task hard time limit in seconds.</span>
+<span class="linenos"> 23</span><span class="c1"># The worker processing the task will be killed</span>
+<span class="linenos"> 24</span><span class="c1"># and replaced with a new one when this is exceeded.</span>
+<span class="linenos"> 25</span><span class="n">task_time_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span>
+<span class="linenos"> 26</span><span class="c1">#</span>
+<span class="linenos"> 27</span><span class="c1"># Grace period to add to the &#39;task_time_limit&#39;</span>
+<span class="linenos"> 28</span><span class="c1"># value.</span>
+<span class="linenos"> 29</span><span class="c1"># The SoftTimeLimitExceeded exception will be raised</span>
+<span class="linenos"> 30</span><span class="c1"># when the &#39;task_time_limit&#39; is exceeded.</span>
+<span class="linenos"> 31</span><span class="n">task_time_grace_period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span>
+<span class="linenos"> 32</span><span class="c1">#</span>
+<span class="linenos"> 33</span><span class="c1"># Time (in seconds), for when after stored task tombstones will</span>
+<span class="linenos"> 34</span><span class="c1"># be deleted</span>
+<span class="linenos"> 35</span><span class="n">result_expires</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">86400</span>
+<span class="linenos"> 36</span><span class="c1">#</span>
+<span class="linenos"> 37</span><span class="c1"># Concurrency</span>
+<span class="linenos"> 38</span><span class="c1">#</span>
+<span class="linenos"> 39</span><span class="c1"># The number of concurrent worker processes executing tasks.</span>
+<span class="linenos"> 40</span><span class="c1">#concurrency =   	# Optional</span>
+<span class="linenos"> 41</span><span class="c1">#</span>
+<span class="linenos"> 42</span><span class="c1"># Processes life cycle</span>
+<span class="linenos"> 43</span><span class="c1">#</span>
+<span class="linenos"> 44</span><span class="c1"># Maximum number of tasks a pool worker process can execute</span>
+<span class="linenos"> 45</span><span class="c1"># before it&#39;s replaced with a new one. Default is no limit.</span>
+<span class="linenos"> 46</span><span class="c1">#max_tasks_per_child =   	# Optional</span>
+<span class="linenos"> 47</span><span class="c1">#</span>
+<span class="linenos"> 48</span><span class="c1"># Maximum consumed memory</span>
+<span class="linenos"> 49</span><span class="c1">#</span>
+<span class="linenos"> 50</span><span class="c1"># Maximum amount of resident memory, in kilobytes,</span>
+<span class="linenos"> 51</span><span class="c1"># that may be consumed by a worker before it will</span>
+<span class="linenos"> 52</span><span class="c1"># be replaced by a new worker.</span>
+<span class="linenos"> 53</span><span class="c1">#max_memory_per_child =   	# Optional</span>
+<span class="linenos"> 54</span><span class="c1">#</span>
+<span class="linenos"> 55</span><span class="c1"># Autoscale</span>
+<span class="linenos"> 56</span><span class="c1">#</span>
+<span class="linenos"> 57</span><span class="c1"># Activate concurrency autoscaling</span>
+<span class="linenos"> 58</span><span class="c1">#autoscale =   	# Optional</span>
+<span class="linenos"> 59</span><span class="c1">#</span>
+<span class="linenos"> 60</span><span class="c1"># Name of the service</span>
+<span class="linenos"> 61</span><span class="c1">#</span>
+<span class="linenos"> 62</span><span class="c1"># Name used as location service name</span>
+<span class="linenos"> 63</span><span class="c1"># for initializing Celery worker.</span>
+<span class="linenos"> 64</span><span class="c1"># </span>
+<span class="linenos"> 65</span><span class="c1">#service_name =   	# Required</span>
+<span class="linenos"> 66</span><span class="c1">#</span>
+<span class="linenos"> 67</span><span class="c1"># Service short title</span>
+<span class="linenos"> 68</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="linenos"> 69</span><span class="c1">#</span>
+<span class="linenos"> 70</span><span class="c1"># Service description</span>
+<span class="linenos"> 71</span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="linenos"> 72</span><span class="c1">#</span>
+<span class="linenos"> 73</span><span class="c1"># Cleanup interval</span>
+<span class="linenos"> 74</span><span class="c1">#</span>
+<span class="linenos"> 75</span><span class="c1"># Interval is seconds between two cleanup of expired jobs.</span>
+<span class="linenos"> 76</span><span class="c1"># The minimun is 300s (5mn).</span>
+<span class="linenos"> 77</span><span class="c1"># </span>
+<span class="linenos"> 78</span><span class="n">cleanup_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span>
+<span class="linenos"> 79</span><span class="c1">#</span>
+<span class="linenos"> 80</span><span class="c1"># Reload watch file</span>
+<span class="linenos"> 81</span><span class="c1">#</span>
+<span class="linenos"> 82</span><span class="c1"># The file to watch for reloading processing plugins.</span>
+<span class="linenos"> 83</span><span class="c1"># When the the modified time of the file is changed, processing</span>
+<span class="linenos"> 84</span><span class="c1"># providers are reloaded.</span>
+<span class="linenos"> 85</span><span class="c1"># The restart is graceful, all running jobs are terminated normally.</span>
+<span class="linenos"> 86</span><span class="c1"># </span>
+<span class="linenos"> 87</span><span class="c1">#reload_monitor =   	# Optional</span>
+<span class="linenos"> 88</span>
+<span class="linenos"> 89</span><span class="c1">#</span>
+<span class="linenos"> 90</span><span class="k">[worker.broker_tls]</span>
+<span class="linenos"> 91</span><span class="c1">#</span>
+<span class="linenos"> 92</span><span class="c1"># CA file</span>
+<span class="linenos"> 93</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos"> 94</span><span class="c1">#</span>
+<span class="linenos"> 95</span><span class="c1"># TLS  certificat</span>
+<span class="linenos"> 96</span><span class="c1">#</span>
+<span class="linenos"> 97</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos"> 98</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos"> 99</span><span class="c1">#</span>
+<span class="linenos">100</span><span class="c1"># TLS key file</span>
+<span class="linenos">101</span><span class="c1">#</span>
+<span class="linenos">102</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">103</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos">104</span>
+<span class="linenos">105</span><span class="c1">#</span>
+<span class="linenos">106</span><span class="k">[worker.backend_tls]</span>
+<span class="linenos">107</span><span class="c1">#</span>
+<span class="linenos">108</span><span class="c1"># CA file</span>
+<span class="linenos">109</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos">110</span><span class="c1">#</span>
+<span class="linenos">111</span><span class="c1"># TLS  certificat</span>
+<span class="linenos">112</span><span class="c1">#</span>
+<span class="linenos">113</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos">114</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos">115</span><span class="c1">#</span>
+<span class="linenos">116</span><span class="c1"># TLS key file</span>
+<span class="linenos">117</span><span class="c1">#</span>
+<span class="linenos">118</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">119</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos">120</span>
+<span class="linenos">121</span><span class="c1">#</span>
+<span class="linenos">122</span><span class="k">[worker.security]</span>
+<span class="linenos">123</span><span class="c1">#cert_store =   	# Required</span>
+<span class="linenos">124</span><span class="c1">#keyfile =   	# Required</span>
+<span class="linenos">125</span><span class="c1">#certfile =   	# Required</span>
+<span class="linenos">126</span>
+<span class="linenos">127</span><span class="c1">#</span>
+<span class="linenos">128</span><span class="k">[worker.scheduler]</span>
+<span class="linenos">129</span><span class="c1">#</span>
+<span class="linenos">130</span><span class="c1"># Enable scheduler</span>
+<span class="linenos">131</span><span class="c1">#</span>
+<span class="linenos">132</span><span class="c1"># Enable embedded scheduler.</span>
+<span class="linenos">133</span><span class="c1"># Prefer scheduler as a service if more</span>
+<span class="linenos">134</span><span class="c1"># than one worker node is used.</span>
+<span class="linenos">135</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">136</span><span class="c1">#</span>
+<span class="linenos">137</span><span class="c1"># Max interval</span>
+<span class="linenos">138</span><span class="c1">#</span>
+<span class="linenos">139</span><span class="c1"># Max seconds to sleep between schedule iterations.</span>
+<span class="linenos">140</span><span class="c1">#max_interval =   	# Optional</span>
+<span class="linenos">141</span><span class="c1">#</span>
+<span class="linenos">142</span><span class="c1"># Scheduler database path</span>
+<span class="linenos">143</span><span class="c1">#</span>
+<span class="linenos">144</span><span class="c1"># Path to the schedule database.</span>
+<span class="linenos">145</span><span class="c1"># Defaults to `celerybeat-schedule` (from Celery doc).</span>
+<span class="linenos">146</span><span class="c1">#database =   	# Optional</span>
+<span class="linenos">147</span>
+<span class="linenos">148</span><span class="c1">#</span>
+<span class="linenos">149</span><span class="c1"># Service related links</span>
+<span class="linenos">150</span><span class="c1">#</span>
+<span class="linenos">151</span><span class="k">[[worker.links]]</span>
+<span class="linenos">152</span><span class="c1">#rel =   	# Optional</span>
+<span class="linenos">153</span><span class="c1">#mime_type =   	# Optional</span>
+<span class="linenos">154</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="linenos">155</span><span class="c1">#description =   	# Optional</span>
+<span class="linenos">156</span><span class="c1">#length =   	# Optional</span>
+<span class="linenos">157</span><span class="n">templated</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">158</span><span class="c1">#hreflang =   	# Optional</span>
+<span class="linenos">159</span><span class="c1">#href =   	# Required</span>
+<span class="linenos">160</span>
+<span class="linenos">161</span>
+<span class="linenos">162</span><span class="k">[processing]</span>
+<span class="linenos">163</span><span class="c1">#</span>
+<span class="linenos">164</span><span class="c1"># Working directory</span>
+<span class="linenos">165</span><span class="c1">#</span>
+<span class="linenos">166</span><span class="c1"># Parent working directory where processes are executed.</span>
+<span class="linenos">167</span><span class="c1"># Each processes will create a working directory for storing</span>
+<span class="linenos">168</span><span class="c1"># result files and logs.</span>
+<span class="linenos">169</span><span class="c1"># </span>
+<span class="linenos">170</span><span class="c1">#workdir =   	# Required</span>
+<span class="linenos">171</span><span class="c1">#</span>
+<span class="linenos">172</span><span class="c1"># Internal qgis providers exposed</span>
+<span class="linenos">173</span><span class="c1">#</span>
+<span class="linenos">174</span><span class="c1"># List of exposed QGIS processing internal providers.</span>
+<span class="linenos">175</span><span class="c1"># NOTE: It is not recommended exposing all providers like</span>
+<span class="linenos">176</span><span class="c1"># `qgis` or `native`, instead provide your own wrapping</span>
+<span class="linenos">177</span><span class="c1"># algorithm, script or model.</span>
+<span class="linenos">178</span><span class="c1"># </span>
+<span class="linenos">179</span><span class="n">exposed_providers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;script&quot;</span><span class="p">,</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+<span class="linenos">180</span><span class="c1">#</span>
+<span class="linenos">181</span><span class="c1"># Expose deprecated algorithms</span>
+<span class="linenos">182</span><span class="c1">#</span>
+<span class="linenos">183</span><span class="c1"># Expose algorithm wich have the `Deprecated`</span>
+<span class="linenos">184</span><span class="c1"># flag set.</span>
+<span class="linenos">185</span><span class="c1"># </span>
+<span class="linenos">186</span><span class="n">expose_deprecated_algorithms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">187</span><span class="c1">#</span>
+<span class="linenos">188</span><span class="c1"># Default vector file extension</span>
+<span class="linenos">189</span><span class="c1">#</span>
+<span class="linenos">190</span><span class="c1"># Define the default vector file extensions for vector destination</span>
+<span class="linenos">191</span><span class="c1"># parameters. If not specified, then the QGIS default value is used.</span>
+<span class="linenos">192</span><span class="c1"># </span>
+<span class="linenos">193</span><span class="n">default_vector_file_ext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;fgb&quot;</span>
+<span class="linenos">194</span><span class="c1">#</span>
+<span class="linenos">195</span><span class="c1"># Default raster file extension</span>
+<span class="linenos">196</span><span class="c1">#</span>
+<span class="linenos">197</span><span class="c1"># Define the default raster file extensions for raster destination</span>
+<span class="linenos">198</span><span class="c1"># parameters. If not specified, then the QGIS default value is used.</span>
+<span class="linenos">199</span><span class="c1"># </span>
+<span class="linenos">200</span><span class="c1">#default_raster_file_ext =   	# Optional</span>
+<span class="linenos">201</span><span class="c1">#</span>
+<span class="linenos">202</span><span class="c1"># Force ellipsoid imposed by the source project</span>
+<span class="linenos">203</span><span class="c1">#</span>
+<span class="linenos">204</span><span class="c1"># Force the ellipsoid from the src project into the destination project.</span>
+<span class="linenos">205</span><span class="c1"># This only apply if the src project has a valid CRS.</span>
+<span class="linenos">206</span><span class="c1"># </span>
+<span class="linenos">207</span><span class="n">adjust_ellipsoid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">208</span><span class="c1">#</span>
+<span class="linenos">209</span><span class="c1"># Set default CRS</span>
+<span class="linenos">210</span><span class="c1">#</span>
+<span class="linenos">211</span><span class="c1"># Set the CRS to use when no source map is specified.</span>
+<span class="linenos">212</span><span class="c1"># For more details on supported formats see the GDAL method</span>
+<span class="linenos">213</span><span class="c1"># &#39;GdalSpatialReference::SetFromUserInput()&#39;</span>
+<span class="linenos">214</span><span class="c1"># </span>
+<span class="linenos">215</span><span class="n">default_crs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;urn:ogc:def:crs:OGC:1.3:CRS84&quot;</span>
+<span class="linenos">216</span><span class="c1">#</span>
+<span class="linenos">217</span><span class="c1"># Advertised services urls</span>
+<span class="linenos">218</span><span class="c1">#</span>
+<span class="linenos">219</span><span class="c1"># Url template used for OGC services references.</span>
+<span class="linenos">220</span><span class="n">advertised_services_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ows:$jobId/$name&quot;</span>
+<span class="linenos">221</span><span class="c1">#</span>
+<span class="linenos">222</span><span class="c1"># Public download url</span>
+<span class="linenos">223</span><span class="c1">#</span>
+<span class="linenos">224</span><span class="c1"># Url template for downloading resources.</span>
+<span class="linenos">225</span><span class="c1"># This is the public base url that will be seen in</span>
+<span class="linenos">226</span><span class="c1"># referenced responses.</span>
+<span class="linenos">227</span><span class="c1"># This url will need to be translated by the front end</span>
+<span class="linenos">228</span><span class="c1"># executor to an effective download url.</span>
+<span class="linenos">229</span><span class="c1"># </span>
+<span class="linenos">230</span><span class="n">store_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${public_url}/jobs/$jobId/files/$resource&quot;</span>
+<span class="linenos">231</span><span class="c1">#</span>
+<span class="linenos">232</span><span class="c1"># Use destination input as sink</span>
+<span class="linenos">233</span><span class="c1">#</span>
+<span class="linenos">234</span><span class="c1"># Allow input value as sink for destination layers.</span>
+<span class="linenos">235</span><span class="c1"># This allow value passed as input value to be interpreted as</span>
+<span class="linenos">236</span><span class="c1"># path or uri sink definition. This enable passing any string</span>
+<span class="linenos">237</span><span class="c1"># that QGIS may use a input source but without open options except for the</span>
+<span class="linenos">238</span><span class="c1"># &#39;layername=&lt;name&gt;&#39; option.</span>
+<span class="linenos">239</span><span class="c1"># </span>
+<span class="linenos">240</span><span class="c1"># NOTE: Running concurrent jobs with this option may result in unpredictable</span>
+<span class="linenos">241</span><span class="c1"># behavior.</span>
+<span class="linenos">242</span><span class="c1"># </span>
+<span class="linenos">243</span><span class="c1"># For that reason it is considered as an UNSAFE OPTION and you should never enable</span>
+<span class="linenos">244</span><span class="c1"># this option if you are exposing the service publicly.</span>
+<span class="linenos">245</span><span class="c1"># </span>
+<span class="linenos">246</span><span class="c1"># File path inputs prefixed with &#39;/&#39; will correspond to path located in the root</span>
+<span class="linenos">247</span><span class="c1"># directory specified by the `raw_destination_root_path` option.</span>
+<span class="linenos">248</span><span class="c1"># Otherwise, they will be stored in the job folder.</span>
+<span class="linenos">249</span><span class="c1"># </span>
+<span class="linenos">250</span><span class="n">raw_destination_input_sink</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">251</span><span class="c1">#</span>
+<span class="linenos">252</span><span class="c1"># Raw destination root path</span>
+<span class="linenos">253</span><span class="c1">#</span>
+<span class="linenos">254</span><span class="c1"># Specify the root directory for storing destination layers files when</span>
+<span class="linenos">255</span><span class="c1"># the `raw_destination_input_sink` option is enabled.</span>
+<span class="linenos">256</span><span class="c1"># If not specified, files will be stored in the job folder.</span>
+<span class="linenos">257</span><span class="c1"># </span>
+<span class="linenos">258</span><span class="c1">#raw_destination_root_path =   	# Optional</span>
+<span class="linenos">259</span><span class="c1">#</span>
+<span class="linenos">260</span><span class="c1"># Project cache size</span>
+<span class="linenos">261</span><span class="c1">#</span>
+<span class="linenos">262</span><span class="c1"># The maximum number of projects in cache by process.</span>
+<span class="linenos">263</span><span class="n">max_cached_projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="linenos">264</span><span class="c1">#</span>
+<span class="linenos">265</span><span class="c1"># Qgis settings</span>
+<span class="linenos">266</span><span class="c1">#</span>
+<span class="linenos">267</span><span class="c1"># Qgis settings override.</span>
+<span class="linenos">268</span><span class="c1"># Use the syntax &#39;&lt;section&gt;/&lt;path&gt;&#39; for keys.</span>
+<span class="linenos">269</span><span class="c1"># Not that values defined here will override those</span>
+<span class="linenos">270</span><span class="c1"># from QGIS3.ini file.&quot;</span>
+<span class="linenos">271</span><span class="c1"># </span>
+<span class="linenos">272</span><span class="n">qgis_settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos">273</span>
+<span class="linenos">274</span><span class="c1">#</span>
+<span class="linenos">275</span><span class="c1"># Projects configuration</span>
+<span class="linenos">276</span><span class="c1">#</span>
+<span class="linenos">277</span><span class="c1"># Projects and cache configuration</span>
+<span class="linenos">278</span><span class="c1">#</span>
+<span class="linenos">279</span><span class="k">[processing.projects]</span>
+<span class="linenos">280</span><span class="c1">#</span>
+<span class="linenos">281</span><span class="c1"># Trust layer metadata</span>
+<span class="linenos">282</span><span class="c1">#</span>
+<span class="linenos">283</span><span class="c1"># Trust layer metadata.</span>
+<span class="linenos">284</span><span class="c1"># Improves layer load time by skipping expensive checks</span>
+<span class="linenos">285</span><span class="c1"># like primary key unicity, geometry type and</span>
+<span class="linenos">286</span><span class="c1"># srid and by using estimated metadata on layer load.</span>
+<span class="linenos">287</span><span class="c1"># Since QGIS 3.16</span>
+<span class="linenos">288</span><span class="c1"># </span>
+<span class="linenos">289</span><span class="n">trust_layer_metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">290</span><span class="c1">#</span>
+<span class="linenos">291</span><span class="c1"># Disable GetPrint requests</span>
+<span class="linenos">292</span><span class="c1">#</span>
+<span class="linenos">293</span><span class="c1"># Don&#39;t load print layouts.</span>
+<span class="linenos">294</span><span class="c1"># Improves project read time if layouts are not required,</span>
+<span class="linenos">295</span><span class="c1"># and allows projects to be safely read in background threads</span>
+<span class="linenos">296</span><span class="c1"># (since print layouts are not thread safe).</span>
+<span class="linenos">297</span><span class="c1"># </span>
+<span class="linenos">298</span><span class="n">disable_getprint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">299</span><span class="c1">#</span>
+<span class="linenos">300</span><span class="c1"># Force read only mode</span>
+<span class="linenos">301</span><span class="c1">#</span>
+<span class="linenos">302</span><span class="c1"># Force layers to open in read only mode</span>
+<span class="linenos">303</span><span class="n">force_readonly_layers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">304</span><span class="c1">#</span>
+<span class="linenos">305</span><span class="c1"># Ignore bad layers</span>
+<span class="linenos">306</span><span class="c1">#</span>
+<span class="linenos">307</span><span class="c1"># Allow projects to be loaded with event if it contains</span>
+<span class="linenos">308</span><span class="c1"># layers that cannot be loaded.</span>
+<span class="linenos">309</span><span class="c1"># Note that the &#39;dont_resolve_layers flag&#39; trigger automatically</span>
+<span class="linenos">310</span><span class="c1"># this option.</span>
+<span class="linenos">311</span><span class="c1"># </span>
+<span class="linenos">312</span><span class="n">ignore_bad_layers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">313</span><span class="c1">#</span>
+<span class="linenos">314</span><span class="c1"># Disable OWS advertised urls</span>
+<span class="linenos">315</span><span class="c1">#</span>
+<span class="linenos">316</span><span class="c1"># Disable ows urls defined in projects.</span>
+<span class="linenos">317</span><span class="c1"># This may be necessary because Qgis projects</span>
+<span class="linenos">318</span><span class="c1"># urls override proxy urls.</span>
+<span class="linenos">319</span><span class="n">disable_advertised_urls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">320</span><span class="c1">#</span>
+<span class="linenos">321</span><span class="c1"># Scheme mapping definitions</span>
+<span class="linenos">322</span><span class="c1">#</span>
+<span class="linenos">323</span><span class="c1"># Defines mapping betweeen location base path and storage handler root url.</span>
+<span class="linenos">324</span><span class="c1"># Resource path relative to location will be joined the the root url path.</span>
+<span class="linenos">325</span><span class="c1"># In the case of Qgis storage, the handler is responsible for transforming</span>
+<span class="linenos">326</span><span class="c1"># the result url into a comprehensive format for the corresponding</span>
+<span class="linenos">327</span><span class="c1"># QgsProjectStorage implementation.</span>
+<span class="linenos">328</span><span class="c1"># This is handled by the default storage implementation for Qgis native</span>
+<span class="linenos">329</span><span class="c1"># project storage.</span>
+<span class="linenos">330</span><span class="c1"># In case of custom QgsProjectStorage, if the scheme does not allow passing</span>
+<span class="linenos">331</span><span class="c1"># project as path component, it is possible to specify a custom resolver function.</span>
+<span class="linenos">332</span><span class="c1"># </span>
+<span class="linenos">333</span><span class="n">search_paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos">334</span><span class="c1">#</span>
+<span class="linenos">335</span><span class="c1"># Allow direct path resolution</span>
+<span class="linenos">336</span><span class="c1">#</span>
+<span class="linenos">337</span><span class="c1"># Allow direct path resolution if there is</span>
+<span class="linenos">338</span><span class="c1"># no matching from the search paths.</span>
+<span class="linenos">339</span><span class="c1"># Uri are directly interpreted as valid Qgis project&#39;s path.</span>
+<span class="linenos">340</span><span class="c1"># WARNING: allowing this may be a security vulnerabilty.&quot;</span>
+<span class="linenos">341</span><span class="c1"># </span>
+<span class="linenos">342</span><span class="n">allow_direct_path_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">343</span>
+<span class="linenos">344</span><span class="c1">#</span>
+<span class="linenos">345</span><span class="c1"># Project storage Handler configurations</span>
+<span class="linenos">346</span><span class="c1">#</span>
+<span class="linenos">347</span><span class="c1"># Configure storage handlers.</span>
+<span class="linenos">348</span><span class="c1"># The name will be used as scheme for project&#39;s search path</span>
+<span class="linenos">349</span><span class="c1"># configuration.</span>
+<span class="linenos">350</span><span class="c1"># </span>
+<span class="linenos">351</span><span class="c1">#</span>
+<span class="linenos">352</span><span class="k">[processing.projects.handlers.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="linenos">353</span><span class="c1">#handler =   	# Required</span>
+<span class="linenos">354</span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos">355</span>
+<span class="linenos">356</span><span class="c1">#</span>
+<span class="linenos">357</span><span class="c1"># Plugin configuration</span>
+<span class="linenos">358</span><span class="c1">#</span>
+<span class="linenos">359</span><span class="k">[processing.plugins]</span>
+<span class="linenos">360</span><span class="c1">#</span>
+<span class="linenos">361</span><span class="c1"># Plugin paths</span>
+<span class="linenos">362</span><span class="c1">#</span>
+<span class="linenos">363</span><span class="c1"># The list of search paths for plugins.</span>
+<span class="linenos">364</span><span class="c1"># Qgis plugins found will be loaded according to</span>
+<span class="linenos">365</span><span class="c1"># the &#39;install&#39; list.</span>
+<span class="linenos">366</span><span class="c1"># If the list is empty, the &#39;QGIS_PLUGINPATH&#39;</span>
+<span class="linenos">367</span><span class="c1"># variable will be checked.</span>
+<span class="linenos">368</span><span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos">369</span><span class="c1">#</span>
+<span class="linenos">370</span><span class="c1"># Installable plugins</span>
+<span class="linenos">371</span><span class="c1">#</span>
+<span class="linenos">372</span><span class="c1"># The list of installable plugins.</span>
+<span class="linenos">373</span><span class="c1"># Note: if the plugin directory contains other plugins</span>
+<span class="linenos">374</span><span class="c1"># plugins not in the list will NOT be loaded !</span>
+<span class="linenos">375</span><span class="c1"># The Plugins will be installed at startup</span>
+<span class="linenos">376</span><span class="c1"># if the &#39;install_mode&#39; is set to &#39;auto&#39;.</span>
+<span class="linenos">377</span><span class="c1"># Note that an empty list means what it is:</span>
+<span class="linenos">378</span><span class="c1"># i.e, *no* installed plugins.</span>
+<span class="linenos">379</span><span class="c1">#install =   	# Optional</span>
+<span class="linenos">380</span><span class="c1">#</span>
+<span class="linenos">381</span><span class="c1"># Plugin installation mode</span>
+<span class="linenos">382</span><span class="c1">#</span>
+<span class="linenos">383</span><span class="c1"># If set to &#39;auto&#39;, plugins installation</span>
+<span class="linenos">384</span><span class="c1"># will be checked at startup. Otherwise,</span>
+<span class="linenos">385</span><span class="c1"># Installation will be done from already available</span>
+<span class="linenos">386</span><span class="c1"># plugins.</span>
+<span class="linenos">387</span><span class="n">install_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;external&quot;</span>
+<span class="linenos">388</span><span class="c1">#</span>
+<span class="linenos">389</span><span class="c1"># Enable processing scripts</span>
+<span class="linenos">390</span><span class="c1">#</span>
+<span class="linenos">391</span><span class="c1"># Enable publication of processing scripts</span>
+<span class="linenos">392</span><span class="n">enable_scripts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">393</span><span class="c1">#</span>
+<span class="linenos">394</span><span class="c1"># Extra builtins providers</span>
+<span class="linenos">395</span><span class="c1">#</span>
+<span class="linenos">396</span><span class="c1"># Load extra builtin processing providers</span>
+<span class="linenos">397</span><span class="c1"># such as &#39;grass&#39; and &#39;otb&#39;.</span>
+<span class="linenos">398</span><span class="n">extra_builtin_providers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos">399</span><span class="c1">#</span>
+<span class="linenos">400</span><span class="c1"># Path to plugin manager executable</span>
+<span class="linenos">401</span><span class="c1">#</span>
+<span class="linenos">402</span><span class="c1"># The absolute path to the qgis-plugin_manager executable</span>
+<span class="linenos">403</span><span class="c1"># that will be used for installing plugin in automatic mode.</span>
+<span class="linenos">404</span><span class="n">plugin_manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/qgis-plugin-manager&quot;</span>
+<span class="linenos">405</span>
+<span class="linenos">406</span><span class="c1">#</span>
+<span class="linenos">407</span><span class="c1"># TLS Certificates</span>
+<span class="linenos">408</span><span class="c1">#</span>
+<span class="linenos">409</span><span class="c1"># TLS credentials to use for references inputs</span>
+<span class="linenos">410</span><span class="c1">#</span>
+<span class="linenos">411</span><span class="k">[processing.certificats]</span>
+<span class="linenos">412</span><span class="c1">#</span>
+<span class="linenos">413</span><span class="c1"># CA file</span>
+<span class="linenos">414</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos">415</span><span class="c1">#</span>
+<span class="linenos">416</span><span class="c1"># TLS  certificat</span>
+<span class="linenos">417</span><span class="c1">#</span>
+<span class="linenos">418</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos">419</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos">420</span><span class="c1">#</span>
+<span class="linenos">421</span><span class="c1"># TLS key file</span>
+<span class="linenos">422</span><span class="c1">#</span>
+<span class="linenos">423</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">424</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos">425</span>
+<span class="linenos">426</span><span class="c1">#</span>
+<span class="linenos">427</span><span class="c1"># Qgis network</span>
+<span class="linenos">428</span><span class="c1">#</span>
+<span class="linenos">429</span><span class="k">[processing.network]</span>
+<span class="linenos">430</span><span class="c1">#</span>
+<span class="linenos">431</span><span class="c1"># Transfer timeout in ms</span>
+<span class="linenos">432</span><span class="c1">#</span>
+<span class="linenos">433</span><span class="c1"># Transfers are aborted if no bytes are transferred before</span>
+<span class="linenos">434</span><span class="c1"># the timeout expires.</span>
+<span class="linenos">435</span><span class="c1"># If set to 0, the timeout is disobled.</span>
+<span class="linenos">436</span><span class="c1"># Default value is set to 10000 milliseconds.</span>
+<span class="linenos">437</span><span class="c1"># </span>
+<span class="linenos">438</span><span class="n">transfer_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10000</span>
+<span class="linenos">439</span><span class="c1">#</span>
+<span class="linenos">440</span><span class="c1"># Trace network activity</span>
+<span class="linenos">441</span><span class="n">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">442</span><span class="c1">#</span>
+<span class="linenos">443</span><span class="c1"># Global cache policy</span>
+<span class="linenos">444</span><span class="c1">#</span>
+<span class="linenos">445</span><span class="c1"># Set a global cache policy for all requests&quot;</span>
+<span class="linenos">446</span><span class="c1"># If set, this will override requests cache policy&quot;.</span>
+<span class="linenos">447</span><span class="c1"># </span>
+<span class="linenos">448</span><span class="c1">#cache_policy =   	# Optional</span>
+<span class="linenos">449</span>
+<span class="linenos">450</span><span class="c1">#</span>
+<span class="linenos">451</span><span class="c1"># Domain policies</span>
+<span class="linenos">452</span><span class="c1">#</span>
+<span class="linenos">453</span><span class="c1"># Set per domain policy</span>
+<span class="linenos">454</span><span class="c1">#</span>
+<span class="linenos">455</span><span class="k">[processing.network.domain_policy.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="linenos">456</span><span class="c1">#</span>
+<span class="linenos">457</span><span class="c1"># Cache load control</span>
+<span class="linenos">458</span><span class="c1">#</span>
+<span class="linenos">459</span><span class="c1"># Override QNetworkRequest::CacheLoadControl for request.</span>
+<span class="linenos">460</span><span class="c1">#cache_policy =   	# Optional</span>
+<span class="linenos">461</span><span class="c1">#</span>
+<span class="linenos">462</span><span class="c1"># Transfer timeout in ms</span>
+<span class="linenos">463</span><span class="c1">#transfer_timeout =   	# Optional</span>
+<span class="linenos">464</span>
+<span class="linenos">465</span>
+<span class="linenos">466</span><span class="c1"># Configure storage for processing data</span>
+<span class="linenos">467</span><span class="k">[storage]</span>
+<span class="linenos">468</span><span class="c1">#</span>
+<span class="linenos">469</span><span class="c1"># Storage module</span>
+<span class="linenos">470</span><span class="c1">#</span>
+<span class="linenos">471</span><span class="c1"># The module implementing storage accesses for</span>
+<span class="linenos">472</span><span class="c1"># job&#39;s files.</span>
+<span class="linenos">473</span><span class="c1"># </span>
+<span class="linenos">474</span><span class="n">storage_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.worker.storages.local.LocalStorage&quot;</span>
+<span class="linenos">475</span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+</pre></div>
+</div>
+</section>
+<section id="server-configuration">
+<h2>Server configuration<a class="headerlink" href="#server-configuration" title="Link to this heading"></a></h2>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="k">[logging]</span>
+<span class="linenos">  2</span><span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span>
+<span class="linenos">  3</span>
+<span class="linenos">  4</span>
+<span class="linenos">  5</span><span class="c1"># OAPI configuration</span>
+<span class="linenos">  6</span><span class="k">[oapi]</span>
+<span class="linenos">  7</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Qjazz-Processes&quot;</span>
+<span class="linenos">  8</span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Publish Qgis processing algorithms as OGC api processes&quot;</span>
+<span class="linenos">  9</span>
+<span class="linenos"> 10</span>
+<span class="linenos"> 11</span><span class="c1"># Configure access policy</span>
+<span class="linenos"> 12</span><span class="k">[access_policy]</span>
+<span class="linenos"> 13</span><span class="c1">#</span>
+<span class="linenos"> 14</span><span class="c1"># Access policy module</span>
+<span class="linenos"> 15</span><span class="c1">#</span>
+<span class="linenos"> 16</span><span class="c1"># The module implementing the access policy for</span>
+<span class="linenos"> 17</span><span class="c1"># processes execution.</span>
+<span class="linenos"> 18</span><span class="c1"># </span>
+<span class="linenos"> 19</span><span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.server.policies.DefaultAccessPolicy&quot;</span>
+<span class="linenos"> 20</span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos"> 21</span>
+<span class="linenos"> 22</span>
+<span class="linenos"> 23</span><span class="c1"># Defining job realm allow filtering job&#39;s requests by a token that is</span>
+<span class="linenos"> 24</span><span class="c1"># set by the client when requesting task execution (see description below).</span>
+<span class="linenos"> 25</span><span class="c1"># </span>
+<span class="linenos"> 26</span><span class="k">[job_realm]</span>
+<span class="linenos"> 27</span><span class="c1">#</span>
+<span class="linenos"> 28</span><span class="c1"># Enable job realm header</span>
+<span class="linenos"> 29</span><span class="c1">#</span>
+<span class="linenos"> 30</span><span class="c1"># When enabled, use the &#39;X-Job-Realm&#39; http header</span>
+<span class="linenos"> 31</span><span class="c1"># as a client identification token for retrieving jobs status and results.</span>
+<span class="linenos"> 32</span><span class="c1"># </span>
+<span class="linenos"> 33</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 34</span><span class="c1">#</span>
+<span class="linenos"> 35</span><span class="c1"># Admininistrator realm jobs tokens</span>
+<span class="linenos"> 36</span><span class="c1">#</span>
+<span class="linenos"> 37</span><span class="c1"># Define catch all tokens for listing and retrieve status and results</span>
+<span class="linenos"> 38</span><span class="c1"># for all jobs.</span>
+<span class="linenos"> 39</span><span class="c1"># </span>
+<span class="linenos"> 40</span><span class="n">admin_tokens</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos"> 41</span>
+<span class="linenos"> 42</span>
+<span class="linenos"> 43</span><span class="k">[http]</span>
+<span class="linenos"> 44</span><span class="c1">#</span>
+<span class="linenos"> 45</span><span class="c1"># Interfaces to listen to</span>
+<span class="linenos"> 46</span><span class="n">listen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span><span class="mi">9180</span><span class="p">]</span>
+<span class="linenos"> 47</span><span class="c1">#</span>
+<span class="linenos"> 48</span><span class="c1"># Use tls</span>
+<span class="linenos"> 49</span><span class="n">use_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 50</span><span class="c1">#</span>
+<span class="linenos"> 51</span><span class="c1"># CORS origin</span>
+<span class="linenos"> 52</span><span class="c1">#</span>
+<span class="linenos"> 53</span><span class="c1"># Allows to specify origin for CORS. If set &#39;all&#39; will set</span>
+<span class="linenos"> 54</span><span class="c1"># Access-Control-Allow-Origin to &#39;*&#39;; &#39;same-origin&#39; return</span>
+<span class="linenos"> 55</span><span class="c1"># the same value as the &#39;Origin&#39; request header.</span>
+<span class="linenos"> 56</span><span class="c1"># A url may may be specified, restricting allowed origin to</span>
+<span class="linenos"> 57</span><span class="c1"># this url.</span>
+<span class="linenos"> 58</span><span class="c1"># </span>
+<span class="linenos"> 59</span><span class="n">cross_origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;all&quot;</span>
+<span class="linenos"> 60</span><span class="c1">#</span>
+<span class="linenos"> 61</span><span class="c1"># Service update interval</span>
+<span class="linenos"> 62</span><span class="c1">#</span>
+<span class="linenos"> 63</span><span class="c1"># Interval in seconds between update of available services</span>
+<span class="linenos"> 64</span><span class="n">update_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span>
+<span class="linenos"> 65</span><span class="c1">#</span>
+<span class="linenos"> 66</span><span class="c1"># Backend request timeout</span>
+<span class="linenos"> 67</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="linenos"> 68</span><span class="c1">#</span>
+<span class="linenos"> 69</span><span class="c1"># Enable Web UI</span>
+<span class="linenos"> 70</span><span class="n">enable_ui</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos"> 71</span>
+<span class="linenos"> 72</span><span class="c1">#</span>
+<span class="linenos"> 73</span><span class="c1"># TLS configuration</span>
+<span class="linenos"> 74</span><span class="c1">#</span>
+<span class="linenos"> 75</span><span class="k">[http.tls]</span>
+<span class="linenos"> 76</span><span class="c1">#</span>
+<span class="linenos"> 77</span><span class="c1"># CA file</span>
+<span class="linenos"> 78</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos"> 79</span><span class="c1">#</span>
+<span class="linenos"> 80</span><span class="c1"># TLS  certificat</span>
+<span class="linenos"> 81</span><span class="c1">#</span>
+<span class="linenos"> 82</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos"> 83</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos"> 84</span><span class="c1">#</span>
+<span class="linenos"> 85</span><span class="c1"># TLS key file</span>
+<span class="linenos"> 86</span><span class="c1">#</span>
+<span class="linenos"> 87</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos"> 88</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos"> 89</span>
+<span class="linenos"> 90</span><span class="c1">#</span>
+<span class="linenos"> 91</span><span class="k">[http.proxy]</span>
+<span class="linenos"> 92</span><span class="c1">#</span>
+<span class="linenos"> 93</span><span class="c1"># Enabled Forwarded headers</span>
+<span class="linenos"> 94</span><span class="c1">#</span>
+<span class="linenos"> 95</span><span class="c1"># Enable proxy headers resolution.</span>
+<span class="linenos"> 96</span><span class="c1"># Include support for &#39;Forwarded&#39; headers</span>
+<span class="linenos"> 97</span><span class="c1"># and &#39;X-Forwarded&#39; headers if allow_x_headers is</span>
+<span class="linenos"> 98</span><span class="c1"># enabled.&quot;</span>
+<span class="linenos"> 99</span><span class="c1"># </span>
+<span class="linenos">100</span><span class="n">enable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">101</span><span class="c1">#</span>
+<span class="linenos">102</span><span class="c1"># Support for &#39;X-Forwarded&#39; headers</span>
+<span class="linenos">103</span><span class="n">allow_x_headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">104</span>
+<span class="linenos">105</span>
+<span class="linenos">106</span><span class="k">[executor]</span>
+<span class="linenos">107</span><span class="c1">#</span>
+<span class="linenos">108</span><span class="c1"># Message expiration timeout</span>
+<span class="linenos">109</span><span class="c1">#</span>
+<span class="linenos">110</span><span class="c1"># The amount of time an execution message</span>
+<span class="linenos">111</span><span class="c1"># can wait on queue before beeing processed</span>
+<span class="linenos">112</span><span class="c1"># with asynchronous response.</span>
+<span class="linenos">113</span><span class="c1"># </span>
+<span class="linenos">114</span><span class="n">message_expiration_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">600</span>
+<span class="linenos">115</span>
+<span class="linenos">116</span><span class="c1">#</span>
+<span class="linenos">117</span><span class="k">[executor.celery]</span>
+<span class="linenos">118</span><span class="c1">#</span>
+<span class="linenos">119</span><span class="c1"># Celery amqp broker host</span>
+<span class="linenos">120</span><span class="n">broker_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+<span class="linenos">121</span><span class="n">broker_use_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">122</span><span class="c1">#broker_user =   	# Optional</span>
+<span class="linenos">123</span><span class="c1">#broker_password =   	# Optional</span>
+<span class="linenos">124</span><span class="c1">#</span>
+<span class="linenos">125</span><span class="c1"># Celery redis backend host</span>
+<span class="linenos">126</span><span class="n">backend_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost:6379/0&quot;</span>
+<span class="linenos">127</span><span class="n">backend_use_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">128</span><span class="c1">#backend_password =   	# Optional</span>
+<span class="linenos">129</span><span class="c1">#</span>
+<span class="linenos">130</span><span class="c1"># Task hard time limit in seconds.</span>
+<span class="linenos">131</span><span class="c1"># The worker processing the task will be killed</span>
+<span class="linenos">132</span><span class="c1"># and replaced with a new one when this is exceeded.</span>
+<span class="linenos">133</span><span class="n">task_time_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span>
+<span class="linenos">134</span><span class="c1">#</span>
+<span class="linenos">135</span><span class="c1"># Grace period to add to the &#39;task_time_limit&#39;</span>
+<span class="linenos">136</span><span class="c1"># value.</span>
+<span class="linenos">137</span><span class="c1"># The SoftTimeLimitExceeded exception will be raised</span>
+<span class="linenos">138</span><span class="c1"># when the &#39;task_time_limit&#39; is exceeded.</span>
+<span class="linenos">139</span><span class="n">task_time_grace_period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span>
+<span class="linenos">140</span><span class="c1">#</span>
+<span class="linenos">141</span><span class="c1"># Time (in seconds), for when after stored task tombstones will</span>
+<span class="linenos">142</span><span class="c1"># be deleted</span>
+<span class="linenos">143</span><span class="n">result_expires</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">86400</span>
+<span class="linenos">144</span><span class="c1">#</span>
+<span class="linenos">145</span><span class="c1"># Concurrency</span>
+<span class="linenos">146</span><span class="c1">#</span>
+<span class="linenos">147</span><span class="c1"># The number of concurrent worker processes executing tasks.</span>
+<span class="linenos">148</span><span class="c1">#concurrency =   	# Optional</span>
+<span class="linenos">149</span><span class="c1">#</span>
+<span class="linenos">150</span><span class="c1"># Processes life cycle</span>
+<span class="linenos">151</span><span class="c1">#</span>
+<span class="linenos">152</span><span class="c1"># Maximum number of tasks a pool worker process can execute</span>
+<span class="linenos">153</span><span class="c1"># before it&#39;s replaced with a new one. Default is no limit.</span>
+<span class="linenos">154</span><span class="c1">#max_tasks_per_child =   	# Optional</span>
+<span class="linenos">155</span><span class="c1">#</span>
+<span class="linenos">156</span><span class="c1"># Maximum consumed memory</span>
+<span class="linenos">157</span><span class="c1">#</span>
+<span class="linenos">158</span><span class="c1"># Maximum amount of resident memory, in kilobytes,</span>
+<span class="linenos">159</span><span class="c1"># that may be consumed by a worker before it will</span>
+<span class="linenos">160</span><span class="c1"># be replaced by a new worker.</span>
+<span class="linenos">161</span><span class="c1">#max_memory_per_child =   	# Optional</span>
+<span class="linenos">162</span><span class="c1">#</span>
+<span class="linenos">163</span><span class="c1"># Autoscale</span>
+<span class="linenos">164</span><span class="c1">#</span>
+<span class="linenos">165</span><span class="c1"># Activate concurrency autoscaling</span>
+<span class="linenos">166</span><span class="c1">#autoscale =   	# Optional</span>
+<span class="linenos">167</span>
+<span class="linenos">168</span><span class="c1">#</span>
+<span class="linenos">169</span><span class="k">[executor.celery.broker_tls]</span>
+<span class="linenos">170</span><span class="c1">#</span>
+<span class="linenos">171</span><span class="c1"># CA file</span>
+<span class="linenos">172</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos">173</span><span class="c1">#</span>
+<span class="linenos">174</span><span class="c1"># TLS  certificat</span>
+<span class="linenos">175</span><span class="c1">#</span>
+<span class="linenos">176</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos">177</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos">178</span><span class="c1">#</span>
+<span class="linenos">179</span><span class="c1"># TLS key file</span>
+<span class="linenos">180</span><span class="c1">#</span>
+<span class="linenos">181</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">182</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos">183</span>
+<span class="linenos">184</span><span class="c1">#</span>
+<span class="linenos">185</span><span class="k">[executor.celery.backend_tls]</span>
+<span class="linenos">186</span><span class="c1">#</span>
+<span class="linenos">187</span><span class="c1"># CA file</span>
+<span class="linenos">188</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos">189</span><span class="c1">#</span>
+<span class="linenos">190</span><span class="c1"># TLS  certificat</span>
+<span class="linenos">191</span><span class="c1">#</span>
+<span class="linenos">192</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos">193</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos">194</span><span class="c1">#</span>
+<span class="linenos">195</span><span class="c1"># TLS key file</span>
+<span class="linenos">196</span><span class="c1">#</span>
+<span class="linenos">197</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">198</span><span class="c1">#keyfile =   	# Optional</span>
+<span class="linenos">199</span>
+<span class="linenos">200</span><span class="c1">#</span>
+<span class="linenos">201</span><span class="k">[executor.celery.security]</span>
+<span class="linenos">202</span><span class="c1">#cert_store =   	# Required</span>
+<span class="linenos">203</span><span class="c1">#keyfile =   	# Required</span>
+<span class="linenos">204</span><span class="c1">#certfile =   	# Required</span>
+<span class="linenos">205</span>
+<span class="linenos">206</span><span class="c1">#</span>
+<span class="linenos">207</span><span class="k">[executor.celery.scheduler]</span>
+<span class="linenos">208</span><span class="c1">#</span>
+<span class="linenos">209</span><span class="c1"># Enable scheduler</span>
+<span class="linenos">210</span><span class="c1">#</span>
+<span class="linenos">211</span><span class="c1"># Enable embedded scheduler.</span>
+<span class="linenos">212</span><span class="c1"># Prefer scheduler as a service if more</span>
+<span class="linenos">213</span><span class="c1"># than one worker node is used.</span>
+<span class="linenos">214</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos">215</span><span class="c1">#</span>
+<span class="linenos">216</span><span class="c1"># Max interval</span>
+<span class="linenos">217</span><span class="c1">#</span>
+<span class="linenos">218</span><span class="c1"># Max seconds to sleep between schedule iterations.</span>
+<span class="linenos">219</span><span class="c1">#max_interval =   	# Optional</span>
+<span class="linenos">220</span><span class="c1">#</span>
+<span class="linenos">221</span><span class="c1"># Scheduler database path</span>
+<span class="linenos">222</span><span class="c1">#</span>
+<span class="linenos">223</span><span class="c1"># Path to the schedule database.</span>
+<span class="linenos">224</span><span class="c1"># Defaults to `celerybeat-schedule` (from Celery doc).</span>
+<span class="linenos">225</span><span class="c1">#database =   	# Optional</span>
+<span class="linenos">226</span>
+<span class="linenos">227</span>
+<span class="linenos">228</span><span class="c1"># The storage configuration is used for configuring the</span>
+<span class="linenos">229</span><span class="c1"># connections to storage backends used by workers.</span>
+<span class="linenos">230</span><span class="c1"># </span>
+<span class="linenos">231</span><span class="k">[storage]</span>
+<span class="linenos">232</span><span class="c1">#</span>
+<span class="linenos">233</span><span class="c1"># Allow insecure downloads</span>
+<span class="linenos">234</span><span class="c1">#</span>
+<span class="linenos">235</span><span class="c1"># If set to false, only TLS encrypted downloads are allowed</span>
+<span class="linenos">236</span><span class="n">allow_insecure_connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">237</span><span class="c1">#</span>
+<span class="linenos">238</span><span class="c1"># Download chunksize</span>
+<span class="linenos">239</span><span class="n">chunksize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">65536</span>
+<span class="linenos">240</span><span class="c1">#</span>
+<span class="linenos">241</span><span class="c1"># Download url expiration</span>
+<span class="linenos">242</span><span class="c1">#</span>
+<span class="linenos">243</span><span class="c1"># Download url expiration in seconds</span>
+<span class="linenos">244</span><span class="n">download_url_expiration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span>
+<span class="linenos">245</span>
+<span class="linenos">246</span><span class="c1">#</span>
+<span class="linenos">247</span><span class="c1"># TLS certifificats</span>
+<span class="linenos">248</span><span class="c1">#</span>
+<span class="linenos">249</span><span class="c1"># Certificats required for TLS downloads connections</span>
+<span class="linenos">250</span><span class="c1">#</span>
+<span class="linenos">251</span><span class="k">[storage.tls]</span>
+<span class="linenos">252</span><span class="c1">#</span>
+<span class="linenos">253</span><span class="c1"># CA file</span>
+<span class="linenos">254</span><span class="c1">#cafile =   	# Optional</span>
+<span class="linenos">255</span><span class="c1">#</span>
+<span class="linenos">256</span><span class="c1"># TLS  certificat</span>
+<span class="linenos">257</span><span class="c1">#</span>
+<span class="linenos">258</span><span class="c1"># Path to the TLS cert file</span>
+<span class="linenos">259</span><span class="c1">#certfile =   	# Optional</span>
+<span class="linenos">260</span><span class="c1">#</span>
+<span class="linenos">261</span><span class="c1"># TLS key file</span>
+<span class="linenos">262</span><span class="c1">#</span>
+<span class="linenos">263</span><span class="c1"># Path to the TLS key file</span>
+<span class="linenos">264</span><span class="c1">#keyfile =   	# Optional</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="processing.html" class="btn btn-neutral float-left" title="Running QGIS Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="jobrealm.html" class="btn btn-neutral float-right" title="Job access" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

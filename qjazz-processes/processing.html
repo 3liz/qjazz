@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Running QGIS Algorithms &mdash; qjazz-processes ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration Settings" href="configuration.html" />
+    <link rel="prev" title="Description" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz-processes
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start">Quick start</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Running QGIS Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#input-output-layer-mapping">Input/output layer mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#source-project">Source project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#accessing-qgis-projects">Accessing Qgis projects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#exposing-processing-algorithms">Exposing processing algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#plugins-locations">Plugins locations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#registering-providers">Registering providers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-scripts-and-models">Using scripts and models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controlling-what-is-exposed">Controlling what is exposed</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="standards.html">Compliance to OGC standards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution.html">Job execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">Qjazz-Processes API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz-processes</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Running QGIS Algorithms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/processing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="running-qgis-algorithms">
+<span id="qgis-processing"></span><h1>Running QGIS Algorithms<a class="headerlink" href="#running-qgis-algorithms" title="Link to this heading"></a></h1>
+<section id="input-output-layer-mapping">
+<span id="layer-mapping"></span><h2>Input/output layer mapping<a class="headerlink" href="#input-output-layer-mapping" title="Link to this heading"></a></h2>
+<p>With QGIS desktop , QGIS processing algorithms usually apply on a QGIS source project and computed layers are displayed in the same context as the source project.</p>
+<p>Qjazz-Processes works the same way: a qgis project will be used as a source of input layers.
+The difference is that, when an algorithm runs, it creates a qgis destination project associated
+to the current task and register computed layers to it.</p>
+<p>The created project may be used as OWS/WFS3 source with QGIS Server.</p>
+<p>Output layers are returned as OWS url’s holding a reference to a WMS/WFS/WMTS/WCS
+url that can be used directly with QGIS server.</p>
+<p>The uri template is configurable using the <code class="docutils literal notranslate"><span class="pre">processing.advertised_services_url</span></code>
+configuration setting.</p>
+</section>
+<section id="source-project">
+<span id="id1"></span><h2>Source project<a class="headerlink" href="#source-project" title="Link to this heading"></a></h2>
+<p>Process parameters may be associated with a source project using the <code class="docutils literal notranslate"><span class="pre">map</span></code> query param.
+If a <cite>map</cite> parameters is given when doing a <cite>describe</cite> requests, allowed values
+for input layers will be taken from the qgis source project according the type
+of the input layers.</p>
+<p>Some algorithms requires a source project, in that case the description metadata should
+have a  role``RequiresProject`` with value set to <code class="docutils literal notranslate"><span class="pre">true`</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When implmenting algorithm, you should always set the Qgis  processing
+<code class="docutils literal notranslate"><span class="pre">RequiresProject</span></code> algorithm flag if a project is needed to run the
+algorithm.</p>
+</div>
+<p>Any attempt to execute an algorithm that requires a project with no map parameter
+will result in a execution error.</p>
+<p>If you need to pass data to your algorithm from client-side, prefer inputs file parameter
+and small payloads.</p>
+</section>
+<section id="accessing-qgis-projects">
+<h2>Accessing Qgis projects<a class="headerlink" href="#accessing-qgis-projects" title="Link to this heading"></a></h2>
+<p>Beside QGIS project files (<em>.qgs</em>, <em>.qgz</em>), Qjazz-Processes support all
+<code class="docutils literal notranslate"><span class="pre">QgsProjectStorage</span></code> backends in Qgis.</p>
+<p>Project’s access is <em>uniform</em>: the configuration settings define search paths which are indirection
+to the corresponding backends:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[prcessing.projects.search_paths]</span>
+<span class="s1">&#39;/a_path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/path/to/projects/&quot;</span><span class="w">                  </span><span class="c1"># Path to files volume</span>
+<span class="s1">&#39;/another/path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;file:///other/projects/&quot;</span><span class="w">       </span><span class="c1"># With explicit scheme</span>
+<span class="s1">&#39;/path/to/postgres&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgres://?service=name&quot;</span><span class="w">  </span><span class="c1"># projects stored in postgres</span>
+</pre></div>
+</div>
+<p>Any following subpath to a search path is considered as the relative project’s path
+or the projects name user for url resolution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">postgres</span><span class="o">/</span><span class="n">projname</span>
+</pre></div>
+</div>
+<p>will be resolved to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>postgres://?service=name&amp;project=projname
+</pre></div>
+</div>
+<p>From client perspective, a project is always refered by its search path followed by the (relative)
+project’s path or name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/&lt;</span><span class="n">search_path</span><span class="o">&gt;/&lt;</span><span class="n">project_path</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="exposing-processing-algorithms">
+<span id="exposing-algorithms"></span><h1>Exposing processing algorithms<a class="headerlink" href="#exposing-processing-algorithms" title="Link to this heading"></a></h1>
+<section id="plugins-locations">
+<h2>Plugins locations<a class="headerlink" href="#plugins-locations" title="Link to this heading"></a></h2>
+<p>The processing provider modules are searched in the path given by the
+<code class="docutils literal notranslate"><span class="pre">processing.projects.search_paths</span></code> configuration setting.</p>
+<p>The search is not recursive, subdirectories  must be set explicitely</p>
+</section>
+<section id="registering-providers">
+<h2>Registering providers<a class="headerlink" href="#registering-providers" title="Link to this heading"></a></h2>
+<p>There is nothing special to do for using a Qgis plugin with Qjazz-Processes.</p>
+<p>As for Qgis desktop, Qjazz-Processes expect the a pluging to follow
+the same rules as for any other plugins <cite>implementing processing
+providers &lt;https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/processing.html&gt;`_</cite>.</p>
+<p>As regular QGIS plugin, a metadata.txt file must be present with the variable
+<code class="docutils literal notranslate"><span class="pre">hasProcessingProvider=yes</span></code> indicating that the plugin is available as a processing
+service provider factory.</p>
+<p>The object returned by the <code class="docutils literal notranslate"><span class="pre">classFactory</span></code> function must implement the <code class="docutils literal notranslate"><span class="pre">initProcessing</span></code>
+method.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">initProcessing</span></code> method will be the one and only one method called by
+Qjazz-Processes.</p>
+</div>
+<p>Qjazz-Processes use the same entrypoint a Qgis desktop plugin except that
+not <code class="docutils literal notranslate"><span class="pre">QgsInterface</span></code> is provided.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<div class="line-block">
+<div class="line">The <code class="docutils literal notranslate"><span class="pre">iface:</span> <span class="pre">QgsInterface</span></code> parameter is used for initializing Gui component
+of the plugin in Qgis desktop.  This parameter will be set to <code class="docutils literal notranslate"><span class="pre">None</span></code> when
+loaded from Qjazz-Processes.</div>
+<div class="line">Implementors should take care to check the value of the <code class="docutils literal notranslate"><span class="pre">iface</span></code> parameter
+and drop all gui initialization if not set.</div>
+<div class="line">The only thing to do is to registor the providers the same way as for
+using in Qgis Desktop.</div>
+</div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qgis.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QgsApplication</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestAlgorithmProvider</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Test</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">initProcessing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="n">QgsApplication</span><span class="o">.</span><span class="n">processingRegistry</span><span class="p">()</span>
+
+        <span class="c1"># XXX we *MUST* keep instance of provider</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_provider</span> <span class="o">=</span> <span class="n">TestAlgorithmProvider</span><span class="p">()</span>
+        <span class="n">reg</span><span class="o">.</span><span class="n">addProvider</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_provider</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">classFactory</span><span class="p">(</span><span class="n">iface</span><span class="p">:</span> <span class="n">QgsInterface</span><span class="o">|</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Test</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">iface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Initialize GUI</span>
+        <span class="o">...</span>
+
+    <span class="k">return</span> <span class="n">Test</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="using-scripts-and-models">
+<h2>Using scripts and models<a class="headerlink" href="#using-scripts-and-models" title="Link to this heading"></a></h2>
+<p>Qjazz-Processes works with scripts and models. First creates a <code class="docutils literal notranslate"><span class="pre">models/</span></code> and a <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> directory
+in the folder given by the <code class="docutils literal notranslate"><span class="pre">processing.plugins.paths`</span></code> setting.</p>
+<p>If your configuration is</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[processing.plugins]</span>
+<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/path/to/plugin_dir&quot;</span><span class="p">]</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>Your processing module directory should be something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├── plugin_dir
+│   ├── models
+│   │    └── &lt;your &#39;.model3&#39; files here&gt;
+│   └── scripts
+│        └── &lt;your &#39;.py&#39; scripts here&gt;
+</pre></div>
+</div>
+<p>Then simple drop your <code class="docutils literal notranslate"><span class="pre">.model3</span></code> in the <code class="docutils literal notranslate"><span class="pre">models/</span></code> folder and the  python scripts in the <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> folder.
+After restarting the workers you should see the corresponding algorithms in the list of published WPS jobs.</p>
+</section>
+<section id="controlling-what-is-exposed">
+<h2>Controlling what is exposed<a class="headerlink" href="#controlling-what-is-exposed" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Algorithms with the flag <a class="reference external" href="https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag">FlagHideFromToolbox</a> set will not be exposed as a process.</p></li>
+<li><p>Algorithms with the flag <a class="reference external" href="https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag">Deprecated</a>  are controlled by the <code class="docutils literal notranslate"><span class="pre">processing.expose_deprecated_algorithms</span></code> setting.</p></li>
+<li><p>Parameters with the flag <a class="reference external" href="https://qgis.org/pyqgis/master/gui/Qgis.html#qgis.gui.Qgis.ProcessingAlgorithmFlag">FlagHidden</a> set wont be exposed as input parameter in the process description.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-left" title="Description" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration.html" class="btn btn-neutral float-right" title="Configuration Settings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

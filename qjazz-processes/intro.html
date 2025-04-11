@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Description &mdash; qjazz-processes ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Running QGIS Algorithms" href="processing.html" />
+    <link rel="prev" title="Welcome to qjazz-processes’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz-processes
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Description</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements-and-limitations">Requirements and limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-multiple-workers-and-servers">Running multiple workers and servers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#services">Services</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#quick-start">Quick start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#docker-compose-setup">Docker compose setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-from-source">Installing from source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Running QGIS Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html#exposing-processing-algorithms">Exposing processing algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="standards.html">Compliance to OGC standards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution.html">Job execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">Qjazz-Processes API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz-processes</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Description</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/intro.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="description">
+<span id="server-description"></span><h1>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h1>
+<p>Qjazz-Processes is an <strong>draft</strong> implementation of the <a class="reference external" href="https://www.ogc.org/standard/ogcapi-processes/">OGC Processes api</a> standards Open Geospatial Consortium based on the QGIS Processing API.</p>
+<p>This implementation allows you to expose and run on a server:</p>
+<ul class="simple">
+<li><p>QGIS Processing models and scripts</p></li>
+<li><p>QGIS plugins having a Processing provider according to their <code class="docutils literal notranslate"><span class="pre">metadata.txt</span></code> file</p></li>
+</ul>
+<section id="features">
+<span id="server-features"></span><h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Asynchronous</p></li>
+<li><p>Horizontally scalable</p></li>
+<li><p>Routing specifications</p></li>
+<li><p>Handle schemas for all Qgis parameters</p></li>
+<li><p>OAPI compliant</p></li>
+</ul>
+</section>
+<section id="requirements-and-limitations">
+<span id="server-requirements"></span><h2>Requirements and limitations<a class="headerlink" href="#requirements-and-limitations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Linux/Posix OS</p></li>
+<li><p>Python 3.12+ only</p></li>
+<li><p>Redis server</p></li>
+<li><p>RabbitMQ server</p></li>
+<li><p>QGIS 3.34+</p></li>
+</ul>
+</section>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Qjazz-Processes is built on top of the  <a class="reference external" href="https://github.com/celery/celery">Celery</a>  framework.</p>
+<p>A Qjazz-Processes Celery <strong>Worker</strong> expose the necessary  tasks for</p>
+<ul class="simple">
+<li><p>Listing exposed Qgis algorithms as OGC processes</p></li>
+<li><p>Returning process description</p></li>
+<li><p>Executing a Qgis algorithm</p></li>
+</ul>
+<p>A Qjazz-Processes <strong>Server</strong> expose an OGC processes compliant api and handle messages and
+results from the <strong>Worker</strong>.</p>
+<figure class="align-center" id="id4">
+<img alt="_images/overview.png" src="_images/overview.png" />
+<figcaption>
+<p><span class="caption-text">The simplest configuration</span><a class="headerlink" href="#id4" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="running-multiple-workers-and-servers">
+<h2>Running multiple workers and servers<a class="headerlink" href="#running-multiple-workers-and-servers" title="Link to this heading"></a></h2>
+<p>Worker and servers and independant components and
+you may run any server and workers as different services on different
+environments.</p>
+<p>This enable running workers in different environments and infrastructure
+according to your requirements.</p>
+<ul class="simple">
+<li><p>You may for example have a worker running intensive Jobs on a dedicated pool of
+machine/vm while  other jobs may be run on smallest architecture.</p></li>
+<li><p>Some wokers may run on specific environments likes different Qgis versions
+or using specific libraries</p></li>
+</ul>
+</section>
+<section id="services">
+<h2>Services<a class="headerlink" href="#services" title="Link to this heading"></a></h2>
+<p>Each worker is bound to a <em>service</em> that represents a set of Qgis processing providers
+and Qgis projects.</p>
+<p>The <strong>Server</strong> route execution messages to specific services: how routing is done depends
+on the selected access policy from the configuration.</p>
+<p>The default access policy select the service from the <code class="docutils literal notranslate"><span class="pre">service</span></code> query parameter or take the first
+available service. Other acces policy will consider a pecific header and much more sophisticated
+routing can be achieve by implementing custom access policy.</p>
+<p>Since we run <a class="reference external" href="https://github.com/celery/celery">Celery</a>  behind the scene, there is no need
+to declare the services to the front end servers; once a worker is deployed, it will be known
+known to the servers after some time depending on the configured update interval.</p>
+<figure class="align-center" id="id5">
+<img alt="_images/routing.png" src="_images/routing.png" />
+<figcaption>
+<p><span class="caption-text">A more complex configuration with multiple services</span><a class="headerlink" href="#id5" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="quick-start">
+<span id="id2"></span><h1>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
+<section id="docker-compose-setup">
+<span id="id3"></span><h2>Docker compose setup<a class="headerlink" href="#docker-compose-setup" title="Link to this heading"></a></h2>
+<p>This is the recommended way to install and run the services:</p>
+<p>The simplest configuration for basic working installation is the following</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">worker</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_LOGGING__LEVEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__SERVICE_NAME</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MyService&quot;</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__BROKER_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__BACKEND_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">redis:6379/0</span>
+<span class="w">      </span><span class="nt">CONF_PROCESSING__WORKDIR</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/qgis-workdir</span>
+<span class="w">      </span><span class="nt">CONF_PROCESSING__PLUGINS__PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">[&quot;/qgis-plugins&quot;]</span>
+<span class="w">      </span><span class="nt">CONF_PROCESSING__PROJECTS__SEARCH_PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">{</span>
+<span class="w">          </span><span class="no">&quot;/&quot;:&quot;/qgis-projects&quot;</span>
+<span class="w">        </span><span class="no">}</span>
+<span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/workdir/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-workdir</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/plugins/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-plugins</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/projects&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-processes&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;worker&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">server</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:9080:9080</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-processes&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-v&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_EXECUTOR__CELERY__BROKER_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq</span>
+<span class="w">      </span><span class="nt">CONF_EXECUTOR__CELERY__BACKEND_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">redis:6379/0</span>
+<span class="w">  </span><span class="nt">rabbitmq</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq:3-alpine</span>
+<span class="w">  </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">redis:6-alpine</span>
+</pre></div>
+</div>
+<p>Alternatively you may use a configuration file:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">worker</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/worker.toml&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/worker.toml</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/workdir/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-workdir</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/plugins/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-plugins</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/projects&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-processes&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;worker&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-C&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/etc/worker.toml&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">server</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:9080:9080</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-processes&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-v&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_EXECUTOR__CELERY__BROKER_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq</span>
+<span class="w">      </span><span class="nt">CONF_EXECUTOR__CELERY__BACKEND_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">redis:6379/0</span>
+<span class="w">  </span><span class="nt">rabbitmq</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rabbitmq:3-alpine</span>
+<span class="w">  </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">redis:6-alpine</span>
+</pre></div>
+</div>
+<p>With the <code class="docutils literal notranslate"><span class="pre">worker.toml</span></code> configuration file:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[worker]</span>
+<span class="n">service_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;MyService&quot;</span>
+<span class="n">backend_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;redis:6379/0&quot;</span>
+<span class="n">broker_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;rabbitmq&quot;</span>
+
+<span class="k">[processing]</span>
+<span class="n">workdir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-workdir&quot;</span>
+
+<span class="k">[processing.plugins]</span>
+<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/qgis-plugins&quot;</span><span class="p">]</span>
+
+<span class="k">[processing.projects.search_paths]</span>
+<span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-projects&quot;</span>
+</pre></div>
+</div>
+<p>The Qjazz-Processes applications take care of configuring Celery for using Redis and RabbitMQ so
+you usually do not have to deal directly with the Redis or RabbitMQ setup.</p>
+<p>For more details, refer to  <a class="reference external" href="https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html">https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html</a> and <a class="reference external" href="https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html">https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html</a>
+for how they are configured with Celery</p>
+</section>
+<section id="installing-from-source">
+<h2>Installing from source<a class="headerlink" href="#installing-from-source" title="Link to this heading"></a></h2>
+<p>You can install directly from source by cloning the reposittory and
+running <code class="code docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> for installing all python modules.</p>
+<p>Running the worker and the server is as simple as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-processing<span class="w"> </span>serve<span class="w"> </span>-C<span class="w"> </span>&lt;worker-configuration-file&gt;
+</pre></div>
+</div>
+<p>and</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-processes<span class="w"> </span>server<span class="w"> </span>-C<span class="w"> </span>&lt;server-configuration-file&gt;
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<div class="line-block">
+<div class="line">You should always install the python modules in a python venv</div>
+<div class="line">with the <code class="code docutils literal notranslate"><span class="pre">--system-site-packages</span></code> option so that you can
+access PyQGIS modules.</div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to qjazz-processes’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="processing.html" class="btn btn-neutral float-right" title="Running QGIS Algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
