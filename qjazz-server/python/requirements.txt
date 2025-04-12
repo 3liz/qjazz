@@ -18,7 +18,7 @@ idna==3.10
 jsondiff==2.2.1
 minio==7.2.15
 msgpack==1.1.0
-multidict==6.3.0
+multidict==6.4.3
 propcache==0.3.1
 protobuf==5.29.4
 pycparser==2.22
@@ -31,6 +31,6 @@ ruamel.yaml.clib==0.2.12
 ruamel.yaml==0.18.10
 setuptools==78.1.0
 typing-inspection==0.4.0
-typing_extensions==4.13.1
-urllib3==2.3.0
+typing_extensions==4.13.2
+urllib3==2.4.0
 yarl==1.19.0
