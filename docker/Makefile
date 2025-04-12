@@ -39,9 +39,13 @@ tag-all: tag noqgis-tag
 
 build: manifest requirements
 	$(MAKE) -C .. configure
+	{ \
+	source $(MANIFEST); \
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
-		--build-arg QGIS_VERSION=$(FLAVOR) \
-		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..
+		--build-arg QGIS_FLAVOR=${FLAVOR} \
+		--label org.opencontainers.image.version=$$version \
+		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..;\
+	}
 
 MANIFEST=factory-$(FLAVOR).manifest
 
@@ -108,9 +112,13 @@ BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION)
 NOQGIS_BUILD_TARGET:=noqgis
 
 noqgis-build: noqgis-manifest requirements
+	{ \
+	source $(NOQGIS_MANIFEST); \
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
-		--build-arg QGIS_VERSION=$(FLAVOR) \
-		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager  -f Dockerfile  ..
+		--build-arg QGIS_FLAVOR=$(FLAVOR) \
+		--label org.opencontainers.image.version=$$version \
+		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager  -f Dockerfile  ..;\
+	}
 
 NOQGIS_MANIFEST=factory-noqgis.manifest
 
@@ -158,8 +166,9 @@ CI_IMAGE=$(REGISTRY_PREFIX)factory-ci-runner:qjazz-$(FLAVOR)
 
 build-ci:
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target ci \
-	--build-arg QGIS_VERSION=$(FLAVOR) \
+	--build-arg QGIS_FLAVOR=$(FLAVOR) \
 	--build-arg factory_runner_uid=$$(id -u) \
+	--label org.opencontainers.image.version=$(VERSION_TAG) \
 	-t $(CI_IMAGE) -f Dockerfile ..
 
 

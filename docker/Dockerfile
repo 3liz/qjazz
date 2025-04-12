@@ -1,15 +1,19 @@
 # syntax=docker/dockerfile:1
 # vim: ft=dockerfile
 ARG REGISTRY_PREFIX=''
-ARG QGIS_VERSION=release
+ARG QGIS_FLAVOR=release
 
 #
 # Qgis platform
 # 
 
-FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} AS base
-LABEL Description="QJazz QGIS services" Vendor="3liz.org"
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS base
+LABEL org.opencontainers.image.vendor="3liz"
+LABEL org.opencontainers.image.title="Qjazz"
+LABEL org.opencontainers.image.description="QJazz, QGIS as services."
 LABEL org.opencontainers.image.authors="David Marteau <david.marteau@3liz.com>"
+LABEL org.opencontainers.image.source="https://github.com/3liz/qjazz"
+LABEL org.opencontainers.image.ref.name="3liz/qjazz"
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
@@ -90,6 +94,12 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 #
 
 FROM ubuntu:24.04 AS noqgis
+LABEL org.opencontainers.image.vendor="3liz"
+LABEL org.opencontainers.image.title="Qjazz"
+LABEL org.opencontainers.image.description="QJazz, QGIS as services."
+LABEL org.opencontainers.image.authors="David Marteau <david.marteau@3liz.com>"
+LABEL org.opencontainers.image.source="https://github.com/3liz/qjazz"
+LABEL org.opencontainers.image.ref.name="3liz/qjazz"
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
@@ -128,7 +138,7 @@ CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 # Build an image usable as CI image for 
 # testing qjazz based services 
 #
-FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_VERSION} AS ci
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS ci
 
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
