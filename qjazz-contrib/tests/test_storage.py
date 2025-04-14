@@ -21,7 +21,7 @@ def test_storage_postgres(data, config):
     assert parse_qs(resolved_url.query)["project"][0] == "project.qgs"
 
     # Test public path
-    rooturl = cm.conf.search_paths["/database"]
+    _, rooturl = cm.conf.search_paths._routes["/database"].cannonical
     public_path = handler.public_path(resolved_uri, "/foobar/baz", rooturl)
     print("test_postgres_storage#public_path:", public_path)
     assert public_path == "/foobar/baz/project.qgs"
@@ -43,4 +43,4 @@ def test_storage_geopackage(data, config):
 
     with pytest.raises(errors.InvalidCacheRootUrl):
         handler = CacheManager.get_protocol_handler("geopackage")
-        handler.validate_rooturl(conf.search_paths["/mygpkg"], config)
+        handler.validate_rooturl(conf.search_paths._routes["/mygpkg"]._url, config)

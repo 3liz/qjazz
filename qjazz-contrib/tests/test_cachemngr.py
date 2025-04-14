@@ -1,5 +1,4 @@
 from pathlib import Path
-from urllib.parse import SplitResult
 
 import pytest
 
@@ -10,13 +9,16 @@ from qjazz_cache.prelude import (
     CheckoutStatus,
     ProjectMetadata,
 )
+from qjazz_cache.routes import DynamicRoute, StaticRoute
 from qjazz_contrib.core import logger
 
 
 def test_search_paths(config):
     sp = config.search_paths
-    for url in sp.values():
-        assert isinstance(url, SplitResult)
+    for route in sp._routes.values():
+        assert isinstance(route, (StaticRoute, DynamicRoute))
+
+        _, url = route.cannonical
         assert url.scheme, "Expecting scheme"
 
 

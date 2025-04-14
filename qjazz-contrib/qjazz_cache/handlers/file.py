@@ -58,9 +58,11 @@ class FileProtocolHandler(ProtocolHandler):
 
         return path
 
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
-        """Validate the rooturl format"""
-        if not Path(rooturl.path).exists():
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
+        """Validate the rooturl format
+        Note that dynamic path will no be validated
+        """
+        if not is_dynamic and not Path(rooturl.path).exists():
             raise InvalidCacheRootUrl(f"{rooturl.path} does not exists")
 
     def resolve_uri(self, uri: Url) -> str:

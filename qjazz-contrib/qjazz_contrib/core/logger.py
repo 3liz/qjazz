@@ -34,6 +34,7 @@ class LogLevel(Enum):
     CRITICAL = logging.CRITICAL
     NOTICE = logging.CRITICAL + 1
 
+
 FORMATSTR = "%(asctime)s.%(msecs)03dZ\t[%(process)d]\t%(levelname)s\t%(message)s"
 
 

@@ -39,13 +39,13 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
         if conf:
             self._path = conf.path
 
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
         if rooturl.path and self._path:
             raise InvalidCacheRootUrl(
                 f"Path redefiniton in geopackage root url configuration: {rooturl.geturl()}",
             )
 
-        if rooturl.path and not Path(rooturl.path).exists():
+        if not is_dynamic and rooturl.path and not Path(rooturl.path).exists():
             raise InvalidCacheRootUrl(f"Geopackage {rooturl.path} does not exists")
 
         q = _parameters(rooturl)

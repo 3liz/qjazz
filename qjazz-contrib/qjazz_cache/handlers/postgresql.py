@@ -58,7 +58,7 @@ class PostgresHandler(QgisStorageProtocolHandler):
         self._uri = urlsplit(str(conf.uri))
         self._query = _parameters(self._uri)
 
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
         if rooturl.netloc and self._uri.netloc:
             raise InvalidCacheRootUrl(
                 f"Netloc redefiniton in postgresql root url configuration: {rooturl.geturl()}",

@@ -23,10 +23,11 @@ services:
     - server
 
   rabbitmq:
-    image: rabbitmq:3-alpine
+    image: rabbitmq:3-management-alpine
     ports:
     - 127.0.0.1:5671:5671
     - 127.0.0.1:5672:5672
+    - 127.0.0.1:15672:15672
 
   redis:
     image: redis:7-alpine

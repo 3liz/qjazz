@@ -47,7 +47,7 @@ except ImportError:
     psutil = None  # type: ignore
 
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 from time import time
 from typing import (
     Iterable,
@@ -64,7 +64,7 @@ from qjazz_contrib.core import componentmanager, logger
 
 # Import default handlers for auto-registration
 from .common import ProjectMetadata, ProtocolHandler, Url
-from .config import ProjectsConfig, validate_url
+from .config import ProjectsConfig
 from .errors import (
     ResourceNotAllowed,
     StrictCheckingFailure,
@@ -74,6 +74,7 @@ from .handlers import (
     register_default_handlers,
     register_protocol_handler,
 )
+from .routes import validate_url
 from .status import CheckoutStatus
 
 CACHE_MANAGER_CONTRACTID = "@3liz.org/cache-manager;1"
@@ -126,11 +127,12 @@ class CacheManager:
             register_protocol_handler(scheme, conf)
 
         # Validate rooturls
-        for path, rooturl in config.search_paths.items():
+        for route in config.search_paths.routes:
+            path, rooturl = route.cannonical
             if logger.is_enabled_for(logger.LogLevel.DEBUG):
                 logger.debug("Validating cache root url '%s' (path: '%s')", rooturl.geturl(), path)
             handler = cls.get_protocol_handler(rooturl.scheme)
-            handler.validate_rooturl(rooturl, config)
+            handler.validate_rooturl(rooturl, config, route.is_dynamic)
 
     @classmethod
     def get_service(cls) -> Self:
@@ -166,10 +168,6 @@ class CacheManager:
         """Return the current configuration"""
         return self._config
 
-    def search_paths(self) -> Iterator[str]:
-        """Return the list of search paths"""
-        return iter(self.conf.search_paths.keys())
-
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """Resolve path according to location mapping
 
@@ -186,21 +184,25 @@ class CacheManager:
 
         Otherwise it will simply be appended to the root url path.
         """
-        path = Path(path)
+        path = PurePosixPath(path)
         # Find matching path
-        for location, rooturl in self.conf.search_paths.items():
-            if path.is_relative_to(location):
-                path = path.relative_to(location)
+        for route in self.conf.search_paths.routes:
+            result = route.resolve_path(path)
+            if not result:
+                continue
 
-                # Check for {path} template in rooturl
-                query = rooturl.query.format(path=path)
-                if query != rooturl.query:
-                    url = rooturl._replace(query=query)
-                else:
-                    # Simply append path to the rooturl path
-                    url = rooturl._replace(path=str(Path(rooturl.path, path)))
+            location, rooturl = result
+            path = path.relative_to(location)
 
-                return url
+            # Check for {path} template in rooturl
+            query = rooturl.query.format(path=path)
+            if query != rooturl.query:
+                url = rooturl._replace(query=query)
+            else:
+                # Simply append path to the rooturl path
+                url = rooturl._replace(path=str(PurePosixPath(rooturl.path, path)))
+
+            return url
 
         if allow_direct or self.conf.allow_direct_path_resolution:
             # Use direct resolution based on scheme
@@ -208,22 +210,10 @@ class CacheManager:
         else:
             raise ResourceNotAllowed(str(path))
 
+
     def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """List compatible search paths"""
-        urls: Iterable[tuple[str, Url]]
-        if location:
-            url = self.conf.search_paths.get(location)
-            if not url:
-                urls = filter(
-                    lambda loc: PurePosixPath(loc[0]).is_relative_to(location),
-                    self.conf.search_paths.items(),
-                )
-            else:
-                urls = ((location, url),)
-        else:
-            urls = self.conf.search_paths.items()
-
-        return urls
+        return self.conf.search_paths.locations(location)
 
     def collect_projects_ex(
         self,

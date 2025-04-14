@@ -16,7 +16,7 @@ Url = SplitResult
 class DummyProtocolHandler:
     """Protocol class for protocol handler"""
 
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
         pass
 
     def resolve_uri(self, uri: Url) -> str:

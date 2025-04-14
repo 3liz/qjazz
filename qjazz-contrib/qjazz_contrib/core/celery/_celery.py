@@ -34,6 +34,7 @@ class SecurityConfig(ConfigBase):
 LOCAL_BROKER = "localhost"
 LOCAL_BACKEND = "localhost:6379/0"
 
+
 class CeleryScheduler(ConfigBase):
     """Scheduler configuration"""
 

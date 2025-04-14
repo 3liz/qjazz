@@ -116,7 +116,7 @@ class S3ProtocolHandler(ProtocolHandler):
         self._tmpdirs: dict[str, TemporaryDirectory] = {}
         self._configured = False
 
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
         """Validate the rooturl format"""
         if not config.force_readonly_layers:
             raise InvalidCacheRootUrl(
@@ -137,6 +137,13 @@ class S3ProtocolHandler(ProtocolHandler):
         if gdal_version_info >= (3, 6):
             from osgeo.gdal import SetPathSpecificOption
 
+            if prefix and is_dynamic:
+                # Because gdal options are set at early stage prefix is no supported
+                # in rooturl
+                raise InvalidCacheRootUrl(
+                    f"Dynamic s3 root url does not support prefix: {rooturl}"
+                )
+
             key = f"/vsis3/{bucket}/{prefix}" if prefix else f"/vsis3/{bucket}"
 
             logger.debug("Adding S3 configuration for prefix %s", key)
@@ -155,10 +162,6 @@ class S3ProtocolHandler(ProtocolHandler):
         elif not self._configured:
             from osgeo.gdal import SetConfigOption
 
-            logger.warning("GDAL version is < 3.6")
-            logger.warning("VSIS3 options connot be set on a per-prefix basis")
-            logger.warning("Only one s3 configuration is allowed")
-
             secret_key = self._conf.secret_key.get_secret_value()
 
             SetConfigOption("AWS_S3_ENDPOINT", self._conf.endpoint)
@@ -169,6 +172,13 @@ class S3ProtocolHandler(ProtocolHandler):
             SetConfigOption("AWS_HTTPS", "YES" if self._conf.secure else "NO")
 
             self._configured = True
+        else:
+            logger.warning(
+                f"Dropped S3  configuration for '{rooturl.geturl()}'\n"
+                "GDAL version is < 3.6\n"
+                "VSIS3 options connot be set on a per-prefix basis\n"
+                "Only one s3 configuration is allowed"
+            )
 
     def resolve_uri(self, url: Url) -> str:
         """Sanitize uri for using as catalog key entry

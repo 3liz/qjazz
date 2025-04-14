@@ -2,7 +2,6 @@ import os
 
 from textwrap import dedent
 from typing import Annotated, Callable
-from urllib.parse import SplitResult, urlsplit
 
 from pydantic import (
     AfterValidator,
@@ -18,6 +17,7 @@ from qjazz_contrib.core import config
 from qjazz_contrib.core.models import Field
 
 from .handlers import HandlerConfig
+from .routes import Routes
 
 Bool = TypeAdapter(bool)
 
@@ -26,20 +26,20 @@ def _getenv_bool(varname: str) -> bool:
     return Bool.validate_python(os.getenv(varname, "no"))
 
 
-def validate_url(v: str) -> SplitResult:
-    if not isinstance(v, str):
-        raise ValueError("Url must be of type str")
-    url = urlsplit(v)
-    if not url.scheme:
-        url = url._replace(scheme="file")
-    return url
+def validate_routes(v: dict[str, str]) -> Routes:
+    if not isinstance(v, dict):
+        raise ValueError("Mapping expected")
+    return Routes(v)
 
 
-Url = Annotated[
-    SplitResult,
-    PlainValidator(validate_url),
-    PlainSerializer(lambda x: x.geturl(), return_type=str),
-    WithJsonSchema({"type": "str"}),
+RoutesDef = Annotated[
+    Routes,
+    PlainValidator(validate_routes),
+    PlainSerializer(
+        lambda routes: {k: v.geturl() for k, v in routes.cannonical},
+        return_type=dict[str, str],
+    ),
+    WithJsonSchema(TypeAdapter(dict[str, str]).json_schema()),
 ]
 
 
@@ -119,8 +119,9 @@ class ProjectsConfig(config.ConfigBase):
             "urls override proxy urls."
         ),
     )
-    search_paths: dict[str, Url] = Field(
+    search_paths: RoutesDef = Field(
         default={},
+        validate_default=True,
         title="Scheme mapping definitions",
         description="""
         Defines mapping betweeen location base path and storage handler root url.

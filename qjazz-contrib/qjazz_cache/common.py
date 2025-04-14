@@ -40,7 +40,7 @@ class ProtocolHandler(Protocol):
     """Protocol class for protocol handler"""
 
     @abstractmethod
-    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig):
+    def validate_rooturl(self, rooturl: Url, config: ProjectLoaderConfig, is_dynamic: bool = False):
         """Validate the rooturl format"""
         ...
 
