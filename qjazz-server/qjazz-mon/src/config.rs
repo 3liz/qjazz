@@ -10,9 +10,10 @@ pub struct Config {
     pub command: PathBuf,
     /// Arguments to commands
     pub args: Vec<String>,
+    /// Tags
+    pub tags: HashMap<String, String>,
     /// The configuration of the executable module
     /// The configuration is passed as QJAZZ_MON_CONFIG
     /// environment variable
-    pub tags: HashMap<String, String>,
     pub config: serde_json::Value,
 }

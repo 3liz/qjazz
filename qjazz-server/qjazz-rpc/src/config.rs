@@ -72,7 +72,7 @@ pub struct Rpc {
     /// Workers are restarted if total memory percent usage of workers
     /// exceed that value.
     high_water_mark: f64,
-    /// Interval in seconds between two check of the out-of-memory
+    /// Interval in seconds between two check the out-of-memory
     /// handler.
     oom_period: u64,
 }
