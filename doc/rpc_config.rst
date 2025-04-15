@@ -147,6 +147,24 @@ project's path or name::
     /<search_path>/<project_path>
 
 
+Dynamic paths
+-------------
+
+Dynamic paths allows to define templated path stems that will by be substitued in the 
+final path resolution::
+
+    "/{user}/{theme}" = "/path/to/{user}/projects/{theme}" 
+
+and ``/alice/forests/coolmap.qgs`` will be resolved to::
+
+    "/path/to/alice/projects/forests/coolmap.qgis"
+
+.. note::
+
+   | Dynamic paths may have restrictions that depends on the underlying handler.
+   | For example, the s3 storage handler does not allow you to template the bucket
+     name and set different configuration the same bucker with templated prefix.
+
 
 Managing cache
 ---------------

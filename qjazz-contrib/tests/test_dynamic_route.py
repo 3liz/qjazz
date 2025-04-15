@@ -1,12 +1,13 @@
 
 from pathlib import Path, PurePosixPath
 
+
 def test_dynamic_route_impl():
     from qjazz_cache.routes import Routes, urlsplit
 
     routes = Routes({
         "/foo/bar": "/myfoo/mybar",
-        "/baz/{Loc1}/{Loc2}": "/mybaz/{Loc1}/myloc/{Loc2}",
+        "/bar/{user}/{theme}": "/path/to/{user}/projects/{theme}",
     })
 
     locs = list(routes.locations("/foo"))
@@ -14,9 +15,9 @@ def test_dynamic_route_impl():
     assert locs[0] == ("/foo/bar", urlsplit("file:/myfoo/mybar"))
 
     # Check substitution
-    locs = list(routes.locations("/baz/loc1/loc2"))
+    locs = list(routes.locations("/bar/alice/forests"))
     assert len(locs) == 1
-    assert locs[0] == ("/baz/loc1/loc2", urlsplit("file:/mybaz/loc1/myloc/loc2"))
+    assert locs[0] == ("/bar/alice/forests", urlsplit("file:/path/to/alice/projects/forests"))
 
     # Should return only static routes
     locs = list(routes.locations())
@@ -25,15 +26,15 @@ def test_dynamic_route_impl():
 
     # Path resolution:w
     for route in routes.routes:
-        result = route.resolve_path(PurePosixPath("/baz/path1/path2/myproject.qgs"))
+        result = route.resolve_path(PurePosixPath("/bar/alice/forests/projects/coolmap.qgs"))
         if result:
             break
 
     assert result
 
     location, url = result
-    assert location == "/baz/path1/path2"
-    assert url == urlsplit("file:/mybaz/path1/myloc/path2")
+    assert location == "/bar/alice/forests"
+    assert url == urlsplit("file:/path/to/alice/projects/forests")
 
 
 def test_dynamic_config(data: Path):
