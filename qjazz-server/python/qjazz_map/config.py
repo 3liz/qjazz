@@ -21,7 +21,7 @@ from qjazz_contrib.core.config import (
 )
 from qjazz_contrib.core.models import Field, Option
 
-from .resolver import BackendConfig
+from .resolver import ChannelConfig
 
 HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 
@@ -75,7 +75,7 @@ class Server(ConfigBase):
 
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
-    backends: dict[str, BackendConfig]
+    backends: dict[str, ChannelConfig]
     includes: Optional[str]
 
     def model_dump_json(self, *args, **kwargs) -> str: ...
@@ -90,7 +90,7 @@ def create_config() -> ConfBuilder:
     # Add the `[backends]` configuration section
     builder.add_section(
         "backends",
-        dict[str, BackendConfig],
+        dict[str, ChannelConfig],
         Field(default={}),
     )
 
@@ -146,7 +146,7 @@ def load_include_config_files(includes: str, conf: ConfigProto):
                     file,
                     f"service {name} already defined",
                 )
-            conf.backends[name] = BackendConfig.model_validate(_backend)
+            conf.backends[name] = ChannelConfig.model_validate(_backend)
 
 
 def load_configuration(configpath: Optional[Path]) -> ConfigProto:

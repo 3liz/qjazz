@@ -183,10 +183,15 @@ pub struct ChannelConfig {
     /// - Regex match if prefixed with 're:'
     pub forward_headers: HeaderFilters,
     /// Allow sending direct project path to backend service.
-    /// This require that the backend service allow for direct resolution.
+    /// This requires that the backend service allow for direct resolution.
     pub allow_direct_resolution: bool,
     /// Api endpoints
     pub api: Vec<ApiEndPoint>,
+    /// Disable root catalog api
+    /// Requesting the catalog root will return
+    /// 403 HTTP response with an informative message that the
+    /// catalog has been disabled for the channel.
+    pub disable_root_catalog: bool,
     /// Channel request timeout
     timeout: Option<u64>,
 }

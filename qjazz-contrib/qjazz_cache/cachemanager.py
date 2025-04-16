@@ -210,7 +210,6 @@ class CacheManager:
         else:
             raise ResourceNotAllowed(str(path))
 
-
     def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """List compatible search paths"""
         return self.conf.search_paths.locations(location)
@@ -225,7 +224,7 @@ class CacheManager:
         """
         for location, url in self.locations(location):
             try:
-                loc = PurePosixPath(location) 
+                loc = PurePosixPath(location)
                 handler = self.get_protocol_handler(url.scheme)
                 for md in handler.projects(url):
                     yield md, handler.public_path(md.uri, location, url), handler, loc

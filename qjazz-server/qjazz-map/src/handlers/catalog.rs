@@ -97,6 +97,12 @@ pub async fn catalog_handler(
     channel: web::Data<Channel>,
     mut params: web::Query<Params>,
 ) -> Result<impl Responder> {
+    if channel.disable_root_catalog() {
+        // Return a 403 http response
+        return Ok(
+            HttpResponse::Forbidden().body("Catalog listing has been disabled for this channel")
+        );
+    }
 
     // Add mandatory terminaison for location prefix
     let prefix = params.prefix.take().map(|mut s| {

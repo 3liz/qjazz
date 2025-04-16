@@ -2,7 +2,6 @@
 //! Implement monitoring for OWS requests
 //!
 
-
 #[cfg(feature = "monitor")]
 mod mon {
     use actix_web::{

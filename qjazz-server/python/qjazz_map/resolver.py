@@ -50,10 +50,10 @@ class ApiEndpoint(ConfigBase):
     delegate_to: Option[str] = Field(
         title="Api name to delegate to",
         description="""
-          Api delegation allow for using a baseurl different
-          from the expected rootpath of qgis server api.
-          For exemple, wfs3 request may be mapped to a completely different
-          root path.
+        Api delegation allow for using a baseurl different
+        from the expected rootpath of qgis server api.
+        For exemple, wfs3 request may be mapped to a completely different
+        root path.
         """,
     )
     name: str = Field(
@@ -67,16 +67,16 @@ class ApiEndpoint(ConfigBase):
     enable_html_delegate: bool = Field(
         default=False,
         title="Enable html in delegated endpoint",
-        description=(
-            "Enable fetching html resources in delegated endpoints.\n"
-            "Enable this if the delegated api handle correctly html\n"
-            "template resource resolution in Qgis server when using\n"
-            "delegated api endpoint."
-        ),
+        description="""
+        Enable fetching html resources in delegated endpoints.
+        Enable this if the delegated api handle correctly html
+        template resource resolution in Qgis server when using
+        delegated api endpoint."
+        """,
     )
 
 
-class BackendConfig(ConfigBase):
+class ChannelConfig(ConfigBase):
     host: str = Field("localhost", title="Hostname")
     port: int = Field(DEFAULT_PORT, title="Port")
     enable_tls: bool = Field(
@@ -110,19 +110,19 @@ class BackendConfig(ConfigBase):
     timeout: int = Field(
         default=20,
         title="Request timeout",
-        description=(
-            "Set the timeout for Qgis response in seconds.\n"
-            "If a Qgis worker takes more than the corresponding value\n"
-            "a timeout error (504) is returned to the client."
-        ),
+        description="""
+        Set the timeout for Qgis response in seconds.
+        If a Qgis worker takes more than the corresponding value
+        a timeout error (504) is returned to the client.
+        """,
     )
     forward_headers: list[Annotated[str, StringConstraints(to_lower=True)]] = Field(
         default=["x-qgis-*", "x-lizmap-*"],
         title="Forwarded headers",
-        description=(
-            "Set the headers that will be forwarded to the Qgis server backend.\n"
-            "This may be useful if you have plugins that may deal with request headers."
-        ),
+        description="""
+        Set the headers that will be forwarded to the Qgis server backend.
+        This may be useful if you have plugins that may deal with request headers.
+        """,
     )
     api: list[ApiEndpoint] = Field(
         default=[],
@@ -131,9 +131,18 @@ class BackendConfig(ConfigBase):
     allow_direct_resolution: bool = Field(
         default=False,
         title="Allow direct path resolution",
-        description=(
-            "Allow remote worker to use direct project path resolution.\n"
-            "WARNING: allowing this may be a security vulnerabilty.\n"
-            "See worker configuration for details."
-        ),
+        description="""
+        Allow remote worker to use direct project path resolution.
+        WARNING: allowing this may be a security vulnerabilty.
+        See worker configuration for details.
+        """,
+    )
+    disable_root_catalog: bool = Field(
+        default=False,
+        title="Disable catalog root api",
+        description="""
+        Disable root catalog api: requesting the catalog root will return
+        a 403 HTTP response with an informative message that the
+        catalog has been disabled for the channel.
+        """
     )

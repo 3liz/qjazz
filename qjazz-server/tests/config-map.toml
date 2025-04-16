@@ -14,6 +14,7 @@ host = "localhost"
 port = 23456
 enable_tls = false
 cafile = "$location/certs/localhost.crt"
+#disable_root_catalog = true
 
 # With delegation
 [[backends.test.api]]

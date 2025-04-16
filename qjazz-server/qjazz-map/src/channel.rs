@@ -115,8 +115,14 @@ impl Channel {
         &self.config.route
     }
 
+    #[inline]
     pub fn allow_direct_resolution(&self) -> bool {
         self.config.allow_direct_resolution
+    }
+
+    #[inline]
+    pub fn disable_root_catalog(&self) -> bool {
+        self.config.disable_root_catalog
     }
 
     /// Return a client stub interface for service

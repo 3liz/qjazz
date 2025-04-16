@@ -58,6 +58,7 @@ class CatalogItem:
     coll: Collection
     location: PurePosixPath
 
+
 def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheEntry]:
     """Return a pinned project cache entry"""
     entry, co_status = cm.checkout(urlsplit(md.uri))

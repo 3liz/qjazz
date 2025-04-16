@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added 
 
-    * Allow passing location prefix in catalog 
+    * [server] Add option for disabling catalog listing
+    * [server] Allow passing location prefix in catalog 
     * Implement dynamic paths for cache manager search paths
     * Add OCI annotations in docker images
 

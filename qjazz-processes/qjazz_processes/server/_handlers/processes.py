@@ -398,7 +398,7 @@ class Processes(HandlerProto):
                 ),
             )
 
-        headers = { "Location": href(request, location) }
+        headers = {"Location": href(request, location)}
 
         if realm:
             headers[JOB_REALM_HEADER] = realm

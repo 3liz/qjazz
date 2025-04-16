@@ -55,4 +55,3 @@ def test_dynamic_config(data: Path):
     uri = cm.resolve_path("/dyn/montpellier/montpellier.qgs")
     assert uri.scheme == "file"
     assert uri.path == f"{data.joinpath('montpellier/montpellier.qgs')}"
-
