@@ -26,6 +26,14 @@ copy_qgis_configuration() {
     mkdir -p $HOME/plugins
 }
 
+#
+# Set QGIS cache directory
+#
+create_qgis_cache_directory() {
+    mkdir -p $QJAZZ_VOLUME/cache
+    export QGIS_SERVER_CACHE_DIRECTORY=$QJAZZ_VOLUME/cache
+}
+
 # Check for uid (running with --user)
 if [[ "$UID" != "0" ]]; then 
     CONF_USER=$UID:$(id -g)
@@ -100,6 +108,7 @@ if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
 fi
 
 copy_qgis_configuration
+create_qgis_cache_directory
 
 exec $@
 
