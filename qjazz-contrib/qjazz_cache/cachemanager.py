@@ -218,16 +218,17 @@ class CacheManager:
     def collect_projects_ex(
         self,
         location: Optional[str] = None,
-    ) -> Iterator[tuple[ProjectMetadata, str, ProtocolHandler]]:
+    ) -> Iterator[tuple[ProjectMetadata, str, ProtocolHandler, PurePosixPath]]:
         """Collect projects metadata from search paths
 
         Yield tuple of (entry, public_path, handler) for all found  entries
         """
         for location, url in self.locations(location):
             try:
+                loc = PurePosixPath(location) 
                 handler = self.get_protocol_handler(url.scheme)
                 for md in handler.projects(url):
-                    yield md, handler.public_path(md.uri, location, url), handler
+                    yield md, handler.public_path(md.uri, location, url), handler, loc
             except Exception:
                 logger.error(traceback.format_exc())
 
@@ -239,7 +240,7 @@ class CacheManager:
 
         Yield tuple of (entry, public_path) for all found  entries
         """
-        for md, public_path, _ in self.collect_projects_ex(location):
+        for md, public_path, _, _ in self.collect_projects_ex(location):
             yield md, public_path
 
     def checkout(self, url: Url) -> tuple[Optional[ProjectMetadata | CacheEntry], CheckoutStatus]:

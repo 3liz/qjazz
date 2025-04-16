@@ -2,6 +2,7 @@ import traceback
 
 from dataclasses import dataclass
 from enum import Flag
+from pathlib import PurePosixPath
 from typing import (
     Iterator,
     Optional,
@@ -55,7 +56,7 @@ class CatalogItem:
     md: ProjectMetadata
     layers: dict[str, OgcEndpoints]
     coll: Collection
-
+    location: PurePosixPath
 
 def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheEntry]:
     """Return a pinned project cache entry"""
@@ -78,12 +79,18 @@ class Catalog:
         self._catalog: dict[str, CatalogItem] = {}
         self._schema = Collection.model_json_schema()
 
-    def update_items(self, cm: CacheManager, pinned: bool = False) -> Iterator[CatalogItem]:
+    def update_items(self,
+        cm: CacheManager,
+        pinned: bool = False,
+        *,
+        prefix: Optional[str] = None,
+    ) -> Iterator[CatalogItem]:
+
         catalog = self._catalog
 
         # Iterate over the whole catalog
         loader_config = FastLoaderConfig()
-        for md, public_path, handler in cm.collect_projects_ex():
+        for md, public_path, handler, location in cm.collect_projects_ex(prefix):
             if pinned and not get_pinned_project(md, cm):
                 # Handle only pinned projects
                 continue
@@ -101,6 +108,7 @@ class Catalog:
                         md=md,
                         layers=layers,
                         coll=Collection.from_project(public_path, project),
+                        location=location,
                     )
                 except Exception:
                     logger.error(
@@ -112,11 +120,20 @@ class Catalog:
 
             yield item
 
-    def update(self, cm: CacheManager, pinned: bool = False):
-        self._catalog = {item.public_path: item for item in self.update_items(cm, pinned)}
+    def update(self, cm: CacheManager, pinned: bool = False, *, prefix: Optional[str] = None):
+        self._catalog = {item.public_path: item for item in self.update_items(
+            cm,
+            pinned,
+            prefix=prefix,
+        )}
 
-    def iter(self) -> Iterator[CatalogItem]:
-        yield from self._catalog.values()
+    def iter(self, prefix: Optional[str] = None) -> Iterator[CatalogItem]:
+        if prefix:
+            for item in self._catalog.values():
+                if item.location.is_relative_to(prefix):
+                    yield item
+        else:
+            yield from self._catalog.values()
 
     def get(self, ident: str) -> Optional[CatalogItem]:
         return self._catalog.get(ident)

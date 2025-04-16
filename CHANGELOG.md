@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## Unreleased
 
 ### Added 
-    
+
+    * Allow passing location prefix in catalog 
     * Implement dynamic paths for cache manager search paths
     * Add OCI annotations in docker images
 

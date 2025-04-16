@@ -33,7 +33,7 @@ def handle_catalog(
     collection_schema = Collection.model_json_schema()
 
     catalog = Catalog.get_service()
-    catalog.update(cm, not conf.load_project_on_request)
+    catalog.update(cm, not conf.load_project_on_request, prefix=msg.location)
 
     if msg.resource:
         item = catalog.get(msg.resource)
@@ -49,9 +49,8 @@ def handle_catalog(
             else []
         )
     else:
-
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
-            for item in islice(catalog.iter(), msg.start, msg.end):
+            for item in islice(catalog.iter(msg.location), msg.start, msg.end):
                 yield _m.CollectionsItem(
                     name=item.public_path,
                     json=CatatalogA.dump_json(item.coll),
@@ -115,7 +114,6 @@ def handle_layers(
         else:
             items = []
     else:
-
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
             for layer in islice(iter_layers(project, parent), msg.start, msg.end):
                 yield _m.CollectionsItem(
@@ -144,7 +142,8 @@ def handle_collection(
     cm: CacheManager,
     conf: QgisConfig,
 ):
-    if msg.location is None:
+    # Allow searching from prefix
+    if msg.location is None or msg.location.endswith("/"):
         handle_catalog(conn, msg, cm, conf)
     else:
         handle_layers(conn, msg, cm, conf)

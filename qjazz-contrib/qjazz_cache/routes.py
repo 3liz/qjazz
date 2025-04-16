@@ -64,7 +64,11 @@ class Routes:
         return self._routes.values()
 
     def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
-        """List compatible search paths"""
+        """List compatible search paths
+
+        Arguments:
+        location -- A location prefix
+        """
         urls: Iterable[tuple[str, Url]]
         if location:
             route = self._routes.get(location)
@@ -77,13 +81,14 @@ class Routes:
                     urls = ()
                 case _:
                     # Exact match route is not found check for compatible locations
+                    # i.e: all routes that is *relative* to the given location.
                     urls = filter(
                         None,
                         (route.relative_to(location) for route in self._routes.values()),
                     )
         else:
             # Returns only static routes
-            urls = ((route._location, route._url) for route in self._routes.values()
+            urls = ((str(route._location), route._url) for route in self._routes.values()
                     if isinstance(route, StaticRoute))
 
         return urls
@@ -101,7 +106,7 @@ class StaticRoute(RouteDef):
     is_dynamic: Final[bool] = False
 
     def __init__(self, location: str, url: str):
-        self._location = location
+        self._location = PurePosixPath(location)
         self._url = validate_url(url)
 
     @property
@@ -109,14 +114,14 @@ class StaticRoute(RouteDef):
         return (str(self._location), self._url)
 
     def relative_to(self, location: str) -> Optional[tuple[str, Url]]:
-        if PurePosixPath(self._location).is_relative_to(location):
-            return (self._location, self._url)
+        if self._location.is_relative_to(location):
+            return (str(self._location), self._url)
         else:
             return None
 
     def resolve_path(self, path: PurePosixPath) -> Optional[tuple[str, Url]]:
         if path.is_relative_to(self._location):
-            return (self._location, self._url)
+            return (str(self._location), self._url)
         else:
             return None
 

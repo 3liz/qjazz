@@ -95,18 +95,22 @@ impl Channel {
         self.serving.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    #[inline]
     pub fn title(&self) -> &str {
         &self.config.title
     }
 
+    #[inline]
     pub fn description(&self) -> &str {
         &self.config.description
     }
 
+    #[inline]
     pub fn route(&self) -> &str {
         &self.config.route
     }
@@ -131,6 +135,7 @@ impl Channel {
 
     /// Request timeout
     /// See https://docs.rs/tonic/latest/tonic/struct.Request.html#method.set_timeout
+    #[inline]
     pub fn timeout(&self) -> Duration {
         self.config.timeout()
     }

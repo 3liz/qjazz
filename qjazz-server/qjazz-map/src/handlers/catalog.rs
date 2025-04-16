@@ -25,6 +25,7 @@ const MAX_PAGE_LIMIT: u16 = 50;
 pub struct Params {
     page: u16,
     limit: u16,
+    prefix: Option<String>,
 }
 
 impl Default for Params {
@@ -32,6 +33,7 @@ impl Default for Params {
         Self {
             page: 0,
             limit: MAX_PAGE_LIMIT,
+            prefix: None,
         }
     }
 }
@@ -87,13 +89,24 @@ struct Catalog<'a> {
     links: Vec<Link<'a>>,
 }
 
+const PREFIX_END: char = '/';
+
 // Catalog handler
 pub async fn catalog_handler(
     req: HttpRequest,
     channel: web::Data<Channel>,
-    params: web::Query<Params>,
+    mut params: web::Query<Params>,
 ) -> Result<impl Responder> {
-    match execute_collection_request(channel.as_ref(), None, None, params.range()).await {
+
+    // Add mandatory terminaison for location prefix
+    let prefix = params.prefix.take().map(|mut s| {
+        if !s.ends_with(PREFIX_END) {
+            s.push(PREFIX_END)
+        }
+        s
+    });
+
+    match execute_collection_request(channel.as_ref(), prefix, None, params.range()).await {
         Either::Left(resp) => Ok(resp),
         Either::Right(page) => {
             let public_url = request::location(&req);

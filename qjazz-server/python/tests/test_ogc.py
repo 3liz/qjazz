@@ -1,7 +1,7 @@
 import json
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from qjazz_ogc import Collection, OgcEndpoints
 from qjazz_ogc.crs import CrsRef
@@ -80,6 +80,31 @@ async def test_ogc_catalog_api(worker: Worker):
 
     assert coll.id == item.name
     assert item.endpoints == OgcEndpoints.MAP.value
+
+
+async def test_ogc_catalog_prefix(worker: Worker):
+    """Test worker cache api"""
+
+    prefix="/france/"
+
+    await worker.io.put_message(
+        messages.CollectionsMsg(
+            start=0,
+            end=50,
+            location=prefix,
+        ),
+    )
+
+    status, resp = await worker.io.read_message()
+    print("\n::test_ogc_api::catalog_prefix", status)
+    assert status == 200
+
+    resp = messages.CollectionsPage.model_validate(resp)
+
+    assert len(resp.items) > 0
+    for item in resp.items:
+        print("\n::test_ogc_api::catalog_prefix::item", item)
+        assert PurePosixPath(item.name).is_relative_to(prefix)
 
 
 def test_ogc_layer_collection(qgis_session: None, data: Path):
