@@ -61,6 +61,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#qgis-project-s-cache-overview">Qgis project’s cache overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dynamic-paths">Dynamic paths</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#managing-cache">Managing cache</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#project-checkout">Project checkout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cache-restoration">Cache restoration</a><ul>
@@ -526,6 +527,26 @@ project’s path or name:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/&lt;</span><span class="n">search_path</span><span class="o">&gt;/&lt;</span><span class="n">project_path</span><span class="o">&gt;</span>
 </pre></div>
 </div>
+<section id="dynamic-paths">
+<h2>Dynamic paths<a class="headerlink" href="#dynamic-paths" title="Link to this heading"></a></h2>
+<p>Dynamic paths allows to define templated path stems that will by be substitued in the
+final path resolution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{theme}</span><span class="s2">&quot;</span> <span class="o">=</span> <span class="s2">&quot;/path/to/</span><span class="si">{user}</span><span class="s2">/projects/</span><span class="si">{theme}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>and <code class="docutils literal notranslate"><span class="pre">/alice/forests/coolmap.qgs</span></code> will be resolved to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;/path/to/alice/projects/forests/coolmap.qgis&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">Dynamic paths may have restrictions that depends on the underlying handler.</div>
+<div class="line">For example, the s3 storage handler does not allow you to template the bucket
+name and set different configuration the same bucker with templated prefix.</div>
+</div>
+</div>
+</section>
 <section id="managing-cache">
 <h2>Managing cache<a class="headerlink" href="#managing-cache" title="Link to this heading"></a></h2>
 <div class="admonition note">
