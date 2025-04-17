@@ -53,7 +53,7 @@ class Worker(Celery):
         self.conf.worker_redirect_stdouts = False
         self.conf.worker_hijack_root_logger = False
 
-        self._autoscale = conf.autoscale
+        self._max_concurrency = conf.max_concurrency
 
     @cached_property
     def worker_hostname(self) -> str:
@@ -63,9 +63,11 @@ class Worker(Celery):
 
     def start_worker(self, **kwargs) -> None:
         """Start the worker"""
-        if self._autoscale:
+        if self._max_concurrency:
             # Activate autoscale
-            kwargs.update(autoscale=(max(self.autoscale), min(self.autoscale)))
+            concurrency = self.conf.worker_concurrency
+            if concurrency and self._max_concurrency > concurrency:
+                kwargs.update(autoscale=(self._max_concurrency, concurrency))
 
         if self._scheduler.enabled:
             kwargs.update(

@@ -9,6 +9,7 @@ description="""
 Qgis service running test algorithms
 """
 concurrency = 1
+max_concurrency = 4
 result_expires = 900
 cleanup_interval = 300
 reload_monitor = "$location/.reloadmon"

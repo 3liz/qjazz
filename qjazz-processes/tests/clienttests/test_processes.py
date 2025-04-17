@@ -124,23 +124,27 @@ def test_unknownprocess(host):
     assert rv.status_code == 403
 
 
-def test_executetimeout(host, data):
+@pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")
+def test_multiple_processes(host, data):
     """  Test execute timeout """
-    rv = requests.post(
-        (
-            f"{host}/processes/processes_test:testlongprocess/execution"
-            f"?map=france/france_parts"
-            f"&tag=test_executetimeout"
-        ),
-        json={ "inputs": { "DELAY": 1 }},
-        headers={"Prefer": "wait=3"},
-    )
+    # Run multiple request to test message queuing and concurreny
+    print("\n")
+    for i in range(10):
+        rv = requests.post(
+            (
+                f"{host}/processes/processes_test:testlongprocess/execution"
+                f"?map=france/france_parts"
+                f"&tag=test_executetimeout"
+            ),
+            json={ "inputs": { "DELAY": 1 }},
+            headers={'Prefer':'respond-async'}
+        )
+        print(f"::test_multiple_processes::{i}\n", rv.text)
+        assert rv.status_code == 202
 
-    print(rv.text)
-    assert rv.status_code == 504
 
 
-@pytest.mark.skipif(os.getenv('TEST_MODE') != 'runall', reason="Test too long")
+@pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")
 def test_verylongprocess(host, data):
     """  Test execute a very long process (30s) """
     rv = requests.post(

@@ -32,7 +32,8 @@ COPY qjazz-server/python /python_modules/qjazz-server/
 RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
-    && /opt/local/qjazz/bin/pip install -U --no-cache-dir pip setuptools wheel requests \
+    && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
+        pip setuptools wheel requests \
     && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /python_modules/requirements.txt \
     && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
         -e /python_modules/qjazz-contrib \

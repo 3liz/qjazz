@@ -124,6 +124,13 @@ class CeleryConfig(ConfigBase):
         description=("The number of concurrent worker processes executing tasks."),
     )
 
+    # Enable autoscaling
+    max_concurrency: Optional[NonNegativeInt] = Field(
+        default=None,
+        title="Autoscale",
+        description="Activate concurrency autoscaling",
+    )
+
     max_tasks_per_child: Optional[int] = Field(
         default=None,
         ge=1,
@@ -142,13 +149,6 @@ class CeleryConfig(ConfigBase):
             "that may be consumed by a worker before it will\n"
             "be replaced by a new worker."
         ),
-    )
-
-    # Enable autoscaling
-    autoscale: Optional[tuple[NonNegativeInt, NonNegativeInt]] = Field(
-        default=None,
-        title="Autoscale",
-        description="Activate concurrency autoscaling",
     )
 
     # Scheduler
