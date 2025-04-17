@@ -37,7 +37,15 @@ impl Restore {
         }
     }
 
-    pub async fn restore(&self, worker: &mut Worker) -> Result<()> {
+    async fn update_worker_config(&self, worker: &mut Worker) -> Result<()> {
+        if self.config.0 > worker.last_update {
+            log::debug!("Updating configuration for worker {}", worker.id());
+            worker.put_config(&self.config.1).await?;
+        }
+        Ok(())
+    }
+
+    async fn update_worker_cache(&self, worker: &mut Worker) -> Result<()> {
         let last_update = worker.last_update;
         if last_update == 0 {
             // Update with all pulled projects so far
@@ -45,11 +53,7 @@ impl Restore {
                 worker.checkout_project(uri, true).await?;
             }
         } else if last_update < self.update {
-            // Update config
-            if self.config.0 > last_update {
-                log::debug!("Updating configuration for worker {}", worker.id());
-                worker.put_config(&self.config.1).await?;
-            }
+            self.update_worker_config(worker).await?;
             // Update cache
             worker.update_cache().await?;
             for rev in self.states.iter().rev() {
@@ -68,6 +72,12 @@ impl Restore {
                 };
             }
         }
+        Ok(())
+    }
+
+    pub async fn restore(&self, worker: &mut Worker) -> Result<()> {
+        self.update_worker_config(worker).await?;
+        self.update_worker_cache(worker).await?;
         worker.last_update = self.update;
         Ok(())
     }

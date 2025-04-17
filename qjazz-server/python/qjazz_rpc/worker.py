@@ -242,6 +242,7 @@ def qgis_server_run(
                 # --------------------
                 case _m.PutConfigMsg():
                     if isinstance(conf, ConfigProxy):
+                        logger.notice("Updating configuration")
                         if isinstance(msg.config, str):
                             config_data = json.loads(msg.config)
                         else:

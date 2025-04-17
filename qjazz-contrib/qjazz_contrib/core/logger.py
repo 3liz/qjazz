@@ -63,8 +63,8 @@ class LoggingConfig(config.ConfigBase):
 
 def set_log_level(log_level: LogLevel) -> LogLevel:
     """Set the log level"""
-    log_level = log_level
     LOGGER.setLevel(log_level.value)
+    LOGGER.log(LogLevel.NOTICE.value, "Log level set to %s", log_level.name)
     return log_level
 
 
@@ -85,7 +85,6 @@ def setup_log_handler(
     channel.setFormatter(formatter)
 
     LOGGER.addHandler(channel)
-    LOGGER.log(LogLevel.NOTICE.value, "Log level set to %s", log_level.name)
     return log_level
 
 
@@ -117,6 +116,10 @@ critical = LOGGER.critical
 debug = LOGGER.debug
 
 
+def notice(msg, *args, **kwargs):
+    LOGGER.log(LogLevel.NOTICE.value, msg, *args, **kwargs)
+
+
 def logger():
     return LOGGER
 
@@ -131,10 +134,6 @@ def log_req(msg, *args, **kwargs):
 
 def log_rreq(msg, *args, **kwargs):
     LOGGER.log(LogLevel.RREQ.value, msg, *args, **kwargs)
-
-
-def log_notice(msg, *args, **kwargs):
-    LOGGER.log(LogLevel.NOTICE.value, msg, *args, **kwargs)
 
 
 def is_enabled_for(level: LogLevel) -> bool:

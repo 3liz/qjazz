@@ -16,6 +16,8 @@ from qgis.core import (
 )
 
 from qjazz_cache.prelude import CacheManager
+from qjazz_contrib.core import logger
+from qjazz_contrib.core.timer import Instant
 
 from . import messages as _m
 from ._op_requests import get_project
@@ -32,8 +34,12 @@ def handle_catalog(
 ):
     collection_schema = Collection.model_json_schema()
 
+    instant = Instant()
+
     catalog = Catalog.get_service()
     catalog.update(cm, not conf.load_project_on_request, prefix=msg.location)
+
+    logger.info("Updated catalog (prefix: '%s') in %s", instant.elapsed_ms())  
 
     if msg.resource:
         item = catalog.get(msg.resource)
