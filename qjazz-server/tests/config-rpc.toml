@@ -25,7 +25,10 @@ disable_getprint = false
 force_readonly_layers = true
 
 [worker.qgis.projects.search_paths]
-'/tests' = "$location/data/samples"
-'/france' = "$location/data/france_parts"
-'/montpellier' = "$location/data/montpellier"
+'/{loc}' = "$location/data/{loc}"
+
+#[worker.qgis.projects.search_paths]
+#'/tests' = "$location/data/samples"
+#'/france' = "$location/data/france_parts"
+#'/montpellier' = "$location/data/montpellier"
  

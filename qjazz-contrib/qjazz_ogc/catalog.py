@@ -22,8 +22,11 @@ from qjazz_cache.prelude import (
     CacheManager,
     CheckoutStatus,
     ProjectMetadata,
+    ProtocolHandler,
+    ResourceNotAllowed,
 )
 from qjazz_contrib.core import componentmanager, logger
+from qjazz_contrib.core.condition import assert_postcondition
 
 from .project import Collection
 
@@ -101,16 +104,7 @@ class Catalog:
 
             if not item or md.last_modified > item.md.last_modified:
                 try:
-                    logger.debug("=Catalog: updating: '%s'", md.uri)
-                    project = handler.project(md, loader_config)
-                    layers = dict(t for t in collect_layers(project))
-                    item = CatalogItem(
-                        public_path=public_path,
-                        md=md,
-                        layers=layers,
-                        coll=Collection.from_project(public_path, project),
-                        location=location,
-                    )
+                    item = new_catalog_item(md, public_path, handler, location, loader_config)
                 except Exception:
                     logger.error(
                         "Error loading project snapshot %s\n%s",
@@ -128,6 +122,59 @@ class Catalog:
             prefix=prefix,
         )}
 
+    def get_and_update(
+        self,
+        cm: CacheManager,
+        ident: str,
+        *,
+        pinned: bool = False,
+    ) -> Optional[CatalogItem]:
+        """ Fetch a resource in the catalog and update it
+        """
+        item = self._catalog.get(ident)
+        if not item:
+            try:
+                url = cm.resolve_path(ident)
+            except ResourceNotAllowed:
+                return None
+
+            location = cast(PurePosixPath, cm.find_location(ident))
+            assert_postcondition(location is not None)
+
+            md, status = cm.checkout(url)
+            match status:
+                case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
+                    entry = cast(CacheEntry, md)
+                    if pinned and not entry.pinned:
+                        # Handle only pinned items
+                        return None
+                case CheckoutStatus.REMOVED | CheckoutStatus.NOTFOUND:
+                    return None
+        else:
+            md, status = cm.checkout(urlsplit(item.md.uri))
+            if status in (CheckoutStatus.REMOVED, CheckoutStatus.NOTFOUND):
+                del self._catalog[ident]
+                return None
+            if cast(ProjectMetadata, md).last_modified <= item.md.last_modified:
+                return item
+
+            location = item.location
+
+        md = cast(ProjectMetadata, md)
+        try:
+            handler = cm.get_protocol_handler(md.scheme)
+            item = new_catalog_item(md, ident, handler, location, FastLoaderConfig())
+            self._catalog[ident] = item
+            return item
+        except Exception:
+            logger.error(
+                "Error loading project snapshot %s\n%s",
+                md.uri,
+                traceback.format_exc(),
+            )
+        return None
+
+
     def iter(self, prefix: Optional[str] = None) -> Iterator[CatalogItem]:
         if prefix:
             for item in self._catalog.values():
@@ -142,6 +189,7 @@ class Catalog:
     def __len__(self) -> int:
         return len(self._catalog)
 
+
     @classmethod
     def get_service(cls) -> Self:
         """Return cache manager as a service.
@@ -153,6 +201,27 @@ class Catalog:
     def register_as_service(self):
         componentmanager.register_service(CATALOG_CONTRACTID, self)
 
+
+#
+# Create a new catalog item
+#
+def new_catalog_item(
+    md: ProjectMetadata,
+    public_path: str,
+    handler: ProtocolHandler,
+    location: PurePosixPath,
+    loader_config: FastLoaderConfig,
+) -> CatalogItem:
+    logger.debug("=Catalog: updating: '%s'", md.uri)
+    project = handler.project(md, loader_config)
+    layers = dict(t for t in collect_layers(project))
+    return CatalogItem(
+        public_path=public_path,
+        md=md,
+        layers=layers,
+        coll=Collection.from_project(public_path, project),
+        location=location,
+    )
 
 #
 # Collect layer infos

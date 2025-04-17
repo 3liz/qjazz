@@ -146,7 +146,7 @@ class CacheManager:
     def get_protocol_handler(cls, scheme: str) -> ProtocolHandler:
         """Find protocol handler for the given scheme"""
         return componentmanager.get_service(
-            f"@3liz.org/cache/protocol-handler;1?scheme={scheme}",
+            f"@3liz.org/cache/protocol-handler;1?scheme={scheme or 'file'}",
         )
 
     def __init__(
@@ -167,6 +167,16 @@ class CacheManager:
     def conf(self) -> ProjectsConfig:
         """Return the current configuration"""
         return self._config
+
+    def find_location(self, path: str) -> Optional[PurePosixPath]:
+        """ Return the location for the given resource path"""
+        path = PurePosixPath(path)
+        for route in self.conf.search_paths.routes:
+            result = route.resolve_path(path)
+            if result:
+                return PurePosixPath(result[0])
+        else:
+            return None
 
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """Resolve path according to location mapping

@@ -2,7 +2,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from qjazz_cache.prelude import CacheManager, ProjectsConfig, errors
+from qjazz_cache import errors
+from qjazz_cache.prelude import CacheManager, ProjectsConfig
 
 
 def test_storage_postgres(data, config):

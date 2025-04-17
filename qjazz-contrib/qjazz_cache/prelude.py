@@ -1,5 +1,7 @@
 # Re-export
-from . import errors  # noqa F401
+from .errors import (  # noqa F401
+    ResourceNotAllowed,
+)
 
 from .cachemanager import (  # noqa F401
     CacheEntry,
@@ -7,4 +9,5 @@ from .cachemanager import (  # noqa F401
     CheckoutStatus,
     ProjectMetadata,
     ProjectsConfig,
+    ProtocolHandler,
 )
