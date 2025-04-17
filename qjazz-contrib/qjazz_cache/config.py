@@ -1,15 +1,13 @@
 import os
 
 from textwrap import dedent
-from typing import Annotated, Callable
+from typing import Annotated
 
 from pydantic import (
-    AfterValidator,
     PlainSerializer,
     PlainValidator,
     PrivateAttr,
     TypeAdapter,
-    ValidationInfo,
     WithJsonSchema,
 )
 
@@ -22,8 +20,8 @@ from .routes import Routes
 Bool = TypeAdapter(bool)
 
 
-def _getenv_bool(varname: str) -> bool:
-    return Bool.validate_python(os.getenv(varname, "no"))
+def _getenv_bool(varname: str, default: bool) -> bool:
+    return Bool.validate_python(os.getenv(varname, default))
 
 
 def validate_routes(v: dict[str, str]) -> Routes:
@@ -43,19 +41,9 @@ RoutesDef = Annotated[
 ]
 
 
-def _qgis_env_flag_validator(name: str) -> Callable[[bool, ValidationInfo], bool]:
-    def validator(v: bool, info: ValidationInfo) -> bool:
-        return v or _getenv_bool(name)
-
-    return validator
-
-
 class ProjectsConfig(config.ConfigBase):
-    trust_layer_metadata: Annotated[
-        bool,
-        AfterValidator(_qgis_env_flag_validator("QGIS_TRUST_LAYER_METADATA")),
-    ] = Field(
-        default=False,
+    trust_layer_metadata: bool = Field(
+        default = _getenv_bool("QGIS_TRUST_LAYER_METADATA", False),
         title="Trust layer metadata",
         description="""
         Trust layer metadata.
@@ -65,11 +53,8 @@ class ProjectsConfig(config.ConfigBase):
         Since QGIS 3.16
         """,
     )
-    disable_getprint: Annotated[
-        bool,
-        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_DISABLE_GETPRINT")),
-    ] = Field(
-        default=False,
+    disable_getprint: bool = Field(
+        default=_getenv_bool("QGIS_SERVER_DISABLE_GETPRINT", False),
         title="Disable GetPrint requests",
         description="""
         Don't load print layouts.
@@ -78,19 +63,13 @@ class ProjectsConfig(config.ConfigBase):
         (since print layouts are not thread safe).
         """,
     )
-    force_readonly_layers: Annotated[
-        bool,
-        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_FORCE_READONLY_LAYERS")),
-    ] = Field(
-        default=True,
+    force_readonly_layers: bool = Field(
+        default=_getenv_bool("QGIS_SERVER_FORCE_READONLY_LAYERS", True),
         title="Force read only mode",
         description="Force layers to open in read only mode",
     )
-    ignore_bad_layers: Annotated[
-        bool,
-        AfterValidator(_qgis_env_flag_validator("QGIS_SERVER_IGNORE_BAD_LAYERS")),
-    ] = Field(
-        default=False,
+    ignore_bad_layers: bool = Field(
+        default=_getenv_bool("QGIS_SERVER_IGNORE_BAD_LAYERS", False),
         title="Ignore bad layers",
         description="""
         Allow projects to be loaded with event if it contains
