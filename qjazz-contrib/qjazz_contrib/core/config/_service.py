@@ -159,7 +159,7 @@ class ConfigSettings(BaseSettings):
     # environment variables.
     # * 'disabled': environment variables have no effects on configuration.
     #
-    env_settings_precedence: ClassVar[EnvSettingsOption] = "first"
+    env_settings_precedence: ClassVar[EnvSettingsOption] = "last"
 
     model_config = SettingsConfigDict(
         frozen=True,
