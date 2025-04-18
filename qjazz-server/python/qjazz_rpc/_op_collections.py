@@ -89,9 +89,9 @@ def handle_layers(
     catalog = Catalog.get_service()
     catalog.update(cm, pinned)
 
-    parent = catalog.get(msg.location)
+    parent = catalog.get_and_update(cm, msg.location)
     if not parent:
-        _m.send_reply(conn, "Resource not found: {msg.location}", 404)
+        _m.send_reply(conn, f"Resource not found: {msg.location}", 404)
         return
 
     # We need to fully load the project to get access to
