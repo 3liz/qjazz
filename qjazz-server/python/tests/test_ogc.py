@@ -85,7 +85,7 @@ async def test_ogc_catalog_api(worker: Worker):
 async def test_ogc_catalog_prefix(worker: Worker):
     """Test worker cache api"""
 
-    prefix="/france/"
+    prefix = "/france/"
 
     await worker.io.put_message(
         messages.CollectionsMsg(

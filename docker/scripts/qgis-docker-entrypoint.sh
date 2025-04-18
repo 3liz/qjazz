@@ -28,11 +28,14 @@ copy_qgis_configuration() {
 }
 
 #
-# Set QGIS cache directory
+# Set QGIS cache directories
 #
-create_qgis_cache_directory() {
+create_qgis_cache_directories() {
     mkdir -p $QJAZZ_VOLUME/cache
     export QGIS_SERVER_CACHE_DIRECTORY=$QJAZZ_VOLUME/cache
+
+    # Set the network cache location (default to ~/.cache/QGIS/QGIS3)
+    export QGIS_NETWORK_CACHE_DIRECTORY=$QJAZZ_VOLUME/.cache
 }
 
 # Check for uid (running with --user)
@@ -109,7 +112,7 @@ if [[ "$CONF_DISPLAY_XVFB" == "ON" ]]; then
 fi
 
 copy_qgis_configuration
-create_qgis_cache_directory
+create_qgis_cache_directories
 
 exec $@
 

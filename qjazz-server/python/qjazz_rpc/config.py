@@ -1,9 +1,15 @@
+import os
+
 from typing import Annotated
 
-from pydantic import BeforeValidator, Field
+from pydantic import (
+    AfterValidator,
+    BeforeValidator,
+)
 
 from qjazz_cache.config import ProjectsConfig
 from qjazz_contrib.core import config
+from qjazz_contrib.core.models import Field
 from qjazz_contrib.core.qgis import QgisNetworkConfig, QgisPluginConfig
 
 
@@ -20,6 +26,20 @@ def _validate_qgis_setting(value: str | bool | float | int) -> str:
 
 
 QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
+QgisSettingValues = dict[str, QgisSettingValue]
+
+
+def validate_qgis_settings(settings: QgisSettingValues) -> QgisSettingValues:
+    # Define where QGIS store network cache, by default it is
+    # in ~/.cache/QGIS/.... make it configurable from env.
+    net_cache_dir = os.getenv("QGIS_NETWORK_CACHE_DIRECTORY")
+    if net_cache_dir:
+        settings["cache/directory"] = net_cache_dir
+    # Cache size in kilobytes
+    net_cache_size = os.getenv("QGIS_NETWORK_CACHE_SIZE_KB")
+    if net_cache_size:
+        settings["cache/size-bytes"] = str(int(net_cache_size) * 1024)
+    return settings
 
 
 class QgisConfig(config.ConfigBase):
@@ -31,43 +51,45 @@ class QgisConfig(config.ConfigBase):
     max_projects: int = Field(
         default=50,
         title="Max number of projects in cache",
-        description=("The maximum number of projects allowed in cache.\nThe default value is set to 50 projects. "),
+        description="""
+        The maximum number of projects allowed in cache.\nThe default value is set to 50 projects.
+        """,
     )
     load_project_on_request: bool = Field(
         default=True,
         title="Load project in cache when requested",
-        description=(
-            "Load project in cache at request.\n"
-            "If set to 'false', project not loaded in cache will\n"
-            "return a 403 HTTP code when requested.\n"
-            "Thus, adding project's to cache will require a specific\n"
-            "action from another service or admininstrative\n"
-            "management tools."
-        ),
+        description="""
+        Load project in cache at request.
+        If set to 'false', project not loaded in cache will
+        return a 403 HTTP code when requested.
+        Thus, adding project's to cache will require a specific
+        action from another service or admininstrative
+        management tools.
+        """,
     )
     reload_outdated_project_on_request: bool = Field(
-        default=False,
+        default=True,
         title="Reload outdated project when requested",
-        description=(
-            "Reload outdated project at request.\n"
-            "If set to 'false', outdated project in cache will\n"
-            "not be refreshed when requested.\n"
-            "Thus, refreshing project's to cache will require a specific\n"
-            "action from another service or admininstrative\n"
-            "management tools."
-        ),
+        description="""
+        Reload outdated project at request.
+        If set to 'false', outdated project in cache will
+        not be refreshed when requested.
+        Thus, refreshing project's to cache will require a specific
+        action from another service or admininstrative
+        management tools.
+        """,
     )
     enable_python_embedded: bool = Field(
         default=False,
         title="Allow python embedded macros",
-        description=(
-            "Set authorization to run Python Embedded in projects.\n"
-            "If enabled, it will use the QGIS settings value defined in the\n"
-            "QGIS settings options.\n"
-            "If disabled, Python Embedded is completely disabled and QGIS defined\n"
-            "settings will be ignored.\n"
-            "For security reason this is disabled by default."
-        ),
+        description="""
+        Set authorization to run Python Embedded in projects.
+        If enabled, it will use the QGIS settings value defined in the
+        QGIS settings options.
+        If disabled, Python Embedded is completely disabled and QGIS defined
+        settings will be ignored.
+        For security reason this is disabled by default.
+        """,
     )
     plugins: QgisPluginConfig = Field(
         default=QgisPluginConfig(),
@@ -78,22 +100,28 @@ class QgisConfig(config.ConfigBase):
         title="Maximum chunk size",
         description="Set the maximum chunk size for streamed responses.",
     )
-    qgis_settings: dict[str, QgisSettingValue] = Field(
+    qgis_settings: Annotated[
+        QgisSettingValues,
+        AfterValidator(validate_qgis_settings),
+    ] = Field(
         default={},
+        validate_default=True,
         title="Qgis settings",
-        description=(
-            "Qgis settings override.\n"
-            "Use the syntax '<section>/<path>' for keys.\n"
-            "Not that values defined here will override those\n"
-            "from QGIS3.ini file."
-        ),
+        description="""
+        Qgis settings override.
+        Use the syntax '<section>/<path>' for keys.
+        Not that values defined here will override those
+        from QGIS3.ini file.
+        """,
     )
     ignore_interrupt_signal: bool = Field(
         True,
         title="Ignore INT signal in worker",
-        description=(
-            "Ignore INT signal in workers.\nThis is useful when you don't want\npropagating signal from parent process."
-        ),
+        description="""
+        Ignore INT signal in workers.
+        This is useful when you don't want
+        propagating signal from parent process.
+        """,
     )
     network: QgisNetworkConfig = Field(
         QgisNetworkConfig(),

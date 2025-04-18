@@ -26,6 +26,7 @@ from qjazz_contrib.core.qgis import (
     show_all_versions,
     show_qgis_settings,
 )
+from qjazz_contrib.core.timer import Instant
 
 from . import _op_cache, _op_collections, _op_plugins, _op_requests
 from . import messages as _m
@@ -171,7 +172,7 @@ def qgis_server_run(
             rendez_vous.busy()
             logger.debug("Received message: %s", msg.msg_id.name)
             logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
-            t_start = time()
+            duration = Instant()
             match msg:
                 # --------------------
                 # Qgis server Requests
@@ -297,7 +298,7 @@ def qgis_server_run(
                         "%s\t%s\tResponse time: %d ms",
                         name,
                         msg.msg_id.name,
-                        int((time() - t_start) * 1000.0),
+                        duration.elapsed_ms,
                     )
             # Reset feedback
             feedback.reset()
