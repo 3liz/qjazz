@@ -36,7 +36,7 @@ class Worker:
     def __init__(self, config: QgisConfig):
         self._name = "Test"
         self._conf = config
-        self._tmpdir = TemporaryDirectory(prefix="qserv_")
+        self._tmpdir = TemporaryDirectory(prefix="qjazz_")
         self._rendez_vous = RendezVous(Path(self._tmpdir.name, "_rendez_vous"))
         self._process: asyncio.subprocess.Process | None = None
         self._started = False

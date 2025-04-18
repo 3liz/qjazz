@@ -31,11 +31,10 @@ BUILD_TARGET:=base
 
 #BUILD_CACHE:=--force-rm --no-cache
 
+main:
+	@echo "No default rule"
 
-build-all: build noqgis-build
-
-tag-all: tag noqgis-tag
-
+build-all: build noqgis-build tag noqgis-tag
 
 build: manifest requirements
 	$(MAKE) -C .. configure

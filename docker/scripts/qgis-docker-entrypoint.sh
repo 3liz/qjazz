@@ -23,7 +23,8 @@ copy_qgis_configuration() {
     export QGIS_OPTIONS_PATH=$HOME
 
     # Create plugin dir
-    mkdir -p $HOME/plugins
+    export QGIS_PLUGINPATH=$QJAZZ_VOLUME/plugins
+    mkdir -p $QGIS_PLUGINPATH
 }
 
 #

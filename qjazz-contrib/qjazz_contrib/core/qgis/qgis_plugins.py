@@ -17,22 +17,20 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import (
-    Annotated,
     Any,
     Iterator,
     Literal,
     Optional,
     Self,
+    Sequence,
     Type,
     assert_never,
     cast,
 )
 
 from pydantic import (
-    AfterValidator,
     Field,
     JsonValue,
-    ValidationInfo,
 )
 
 import qgis
@@ -54,39 +52,24 @@ class PluginType(Enum):
 QGIS_PLUGIN_SERVICE_CONTRACTID = "@3liz.org/qgis-plugin-service;1"
 
 
-def _default_plugin_path() -> Path:
-    """Return the default plugin's path"""
-    return Path(
-        os.getenv("QGIS_OPTIONS_PATH")
-        or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
-        or os.getenv("QGIS_HOME")
-        or Path.home().joinpath(".qgis-server"),
-        "plugins",
-    )
-
-
-def _validate_plugins_paths(paths: list[Path], _: ValidationInfo) -> list[Path]:
-    if not paths:
-        path_env = os.getenv("QGIS_PLUGINPATH")
-        if path_env:
-            paths = [Path(p) for p in path_env.split(":")]
-    paths.append(_default_plugin_path())
-    for path in paths:
-        if not path.exists() or not path.is_dir():
-            print(  # noqa T201
-                f"WARNING: '{path}' is not a valid plugin directory",
-                file=sys.stderr,
-                flush=True,
-            )
-    return paths
+def _default_plugin_paths() -> list[Path]:
+    """Return the default plugin's paths"""
+    path_env = os.getenv("QGIS_PLUGINPATH")
+    if path_env:
+        return [Path(p) for p in path_env.split(":")]
+    else:
+        return [Path(
+            os.getenv("QGIS_OPTIONS_PATH")
+            or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
+            or os.getenv("QGIS_HOME")
+            or Path.home().joinpath(".qjazz"),
+            "plugins",
+        )]
 
 
 class QgisPluginConfig(config.ConfigBase):
-    paths: Annotated[
-        list[Path],
-        AfterValidator(_validate_plugins_paths),
-    ] = Field(
-        default=[],
+    paths: Sequence[Path] = Field(
+        default=_default_plugin_paths(),
         validate_default=True,
         title="Plugin paths",
         description=(
@@ -365,10 +348,10 @@ def install_plugins(conf: QgisPluginConfig):
 
     assert_precondition(conf.plugin_manager.is_absolute())
 
-    logger.info("Installing plugins")
-
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
+
+    logger.info("Installing plugins in %s", install_path)
 
     def _run(*args):
         res = subprocess.run(

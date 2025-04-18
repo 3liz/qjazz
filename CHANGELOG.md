@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+* Fix configuration issues
+* Fix catalog update logic
 * [rpc] Fix configuration update not applied on worker on first time
 
 ## 0.1.0 - 2025-04-11

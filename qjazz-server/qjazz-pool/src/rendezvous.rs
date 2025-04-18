@@ -59,7 +59,7 @@ impl Drop for RendezVous {
 
 impl RendezVous {
     pub fn new() -> Result<Self> {
-        let tmp_dir = TempDir::with_prefix("qserv_")?;
+        let tmp_dir = TempDir::with_prefix("qjazz_")?;
         let path = tmp_dir.path().join("_rendez_vous");
 
         Ok(Self {
