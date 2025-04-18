@@ -7,7 +7,7 @@ services:
       CONF_WORKER__NAME: worker
       CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
         { 
-          "/": "/qgis-projects/france_parts"
+          "/": "/qgis-projects"
         }
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects } 

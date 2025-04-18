@@ -1,7 +1,7 @@
 import os
 
 from textwrap import dedent
-from typing import Annotated
+from typing import Annotated, cast
 
 from pydantic import (
     PlainSerializer,
@@ -24,10 +24,15 @@ def _getenv_bool(varname: str, default: bool) -> bool:
     return Bool.validate_python(os.getenv(varname, default))
 
 
-def validate_routes(v: dict[str, str]) -> Routes:
-    if not isinstance(v, dict):
-        raise ValueError("Mapping expected")
-    return Routes(v)
+def validate_routes(v: str|dict[str, str]) -> Routes:
+    match v:
+        case str():
+            v = TypeAdapter(dict[str, str]).validate_json(v)
+        case dict():
+            pass
+        case _:
+            raise ValueError("Mapping or json string expected")
+    return Routes(cast(dict,v))
 
 
 RoutesDef = Annotated[
