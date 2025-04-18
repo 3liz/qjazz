@@ -32,3 +32,5 @@ force_readonly_layers = true
 '/france' = "$location/data/france_parts"
 '/montpellier' = "$location/data/montpellier"
  
+[worker.network]
+trace = true

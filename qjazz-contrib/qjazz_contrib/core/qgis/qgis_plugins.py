@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Iterator,
     Literal,
@@ -29,6 +30,7 @@ from typing import (
 )
 
 from pydantic import (
+    AfterValidator,
     Field,
     JsonValue,
 )
@@ -68,8 +70,11 @@ def _default_plugin_paths() -> list[Path]:
 
 
 class QgisPluginConfig(config.ConfigBase):
-    paths: Sequence[Path] = Field(
-        default=_default_plugin_paths(),
+    paths: Annotated[
+        Sequence[Path],
+        AfterValidator(lambda v: _default_plugin_paths() if not v else v),
+    ] = Field(
+        default = [],
         validate_default=True,
         title="Plugin paths",
         description=(
