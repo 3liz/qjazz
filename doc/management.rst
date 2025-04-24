@@ -1,11 +1,11 @@
 .. highlight:: text
 
-.. _adv_managment:
+.. _adv_management:
 
-Advanced managment
+Advanced management
 ==================
 
-`qjazz` come with managment tools for Qgis service clusters.
+`qjazz` come with management tools for Qgis service clusters.
 
 It allows you to:
 
@@ -15,13 +15,13 @@ It allows you to:
 * Get plugin's infos
 * List project's catalog
 * Watch health status 
-* Serve REST managment api  
+* Serve REST management api
 
 
-Running managment from CLI
+Running management from CLI
 --------------------------
 
-You may run the managment tool from CLI::
+You may run the management tool from CLI::
 
     > pip install qjazz-admin
     > python3 -m qjazz_admin --help
@@ -49,10 +49,10 @@ or from the docker image::
         3liz/qjazz:ltr qjazz-server-admin
 
 
-Managment from REST api
+Management from REST api
 ------------------------
 
-Managment may also be handler using REST api with the `serve` command::
+Management may also be handler using REST api with the `serve` command::
 
     > qjazz-server-admin serve
 
@@ -62,8 +62,8 @@ From this you can use your own dashboard for managing your Qgis clusters.
 Api specification
 ^^^^^^^^^^^^^^^^^
 
-See the :doc:`managment-api` 
-or download the :download:`Json specs <specs/openapi-managment.json>`.
+See the :doc:`management-api`
+or download the :download:`Json specs <specs/openapi-management.json>`.
 
 
 Configuration
@@ -146,7 +146,7 @@ The configuration schema may be output as different format using the `doc` comma
 from the CLI: the `json` or `yaml` format may be used for validation. 
 
 
-.. literalinclude:: configs/managment.toml
+.. literalinclude:: configs/management.toml
      :language: toml
 
 
@@ -164,10 +164,10 @@ In pool of Qgis services, cache may be desynchronized for different reasons:
 * Using the `load_project_on_request`
 * Updating container in a orchestrated environment
 
-The :ref:`cache restoration mecanism <rpc_cache_restoration>` may prevent most
-of desynchronization mecanism, it may be required to manually resync caches: 
+The :ref:`cache restoration mechanism <rpc_cache_restoration>` may prevent most
+of desynchronization mechanism, it may be required to manually resync caches:
 
-The cli managment tool provide the `sync` command while the REST api provides the
+The cli management tool provide the `sync` command while the REST api provides the
 http method:
 
 .. http:patch:: /v1/pools/{Id}/cache
@@ -177,7 +177,7 @@ http method:
 
 .. _admin_config_reload:
 
-Adding, modifying or removing pool to managment service
+Adding, modifying or removing pool to management service
 -------------------------------------------------------
 
 If you add or remove resolver's you will need to reload the configuration.

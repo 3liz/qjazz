@@ -7,25 +7,25 @@ Description
 
 QJazz is a suite of QGIS based services including:
 
-- QGIS serverr as microservice
+- QGIS server as microservice
 - OGC Processes server on top of QGIS processing
 
 This is as set of modules for deploying QGIS based servers and processing services
 as OGC processes compliant API
 
 It aims to provide support for scalable deployment of QGIS based services 
-on medium or large infrastructure and has been developped to solve some issues
+on medium or large infrastructure and has been developed to solve some issues
 when dealing with large numbers of projects.
 
 The services are implemented as  wrappers around the QGIS Server api 
 and the Processing QGIS api and because of this, it supports all 
 QGIS Server features and options.
 
-The qjazz-server setup is splitted in 3 different services: 
+The qjazz-server setup is split in 3 different services:
     
 - Services using gRCP protocols for running qgis servers processes
-- Middleware asynchronous HTTP proxy for routing requests to differents worker backends
-- Admin tools and service for inspectings worker's pool and health checking.
+- Middleware asynchronous HTTP proxy for routing requests to different worker backends
+- Admin tools and service for inspecting worker's pool and health checking.
 
 Overview
 --------
@@ -34,7 +34,7 @@ Overview
 
     --------------------                 -------------------
     |                  | n             n |                 |
-    |  Http            |<--------------->|   Qgis rpc      |
+    |  HTTP            |<--------------->|   QGIS RPC      |
     |  frontend/proxy  |                 |   service pools |
     |                  |                 |                 |
     --------------------                 -------------------
@@ -57,7 +57,7 @@ These services have been designed after experimenting with version 1.x of
 `qjazz-server <https://https://github.com/3liz/qjazz-server>`_ 
 on production infrastructure.
 
-It aims at bringing better scaling managment, cache managment and healtcheck/fault tolerance
+It aims at bringing better scaling management, cache management and healthcheck/fault tolerance
 support.
 
 Integrated features:
@@ -215,7 +215,7 @@ You may specify a configuration file with the `--conf` or `-C` option::
 Using environment variables
 ---------------------------
 
-Configuration defaults may by overriden by environment variables.
+Configuration defaults may by overridden by environment variables.
 
 This is useful for playing nicely with docker-compose with small
 configuration settings.
