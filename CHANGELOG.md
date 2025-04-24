@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+* Prevent concurrent access to QGIS profile data in QGIS initialization
 * Fix configuration issues
 * Fix catalog update logic
 * [rpc] Fix configuration update not applied on worker on first time
