@@ -51,12 +51,16 @@ def setup_qgis_application(
     logprefix: str = "Qgis:",
     server_settings: bool = False,
     allow_python_embedded: bool = False,
+    timeout: int = 20,
 ) -> str:
     """Setup qgis application
 
     :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
         Note that prevents qgis to segfault when exiting. Default to True.
     """
+    from qjazz_contrib.core.semaphore import semaphore
+    from qjazz_contrib.core.timer import Instant
+
     global qgis_application
     assert_precondition(qgis_application is None, "Qgis application already initialized")
 
@@ -71,8 +75,6 @@ def setup_qgis_application(
 
     if Qgis.QGIS_VERSION_INT < 33400:
         raise RuntimeError(f"You need QGIS3.34 minimum (found {Qgis.QGIS_VERSION_INT})")
-
-    logger.info("Starting Qgis application: %s", Qgis.QGIS_VERSION)
 
     #  We MUST set the QT_QPA_PLATFORM to prevent
     #  Qt trying to connect to display in containers
@@ -100,28 +102,45 @@ def setup_qgis_application(
         allow_python_embedded=allow_python_embedded,
     )
 
-    # XXX: note, setting the platform to anything else than
+    instant = Instant()
+
+    logger.info("Starting Qgis application: %s", Qgis.QGIS_VERSION)
+
+    # NOTE: Setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
     # But this has side-effects when used with
-    qgis_application = QgsApplication(
-        [],
-        False,
-        platformName="qjazz-application",
-    )
+
+    # Apparently QGIS does not support well concurrent access to
+    # profile files and data at startup. The posix semaphore will
+    # this.
+    # The semaphore is not unlinked: this is on purpose and does
+    # not really matter since it is named after the unique path
+    # of the profile.
+    # Furthemore it does not appear to leak through containers (tested)
+    with semaphore(options_path, timeout=timeout):
+        qgis_application = QgsApplication(
+            [],
+            False,
+            platformName="qjazz-application",
+        )
+
+    logger.debug("QGIS application initialized in %s ms", instant.elapsed_ms)
 
     qgis_application.setPrefixPath(qgis_prefix, True)
 
     if cleanup:
-        # Closing QgsApplication on exit will
-        # prevent our app to segfault on exit()
-        # XXX Doesn't seem necessary anymore
         import atexit
-
-        logger.debug(f"{logprefix} Installing cleanup hook")
+        # NOTE: this is not called on signal !
+        # see https://docs.python.org/3/library/atexit.html
 
         @atexit.register
         def exitQgis():
-            exit_qgis_application()
+            # Closing QgsApplication on exit will
+            # prevent our app to segfault on exit()
+            # XXX Doesn't seem necessary anymore
+            if cleanup:
+                logger.debug(f"{logprefix} Installing cleanup hook")
+                exit_qgis_application()
 
     # Install logger hook
     install_logger_hook(logprefix)
@@ -165,9 +184,9 @@ def init_qgis_processing() -> None:
 
 def init_qgis_server(**kwargs) -> qgis.server.QgsServer:
     """Init Qgis server"""
-    setup_qgis_application(server_settings=True, **kwargs)
-
     from qgis.server import QgsServer
+
+    setup_qgis_application(server_settings=True, **kwargs)
 
     server = QgsServer()
 

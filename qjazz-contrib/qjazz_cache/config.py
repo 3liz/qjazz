@@ -24,7 +24,7 @@ def _getenv_bool(varname: str, default: bool) -> bool:
     return Bool.validate_python(os.getenv(varname, default))
 
 
-def validate_routes(v: str|dict[str, str]) -> Routes:
+def validate_routes(v: str | dict[str, str]) -> Routes:
     match v:
         case str():
             v = TypeAdapter(dict[str, str]).validate_json(v)
@@ -32,7 +32,7 @@ def validate_routes(v: str|dict[str, str]) -> Routes:
             pass
         case _:
             raise ValueError("Mapping or json string expected")
-    return Routes(cast(dict,v))
+    return Routes(cast(dict, v))
 
 
 RoutesDef = Annotated[
@@ -48,7 +48,7 @@ RoutesDef = Annotated[
 
 class ProjectsConfig(config.ConfigBase):
     trust_layer_metadata: bool = Field(
-        default = _getenv_bool("QGIS_TRUST_LAYER_METADATA", False),
+        default=_getenv_bool("QGIS_TRUST_LAYER_METADATA", False),
         title="Trust layer metadata",
         description="""
         Trust layer metadata.

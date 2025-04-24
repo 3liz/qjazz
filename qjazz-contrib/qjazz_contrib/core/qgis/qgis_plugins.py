@@ -74,7 +74,7 @@ class QgisPluginConfig(config.ConfigBase):
         Sequence[Path],
         AfterValidator(lambda v: _default_plugin_paths() if not v else v),
     ] = Field(
-        default = [],
+        default=[],
         validate_default=True,
         title="Plugin paths",
         description=(

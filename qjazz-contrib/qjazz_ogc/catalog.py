@@ -174,7 +174,6 @@ class Catalog:
             )
         return None
 
-
     def iter(self, prefix: Optional[str] = None) -> Iterator[CatalogItem]:
         if prefix:
             for item in self._catalog.values():
@@ -188,7 +187,6 @@ class Catalog:
 
     def __len__(self) -> int:
         return len(self._catalog)
-
 
     @classmethod
     def get_service(cls) -> Self:
@@ -222,6 +220,7 @@ def new_catalog_item(
         coll=Collection.from_project(public_path, project),
         location=location,
     )
+
 
 #
 # Collect layer infos

@@ -15,6 +15,7 @@ dependencies = [
   'pydantic < 3.0',
   'pydantic-settings',
   'typing-extensions',
+  'posix_ipc',
 ]
 version = "0.2.0"
 
