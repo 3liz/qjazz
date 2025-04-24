@@ -3,7 +3,7 @@
 .. _adv_management:
 
 Advanced management
-==================
+===================
 
 `qjazz` come with management tools for Qgis service clusters.
 
@@ -19,7 +19,7 @@ It allows you to:
 
 
 Running management from CLI
---------------------------
+---------------------------
 
 You may run the management tool from CLI::
 
@@ -178,7 +178,7 @@ http method:
 .. _admin_config_reload:
 
 Adding, modifying or removing pool to management service
--------------------------------------------------------
+--------------------------------------------------------
 
 If you add or remove resolver's you will need to reload the configuration.
 

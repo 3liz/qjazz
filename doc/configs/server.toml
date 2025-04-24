@@ -32,7 +32,7 @@ enable_tls = false
 # Allows to specify origin for CORS. If set 'all' will set
 # Access-Control-Allow-Origin to '*'; 'same-origin' return
 # the same value as the 'Origin' request header.
-# A url may be specified, restricting allowed origin to
+# A url may may be specified, restricting allowed origin to
 # this url.
 # 
 cross_origin = "all"
@@ -88,12 +88,14 @@ shutdown_timeout = 30
 # Set the timeout for Qgis response in seconds.
 # If a Qgis worker takes more than the corresponding value
 # a timeout error (504) is returned to the client.
+# 
 #timeout = 20
 #
 # Forwarded headers
 #
 # Set the headers that will be forwarded to the Qgis server backend.
 # This may be useful if you have plugins that may deal with request headers.
+# 
 #forward_headers = ["x-qgis-*","x-lizmap-*"]
 #
 # Allow direct path resolution
@@ -101,7 +103,16 @@ shutdown_timeout = 30
 # Allow remote worker to use direct project path resolution.
 # WARNING: allowing this may be a security vulnerabilty.
 # See worker configuration for details.
+# 
 #allow_direct_resolution = false
+#
+# Disable catalog root api
+#
+# Disable root catalog api: requesting the catalog root will return
+# a 403 HTTP response with an informative message that the
+# catalog has been disabled for the channel.
+# 
+#disable_root_catalog = false
 
 #
 # Api endpoints
@@ -131,7 +142,8 @@ shutdown_timeout = 30
 # Enable fetching html resources in delegated endpoints.
 # Enable this if the delegated api handle correctly html
 # template resource resolution in Qgis server when using
-# delegated api endpoint.
+# delegated api endpoint."
+# 
 #enable_html_delegate = false
 
 #

@@ -89,8 +89,9 @@ restore_projects = []
 #
 # Max number of projects in cache
 #
-# The maximum number of projects allowed in cache.
-# The default value is set to 50 projects. 
+#         The maximum number of projects allowed in cache.
+# The default value is set to 50 projects.
+# 
 max_projects = 50
 #
 # Load project in cache when requested
@@ -101,6 +102,7 @@ max_projects = 50
 # Thus, adding project's to cache will require a specific
 # action from another service or admininstrative
 # management tools.
+# 
 load_project_on_request = true
 #
 # Reload outdated project when requested
@@ -111,7 +113,8 @@ load_project_on_request = true
 # Thus, refreshing project's to cache will require a specific
 # action from another service or admininstrative
 # management tools.
-reload_outdated_project_on_request = false
+# 
+reload_outdated_project_on_request = true
 #
 # Allow python embedded macros
 #
@@ -121,6 +124,7 @@ reload_outdated_project_on_request = false
 # If disabled, Python Embedded is completely disabled and QGIS defined
 # settings will be ignored.
 # For security reason this is disabled by default.
+# 
 enable_python_embedded = false
 #
 # Maximum chunk size
@@ -134,6 +138,7 @@ max_chunk_size = 1048576
 # Use the syntax '<section>/<path>' for keys.
 # Not that values defined here will override those
 # from QGIS3.ini file.
+# 
 qgis_settings = {}
 #
 # Ignore INT signal in worker
@@ -141,6 +146,7 @@ qgis_settings = {}
 # Ignore INT signal in workers.
 # This is useful when you don't want
 # propagating signal from parent process.
+# 
 ignore_interrupt_signal = true
 
 #
