@@ -27,7 +27,7 @@ build::
 	@echo "* Creating proxy config documentation"
 	@python -m qjazz_map config --schema --format toml > ./configs/server.toml
 	@echo "* Creating admin config documentation"
-	@qjazz-server-admin doc config --format toml > ./configs/managment.toml
+	@qjazz-server-admin doc config --format toml > ./configs/management.toml
 
 
 build::
@@ -38,9 +38,9 @@ build::
 	@echo "* Creating admin config schema specs"
 	@qjazz-server-admin doc config  > ./specs/admin-config.json
 	@echo "* Creating admin openapi specs (YAML)"
-	@qjazz-server-admin doc openapi > ./specs/openapi-managment.json
+	@qjazz-server-admin doc openapi > ./specs/openapi-management.json
 	@echo "* Creating admin openapi specs (JSON)"
-	@qjazz-server-admin doc openapi --yaml > ./specs/openapi-managment.yml
+	@qjazz-server-admin doc openapi --yaml > ./specs/openapi-management.yml
 
 
 clean:

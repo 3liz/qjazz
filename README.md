@@ -57,7 +57,7 @@ api.
 It enables leverage your algorithms and models designed with QGIS desktop with a full
 compliant OGC *Processes* api without *any* modifications.
 
-It use the [Celery](https://docs.celeryq.dev/en/stable/) framework for distributing
+It uses the [Celery](https://docs.celeryq.dev/en/stable/) framework for distributing
 your jobs to multiples set of services and QGIS versions.
 
 It allows for deploying custom QGIS based services by implementing your own QGIS based 
@@ -84,7 +84,7 @@ Qjazz on these platforms, consider using VMs or containers.
 
 Look at the latest documentation:
 
-* [Qjazz server documetation](https://docs.3liz.org/qjazz/qjazz-server/index.html)
+* [Qjazz server documentation](https://docs.3liz.org/qjazz/qjazz-server/index.html)
 * [Qjazz processes documentation](https://docs.3liz.org/qjazz/qjazz-processes/index.html)
 
 

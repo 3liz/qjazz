@@ -32,7 +32,7 @@ enable_tls = false
 # Allows to specify origin for CORS. If set 'all' will set
 # Access-Control-Allow-Origin to '*'; 'same-origin' return
 # the same value as the 'Origin' request header.
-# A url may may be specified, restricting allowed origin to
+# A url may be specified, restricting allowed origin to
 # this url.
 # 
 cross_origin = "all"
