@@ -117,7 +117,10 @@ impl WorkerQueue {
                 // Cancel failed, terminate the worker
                 let id = worker.id();
                 self.terminate_failure(worker).await?;
-                log::error!("Killed stalled process {}", id);
+                match rv {
+                    Err(Error::WorkerStalled) => log::error!("Killed stalled process {}", id),
+                    _ => log::error!("Worker failure {}: {:?}", id, rv),
+                }
             }
             rv
         }

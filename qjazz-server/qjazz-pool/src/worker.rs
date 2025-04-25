@@ -129,24 +129,29 @@ impl Worker {
     /// Attempt a SIGTERM then wait for 5s before attempting a
     /// kill.
     pub async fn terminate(&mut self) -> Result<()> {
-        log::debug!("Terminating worker {}", self.id());
-        self.rendez_vous.stop().await;
-        self.process.send_signal(Signal::SIGTERM)?;
-        if timeout(
-            Duration::from_secs(TERM_TIMEOUT_SEC),
-            self.process.child.wait(),
-        )
-        .await
-        .is_err()
-        {
-            log::warn!(
-                "Worker not {} (pid: {:?} terminated, kill forced...",
-                self.name,
-                self.process.child.id(),
-            );
-            self.process.child.start_kill().inspect_err(|err| {
-                log::error!("Failed to  kill worker [{:?}] {:?}", self.id(), err);
-            })?;
+        if let Ok(Some(status)) = self.process.child.try_wait() {
+            log::info!("Worker terminated with exit status {:?}", 
+                status.code().unwrap_or(-1));
+        } else {
+            log::debug!("Terminating worker {}", self.id());
+            self.rendez_vous.stop().await;
+            self.process.send_signal(Signal::SIGTERM)?;
+            if timeout(
+                Duration::from_secs(TERM_TIMEOUT_SEC),
+                self.process.child.wait(),
+            )
+            .await
+            .is_err()
+            {
+                log::warn!(
+                    "Worker not {} (pid: {:?} terminated, kill forced...",
+                    self.name,
+                    self.process.child.id(),
+                );
+                self.process.child.start_kill().inspect_err(|err| {
+                    log::error!("Failed to  kill worker [{:?}] {:?}", self.id(), err);
+                })?;
+            }
         }
         Ok(())
     }
