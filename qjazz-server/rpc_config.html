@@ -71,9 +71,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
 </ul>
 
         </div>
@@ -127,7 +127,7 @@ state that can be monitored.</p>
 the number of live QGIS processes constante.</p>
 <p>In some situation the number of dead process exceed some limite will
 stop with an error code.</p>
-<p>There is one condition for a worker to deliberatly exit
+<p>There is one condition for a worker to deliberately exit
 with a error condition: the <em>process failure pressure</em>.</p>
 <p>The process failure pressure is the ratio of failed processes over the initial
 number of configured processes. If this ratio raise above some configured limit,
@@ -135,7 +135,7 @@ then the service will exit with critical error condition.</p>
 </section>
 <section id="process-timeout">
 <h3>Process timeout<a class="headerlink" href="#process-timeout" title="Link to this heading"></a></h3>
-<p>A process may be deliberatly killed (and thus increase the pressure) on long
+<p>A process may be deliberately killed (and thus increase the pressure) on long
 running requests.</p>
 <p>If the response time exceed the request <cite>server.timeout</cite> then the process processing the request
 is considered as stalled and asked to abort gracefully the request.
@@ -146,7 +146,7 @@ pressure.</p>
 <p class="admonition-title">Note</p>
 <div class="line-block">
 <div class="line">When a worker die, the service will try to maintain the initial number of workers.
-Nevertherless, if too many workers die in a short amount the pressure can increase
+Nevertheless, if too many workers die in a short amount the pressure can increase
 too much and the worker will exit.</div>
 <div class="line">If this occurs, this is usually because there is something wrong with the treatment of
 the  qgis request that must be investigated.</div>
@@ -251,8 +251,9 @@ by default.</p>
 <span class="c1">#</span>
 <span class="c1"># Max number of projects in cache</span>
 <span class="c1">#</span>
-<span class="c1"># The maximum number of projects allowed in cache.</span>
-<span class="c1"># The default value is set to 50 projects. </span>
+<span class="c1">#         The maximum number of projects allowed in cache.</span>
+<span class="c1"># The default value is set to 50 projects.</span>
+<span class="c1"># </span>
 <span class="n">max_projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span>
 <span class="c1">#</span>
 <span class="c1"># Load project in cache when requested</span>
@@ -263,6 +264,7 @@ by default.</p>
 <span class="c1"># Thus, adding project&#39;s to cache will require a specific</span>
 <span class="c1"># action from another service or admininstrative</span>
 <span class="c1"># management tools.</span>
+<span class="c1"># </span>
 <span class="n">load_project_on_request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 <span class="c1">#</span>
 <span class="c1"># Reload outdated project when requested</span>
@@ -273,7 +275,8 @@ by default.</p>
 <span class="c1"># Thus, refreshing project&#39;s to cache will require a specific</span>
 <span class="c1"># action from another service or admininstrative</span>
 <span class="c1"># management tools.</span>
-<span class="n">reload_outdated_project_on_request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1"># </span>
+<span class="n">reload_outdated_project_on_request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 <span class="c1">#</span>
 <span class="c1"># Allow python embedded macros</span>
 <span class="c1">#</span>
@@ -283,6 +286,7 @@ by default.</p>
 <span class="c1"># If disabled, Python Embedded is completely disabled and QGIS defined</span>
 <span class="c1"># settings will be ignored.</span>
 <span class="c1"># For security reason this is disabled by default.</span>
+<span class="c1"># </span>
 <span class="n">enable_python_embedded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 <span class="c1">#</span>
 <span class="c1"># Maximum chunk size</span>
@@ -296,6 +300,7 @@ by default.</p>
 <span class="c1"># Use the syntax &#39;&lt;section&gt;/&lt;path&gt;&#39; for keys.</span>
 <span class="c1"># Not that values defined here will override those</span>
 <span class="c1"># from QGIS3.ini file.</span>
+<span class="c1"># </span>
 <span class="n">qgis_settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
 <span class="c1">#</span>
 <span class="c1"># Ignore INT signal in worker</span>
@@ -303,6 +308,7 @@ by default.</p>
 <span class="c1"># Ignore INT signal in workers.</span>
 <span class="c1"># This is useful when you don&#39;t want</span>
 <span class="c1"># propagating signal from parent process.</span>
+<span class="c1"># </span>
 <span class="n">ignore_interrupt_signal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 
 <span class="c1">#</span>
@@ -480,7 +486,7 @@ by default.</p>
 </section>
 <section id="dynamic-configuration-setup">
 <h3>Dynamic configuration setup<a class="headerlink" href="#dynamic-configuration-setup" title="Link to this heading"></a></h3>
-<p>This is only available if you are running the service throught the official docker image.</p>
+<p>This is only available if you are running the service through the official docker image.</p>
 <p>The configuration may be set dynamically at startup by running an executable returning
 a configuration in <em>JSon</em> format.</p>
 <p>The executable is controlled by the <cite>QJAZZ_CONFIG_EXEC</cite> variable.</p>
@@ -500,10 +506,10 @@ and define a setting a custom QJAZZ_CONFIG_EXEC executable.</div>
 <section id="qgis-project-s-cache-overview">
 <span id="rpc-cache-overview"></span><h1>Qgis project’s cache overview<a class="headerlink" href="#qgis-project-s-cache-overview" title="Link to this heading"></a></h1>
 <p>Each processes manage its own cache. This is due to a limitation in Qgis that
-prevent sharing resources between differents processes and the fact that Qgis server
-runtime is essentialy single threaded.</p>
+prevent sharing resources between different processes and the fact that Qgis server
+runtime is essentially single threaded.</p>
 <p>The cache in Qgis services do not use the default internal cache of Qgis server but
-its own caching system based on <cite>QgisProjectStorage</cite> objects. This ensure that any
+its own caching system based on <cite>QgsProjectStorage</cite> objects. This ensure that any
 storage backends implemented or added in Qgis with plugins is supported.</p>
 <p>Project’s access is <em>uniform</em>: the cache configuration define search paths which are indirection
 to the corresponding backends:</p>
@@ -522,14 +528,14 @@ or the projects name user for url resolution:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>postgres://?service=name&amp;project=projname
 </pre></div>
 </div>
-<p>From client perspective, a project is always refered by its search path followed by the (relative)
+<p>From client perspective, a project is always referred by its search path followed by the (relative)
 project’s path or name:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/&lt;</span><span class="n">search_path</span><span class="o">&gt;/&lt;</span><span class="n">project_path</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <section id="dynamic-paths">
 <h2>Dynamic paths<a class="headerlink" href="#dynamic-paths" title="Link to this heading"></a></h2>
-<p>Dynamic paths allows to define templated path stems that will by be substitued in the
+<p>Dynamic paths allows to define templated path stems that will by be substituted in the
 final path resolution:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{theme}</span><span class="s2">&quot;</span> <span class="o">=</span> <span class="s2">&quot;/path/to/</span><span class="si">{user}</span><span class="s2">/projects/</span><span class="si">{theme}</span><span class="s2">&quot;</span>
 </pre></div>
@@ -601,7 +607,7 @@ Commands:
 <dd class="field-odd"><p>Project does not exists</p>
 </dd>
 </dl>
-<p>You may <em>pull</em> the project to make it change state depending on its inital state:</p>
+<p>You may <em>pull</em> the project to make it change state depending on its initial state:</p>
 <table class="docutils align-default" id="id1">
 <caption><span class="caption-text">Pull state changes</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
 <thead>
@@ -636,8 +642,8 @@ Commands:
 </section>
 <section id="cache-restoration">
 <span id="rpc-cache-restoration"></span><h2>Cache restoration<a class="headerlink" href="#cache-restoration" title="Link to this heading"></a></h2>
-<p>Projects loaded with the cache managment api are <cite>pinned</cite> in the cache: they cannot leave the cache
-except if removed explicitely.</p>
+<p>Projects loaded with the cache management api are <cite>pinned</cite> in the cache: they cannot leave the cache
+except if removed explicitly.</p>
 <p>Operations on cache are recorded internally and a when a QGIS processes is restored, all pinned
 projects are loaded.</p>
 <p>The cache may be restored at startup either from the <cite>worker.restore_projects</cite> setting
@@ -645,8 +651,8 @@ projects are loaded.</p>
 <section id="dynamic-cache-restoration">
 <h3>Dynamic cache restoration<a class="headerlink" href="#dynamic-cache-restoration" title="Link to this heading"></a></h3>
 <p>Dynamic restoration is only available with the official Docker image.</p>
-<p>The cache restoration configuration may be set from remote location and indepedantly of
-the remote configuration setup using the <cite>QJAZZ_RESTORE_PROJECTS_EXEC</cite> env varible.
+<p>The cache restoration configuration may be set from remote location and independently of
+the remote configuration setup using the <cite>QJAZZ_RESTORE_PROJECTS_EXEC</cite> env variable.
 The executable must return a comma separated list of projects to load at startup (internally
 it use the <cite>CONF_WORKER__RESTORE_PROJECTS</cite>).</p>
 <div class="admonition note">

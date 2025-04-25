@@ -70,9 +70,9 @@
 <li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
 </ul>
 
         </div>
@@ -103,28 +103,28 @@
 <span id="project-description"></span><h1>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h1>
 <p>QJazz is a suite of QGIS based services including:</p>
 <ul class="simple">
-<li><p>QGIS serverr as microservice</p></li>
+<li><p>QGIS server as microservice</p></li>
 <li><p>OGC Processes server on top of QGIS processing</p></li>
 </ul>
 <p>This is as set of modules for deploying QGIS based servers and processing services
 as OGC processes compliant API</p>
 <p>It aims to provide support for scalable deployment of QGIS based services
-on medium or large infrastructure and has been developped to solve some issues
+on medium or large infrastructure and has been developed to solve some issues
 when dealing with large numbers of projects.</p>
 <p>The services are implemented as  wrappers around the QGIS Server api
 and the Processing QGIS api and because of this, it supports all
 QGIS Server features and options.</p>
-<p>The qjazz-server setup is splitted in 3 different services:</p>
+<p>The qjazz-server setup is split in 3 different services:</p>
 <ul class="simple">
 <li><p>Services using gRCP protocols for running qgis servers processes</p></li>
-<li><p>Middleware asynchronous HTTP proxy for routing requests to differents worker backends</p></li>
-<li><p>Admin tools and service for inspectings worker’s pool and health checking.</p></li>
+<li><p>Middleware asynchronous HTTP proxy for routing requests to different worker backends</p></li>
+<li><p>Admin tools and service for inspecting worker’s pool and health checking.</p></li>
 </ul>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>--------------------                 -------------------
 |                  | n             n |                 |
-|  Http            |&lt;---------------&gt;|   Qgis rpc      |
+|  HTTP            |&lt;---------------&gt;|   QGIS RPC      |
 |  frontend/proxy  |                 |   service pools |
 |                  |                 |                 |
 --------------------                 -------------------
@@ -145,7 +145,7 @@ QGIS Server features and options.</p>
 <p>These services have been designed after experimenting with version 1.x of
 <a class="reference external" href="https://https://github.com/3liz/qjazz-server">qjazz-server</a>
 on production infrastructure.</p>
-<p>It aims at bringing better scaling managment, cache managment and healtcheck/fault tolerance
+<p>It aims at bringing better scaling management, cache management and healthcheck/fault tolerance
 support.</p>
 <p>Integrated features:</p>
 <ul class="simple">
@@ -271,7 +271,7 @@ but json and yaml may also be used.</p>
 </section>
 <section id="using-environment-variables">
 <h2>Using environment variables<a class="headerlink" href="#using-environment-variables" title="Link to this heading"></a></h2>
-<p>Configuration defaults may by overriden by environment variables.</p>
+<p>Configuration defaults may by overridden by environment variables.</p>
 <p>This is useful for playing nicely with docker-compose with small
 configuration settings.</p>
 <p>Configuration structure may be composed of simple values but also of more nested

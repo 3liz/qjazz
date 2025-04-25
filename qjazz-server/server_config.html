@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Advanced managment" href="managment.html" />
+    <link rel="next" title="Advanced management" href="management.html" />
     <link rel="prev" title="QGIS RPC services" href="rpc_config.html" /> 
 </head>
 
@@ -55,9 +55,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#service-configuration">Service configuration</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html">Advanced managment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment.html#case-scenarios">Case scenarios</a></li>
-<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
 </ul>
 
         </div>
@@ -101,7 +101,7 @@ directive of a proxy server.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Project may be specified in serveral way:</p>
+<p>Project may be specified in several way:</p>
 <ul>
 <li><p>Use <cite>MAP</cite> parameter:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://test.com/route_path?MAP=/search_path/project_path&amp;SERVICE=...
@@ -231,12 +231,14 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># Set the timeout for Qgis response in seconds.</span>
 <span class="c1"># If a Qgis worker takes more than the corresponding value</span>
 <span class="c1"># a timeout error (504) is returned to the client.</span>
+<span class="c1"># </span>
 <span class="c1">#timeout = 20</span>
 <span class="c1">#</span>
 <span class="c1"># Forwarded headers</span>
 <span class="c1">#</span>
 <span class="c1"># Set the headers that will be forwarded to the Qgis server backend.</span>
 <span class="c1"># This may be useful if you have plugins that may deal with request headers.</span>
+<span class="c1"># </span>
 <span class="c1">#forward_headers = [&quot;x-qgis-*&quot;,&quot;x-lizmap-*&quot;]</span>
 <span class="c1">#</span>
 <span class="c1"># Allow direct path resolution</span>
@@ -244,7 +246,16 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># Allow remote worker to use direct project path resolution.</span>
 <span class="c1"># WARNING: allowing this may be a security vulnerabilty.</span>
 <span class="c1"># See worker configuration for details.</span>
+<span class="c1"># </span>
 <span class="c1">#allow_direct_resolution = false</span>
+<span class="c1">#</span>
+<span class="c1"># Disable catalog root api</span>
+<span class="c1">#</span>
+<span class="c1"># Disable root catalog api: requesting the catalog root will return</span>
+<span class="c1"># a 403 HTTP response with an informative message that the</span>
+<span class="c1"># catalog has been disabled for the channel.</span>
+<span class="c1"># </span>
+<span class="c1">#disable_root_catalog = false</span>
 
 <span class="c1">#</span>
 <span class="c1"># Api endpoints</span>
@@ -274,7 +285,8 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># Enable fetching html resources in delegated endpoints.</span>
 <span class="c1"># Enable this if the delegated api handle correctly html</span>
 <span class="c1"># template resource resolution in Qgis server when using</span>
-<span class="c1"># delegated api endpoint.</span>
+<span class="c1"># delegated api endpoint.&quot;</span>
+<span class="c1"># </span>
 <span class="c1">#enable_html_delegate = false</span>
 
 <span class="c1">#</span>
@@ -302,7 +314,7 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="rpc_config.html" class="btn btn-neutral float-left" title="QGIS RPC services" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="managment.html" class="btn btn-neutral float-right" title="Advanced managment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="management.html" class="btn btn-neutral float-right" title="Advanced management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

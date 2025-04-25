@@ -41,7 +41,7 @@ the number of live QGIS processes constante.
 In some situation the number of dead process exceed some limite will
 stop with an error code.
 
-There is one condition for a worker to deliberatly exit 
+There is one condition for a worker to deliberately exit
 with a error condition: the *process failure pressure*.
 
 The process failure pressure is the ratio of failed processes over the initial
@@ -52,7 +52,7 @@ then the service will exit with critical error condition.
 Process timeout
 ^^^^^^^^^^^^^^^
 
-A process may be deliberatly killed (and thus increase the pressure) on long
+A process may be deliberately killed (and thus increase the pressure) on long
 running requests.
 
 If the response time exceed the request `server.timeout` then the process processing the request
@@ -63,7 +63,7 @@ pressure.
 
 .. note::
    | When a worker die, the service will try to maintain the initial number of workers.
-     Nevertherless, if too many workers die in a short amount the pressure can increase 
+     Nevertheless, if too many workers die in a short amount the pressure can increase
      too much and the worker will exit.
    | If this occurs, this is usually because there is something wrong with the treatment of 
      the  qgis request that must be investigated.
@@ -93,7 +93,7 @@ TOML configuration
 Dynamic configuration setup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is only available if you are running the service throught the official docker image.
+This is only available if you are running the service through the official docker image.
 
 The configuration may be set dynamically at startup by running an executable returning 
 a configuration in *JSon* format.
@@ -115,11 +115,11 @@ Qgis project's cache overview
 =============================
 
 Each processes manage its own cache. This is due to a limitation in Qgis that
-prevent sharing resources between differents processes and the fact that Qgis server 
-runtime is essentialy single threaded.
+prevent sharing resources between different processes and the fact that Qgis server
+runtime is essentially single threaded.
 
 The cache in Qgis services do not use the default internal cache of Qgis server but
-its own caching system based on `QgisProjectStorage` objects. This ensure that any
+its own caching system based on `QgsProjectStorage` objects. This ensure that any
 storage backends implemented or added in Qgis with plugins is supported.
 
 Project's access is *uniform*: the cache configuration define search paths which are indirection
@@ -141,7 +141,7 @@ will be resolved to::
 
     postgres://?service=name&project=projname
 
-From client perspective, a project is always refered by its search path followed by the (relative)
+From client perspective, a project is always referred by its search path followed by the (relative)
 project's path or name::
 
     /<search_path>/<project_path>
@@ -150,7 +150,7 @@ project's path or name::
 Dynamic paths
 -------------
 
-Dynamic paths allows to define templated path stems that will by be substitued in the 
+Dynamic paths allows to define templated path stems that will by be substituted in the
 final path resolution::
 
     "/{user}/{theme}" = "/path/to/{user}/projects/{theme}" 
@@ -215,7 +215,7 @@ Whenever a project is checked out from cache, a cache status is returned
 :NOTFOUND: Project does not exists
 
 
-You may *pull* the project to make it change state depending on its inital state:
+You may *pull* the project to make it change state depending on its initial state:
 
 .. list-table:: Pull state changes
    :header-rows: 1
@@ -245,8 +245,8 @@ You may *pull* the project to make it change state depending on its inital state
 Cache restoration
 -----------------
 
-Projects loaded with the cache managment api are `pinned` in the cache: they cannot leave the cache
-except if removed explicitely.
+Projects loaded with the cache management api are `pinned` in the cache: they cannot leave the cache
+except if removed explicitly.
 
 Operations on cache are recorded internally and a when a QGIS processes is restored, all pinned
 projects are loaded.
@@ -259,8 +259,8 @@ Dynamic cache restoration
 
 Dynamic restoration is only available with the official Docker image.
 
-The cache restoration configuration may be set from remote location and indepedantly of 
-the remote configuration setup using the `QJAZZ_RESTORE_PROJECTS_EXEC` env varible. 
+The cache restoration configuration may be set from remote location and independently of
+the remote configuration setup using the `QJAZZ_RESTORE_PROJECTS_EXEC` env variable.
 The executable must return a comma separated list of projects to load at startup (internally
 it use the `CONF_WORKER__RESTORE_PROJECTS`).
 

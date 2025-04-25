@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advanced managment &mdash; qjazz ${PIN_VERSION} documentation</title>
+  <title>Advanced management &mdash; qjazz ${PIN_VERSION} documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Managment API" href="managment-api.html" />
+    <link rel="next" title="Managment API" href="management-api.html" />
     <link rel="prev" title="HTTP frontend" href="server_config.html" /> 
 </head>
 
@@ -50,9 +50,9 @@
 <li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced managment</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#running-managment-from-cli">Running managment from CLI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#managment-from-rest-api">Managment from REST api</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#running-management-from-cli">Running management from CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#management-from-rest-api">Management from REST api</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#api-specification">Api specification</a></li>
 </ul>
 </li>
@@ -62,11 +62,11 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#case-scenarios">Case scenarios</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#synchronizing-pool-cache">Synchronizing pool cache</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#adding-modifying-or-removing-pool-to-managment-service">Adding, modifying or removing pool to managment service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-modifying-or-removing-pool-to-management-service">Adding, modifying or removing pool to management service</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#resyncing-with-rpc-pools-when-rescaling-rpc-services">Resyncing with rpc pools when rescaling rpc services</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="managment-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
 </ul>
 
         </div>
@@ -83,9 +83,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Advanced managment</li>
+      <li class="breadcrumb-item active">Advanced management</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/managment.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/management.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -93,9 +93,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="advanced-managment">
-<span id="adv-managment"></span><h1>Advanced managment<a class="headerlink" href="#advanced-managment" title="Link to this heading"></a></h1>
-<p><cite>qjazz</cite> come with managment tools for Qgis service clusters.</p>
+  <section id="advanced-management">
+<span id="adv-management"></span><h1>Advanced management<a class="headerlink" href="#advanced-management" title="Link to this heading"></a></h1>
+<p><cite>qjazz</cite> come with management tools for Qgis service clusters.</p>
 <p>It allows you to:</p>
 <ul class="simple">
 <li><p>Retrieve infos about running Qgis clusters</p></li>
@@ -104,11 +104,11 @@
 <li><p>Get plugin’s infos</p></li>
 <li><p>List project’s catalog</p></li>
 <li><p>Watch health status</p></li>
-<li><p>Serve REST managment api</p></li>
+<li><p>Serve REST management api</p></li>
 </ul>
-<section id="running-managment-from-cli">
-<h2>Running managment from CLI<a class="headerlink" href="#running-managment-from-cli" title="Link to this heading"></a></h2>
-<p>You may run the managment tool from CLI:</p>
+<section id="running-management-from-cli">
+<h2>Running management from CLI<a class="headerlink" href="#running-management-from-cli" title="Link to this heading"></a></h2>
+<p>You may run the management tool from CLI:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&gt; pip install qjazz-admin
 &gt; python3 -m qjazz_admin --help
 Usage: python -m qjazz_admin [OPTIONS] COMMAND [ARGS]...
@@ -135,17 +135,17 @@ Commands:
 </pre></div>
 </div>
 </section>
-<section id="managment-from-rest-api">
-<h2>Managment from REST api<a class="headerlink" href="#managment-from-rest-api" title="Link to this heading"></a></h2>
-<p>Managment may also be handler using REST api with the <cite>serve</cite> command:</p>
+<section id="management-from-rest-api">
+<h2>Management from REST api<a class="headerlink" href="#management-from-rest-api" title="Link to this heading"></a></h2>
+<p>Management may also be handler using REST api with the <cite>serve</cite> command:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&gt; qjazz-server-admin serve
 </pre></div>
 </div>
 <p>From this you can use your own dashboard for managing your Qgis clusters.</p>
 <section id="api-specification">
 <h3>Api specification<a class="headerlink" href="#api-specification" title="Link to this heading"></a></h3>
-<p>See the <a class="reference internal" href="managment-api.html"><span class="doc">Managment API</span></a>
-or download the <a class="reference download internal" download="" href="_downloads/71fdc0b8c9fc3a2fb391879da711b477/openapi-managment.json"><code class="xref download docutils literal notranslate"><span class="pre">Json</span> <span class="pre">specs</span></code></a>.</p>
+<p>See the <a class="reference internal" href="management-api.html"><span class="doc">Managment API</span></a>
+or download the <a class="reference download internal" download="" href="_downloads/52c3eccadea157f9d0286eb7ab7ac68e/openapi-management.json"><code class="xref download docutils literal notranslate"><span class="pre">Json</span> <span class="pre">specs</span></code></a>.</p>
 </section>
 </section>
 <section id="configuration">
@@ -345,9 +345,9 @@ from the CLI: the <cite>json</cite> or <cite>yaml</cite> format may be used for 
 <li><p>Using the <cite>load_project_on_request</cite></p></li>
 <li><p>Updating container in a orchestrated environment</p></li>
 </ul>
-<p>The <a class="reference internal" href="rpc_config.html#rpc-cache-restoration"><span class="std std-ref">cache restoration mecanism</span></a> may prevent most
-of desynchronization mecanism, it may be required to manually resync caches:</p>
-<p>The cli managment tool provide the <cite>sync</cite> command while the REST api provides the
+<p>The <a class="reference internal" href="rpc_config.html#rpc-cache-restoration"><span class="std std-ref">cache restoration mechanism</span></a> may prevent most
+of desynchronization mechanism, it may be required to manually resync caches:</p>
+<p>The cli management tool provide the <cite>sync</cite> command while the REST api provides the
 http method:</p>
 <dl class="http patch">
 <dt class="sig sig-object http" id="patch--v1-pools-Id-cache">
@@ -356,8 +356,8 @@ http method:</p>
 </dd></dl>
 
 </section>
-<section id="adding-modifying-or-removing-pool-to-managment-service">
-<span id="admin-config-reload"></span><h2>Adding, modifying or removing pool to managment service<a class="headerlink" href="#adding-modifying-or-removing-pool-to-managment-service" title="Link to this heading"></a></h2>
+<section id="adding-modifying-or-removing-pool-to-management-service">
+<span id="admin-config-reload"></span><h2>Adding, modifying or removing pool to management service<a class="headerlink" href="#adding-modifying-or-removing-pool-to-management-service" title="Link to this heading"></a></h2>
 <p>If you add or remove resolver’s you will need to reload the configuration.</p>
 <p>The REST api provide a method for reloading the configuration:</p>
 <blockquote>
@@ -391,7 +391,7 @@ the changes into account.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="server_config.html" class="btn btn-neutral float-left" title="HTTP frontend" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="managment-api.html" class="btn btn-neutral float-right" title="Managment API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="management-api.html" class="btn btn-neutral float-right" title="Managment API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -27,7 +27,7 @@ Passing request for a particular backend is done with the route as leading path:
 
 .. note::
 
-    Project may be specified in serveral way:
+    Project may be specified in several way:
 
     * Use `MAP` parameter::
 
