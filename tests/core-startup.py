@@ -1,8 +1,10 @@
 #
 # Startup scripts for tests with ipython
 #
+import qgis.server
 
 from qjazz_contrib.core.qgis import (
+    current_qgis_application,
     init_qgis_application,
     init_qgis_server,
     show_qgis_settings,

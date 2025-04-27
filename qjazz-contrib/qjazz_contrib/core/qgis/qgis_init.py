@@ -30,6 +30,10 @@ def setup_qgis_paths(prefix: str) -> None:
 qgis_application: Optional["qgis.core.QgsApplication"] = None
 
 
+def current_qgis_application() -> Optional["qgis.core.QgsApplication"]:
+    return qgis_application
+
+
 def qgis_initialized():
     global qgis_application
     return qgis_application is not None
@@ -108,11 +112,11 @@ def setup_qgis_application(
 
     # NOTE: Setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
-    # But this has side-effects when used with
+    # But this has side-effects when used with QgsServer
 
     # Apparently QGIS does not support well concurrent access to
     # profile files and data at startup. The posix semaphore will
-    # this.
+    # prevent this.
     # The semaphore is not unlinked: this is on purpose and does
     # not really matter since it is named after the unique path
     # of the profile.

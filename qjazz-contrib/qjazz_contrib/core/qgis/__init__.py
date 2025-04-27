@@ -1,4 +1,5 @@
 from .qgis_init import (  # noqa
+    current_qgis_application,
     exit_qgis_application,
     init_qgis_application,
     init_qgis_processing,
