@@ -427,11 +427,18 @@ def set_config(config: str):
         except json.JSONDecodeError as err:
             click.echo(err, err=True)
 
+# Shortcut for settings log level only
+@config_commands.command("log")
+@click.argument("level", nargs=1)
+def set_loglevel(level: str):
+    """Send log level to remote"""
+    with connect() as stub:
+        stub.SetConfig(qjazz_pb2.JsonConfig(json=json.dumps({"logging": {"level": level }})))
+
 
 #
 #  status
 #
-
 
 @cli_commands.group("state")
 def status_commands():
