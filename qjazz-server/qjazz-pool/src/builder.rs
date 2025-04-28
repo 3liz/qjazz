@@ -1,6 +1,6 @@
 //! Builder
 use crate::Worker;
-use crate::config::{WorkerOptions, get_log_level, python_executable};
+use crate::config::{WorkerOptions, get_log_level, log_level_from_json, python_executable};
 use crate::errors::Result;
 use crate::messages::JsonValue;
 use crate::utils::json_merge;
@@ -12,6 +12,7 @@ use tokio::process::Command;
 pub struct Builder {
     pub(crate) opts: WorkerOptions,
     pub(crate) command: Command,
+    pub(crate) log_level: &'static str,
 }
 
 // Builder Clone
@@ -26,6 +27,7 @@ impl Clone for Builder {
                 None => builder.env_remove(k),
             };
         }
+        builder.log_level = self.log_level;
         builder
     }
 }
@@ -61,7 +63,7 @@ impl Builder {
         let mut command = Self::new_command(&opts);
         command.args(args);
         command.arg(&opts.name);
-        Self { opts, command }
+        Self { opts, command, log_level: get_log_level() }
     }
 
     /// Start a worker with the given configuration
@@ -71,15 +73,19 @@ impl Builder {
 
     /// Patch configuration
     pub fn patch(&mut self, patch: &serde_json::Value) -> Result<()> {
-        let mut doc = serde_json::to_value(&self.opts)?;
-        json_merge(&mut doc, patch);
 
-        self.opts = serde_json::from_value(doc)?;
+        if let Some(level) = log_level_from_json(patch) {
+            self.log_level = level;
+            self.command.env("CONF_LOGGING__LEVEL", level);
+        }
 
-        // Update environment
-        self.command
-            .env("CONF_LOGGING__LEVEL", get_log_level())
-            .env("CONF_WORKER__QGIS", self.opts.qgis.to_string());
+        if let Some(patch) = patch.get("worker") {
+            let mut doc = serde_json::to_value(&self.opts)?;
+            json_merge(&mut doc, patch);
+            self.opts = serde_json::from_value(doc)?;
+            self.command.env("CONF_WORKER__QGIS", self.opts.qgis.to_string());
+        }
+
         Ok(())
     }
 
@@ -175,9 +181,11 @@ mod tests {
 
         builder
             .patch(&json!({
-                "num_processes": 3,
-                "qgis": {
-                    "max_projects": 25
+                "worker": {
+                    "num_processes": 3,
+                    "qgis": {
+                        "max_projects": 25
+                    }
                 }
             }))
             .unwrap();

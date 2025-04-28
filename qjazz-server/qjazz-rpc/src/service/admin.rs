@@ -231,29 +231,25 @@ impl QgisAdmin for QgisAdminServicer {
     //
     async fn set_config(&self, request: Request<JsonConfig>) -> Result<Response<Empty>, Status> {
         // Sync state
-        let patch = serde_json::from_str(&request.into_inner().json)
+        let patch = serde_json::from_str::<serde_json::Value>(&request.into_inner().json)
             .map_err(|err| Status::invalid_argument(format!("{:?}", err)))?;
 
-        if log::log_enabled!(log::Level::Debug) {
-            log::debug!("Updating configuration: {}", patch);
-        } else {
-            log::info!("Updating configuration");
-        }
+            if log::log_enabled!(log::Level::Debug) {
+                log::debug!("Updating configuration: {}", patch);
+            } else {
+                log::info!("Updating configuration");
+            }
 
-        // Update log level
-        Settings::set_log_level(&patch);
+            // Patch configuration
+            self.pool
+                .write()
+                .await
+                .patch_config(&patch)
+                .await
+                .map_err(Status::invalid_argument)?;
 
-        // Patch configuration
-        self.pool
-            .write()
-            .await
-            .patch_config(&patch)
-            .await
-            .map_err(Status::invalid_argument)?;
-
-        self.inner.get_ref().update_config(patch).await;
-
-        Ok(Response::new(Empty {}))
+            self.inner.get_ref().update_config(patch).await;
+            Ok(Response::new(Empty {}))
     }
 
     async fn get_config(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {

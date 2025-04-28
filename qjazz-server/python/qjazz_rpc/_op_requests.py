@@ -356,8 +356,10 @@ def request_project_from_cache(
                 assert_never(unreachable)
     except CacheManager.ResourceNotAllowed as err:
         _m.send_reply(conn, str(err), 403)
+        co_status = Co.NOTFOUND
     except CacheManager.StrictCheckingFailure as err:
         logger.critical("Strict checking error: %s", err)
         _m.send_reply(conn, str(err), 500)
+        co_status = Co.NOTFOUND
 
     return co_status, entry

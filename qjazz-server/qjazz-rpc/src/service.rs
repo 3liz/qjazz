@@ -4,7 +4,6 @@ use tokio::sync::mpsc;
 use tokio_stream::{Stream, wrappers::ReceiverStream};
 use tonic::{Request, Response, Status};
 
-use crate::config::Settings;
 use crate::utils::{headers_to_metadata, metadata_to_headers};
 use qjazz_pool::restore;
 

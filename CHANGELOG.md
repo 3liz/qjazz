@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+* [rpc] Fix configuration patching
+* [rpc] Fix undefined checkout status on cache manager exception
+* [rpc] Be consistent in get/set config command
 * Prevent concurrent access to QGIS profile data in QGIS initialization
 * Fix configuration issues
 * Fix catalog update logic

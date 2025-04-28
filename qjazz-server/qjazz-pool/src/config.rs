@@ -35,16 +35,43 @@ impl<const MIN: usize, const MAX: usize> BoundedUsize<MIN, MAX> {
     }
 }
 
+const LOG_CRITICAL: &'static str = "critical";
+const LOG_ERROR: &'static str = "error";
+const LOG_WARNING: &'static str = "warning";
+const LOG_INFO: &'static str = "info";
+const LOG_DEBUG: &'static str = "trace";
+const LOG_TRACE: &'static str = "trace";
+
+
 pub(crate) fn get_log_level() -> &'static str {
     match log::max_level() {
-        log::LevelFilter::Error => "error",
-        log::LevelFilter::Warn => "warning",
-        log::LevelFilter::Info => "info",
-        log::LevelFilter::Debug => "debug",
-        log::LevelFilter::Trace => "trace",
-        log::LevelFilter::Off => "critical",
+        log::LevelFilter::Error => LOG_ERROR,
+        log::LevelFilter::Warn => LOG_WARNING,
+        log::LevelFilter::Info => LOG_INFO,
+        log::LevelFilter::Debug => LOG_DEBUG,
+        log::LevelFilter::Trace => LOG_TRACE,
+        log::LevelFilter::Off => LOG_CRITICAL,
     }
 }
+
+// Return log level from json configuration
+pub(crate) fn log_level_from_json(opts: &serde_json::Value) -> Option<&'static str> {
+    opts.get("logging").and_then(|value| {
+        value.get("level").and_then(|value| {
+            value.as_str().and_then(|value| {
+                match value.to_ascii_lowercase().as_str() {
+                    "error" => Some(LOG_ERROR),
+                    "info" => Some(LOG_INFO),
+                    "debug" => Some(LOG_DEBUG),
+                    "trace" => Some(LOG_TRACE),
+                    "critical" => Some(LOG_CRITICAL),
+                    _ => None,
+                }
+            })
+        })
+    })
+}
+
 
 pub(crate) fn python_executable() -> PathBuf {
     std::env::var_os("PYTHON_EXEC")

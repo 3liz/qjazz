@@ -6,7 +6,7 @@ annotated-types==0.7.0
 argon2-cffi-bindings==21.2.0
 argon2-cffi==23.1.0
 attrs==25.3.0
-certifi==2025.1.31
+certifi==2025.4.26
 cffi==1.17.1
 click==8.1.8
 dnspython==2.7.0
@@ -30,7 +30,7 @@ pydantic_core==2.33.1
 python-dotenv==1.1.0
 ruamel.yaml.clib==0.2.12
 ruamel.yaml==0.18.10
-setuptools==79.0.1
+setuptools==80.0.0
 typing-inspection==0.4.0
 typing_extensions==4.13.2
 urllib3==2.4.0

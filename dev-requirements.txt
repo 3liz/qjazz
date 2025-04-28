@@ -16,3 +16,4 @@ bandit
 build >= 1.2.2
 twine
 vulture
+qgis-plugin-manager

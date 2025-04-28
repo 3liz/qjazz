@@ -231,29 +231,6 @@ impl Settings {
             Self::from_file(path)
         }
     }
-
-    /// Set log level from json configuration
-    pub fn set_log_level(config: &serde_json::Value) {
-        if let Some(level) = config
-            .get("logging")
-            .and_then(|v| v.get("level"))
-            .and_then(|v| v.as_str())
-        {
-            log::set_max_level(match level.to_lowercase().as_str() {
-                "error" => log::LevelFilter::Error,
-                "warning" => log::LevelFilter::Warn,
-                "info" => log::LevelFilter::Info,
-                "debug" => log::LevelFilter::Debug,
-                "trace" => log::LevelFilter::Trace,
-                "critical" => log::LevelFilter::Off,
-                invalid => {
-                    log::error!("Invalid log level: '{}'", invalid);
-                    log::max_level() // Returns the current level filter
-                }
-            });
-            log::info!("Log level set to: {}", log::max_level());
-        }
-    }
 }
 
 // Utils

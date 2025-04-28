@@ -4,3 +4,4 @@ __pycache__
 
 *.removed
 .nvimlog
+/tests/qgis-plugin-manager

@@ -261,10 +261,10 @@ def qgis_server_run(
                         _m.send_reply(conn, "", 403)
                 case _m.GetConfigMsg():
                     if isinstance(conf, ConfigProxy):
-                        conf_model = conf.service.conf
+                        confservice = conf.service
+                        _m.send_reply(conn, confservice.conf.model_dump(mode="json"))
                     else:
-                        conf_model = conf
-                    _m.send_reply(conn, conf_model.model_dump(mode="json"))
+                        _m.send_reply(conn, conf.model_dump(mode="json"))
                 # --------------------
                 # Status
                 # --------------------

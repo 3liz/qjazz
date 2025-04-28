@@ -11,27 +11,26 @@ name = "Test"
 num_processes = 1
 process_start_timeout = 10
 
-[worker.qgis]
-
 [worker.qgis.plugins]
 paths = ['$location/plugins']
 install = [
     "Lizmap server",
 ]
-install_mode= "auto"
+install_mode = "auto"
+plugin_manager = "$location/qgis-plugin-manager"
 
 [worker.qgis.projects]
 trust_layer_metadata = true
 disable_getprint = false
 force_readonly_layers = true
 
-#[worker.qgis.projects.search_paths]
-#'/{loc}' = "$location/data/{loc}"
-
 [worker.qgis.projects.search_paths]
-'/tests' = "$location/data/samples"
-'/france' = "$location/data/france_parts"
-'/montpellier' = "$location/data/montpellier"
+'/{loc}' = "$location/data/{loc}"
+
+#[worker.qgis.projects.search_paths]
+#'/tests' = "$location/data/samples"
+#'/france' = "$location/data/france_parts"
+#'/montpellier' = "$location/data/montpellier"
  
-[worker.network]
+[worker.qgis.network]
 trace = true
