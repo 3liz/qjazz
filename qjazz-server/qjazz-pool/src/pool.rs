@@ -309,8 +309,10 @@ impl Pool {
 
         let ts = Instant::now();
 
+        let launcher = self.builder.launcher();
+
         log::debug!("Launching {} workers", n);
-        let futures: Vec<_> = (0..n).map(|_| self.builder.clone().start_owned()).collect();
+        let futures: Vec<_> = (0..n).map(|_| launcher.clone().spawn()).collect();
 
         // Start the workers asynchronously
         let mut workers = try_join_all(futures).await?;
@@ -389,7 +391,7 @@ mod tests {
     use crate::tests::setup;
 
     fn builder(num_processes: usize) -> Builder {
-        let mut builder = Builder::new(&[crate::rootdir!("process.py")]);
+        let mut builder = Builder::new(crate::rootdir!("process.py"));
         let _ = builder
             .name("test")
             .process_start_timeout(5)

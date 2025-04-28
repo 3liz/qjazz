@@ -12,7 +12,7 @@ use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 
 /// Run gRPC server
 pub(crate) async fn serve(
-    args: &str,
+    args: String,
     settings: &Settings,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr = settings.rpc.listen().address();
@@ -21,7 +21,7 @@ pub(crate) async fn serve(
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
 
     let mut pool = Pool::new(qjazz_pool::Builder::from_options(
-        args.split_whitespace(),
+        args,
         settings.worker.clone(),
     ));
     pool.maintain_pool().await?;

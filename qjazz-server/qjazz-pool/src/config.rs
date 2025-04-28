@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 use std::fmt;
 use std::path::PathBuf;
-
 use crate::errors::Error;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -73,10 +73,16 @@ pub(crate) fn log_level_from_json(opts: &serde_json::Value) -> Option<&'static s
 }
 
 
-pub(crate) fn python_executable() -> PathBuf {
+
+static PYTHON_EXEC: LazyLock<PathBuf> = LazyLock::new(|| {
     std::env::var_os("PYTHON_EXEC")
         .map(PathBuf::from)
         .unwrap_or("python3".into())
+});
+
+
+pub(crate) fn python_executable() -> &'static PathBuf {
+    &*PYTHON_EXEC
 }
 
 const DEFAULT_START_TIMEOUT_SEC: u64 = 5;

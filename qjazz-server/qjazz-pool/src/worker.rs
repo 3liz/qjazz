@@ -1,5 +1,5 @@
 //! Qgis worker
-use crate::config::WorkerOptions;
+use crate::config::{WorkerOptions, python_executable};
 use crate::errors::{Error, Result};
 use crate::messages::{self as msg, JsonValue, RequestMessage, RequestReply};
 use crate::pipes::{Pipe, PipeOptions};
@@ -8,6 +8,7 @@ use crate::stream::{ByteStream, ObjectStream};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
 use std::fmt;
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 use tokio::process::{Child, Command};
 use tokio::time::timeout;
@@ -44,41 +45,58 @@ impl _Child {
     }
 }
 
-/// Worker
-///
-/// The worker object is a handle to the  child QGIS server process.
-pub struct Worker {
+/// Worker launcher
+#[derive(Clone)]
+pub struct WorkerLauncher {
     name: String,
-    rendez_vous: RendezVous,
-    cancel_timeout: Duration,
-    ready_timeout: Duration,
-    process: _Child,
-    uptime: Instant,
-    pub(crate) generation: usize,
-    pub(crate) last_update: u64,
+    args: String,
+    start_timeout: u64,
+    cancel_timeout: u64,
+    buffer_size: usize,
+    qgis_options: String,
+    log_level: &'static str,
 }
 
-impl Worker {
-    // Start a Python subprocess
-    pub(crate) async fn spawn(command: &mut Command, opts: &WorkerOptions) -> Result<Self> {
-        let name = &opts.name;
+impl WorkerLauncher {
+
+    pub fn new(opts: &WorkerOptions, args: String, log_level: &'static str) -> Self {
+        Self {
+            args,
+            name: opts.name.clone(),
+            start_timeout: opts.process_start_timeout,
+            cancel_timeout: opts.cancel_timeout,
+            buffer_size: opts.max_chunk_size(),
+            qgis_options: opts.qgis.to_string(),
+            log_level,
+        }
+    }
+
+    /// Start a worker and consume the launcher
+    pub async fn spawn(self) -> Result<Worker> {
+        let name = &self.name;
         let mut rendez_vous = RendezVous::new()?;
 
-        let buffer_size = opts.max_chunk_size();
+        let buffer_size = self.buffer_size;
 
         log::debug!("Starting child process");
 
         // Start rendez-vous
         rendez_vous.start()?;
 
-        let mut child = command
+        let mut child = Command::new(python_executable())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .args(self.args.split_whitespace())
+            .arg(&self.name)
             .kill_on_drop(true)
-            .env("RENDEZ_VOUS", rendez_vous.path())
+            .env("CONF_LOGGING__LEVEL", self.log_level)
+            .env("CONF_WORKER__QGIS", self.qgis_options)
             .env("CONF_WORKER__QGIS__MAX_CHUNK_SIZE", buffer_size.to_string())
+            .env("RENDEZ_VOUS", rendez_vous.path())
             .spawn()?;
 
         let result;
-        let start_timeout = opts.process_start_timeout;
+        let start_timeout = self.start_timeout;
         let stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
 
@@ -110,9 +128,9 @@ impl Worker {
         }
 
         let process = result?;
-        let cancel_timeout = Duration::from_secs(opts.cancel_timeout);
+        let cancel_timeout = Duration::from_secs(self.cancel_timeout);
 
-        Ok(Self {
+        Ok(Worker {
             name: name.into(),
             rendez_vous,
             cancel_timeout,
@@ -123,7 +141,25 @@ impl Worker {
             generation: 1,
         })
     }
+}
 
+
+
+/// Worker
+///
+/// The worker object is a handle to the  child QGIS server process.
+pub struct Worker {
+    name: String,
+    rendez_vous: RendezVous,
+    cancel_timeout: Duration,
+    ready_timeout: Duration,
+    process: _Child,
+    uptime: Instant,
+    pub(crate) generation: usize,
+    pub(crate) last_update: u64,
+}
+
+impl Worker {
     /// Terminate the child process
     ///
     /// Attempt a SIGTERM then wait for 5s before attempting a
@@ -465,7 +501,7 @@ mod tests {
     use crate::tests::setup;
 
     async fn build_worker() -> Result<Worker> {
-        Builder::new(&[crate::rootdir!("process.py")])
+        Builder::new(crate::rootdir!("process.py"))
             .name("test")
             .process_start_timeout(5)
             .start()

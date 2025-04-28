@@ -21,6 +21,9 @@ macro_rules! rootdir {
             .as_path()
             .join($name)
             .as_path()
+            .as_os_str()
+            .to_string_lossy()
+            .into_owned()
     };
 }
 
@@ -35,7 +38,7 @@ use std::collections::HashMap;
 async fn test_messages_io() {
     setup();
 
-    let mut w = Builder::new(&[crate::rootdir!("process.py")])
+    let mut w = Builder::new(crate::rootdir!("process.py"))
         .name("test")
         .start()
         .await

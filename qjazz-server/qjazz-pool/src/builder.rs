@@ -1,74 +1,39 @@
 //! Builder
-use crate::Worker;
-use crate::config::{WorkerOptions, get_log_level, log_level_from_json, python_executable};
+use crate::worker::{Worker, WorkerLauncher};
+use crate::config::{WorkerOptions, get_log_level, log_level_from_json};
 use crate::errors::Result;
 use crate::messages::JsonValue;
 use crate::utils::json_merge;
-use std::ffi::OsStr;
-use std::process::Stdio;
-use tokio::process::Command;
+
 
 /// Builder
 pub struct Builder {
+    pub(crate) args: String,
     pub(crate) opts: WorkerOptions,
-    pub(crate) command: Command,
     pub(crate) log_level: &'static str,
 }
 
-// Builder Clone
-impl Clone for Builder {
-    fn clone(&self) -> Self {
-        let mut builder =
-            Builder::from_options(self.command.as_std().get_args(), self.opts.clone());
-        // Update arguments and envs
-        for (k, v) in self.command.as_std().get_envs() {
-            match v {
-                Some(v) => builder.env(k, v),
-                None => builder.env_remove(k),
-            };
-        }
-        builder.log_level = self.log_level;
-        builder
-    }
-}
 
 impl Builder {
-    // Initialize a Command for process creation
-    fn new_command(opts: &WorkerOptions) -> Command {
-        let mut command = Command::new(python_executable());
-        // Preinitialize command so may reuse it
-        command
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .env("CONF_LOGGING__LEVEL", get_log_level())
-            .env("CONF_WORKER__QGIS", opts.qgis.to_string());
-        command
-    }
-
     /// Create new builder from args
-    pub fn new<I, S>(args: I) -> Self
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+    pub fn new(args: String) -> Self
     {
         Self::from_options(args, Default::default())
     }
 
     /// Create a new Builder from options
-    pub fn from_options<I, S>(args: I, opts: WorkerOptions) -> Self
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+    pub fn from_options(args: String, opts: WorkerOptions) -> Self
     {
-        let mut command = Self::new_command(&opts);
-        command.args(args);
-        command.arg(&opts.name);
-        Self { opts, command, log_level: get_log_level() }
+        Self { args, opts, log_level: get_log_level() }
+    }
+
+    pub fn launcher(&self) -> WorkerLauncher {
+        WorkerLauncher::new(&self.opts, self.args.clone(), self.log_level)
     }
 
     /// Start a worker with the given configuration
     pub async fn start(&mut self) -> Result<Worker> {
-        Worker::spawn(&mut self.command, &self.opts).await
+        self.launcher().spawn().await
     }
 
     /// Patch configuration
@@ -76,22 +41,15 @@ impl Builder {
 
         if let Some(level) = log_level_from_json(patch) {
             self.log_level = level;
-            self.command.env("CONF_LOGGING__LEVEL", level);
         }
 
         if let Some(patch) = patch.get("worker") {
             let mut doc = serde_json::to_value(&self.opts)?;
             json_merge(&mut doc, patch);
             self.opts = serde_json::from_value(doc)?;
-            self.command.env("CONF_WORKER__QGIS", self.opts.qgis.to_string());
         }
 
         Ok(())
-    }
-
-    /// Start a worker by consumming the builder
-    pub async fn start_owned(mut self) -> Result<Worker> {
-        Worker::spawn(&mut self.command, &self.opts).await
     }
 
     /// Return worker options
@@ -104,27 +62,6 @@ impl Builder {
         &mut self.opts
     }
 
-    pub fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
-    where
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        self.command.env(key, val);
-        self
-    }
-    pub fn env_remove<K: AsRef<OsStr>>(&mut self, key: K) -> &mut Self {
-        self.command.env_remove(key);
-        self
-    }
-    pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Self
-    where
-        I: IntoIterator<Item = (K, V)>,
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        self.command.envs(vars);
-        self
-    }
     pub fn name(&mut self, value: &str) -> &mut Self {
         self.opts.name = value.to_string();
         self
@@ -141,20 +78,6 @@ impl Builder {
         self.opts.num_processes = value.try_into()?;
         Ok(self)
     }
-    /// Add project to load at startup
-    pub fn project(&mut self, value: &str) -> &mut Self {
-        self.command.arg(value);
-        self
-    }
-    /// Add multiple projects to load at startup
-    pub fn projects<I, S>(&mut self, projects: I) -> &mut Self
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
-    {
-        self.command.args(projects);
-        self
-    }
 }
 
 #[cfg(test)]
@@ -164,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_builder_patch() {
-        let mut builder = Builder::new(&[crate::rootdir!("process.py")]);
+        let mut builder = Builder::new(crate::rootdir!("process.py"));
         let _ = builder
             .name("test")
             .process_start_timeout(5)
