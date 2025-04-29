@@ -499,7 +499,7 @@ def get_status_env():
 
 @status_commands.command("disable")
 def disable_server():
-    """Disable server serving stats"""
+    """Disable server serving"""
     with connect() as stub:
         _ = stub.SetServerServingStatus(
             qjazz_pb2.ServerStatus(status=qjazz_pb2.ServingStatus.NOT_SERVING),
@@ -508,7 +508,7 @@ def disable_server():
 
 @status_commands.command("enable")
 def enable_server():
-    """Enable server serving stats"""
+    """Enable server serving"""
     with connect() as stub:
         _ = stub.SetServerServingStatus(
             qjazz_pb2.ServerStatus(status=qjazz_pb2.ServingStatus.SERVING),
@@ -562,9 +562,9 @@ def display_stats(watch: bool, interval: int):
         resp = stub.Stats(qjazz_pb2.Empty())
         click.echo(MessageToJson(resp))
         if watch:
+            sleep(interval)
             resp = stub.Stats(qjazz_pb2.Empty())
             click.echo(MessageToJson(resp))
-            sleep(interval)
 
 
 @cli_commands.command("sleep")
