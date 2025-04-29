@@ -1,10 +1,60 @@
 stages:
+  - build
   - test
   - doc 
-  - build
   - docker
   - deploy
   - release
+
+
+#-----------------
+# Build
+#-----------------
+
+build-binaries:
+  image: ${REGISTRY_URL}/factory-ci-runner:rust-noble
+  stage: build
+  script:
+    - make -C qjazz-server build-release
+  environment:
+    name: snap
+  artifacts:
+    paths:
+    - "qjazz-server/target/release/qjazz-rpc-bin"
+    - "qjazz-server/target/release/qjazz-map-bin"
+  tags:
+  - factory-plain
+
+
+.build-extensions:
+  image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
+  stage: build
+  script:
+    - make -C qjazz-contrib build
+  environment:
+    name: snap
+  artifacts:
+    paths:
+    - "qjazz-contrib/qjazz_contrib/core/qgis/*.so"
+  tags:
+  - factory-plain
+
+# XXX We cannot use artifacts with parallel/matrix
+build-extensions:3.34:
+  extends: .build-extensions
+  variables:
+    QGIS_FLAVOR: '3.34'
+
+build-extensions:ltr:
+  extends: .build-extensions
+  variables:
+    QGIS_FLAVOR: 'ltr'
+
+build-extensions:release:
+  extends: .build-extensions
+  variables:
+    QGIS_FLAVOR: 'release'
+
 
 #-----------------
 # Tests
@@ -13,6 +63,7 @@ stages:
 .tests:
   image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
   stage: test
+  resource_group: qjazz_tests
   script:
     - make install install-dev
     - pip list -l
@@ -20,12 +71,31 @@ stages:
   tags:   
     - factory-plain
 
-tests:
+tests:ltr:
   extends: .tests
-  resource_group: qjazz_tests
-  parallel:
-    matrix:
-    - QGIS_FLAVOR: ['ltr', 'release', '3.34']
+  dependencies:
+      - build-extensions:ltr
+  variables:
+    QGIS_FLAVOR: "ltr"
+
+tests:release:
+  extends: .tests
+  dependencies:
+      - build-extensions:release
+  variables:
+    QGIS_FLAVOR: "release"
+
+tests:3.34:
+  extends: .tests
+  dependencies:
+      - build-extensions:3.34
+  variables:
+    QGIS_FLAVOR: "3.34"
+
+
+#-----------------
+# Doc
+#-----------------
 
 doc:
   image: ${REGISTRY_URL}/factory-ci-runner:build-doc

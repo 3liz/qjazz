@@ -29,12 +29,14 @@ COPY qjazz-processes /python_modules/qjazz-processes
 COPY qjazz-server/python /python_modules/qjazz-server/
 
 # Create virtualenv for installing modules
-RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
+RUN --mount=type=cache,target=/.python-cache \
+    mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
     && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
         pip setuptools wheel requests \
     && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /python_modules/requirements.txt \
+    && export QJAZZ_NO_BUILD_EXT_INSTALL=1 \
     && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
         -e /python_modules/qjazz-contrib \
         -e /python_modules/qjazz-processes \
@@ -55,7 +57,7 @@ RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
     && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
         --cache-dir=/.python-cache pip setuptools wheel packaging \
     && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
-         --cache-dir=/.python-cache qgis-plugin-manager \
+        --cache-dir=/.python-cache qgis-plugin-manager \
     && cd /usr/local/bin && ln -s /opt/local/plugin-manager/bin/qgis-plugin-manager
 
 COPY docker/scripts/ /usr/local/bin/

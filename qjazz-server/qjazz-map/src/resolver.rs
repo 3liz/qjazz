@@ -281,7 +281,7 @@ pub struct ApiEndPoint {
     /// from the expected rootpath of qgis server api.
     /// For exemple, wfs3 request may be mapped to a completely different
     /// root path.
-    pub delegate_to: Option<String>,
+    pub delegate: bool,
     /// Descriptive name
     pub name: String,
     /// Api description

@@ -5,6 +5,7 @@ as a sub process
 import json
 import os
 import signal
+import sys
 import traceback
 
 from time import sleep, time
@@ -14,7 +15,6 @@ from pydantic import JsonValue
 from qjazz_ogc import Catalog
 
 from qgis.core import QgsFeedback
-from qgis.server import QgsServer
 
 from qjazz_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_contrib.core import logger
@@ -22,7 +22,7 @@ from qjazz_contrib.core.config import ConfigProxy
 from qjazz_contrib.core.qgis import (
     PluginType,
     QgisPluginService,
-    init_qgis_server,
+    Server,
     show_all_versions,
     show_qgis_settings,
 )
@@ -48,7 +48,7 @@ def load_default_project(cm: CacheManager):
             logger.error("The project %s does not exists", url)
 
 
-def setup_server(conf: QgisConfig) -> QgsServer:
+def setup_server(conf: QgisConfig) -> Server:
     """Setup Qgis server and plugins"""
     # Enable qgis server debug verbosity
     if logger.is_enabled_for(logger.LogLevel.DEBUG):
@@ -64,7 +64,13 @@ def setup_server(conf: QgisConfig) -> QgsServer:
     # Disable any cache strategy
     os.environ["QGIS_SERVER_PROJECT_CACHE_STRATEGY"] = "off"
 
-    server = init_qgis_server(settings=conf.qgis_settings)
+    # Set the server request handler
+    server = Server.new(settings=conf.qgis_settings)
+    server.use_default_handler = conf.use_default_server_handler
+    logger.info(
+        "Using server request handler: %s",
+        "default" if server.use_default_handler else "QJazz",
+    )
 
     # Configure QGIS network (trace, timeouts)
     conf.network.configure_network()
@@ -72,7 +78,7 @@ def setup_server(conf: QgisConfig) -> QgsServer:
     CacheManager.initialize_handlers(projects)
 
     if logger.is_enabled_for(logger.LogLevel.DEBUG):
-        print(show_qgis_settings(), flush=True)  # noqa T201
+        print(show_qgis_settings(), flush=True, file=sys.stderr)  # noqa T201
 
     # Register catalog as service
     cat = Catalog()
@@ -126,7 +132,7 @@ class RendezVous(Protocol):
 
 
 def qgis_server_run(
-    server: QgsServer,
+    server: Server,
     conn: _m.Connection,
     conf: QgisConfig,
     rendez_vous: RendezVous,
@@ -134,12 +140,12 @@ def qgis_server_run(
     projects: Optional[List[str]] = None,
 ):
     """Run Qgis server and process incoming requests"""
-    cm = CacheManager(conf.projects, server)
+    cm = CacheManager(conf.projects, server.inner)
 
     # Register the cache manager as a service
     cm.register_as_service()
 
-    server_iface = server.serverInterface()
+    server_iface = server.inner.serverInterface()
 
     # Load plugins
     plugin_s = QgisPluginService(conf.plugins)

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Iterator, Optional, no_type_check
 
-import qgis
+import qgis  # noqa F401
 
 from .. import logger
 from ..condition import assert_precondition
@@ -186,7 +186,7 @@ def init_qgis_processing() -> None:
     Processing.initialize()
 
 
-def init_qgis_server(**kwargs) -> qgis.server.QgsServer:
+def init_qgis_server(**kwargs) -> "qgis.server.QgsServer":
     """Init Qgis server"""
     from qgis.server import QgsServer
 

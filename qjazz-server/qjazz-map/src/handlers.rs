@@ -124,13 +124,8 @@ pub mod api {
         let content_type =
             request::header_as_str(&req, http::header::CONTENT_TYPE).map(String::from);
 
-        let name = endpoint
-            .delegate_to
-            .clone()
-            .unwrap_or(endpoint.endpoint.clone());
-
         let request = ApiRequest {
-            name,
+            name: endpoint.name.clone(),
             path,
             target: args.into_inner().map,
             url: Some(request::location(&req)),
@@ -138,7 +133,7 @@ pub mod api {
             options: Some(req.query_string().to_string()),
             method: req.method().as_str().to_string(),
             data: (!data.is_empty()).then(|| data.to_vec()),
-            delegate: endpoint.delegate_to.is_some(),
+            delegate: endpoint.delegate,
             request_id: request_id.clone(),
             content_type,
         };

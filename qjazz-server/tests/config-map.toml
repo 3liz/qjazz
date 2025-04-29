@@ -19,17 +19,17 @@ cafile = "$location/certs/localhost.crt"
 # With delegation
 [[backends.test.api]]
 endpoint = "features"
-delegate_to = "wfs3"
-name = "Features OGC Api"
+delegate = true
+name = "WFS3"
 
 # Without delegation
 [[backends.test.api]]
 endpoint = "wfs3"
-name = "Features OGC Api (WFS3)"
+name = "OGC WFS3 (Draft)"
 
 [[backends.test.api]]
 endpoint = "lizmap"
-name = "Lizmap API"
+name = "Lizmap"
 
 [backends.worker]
 title = "Backend to host 'worker'"

@@ -1,6 +1,6 @@
 [package]
 name = "qjazz-pool"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "QGIS worker pool"
 keywords.workspace = true

@@ -199,6 +199,7 @@ async def test_rpc_api_request(worker: Worker):
             target="/france/france_parts",
             url="http://localhost:8080/features",
             method=messages.HTTPMethod.GET,
+            delegate=True,
         ),
     )
     assert status == 200

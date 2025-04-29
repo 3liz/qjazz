@@ -11,8 +11,8 @@ name = "Features OGC Api (WFS3)"
 [[backends.basic.api]]
 endpoint = "features"
 delegate_to = "wfs3"
-name = "Features OGC Api"
+name = "OGC WFS3 (Draft)"
 
 [[backends.basic.api]]
 endpoint = "lizmap"
-name = "Lizmap server API"
+name = "Lizmap"

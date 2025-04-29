@@ -106,7 +106,7 @@ push-eager:
 # No QGIS build
 # =============
 
-BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION)
+BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION_TAG)
 
 NOQGIS_BUILD_TARGET:=noqgis
 

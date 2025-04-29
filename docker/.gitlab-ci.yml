@@ -1,25 +1,6 @@
 #-------------
-# Build
+# Docker build
 #-------------
-
-build-binaries:
-  image: ${REGISTRY_URL}/factory-ci-runner:rust-noble
-  stage: build
-  script:
-    - make -C qjazz-server build-release
-  environment:
-    name: snap
-  artifacts:
-    paths:
-    - "qjazz-server/target/release/qjazz-rpc-bin"
-    - "qjazz-server/target/release/qjazz-map-bin"
-  only:
-    refs:
-    - tags
-    - main
-  tags:
-  - factory-plain
-
 
 .build-docker:
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
@@ -31,8 +12,6 @@ build-binaries:
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:
     name: snap
-  dependencies:
-      - build-binaries
   artifacts:
     paths:
     - "docker/factory-${QGIS_FLAVOR}.manifest"
@@ -47,16 +26,25 @@ build-binaries:
 
 build-docker:ltr:
   extends: .build-docker
+  dependencies:
+      - build-binaries
+      - build-extensions:ltr
   variables:
     QGIS_FLAVOR: "ltr"
 
 build-docker:release:
   extends: .build-docker
+  dependencies:
+      - build-binaries
+      - build-extensions:release
   variables:
     QGIS_FLAVOR: "release"
 
 build-docker:3.34:
   extends: .build-docker
+  dependencies:
+      - build-binaries
+      - build-extensions:3.34
   variables:
     QGIS_FLAVOR: "3.34"
 

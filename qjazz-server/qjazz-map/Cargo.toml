@@ -1,6 +1,6 @@
 [package]
 name = "qjazz-map"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "QJazz Map Server"
 keywords.workspace = true

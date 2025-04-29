@@ -8,11 +8,12 @@ from typing import Optional, assert_never, cast
 from urllib.parse import urlunsplit
 
 from qgis.core import QgsFeedback
-from qgis.server import QgsServer, QgsServerRequest, QgsServerResponse
+from qgis.server import QgsServerRequest, QgsServerResponse
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_precondition
+from qjazz_contrib.core.qgis import Server
 from qjazz_contrib.core.utils import to_rfc822
 
 from . import messages as _m
@@ -34,7 +35,7 @@ Co = CheckoutStatus
 def handle_ows_request(
     conn: _m.Connection,
     msg: _m.OwsRequestMsg,
-    server: QgsServer,
+    server: Server,
     cm: CacheManager,
     config: QgisConfig,
     *,
@@ -104,7 +105,7 @@ def handle_ows_request(
     if msg.request_id:
         log.accept(msg.request_id, entry.uri if entry else None)
 
-    resp = _handle_generic_request(
+    (req, resp, project) = _handle_generic_request(
         url,
         entry,
         co_status,
@@ -112,7 +113,6 @@ def handle_ows_request(
         method,
         msg.headers,
         conn,
-        server,
         config,
         target=target,
         cache_id=cache_id,
@@ -121,6 +121,8 @@ def handle_ows_request(
         content_type=msg.content_type,
         resp_hdrs=resp_hdrs,
     )
+
+    server.handle_request(req, resp, project=project)
 
     log.log(
         msg.request_id or "-",
@@ -134,7 +136,7 @@ def handle_ows_request(
 def handle_api_request(
     conn: _m.Connection,
     msg: _m.ApiRequestMsg,
-    server: QgsServer,
+    server: Server,
     cm: CacheManager,
     config: QgisConfig,
     *,
@@ -177,10 +179,12 @@ def handle_api_request(
         # Pass api name as header
         # to api delegate
         headers.append(("x-qgis-api", msg.name))
+        api_name = "API Delegate"
     else:
         url = msg.url
         if msg.path:
             url = f"{url.removesuffix('/')}/{msg.path.removeprefix('/')}"
+        api_name = msg.name
 
     if msg.options:
         url += f"?{msg.options}"
@@ -188,7 +192,7 @@ def handle_api_request(
     if msg.request_id:
         log.accept(msg.request_id, entry.uri if entry else None)
 
-    resp = _handle_generic_request(
+    (req, resp, project) = _handle_generic_request(
         url,
         entry,
         co_status,
@@ -196,7 +200,6 @@ def handle_api_request(
         method,
         msg.headers,
         conn,
-        server,
         config,
         target=target,
         cache_id=cache_id,
@@ -204,6 +207,8 @@ def handle_api_request(
         header_prefix=msg.header_prefix,
         content_type=msg.content_type,
     )
+
+    server.handle_request(req, resp, project=project, api=api_name)
 
     log.log(
         msg.request_id or "-",
@@ -222,7 +227,6 @@ def _handle_generic_request(
     method: QgsServerRequest.Method,
     headers: list[tuple[str, str]],
     conn: _m.Connection,
-    server: QgsServer,
     config: QgisConfig,
     *,
     target: Optional[str],
@@ -254,8 +258,6 @@ def _handle_generic_request(
             feedback=feedback,
             header_prefix=header_prefix,
         )
-        # See https://github.com/qgis/QGIS/pull/9773
-        server.serverInterface().setConfigFilePath(project.fileName())
     else:
         project = None
         response = Response(
@@ -273,8 +275,7 @@ def _handle_generic_request(
         req_hdrs["Content-Type"] = content_type
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
-    server.handleRequest(request, response, project=project)
-    return response
+    return (request, response, project)
 
 
 def get_project(

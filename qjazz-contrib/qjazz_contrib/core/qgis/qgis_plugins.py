@@ -35,7 +35,7 @@ from pydantic import (
     JsonValue,
 )
 
-import qgis
+import qgis  # noqa F401
 
 from .. import componentmanager, config, logger
 from ..condition import assert_precondition

@@ -22,3 +22,14 @@ configure:: manifest
 manifest:
 	# Create manifest
 	@echo "{\"commit_id\": \"$(shell git rev-parse HEAD)\" }" > qjazz_contrib/core/manifest.json
+
+
+build::
+	rm -rf *.egg-info
+	python setup.py build_ext --inplace
+	strip qjazz_contrib/core/qgis/*.so
+
+clean::
+	rm -rf build
+	rm qjazz_contrib/core/qgis/*.so
+

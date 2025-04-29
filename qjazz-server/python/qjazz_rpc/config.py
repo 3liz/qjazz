@@ -127,3 +127,15 @@ class QgisConfig(config.ConfigBase):
         QgisNetworkConfig(),
         title="QGIS Network configuration",
     )
+    use_default_server_handler: bool = Field(
+        False,
+        title="Use default QGIS server handler",
+        description="""
+        Use the default QGIS server handler instead
+        tf the alternative QJazz optimized handler.
+        Note that the QJazz handler deactivate the
+        'onSendResponse' method. If your plugin's filters
+        require the 'onSendResponse' method, then you
+        must set this option to true.
+        """,
+    )

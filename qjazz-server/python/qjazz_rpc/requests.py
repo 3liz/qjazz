@@ -194,7 +194,7 @@ class Response(QgsServerResponse):
                 self._status_code = code
                 self.truncate()
                 self._buffer.write(message.encode() if message else b"")
-                self.flush()
+                self.finish()
             else:
                 logger.error("Cannot set error after header written")
         except Exception:

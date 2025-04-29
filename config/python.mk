@@ -10,6 +10,7 @@ dist::
 	rm -rf *.egg-info
 	$(PYTHON) -m build --no-isolation --sdist --outdir=$(SDIST)
 
+
 clean::
 	rm -rf $(SDIST) *.egg-info
 
@@ -43,6 +44,7 @@ typing:: $(PYTHON_PKG)
 scan::
 	bandit -r $(PYTHON_PKG) $(SCAN_OPTS)
 
+# Do not use in CI tests since it choke on false positive
 deadcode:: 
 	vulture $(PYTHON_PKG) --min-confidence 70
 
@@ -61,6 +63,6 @@ requirements: $(REQUIREMENTS)
 ifndef TESTDIR
 test::
 else
-test:: lint typing scan deadcode
+test:: lint typing scan
 	cd $(TESTDIR) && pytest -v 
 endif

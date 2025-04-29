@@ -1,4 +1,4 @@
-from .qgis_init import (  # noqa
+from .qgis_init import (  # noqa F401
     current_qgis_application,
     exit_qgis_application,
     init_qgis_application,
@@ -9,12 +9,14 @@ from .qgis_init import (  # noqa
     show_all_versions,
     show_qgis_settings,
 )
-from .qgis_plugins import (  # noqa
+from .qgis_plugins import (  # noqa F401
     PluginType,
     QgisPluginConfig,
     QgisPluginService,
     install_plugins,
 )
-from .qgis_network import (  # noqa
+from .qgis_network import (  # noqa F401
     QgisNetworkConfig,
 )
+
+from .qgis_server import Server # noqa F401
