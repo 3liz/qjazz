@@ -182,7 +182,7 @@ impl Pool {
         self.error
     }
 
-    pub(crate) fn options(&self) -> &WorkerOptions {
+    pub fn options(&self) -> &WorkerOptions {
         self.builder.options()
     }
 

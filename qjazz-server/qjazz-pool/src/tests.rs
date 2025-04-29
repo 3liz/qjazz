@@ -81,7 +81,7 @@ async fn test_messages_io() {
             .expect("Header not found"),
         "application/test"
     );
-    assert_eq!(resp.checkout_status, Some(msg::CheckoutStatus::NEW as i64));
+    assert_eq!(resp.checkout_status, Some(msg::CheckoutStatus::NEW));
 
     let mut stream = w.byte_stream().unwrap();
 

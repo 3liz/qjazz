@@ -193,6 +193,7 @@ pub struct ApiRequestMsg<'a> {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct RequestReply {
     pub status_code: i64,
+    pub target: Option<String>,
     pub checkout_status: Option<i64>,
     pub headers: Vec<(String, String)>,
     pub cache_id: String,
@@ -250,25 +251,14 @@ pub struct CollectionsPage {
 // CACHE
 //
 
-#[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum CheckoutStatus {
-    UNCHANGED = 0,
-    NEEDUPDATE = 1,
-    REMOVED = 2,
-    NOTFOUND = 3,
-    NEW = 4,
-    UPDATED = 5,
-}
-
-impl Serialize for CheckoutStatus {
-    #[inline]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_i64(*self as i64)
-    }
+#[allow(non_snake_case)]
+pub mod CheckoutStatus {
+    pub const UNCHANGED: i64 = 0;
+    pub const NEEDUPDATE: i64 = 1;
+    pub const REMOVED: i64 = 2;
+    pub const NOTFOUND: i64 = 3;
+    pub const NEW: i64 = 4;
+    pub const UPDATED: i64 = 5;
 }
 
 impl_message! {CheckoutProjectMsg<'a>, CHECKOUT_PROJECT}

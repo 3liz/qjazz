@@ -1,10 +1,9 @@
 //! Builder
-use crate::worker::{Worker, WorkerLauncher};
 use crate::config::{WorkerOptions, get_log_level, log_level_from_json};
 use crate::errors::Result;
 use crate::messages::JsonValue;
 use crate::utils::json_merge;
-
+use crate::worker::{Worker, WorkerLauncher};
 
 /// Builder
 pub struct Builder {
@@ -13,18 +12,19 @@ pub struct Builder {
     pub(crate) log_level: &'static str,
 }
 
-
 impl Builder {
     /// Create new builder from args
-    pub fn new(args: String) -> Self
-    {
+    pub fn new(args: String) -> Self {
         Self::from_options(args, Default::default())
     }
 
     /// Create a new Builder from options
-    pub fn from_options(args: String, opts: WorkerOptions) -> Self
-    {
-        Self { args, opts, log_level: get_log_level() }
+    pub fn from_options(args: String, opts: WorkerOptions) -> Self {
+        Self {
+            args,
+            opts,
+            log_level: get_log_level(),
+        }
     }
 
     pub fn launcher(&self) -> WorkerLauncher {
@@ -38,7 +38,6 @@ impl Builder {
 
     /// Patch configuration
     pub fn patch(&mut self, patch: &serde_json::Value) -> Result<()> {
-
         if let Some(level) = log_level_from_json(patch) {
             self.log_level = level;
         }

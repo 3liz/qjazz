@@ -30,6 +30,7 @@ service QgisAdmin {
     rpc Stats (Empty) returns (StatsReply) {}
     rpc Sleep (SleepRequest) returns (Empty) {}
     rpc Reload (Empty) returns (Empty) {}
+    rpc DumpCache (Empty) returns (stream DumpCacheItem) {}
 }
 
 
@@ -207,3 +208,10 @@ message CatalogItem {
     string last_modified = 4;
     string public_uri = 5;
 }
+
+message DumpCacheItem {
+    string cache_id = 1;
+    string config = 2;
+    repeated CacheInfo cache = 3;
+}
+

@@ -5,7 +5,7 @@ use tokio_stream::{Stream, wrappers::ReceiverStream};
 use tonic::{Request, Response, Status};
 
 use crate::utils::{headers_to_metadata, metadata_to_headers};
-use qjazz_pool::restore;
+use qjazz_pool::{messages::CheckoutStatus, restore};
 
 // Qjazz gRPC services
 

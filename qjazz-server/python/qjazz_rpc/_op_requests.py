@@ -114,6 +114,7 @@ def handle_ows_request(
         conn,
         server,
         config,
+        target=target,
         cache_id=cache_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
@@ -197,6 +198,7 @@ def handle_api_request(
         conn,
         server,
         config,
+        target=target,
         cache_id=cache_id,
         feedback=feedback,
         header_prefix=msg.header_prefix,
@@ -223,6 +225,7 @@ def _handle_generic_request(
     server: QgsServer,
     config: QgisConfig,
     *,
+    target: Optional[str],
     cache_id: str,
     feedback: QgsFeedback,
     header_prefix: Optional[str],
@@ -243,7 +246,8 @@ def _handle_generic_request(
 
         response = Response(
             conn,
-            cast(Co, co_status).value,
+            target=target,
+            co_status=cast(Co, co_status).value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             cache_id=cache_id,

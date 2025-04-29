@@ -5,7 +5,7 @@ import warnings
 
 from . import qjazz_pb2 as qjazz__pb2
 
-GRPC_GENERATED_VERSION = '1.70.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -315,6 +315,11 @@ class QgisAdminStub(object):
                 request_serializer=qjazz__pb2.Empty.SerializeToString,
                 response_deserializer=qjazz__pb2.Empty.FromString,
                 _registered_method=True)
+        self.DumpCache = channel.unary_stream(
+                '/qjazz.QgisAdmin/DumpCache',
+                request_serializer=qjazz__pb2.Empty.SerializeToString,
+                response_deserializer=qjazz__pb2.DumpCacheItem.FromString,
+                _registered_method=True)
 
 
 class QgisAdminServicer(object):
@@ -416,6 +421,12 @@ class QgisAdminServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DumpCache(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_QgisAdminServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -498,6 +509,11 @@ def add_QgisAdminServicer_to_server(servicer, server):
                     servicer.Reload,
                     request_deserializer=qjazz__pb2.Empty.FromString,
                     response_serializer=qjazz__pb2.Empty.SerializeToString,
+            ),
+            'DumpCache': grpc.unary_stream_rpc_method_handler(
+                    servicer.DumpCache,
+                    request_deserializer=qjazz__pb2.Empty.FromString,
+                    response_serializer=qjazz__pb2.DumpCacheItem.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -932,6 +948,33 @@ class QgisAdmin(object):
             '/qjazz.QgisAdmin/Reload',
             qjazz__pb2.Empty.SerializeToString,
             qjazz__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DumpCache(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/qjazz.QgisAdmin/DumpCache',
+            qjazz__pb2.Empty.SerializeToString,
+            qjazz__pb2.DumpCacheItem.FromString,
             options,
             channel_credentials,
             insecure,

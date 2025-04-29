@@ -170,6 +170,7 @@ def run(name: str, projects: list[str]) -> None:
                             conn,
                             m_.RequestReply(
                                 status_code=200,
+                                target="",
                                 headers=[(f"{prefix}content-type", "application/test")],
                                 checkout_status=CheckoutStatus.NEW.value,
                             ),
@@ -184,6 +185,7 @@ def run(name: str, projects: list[str]) -> None:
                             conn,
                             m_.RequestReply(
                                 status_code=200,
+                                target="",
                                 headers=[(f"{prefix}content-type", "application/test")],
                                 checkout_status=CheckoutStatus.NEW.value,
                             ),

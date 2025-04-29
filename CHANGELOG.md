@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added 
 
+* [rpc] Add cache 'dump' command for inspecting all workers.
 * [docker] Define `QGIS_SERVER_CACHE_DIRECTORY` in entrypoint
 * [server] Add option for disabling catalog listing
 * [server] Allow passing location prefix in catalog 

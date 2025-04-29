@@ -41,6 +41,7 @@ async def test_rpc_io(worker: Worker):
     resp = messages.RequestReply.model_validate(resp)
 
     assert resp.status_code == 200
+    assert resp.target == "/france/france_parts"
 
     print(f"> {resp.headers}")
 

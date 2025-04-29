@@ -72,6 +72,7 @@ class Response(BaseModel):
 #
 class RequestReply(Response):
     status_code: int
+    target: Optional[str]
     checkout_status: Optional[int]
     headers: list[tuple[str, str]] = Field([])
     cache_id: str = ""

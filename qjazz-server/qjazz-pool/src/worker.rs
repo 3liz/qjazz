@@ -58,7 +58,6 @@ pub struct WorkerLauncher {
 }
 
 impl WorkerLauncher {
-
     pub fn new(opts: &WorkerOptions, args: String, log_level: &'static str) -> Self {
         Self {
             args,
@@ -143,8 +142,6 @@ impl WorkerLauncher {
     }
 }
 
-
-
 /// Worker
 ///
 /// The worker object is a handle to the  child QGIS server process.
@@ -166,8 +163,10 @@ impl Worker {
     /// kill.
     pub async fn terminate(&mut self) -> Result<()> {
         if let Ok(Some(status)) = self.process.child.try_wait() {
-            log::info!("Worker terminated with exit status {:?}", 
-                status.code().unwrap_or(-1));
+            log::info!(
+                "Worker terminated with exit status {:?}",
+                status.code().unwrap_or(-1)
+            );
         } else {
             log::debug!("Terminating worker {}", self.id());
             self.rendez_vous.stop().await;

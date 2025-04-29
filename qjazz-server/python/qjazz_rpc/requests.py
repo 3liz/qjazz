@@ -65,6 +65,8 @@ class Response(QgsServerResponse):
     def __init__(
         self,
         conn: _m.Connection,
+        *,
+        target: Optional[str] = None,
         co_status: Optional[int] = None,
         headers: Optional[dict] = None,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
@@ -87,6 +89,7 @@ class Response(QgsServerResponse):
         self._cache_id = cache_id
         self._feedback = feedback
         self._header_prefix = header_prefix or ""
+        self._target = target
 
     # Since 3.36
     def feedback(self) -> Optional[QgsFeedback]:
@@ -114,6 +117,7 @@ class Response(QgsServerResponse):
         _m.send_reply(
             self._conn,
             _m.RequestReply(
+                target=self._target,
                 status_code=self._status_code,
                 headers=[(f"{self._header_prefix}{k}", v) for k, v in self._headers.items()],
                 checkout_status=self._co_status,

@@ -1,8 +1,8 @@
+use crate::errors::Error;
 use serde::{Deserialize, Serialize};
-use std::sync::LazyLock;
 use std::fmt;
 use std::path::PathBuf;
-use crate::errors::Error;
+use std::sync::LazyLock;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(try_from = "usize")]
@@ -35,13 +35,12 @@ impl<const MIN: usize, const MAX: usize> BoundedUsize<MIN, MAX> {
     }
 }
 
-const LOG_CRITICAL: &'static str = "critical";
-const LOG_ERROR: &'static str = "error";
-const LOG_WARNING: &'static str = "warning";
-const LOG_INFO: &'static str = "info";
-const LOG_DEBUG: &'static str = "trace";
-const LOG_TRACE: &'static str = "trace";
-
+const LOG_CRITICAL: &str = "critical";
+const LOG_ERROR: &str = "error";
+const LOG_WARNING: &str = "warning";
+const LOG_INFO: &str = "info";
+const LOG_DEBUG: &str = "trace";
+const LOG_TRACE: &str = "trace";
 
 pub(crate) fn get_log_level() -> &'static str {
     match log::max_level() {
@@ -58,21 +57,19 @@ pub(crate) fn get_log_level() -> &'static str {
 pub(crate) fn log_level_from_json(opts: &serde_json::Value) -> Option<&'static str> {
     opts.get("logging").and_then(|value| {
         value.get("level").and_then(|value| {
-            value.as_str().and_then(|value| {
-                match value.to_ascii_lowercase().as_str() {
+            value
+                .as_str()
+                .and_then(|value| match value.to_ascii_lowercase().as_str() {
                     "error" => Some(LOG_ERROR),
                     "info" => Some(LOG_INFO),
                     "debug" => Some(LOG_DEBUG),
                     "trace" => Some(LOG_TRACE),
                     "critical" => Some(LOG_CRITICAL),
                     _ => None,
-                }
-            })
+                })
         })
     })
 }
-
-
 
 static PYTHON_EXEC: LazyLock<PathBuf> = LazyLock::new(|| {
     std::env::var_os("PYTHON_EXEC")
@@ -80,9 +77,8 @@ static PYTHON_EXEC: LazyLock<PathBuf> = LazyLock::new(|| {
         .unwrap_or("python3".into())
 });
 
-
 pub(crate) fn python_executable() -> &'static PathBuf {
-    &*PYTHON_EXEC
+    &PYTHON_EXEC
 }
 
 const DEFAULT_START_TIMEOUT_SEC: u64 = 5;

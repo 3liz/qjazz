@@ -8,9 +8,9 @@ use tonic_health::server::HealthReporter;
 use super::*;
 
 use qjazz_service::{
-    CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, Empty, JsonConfig,
-    PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest, ServerStatus, ServingStatus,
-    SleepRequest, StatsReply, project_info,
+    CacheInfo, CatalogItem, CatalogRequest, CheckoutRequest, DropRequest, DumpCacheItem, Empty,
+    JsonConfig, PingReply, PingRequest, PluginInfo, ProjectInfo, ProjectRequest, ServerStatus,
+    ServingStatus, SleepRequest, StatsReply, project_info,
 };
 
 use qjazz_service::qgis_admin_server::QgisAdmin;
@@ -45,6 +45,7 @@ impl QgisAdminServicer {
 type CacheInfoStream = Pin<Box<dyn Stream<Item = Result<CacheInfo, Status>> + Send>>;
 type PluginInfoStream = Pin<Box<dyn Stream<Item = Result<PluginInfo, Status>> + Send>>;
 type CatalogItemStream = Pin<Box<dyn Stream<Item = Result<CatalogItem, Status>> + Send>>;
+type DumpCacheItemStream = Pin<Box<dyn Stream<Item = Result<DumpCacheItem, Status>> + Send>>;
 
 // gRPC Service implementation
 #[tonic::async_trait]
@@ -85,7 +86,16 @@ impl QgisAdmin for QgisAdminServicer {
             // Trigger sync
             self.inner
                 .get_ref()
-                .update_cache(restore::State::Pull(req.uri))
+                .update_cache(
+                    if matches!(
+                        resp.status,
+                        CheckoutStatus::REMOVED | CheckoutStatus::NOTFOUND
+                    ) {
+                        restore::State::Remove(req.uri)
+                    } else {
+                        restore::State::Pull(req.uri)
+                    },
+                )
                 .await;
         }
 
@@ -106,6 +116,8 @@ impl QgisAdmin for QgisAdminServicer {
                 .map(CacheInfo::from)
                 .map_err(Self::error)?,
         );
+
+        w.done();
 
         // Sync state
         self.inner
@@ -139,7 +151,12 @@ impl QgisAdmin for QgisAdminServicer {
                 loop {
                     if tx
                         .send(match stream.next().await {
-                            Ok(Some(item)) => Ok(CacheInfo::from(item)),
+                            Ok(Some(item)) => {
+                                if !item.pinned {
+                                    continue
+                                }
+                                Ok(CacheInfo::from(item))
+                            }
                             Ok(None) => break,
                             Err(err) => Err(Status::unknown(err)),
                         })
@@ -181,6 +198,80 @@ impl QgisAdmin for QgisAdminServicer {
 
         Ok(Response::new(Empty {}))
     }
+
+    // Dump cache(s)
+    type DumpCacheStream = DumpCacheItemStream;
+
+    async fn dump_cache(
+        &self,
+        _: Request<Empty>,
+    ) -> Result<Response<Self::DumpCacheStream>, Status> {
+        let num_workers = self.pool.read().await.options().num_processes();
+
+        // Drain all workers
+        // NOTE: This is a kind of 'stop the world' method since it waits
+        // for all workers beeing availables
+        // should be called only for debugging purposes
+        let mut workers = self.inner.get_ref().drain();
+        while workers.len() < num_workers {
+            workers.push(self.inner.get_worker().await?)
+        }
+
+        async fn list_cache(w: &mut qjazz_pool::Worker) -> Result<Vec<CacheInfo>, Status> {
+            let mut stream = w.list_cache().await.map_err(QgisAdminServicer::error)?;
+            let mut items = vec![];
+            loop {
+                match stream.next().await {
+                    Ok(Some(item)) => items.push(CacheInfo::from(item)),
+                    Ok(None) => break,
+                    Err(err) => return Err(Status::unknown(err)),
+                }
+            }
+            Ok(items)
+        }
+
+        let (tx, rx) = mpsc::channel(32);
+        tokio::spawn(async move {
+            {
+                for mut w in workers.drain(..) {
+                    let cache_id = format!("{}_{}", w.name(), w.id().value.unwrap_or(0));
+                    let cache = match list_cache(&mut w).await {
+                        Ok(cache) => cache,
+                        Err(status) => {
+                            let _ = tx.send(Err(status)).await;
+                            return;
+                        }
+                    };
+                    let config = match w.get_config().await {
+                        Ok(config) => config.to_string(),
+                        Err(err) => {
+                            let _ = tx.send(Err(QgisAdminServicer::error(err))).await;
+                            return;
+                        }
+                    };
+                    w.done();
+                    if tx
+                        .send(Ok(DumpCacheItem {
+                            cache_id,
+                            config,
+                            cache,
+                        }))
+                        .await
+                        .is_err()
+                    {
+                        log::error!("Connection cancelled by client");
+                        return;
+                    }
+                }
+            }
+        });
+
+        let output_stream = ReceiverStream::new(rx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::DumpCacheStream
+        ))
+    }
+
     //
     // Plugins
     //
@@ -234,29 +325,28 @@ impl QgisAdmin for QgisAdminServicer {
         let patch = serde_json::from_str::<serde_json::Value>(&request.into_inner().json)
             .map_err(|err| Status::invalid_argument(format!("{:?}", err)))?;
 
-            if log::log_enabled!(log::Level::Debug) {
-                log::debug!("Updating configuration: {}", patch);
-            } else {
-                log::info!("Updating configuration");
-            }
+        if log::log_enabled!(log::Level::Debug) {
+            log::debug!("Updating configuration: {}", patch);
+        } else {
+            log::info!("Updating configuration");
+        }
 
-            // Patch configuration
-            self.pool
-                .write()
-                .await
-                .patch_config(&patch)
-                .await
-                .map_err(Status::invalid_argument)?;
+        // Patch configuration
+        self.pool
+            .write()
+            .await
+            .patch_config(&patch)
+            .await
+            .map_err(Status::invalid_argument)?;
 
-            self.inner.get_ref().update_config(patch).await;
-            Ok(Response::new(Empty {}))
+        self.inner.get_ref().update_config(patch).await;
+        Ok(Response::new(Empty {}))
     }
 
     async fn get_config(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
-        // Wait for available worker
-        let mut w = self.inner.get_worker().await?;
         Ok(Response::new(JsonConfig {
-            json: w.get_config().await.map_err(Self::error)?.to_string(),
+            json: serde_json::to_string(self.pool.read().await.options())
+                .map_err(|err| Status::internal(format!("{}", err)))?,
         }))
     }
 
@@ -398,6 +488,7 @@ impl QgisAdmin for QgisAdminServicer {
         w.sleep(request.into_inner().delay)
             .await
             .map_err(Self::error)?;
+        w.done();
         Ok(Response::new(Empty {}))
     }
     // Reload

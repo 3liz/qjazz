@@ -10,15 +10,8 @@ class ServingStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     SERVING: _ClassVar[ServingStatus]
     NOT_SERVING: _ClassVar[ServingStatus]
-
-class CollectionsType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = ()
-    CATALOG: _ClassVar[CollectionsType]
-    DATASET: _ClassVar[CollectionsType]
 SERVING: ServingStatus
 NOT_SERVING: ServingStatus
-CATALOG: CollectionsType
-DATASET: CollectionsType
 
 class PingRequest(_message.Message):
     __slots__ = ("echo",)
@@ -123,16 +116,16 @@ class ApiRequest(_message.Message):
     def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ...) -> None: ...
 
 class CollectionsRequest(_message.Message):
-    __slots__ = ("location", "type", "start", "end")
+    __slots__ = ("location", "resource", "start", "end")
     LOCATION_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
+    RESOURCE_FIELD_NUMBER: _ClassVar[int]
     START_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
     location: str
-    type: CollectionsType
+    resource: str
     start: int
     end: int
-    def __init__(self, location: _Optional[str] = ..., type: _Optional[_Union[CollectionsType, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ...) -> None: ...
+    def __init__(self, location: _Optional[str] = ..., resource: _Optional[str] = ..., start: _Optional[int] = ..., end: _Optional[int] = ...) -> None: ...
 
 class CollectionsPage(_message.Message):
     __slots__ = ("schema", "next", "items")
@@ -284,3 +277,13 @@ class CatalogItem(_message.Message):
     last_modified: str
     public_uri: str
     def __init__(self, uri: _Optional[str] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., public_uri: _Optional[str] = ...) -> None: ...
+
+class DumpCacheItem(_message.Message):
+    __slots__ = ("cache_id", "config", "cache")
+    CACHE_ID_FIELD_NUMBER: _ClassVar[int]
+    CONFIG_FIELD_NUMBER: _ClassVar[int]
+    CACHE_FIELD_NUMBER: _ClassVar[int]
+    cache_id: str
+    config: str
+    cache: _containers.RepeatedCompositeFieldContainer[CacheInfo]
+    def __init__(self, cache_id: _Optional[str] = ..., config: _Optional[str] = ..., cache: _Optional[_Iterable[_Union[CacheInfo, _Mapping]]] = ...) -> None: ...

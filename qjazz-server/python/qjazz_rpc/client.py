@@ -79,6 +79,15 @@ def MessageToJson(msg: Message) -> str:
     )
 
 
+def MessageToDict(msg: Message) -> dict:
+    return json_format.MessageToDict(
+        msg,
+        # XXX Since protobuf 5.26
+        # See https://github.com/python/typeshed/issues/11636
+        always_print_fields_with_no_presence=True,  # type: ignore [call-arg]
+    )
+
+
 @overload
 def connect(
     stub: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
@@ -280,7 +289,13 @@ def cache_commands():
 @click.argument("project", nargs=1)
 @click.option("--pull", is_flag=True, help="Load project in cache")
 def checkout_project(project: str, pull: bool):
-    """CheckoutProject PROJECT from cache"""
+    """CheckoutProject PROJECT from cache
+
+    If pull is true then the project is loaded into the cache as
+    a pinned item.
+
+    To remove a pinned item use the 'drop' cache command.
+    """
     with connect() as stub:
         item = stub.CheckoutProject(
             qjazz_pb2.CheckoutRequest(uri=project, pull=pull),
@@ -310,36 +325,42 @@ def clear_cache():
 
 @cache_commands.command("list")
 def list_cache():
-    """List projects from cache"""
+    """List projects from static (pinned) cache"""
+    count = 0
     with connect() as stub:
         stream = stub.ListCache(qjazz_pb2.Empty())
         for item in stream:
             click.echo(MessageToJson(item))
 
+    click.echo(f"Returned {count} items", err=True)
+
 
 @cache_commands.command("update")
 def update_cache():
-    """Synchronize cache between processes"""
+    """Update cache item state"""
+    count = 0
     with connect() as stub:
         stream = stub.UpdateCache(qjazz_pb2.Empty())
         for item in stream:
             click.echo(MessageToJson(item))
+
+    click.echo(f"Returned {count} items", err=True)
 
 
 @cache_commands.command("info")
 @click.argument("project", nargs=1)
 def project_info(project: str):
     """Return info from PROJECT in cache"""
+    count = 0
     with connect() as stub:
         stream = stub.GetProjectInfo(
             qjazz_pb2.ProjectRequest(uri=project),
         )
-        count = 0
         for item in stream:
             count += 1
             click.echo(MessageToJson(item))
 
-        click.echo(f"Returned {count} items", err=True)
+    click.echo(f"Returned {count} items", err=True)
 
 
 @cache_commands.command("catalog")
@@ -357,6 +378,27 @@ def catalog(location: Optional[str]):
 
         click.echo(f"Returned {count} items", err=True)
 
+
+@cache_commands.command("dump")
+def dump_cache():
+    """Dump cache and config for all backend workers
+
+    Careful that this is a 'stop the world' method since it waits
+    for all workers beeing availables and  should be called only for
+    debugging purposes.
+    """
+    count = 0
+    with connect() as stub:
+        stream = stub.DumpCache(
+            qjazz_pb2.Empty(),
+        )
+        for item in stream:
+            count += 1
+            item = MessageToDict(item)
+            item['config'] = json.loads(item['config'])
+            click.echo(json.dumps(item, indent=2))
+
+    click.echo(f"Returned {count} items", err=True)
 
 #
 # Plugins
@@ -427,13 +469,14 @@ def set_config(config: str):
         except json.JSONDecodeError as err:
             click.echo(err, err=True)
 
+
 # Shortcut for settings log level only
 @config_commands.command("log")
 @click.argument("level", nargs=1)
 def set_loglevel(level: str):
     """Send log level to remote"""
     with connect() as stub:
-        stub.SetConfig(qjazz_pb2.JsonConfig(json=json.dumps({"logging": {"level": level }})))
+        stub.SetConfig(qjazz_pb2.JsonConfig(json=json.dumps({"logging": {"level": level}})))
 
 
 #
