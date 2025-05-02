@@ -148,6 +148,23 @@ qgis_settings = {}
 # propagating signal from parent process.
 # 
 ignore_interrupt_signal = true
+#
+# Use default QGIS server handler
+#
+# Use the default QGIS server handler instead
+# tf the alternative QJazz optimized handler.
+# Note that the QJazz handler deactivate the
+# 'onSendResponse' method. If your plugin's filters
+# require the 'onSendResponse' method, then you
+# must set this option to true.
+# 
+use_default_server_handler = false
+#
+# API aliases
+#
+# Use aliases for QGIS server apis.
+# 
+api_aliases = {}
 
 #
 # Projects configuration
