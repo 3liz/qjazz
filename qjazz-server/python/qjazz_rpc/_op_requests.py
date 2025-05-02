@@ -184,7 +184,7 @@ def handle_api_request(
         url = msg.url
         if msg.path:
             url = f"{url.removesuffix('/')}/{msg.path.removeprefix('/')}"
-        api_name = msg.name
+        api_name = config.api_aliases.get(msg.name.upper(), msg.name)
 
     if msg.options:
         url += f"?{msg.options}"

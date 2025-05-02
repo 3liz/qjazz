@@ -16,16 +16,16 @@ enable_tls = false
 cafile = "$location/certs/localhost.crt"
 #disable_root_catalog = true
 
-# With delegation
+# With delegation 
+# Require delegation with default QGIS server handler
 [[backends.test.api]]
 endpoint = "features"
-delegate = true
 name = "WFS3"
+#delegate = true
 
-# Without delegation
 [[backends.test.api]]
 endpoint = "wfs3"
-name = "OGC WFS3 (Draft)"
+name = "WFS3"
 
 [[backends.test.api]]
 endpoint = "lizmap"

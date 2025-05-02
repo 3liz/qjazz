@@ -25,8 +25,10 @@ from qjazz_contrib.core import logger
 
 ROOT_DELEGATE = "/__delegate__"
 
+# Predefined API aliases
 API_ALIASES = {
     "WFS3": "OGC WFS3 (Draft)",
+    "LIZMAP": "Lizmap",  # Make the name case insensitive
 }
 
 

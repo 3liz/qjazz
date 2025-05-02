@@ -42,6 +42,15 @@ def validate_qgis_settings(settings: QgisSettingValues) -> QgisSettingValues:
     return settings
 
 
+def static_api_aliases(aliases: dict[str, str]) -> dict[str, str]:
+    # Add static api aliases definitions
+    from .delegate import API_ALIASES
+
+    api_aliases = API_ALIASES.copy()
+    api_aliases.update((k.upper(),v) for k, v in aliases.items())
+    return api_aliases
+
+
 class QgisConfig(config.ConfigBase):
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
@@ -137,5 +146,16 @@ class QgisConfig(config.ConfigBase):
         'onSendResponse' method. If your plugin's filters
         require the 'onSendResponse' method, then you
         must set this option to true.
+        """,
+    )
+    api_aliases: Annotated[
+        dict[str,str],
+        AfterValidator(static_api_aliases),
+    ] = Field(
+        {},
+        validate_default=True,
+        title="API aliases",
+        description="""
+        Use aliases for QGIS server apis.
         """,
     )
