@@ -229,23 +229,25 @@ def collect_layers(p: QgsProject) -> Iterator[tuple[str, OgcEndpoints]]:
     """Collect layers and corresponding OgcEndpoint"""
     from qgis.server import QgsServerProjectUtils
 
-    restricted_layers = set(QgsServerProjectUtils.wmsRestrictedLayers(p))
+    from .layers import LayerAccessor
+
+    accessor = LayerAccessor(p)
+
     wfs_layers_id = set(QgsServerProjectUtils.wfsLayerIds(p))
     wcs_layers_id = set(QgsServerProjectUtils.wcsLayerIds(p))
 
     # root = project.layerTreeRoot()
-    for layer in p.mapLayers().values():
-        if layer.name() not in restricted_layers:
-            endpoints = OgcEndpoints.NONE
-            match layer:
-                case QgsVectorLayer():
-                    if layer.id() in wfs_layers_id:
-                        endpoints |= OgcEndpoints.FEATURES
-                    if layer.isSpatial():
-                        endpoints |= OgcEndpoints.MAP
-                case QgsRasterLayer():
+    for layer in accessor.layers():
+        endpoints = OgcEndpoints.NONE
+        match layer:
+            case QgsVectorLayer():
+                if layer.id() in wfs_layers_id:
+                    endpoints |= OgcEndpoints.FEATURES
+                if layer.isSpatial():
                     endpoints |= OgcEndpoints.MAP
-                    if layer.id() in wcs_layers_id:
-                        endpoints |= OgcEndpoints.COVERAGE
+            case QgsRasterLayer():
+                endpoints |= OgcEndpoints.MAP
+                if layer.id() in wcs_layers_id:
+                    endpoints |= OgcEndpoints.COVERAGE
 
-            yield (layer.name(), endpoints)
+        yield (accessor.layer_name(layer), endpoints)

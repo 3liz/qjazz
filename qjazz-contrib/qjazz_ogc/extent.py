@@ -16,6 +16,7 @@ from qgis.server import QgsServerProjectUtils as Pu
 
 from .core import extent
 from .crs import CrsRef, QgsCrs3D
+from .layers import LayerAccessor
 from .metadata import DateTime
 
 
@@ -97,8 +98,10 @@ def compute_extent_from_layers(
     dest_crs: Optional[QgsCoordinateTransform] = None,
     layers: Optional[Iterable[str]] = None
 ) -> QgsRectangle:
-    """Combine extent from layers"""
-    restricted_layers = Pu.wmsRestrictedLayers(p)
+    """Combine extent from layers
+
+    'layers' must contains the actual names of the layer (not id nor shortname)
+    """
     extent = QgsRectangle()
 
     if not dest_crs:
@@ -106,10 +109,10 @@ def compute_extent_from_layers(
 
     layer_names = set(layers) if layers else None
 
-    for layer in p.mapLayers().values():
+    for layer in LayerAccessor(p).layers():
+
         name = layer.name()
-        if name in restricted_layers:
-            continue
+
         if layer_names and name not in layer_names:
             continue
 

@@ -1,19 +1,13 @@
 import json
 
 from itertools import islice
-from typing import (
-    Iterator,
-    Optional,
-)
+from typing import Iterator
 
 from pydantic import TypeAdapter
-from qjazz_ogc import Catalog, CatalogItem, Collection, OgcEndpoints
+from qjazz_ogc import Catalog, CatalogItem, Collection, LayerAccessor, OgcEndpoints
 from qjazz_ogc.stac import CatalogBase
 
-from qgis.core import (
-    QgsMapLayer,
-    QgsProject,
-)
+from qgis.core import QgsMapLayer
 
 from qjazz_cache.prelude import CacheManager
 from qjazz_contrib.core import logger
@@ -24,6 +18,10 @@ from ._op_requests import get_project
 from .config import QgisConfig
 
 CatatalogA = TypeAdapter(CatalogBase)
+
+#
+# Return project's catalog
+#
 
 
 def handle_catalog(
@@ -37,6 +35,7 @@ def handle_catalog(
     catalog = Catalog.get_service()
 
     if msg.resource:
+        # Return single project
         item = catalog.get_and_update(cm, msg.resource)
         items = (
             [
@@ -50,6 +49,7 @@ def handle_catalog(
             else []
         )
     else:
+        # Return the full catalog
         instant = Instant()
         catalog.update(cm, not conf.load_project_on_request, prefix=msg.location)
         logger.info("Updated catalog (prefix: '%s') in %s ms", msg.location, instant.elapsed_ms)
@@ -98,19 +98,23 @@ def handle_layers(
     # metadata
     entry, _ = get_project(conn, cm, conf, parent.public_path, False)
     if not entry:
+        logger.warning("Collection: to entry found for project <%s>", parent.public_path)
         return
 
     project = entry.project
 
+    accessor = LayerAccessor(project)
+
     if msg.resource:
+        # We are looking for single layer
         if msg.resource in parent.layers:
-            layer = get_layer(project, msg.resource)
+            layer = accessor.layer_by_name(msg.resource)
             items = (
                 [
                     _m.CollectionsItem(
-                        name=layer.name(),
+                        name=msg.resource,
                         json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-                        endpoints=parent.layers[layer.name()].value,
+                        endpoints=parent.layers[msg.resource].value,
                     )
                 ]
                 if layer
@@ -119,12 +123,14 @@ def handle_layers(
         else:
             items = []
     else:
+        # Return the layers collection set
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
-            for layer in islice(iter_layers(project, parent), msg.start, msg.end):
+            for layer in islice(iter_layers(accessor, parent), msg.start, msg.end):
+                name = accessor.layer_name(layer)
                 yield _m.CollectionsItem(
-                    name=layer.name(),
+                    name=name,
                     json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-                    endpoints=parent.layers[layer.name()].value,
+                    endpoints=parent.layers[name].value,
                 )
 
         items = list(iter_catalog())
@@ -154,23 +160,10 @@ def handle_collection(
         handle_layers(conn, msg, cm, conf)
 
 
-def iter_layers(project: QgsProject, item: CatalogItem) -> Iterator[QgsMapLayer]:
+def iter_layers(accessor: LayerAccessor, item: CatalogItem) -> Iterator[QgsMapLayer]:
     """Return the catalog of layers for this project"""
     # root = project.layerTreeRoot()
     # XXX Show only layers displayable with WMS GetMap.
-    # TODO handle legends
-    for layer in project.mapLayers(True).values():
-        if layer.name() in item.layers:
+    for layer in accessor.project.mapLayers(True).values():
+        if accessor.layer_name(layer) in item.layers:
             yield layer
-
-
-def get_layer(
-    project: QgsProject,
-    name: str,
-) -> Optional[QgsMapLayer]:
-    """Return the catalog of layers for this project"""
-    layer = project.mapLayersByName(name)
-    if layer:
-        return layer[0]
-
-    return None

@@ -227,6 +227,7 @@ def send_project_info(
     uri: str,
     cache_id: str = "",
 ):
+    # TODO: Return WMS restrictions and shortname
     def _layer(layer_id: str, layer: QgsMapLayer) -> _m.LayerInfo:
         return _m.LayerInfo(
             layer_id=layer_id,

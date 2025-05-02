@@ -47,7 +47,7 @@ def static_api_aliases(aliases: dict[str, str]) -> dict[str, str]:
     from .delegate import API_ALIASES
 
     api_aliases = API_ALIASES.copy()
-    api_aliases.update((k.upper(),v) for k, v in aliases.items())
+    api_aliases.update((k.upper(), v) for k, v in aliases.items())
     return api_aliases
 
 
@@ -149,7 +149,7 @@ class QgisConfig(config.ConfigBase):
         """,
     )
     api_aliases: Annotated[
-        dict[str,str],
+        dict[str, str],
         AfterValidator(static_api_aliases),
     ] = Field(
         {},

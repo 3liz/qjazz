@@ -25,6 +25,7 @@ from .core import collections
 from .core.crs import Crs
 from .crs import Crs3D, CrsRef
 from .extent import Extent
+from .layers import LayerAccessor
 from .metadata import DateTime, Keywords, Links
 from .stac import links
 
@@ -42,13 +43,9 @@ def output_crs_list(p: QgsProject) -> Iterator[Crs]:
 
 def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]:
     """Compute scale denominator"""
-    restricted_layers = QgsServerProjectUtils.wmsRestrictedLayers(p)
     scales: tuple[float, float] | None = None
 
-    for ml in p.mapLayers().values():
-        if ml.name() in restricted_layers:
-            continue
-
+    for ml in LayerAccessor(p).layers():
         if ml.hasScaleBasedVisibility():
             if not scales:
                 scales = (ml.minimumScale(), ml.maximumScale())
@@ -59,6 +56,18 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
                 )
 
     return scales if scales else (None, None)
+
+
+def get_layer_short_name(layer: QgsMapLayer) -> str:
+    """ Get the layer name according if the shortname is set"""
+    if Qgis.QGIS_VERSION_INT < 33800:
+        name = layer.shortName()
+    else:
+        name = layer.serverProperties().shortName()
+    if not name:
+        name = layer.name()
+
+    return name
 
 
 class Collection(collections.Collection):
@@ -113,7 +122,6 @@ class Collection(collections.Collection):
     @classmethod
     def from_layer(cls, layer: QgsMapLayer, parent: Self) -> Self:
         """Build a Collection from a QGIS project"""
-        props = layer.serverProperties()
 
         provider = layer.dataProvider()
         md = provider.layerMetadata()
@@ -128,6 +136,7 @@ class Collection(collections.Collection):
             attribution_url = layer.attributionUrl()
             keywords = layer.keywordList()
         else:
+            props = layer.serverProperties()
             title = props.title()
             abstract = props.abstract()
             attribution = props.attribution()
