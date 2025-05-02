@@ -310,6 +310,23 @@ by default.</p>
 <span class="c1"># propagating signal from parent process.</span>
 <span class="c1"># </span>
 <span class="n">ignore_interrupt_signal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="c1">#</span>
+<span class="c1"># Use default QGIS server handler</span>
+<span class="c1">#</span>
+<span class="c1"># Use the default QGIS server handler instead</span>
+<span class="c1"># tf the alternative QJazz optimized handler.</span>
+<span class="c1"># Note that the QJazz handler deactivate the</span>
+<span class="c1"># &#39;onSendResponse&#39; method. If your plugin&#39;s filters</span>
+<span class="c1"># require the &#39;onSendResponse&#39; method, then you</span>
+<span class="c1"># must set this option to true.</span>
+<span class="c1"># </span>
+<span class="n">use_default_server_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="c1">#</span>
+<span class="c1"># API aliases</span>
+<span class="c1">#</span>
+<span class="c1"># Use aliases for QGIS server apis.</span>
+<span class="c1"># </span>
+<span class="n">api_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
 
 <span class="c1">#</span>
 <span class="c1"># Projects configuration</span>
