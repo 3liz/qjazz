@@ -1,5 +1,8 @@
 """ Utilities for inspecting cache and catalog objects
 
+    Initialize cache manager and catalog from local
+    configuration
+
     Used a debugging tools inside containers
 """
 from functools import cached_property
@@ -12,7 +15,12 @@ from typing import (
 
 from qjazz_ogc import Catalog, CatalogItem
 
-from qjazz_cache.prelude import CacheManager
+from qjazz_cache.prelude import (
+    CacheEntry,
+    CacheManager,
+    CheckoutStatus,
+    ProjectMetadata,
+)
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.qgis import current_qgis_application, init_qgis_application
 
@@ -45,7 +53,7 @@ def init_cache(conf: WorkerConfig) -> CacheManager:
     return cm
 
 
-class Setup:
+class Inspect:
     def __init__(self, path: Optional[Path|str], **kwds):
         self.conf = load_config(path, **kwds)
         self.catalog = Catalog()
@@ -66,13 +74,23 @@ class Setup:
     def get_catalog_item(self, resource: str) -> Optional[CatalogItem]:
         return self.catalog.get_and_update(self.cache, resource)
 
+    def checkout_project(
+        self, loc: str,
+        *,
+        pull: bool = False,
+    ) -> tuple[CacheEntry | ProjectMetadata, CheckoutStatus]:
+        cm = self.cache
+        url = cm.resolve_path(loc)
+        md, status = cm.checkout(url)
+        return cm.update(md, status) if pull else (md, status)
+
 
 def init(
     config_path: Optional[Path],
     log_level: logger.LogLevel = logger.LogLevel.DEBUG,
     **kwds,
-) -> Setup:
+) -> Inspect:
 
     logger.setup_log_handler(log_level)
     init_qgis_application()
-    return Setup(config_path)
+    return Inspect(config_path)

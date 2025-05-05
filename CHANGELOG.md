@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added 
 
+* [core/catalog] Set minimum QGIS version for project
 * [core] QGIS server api aliases
 * [core] Alternate QGIS request handler via extension module
 * [rpc] Add cache 'dump' command for inspecting all workers.

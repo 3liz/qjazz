@@ -1,3 +1,4 @@
+import os
 import traceback
 
 from dataclasses import dataclass
@@ -33,6 +34,8 @@ from .project import Collection
 Co = CheckoutStatus
 
 CATALOG_CONTRACTID = "@3liz.org/catalog;1"
+
+QJAZZ_CATALOG_MIN_QGIS_VERSION=(3,0)
 
 
 class OgcEndpoints(Flag):
@@ -76,12 +79,29 @@ def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheE
             return None
 
 
+def get_minimum_qgis_version():
+    ver = os.getenv("QJAZZ_CATALOG_MIN_QGIS_VERSION")
+    if ver:
+        from pydantic import TypeAdapter, ValidationError
+        try:
+            return TypeAdapter(tuple[int, int]).validate_python(ver.split('.')[:2])
+        except ValidationError:
+            logger.error("Invalid value for QJAZZ_CATALOG_MIN_QGIS_VERSION: '%s'", ver)
+
+    return QJAZZ_CATALOG_MIN_QGIS_VERSION
+
+
+class ProjectTooOld(Exception):
+    pass
+
+
 class Catalog:
     """Handle Qgis project's catalog"""
 
     def __init__(self) -> None:
         self._catalog: dict[str, CatalogItem] = {}
         self._schema = Collection.model_json_schema()
+        self._minimum_qgis_version = get_minimum_qgis_version()
 
     def update_items(self,
         cm: CacheManager,
@@ -104,7 +124,14 @@ class Catalog:
 
             if not item or md.last_modified > item.md.last_modified:
                 try:
-                    item = new_catalog_item(md, public_path, handler, location, loader_config)
+                    item = new_catalog_item(
+                        md,
+                        public_path,
+                        handler,
+                        location,
+                        loader_config,
+                        self._minimum_qgis_version,
+                    )
                 except Exception:
                     logger.error(
                         "Error loading project snapshot %s\n%s",
@@ -163,7 +190,14 @@ class Catalog:
         md = cast(ProjectMetadata, md)
         try:
             handler = cm.get_protocol_handler(md.scheme)
-            item = new_catalog_item(md, ident, handler, location, FastLoaderConfig())
+            item = new_catalog_item(
+                md,
+                ident,
+                handler,
+                location,
+                FastLoaderConfig(),
+                self._minimum_qgis_version,
+            )
             self._catalog[ident] = item
             return item
         except Exception:
@@ -209,9 +243,13 @@ def new_catalog_item(
     handler: ProtocolHandler,
     location: PurePosixPath,
     loader_config: FastLoaderConfig,
+    minimum_qgis_version: tuple[int, int],
 ) -> CatalogItem:
     logger.debug("=Catalog: updating: '%s'", md.uri)
     project = handler.project(md, loader_config)
+
+    check_project_version(md, project, minimum_qgis_version)
+
     layers = dict(t for t in collect_layers(project))
     return CatalogItem(
         public_path=public_path,
@@ -243,6 +281,7 @@ def collect_layers(p: QgsProject) -> Iterator[tuple[str, OgcEndpoints]]:
             case QgsVectorLayer():
                 if layer.id() in wfs_layers_id:
                     endpoints |= OgcEndpoints.FEATURES
+                # NOTE: on old projects this returns always False
                 if layer.isSpatial():
                     endpoints |= OgcEndpoints.MAP
             case QgsRasterLayer():
@@ -251,3 +290,21 @@ def collect_layers(p: QgsProject) -> Iterator[tuple[str, OgcEndpoints]]:
                     endpoints |= OgcEndpoints.COVERAGE
 
         yield (accessor.layer_name(layer), endpoints)
+
+
+#
+# Check project version
+#
+def check_project_version(
+    md: ProjectMetadata,
+    project: QgsProject,
+    minimum_qgis_version: tuple[int, int],
+):
+    project_ver = project.lastSaveVersion()
+    if not project_ver.isNull() and \
+        (project_ver.majorVersion(), project_ver.minorVersion()) < minimum_qgis_version:
+
+        logger.warning("Project %s is too old (%s)", md.uri, project_ver.text())
+        raise ProjectTooOld(str(md.uri))
+
+

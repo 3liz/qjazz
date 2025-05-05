@@ -110,7 +110,7 @@ void set_internal_error(QgsServerResponse& response, QgsException& exc, QString 
     response.setHeader(QStringLiteral("Content-Type"), QStringLiteral("text/plain"));
     response.sendError(500, QStringLiteral("Internal Server Error"));
     QgsMessageLog::logMessage(
-        QString("%1 (location: %2").arg(exc.what()).arg(location), 
+        QString("%1 (location: %2)").arg(exc.what()).arg(location), 
         QStringLiteral("Qjazz"), 
         Qgis::MessageLevel::Critical);
 }

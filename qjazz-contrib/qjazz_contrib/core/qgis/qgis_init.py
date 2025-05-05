@@ -42,7 +42,7 @@ def qgis_initialized():
 def exit_qgis_application():
     global qgis_application
     if qgis_application:
-        # print("\nTerminating Qgis application", file=sys.stderr, flush=True)
+        # print("\nTerminating QGIS application", file=sys.stderr, flush=True)
         qgis_application.exitQgis()
         qgis_application = None
 
@@ -108,7 +108,7 @@ def setup_qgis_application(
 
     instant = Instant()
 
-    logger.info("Starting Qgis application: %s", Qgis.QGIS_VERSION)
+    logger.info("Starting QGIS application: %s", Qgis.QGIS_VERSION)
 
     # NOTE: Setting the platform to anything else than
     # 'external' will prevent loading Grass and OTB providers
@@ -149,7 +149,7 @@ def setup_qgis_application(
     # Install logger hook
     install_logger_hook(logprefix)
 
-    logger.debug("Qgis application configured......")
+    logger.debug("QGIS application configured......")
 
     return options_path
 
@@ -187,7 +187,7 @@ def init_qgis_processing() -> None:
 
 
 def init_qgis_server(**kwargs) -> "qgis.server.QgsServer":
-    """Init Qgis server"""
+    """Init QGIS server"""
     from qgis.server import QgsServer
 
     setup_qgis_application(server_settings=True, **kwargs)
@@ -208,7 +208,7 @@ def load_qgis_settings(
     server_settings: bool = False,
     allow_python_embedded: bool = False,
 ) -> str:
-    """Load qgis settings"""
+    """Load QGIS settings"""
     from qgis.core import Qgis, QgsSettings
     from qgis.PyQt.QtCore import QSettings
 
