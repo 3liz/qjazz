@@ -13,13 +13,15 @@ fi
  
 qjazz-config install-plugins $INSTALL_ARGS
 
-read conf_patch <<EOF
+if [ -n ${CONF_WORKER__QGIS__PLUGINS__INSTALL:-""} ]; then
+    read conf_patch <<EOF
 { "worker": { "qgis": { "plugins": { "install": $CONF_WORKER__QGIS__PLUGINS__INSTALL }}}}
 EOF
 
-# Update configuration
-echo "Patching configuration"
-qjazz-rpc-client config set "$conf_patch"
+    # Update configuration
+    echo "Patching configuration"
+    qjazz-rpc-client config set "$conf_patch"
+fi
 
 # Reload workers
 echo "Reloading QGIS workers"
