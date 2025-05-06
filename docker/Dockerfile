@@ -89,6 +89,9 @@ VOLUME /home/qgis
 VOLUME /var/qjazz
 
 ENV QJAZZ_VOLUME=/var/qjazz
+
+# Define here so that commands run with `docker exec`
+# may access the variable
 ENV QGIS_PLUGINPATH=/var/qjazz/plugins
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]

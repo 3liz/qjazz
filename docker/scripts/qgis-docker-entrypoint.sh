@@ -24,6 +24,10 @@ copy_qgis_configuration() {
 
     # Create plugin dir
     mkdir -p $QGIS_PLUGINPATH
+    # Get the sources file content
+    if [[ -n $QGIS_PLUGIN_MANAGER_SOURCES ]]; then
+        echo $QGIS_PLUGIN_MANAGER_SOURCES > $QGIS_PLUGINPATH/sources.list
+    fi
 }
 
 #
