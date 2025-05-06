@@ -8,7 +8,7 @@ argon2-cffi==23.1.0
 attrs==25.3.0
 certifi==2025.4.26
 cffi==1.17.1
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
 click==8.1.8
 frozenlist==1.6.0
 idna==3.10
@@ -18,10 +18,10 @@ posix_ipc==1.2.0
 propcache==0.3.1
 pycparser==2.22
 pycryptodome==3.22.0
-pydantic-extra-types==2.10.3
+pydantic-extra-types==2.10.4
 pydantic-settings==2.9.1
-pydantic==2.11.3
-pydantic_core==2.33.1
+pydantic==2.11.4
+pydantic_core==2.33.2
 python-dotenv==1.1.0
 requests==2.32.3
 ruamel.yaml.clib==0.2.12

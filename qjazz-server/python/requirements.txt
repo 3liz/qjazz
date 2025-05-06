@@ -25,12 +25,12 @@ protobuf==5.29.4
 pycparser==2.22
 pycryptodome==3.22.0
 pydantic-settings==2.9.1
-pydantic==2.11.3
-pydantic_core==2.33.1
+pydantic==2.11.4
+pydantic_core==2.33.2
 python-dotenv==1.1.0
 ruamel.yaml.clib==0.2.12
 ruamel.yaml==0.18.10
-setuptools==80.1.0
+setuptools==80.3.1
 typing-inspection==0.4.0
 typing_extensions==4.13.2
 urllib3==2.4.0

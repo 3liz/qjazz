@@ -45,6 +45,7 @@ RUN --mount=type=cache,target=/.python-cache \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-processing \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
+    && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
     && rm -r /python_modules/**/*.egg-info \
     ${NULL}
 
@@ -88,6 +89,7 @@ VOLUME /home/qgis
 VOLUME /var/qjazz
 
 ENV QJAZZ_VOLUME=/var/qjazz
+ENV QGIS_PLUGINPATH=/var/qjazz/plugins
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 

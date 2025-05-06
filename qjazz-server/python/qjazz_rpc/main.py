@@ -27,7 +27,7 @@ class WorkerConfig(config.ConfigBase):
 
     qgis: QgisConfig = Field(
         QgisConfig(),
-        title="Qgis process configuration",
+        title="Qgis server configuration",
     )
 
 

@@ -22,6 +22,10 @@ class ConfigProtocol(Protocol):
 
 
 def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
+
+    # Set high precedence to environment variables
+    config.set_env_settings_option("first")
+
     confservice = config.ConfBuilder()
     confservice.add_section("worker", Worker)
 

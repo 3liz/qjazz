@@ -25,6 +25,7 @@ from grpc_health.v1 import (
 )
 
 from qjazz_contrib.core.config import TLSConfig
+from qjazz_contrib.core.timer import Instant
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 
@@ -91,17 +92,19 @@ def MessageToDict(msg: Message) -> dict:
 @overload
 def connect(
     stub: type[qjazz_pb2_grpc.QgisAdminStub] = qjazz_pb2_grpc.QgisAdminStub,
+    exit_on_error: bool = True,
 ) -> AbstractContextManager[qjazz_pb2_grpc.QgisAdminStub]: ...
 
 
 @overload
 def connect(
     stub: type[qjazz_pb2_grpc.QgisServerStub],
+    exit_on_error: bool = True,
 ) -> AbstractContextManager[qjazz_pb2_grpc.QgisServerStub]: ...
 
 
 @contextmanager
-def connect(stub=qjazz_pb2_grpc.QgisAdminStub) -> Generator:
+def connect(stub=qjazz_pb2_grpc.QgisAdminStub, exit_on_error: bool = True) -> Generator:
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
@@ -132,6 +135,8 @@ def connect(stub=qjazz_pb2_grpc.QgisAdminStub) -> Generator:
             click.echo(f"RPC ERROR: {rpcerr.code()} {rpcerr.details()}", err=True)
             print_metadata(rpcerr.initial_metadata())
             print_metadata(rpcerr.trailing_metadata())
+            if exit_on_error:
+                sys.exit(1)
 
 
 def print_metadata(metadata):
@@ -516,28 +521,30 @@ def enable_server():
 
 
 @cli_commands.command("ping")
-@click.option("--count", default=1, help="Number of requests to send")
+@click.option("--count", "-n", default=1, help="Number of requests to send")
 @click.option("--server", is_flag=True, help="Ping qgis server service")
 def ping(count: int, server: bool = False):
     """Ping service"""
     stub = qjazz_pb2_grpc.QgisServerStub if server else qjazz_pb2_grpc.QgisAdminStub
     target = "server" if server else "admin"
     with connect(stub) as stub:
+        instant = Instant()
         for n in range(count):
-            t_start = time()
             resp = stub.Ping(qjazz_pb2.PingRequest(echo=str(n)))
-            t_end = time()
+            elapsed = instant.elapsed_ms
             click.echo(
-                f"({target}) seq={n:<5} resp={resp.echo:<5} time={int((t_end - t_start) * 1000.0)} ms",
+                f"({target}) seq={n:<5} resp={resp.echo:<5} time={elapsed} ms",
             )
             sleep(1)
+            instant.restart()
 
 
 @cli_commands.command("healthcheck")
 @click.option("--watch", "-w", is_flag=True, help="Watch status changes")
-def healthcheck_status(watch: bool):
+@click.option("--set-error", is_flag=True, help="Exit with error if not serving")
+def healthcheck_status(watch: bool, set_error: bool):
     """Check and monitor the status of a GRPC server"""
-    with connect(stub=health_pb2_grpc.HealthStub) as stub:
+    with connect(stub=health_pb2_grpc.HealthStub, exit_on_error=not watch) as stub:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
         request = health_pb2.HealthCheckRequest(service="qjazz.QgisServer")
         if watch:
@@ -546,6 +553,10 @@ def healthcheck_status(watch: bool):
         else:
             resp = stub.Check(request)
             click.echo(f"=: {ServingStatus.Name(resp.status)}")
+
+        if set_error and resp.status != ServingStatus.SERVING:
+            sys.exit(1)
+
 
 
 @cli_commands.command("stats")

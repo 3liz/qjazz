@@ -451,11 +451,13 @@ impl QgisAdmin for QgisAdminServicer {
 
         match request.into_inner().status {
             st if st == ServingStatus::Serving as i32 => {
+                log::info!("Setting server serving status to SERVING");
                 reporter
                     .set_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
             }
             st if st == ServingStatus::NotServing as i32 => {
+                log::info!("Setting server serving status to NOT SERVING");
                 reporter
                     .set_not_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
