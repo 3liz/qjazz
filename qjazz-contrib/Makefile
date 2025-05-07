@@ -23,13 +23,14 @@ manifest:
 	# Create manifest
 	@echo "{\"commit_id\": \"$(shell git rev-parse HEAD)\" }" > qjazz_contrib/core/manifest.json
 
+BUILDDIR=build-$(QGIS_FLAVOR)
 
 build::
 	rm -rf *.egg-info
-	python setup.py build_ext --inplace
+	python setup.py build_ext -b $(BUILDDIR) -t $(BUILDDIR) --inplace 
 	strip qjazz_contrib/core/qgis/*.so
 
 clean::
-	rm -rf build
-	rm qjazz_contrib/core/qgis/*.so
+	rm -rf $(BUILDDIR)
+	rm -f qjazz_contrib/core/qgis/*.so
 

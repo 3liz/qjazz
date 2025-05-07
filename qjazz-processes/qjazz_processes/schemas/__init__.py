@@ -50,6 +50,10 @@ from .models import (  # noqa F401
     remove_auto_title,
 )
 
+from .utils import (  # noqa F401
+    input_model_description,
+)
+
 
 class RunProcessException(Exception):
     pass

@@ -9,9 +9,6 @@ DIRS= \
 	qjazz-processes \
 	$(NULL)
 
-docker-%:
-	$(MAKE) -C docker $*
-
 install-dev::
 	pip install -U --upgrade-strategy=eager \
 	  -r dev-requirements.txt \

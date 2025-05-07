@@ -8,6 +8,7 @@ test \
 lint \
 lint-preview \
 typing \
+clean \
 configure \
 build \
 dist \
