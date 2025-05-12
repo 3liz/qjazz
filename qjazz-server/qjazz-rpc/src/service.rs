@@ -80,20 +80,26 @@ pub(crate) use qjazz_service::qgis_server_server::QgisServerServer;
 
 pub(crate) struct QgisServerServicer {
     inner: Inner,
+    reporter: Reporter,
 }
+
+type Reporter = crate::monitor::Sender;
 
 impl Qjazz for QgisServerServicer {}
 
 impl QgisServerServicer {
-    pub(crate) fn new(queue: qjazz_pool::Receiver) -> Self {
+    pub(crate) fn new(queue: qjazz_pool::Receiver, reporter: Reporter) -> Self {
         Self {
             inner: Inner(queue),
+            reporter,
         }
     }
 
     // Handle byte streaming
+    #[allow(unused_variables)]
     fn stream_bytes(
         mut w: qjazz_pool::ScopedWorker,
+        reporter: Reporter,
     ) -> mpsc::Receiver<Result<ResponseChunk, Status>> {
         let (tx, rx) = mpsc::channel(1);
         tokio::spawn(async move {
@@ -120,6 +126,18 @@ impl QgisServerServicer {
                         log::error!("Connection cancelled by client");
                         return;
                     }
+                }
+            }
+
+            #[cfg(feature = "monitor")]
+            if reporter.is_configured() {
+                match w.get_report().await {
+                    Ok(report) => {
+                        let _ = reporter
+                            .send(report)
+                            .inspect_err(|e| log::error!("Failed to send report {:?}", e));
+                    }
+                    Err(err) => log::error!("Failed to get report {:?}", err),
                 }
             }
             w.done();
@@ -180,11 +198,12 @@ impl QgisServer for QgisServerServicer {
                     .map(|me| me.try_into().map_err(Status::invalid_argument))
                     .transpose()?,
                 body: req.body.as_deref(),
+                send_report: self.reporter.is_configured(),
             })
             .await
             .map_err(Self::error)?;
 
-        let rx = Self::stream_bytes(w);
+        let rx = Self::stream_bytes(w, self.reporter.clone());
 
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteOwsRequestStream);
@@ -227,11 +246,12 @@ impl QgisServer for QgisServerServicer {
                 header_prefix: Some(Self::HEADER_PREFIX),
                 headers,
                 content_type: req.content_type.as_deref(),
+                send_report: self.reporter.is_configured(),
             })
             .await
             .map_err(Self::error)?;
 
-        let rx = Self::stream_bytes(w);
+        let rx = Self::stream_bytes(w, self.reporter.clone());
 
         let output_stream = ReceiverStream::new(rx);
         let mut response = Response::new(Box::pin(output_stream) as Self::ExecuteApiRequestStream);

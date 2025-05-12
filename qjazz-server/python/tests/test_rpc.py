@@ -66,7 +66,7 @@ async def test_rpc_chunked_response(worker: Worker):
             service="WFS",
             request="GetFeature",
             version="1.0.0",
-            options="TYPENAME=france_parts_bordure",
+            options="SERVICE=WFS&REQUEST=GetFeature&TYPENAME=france_parts_bordure",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
         ),
@@ -165,9 +165,10 @@ async def test_rpc_ows_chunked_request(worker: Worker):
             service="WFS",
             request="GetFeature",
             version="1.0.0",
-            options="TYPENAME=france_parts_bordure",
+            options="SERVICE=WFS&REQUEST=GetFeature&TYPENAME=france_parts_bordure",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
+            send_report=True,
         ),
     )
     assert status == 200
@@ -179,6 +180,11 @@ async def test_rpc_ows_chunked_request(worker: Worker):
     # Stream remaining bytes
     async for chunk in worker.io.stream_bytes():
         assert len(chunk) > 0
+
+    # Read report
+    status, report = await worker.io.read_message()
+    print(f"> REPORT: {report}")
+    assert status == 200
 
     # Ensure that there is nothing left to read
     async with asyncio.timeout(1):

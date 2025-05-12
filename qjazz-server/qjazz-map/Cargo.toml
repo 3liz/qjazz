@@ -21,7 +21,7 @@ tonic = { version = "0.12", features = ["tls"] }
 tonic-health = "0.12"
 clap = { version = "4", features=["derive"] }
 log = { workspace = true,  features = ["serde"] }
-serde = { workspace = true, features=["derive", "rc"] }
+serde = { workspace = true, features=["derive"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 tokio-util = { workspace = true }

@@ -1,11 +1,16 @@
+import os
 import traceback
 
 from pathlib import Path
 
 import pytest
 
+from qjazz_contrib.core import logger
 from qjazz_rpc.config import ProjectsConfig, QgisConfig
 from qjazz_rpc.tests import Worker
+
+# Disable loglevel setting notice
+os.environ["QJAZZ_LOGLEVEL_NOTICE"] = "no"
 
 
 def pytest_collection_modifyitems(config, items):
@@ -67,6 +72,7 @@ def projects(data: Path) -> ProjectsConfig:
 @pytest.fixture(scope="function")
 async def worker(projects: ProjectsConfig) -> Worker:
     """Setup configuration"""
+    logger.setup_log_handler(None)
     worker = Worker(config=QgisConfig(projects=projects))
     await worker.start()
     yield worker

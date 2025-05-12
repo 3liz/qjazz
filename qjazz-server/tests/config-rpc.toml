@@ -1,5 +1,5 @@
 [logging]
-level = "debug"
+level = "info"
 
 [rpc.listen]
 enable_tls = false
@@ -10,6 +10,7 @@ tls_cert_file = "$location/certs/localhost.crt"
 name = "Test"
 num_processes = 2
 process_start_timeout = 10
+send_report = true
 
 [worker.qgis.plugins]
 paths = ['$location/plugins']
@@ -34,3 +35,7 @@ force_readonly_layers = true
  
 [worker.qgis.network]
 trace = true
+
+#[monitor]
+#command = "python"
+#args = ["$location/monitor.py"]

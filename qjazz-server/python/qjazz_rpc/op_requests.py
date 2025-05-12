@@ -7,8 +7,8 @@ from string import capwords
 from typing import Optional, assert_never, cast
 from urllib.parse import urlunsplit
 
-from qgis.core import QgsFeedback
-from qgis.server import QgsServerRequest, QgsServerResponse
+from qgis.core import QgsFeedback, QgsProject
+from qgis.server import QgsServerRequest
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
 from qjazz_contrib.core import logger
@@ -17,11 +17,11 @@ from qjazz_contrib.core.qgis import Server
 from qjazz_contrib.core.utils import to_rfc822
 
 from . import messages as _m
-from ._op_cache import evict_project_from_cache
-from ._op_map import InvalidMapRequest, prepare_map_request
 from .config import QgisConfig
 from .delegate import ROOT_DELEGATE
-from .log import Log
+from .monitor import Monitor
+from .op_cache import evict_project_from_cache
+from .op_map import InvalidMapRequest, prepare_map_request
 from .requests import Request, Response, _to_qgis_method
 
 Co = CheckoutStatus
@@ -52,7 +52,7 @@ def handle_ows_request(
             _m.send_reply(conn, "Missing project", 400)
             return
 
-    log = Log()
+    log = Monitor(conn if msg.send_report else None)
 
     entry, co_status = get_project(
         conn,
@@ -105,7 +105,7 @@ def handle_ows_request(
     if msg.request_id:
         log.accept(msg.request_id, entry.uri if entry else None)
 
-    (req, resp, project) = _handle_generic_request(
+    (req, resp, project) = handle_generic_request(
         url,
         entry,
         co_status,
@@ -130,6 +130,7 @@ def handle_ows_request(
         request or "<UNKN>",
         target,
         resp,
+        entry.hits if entry else 0,
     )
 
 
@@ -148,7 +149,7 @@ def handle_api_request(
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
 
-    log = Log()
+    log = Monitor(conn if msg.send_report else None)
 
     if target:
         entry, co_status = get_project(
@@ -192,7 +193,7 @@ def handle_api_request(
     if msg.request_id:
         log.accept(msg.request_id, entry.uri if entry else None)
 
-    (req, resp, project) = _handle_generic_request(
+    (req, resp, project) = handle_generic_request(
         url,
         entry,
         co_status,
@@ -216,10 +217,11 @@ def handle_api_request(
         "OAPI",
         target,
         resp,
+        entry.hits if entry else 0,
     )
 
 
-def _handle_generic_request(
+def handle_generic_request(
     url: str,
     entry: Optional[CacheEntry],
     co_status: Optional[Co],
@@ -235,7 +237,7 @@ def _handle_generic_request(
     header_prefix: Optional[str],
     content_type: Optional[str],
     resp_hdrs: Optional[dict[str, str]] = None,
-) -> QgsServerResponse:
+) -> tuple[Request, Response, Optional[QgsProject]]:
     """Handle generic Qgis request"""
     if entry:
         assert_precondition(co_status is not None)
@@ -273,6 +275,8 @@ def _handle_generic_request(
     req_hdrs = {capwords(k, sep="-"): v for k, v in headers if not k.startswith("grpc-")}
     if content_type:
         req_hdrs["Content-Type"] = content_type
+
+    logger.debug("Handling QGIS request: %s", url)
 
     request = Request(url, method, req_hdrs, data=data)  # type: ignore
     return (request, response, project)

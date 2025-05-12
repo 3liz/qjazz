@@ -1,10 +1,11 @@
-""" Utilities for inspecting cache and catalog objects
+"""Utilities for inspecting cache and catalog objects
 
-    Initialize cache manager and catalog from local
-    configuration
+Initialize cache manager and catalog from local
+configuration
 
-    Used a debugging tools inside containers
+Used a debugging tools inside containers
 """
+
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -31,9 +32,8 @@ class ConfigProto(Protocol):
     worker: WorkerConfig
 
 
-def load_config(path: Optional[Path|str], **kwds) -> WorkerConfig:
-    """
-    """
+def load_config(path: Optional[Path | str], **kwds) -> WorkerConfig:
+    """ """
     from qjazz_contrib.core import config
 
     confservice = config.ConfBuilder()
@@ -44,7 +44,6 @@ def load_config(path: Optional[Path|str], **kwds) -> WorkerConfig:
 
 
 def init_cache(conf: WorkerConfig) -> CacheManager:
-
     CacheManager.initialize_handlers(conf.qgis.projects)
 
     cm = CacheManager(conf.qgis.projects)
@@ -54,7 +53,7 @@ def init_cache(conf: WorkerConfig) -> CacheManager:
 
 
 class Inspect:
-    def __init__(self, path: Optional[Path|str], **kwds):
+    def __init__(self, path: Optional[Path | str], **kwds):
         self.conf = load_config(path, **kwds)
         self.catalog = Catalog()
 
@@ -75,7 +74,8 @@ class Inspect:
         return self.catalog.get_and_update(self.cache, resource)
 
     def checkout_project(
-        self, loc: str,
+        self,
+        loc: str,
         *,
         pull: bool = False,
     ) -> tuple[CacheEntry | ProjectMetadata, CheckoutStatus]:
@@ -90,7 +90,6 @@ def init(
     log_level: logger.LogLevel = logger.LogLevel.DEBUG,
     **kwds,
 ) -> Inspect:
-
     logger.setup_log_handler(log_level)
     init_qgis_application()
     return Inspect(config_path)

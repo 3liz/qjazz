@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Monitor configuration
@@ -10,8 +9,6 @@ pub struct Config {
     pub command: PathBuf,
     /// Arguments to commands
     pub args: Vec<String>,
-    /// Tags
-    pub tags: HashMap<String, String>,
     /// The configuration of the executable module
     /// The configuration is passed as QJAZZ_MON_CONFIG
     /// environment variable

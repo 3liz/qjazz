@@ -23,3 +23,5 @@ __output__
 *.qgs~
 
 /.env
+
+/external

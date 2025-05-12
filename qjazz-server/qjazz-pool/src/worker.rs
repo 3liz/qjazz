@@ -470,6 +470,13 @@ impl Worker {
             .await
             .map(|(_, resp)| resp)
     }
+
+    //
+    // Report
+    //
+    pub async fn get_report(&mut self) -> Result<JsonValue> {
+        self.io()?.read_response().await.map(|(_, resp)| resp)
+    }
 }
 
 /// A object representing a displayable Pid

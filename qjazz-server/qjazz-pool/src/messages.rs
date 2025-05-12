@@ -169,6 +169,7 @@ pub struct OwsRequestMsg<'a> {
     pub method: Option<HTTPMethod>,
     #[serde(with = "serde_bytes")]
     pub body: Option<&'a [u8]>,
+    pub send_report: bool,
 }
 
 /// API request message
@@ -188,6 +189,7 @@ pub struct ApiRequestMsg<'a> {
     pub request_id: Option<&'a str>,
     pub header_prefix: Option<&'a str>,
     pub content_type: Option<&'a str>,
+    pub send_report: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -446,6 +448,7 @@ mod tests {
             request_id: Some("1234"),
             header_prefix: Some("x-test-"),
             content_type: Some("application/test"),
+            send_report: false,
         };
 
         let mut buf = Vec::new();

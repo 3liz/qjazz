@@ -95,6 +95,7 @@ class OwsRequestMsg(MsgModel):
     content_type: Optional[str] = None
     method: Optional[HTTPMethod] = None
     body: Optional[bytes] = None
+    send_report: bool = False
 
 
 #
@@ -114,8 +115,8 @@ class ApiRequestMsg(MsgModel):
     headers: list[tuple[str, str]] = Field([])
     request_id: Optional[str] = None
     header_prefix: Optional[str] = None
-    debug_report: bool = False
     content_type: Optional[str] = None
+    send_report: bool = False
 
 
 #

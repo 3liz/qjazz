@@ -28,8 +28,8 @@ from qjazz_contrib.core.qgis import (
 )
 from qjazz_contrib.core.timer import Instant
 
-from . import _op_cache, _op_collections, _op_plugins, _op_requests
 from . import messages as _m
+from . import op_cache, op_collections, op_plugins, op_requests
 from .config import QgisConfig
 from .delegate import ApiDelegate
 
@@ -184,7 +184,7 @@ def qgis_server_run(
                 # Qgis server Requests
                 # --------------------
                 case _m.OwsRequestMsg():
-                    _op_requests.handle_ows_request(
+                    op_requests.handle_ows_request(
                         conn,
                         msg,
                         server,
@@ -194,7 +194,7 @@ def qgis_server_run(
                         feedback=feedback.feedback,
                     )
                 case _m.ApiRequestMsg():
-                    _op_requests.handle_api_request(
+                    op_requests.handle_api_request(
                         conn,
                         msg,
                         server,
@@ -207,7 +207,7 @@ def qgis_server_run(
                 # Collections
                 # --------------------
                 case _m.CollectionsMsg():
-                    _op_collections.handle_collection(conn, msg, cm, conf)
+                    op_collections.handle_collection(conn, msg, cm, conf)
                 # --------------------
                 # Global management
                 # --------------------
@@ -221,14 +221,14 @@ def qgis_server_run(
                 # Cache management
                 # --------------------
                 case _m.CheckoutProjectMsg():
-                    _op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)
+                    op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)
                 case _m.DropProjectMsg():
-                    _op_cache.drop_project(conn, cm, msg.uri, name)
+                    op_cache.drop_project(conn, cm, msg.uri, name)
                 case _m.ClearCacheMsg():
                     cm.clear()
                     _m.send_reply(conn, None)
                 case _m.ListCacheMsg():
-                    _op_cache.send_cache_list(conn, cm, cache_id=name)
+                    op_cache.send_cache_list(conn, cm, cache_id=name)
                 case _m.UpdateCacheMsg():
                     # We need to consume the iterator
                     # for updating the whole cache
@@ -236,14 +236,14 @@ def qgis_server_run(
                         pass
                     _m.send_reply(conn, None)
                 case _m.GetProjectInfoMsg():
-                    _op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
+                    op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
                 case _m.CatalogMsg():
-                    _op_cache.send_catalog(conn, cm, msg.location)
+                    op_cache.send_catalog(conn, cm, msg.location)
                 # --------------------
                 # Plugin inspection
                 # --------------------
                 case _m.PluginsMsg():
-                    _op_plugins.inspect_plugins(conn, plugin_s)
+                    op_plugins.inspect_plugins(conn, plugin_s)
                 # --------------------
                 # Config
                 # --------------------

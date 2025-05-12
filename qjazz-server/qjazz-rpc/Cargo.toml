@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 qjazz-pool = "~0.1"
+qjazz-mon = { version = "~0.1", optional = true }
 tonic = { version = "0.12", features= ["tls"] }
 tonic-health = "0.12"
 prost = "0.13"
@@ -33,5 +34,12 @@ procfs = "0.17"
 nix = { workspace = true }
 sysconf = "0.3"
 
+[features]
+default = ["monitor"]
+monitor = ["qjazz-mon"]
+
+
 [build-dependencies]
 tonic-build = "0.12"
+
+

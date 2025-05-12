@@ -153,7 +153,7 @@ impl QgisAdmin for QgisAdminServicer {
                         .send(match stream.next().await {
                             Ok(Some(item)) => {
                                 if !item.pinned {
-                                    continue
+                                    continue;
                                 }
                                 Ok(CacheInfo::from(item))
                             }

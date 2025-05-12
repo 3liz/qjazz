@@ -400,10 +400,11 @@ def dump_cache():
         for item in stream:
             count += 1
             item = MessageToDict(item)
-            item['config'] = json.loads(item['config'])
+            item["config"] = json.loads(item["config"])
             click.echo(json.dumps(item, indent=2))
 
     click.echo(f"Returned {count} items", err=True)
+
 
 #
 # Plugins
@@ -488,6 +489,7 @@ def set_loglevel(level: str):
 #  status
 #
 
+
 @cli_commands.group("state")
 def status_commands():
     """Commands for retrieving and setting rpc service state"""
@@ -556,7 +558,6 @@ def healthcheck_status(watch: bool, set_error: bool):
 
         if set_error and resp.status != ServingStatus.SERVING:
             sys.exit(1)
-
 
 
 @cli_commands.command("stats")

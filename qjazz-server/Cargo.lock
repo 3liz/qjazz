@@ -2262,6 +2262,7 @@ dependencies = [
  "nix",
  "procfs",
  "prost",
+ "qjazz-mon",
  "qjazz-pool",
  "serde",
  "serde_json",

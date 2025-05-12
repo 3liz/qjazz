@@ -14,8 +14,8 @@ from qjazz_contrib.core import logger
 from qjazz_contrib.core.timer import Instant
 
 from . import messages as _m
-from ._op_requests import get_project
 from .config import QgisConfig
+from .op_requests import get_project
 
 CatatalogA = TypeAdapter(CatalogBase)
 

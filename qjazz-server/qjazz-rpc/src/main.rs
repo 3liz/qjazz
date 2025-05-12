@@ -1,5 +1,6 @@
 mod config;
 mod logger;
+mod monitor;
 mod oom;
 mod server;
 mod service;
@@ -72,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .and_then(|v| v.to_str())
                         .unwrap_or("-m qjazz_rpc.main")
                         .into(),
-                    &settings,
+                    settings,
                 ))?;
         }
         None => (),

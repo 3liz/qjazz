@@ -12,8 +12,6 @@ mod mon {
     };
     use qjazz_mon::{Config, Error, Monitor};
     use serde::Serialize;
-    use std::collections::HashMap;
-    use std::sync::Arc;
     use tokio::time::Instant;
     use tokio_util::sync::CancellationToken;
 
@@ -27,8 +25,6 @@ mod mon {
         request: String,
         response_time: u64,
         response_status: u16,
-        #[serde(flatten)]
-        tags: Arc<HashMap<String, String>>,
     }
 
     #[derive(Debug)]
@@ -46,14 +42,10 @@ mod mon {
         }
     }
 
+    type Inner = qjazz_mon::Sender<Msg>;
+
     // Wrap sender into Option and set to None
     // when monitor is not configured
-    #[derive(Clone)]
-    struct Inner {
-        tx: qjazz_mon::Sender<Msg>,
-        tags: Arc<HashMap<String, String>>,
-    }
-
     #[derive(Clone)]
     pub struct Sender(Option<Inner>);
 
@@ -73,11 +65,9 @@ mod mon {
                     map: params.args.map.unwrap_or(NOTSET.to_string()),
                     response_time: params.instant.elapsed().as_millis() as u64,
                     response_status: status.as_u16(),
-                    tags: tx.tags.clone(),
                 };
-                tx.tx
-                    .try_send(msg)
-                    .map_err(|e| Error::SendError(format!("{e}")))
+                tx.try_send(msg)
+                  .map_err(|e| Error::SendError(format!("{e}")))
             } else {
                 Err(Error::SendError("Monitor is not configured".to_string()))
             }
@@ -91,10 +81,7 @@ mod mon {
     ) -> Result<(Sender, Option<CancellationToken>), Error> {
         if let Some(conf) = conf {
             let monitor = Monitor::new(&conf);
-            let tx = Inner {
-                tx: monitor.sender().clone(),
-                tags: Arc::new(conf.tags),
-            };
+            let tx = monitor.sender().clone();
 
             let token = CancellationToken::new();
             let tok = token.clone();

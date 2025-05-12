@@ -3,10 +3,9 @@
 ARG REGISTRY_PREFIX=''
 ARG QGIS_FLAVOR=release
 
-#
-# Qgis platform
-# 
-
+# ==============
+# QJazz platform
+# ==============
 FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS base
 LABEL org.opencontainers.image.vendor="3liz"
 LABEL org.opencontainers.image.title="Qjazz"
@@ -97,10 +96,9 @@ ENV QGIS_PLUGINPATH=/var/qjazz/plugins
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
 
-#
+# ==================================
 # Server only installation (no-qgis)
-#
-
+# ==================================
 FROM ubuntu:24.04 AS noqgis
 LABEL org.opencontainers.image.vendor="3liz"
 LABEL org.opencontainers.image.title="Qjazz"
@@ -140,12 +138,12 @@ EXPOSE 9443 9080 9876
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
-#
+# ==================================
 # CI dev environment
 #
 # Build an image usable as CI image for 
 # testing qjazz based services 
-#
+# ==================================
 FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS ci
 
 RUN apt-get update -y \

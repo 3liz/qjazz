@@ -310,7 +310,9 @@ bool handle_request_impl(
             if (!service) {
                 response.write(QgsOgcServiceException(
                     QStringLiteral("Service configuration error"),
-                    QStringLiteral("Service unknown or unsupported")         
+                    QStringLiteral("Service unknown or unsupported"),
+                    QString(),
+                    400
                 ));
                 response.finish();    
                 return true;

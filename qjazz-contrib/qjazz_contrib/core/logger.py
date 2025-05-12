@@ -8,6 +8,7 @@
 """Logger"""
 
 import logging
+import os
 import sys
 
 from contextlib import contextmanager
@@ -64,21 +65,26 @@ class LoggingConfig(config.ConfigBase):
 def set_log_level(log_level: LogLevel) -> LogLevel:
     """Set the log level"""
     LOGGER.setLevel(log_level.value)
-    LOGGER.log(LogLevel.NOTICE.value, "Log level set to %s", log_level.name)
+    if os.getenv("QJAZZ_LOGLEVEL_NOTICE") != "no":
+        LOGGER.log(LogLevel.NOTICE.value, "Log level set to %s", log_level.name)
     return log_level
 
 
 def setup_log_handler(
-    log_level: LogLevel = LogLevel.INFO,
+    log_level: Optional[LogLevel] = LogLevel.INFO,
     channel: Optional[logging.Handler] = None,
 ) -> LogLevel:
-    """Initialize log handler with the given log level"""
+    """Initialize log handler with the given log level
+
+    If log_level is None, use the default logging level.
+    """
+
     logging.addLevelName(LogLevel.TRACE.value, LogLevel.TRACE.name)
     logging.addLevelName(LogLevel.REQ.value, LogLevel.REQ.name)
     logging.addLevelName(LogLevel.RREQ.value, LogLevel.RREQ.name)
     logging.addLevelName(LogLevel.NOTICE.value, LogLevel.NOTICE.name)
 
-    log_level = set_log_level(log_level)
+    log_level = set_log_level(log_level or LogLevel(logging.getLogger().level))
 
     formatter = logging.Formatter(FORMATSTR, datefmt="%Y-%m-%dT%H:%M:%S")
     channel = channel or logging.StreamHandler(sys.stderr)

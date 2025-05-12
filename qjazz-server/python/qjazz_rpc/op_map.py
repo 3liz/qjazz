@@ -92,7 +92,6 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
 
     # See https://docs.ogc.org/pol/09-048r6.html#toc14 for CURIE notation
     if "crs" not in params:
-
         content_crs = crs().authid()
         headers["Content-Crs"] = f"[{content_crs}]"  # CURIE notation
         options = f"{options}&crs={content_crs}"

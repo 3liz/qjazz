@@ -158,6 +158,8 @@ pub struct Settings {
     pub logging: Logging,
     pub rpc: Rpc,
     pub worker: qjazz_pool::WorkerOptions,
+    #[cfg(feature = "monitor")]
+    pub monitor: Option<qjazz_mon::Config>,
 }
 
 impl Settings {

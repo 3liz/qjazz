@@ -144,5 +144,5 @@ class ChannelConfig(ConfigBase):
         Disable root catalog api: requesting the catalog root will return
         a 403 HTTP response with an informative message that the
         catalog has been disabled for the channel.
-        """
+        """,
     )

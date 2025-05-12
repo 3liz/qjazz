@@ -13,7 +13,7 @@ use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 /// Run gRPC server
 pub(crate) async fn serve(
     args: String,
-    settings: &Settings,
+    settings: Settings,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr = settings.rpc.listen().address();
 
@@ -22,7 +22,7 @@ pub(crate) async fn serve(
 
     let mut pool = Pool::new(qjazz_pool::Builder::from_options(
         args,
-        settings.worker.clone(),
+        settings.worker,
     ));
     pool.maintain_pool().await?;
 
@@ -32,17 +32,28 @@ pub(crate) async fn serve(
 
     let receiver = qjazz_pool::Receiver::new(&pool);
 
+    // Handle graceful shutdown
+    let token = CancellationToken::new();
+
+    // Start monitor
+    #[cfg(feature = "monitor")]
+    let reporter = crate::monitor::consume(settings.monitor, token.clone())
+        .await
+        .inspect_err(|e| {
+            log::error!("Failed to start monitor process: {e}");
+        })?;
+
+    #[cfg(not(feature = "monitor"))]
+    let reporter = crate::monitor::Sender {};
+
     // NOTE: service are registered as "qjazz.<service name>"
     // While in python this is "<service name>
-    let qgis_servicer = QgisServerServicer::new(receiver.clone());
+    let qgis_servicer = QgisServerServicer::new(receiver.clone(), reporter);
 
     // Create admin servicer
     let pool_owned = Arc::new(RwLock::new(pool));
     let admin_servicer =
         QgisAdminServicer::new(receiver, pool_owned.clone(), health_reporter.clone());
-
-    // Handle graceful shutdown
-    let token = CancellationToken::new();
 
     let signal_handle = crate::signals::handle_signals(
         pool_owned.clone(),
@@ -62,7 +73,7 @@ pub(crate) async fn serve(
     // NOTE Do not use serve_with_shutdown since
     // it waits forever for client to disconnect
     // Just launch the task and let tokio abort on exit.
-    // Furthemore graceful shutdown is handled by the worker
+    // Furthemore, graceful shutdown is handled by the worker
     // pool.
     let mut builder = Server::builder();
 
