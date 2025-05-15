@@ -95,6 +95,14 @@ ENV QGIS_PLUGINPATH=/var/qjazz/plugins
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
+# ================
+# Lizcloud support 
+# ================
+FROM base AS lizcloud
+
+ARG PIP_OPTIONS
+
+RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS "qjazz-lizcloud"
 
 # ==================================
 # Server only installation (no-qgis)
@@ -124,7 +132,6 @@ COPY --from=base /usr/local/bin/qjazz-map-bin /usr/local/bin/qjazz-map-bin
 
 RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
-    && ln -s /opt/local/qjazz/bin/qjazz-server-http \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && mkdir -p /etc/qjazz && chmod 755 /etc/qjazz \
     ${NULL}
@@ -137,6 +144,16 @@ ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 EXPOSE 9443 9080 9876
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
+
+# =======================
+# NoQGIS Lizcloud support 
+# =======================
+FROM noqgis AS noqgis-lizcloud
+
+ARG PIP_OPTIONS
+
+RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS "qjazz-lizcloud"
+
 
 # ==================================
 # CI dev environment

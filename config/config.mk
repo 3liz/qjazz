@@ -9,13 +9,6 @@ ifeq ($(shell echo $(CI_COMMIT_TAG) | head -c 8), release-)
 endif
 endif
 
-ifndef BUILD_RELEASE
-QJAZZ_VERSION_RC_TAG=dev0
-VERSION_TAG=$(VERSION).$(QJAZZ_VERSION_RC_TAG)
-else
-VERSION_TAG=$(VERSION)
-endif
-
 REQUIREMENTS=requirements.txt
 
 PYTHON=python3

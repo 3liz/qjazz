@@ -7,6 +7,7 @@
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR
+  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR TARGET=lizcloud
   - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
@@ -15,6 +16,7 @@
   artifacts:
     paths:
     - "docker/factory-${QGIS_FLAVOR}.manifest"
+    - "docker/factory-${QGIS_FLAVOR}-lizcloud.manifest"
   only:
     refs:
     - tags
@@ -57,6 +59,7 @@ build-docker:noqgis:
   stage: docker
   script:
   - make -C docker noqgis-build noqgis-deliver
+  - make -C docker noqgis-build noqgis-deliver TARGET=lizcloud
   only:
     refs:
     - tags
@@ -66,6 +69,7 @@ build-docker:noqgis:
   artifacts:
     paths:
     - "docker/factory-noqgis.manifest"
+    - "docker/factory-noqgis-lizcloud.manifest"
 
 # -----------
 # release
@@ -76,14 +80,13 @@ build-docker:noqgis:
   stage: release
   script:
     - release-image qjazz-$QGIS_FLAVOR
-    - push-to-docker-hub --clean
   environment:
     name: production
   only:
     refs:
       - tags
   variables:
-    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
+    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}-lizcloud.manifest"
   when: manual
   # See https://about.gitlab.com/blog/2021/05/20/dag-manual-fix/#what-if-i-dont-want-this-new-behavior
   allow_failure: false
@@ -120,6 +123,64 @@ release:noqgis:
   stage: release
   script:
     - release-image qjazz-noqgis
+  environment:
+    name: production
+  only:
+    refs:
+      - tags
+  variables:
+    FACTORY_MANIFEST: "docker/factory-noqgis-lizcloud.manifest"
+  when: manual
+  allow_failure: false
+  tags:
+    - factory-dind
+  dependencies:
+    - build-docker:noqgis
+
+# ------------------
+# push to docker hub
+# ------------------
+
+.push:
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  stage: post-release
+  script:
+    - push-to-docker-hub --clean
+  environment:
+    name: production
+  only:
+    refs:
+      - tags
+  variables:
+    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
+  tags:
+    - factory-dind
+
+push:release:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: release
+  dependencies:
+    - build-docker:release
+
+push:ltr:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: ltr
+  dependencies:
+    - build-docker:ltr
+
+push:3.34:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: "3.34"
+  dependencies:
+    - build-docker:3.34
+
+push:noqgis:
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  stage: post-release
+  script:
     - push-to-docker-hub --clean
   environment:
     name: production
@@ -128,10 +189,7 @@ release:noqgis:
       - tags
   variables:
     FACTORY_MANIFEST: "docker/factory-noqgis.manifest"
-  when: manual
-  allow_failure: false
   tags:
     - factory-dind
   dependencies:
     - build-docker:noqgis
-
