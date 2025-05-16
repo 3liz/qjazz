@@ -93,17 +93,20 @@ class LandingPage(HandlerProto):
                 rel="self",
                 title="Landing page",
             ),
-
-        ]
-
-        links.extend(
             make_link(
                 request,
-                path=self.format_path(request, "/processes", service=service.service),
-                rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
-                title=service.title,
-            ) for service in self._executor.services
-        )
+                rel="http://www.opengis.net/def/rel/ogc/1.0/job-list",
+                path=self.format_path(request, "/jobs/"),
+                title="Job list",
+            ),
+            make_link(
+                request,
+                rel="alternate",
+                mime_type="text/html",
+                path=self.format_path(request, "/jobs.html"),
+                title="Jobs html interface",
+            ),
+        ]
 
         return web.Response(
             content_type="application/json",

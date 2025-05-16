@@ -15,7 +15,7 @@ from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_precondition
 
 from ...schemas import Link as LinkAny
-from ..utils import stream_from
+from ..utils import public_url, stream_from
 from .protos import (
     ErrorResponse,
     HandlerProto,
@@ -93,6 +93,7 @@ class Storage(HandlerProto):
         files = await self._executor.files(
             job_id,
             realm=self._jobrealm.job_realm(request),
+            public_url=public_url(request, ""),
             timeout=self._timeout,
         )
 

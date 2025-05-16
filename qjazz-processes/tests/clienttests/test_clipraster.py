@@ -1,9 +1,6 @@
 """
     Test Processing executor
 """
-""" Test WPS service
-"""
-
 
 import requests
 import json

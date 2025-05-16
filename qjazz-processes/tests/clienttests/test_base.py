@@ -13,7 +13,7 @@ def test_landing_page(host):
     assert "links" in data
     rels = set(link["rel"] for link in  data["links"])
     assert "http://www.opengis.net/def/rel/ogc/1.0/conformance" in rels
-    assert "http://www.opengis.net/def/rel/ogc/1.0/processes" in rels
+    assert "http://www.opengis.net/def/rel/ogc/1.0/job-list" in rels
 
 
 def test_api_specs(host):

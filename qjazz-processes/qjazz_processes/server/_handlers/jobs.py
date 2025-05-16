@@ -58,6 +58,12 @@ class Jobs(HandlerProto):
                 type: string
               required: true
               description: Job id
+            - in: query
+              name: details
+              schema:
+                type: boolean
+              required: false
+              description: Job extended details
         tags:
           - jobs
         responses:
@@ -87,20 +93,31 @@ class Jobs(HandlerProto):
             return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
 
         location = self.format_path(request, f"/jobs/{job_id}")
-        job_status.links.append(
-            make_link(request, path=location, rel="self", title="Job status"),
-        )
-
         if job_status.status == job_status.SUCCESS:
-            location = self.format_path(request, f"/jobs/{job_id}/results")
             job_status.links.append(
                 make_link(
                     request,
-                    path=location,
+                    path=f"{location}/results",
                     rel="http://www.opengis.net/def/rel/ogc/1.0/results",
                     title="Job results",
                 ),
             )
+
+        job_status.links.extend((
+            make_link(
+                request,
+                path=f"{location}/log",
+                rel="related",
+                title="Job execution logs",
+            ),
+            make_link(
+                request,
+                path=f"{location}/files",
+                rel="related",
+                title="Job files",
+            ),
+            make_link(request, path=location, rel="self", title="Job status"),
+        ))
 
         return web.Response(
             headers={"Location": href(request, location)},
@@ -135,9 +152,10 @@ class Jobs(HandlerProto):
               name: status
               required: false
               schema:
-                type: arary
+                type: array
                 items:
                   type: string
+                description: Filter by status
             - in: query
               name: processID
               required: false
@@ -145,6 +163,13 @@ class Jobs(HandlerProto):
                 type: array
                 items:
                    type: string
+              description: Filter by process
+            - in: query
+              name: service
+              required: false
+              schema:
+                type: string
+              description: Filter by service
         tags:
           - jobs
         responses:
@@ -196,12 +221,21 @@ class Jobs(HandlerProto):
             jobs = [st for st in filtered_jobs()]
 
         for st in jobs:
+            location = self.format_path(request, f"/jobs/{st.job_id}")
+            st.links.append(
+                make_link(
+                    request,
+                    path=location,
+                    rel="related",
+                    title="Job details",
+                ),
+            )
             if st.status == st.SUCCESS:
                 location = self.format_path(request, f"/jobs/{st.job_id}/results")
                 st.links.append(
                     make_link(
                         request,
-                        path=location,
+                        path=f"{location}/results",
                         rel="http://www.opengis.net/def/rel/ogc/1.0/results",
                         title="Job results",
                     ),
@@ -211,6 +245,7 @@ class Jobs(HandlerProto):
             "processID": process_ids,
             "status": filtered_status,
             "limit": limit,
+            "service": service or (),
             "page": page or (),
         }
 

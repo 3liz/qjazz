@@ -1,4 +1,4 @@
-""" Test WPS service
+""" Test Processes service
 """
 import os
 import pytest
