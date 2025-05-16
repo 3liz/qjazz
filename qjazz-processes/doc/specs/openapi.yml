@@ -29,7 +29,15 @@ paths:
   /processes/:
     get:
       summary: Get available processes
-      description: "Returns the list of available for the\ngiven ServiceId\n"
+      description: "Returns the list of available processes\n"
+      parameters:
+      - in: query
+        name: service
+        schema:
+          type: string
+        required: false
+        description: "The service requested.\nIf not set, the default behavior is
+          to return\nthe first service in the configured service list.\n"
       tags:
       - processes
       responses:
@@ -128,9 +136,10 @@ paths:
         name: status
         required: false
         schema:
-          type: arary
+          type: array
           items:
             type: string
+          description: Filter by status
       - in: query
         name: processID
         required: false
@@ -138,6 +147,13 @@ paths:
           type: array
           items:
             type: string
+        description: Filter by process
+      - in: query
+        name: service
+        required: false
+        schema:
+          type: string
+        description: Filter by service
       tags:
       - jobs
       responses:
@@ -164,6 +180,12 @@ paths:
           type: string
         required: true
         description: Job id
+      - in: query
+        name: details
+        schema:
+          type: boolean
+        required: false
+        description: Job extended details
       tags:
       - jobs
       responses:

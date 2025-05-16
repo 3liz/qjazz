@@ -41,6 +41,11 @@ result_expires = 86400
 # The number of concurrent worker processes executing tasks.
 #concurrency =   	# Optional
 #
+# Autoscale
+#
+# Activate concurrency autoscaling
+#max_concurrency =   	# Optional
+#
 # Processes life cycle
 #
 # Maximum number of tasks a pool worker process can execute
@@ -53,11 +58,6 @@ result_expires = 86400
 # that may be consumed by a worker before it will
 # be replaced by a new worker.
 #max_memory_per_child =   	# Optional
-#
-# Autoscale
-#
-# Activate concurrency autoscaling
-#autoscale =   	# Optional
 #
 # Name of the service
 #
