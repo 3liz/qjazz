@@ -7,6 +7,8 @@ stages:
   - release
   - post-release
 
+variables:
+  DOCKER_DRIVER: overlay2
 
 #-----------------
 # Build
