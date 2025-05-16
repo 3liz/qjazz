@@ -19,7 +19,7 @@ from .models import ErrorResponse
 from .storage import StorageConfig
 
 API_VERSION = "v1"
-PAGKAGE_NAME = "qjazz_processes"
+PACKAGE_NAME = "qjazz_processes"
 
 
 def redirect_trailing_slash():
@@ -51,7 +51,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
         self._jobrealm = jobrealm
         self._storage = storage
 
-        self._staticpath = Path(str(resources.files(PAGKAGE_NAME))).joinpath("server", "html")
+        self._staticpath = Path(str(resources.files(PACKAGE_NAME))).joinpath("server", "html")
 
     @property
     def routes(self) -> list[web.RouteDef]:

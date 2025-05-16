@@ -2,6 +2,7 @@ import asyncio
 import signal
 import traceback
 
+from importlib import resources
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import (
@@ -41,7 +42,7 @@ from .accesspolicy import (
 from .cache import ServiceCache
 from .executor import AsyncExecutor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
-from .handlers import API_VERSION, Handler
+from .handlers import API_VERSION, PACKAGE_NAME, Handler
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse, RequestHandler
 from .storage import StorageConfig
@@ -383,7 +384,15 @@ def create_app(conf: ConfigProto) -> web.Application:
             text=doc.model_dump_json(),
         )
 
+    # Open API
+
+    swagger_index = Path(str(resources.files(PACKAGE_NAME)), "server", "swagger_ui.html")
+
+    async def swagger_ui(request: web.Request) -> web.StreamResponse:
+        return web.FileResponse(path=swagger_index)
+
     app.router.add_route("GET", "/api", service_desc)
+    app.router.add_route("GET", "/api.html", swagger_ui)
 
     # Add executor context
     app.cleanup_ctx.append(cache.cleanup_ctx(conf.http, executor))

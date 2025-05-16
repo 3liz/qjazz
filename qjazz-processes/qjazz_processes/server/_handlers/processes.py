@@ -52,8 +52,17 @@ class Processes(HandlerProto):
         """
         summary: Get available processes
         description: |
-            Returns the list of available for the
-            given ServiceId
+            Returns the list of available processes
+        parameters:
+            - in: query
+              name: service
+              schema:
+                type: string
+              required: false
+              description: |
+                The service requested.
+                If not set, the default behavior is to return
+                the first service in the configured service list.
         tags:
             - processes
         responses:

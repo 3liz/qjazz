@@ -83,6 +83,13 @@ class LandingPage(HandlerProto):
             ),
             make_link(
                 request,
+                path=self.format_path(request, "/api.html"),
+                mime_type="text/html",
+                rel="service-desc",
+                title="Swagger interface for api description",
+            ),
+            make_link(
+                request,
                 path=self.format_path(request, "/conformance"),
                 rel="http://www.opengis.net/def/rel/ogc/1.0/conformance",
                 title="Conformance classes",
