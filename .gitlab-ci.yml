@@ -47,6 +47,7 @@ build-extensions:3.34:
   extends: .build-extensions
   variables:
     QGIS_FLAVOR: '3.34'
+    QJAZZ_NO_BUILD_EXT_INSTALL: '1'
 
 build-extensions:ltr:
   extends: .build-extensions
@@ -94,6 +95,7 @@ tests:3.34:
       - build-extensions:3.34
   variables:
     QGIS_FLAVOR: "3.34"
+    QJAZZ_NO_BUILD_EXT_INSTALL: '1'
 
 
 #-----------------

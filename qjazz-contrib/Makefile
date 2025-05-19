@@ -25,10 +25,12 @@ manifest:
 
 BUILDDIR=build-$(QGIS_FLAVOR)
 
+ifndef QJAZZ_NO_BUILD_EXT_INSTALL
 build::
 	rm -rf *.egg-info
 	python setup.py build_ext -b $(BUILDDIR) -t $(BUILDDIR) --inplace 
 	strip qjazz_contrib/core/qgis/*.so
+endif
 
 clean::
 	rm -rf $(BUILDDIR)
