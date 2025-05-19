@@ -233,7 +233,7 @@ bool handle_request_impl(
     {
         // Project is mandatory
         if (!project) {
-            PyErr_SetString(ServerExc_ProjectRequired, api_name);
+            PyErr_SetString(ServerExc_ProjectRequired, "Project required");
             return false; 
         }
     }

@@ -66,11 +66,14 @@ def setup_server(conf: QgisConfig) -> Server:
 
     # Set the server request handler
     server = Server.new(settings=conf.qgis_settings)
-    server.use_default_handler = conf.use_default_server_handler
-    logger.info(
-        "Using server request handler: %s",
-        "default" if server.use_default_handler else "QJazz",
-    )
+    if hasattr(server, "use_default_handler"):
+        server.use_default_handler = conf.use_default_server_handler
+        logger.info(
+            "Using QJazz binding server handler %s",
+            "with default request handler)" if server.use_default_handler else "",
+        )
+    else:
+        logger.info("Using Python QGIS server handler")
 
     # Configure QGIS network (trace, timeouts)
     conf.network.configure_network()

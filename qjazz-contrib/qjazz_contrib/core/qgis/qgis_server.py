@@ -3,6 +3,7 @@
 from typing import (
     Optional,
     Protocol,
+    TypeVar,
 )
 
 from qgis.core import QgsProject
@@ -14,14 +15,14 @@ from qgis.server import (
 
 from .qgis_init import init_qgis_server
 
+E = TypeVar("E", bound=Exception)
 
-class Server(Protocol):
 
-    use_default_handler: bool
+class Server(Protocol[E]):
 
-    ApiNotFoundError: type[Exception]
-    ProjectRequired: type[Exception]
-    InternalError: type[Exception]
+    ApiNotFoundError: E
+    ProjectRequired: E
+    InternalError: E
 
     @property
     def inner(self) -> QgsServer: ...
@@ -39,13 +40,17 @@ class Server(Protocol):
         """ Create a  QgsServer
         """
         inner = init_qgis_server(**kwargs)
-        from .qgis_binding import (
-            ApiNotFoundError,
-            InternalError,
-            ProjectRequired,
-            Server,
-        )
-        cls.ApiNotFoundError = ApiNotFoundError
-        cls.ProjectRequired = ProjectRequired
-        cls.InternalError = InternalError
-        return Server(inner)
+        try:
+            from .qgis_binding import (
+                ApiNotFoundError,
+                InternalError,
+                ProjectRequired,
+                Server,
+            )
+            cls.ApiNotFoundError = ApiNotFoundError
+            cls.ProjectRequired = ProjectRequired
+            cls.InternalError = InternalError
+            return Server(inner)
+        except ModuleNotFoundError:
+            from .no_binding import ServerWrapper
+            return ServerWrapper(inner)
