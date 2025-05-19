@@ -140,9 +140,7 @@ class S3ProtocolHandler(ProtocolHandler):
             if prefix and is_dynamic:
                 # Because gdal options are set at early stage prefix is no supported
                 # in rooturl
-                raise InvalidCacheRootUrl(
-                    f"Dynamic s3 root url does not support prefix: {rooturl}"
-                )
+                raise InvalidCacheRootUrl(f"Dynamic s3 root url does not support prefix: {rooturl}")
 
             key = f"/vsis3/{bucket}/{prefix}" if prefix else f"/vsis3/{bucket}"
 

@@ -1,4 +1,3 @@
-
 from typing import (
     Annotated,
     Callable,
@@ -42,9 +41,7 @@ class ProcessList(swagger.JsonModel):
     links: Sequence[Link]
 
 
-TagParam: TypeAdapter[Optional[str]] = TypeAdapter(
-    Annotated[Optional[str], Field(max_length=36)]
-)
+TagParam: TypeAdapter[Optional[str]] = TypeAdapter(Annotated[Optional[str], Field(max_length=36)])
 
 
 class Processes(HandlerProto):
@@ -438,6 +435,7 @@ class Processes(HandlerProto):
 # Handle HTTP Prefer header
 #
 
+
 class ExecutePrefs:
     execute_async: bool = False
     wait: Optional[int] = None
@@ -445,9 +443,7 @@ class ExecutePrefs:
     delay: Optional[int] = None
 
     as_seconds: Callable[[str], int] = TypeAdapter(PositiveInt).validate_python
-    as_priority: Callable[[str], int] = TypeAdapter(
-        Annotated[int, Field(ge=0, lt=10)]
-    ).validate_python
+    as_priority: Callable[[str], int] = TypeAdapter(Annotated[int, Field(ge=0, lt=10)]).validate_python
 
     def execute_sync(self) -> bool:
         return self.delay is None and (not self.execute_async or self.wait is not None)

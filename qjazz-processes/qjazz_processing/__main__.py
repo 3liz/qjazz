@@ -67,6 +67,7 @@ def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
         click.echo(conf.model_dump_json(indent=4))
     else:
         from .jobs import app
+
         app.start_worker(loglevel=loglevel)
 
 
@@ -94,6 +95,7 @@ def run_scheduler(configpath: Optional[Path], loglevel: str):
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
     from .jobs import app
+
     app.run_scheduler(loglevel=loglevel)
 
 
@@ -124,6 +126,7 @@ def install_plugins(configpath: Optional[Path], force: bool):
 
     if force or conf.processing.plugins.install_mode == "auto":
         from qjazz_contrib.core.qgis import install_plugins
+
         install_plugins(conf.processing.plugins)
     else:
         click.echo("Plugin installation set to manual: no plugins to install...")

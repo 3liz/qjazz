@@ -1,4 +1,3 @@
-
 from functools import cached_property
 from typing import (
     Iterator,
@@ -14,7 +13,6 @@ from qgis.server import QgsServerProjectUtils
 
 
 class LayerAccessor:
-
     def __init__(self, project: QgsProject):
         self._project = project
 
@@ -50,7 +48,7 @@ class LayerAccessor:
                 yield layer
 
     def layer_name(self, layer: QgsMapLayer) -> str:
-        """ Get the layer name according if the shortname is set"""
+        """Get the layer name according if the shortname is set"""
         if self.use_layer_ids:
             return layer.id()
         elif Qgis.QGIS_VERSION_INT < 33800:

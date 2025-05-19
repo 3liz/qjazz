@@ -1,11 +1,12 @@
-""" Dict like object for handling templated routing
+"""Dict like object for handling templated routing
 
-    The code for Dynamic route handling has been borrowed
-    from aiohttp https://github.com/aio-libs/aiohttp licensed under
-    Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
+The code for Dynamic route handling has been borrowed
+from aiohttp https://github.com/aio-libs/aiohttp licensed under
+Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
 
-    Copyright aio-libs contributors.
+Copyright aio-libs contributors.
 """
+
 import re
 
 from pathlib import PurePosixPath
@@ -28,7 +29,6 @@ PATH_SEP: Final[str] = re.escape("/")
 
 
 class RouteDef(Protocol):
-
     @property
     def is_dynamic(self) -> bool: ...
 
@@ -41,12 +41,10 @@ class RouteDef(Protocol):
 
 
 class Routes:
-
     def __init__(self, search_paths: dict[str, str]):
-
         def build_routes() -> Iterator[tuple[str, RouteDef]]:
             for location, url in search_paths.items():
-                if not location.startswith('/'):
+                if not location.startswith("/"):
                     raise ValueError("Search path route must start with '/'")
                 if not ("{" in location or "}" in location or ROUTE_RE.search(location)):
                     yield location, StaticRoute(location, url)
@@ -88,8 +86,9 @@ class Routes:
                     )
         else:
             # Returns only static routes
-            urls = ((str(route._location), route._url) for route in self._routes.values()
-                    if isinstance(route, StaticRoute))
+            urls = (
+                (str(route._location), route._url) for route in self._routes.values() if isinstance(route, StaticRoute)
+            )
 
         return urls
 
@@ -102,7 +101,6 @@ def validate_url(urlstr: str) -> Url:
 
 
 class StaticRoute(RouteDef):
-
     is_dynamic: Final[bool] = False
 
     def __init__(self, location: str, url: str):
@@ -127,7 +125,6 @@ class StaticRoute(RouteDef):
 
 
 class DynamicRoute(RouteDef):
-
     is_dynamic: Final[bool] = True
 
     DYN = re.compile(r"\{(?P<var>[_a-zA-Z][_a-zA-Z0-9]*)\}")

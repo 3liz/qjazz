@@ -1,4 +1,4 @@
-from ..executor.async_executor  import (   # noqa F401
+from ..executor.async_executor import (  # noqa F401
     AsyncExecutor,
     ExecutorConfig,
     InputValueError,

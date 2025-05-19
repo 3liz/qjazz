@@ -50,7 +50,6 @@ class AsyncExecutor(
     Commands,
     Processes,
 ):
-
     async def update_services(self) -> ServiceDict:
         """Update services destinations
 

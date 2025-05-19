@@ -60,13 +60,15 @@ def _default_plugin_paths() -> list[Path]:
     if path_env:
         return [Path(p) for p in path_env.split(":")]
     else:
-        return [Path(
-            os.getenv("QGIS_OPTIONS_PATH")
-            or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
-            or os.getenv("QGIS_HOME")
-            or Path.home().joinpath(".qjazz"),
-            "plugins",
-        )]
+        return [
+            Path(
+                os.getenv("QGIS_OPTIONS_PATH")
+                or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
+                or os.getenv("QGIS_HOME")
+                or Path.home().joinpath(".qjazz"),
+                "plugins",
+            )
+        ]
 
 
 class QgisPluginConfig(config.ConfigBase):

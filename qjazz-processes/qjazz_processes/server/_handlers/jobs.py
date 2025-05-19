@@ -103,21 +103,23 @@ class Jobs(HandlerProto):
                 ),
             )
 
-        job_status.links.extend((
-            make_link(
-                request,
-                path=f"{location}/log",
-                rel="related",
-                title="Job execution logs",
-            ),
-            make_link(
-                request,
-                path=f"{location}/files",
-                rel="related",
-                title="Job files",
-            ),
-            make_link(request, path=location, rel="self", title="Job status"),
-        ))
+        job_status.links.extend(
+            (
+                make_link(
+                    request,
+                    path=f"{location}/log",
+                    rel="related",
+                    title="Job execution logs",
+                ),
+                make_link(
+                    request,
+                    path=f"{location}/files",
+                    rel="related",
+                    title="Job files",
+                ),
+                make_link(request, path=location, rel="self", title="Job status"),
+            )
+        )
 
         return web.Response(
             headers={"Location": href(request, location)},

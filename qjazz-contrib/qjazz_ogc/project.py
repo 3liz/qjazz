@@ -59,7 +59,7 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 
 
 def get_layer_short_name(layer: QgsMapLayer) -> str:
-    """ Get the layer name according if the shortname is set"""
+    """Get the layer name according if the shortname is set"""
     if Qgis.QGIS_VERSION_INT < 33800:
         name = layer.shortName()
     else:

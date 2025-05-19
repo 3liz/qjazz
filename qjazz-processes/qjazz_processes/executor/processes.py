@@ -54,7 +54,6 @@ class JobMeta(TypedDict):
 
 
 class Processes(ExecutorProtocol):
-
     def _describe(
         self,
         destinations: Sequence[str],
@@ -120,7 +119,7 @@ class Processes(ExecutorProtocol):
     class JobBuilder:
         def __init__(
             self,
-            this: 'Processes',
+            this: "Processes",
             service: str,
             ident: str,
             *,
@@ -158,23 +157,23 @@ class Processes(ExecutorProtocol):
             self.expires = expires
             self.pending_timeout = pending_timeout
 
-        def register(self, this: 'Processes', job_id: str) -> JobStatus:
+        def register(self, this: "Processes", job_id: str) -> JobStatus:
             """Register job"""
 
             # create PENDING default state
             status = JobStatus(
                 job_id=job_id,
                 status=JobStatus.PENDING,
-                process_id=self.meta['process_id'],
+                process_id=self.meta["process_id"],
                 created=self.created,
-                tag=self.meta['tag'],
+                tag=self.meta["tag"],
             )
 
             # Register pending task info
             registry.register(
                 this._celery,
-                self.meta['service'],
-                self.meta['realm'],
+                self.meta["service"],
+                self.meta["realm"],
                 status,
                 self.expires,
                 self.pending_timeout,
@@ -501,7 +500,7 @@ class Processes(ExecutorProtocol):
         kwargs = state["kwargs"]
         meta = kwargs.get("__meta__", {})
 
-        details: dict = {'tag': meta.get('tag')}
+        details: dict = {"tag": meta.get("tag")}
         if with_details:
             details.update(run_config=kwargs.get("request"))
             if finished:

@@ -94,9 +94,7 @@ def transform_extent(
 
 
 def compute_extent_from_layers(
-    p: QgsProject,
-    dest_crs: Optional[QgsCoordinateTransform] = None,
-    layers: Optional[Iterable[str]] = None
+    p: QgsProject, dest_crs: Optional[QgsCoordinateTransform] = None, layers: Optional[Iterable[str]] = None
 ) -> QgsRectangle:
     """Combine extent from layers
 
@@ -110,7 +108,6 @@ def compute_extent_from_layers(
     layer_names = set(layers) if layers else None
 
     for layer in LayerAccessor(p).layers():
-
         name = layer.name()
 
         if layer_names and name not in layer_names:
@@ -148,11 +145,7 @@ def layer_extents_from_metadata(
 
 class SpatialExtent(extent.SpatialExtent):
     @classmethod
-    def from_project(
-        cls,
-        p: QgsProject,
-        layers: Optional[Iterable[str]] = None
-    ) -> Optional[Self]:
+    def from_project(cls, p: QgsProject, layers: Optional[Iterable[str]] = None) -> Optional[Self]:
         """Build the spatial extent
 
         bbox_crs is the crs of the bbox property if this one is

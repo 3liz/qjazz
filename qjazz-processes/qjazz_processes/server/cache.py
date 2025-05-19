@@ -44,7 +44,6 @@ class ServiceCache:
         update_interval = conf.update_interval
 
         async def ctx(app: web.Application):
-
             service_names: set[str] = set()
 
             async def update_services() -> bool:
@@ -98,7 +97,6 @@ class ServiceCache:
 
 
 def _log_services(services: ServiceDict):
-
     def _format(key, dests, p):
         return f"* {key:<15}{p.title:<30}{dests}"
 

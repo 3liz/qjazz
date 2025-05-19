@@ -13,7 +13,6 @@ from .protocols import ExecutorProtocol
 
 
 class Commands(ExecutorProtocol):
-
     #
     # Control commands
     #
@@ -31,7 +30,7 @@ class Commands(ExecutorProtocol):
         return self._celery.control.ping(self._dests(service), timeout=timeout)
 
     def shutdown(self, service: str, *, reply: bool = True, timeout: float = 5.0) -> JsonValue:
-        """ Shutdown remote service """
+        """Shutdown remote service"""
         return self._celery.control.shutdown(
             self._dests(service),
             reply=reply,

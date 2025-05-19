@@ -140,7 +140,7 @@ type EnvSettingsOption = Literal["first", "last", "disabled"]
 
 
 def set_env_settings_option(opt: EnvSettingsOption):
-    print("Environment precedence set to:", opt, file=sys.stderr)   # noqa T210
+    print("Environment precedence set to:", opt, file=sys.stderr)  # noqa T210
     ConfigSettings.env_settings_precedence = opt
 
 
@@ -148,7 +148,6 @@ def set_env_settings_option(opt: EnvSettingsOption):
 # The base model for the config settings
 #
 class ConfigSettings(BaseSettings):
-
     #
     # Configure the precedence of
     # environment variable in the global
@@ -172,7 +171,7 @@ class ConfigSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],             # noqa F841 (unused variable)
+        settings_cls: Type[BaseSettings],  # noqa F841 (unused variable)
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,  # noqa F841

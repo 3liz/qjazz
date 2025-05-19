@@ -136,7 +136,7 @@ class ProcessingContext(QgsProcessingContext):
             public_url=self.public_url,
         )
 
-        if advertised_services_url.find('?') > -1:
+        if advertised_services_url.find("?") > -1:
             url = f"{advertised_services_url}&SERVICE={service}&REQUEST={request}"
         else:
             url = f"{advertised_services_url}?SERVICE={service}&REQUEST={request}"

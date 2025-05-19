@@ -169,7 +169,7 @@ class CacheManager:
         return self._config
 
     def find_location(self, path: str) -> Optional[PurePosixPath]:
-        """ Return the location for the given resource path"""
+        """Return the location for the given resource path"""
         path = PurePosixPath(path)
         for route in self.conf.search_paths.routes:
             result = route.resolve_path(path)

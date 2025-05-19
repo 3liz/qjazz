@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import (
     ClassVar,
@@ -11,7 +10,6 @@ import celery.states
 
 from pydantic import (
     DirectoryPath,
-    Field,
     FilePath,
     NonNegativeInt,
 )
@@ -20,6 +18,7 @@ from qjazz_contrib.core.config import (
     ConfigBase,
     TLSConfig,
 )
+from qjazz_contrib.core.models import Field
 
 
 class SecurityConfig(ConfigBase):
@@ -41,11 +40,11 @@ class CeleryScheduler(ConfigBase):
     enabled: bool = Field(
         default=False,
         title="Enable scheduler",
-        description=(
-            "Enable embedded scheduler.\n"
-            "Prefer scheduler as a service if more\n"
-            "than one worker node is used."
-        ),
+        description="""
+        Enable embedded scheduler.
+        Prefer scheduler as a service if more
+        than one worker node is used.
+        """,
     )
     max_interval: Optional[int] = Field(
         default=None,
@@ -58,10 +57,10 @@ class CeleryScheduler(ConfigBase):
     database: Optional[Path] = Field(
         default=None,
         title="Scheduler database path",
-        description=(
-            "Path to the schedule database.\n"
-            "Defaults to `celerybeat-schedule` (from Celery doc)."
-        ),
+        description="""
+        Path to the schedule database.
+        Defaults to `celerybeat-schedule` (from Celery doc).
+        """,
     )
 
     def database_filename(self) -> Optional[str]:
@@ -94,34 +93,36 @@ class CeleryConfig(ConfigBase):
     task_time_limit: int = Field(
         default=3600,
         gt=60,
-        description=(
-            "Task hard time limit in seconds.\n"
-            "The worker processing the task will be killed\n"
-            "and replaced with a new one when this is exceeded."
-        ),
+        description="""
+        Task hard time limit in seconds.
+        The worker processing the task will be killed
+        and replaced with a new one when this is exceeded.
+        """,
     )
 
     task_time_grace_period: int = Field(
         default=60,
         ge=0,
-        description=(
-            "Grace period to add to the 'task_time_limit'\n"
-            "value.\n"
-            "The SoftTimeLimitExceeded exception will be raised\n"
-            "when the 'task_time_limit' is exceeded."
-        ),
+        description="""
+        Grace period to add to the 'task_time_limit' value.
+        The SoftTimeLimitExceeded exception will be raised
+        when the 'task_time_limit' is exceeded.
+        """,
     )
 
     result_expires: int = Field(
         default=86400,
-        description=("Time (in seconds), for when after stored task tombstones will\nbe deleted"),
+        description="""
+        Time (in seconds), for when after stored task tombstones will
+        be deleted
+        """,
     )
 
     concurrency: Optional[int] = Field(
         default=None,
         ge=1,
         title="Concurrency",
-        description=("The number of concurrent worker processes executing tasks."),
+        description="The number of concurrent worker processes executing tasks.",
     )
 
     # Enable autoscaling
@@ -135,20 +136,20 @@ class CeleryConfig(ConfigBase):
         default=None,
         ge=1,
         title="Processes life cycle",
-        description=(
-            "Maximum number of tasks a pool worker process can execute\n"
-            "before it's replaced with a new one. Default is no limit."
-        ),
+        description="""
+        Maximum number of tasks a pool worker process can execute
+        before it's replaced with a new one. Default is no limit.
+        """,
     )
 
     max_memory_per_child: Optional[int] = Field(
         default=None,
         title="Maximum consumed memory",
-        description=(
-            "Maximum amount of resident memory, in kilobytes,\n"
-            "that may be consumed by a worker before it will\n"
-            "be replaced by a new worker."
-        ),
+        description="""
+        Maximum amount of resident memory, in kilobytes,
+        that may be consumed by a worker before it will
+        be replaced by a new worker.
+        """,
     )
 
     # Scheduler

@@ -15,7 +15,7 @@ def semaphore(name: str, *, timeout: Optional[int] = None) -> Generator:
 
     name = name.removeprefix("/").translate(
         # Dunno why Mypy choke on this
-        str.maketrans({'/': '_', '.': '_'})  # type: ignore [arg-type]
+        str.maketrans({"/": "_", ".": "_"})  # type: ignore [arg-type]
     )
     logger.debug("Getting semaphore %s", name)
     sem = Semaphore(name, O_CREAT, initial_value=1)

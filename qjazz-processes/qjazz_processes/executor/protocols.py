@@ -1,5 +1,3 @@
-
-
 from typing import (
     Optional,
     Protocol,
@@ -23,11 +21,9 @@ class ExecutorProtocol(Protocol):
     _services: ServiceDict
 
     @classmethod
-    def get_destinations(cls, service: str, services: ServiceDict) -> Optional[Sequence[str]]:
-        ...
+    def get_destinations(cls, service: str, services: ServiceDict) -> Optional[Sequence[str]]: ...
 
-    def destinations(self, service: str) -> Optional[Sequence[str]]:
-        ...
+    def destinations(self, service: str) -> Optional[Sequence[str]]: ...
 
     def command(
         self,
@@ -37,5 +33,4 @@ class ExecutorProtocol(Protocol):
         broadcast: bool = False,
         reply: bool = True,
         **kwargs,
-    ) -> JsonValue:
-        ...
+    ) -> JsonValue: ...

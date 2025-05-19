@@ -1,14 +1,15 @@
-
 from pathlib import Path, PurePosixPath
 
 
 def test_dynamic_route_impl():
     from qjazz_cache.routes import Routes, urlsplit
 
-    routes = Routes({
-        "/foo/bar": "/myfoo/mybar",
-        "/bar/{user}/{theme}": "/path/to/{user}/projects/{theme}",
-    })
+    routes = Routes(
+        {
+            "/foo/bar": "/myfoo/mybar",
+            "/bar/{user}/{theme}": "/path/to/{user}/projects/{theme}",
+        }
+    )
 
     locs = list(routes.locations("/foo"))
     assert len(locs) == 1
@@ -44,10 +45,7 @@ def test_dynamic_config(data: Path):
         trust_layer_metadata=True,
         disable_getprint=True,
         force_readonly_layers=True,
-        search_paths={
-            "/france": f"{data}/france_parts/",
-            "/dyn/{loc}":  f"{data}/{{loc}}"
-        },
+        search_paths={"/france": f"{data}/france_parts/", "/dyn/{loc}": f"{data}/{{loc}}"},
     )
 
     cm = CacheManager(conf)

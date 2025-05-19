@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from time import time
 from typing import (
@@ -44,20 +43,20 @@ class ExecutorConfig(ConfigBase):
 
 
 class ExecutorBase:
-
     def __init__(
-            self,
-            conf: Optional[ExecutorConfig] = None,
-            *,
-            name: Optional[str] = None,
+        self,
+        conf: Optional[ExecutorConfig] = None,
+        *,
+        name: Optional[str] = None,
     ):
         conf = conf or ExecutorConfig()
         self._celery = Celery(name, conf.celery)
         self._services: ServiceDict = {}
         self._pending_expiration_timeout = conf.message_expiration_timeout
-        self._last_updated = 0.
+        self._last_updated = 0.0
 
-    def presences(self,
+    def presences(
+        self,
         destinations: Optional[Sequence[str]] = None,
     ) -> dict[str, PresenceDetails]:
         """Return presence info for online workers"""
@@ -99,6 +98,7 @@ class ExecutorBase:
 
     def destinations(self, service: str) -> Optional[Sequence[str]]:
         return self.get_destinations(service, self._services)
+
 
 # =============================
 # Executor; Synchronous version

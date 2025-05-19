@@ -74,7 +74,7 @@ class Worker(Celery):
                 beat=True,
                 schedule=self._scheduler.database_filename(),
                 heartbeat_interval=self._scheduler.max_interval,
-        )
+            )
 
         worker = self.Worker(
             hostname=self.worker_hostname,

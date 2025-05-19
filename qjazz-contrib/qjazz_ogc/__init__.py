@@ -7,4 +7,4 @@ except ModuleNotFoundError:
 else:
     from .project import Collection  # noqa F401
     from .catalog import Catalog, CatalogItem, OgcEndpoints  # noqa F401
-    from .layers import LayerAccessor # noqa F401
+    from .layers import LayerAccessor  # noqa F401

@@ -1,4 +1,3 @@
-
 import sys
 
 from pathlib import Path
@@ -36,6 +35,7 @@ def main(env_settings: config.EnvSettingsOption):
 # Server
 #
 
+
 @main.command("serve")
 @click.option(
     "--conf",
@@ -62,6 +62,7 @@ def run_server(configpath: Path, verbose: bool, dump_config: bool):
     )
 
     serve(conf)
+
 
 #
 
@@ -101,6 +102,7 @@ def setup_executor_context(
 #
 #  Service commands
 #
+
 
 @main.group("service")
 @click.option(
@@ -169,8 +171,10 @@ def shutdown_service(ctx: click.Context, service: str):
 @control.command("ping")
 @click.argument("service")
 @click.option(
-    "--repeat", "-n",
-    type=int, default=0,
+    "--repeat",
+    "-n",
+    type=int,
+    default=0,
     help="Ping every <REPEAT> seconds",
     metavar="REPEAT",
 )
@@ -196,6 +200,7 @@ def ping_service(ctx: click.Context, service: str, repeat: int):
     else:
         _ping()
 
+
 #
 #  Processes commands
 #
@@ -216,7 +221,7 @@ def processes(
     configpath: Optional[Path],
     verbose: bool,
 ):
-    """ Processes commands"""
+    """Processes commands"""
     setup_executor_context(ctx, configpath, verbose)
 
 
@@ -273,6 +278,7 @@ def describe_processes(ctx: click.Context, service: str, ident: str, project: Op
         click.echo("Service not available", err=True)
         sys.exit(1)
 
+
 #
 # Jobs
 #
@@ -293,7 +299,7 @@ def jobs(
     configpath: Optional[Path],
     verbose: bool,
 ):
-    """ Jobs commands"""
+    """Jobs commands"""
     setup_executor_context(ctx, configpath, verbose)
 
 

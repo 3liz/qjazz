@@ -1,5 +1,5 @@
-""" Wrapper around Qgsserver
-"""
+"""Wrapper around Qgsserver"""
+
 from typing import (
     Optional,
     Protocol,
@@ -19,7 +19,6 @@ E = TypeVar("E", bound=Exception)
 
 
 class Server(Protocol[E]):
-
     ApiNotFoundError: E
     ProjectRequired: E
     InternalError: E
@@ -37,8 +36,7 @@ class Server(Protocol[E]):
 
     @classmethod
     def new(cls, **kwargs) -> "Server":
-        """ Create a  QgsServer
-        """
+        """Create a  QgsServer"""
         inner = init_qgis_server(**kwargs)
         try:
             from .qgis_binding import (
@@ -47,10 +45,12 @@ class Server(Protocol[E]):
                 ProjectRequired,
                 Server,
             )
+
             cls.ApiNotFoundError = ApiNotFoundError
             cls.ProjectRequired = ProjectRequired
             cls.InternalError = InternalError
             return Server(inner)
         except ModuleNotFoundError:
             from .no_binding import ServerWrapper
+
             return ServerWrapper(inner)

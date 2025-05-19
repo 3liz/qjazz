@@ -35,7 +35,7 @@ Co = CheckoutStatus
 
 CATALOG_CONTRACTID = "@3liz.org/catalog;1"
 
-QJAZZ_CATALOG_MIN_QGIS_VERSION=(3,0)
+QJAZZ_CATALOG_MIN_QGIS_VERSION = (3, 0)
 
 
 class OgcEndpoints(Flag):
@@ -83,8 +83,9 @@ def get_minimum_qgis_version():
     ver = os.getenv("QJAZZ_CATALOG_MIN_QGIS_VERSION")
     if ver:
         from pydantic import TypeAdapter, ValidationError
+
         try:
-            return TypeAdapter(tuple[int, int]).validate_python(ver.split('.')[:2])
+            return TypeAdapter(tuple[int, int]).validate_python(ver.split(".")[:2])
         except ValidationError:
             logger.error("Invalid value for QJAZZ_CATALOG_MIN_QGIS_VERSION: '%s'", ver)
 
@@ -103,13 +104,13 @@ class Catalog:
         self._schema = Collection.model_json_schema()
         self._minimum_qgis_version = get_minimum_qgis_version()
 
-    def update_items(self,
+    def update_items(
+        self,
         cm: CacheManager,
         pinned: bool = False,
         *,
         prefix: Optional[str] = None,
     ) -> Iterator[CatalogItem]:
-
         catalog = self._catalog
 
         # Iterate over the whole catalog
@@ -143,11 +144,14 @@ class Catalog:
             yield item
 
     def update(self, cm: CacheManager, pinned: bool = False, *, prefix: Optional[str] = None):
-        self._catalog = {item.public_path: item for item in self.update_items(
-            cm,
-            pinned,
-            prefix=prefix,
-        )}
+        self._catalog = {
+            item.public_path: item
+            for item in self.update_items(
+                cm,
+                pinned,
+                prefix=prefix,
+            )
+        }
 
     def get_and_update(
         self,
@@ -156,8 +160,7 @@ class Catalog:
         *,
         pinned: bool = False,
     ) -> Optional[CatalogItem]:
-        """ Fetch a resource in the catalog and update it
-        """
+        """Fetch a resource in the catalog and update it"""
         item = self._catalog.get(ident)
         if not item:
             try:
@@ -301,10 +304,6 @@ def check_project_version(
     minimum_qgis_version: tuple[int, int],
 ):
     project_ver = project.lastSaveVersion()
-    if not project_ver.isNull() and \
-        (project_ver.majorVersion(), project_ver.minorVersion()) < minimum_qgis_version:
-
+    if not project_ver.isNull() and (project_ver.majorVersion(), project_ver.minorVersion()) < minimum_qgis_version:
         logger.warning("Project %s is too old (%s)", md.uri, project_ver.text())
         raise ProjectTooOld(str(md.uri))
-
-

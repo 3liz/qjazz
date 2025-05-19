@@ -19,4 +19,4 @@ from .qgis_network import (  # noqa F401
     QgisNetworkConfig,
 )
 
-from .qgis_server import Server # noqa F401
+from .qgis_server import Server  # noqa F401

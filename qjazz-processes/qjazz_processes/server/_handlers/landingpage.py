@@ -30,7 +30,6 @@ class LandingPageModel(swagger.JsonModel):
 
 
 class LandingPage(HandlerProto):
-
     async def conformance(self, request: web.Request) -> web.Response:
         """
         summary: "Conformances classes"

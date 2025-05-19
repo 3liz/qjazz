@@ -37,20 +37,22 @@ class ServiceItem(swagger.JsonModel):
         format_path: PathFormatter,
     ) -> Self:
         links = [link for link in details.links]
-        links.extend((
-            make_link(
-                request,
-                rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
-                path=format_path(request, "/processes/", service=details.service),
-                title="Services processes",
-            ),
-            make_link(
-                request,
-                rel="http://www.opengis.net/def/rel/ogc/1.0/job-list",
-                path=format_path(request, "/jobs/", service=details.service),
-                title="Job list",
-            ),
-        ))
+        links.extend(
+            (
+                make_link(
+                    request,
+                    rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
+                    path=format_path(request, "/processes/", service=details.service),
+                    title="Services processes",
+                ),
+                make_link(
+                    request,
+                    rel="http://www.opengis.net/def/rel/ogc/1.0/job-list",
+                    path=format_path(request, "/jobs/", service=details.service),
+                    title="Job list",
+                ),
+            )
+        )
         return cls(
             name=details.service,
             title=details.title,

@@ -37,7 +37,7 @@ class ServerWrapper:
         project: Optional[QgsProject] = None,
         api: Optional[str] = None,
     ):
-        if (api):
+        if api:
             # Find the api
             iface = self._inner.serverInterface()
             if not iface.serviceRegistry().getApi(api):
