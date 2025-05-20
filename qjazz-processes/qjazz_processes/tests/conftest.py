@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from aiohttp.test_utils import TestClient
 from typing_extensions import Callable
 
 from qgis.core import (
+    Qgis,
     QgsProcessingFeedback,
 )
 from qgis.server import QgsServer
@@ -190,3 +192,14 @@ def server_app(rootdir: Path) -> web.Application:
 @pytest.fixture(scope="function")
 async def http_client(server_app: web.Application, aiohttp_client: Callable) -> TestClient:
     return await aiohttp_client(server_app)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    try:
+        from qjazz_contrib.core import qgis
+        # On QGIS <= 3.34, explicite call to exit() is required
+        # in order to prevent a segmentation fault.
+        if Qgis.QGIS_VERSION_INT <= 34000:
+            qgis.exit_qgis_application()
+    except Exception:
+        traceback.print_exc()

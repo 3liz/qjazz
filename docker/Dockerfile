@@ -22,30 +22,25 @@ RUN apt-get update -y \
         less \
     && apt-get clean
 
-COPY docker/requirements.txt /python_modules/
-COPY qjazz-contrib /python_modules/qjazz-contrib
-COPY qjazz-processes /python_modules/qjazz-processes
-COPY qjazz-server/python /python_modules/qjazz-server/
-
 # Create virtualenv for installing modules
-RUN --mount=type=cache,target=/.python-cache \
+RUN --mount=type=bind,target=/src,rw \
+    --mount=type=cache,target=/.python-cache \
     mkdir -p /opt/local/ \
     && python3 -m venv --system-site-packages /opt/local/qjazz \
     && cd /usr/local/bin \
     && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
         pip setuptools wheel requests \
-    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /python_modules/requirements.txt \
+    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /src/docker/requirements.txt \
     && export QJAZZ_NO_BUILD_EXT_INSTALL=1 \
     && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
-        -e /python_modules/qjazz-contrib \
-        -e /python_modules/qjazz-processes \
-        -e /python_modules/qjazz-server \
+        /src/qjazz-contrib \
+        /src/qjazz-processes \
+        /src/qjazz-server/python \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-processing \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
     && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
-    && rm -r /python_modules/**/*.egg-info \
     ${NULL}
 
 # Install qgis-plugin-manager
@@ -126,7 +121,6 @@ RUN apt-get update -y \
         less \
     && apt-get clean
 
-COPY --from=base /python_modules /python_modules
 COPY --from=base /opt/local/qjazz /opt/local/qjazz
 COPY --from=base /usr/local/bin/qjazz-map-bin /usr/local/bin/qjazz-map-bin
 
@@ -184,10 +178,14 @@ RUN useradd --uid=${factory_runner_uid} --home-dir=/home/factory-runner factory-
     && chown -R factory-runner:factory-runner /home/factory-runner \
     ${NULL}
 
-COPY --from=base --chown=factory-runner:factory-runner /python_modules /python_modules
 COPY --from=base --chown=factory-runner:factory-runner /opt/local/qjazz /opt/local/qjazz
 
 USER factory-runner 
+
+# Copy source files
+# NOTE: Not sure that is needed
+COPY qjazz-contrib /python_modules/qjazz-contrib
+COPY qjazz-processes /python_modules/qjazz-processes
 
 COPY dev-requirements.txt /dev-requirements.txt
 RUN --mount=type=cache,target=/.python-cache \

@@ -1,1 +1,2 @@
 exclude tests/*
+include qjazz_contrib/core/qgis/*.so

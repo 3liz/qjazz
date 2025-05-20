@@ -38,3 +38,6 @@ python_modules/*/*.egg-info
 python_modules/*/.gitignore
 python_modules/*/tests
 qjazz-server/python/qjazz_rpcw/_grpc/protos
+qjazz-server/target/debug
+qjazz-server/target/release/build
+qjazz-server/target/release/deps
