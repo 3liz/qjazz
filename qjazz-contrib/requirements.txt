@@ -5,7 +5,7 @@ celery==5.5.2
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
-click==8.1.8
+click==8.2.0
 kombu==5.5.3
 posix_ipc==1.2.0
 prompt_toolkit==3.0.51
@@ -14,7 +14,7 @@ pydantic==2.11.4
 pydantic_core==2.33.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
-redis==6.0.0
+redis==6.1.0
 six==1.17.0
 typing-inspection==0.4.0
 typing_extensions==4.13.2
