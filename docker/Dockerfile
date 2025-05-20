@@ -121,14 +121,29 @@ RUN apt-get update -y \
         less \
     && apt-get clean
 
-COPY --from=base /opt/local/qjazz /opt/local/qjazz
-COPY --from=base /usr/local/bin/qjazz-map-bin /usr/local/bin/qjazz-map-bin
-
-RUN cd /usr/local/bin \
+# Create virtualenv for installing modules
+RUN --mount=type=bind,target=/src,rw \
+    --mount=type=cache,target=/.python-cache \
+    mkdir -p /opt/local/ \
+    && python3 -m venv --system-site-packages /opt/local/qjazz \
+    && cd /usr/local/bin \
+    && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
+        pip setuptools wheel requests \
+    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /src/docker/requirements.txt \
+    && export QJAZZ_NO_BUILD_EXT_INSTALL=1 \
+    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
+        /src/qjazz-contrib \
+        /src/qjazz-processes \
+        /src/qjazz-server/python \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
-    && mkdir -p /etc/qjazz && chmod 755 /etc/qjazz \
+    && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
     ${NULL}
+
+# Install binaries
+COPY qjazz-server/target/release/qjazz-map-bin /usr/local/bin/
+
+RUN mkdir -p /etc/qjazz && chmod 755 /etc/qjazz
 
 COPY docker/scripts/ /usr/local/bin/
 
