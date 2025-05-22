@@ -157,7 +157,7 @@ class ProcessCache(mp.Process):
                             logger.info("Process cache ready")
                             self._conn.send(True)
                 except Exception as e:
-                    logger.error("%s\nCache error: %s", traceback.format_exc, e)
+                    logger.error("%s\nCache error: %s", traceback.format_exc(), e)
         except (KeyboardInterrupt, SystemExit):
             pass
         logger.info("Leaving process cache")

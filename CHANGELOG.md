@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added 
 
+* [core/config] Enable ConfBuilder registration as a service
 * [core/cache] Implement streaming arbitrary resource from search paths
 * [docker] Add 'install-plugins.sh' script
 * [core/catalog] Set minimum QGIS version for project

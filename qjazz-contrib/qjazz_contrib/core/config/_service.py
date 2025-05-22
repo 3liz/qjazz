@@ -43,6 +43,7 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
+    Self,
     Type,
     TypeAlias,
     assert_never,
@@ -62,13 +63,15 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from .. import componentmanager
 from ..condition import assert_precondition
 
 # Shortcut
 getenv = os.getenv
 
-
 ConfigError = ValidationError
+
+CONFIG_SERVICE_CONTRACTID = "@3liz.org/config-service;1"
 
 
 def dict_merge(dct: dict, merge_dct: dict, model: Optional[BaseModel]):
@@ -307,6 +310,21 @@ class ConfBuilder:
     def conf(self):
         self.update_config()
         return self._conf
+
+    #
+    # Service registration
+    #
+
+    def register_as_service(self):
+        componentmanager.register_service(CONFIG_SERVICE_CONTRACTID, self)
+
+    @classmethod
+    def get_service(cls) -> Self:
+        """Return cache manager as a service.
+        This require that register_as_service has been called
+        in the current context
+        """
+        return componentmanager.get_service(CONFIG_SERVICE_CONTRACTID)
 
 
 #

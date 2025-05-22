@@ -134,6 +134,7 @@ def load_configuration() -> ConfigProto:
         cnf = {}
 
     confservice.validate(cnf)
+    confservice.register_as_service()
 
     conf = confservice.conf
     logger.setup_log_handler(conf.logging.level)
