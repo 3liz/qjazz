@@ -85,3 +85,22 @@ def test_checkout_invalid_layers(config):
 
     with pytest.raises(StrictCheckingFailure):
         _ = cm.update(md, status)
+
+
+def test_resource_stream(config):
+    cm = CacheManager(config)
+
+    url = cm.resolve_path("/montpellier/montpellier.qgs.png")
+    print("\n::test_resource_stream::url", url)
+
+    with cm.get_protocol_handler(url.scheme).resource_stream(url) as res:
+        print("::test_resource_stream::res", res)
+        assert res.length > 0
+
+
+
+
+
+
+
+

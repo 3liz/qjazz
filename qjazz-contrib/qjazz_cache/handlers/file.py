@@ -8,16 +8,17 @@
 
 """File protocol handler"""
 
+from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
-from typing import Iterator
+from typing import Generator, Iterator
 from urllib.parse import urlsplit
 
 from qgis.core import QgsProject
 
 from qjazz_contrib.core import componentmanager, logger
 
-from ..common import ProjectMetadata, ProtocolHandler, Url
+from ..common import ProjectMetadata, ProtocolHandler, ResourceStream, Url
 from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
@@ -104,3 +105,17 @@ class FileProtocolHandler(ProtocolHandler):
                 yield file_metadata(p)
         else:
             yield file_metadata(path)
+
+    @contextmanager
+    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
+        """Return a resource download url for the given uri"""
+
+        path = Path(uri.path)
+        stat = path.stat()
+
+        with path.open("rb") as fp:
+            yield ResourceStream(
+                read=fp.read,
+                length=stat.st_size,
+                mime_type=None,
+            )

@@ -27,11 +27,12 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import (
+    Generator,
     Iterator,
     Optional,
     cast,
 )
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from minio import Minio, S3Error
 from osgeo.gdal import __version__ as __gdal_version__
@@ -43,7 +44,7 @@ from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.config import ConfigSettings
 
-from ..common import ProjectMetadata, ProtocolHandler, Url
+from ..common import ProjectMetadata, ProtocolHandler, ResourceStream, Url
 from ..errors import InvalidCacheRootUrl
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
@@ -91,6 +92,9 @@ class S3HandlerConfig(ConfigSettings):
     check_cert: bool = True
 
     download_dir: Optional[DirectoryPath] = None
+
+    # Resource link expiration in seconds
+    resource_url_expiration: int = 3600
 
 
 class S3ProtocolHandler(ProtocolHandler):
@@ -254,38 +258,41 @@ class S3ProtocolHandler(ProtocolHandler):
         assert_precondition(bucket_name is not None)
         bucket_name = cast(str, bucket_name)
 
-        # Download project in tmpdir
-        resp = self._client.get_object(bucket_name, object_name)
-        match resp.status:
-            case 404:
-                raise FileNotFoundError(md.uri)
-            case st if st > 200:
-                logger.error(
-                    "[S3] returned error %s: '%s'",
-                    resp.status,
-                    resp.read().decode(),
-                )
-                raise RuntimeError(f"S3 error {md.uri}: error {resp.status}: {resp.read().decode()}")
-            case _:
-                # Result ok
-                pass
+        try:
+            # Download project in tmpdir
+            resp = self._client.get_object(bucket_name, object_name)
+            match resp.status:
+                case 404:
+                    raise FileNotFoundError(md.uri)
+                case st if st > 200:
+                    body = resp.read().decode()
+                    logger.error(
+                        "[S3] returned error %s: '%s'",
+                        resp.status,
+                        body,
+                    )
+                    raise RuntimeError(f"S3 error {md.uri}: error {resp.status}: {body}")
+                case _:
+                    # Result ok
+                    pass
 
-        object_path = PurePosixPath(bucket_name, object_name.strip("/"))
+            object_path = PurePosixPath(bucket_name, object_name.strip("/"))
 
-        tmpdir = TemporaryDirectory(
-            prefix="s3_",
-            dir=self._download_dir,
-            ignore_cleanup_errors=True,
-        )
+            tmpdir = TemporaryDirectory(
+                prefix="s3_",
+                dir=self._download_dir,
+                ignore_cleanup_errors=True,
+            )
 
-        basename = object_path.name
-        filename = Path(tmpdir.name).joinpath(basename)
+            basename = object_path.name
+            filename = Path(tmpdir.name).joinpath(basename)
 
-        with filename.open("wb") as fp:
-            for chunk in resp.stream():
-                fp.write(chunk)
-
-        resp.release_conn()
+            with filename.open("wb") as fp:
+                for chunk in resp.stream():
+                    fp.write(chunk)
+        finally:
+            resp.close()
+            resp.release_conn()
 
         # Store the download dir for later removal
         self._tmpdirs[md.uri] = tmpdir
@@ -318,3 +325,40 @@ class S3ProtocolHandler(ProtocolHandler):
                     storage="s3",
                     last_modified=int(last_modified.timestamp()),
                 )
+
+    @contextmanager
+    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
+        """Return a resource download url for the given uri"""
+
+        bucket_name = uri.hostname
+        object_name = uri.path
+
+        assert_precondition(bucket_name is not None)
+        bucket_name = cast(str, bucket_name)
+
+        stat = self._client.stat_object(bucket_name, object_name)
+
+        try:
+            # Download project in tmpdir
+            resp = self._client.get_object(bucket_name, object_name)
+            match resp.status:
+                case 404:
+                    raise FileNotFoundError(urlunsplit(uri))
+                case st if st > 200:
+                    body = resp.read().decode()
+                    logger.error(
+                        "[S3] returned error %s: '%s'",
+                        resp.status,
+                        body,
+                    )
+                    raise RuntimeError(f"S3 error {urlunsplit(uri)}: error {resp.status}: {body}")
+                case _:
+                    # Result ok
+                    yield ResourceStream(
+                        read=resp.read,
+                        length=stat.size,
+                        mime_type=stat.content_type,
+                    )
+        finally:
+            resp.close()
+            resp.release_conn()

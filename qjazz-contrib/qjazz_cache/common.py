@@ -13,8 +13,11 @@ import urllib.parse
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import (
+    Callable,
+    ContextManager,
     Iterator,
     Optional,
+    ParamSpec,
     Protocol,
     runtime_checkable,
 )
@@ -24,6 +27,15 @@ from qgis.core import QgsProject
 from .storage import ProjectLoaderConfig
 
 Url = urllib.parse.SplitResult
+
+
+
+
+@dataclass(frozen=True)
+class ResourceStream:
+    read: Callable[..., bytes]
+    length: Optional[int]
+    mime_type: Optional[str]
 
 
 @dataclass(frozen=True)
@@ -77,3 +89,7 @@ class ProtocolHandler(Protocol):
     @abstractmethod
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
         """List all projects availables from the given uri"""
+
+    @abstractmethod
+    def resource_stream(self, uri: Url) -> ContextManager[ResourceStream]:
+        """Return a resource stream for the given uri"""

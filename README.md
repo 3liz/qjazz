@@ -55,7 +55,7 @@ deploying execution of QGIS processing algorithms behind a compliant OGC *Proces
 api.
 
 It enables leverage your algorithms and models designed with QGIS desktop with a full
-compliant OGC *Processes* api without *any* modifications.
+compliant OGC *Processes* api with *no* modifications.
 
 It uses the [Celery](https://docs.celeryq.dev/en/stable/) framework for distributing
 your jobs to multiples set of services and QGIS versions.
@@ -78,7 +78,7 @@ required:
 
 
 Note that support for Windows or OSX are *not* planned. If you want to deploy
-Qjazz on these platforms, consider using VMs or containers.
+Qjazz on these platforms, consider using VMs or containers (Docker).
 
 ### Documentation
 

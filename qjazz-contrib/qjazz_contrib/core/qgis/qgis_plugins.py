@@ -221,7 +221,7 @@ class QgisPluginService:
 
                     package = sys.modules[plugin]
 
-                    # Mark packace as loaded by qjazz_server
+                    # Mark package as loaded by qjazz_server
                     # allow plugins to check if it has been
                     # loaded by qjazzs-server
                     package._is_qjazz_server = True  # type: ignore [attr-defined]
