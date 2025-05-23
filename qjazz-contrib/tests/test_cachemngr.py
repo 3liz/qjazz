@@ -1,3 +1,5 @@
+import contextlib
+
 from pathlib import Path
 
 import pytest
@@ -93,14 +95,17 @@ def test_resource_stream(config):
     url = cm.resolve_path("/montpellier/montpellier.qgs.png")
     print("\n::test_resource_stream::url", url)
 
-    with cm.get_protocol_handler(url.scheme).resource_stream(url) as res:
-        print("::test_resource_stream::res", res)
-        assert res.length > 0
+    res = cm.get_protocol_handler(url.scheme).get_resource(url)
+    print("::test_resource_stream::res", res)
+    assert res is not None
+    assert res.size > 0
 
+    with contextlib.closing(res) as res:
+        b = res.read(50)
+        assert len(b) == 50
 
+    url = cm.resolve_path("/montpellier/i_do_not_exists")
+    print("\n::test_resource_stream::url", url)
 
-
-
-
-
-
+    res = cm.get_protocol_handler(url.scheme).get_resource(url)
+    assert res is None

@@ -27,7 +27,6 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import (
-    Generator,
     Iterator,
     Optional,
     cast,
@@ -44,8 +43,16 @@ from qjazz_contrib.core import logger
 from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.config import ConfigSettings
 
-from ..common import ProjectMetadata, ProtocolHandler, ResourceStream, Url
+from ..common import (
+    ProjectMetadata,
+    ProtocolHandler,
+    Url,
+)
 from ..errors import InvalidCacheRootUrl
+from ..resources import (
+    ResourceObject,
+    ResourceReader,
+)
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 if Qgis.QGIS_VERSION_INT < 33800:
@@ -326,8 +333,11 @@ class S3ProtocolHandler(ProtocolHandler):
                     last_modified=int(last_modified.timestamp()),
                 )
 
-    @contextmanager
-    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
+    #
+    # Implement the ResourceStore Protocal
+    #
+
+    def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
         """Return a resource download url for the given uri"""
 
         bucket_name = uri.hostname
@@ -336,29 +346,76 @@ class S3ProtocolHandler(ProtocolHandler):
         assert_precondition(bucket_name is not None)
         bucket_name = cast(str, bucket_name)
 
-        stat = self._client.stat_object(bucket_name, object_name)
+        if name:
+            object_name = str(PurePosixPath(object_name).joinpath(name))
 
-        try:
-            # Download project in tmpdir
-            resp = self._client.get_object(bucket_name, object_name)
-            match resp.status:
-                case 404:
-                    raise FileNotFoundError(urlunsplit(uri))
-                case st if st > 200:
-                    body = resp.read().decode()
-                    logger.error(
-                        "[S3] returned error %s: '%s'",
-                        resp.status,
-                        body,
-                    )
-                    raise RuntimeError(f"S3 error {urlunsplit(uri)}: error {resp.status}: {body}")
-                case _:
-                    # Result ok
-                    yield ResourceStream(
-                        read=resp.read,
-                        length=stat.size,
-                        mime_type=stat.content_type,
-                    )
-        finally:
+        resp = self._client.get_object(bucket_name, object_name)
+
+        def _close():
             resp.close()
             resp.release_conn()
+
+        match resp.status:
+            case 404:
+                _close()
+                return None
+            case st if st > 200:
+                body = resp.read().decode()
+                logger.error(
+                    "[S3] returned error %s: '%s'",
+                    resp.status,
+                    body,
+                )
+                _close()
+                raise RuntimeError(f"S3 error {urlunsplit(uri)}: error {resp.status}: {body}")
+            case _:
+                return ResourceReader(
+                    read=resp.read,
+                    close=_close,
+                    size=int(resp.headers.get("content-length", "0")),
+                    content_type=resp.headers.get("content-type"),
+                    uri=urlunsplit(uri),
+                )
+
+    def list_resources(self, uri: Url, subpath: Optional[str] = None) -> Iterator[ResourceObject]:
+        """Return a resource download url for the given uri"""
+
+        bucket_name = uri.hostname
+        root = PurePosixPath(uri.path)
+
+        path = root.joinpath(subpath) if subpath else root
+
+        prefix: str | None = str(path).removeprefix("/")
+        if prefix and not prefix.endswith("/"):
+            prefix = f"{prefix}/"
+        else:
+            prefix = None
+
+        assert_precondition(bucket_name is not None)
+        bucket_name = cast(str, bucket_name)
+
+        for obj in self._client.list_objects(bucket_name, prefix=prefix):
+            yield ResourceObject(
+                name=str(PurePosixPath(obj.object_name).relative_to(root)),
+                size=obj.size,
+                content_type=obj.content_type,
+                last_modified=obj.last_modified,
+                is_dir=obj.is_dir,
+            )
+
+    #
+    # Implement the RemoteResources protocol
+    #
+
+    def fget_resource(self, uri: Url, name: Optional[str], dest: Path):
+        bucket_name = uri.hostname
+        object_name = uri.path
+
+        assert_precondition(bucket_name is not None)
+        bucket_name = cast(str, bucket_name)
+
+        if name:
+            # Append name to path
+            object_name = str(PurePosixPath(object_name, name))
+
+        self._client.fget_object(bucket_name, object_name, str(dest))

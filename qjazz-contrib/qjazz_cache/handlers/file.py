@@ -8,18 +8,22 @@
 
 """File protocol handler"""
 
-from contextlib import contextmanager
+from datetime import datetime
 from itertools import chain
 from pathlib import Path
-from typing import Generator, Iterator
-from urllib.parse import urlsplit
+from typing import Iterator, Optional
+from urllib.parse import urlsplit, urlunsplit
 
 from qgis.core import QgsProject
 
 from qjazz_contrib.core import componentmanager, logger
 
-from ..common import ProjectMetadata, ProtocolHandler, ResourceStream, Url
+from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl
+from ..resources import (
+    ResourceObject,
+    ResourceReader,
+)
 from ..storage import ProjectLoaderConfig, load_project_from_uri
 
 # Allowed files suffix for projects
@@ -106,16 +110,43 @@ class FileProtocolHandler(ProtocolHandler):
         else:
             yield file_metadata(path)
 
-    @contextmanager
-    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
+    #
+    # Implement the ResourceStore Protocal
+    #
+
+    def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
         """Return a resource download url for the given uri"""
 
         path = Path(uri.path)
-        stat = path.stat()
+        if name:
+            path = path.joinpath(name)
 
-        with path.open("rb") as fp:
-            yield ResourceStream(
-                read=fp.read,
-                length=stat.st_size,
-                mime_type=None,
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            return None
+
+        fp = path.open("rb")
+        return ResourceReader(
+            read=fp.read,
+            close=fp.close,
+            size=stat.st_size,
+            content_type=None,
+            uri=urlunsplit(uri),
+        )
+
+    def list_resources(self, uri: Url, subpath: Optional[str] = None) -> Iterator[ResourceObject]:
+        """List resources"""
+
+        root = Path(uri.path)
+        path = root.joinpath(subpath) if subpath else root
+
+        for res in path.glob("*"):
+            st = res.stat()
+            yield ResourceObject(
+                name=str(res.relative_to(root)),
+                size=st.st_size,
+                content_type=None,
+                last_modified=datetime.fromtimestamp(st.st_mtime),
+                is_dir=res.is_dir(),
             )

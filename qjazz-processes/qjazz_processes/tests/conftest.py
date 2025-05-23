@@ -3,20 +3,21 @@ import sys
 import traceback
 
 from pathlib import Path
+from typing import Callable, Generator, Protocol, cast
 
 import pytest
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from typing_extensions import Callable
 
 from qgis.core import (
     Qgis,
     QgsProcessingFeedback,
+    QgsProject,
 )
 from qgis.server import QgsServer
 
-from qjazz_cache.prelude import ProjectsConfig
+from qjazz_cache.prelude import CacheManager, ProjectsConfig
 from qjazz_contrib.core import qgis
 from qjazz_processes.processing.prelude import (
     ProcessingConfig,
@@ -135,19 +136,20 @@ def server(qgis_session: ProcessingConfig) -> QgsServer:
 
 
 @pytest.fixture(scope="session")
-def cache_manager(cache_config, qgis_session):
-    from qjazz_cache.prelude import CacheManager
-
+def cache_manager(cache_config: ProjectsConfig, qgis_session: ProcessingConfig) -> CacheManager:
     CacheManager.initialize_handlers(cache_config)
     return CacheManager(cache_config)
 
 
-@pytest.fixture(scope="session")
-def projects(cache_manager):
-    """Return wrapper around cache manager"""
-    from qgis.core import QgsProject
+class ProjectsProto(Protocol):
+    def get(self, name: str) -> QgsProject: ...
 
+
+@pytest.fixture(scope="session")
+def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None]:
+    """Return wrapper around cache manager"""
     from qjazz_cache.prelude import CheckoutStatus as Co
+    from qjazz_cache.prelude import ProjectMetadata
 
     cm = cache_manager
 
@@ -161,7 +163,7 @@ def projects(cache_manager):
                 case Co.REMOVED | Co.NOTFOUND:
                     raise FileNotFoundError(f"Project {url} not found")
                 case _:
-                    entry, _ = cm.update(md, status)
+                    entry, _ = cm.update(cast(ProjectMetadata, md), status)
                     project = entry.project
             return project
 

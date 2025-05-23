@@ -1,8 +1,7 @@
 """Postgres storage handler"""
 
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Optional
 from urllib.parse import parse_qsl, urlsplit
 
 from pydantic import (
@@ -14,7 +13,7 @@ from qjazz_contrib.core import componentmanager
 from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_contrib.core.config import ConfigSettings
 
-from ..common import ResourceStream, Url
+from ..common import Url
 from ..errors import InvalidCacheRootUrl
 from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
@@ -83,8 +82,3 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
             path = path.joinpath(project)
 
         return f"{path}"
-
-    @contextmanager
-    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
-        """Return a resource download url for the given uri"""
-        raise NotImplementedError("Cannot read resource from 'geopackage' handler")

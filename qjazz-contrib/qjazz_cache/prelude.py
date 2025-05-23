@@ -10,4 +10,10 @@ from .cachemanager import (  # noqa F401
     ProjectMetadata,
     ProjectsConfig,
     ProtocolHandler,
+    Url,
+)
+
+from .resources import (  # noqa F401
+    RemoteResources,
+    ResourceStore,
 )

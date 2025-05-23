@@ -1,8 +1,7 @@
 """Postgres storage handler"""
 
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Annotated, Generator, Optional
+from typing import Annotated, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from pydantic import (
@@ -14,7 +13,7 @@ from pydantic import (
 from qjazz_contrib.core import componentmanager
 from qjazz_contrib.core.config import ConfigSettings
 
-from ..common import ResourceStream, Url
+from ..common import Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
 from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
 
@@ -106,8 +105,3 @@ class PostgresHandler(QgisStorageProtocolHandler):
             path = path.joinpath(params["project"])
 
         return f"{path}"
-
-    @contextmanager
-    def resource_stream(self, uri: Url) -> Generator[ResourceStream, None, None]:
-        """Return a resource download url for the given uri"""
-        raise NotImplementedError("Cannot read resource from 'postgresql' handler")
