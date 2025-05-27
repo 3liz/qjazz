@@ -141,7 +141,10 @@ class FileProtocolHandler(ProtocolHandler):
         root = Path(uri.path)
         path = root.joinpath(subpath) if subpath else root
 
-        for res in path.glob("*"):
+        if not path.is_dir():
+            return
+
+        for res in path.iterdir():
             st = res.stat()
             yield ResourceObject(
                 name=str(res.relative_to(root)),

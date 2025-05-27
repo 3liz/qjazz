@@ -9,7 +9,7 @@ class Projects(Protocol):
     def get(self, name: str) -> QgsProject: ...
 
 
-class FeedBack(QgsProcessingFeedback):
+class Feedback(QgsProcessingFeedback):
     def __init__(self):
         super().__init__(False)
 

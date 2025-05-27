@@ -416,7 +416,7 @@ def execute_processes(
 
     project = get_project(project_path) if project_path else None
 
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(conf.processing)
     context.setFeedback(feedback)
 
@@ -471,7 +471,7 @@ def execute_processes(
         abort_with_error(ctx, f"Execute error: {err}")
 
 
-class FeedBack(QgsProcessingFeedback):
+class Feedback(QgsProcessingFeedback):
     def __init__(self):
         super().__init__(False)
 

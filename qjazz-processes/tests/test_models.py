@@ -12,7 +12,7 @@ from qjazz_processes.processing.prelude import (
     runalg,
 )
 
-from .utils import FeedBack
+from .utils import Feedback
 
 
 def test_model_algorithms(qgis_session, plugins, projects):
@@ -64,7 +64,7 @@ def test_model_algorithms(qgis_session, plugins, projects):
     # Set the destination project
     context.destination_project = destination_project
 
-    feedback = FeedBack()
+    feedback = Feedback()
     context.feedback = feedback
 
     # Run algorithm

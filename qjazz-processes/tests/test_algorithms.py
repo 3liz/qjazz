@@ -18,7 +18,7 @@ from qjazz_processes.processing.prelude import (
     runalg,
 )
 
-from .utils import FeedBack
+from .utils import Feedback
 
 
 def test_algorithms_simple(feedback, context, plugins):
@@ -76,7 +76,7 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     """Test layer copy: input one layer, output one layer.
     Test layer destination
     """
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(qgis_session)
     context.setFeedback(feedback)
 
@@ -138,7 +138,7 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
 
 def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     """Test wrapping a native algorithm."""
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(qgis_session)
     context.setFeedback(feedback)
 
@@ -204,7 +204,7 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
 
 def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
     """Test layer output"""
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(qgis_session)
     context.setFeedback(feedback)
 
@@ -238,7 +238,7 @@ def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
 
 def test_algorithms_selectfeatures(qgis_session, plugins, projects):
     """Test layer output"""
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(qgis_session)
     context.setFeedback(feedback)
 
@@ -272,7 +272,7 @@ def test_algorithms_selectfeatures(qgis_session, plugins, projects):
 
 def test_algorithms_exception(qgis_session, plugins, projects):
     """Test Error in algorithm"""
-    feedback = FeedBack()
+    feedback = Feedback()
     context = ProcessingContext(qgis_session)
     context.setFeedback(feedback)
 

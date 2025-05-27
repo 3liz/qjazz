@@ -24,7 +24,7 @@ from qjazz_processes.processing.prelude import (
     ProcessingContext,
 )
 
-from .utils import FeedBack, Projects
+from .utils import Feedback, Projects
 
 
 def pytest_report_header(config):
@@ -115,7 +115,7 @@ def qgis_session(processing_config: ProcessingConfig) -> ProcessingConfig:
 
 @pytest.fixture(scope="function")
 def feedback() -> QgsProcessingFeedback:
-    return FeedBack()
+    return Feedback()
 
 
 @pytest.fixture(scope="function")
