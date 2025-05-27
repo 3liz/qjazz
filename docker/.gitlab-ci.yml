@@ -158,21 +158,21 @@ release:noqgis:
     - factory-dind
 
 push:release:
-  extends: .release
+  extends: .push
   variables:
     QGIS_FLAVOR: release
   dependencies:
     - build-docker:release
 
 push:ltr:
-  extends: .release
+  extends: .push
   variables:
     QGIS_FLAVOR: ltr
   dependencies:
     - build-docker:ltr
 
 push:3.34:
-  extends: .release
+  extends: .push
   variables:
     QGIS_FLAVOR: "3.34"
   dependencies:

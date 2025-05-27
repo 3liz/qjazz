@@ -158,12 +158,12 @@ noqgis-push:
 	docker push $(BUILDNAME):noqgis$(QJAZZ_VERSION_TAG)
 else
 noqgis-tag:
-	{ set -e; source $(NOQGIS_MANIFEST); \
-	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):$$version$; \
+	{ set -xe; source $(NOQGIS_MANIFEST); \
+	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):$$version; \
 	docker tag $(BUILDNOQGISIMAGE) $(BUILDNAME):$$version_short; \
 	}
 noqgis-push:
-	{ set -e; source $(NOQGIS_MANIFEST); \
+	{ set -xe; source $(NOQGIS_MANIFEST); \
 	docker push $(BUILDNAME):$$version; \
 	docker push $(BUILDNAME):$$version_short; \
 	}

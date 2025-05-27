@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## 0.2.0 - 2025-05-27
+
 ### Added 
 
 * [core/config] Enable ConfBuilder registration as a service
