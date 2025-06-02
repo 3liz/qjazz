@@ -25,7 +25,11 @@ def test_execute_clipbyextent(host):
                     "mediaType": "application/x-ogc-wms+xml; version=1.3.0",
                 },
             },
-        }
+        },
+        "subscriber": {
+            "successUri": "test://callback/success/?job_id={job_id}",
+            "inProgressUri": "test://in_progress/?job_id={job_id}",
+        },
     }
 
     rv = requests.post(

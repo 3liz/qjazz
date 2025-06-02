@@ -23,6 +23,11 @@ def _print_field_doc(s: IO, field: FieldInfo):
         print("#", file=s)
         for line in field.description.split("\n"):
             print(f"# {line}", file=s)
+    if field.examples:
+        for example in field.examples:
+           print("#\n# Example:\n#", file=s)
+           for line in dedent(example).removeprefix("\n").split("\n"):
+               print(f"# {line}", file=s)
 
 
 def _to_string(v: str | bool | int | float) -> str:
@@ -171,23 +176,23 @@ def dump_model_toml(s: IO, model: Type[BaseModel]):
             arg = a.__args__[0]
             # Only print base model arguments
             if _is_model(arg):
-                _dump_model(s, arg, f"[[{name}]]", comment=True)
+                _dump_model(s, arg, f"[[{name}]]")
             elif arg.__name__ == "Union":
                 for m in arg.__args__:
                     assert_precondition(_is_model(m))
                     print(file=s)
-                    _dump_model(s, m, f"[[{name}]]", comment=True)
+                    _dump_model(s, m, f"[[{name}]]")
         elif a.__name__.lower() == "dict":
             arg = a.__args__[1]
             # Only print base model arguments
             if _is_model(arg):
                 _print_model_doc(s, arg)
-                _dump_section(s, arg, f"{name}.key", comment=True)
+                _dump_section(s, arg, f"{name}.'key'")
             elif arg.__name__ == "Union":
                 for i, m in enumerate(arg.__args__):
                     assert_precondition(_is_model(m))
                     print(file=s)
-                    _dump_section(s, m, f"{name}.key{i}", comment=True)
+                    _dump_section(s, m, f"{name}.'key{i}'")
         else:
             _print_field_doc(s, field)
             _print_field(s, name, field, comment=True)

@@ -14,6 +14,7 @@ from qjazz_processes.schemas import (
     JobResults,
 )
 from qjazz_processes.worker.prelude import (
+    PROCESS_EXECUTE_TASK,
     Feedback,
     ProcessCacheProtocol,
     QgisJob,
@@ -80,7 +81,7 @@ def validate_process_inputs(
     )
 
 
-@app.job(name="process_execute", bind=True, run_context=True, base=QgisProcessJob)
+@app.job(name=PROCESS_EXECUTE_TASK, bind=True, run_context=True, base=QgisProcessJob)
 def execute_process(
     self: Job,
     ctx: JobContext,

@@ -46,12 +46,18 @@ force_readonly_layers = true
 # CONF_S3_BUCKET_NAME: test
 # CONF_S3_SECURE: no
 
-[storage.config]
-endpoint = "localhost:9000"
-access_key = "minioadmin"
-secret_key = "minioadmin"
-bucket_name = "test"
-secure = false
+#[storage.config]
+#endpoint = "localhost:9000"
+#access_key = "minioadmin"
+#secret_key = "minioadmin"
+#bucket_name = "test"
+#secure = false
 
+[callbacks.test]
+handler = "qjazz_processes.callbacks.TestCallback"
 
+[callbacks.http]
+handler = "qjazz_processes.callbacks.HttpCallback"
 
+[callbacks.https]
+handler = "qjazz_processes.callbacks.HttpCallback"

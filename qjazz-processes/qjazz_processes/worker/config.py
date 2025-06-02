@@ -20,6 +20,7 @@ from qjazz_contrib.core.condition import (
 from qjazz_contrib.core.models import Field
 from qjazz_processes.schemas import LinkHttp
 
+from ..callbacks import CallbacksConfig
 from ..processing.config import ProcessingConfig
 from .storage import StorageConfig
 
@@ -109,6 +110,7 @@ class ConfigProto(Protocol):
     processing: ProcessingConfig
     worker: WorkerConfig
     storage: StorageConfig
+    callbacks: CallbacksConfig
 
     def model_dump_json(*args, **kwargs) -> str: ...
 
@@ -121,6 +123,7 @@ confservice = config.ConfBuilder()
 
 confservice.add_section("processing", ProcessingConfig, field=...)
 confservice.add_section("storage", StorageConfig)
+confservice.add_section("callbacks", CallbacksConfig)
 
 
 def load_configuration() -> ConfigProto:

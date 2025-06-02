@@ -90,6 +90,7 @@ class Storage(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
+        # Require realm for file listing
         files = await self._executor.files(
             job_id,
             realm=self._jobrealm.job_realm(request),
@@ -155,10 +156,10 @@ class Storage(HandlerProto):
         job_id = request.match_info["JobId"]
         resource = request.match_info["Resource"]
 
+        # Do not require realm
         link = await self._executor.download_url(
             job_id,
             resource=resource,
-            realm=self._jobrealm.job_realm(request),
             timeout=self._timeout,
             expiration=self._storage.download_url_expiration,
         )

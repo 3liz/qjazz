@@ -9,7 +9,7 @@ from typing import (
     TypeAlias,
 )
 
-from pydantic import JsonValue, TypeAdapter
+from pydantic import AnyUrl, JsonValue, TypeAdapter
 
 from .models import (
     Field,
@@ -98,9 +98,16 @@ class Output(JsonModel):
     format: OutputFormat
 
 
+class Subscriber(JsonModel):
+    success_uri: Option[AnyUrl] = None
+    failed_uri: Option[AnyUrl] = None
+    in_progress_uri: Option[AnyUrl] = None
+
+
 class JobExecute(JsonModel):
     inputs: dict[str, JsonValue] = Field(default={})
     outputs: dict[str, Output] = Field(default={})
+    subscriber: Option[Subscriber] = None
 
 
 JobResults: TypeAlias = dict[str, JsonValue]

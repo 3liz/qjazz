@@ -373,7 +373,7 @@ class Processes(ExecutorProtocol):
                     logger.trace("=State returned: %s", state)
                     if state["status"] != Celery.STATE_REVOKED:
                         logger.warning(
-                            "%s: task was revoked but still in' %s' state",
+                            "%s: task was revoked but still in '%s' state",
                             job_id,
                             state["status"],
                         )

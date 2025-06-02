@@ -199,6 +199,7 @@ async def http_client(server_app: web.Application, aiohttp_client: Callable) -> 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     try:
         from qjazz_contrib.core import qgis
+
         # On QGIS <= 3.34, explicite call to exit() is required
         # in order to prevent a segmentation fault.
         if Qgis.QGIS_VERSION_INT <= 34000:

@@ -132,16 +132,18 @@ backend_use_tls = false
 # Task hard time limit in seconds.
 # The worker processing the task will be killed
 # and replaced with a new one when this is exceeded.
+# 
 task_time_limit = 3600
 #
-# Grace period to add to the 'task_time_limit'
-# value.
+# Grace period to add to the 'task_time_limit' value.
 # The SoftTimeLimitExceeded exception will be raised
 # when the 'task_time_limit' is exceeded.
+# 
 task_time_grace_period = 60
 #
 # Time (in seconds), for when after stored task tombstones will
 # be deleted
+# 
 result_expires = 86400
 #
 # Concurrency
@@ -158,6 +160,7 @@ result_expires = 86400
 #
 # Maximum number of tasks a pool worker process can execute
 # before it's replaced with a new one. Default is no limit.
+# 
 #max_tasks_per_child =   	# Optional
 #
 # Maximum consumed memory
@@ -165,6 +168,7 @@ result_expires = 86400
 # Maximum amount of resident memory, in kilobytes,
 # that may be consumed by a worker before it will
 # be replaced by a new worker.
+# 
 #max_memory_per_child =   	# Optional
 
 #
@@ -213,6 +217,7 @@ result_expires = 86400
 # Enable embedded scheduler.
 # Prefer scheduler as a service if more
 # than one worker node is used.
+# 
 enabled = false
 #
 # Max interval
@@ -224,6 +229,7 @@ enabled = false
 #
 # Path to the schedule database.
 # Defaults to `celerybeat-schedule` (from Celery doc).
+# 
 #database =   	# Optional
 
 

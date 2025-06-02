@@ -1,6 +1,7 @@
 pytest >= 5.3
 pytest-asyncio
 pytest-aiohttp
+pytest-httpserver
 ruff
 mypy
 mypy-extensions

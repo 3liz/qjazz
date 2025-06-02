@@ -24,6 +24,7 @@ class WorkerPresenceV1(WorkerVersion1):
     qgis_version_info: int
     versions: str
     result_expires: int
+    callbacks: Sequence[str]
 
 
 WorkerPresenceVersion = WorkerPresenceV1

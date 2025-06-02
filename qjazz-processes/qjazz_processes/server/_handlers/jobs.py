@@ -83,9 +83,9 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
+        # Do not ask realm
         job_status = await self._executor.job_status(
             job_id,
-            realm=self._jobrealm.job_realm(request),
             with_details=validate_param(BoolParam, request, "details", False),
         )
 
@@ -200,6 +200,7 @@ class Jobs(HandlerProto):
         process_ids = request.query.getall("processID", ())
         filtered_status = request.query.getall("status", ())
 
+        # Require realm for job listing
         realm = self._jobrealm.job_realm(request)
 
         jobs = await self._executor.jobs(
@@ -318,7 +319,8 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
-        results = await self._executor.job_results(job_id, realm=self._jobrealm.job_realm(request))
+        # Do not ask realm
+        results = await self._executor.job_results(job_id)
         if not results:
             return ErrorResponse.response(404, "No results", details={"jobId": job_id})
         return web.Response(
@@ -357,7 +359,8 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
-        st = await self._executor.dismiss(job_id, realm=self._jobrealm.job_realm(request))
+        # Do not ask realm
+        st = await self._executor.dismiss(job_id)
         if not st:
             return ErrorResponse.response(404, "Job not found", details={"jobId": job_id})
 
@@ -397,6 +400,7 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
+        # Require realm for job logs
         log_d = await self._executor.log_details(
             job_id,
             realm=self._jobrealm.job_realm(request),

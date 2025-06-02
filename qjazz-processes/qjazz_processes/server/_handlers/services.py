@@ -27,6 +27,7 @@ class ServiceItem(swagger.JsonModel):
     description: str = Field("")
     qgis_version_info: int
     version_details: str
+    callbacks: Sequence[str]
     links: Sequence[Link]
 
     @classmethod
@@ -59,6 +60,7 @@ class ServiceItem(swagger.JsonModel):
             description=details.description,
             qgis_version_info=details.qgis_version_info,
             version_details=details.versions,
+            callbacks=details.callbacks,
             links=links,
         )
 

@@ -415,6 +415,21 @@ definitions:
     required:
     - mediaType
     type: object
+  Subscriber:
+    properties:
+      successUri:
+        format: uri
+        minLength: 1
+        type: string
+      failedUri:
+        format: uri
+        minLength: 1
+        type: string
+      inProgressUri:
+        format: uri
+        minLength: 1
+        type: string
+    type: object
   JobExecute:
     properties:
       inputs:
@@ -427,6 +442,8 @@ definitions:
           $ref: '#/definitions/Output'
         default: {}
         type: object
+      subscriber:
+        $ref: '#/definitions/Subscriber'
     title: JobExecute
     type: object
   JobException:

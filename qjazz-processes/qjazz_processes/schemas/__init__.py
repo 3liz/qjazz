@@ -17,6 +17,7 @@ from .jobs import (  # noqa F401
     JobStatusCode,
     JobResults,
     Output,
+    Subscriber,
 )
 from .ogc import (  # noqa F401
     OgcDataType,
