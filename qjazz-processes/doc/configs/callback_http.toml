@@ -1,0 +1,59 @@
+
+
+[callbacks]
+
+#
+[callbacks.http]
+#
+# Enable callback
+enabled = true
+handler = "qjazz_processes.callbacks.HttpCallback"
+
+#
+[callbacks.http.config]
+#
+# Path to CA file
+#ca_cert =   	# Optional
+#
+# Authorization order
+#
+# Set the order of evaluation of allow and deny directives:
+# - Allow: allow by default  except thoses in deny then
+#   put back those in deny with the allow directive.
+# - Deny: deny by default  except thoses in allow then deny
+#   those in allow with the deny directive.
+# 
+order = "Allow"
+#
+# Allowed addresses
+#
+# List of allowed hosts. An host may be a IP addresse at IP range
+# in CIDR format or a FQDN or FQDN suffix starting with a dot (and
+# an optional '*').
+# 
+#
+# Example:
+#
+# allow = [
+#     "foo.bar.com",
+#     "*.mydomain.com",
+#     "192.168.0.0/24",
+#     "192.168.1.2",
+# ]
+# 
+allow = []
+#
+# Forbidden addresses
+#
+# List of forbidden hosts in the same format as for 'allow' list.
+deny = []
+#
+# User agent
+user_agent = "Qjazz processes v0.2.0"
+#
+# Request timeout
+#
+# The request timeout value for both connect and read timeout.
+# 
+timeout = 5
+

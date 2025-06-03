@@ -738,6 +738,10 @@ definitions:
         type: integer
       versionDetails:
         type: string
+      callbacks:
+        items:
+          type: string
+        type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
@@ -746,6 +750,7 @@ definitions:
     - name
     - qgisVersionInfo
     - versionDetails
+    - callbacks
     - links
     type: object
   ServicesResponse:
@@ -902,6 +907,7 @@ definitions:
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback
         items:
           type: string
         type: array

@@ -212,12 +212,15 @@ class ConfBuilder:
         os.getenv("PY_QGIS_CONFSERVICE_TRACE", "no"),
     )
 
-    def __init__(self):
-        self._sections = self._global_sections.copy()
-        self._model = None
-        self._conf = None
+    def __init__(self, *, with_global_sections: bool = True):
+        if with_global_sections:
+            self._sections = self._global_sections.copy()
+        else:
+            self._sections = {}
+        self._model: Type[BaseModel] | None = None
+        self._conf: BaseModel | None = None
         self._model_changed = True
-        self._timestamp = 0
+        self._timestamp = 0.
 
     @property
     def version(self):
@@ -245,7 +248,7 @@ class ConfBuilder:
             **{name: _model(model) for name, model in self._sections.items()},
         )
 
-    def _get_model(self) -> Type[ConfigSettings]:
+    def _get_model(self) -> Type[BaseModel]:
         if self._model_changed or not self._model:
             self._model = self._create_base_model()
             self._model_changed = False
@@ -267,7 +270,7 @@ class ConfBuilder:
         # Update timestamp so that we can check update in
         # proxy
         self._timestamp = time()
-        return conf
+        return cast(ConfigSettings, conf)
 
     def update_config(self, obj: Optional[dict] = None) -> ConfigSettings:
         """Update the configuration"""
@@ -280,7 +283,7 @@ class ConfBuilder:
                 data = obj or {}
 
             self.validate(data)
-        return self._conf
+        return cast(ConfigSettings, self._conf)
 
     def json_schema(self) -> dict[str, Any]:
         return self._get_model().model_json_schema()
@@ -384,7 +387,7 @@ class ConfigProxy[T: ConfigBase]:
         *,
         default: Optional[T] = None,
     ):
-        self._timestamp = -1
+        self._timestamp = -1.
         self._builder = builder
         self._configpath = configpath
         if default:

@@ -2,7 +2,9 @@
 # Handle callbacks
 # See https://docs.ogc.org/is/18-062r2/18-062r2.html#toc52 for
 # OGC specifications
-#
+import traceback
+
+from contextlib import contextmanager
 from typing import (
     Annotated,
     Optional,
@@ -107,6 +109,15 @@ CallbacksConfig = Annotated[
 ]
 
 
+
+@contextmanager
+def infallible(uri: str):
+    try:
+        yield
+    except Exception:
+        logger.error("Callback '%s' failed:\n%s", uri, traceback.format_exc())
+
+
 class Callbacks:
     def __init__(self, conf: CallbacksConfig):
         self._handlers = {k: cnf.create_instance(k) for k, cnf in conf.items()}
@@ -124,16 +135,19 @@ class Callbacks:
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            handler.on_success(url, job_id, results)
+            with infallible(uri):
+                handler.on_success(url, job_id, results)
 
     def on_failure(self, uri: str, job_id: str):
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            handler.on_failure(url, job_id)
+            with infallible(uri):
+                handler.on_failure(url, job_id)
 
     def in_progress(self, uri: str, job_id: str):
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            handler.in_progress(url, job_id)
+            with infallible(uri):
+                handler.in_progress(url, job_id)

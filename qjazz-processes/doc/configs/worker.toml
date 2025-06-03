@@ -496,8 +496,10 @@ storage_class = "qjazz_processes.worker.storages.local.LocalStorage"
 config = {}
 
 #
-# Callbacks configuration.
-# Define a mapping between protocol and handler.
+# Callbacks
+#
+# Define a mapping between a uri scheme and a handler for that
+# scheme.
 # 
 #
 # Example:
@@ -506,6 +508,9 @@ config = {}
 # handler = "qjazz_processes.callbacks.HttpCallback",
 # 
 [callbacks.'key']
+#
+# Enable callback
+enabled = true
 #
 # Callback module
 #

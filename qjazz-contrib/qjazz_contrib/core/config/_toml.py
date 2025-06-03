@@ -2,6 +2,7 @@ import inspect
 import sys  # noqa
 
 from textwrap import dedent
+from types import UnionType
 from typing import IO, Type
 
 from pydantic import BaseModel
@@ -95,11 +96,11 @@ def _is_model(t: Type) -> bool:
 
 
 def _unpack_arg(t: Type) -> Type:
-    match t.__name__:
-        case "Annotated" | "Optional":
-            return _unpack_arg(t.__args__[0])
-        case _:
-            return t
+    if hasattr(t, "__name__"):
+        match t.__name__:
+            case "Annotated" | "Optional":
+                return _unpack_arg(t.__args__[0])
+    return t
 
 
 def _dump_section(
@@ -127,7 +128,7 @@ def _dump_section(
         if _is_model(arg):
             deferred_.append((arg, name.format(key="'key'"), field, as_list))
             rv = True
-        elif arg.__name__ == "Union":
+        elif isinstance(arg, UnionType) or  arg.__name__ == "Union":
             for i, m in enumerate(arg.__args__):
                 if _is_model(m):
                     deferred_.append((m, name.format(key=f"'key{i}'"), field))

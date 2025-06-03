@@ -11,6 +11,9 @@ from .protos import (
     swagger,
 )
 
+# See https://docs.ogc.org/is/18-062r2/18-062r2.html
+# See http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/
+
 
 @swagger.model
 class Conformance(swagger.JsonModel):
@@ -21,6 +24,7 @@ class Conformance(swagger.JsonModel):
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30",
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list",
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss",
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback",
     ]
 
 

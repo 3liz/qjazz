@@ -54,6 +54,7 @@ HandlerConfigOptions = Annotated[
 
 
 class HandlerConfig(ConfigBase):
+    enabled: bool = Field(True, title="Enable callback")
     handler: Annotated[
         ImportString,
         WithJsonSchema({"type": "string}"}),
@@ -114,7 +115,7 @@ CallbacksConfig = Annotated[
 
 class Callbacks:
     def __init__(self, conf: CallbacksConfig):
-        self._handlers = {k: cnf.create_instance(k) for k, cnf in conf.items()}
+        self._handlers = {k: cnf.create_instance(k) for k, cnf in conf.items() if cnf.enabled}
 
     @property
     def schemes(self) -> Iterable[str]:

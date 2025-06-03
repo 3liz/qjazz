@@ -62,7 +62,7 @@ class HttpCallbackConfig(ConfigBase):
         description="""
         Set the order of evaluation of allow and deny directives:
         - Allow: allow by default  except thoses in deny then
-        put back those in deny with the allow directive.
+          put back those in deny with the allow directive.
         - Deny: deny by default  except thoses in allow then deny
           those in allow with the deny directive.
         """,
@@ -70,10 +70,26 @@ class HttpCallbackConfig(ConfigBase):
     allow: Sequence[HostFilterType] = Field(
         default=[],
         title="Allowed addresses",
+        description="""
+        List of allowed hosts. An host may be a IP addresse at IP range
+        in CIDR format or a FQDN or FQDN suffix starting with a dot (and
+        an optional '*').
+        """,
+        examples=[
+            """
+            allow = [
+                "foo.bar.com",
+                "*.mydomain.com",
+                "192.168.0.0/24",
+                "192.168.1.2",
+            ]
+            """,
+        ],
     )
     deny: Sequence[HostFilterType] = Field(
         default=[],
         title="Forbidden addresses",
+        description="List of forbidden hosts in the same format as for 'allow' list.",
     )
     user_agent: str = Field(
         default=f"Qjazz processes v{version('qjazz_processes')}",
@@ -199,5 +215,14 @@ def match_ip(
                 return hostname.endswith(test_ip)
             else:
                 return test_ip == hostname
-
     return False  # Makes Mypy happy
+
+
+def dump_toml_schema() -> None:
+    from ..doc import dump_callback_config_schema
+
+    dump_callback_config_schema(
+        "qjazz_processes.callbacks.HttpCallback",
+        HttpCallbackConfig,
+    )
+
