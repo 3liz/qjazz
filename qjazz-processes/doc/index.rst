@@ -10,10 +10,9 @@ Welcome to qjazz-processes's documentation!
    intro
    processing
    configuration
-   jobrealm
-   standards
    parameters
    execution
+   jobrealm
    openapi
 
 Indices and tables

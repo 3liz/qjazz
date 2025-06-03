@@ -116,8 +116,8 @@ Qjazz implement natively http callbacks.
 A the moment, only http callbacks are natively implemented in QJazz. 
 
 
-HTTP Callbacks
---------------
+HTTP Callback configuration
+---------------------------
 
 .. literalinclude:: configs/callback_http.toml
    :language: toml
