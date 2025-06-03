@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [processes] Fix Crs schema definition
 * [processes] Implement OGC processes callbacks requirements
 
 ## 0.2.0 - 2025-05-27

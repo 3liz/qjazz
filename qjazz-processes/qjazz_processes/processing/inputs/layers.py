@@ -164,7 +164,6 @@ class ParameterVectorLayer(ParameterMapLayer):
 
 
 class ParameterFeatureSource(ParameterMapLayer):
-
     _SchemaFormat = "x-feature-source"
 
     @classmethod

@@ -277,7 +277,6 @@ else:
 
 
 class ParameterRange(InputParameter):
-
     _SchemaFormat = "x-range"
 
     @classmethod

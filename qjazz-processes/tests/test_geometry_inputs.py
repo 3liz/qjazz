@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from qgis.core import (
     Qgis,
+    QgsCoordinateReferenceSystem,
     QgsPointXY,
     QgsProcessingParameterCrs,
     QgsProcessingParameterExtent,
@@ -192,6 +193,24 @@ def test_parameter_crs(qgis_session):
 
     value = inp.value("urn:ogc:def:crs:OGC:1.3:CRS84")
     assert value.authid() == "OGC:CRS84"
+
+    value = inp.value({"uri": "urn:ogc:def:crs:OGC:1.3:CRS84"})
+    assert value.authid() == "OGC:CRS84"
+
+    epsg3857 = QgsCoordinateReferenceSystem()
+    epsg3857.createFromUserInput("EPSG:3857")
+    assert epsg3857.isValid()
+    epsg3857_WKT = epsg3857.toWkt()
+    print("\ntest_parameter_crs::epsg3857_WKT", epsg3857_WKT)
+
+    value = inp.value(
+        {
+            "value": epsg3857_WKT,
+            "mediaType": Formats.WKT.media_type,
+        }
+    )
+    assert value.isValid()
+    assert value.authid() == "EPSG:3857"
 
     with pytest.raises(InputValueError):
         _ = inp.value("Foobar")

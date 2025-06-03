@@ -65,7 +65,6 @@ def get_default_value(param, default, project, rows, cols):
 
 
 class ParameterMatrix(InputParameter):
-
     _SchemaFormat = "x-qgis-matrix"
 
     @classmethod

@@ -1,6 +1,7 @@
 import re
 
 from typing import (
+    Annotated,
     Any,
     Iterator,
     Optional,
@@ -12,6 +13,7 @@ from typing import (
 from osgeo import ogr
 from pydantic import (
     AnyUrl,
+    Field,
     JsonValue,
     TypeAdapter,
 )
@@ -83,7 +85,6 @@ def geometrytypes_to_model(
 
 
 class ParameterGeometry(InputParameter):
-
     _SchemaFormat = "geojson-geometry"
 
     @classmethod
@@ -111,7 +112,7 @@ class ParameterGeometry(InputParameter):
 
         _type = OneOf[  # type: ignore [misc, valid-type]
             Union[
-                _type,
+                Annotated[_type, Field(json_schema_extra={"format": "geojson-geometry"})],
                 MediaType(str, Formats.WKT.media_type),
                 MediaType(str, Formats.GML.media_type),
             ],
@@ -182,7 +183,6 @@ class ParameterPoint(ParameterGeometry):
 
 
 class ParameterCrs(InputParameter):
-
     _SchemaFormat = "x-ogc-crs"
 
     @classmethod
@@ -193,10 +193,7 @@ class ParameterCrs(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-        _type: Any
-        if validation_only:
-            _type = str
-        else:
+        if not validation_only:
             default = field.pop("default", None)
             if default:
                 context = QgsProcessingContext()
@@ -211,8 +208,7 @@ class ParameterCrs(InputParameter):
                 if crs.isValid:
                     field.update(default=crs.toOgcUrn())
 
-            _type = CrsDefinition
-
+        _type = CrsDefinition
         return _type
 
     def value(
@@ -220,11 +216,23 @@ class ParameterCrs(InputParameter):
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> QgsCoordinateReferenceSystem:
-        value = self.validate(inp)
+        match inp:
+            case {"value": str(inp), "mediaType": Formats.WKT.media_type}:
+                pass
+
+        match self.validate(inp):
+            case str(value):
+                pass
+            case {"uri": url}:
+                value = str(url)
+            case {"json": data}:
+                value = TypeAdapter(JsonValue).dump_json(data).decode()
+            case _:
+                raise InputValueError("Invalide CRS definition")
 
         crs = QgsCoordinateReferenceSystem()
         crs.createFromUserInput(value)
-        if not crs or not crs.isValid():
+        if not crs.isValid():
             raise InputValueError(f"Invalid CRS: {crs}")
 
         return crs

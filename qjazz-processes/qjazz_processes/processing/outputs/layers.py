@@ -65,7 +65,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
         if formats:
             schema = {
                 "$defs": {"Link": schema},
-                "anyOf": [
+                "oneOf": [
                     {
                         "$ref": "#/$defs/Link",
                         "contentMediaType": fmt.media_type,
