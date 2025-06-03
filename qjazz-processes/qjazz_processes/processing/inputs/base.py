@@ -32,6 +32,7 @@ ParameterDefinition = TypeVar("ParameterDefinition", bound=QgsProcessingParamete
 
 class InputParameter[T]:
     _ParameterType: TypeAlias | None = None
+    _SchemaFormat: str | None = None
 
     def __init__(
         self,
@@ -73,6 +74,10 @@ class InputParameter[T]:
             return self._param.name()
         else:
             return None
+
+    @classmethod
+    def schema_format(cls) -> Optional[str]:
+        return cls._SchemaFormat
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
@@ -148,6 +153,11 @@ class InputParameter[T]:
         schema.pop("title", None)
         one_of(schema)
         remove_auto_title(schema)
+
+        schema_format = self.schema_format()
+        if schema_format:
+            schema["format"] = schema_format
+
         return schema
 
     def description(self) -> InputDescription:

@@ -277,6 +277,9 @@ else:
 
 
 class ParameterRange(InputParameter):
+
+    _SchemaFormat = "x-range"
+
     @classmethod
     def create_model(
         cls,
@@ -307,8 +310,6 @@ class ParameterRange(InputParameter):
                         field.update(default=[_type(left), _type(right)])
                     case _:
                         InputValueError(f"Invalid default value for parameter Range: {default}")
-
-            field.update(json_schema_extra={"format": "x-range"})
 
         _type = Sequence[_type]  # type: ignore [valid-type]
         return _type

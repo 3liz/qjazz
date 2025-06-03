@@ -65,6 +65,9 @@ def get_default_value(param, default, project, rows, cols):
 
 
 class ParameterMatrix(InputParameter):
+
+    _SchemaFormat = "x-qgis-matrix"
+
     @classmethod
     def metadata(cls, param: QgsProcessingParameterMatrix) -> list[Metadata]:
         md = super(ParameterMatrix, cls).metadata(param)
@@ -108,11 +111,10 @@ class ParameterMatrix(InputParameter):
             )
             if default:
                 field.update(default=default)
-            schema_extra = {"format": "x-matrix"}
             if headers:
+                schema_extra = field.get("json_schema_extra", {})
                 schema_extra["x-matrix-headers"] = headers
-
-            field.update(json_schema_extra=schema_extra)
+                field.update(json_schema_extra=schema_extra)
 
         return _type
 

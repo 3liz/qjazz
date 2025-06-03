@@ -182,7 +182,10 @@ def test_parameter_crs(qgis_session):
     inp = InputParameter(param)
 
     schema = inp.json_schema()
-    print("\ntest_parameter_crs::", schema)
+    print("\ntest_parameter_crs::schema", schema)
+
+    assert "oneOf" in schema
+    assert schema["format"] == "x-ogc-crs"
 
     value = inp.value("EPSG:3857")
     assert value.authid() == "EPSG:3857"

@@ -1,7 +1,6 @@
 import re
 
 from typing import (
-    Annotated,
     Any,
     Iterator,
     Optional,
@@ -13,7 +12,6 @@ from typing import (
 from osgeo import ogr
 from pydantic import (
     AnyUrl,
-    Field,
     JsonValue,
     TypeAdapter,
 )
@@ -43,6 +41,7 @@ from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     WGS84,
     BoundingBox,
+    CrsDefinition,
     Formats,
     InputValueError,
     MediaType,
@@ -84,6 +83,9 @@ def geometrytypes_to_model(
 
 
 class ParameterGeometry(InputParameter):
+
+    _SchemaFormat = "geojson-geometry"
+
     @classmethod
     def get_geometry_type(cls, param: QgsProcessingParameterGeometry) -> TypeAlias:
         geomtypes = param.geometryTypes()
@@ -106,11 +108,6 @@ class ParameterGeometry(InputParameter):
             g = default and qgsgeometry_to_json(_type, default, project and project.crs())
             if g:
                 field.update(default=g)
-
-            _type = Annotated[
-                _type,
-                Field(json_schema_extra={"format": "geojson-geometry"}),
-            ]
 
         _type = OneOf[  # type: ignore [misc, valid-type]
             Union[
@@ -182,17 +179,12 @@ class ParameterPoint(ParameterGeometry):
 #
 # QgsProcessingParameterCrs
 #
-CrsDefinition = OneOf[  # type: ignore [misc, valid-type]
-    Union[
-        str,
-        AnyUrl,
-        MediaType(str, Formats.WKT.media_type),
-        MediaType(str, Formats.GML.media_type),
-    ],
-]
 
 
 class ParameterCrs(InputParameter):
+
+    _SchemaFormat = "x-ogc-crs"
+
     @classmethod
     def create_model(
         cls,
@@ -201,7 +193,10 @@ class ParameterCrs(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-        if not validation_only:
+        _type: Any
+        if validation_only:
+            _type = str
+        else:
             default = field.pop("default", None)
             if default:
                 context = QgsProcessingContext()
@@ -216,11 +211,7 @@ class ParameterCrs(InputParameter):
                 if crs.isValid:
                     field.update(default=crs.toOgcUrn())
 
-            field.update(json_schema_extra={"format": "x-ogc-crs"})
-
             _type = CrsDefinition
-        else:
-            _type = str
 
         return _type
 
@@ -306,7 +297,8 @@ class ParameterCoordinateOperation(InputParameter):
 
 
 class ParameterExtent(InputParameter):
-    _ParameterType = BoundingBox(str)
+    _ParameterType = BoundingBox()
+    _SchemaFormat = "ogc-bbox"
 
     @classmethod
     def create_model(
@@ -339,7 +331,7 @@ class ParameterExtent(InputParameter):
 
                 default_crs = crs.toOgcUri() if crs.isValid() else WGS84
 
-                _type = BoundingBox(Annotated[CrsDefinition, Field(default_crs)])
+                _type = BoundingBox(default_crs)
 
                 if not rect.isEmpty() or rect.isNull():
                     field.update(

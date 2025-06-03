@@ -164,6 +164,9 @@ class ParameterVectorLayer(ParameterMapLayer):
 
 
 class ParameterFeatureSource(ParameterMapLayer):
+
+    _SchemaFormat = "x-feature-source"
+
     @classmethod
     def compatible_layers(
         cls,
@@ -186,8 +189,6 @@ class ParameterFeatureSource(ParameterMapLayer):
             project,
             validation_only,
         )
-
-        field.update(json_schema_extra={"format": "x-feature-source"})
 
         crsdef = WGS84
         if project:
@@ -516,27 +517,6 @@ class ParameterVectorDestination(ParameterLayerDestination):
             ),
         )
         return md
-
-    @classmethod
-    def create_model(
-        cls,
-        param: ParameterDefinition,
-        field: dict,
-        project: Optional[QgsProject] = None,
-        validation_only: bool = False,
-    ) -> TypeAlias:
-        _type = super(ParameterVectorDestination, cls).create_model(
-            param,
-            field,
-            project,
-            validation_only,
-        )
-
-        if not validation_only:
-            schema_extra = field.get("json_schema_extra", {})
-            field.update(json_schema_extra=schema_extra)
-
-        return _type
 
 
 #

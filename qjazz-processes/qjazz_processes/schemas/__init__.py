@@ -25,6 +25,7 @@ from .ogc import (  # noqa F401
     UOMRef,
     WGS84,
 )
+from .crs import CrsDefinition  # noqa F401
 from .bbox import BoundingBox  # noqa F401
 from .formats import (  # noqa F401
     Formats,

@@ -24,7 +24,7 @@ def test_parameter_matrix():
 
     schema = inp.json_schema()
     print("\ntest_parameter_matrix::", schema)
-    assert schema["format"] == "x-matrix"
+    assert schema["format"] == "x-qgis-matrix"
     assert schema["x-matrix-headers"] == headers
 
     md = inp.metadata(param)
@@ -53,7 +53,7 @@ def test_parameter_matrix_fixed_rows():
 
     schema = inp.json_schema()
     print("\ntest_parameter_matrix_fixed_rows::", schema)
-    assert schema["format"] == "x-matrix"
+    assert schema["format"] == "x-qgis-matrix"
 
     md = inp.metadata(param)
     assert meta(md, "typeName") == QgsProcessingParameterMatrix.typeName()
