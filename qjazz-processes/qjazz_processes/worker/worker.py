@@ -1,6 +1,7 @@
 #
 # Processing worker
 #
+import functools
 import mimetypes
 import shutil
 
@@ -120,12 +121,24 @@ def describe_process(_state, ident: str, project_path: str | None) -> dict | Non
         return None
 
 
+@functools.cache
+def qgis_version_details() -> Sequence[str]:
+    from qgis.core import QgsCommandLineUtils
+    return tuple(
+        filter(
+            None,
+            (line.strip() for line in QgsCommandLineUtils.allVersions().split("\n")),
+        ),
+    )
+
+
+
 @inspect_command()
 def presence(_state) -> dict:
     """Returns informations about the service"""
     app = cast(QgisWorker, _state.consumer.app)
 
-    from qgis.core import Qgis, QgsCommandLineUtils
+    from qgis.core import Qgis
 
     return WorkerPresenceVersion(
         service=app._service_name,
@@ -134,7 +147,7 @@ def presence(_state) -> dict:
         links=app._service_links,
         online_since=app._online_since,
         qgis_version_info=Qgis.versionInt(),
-        versions=QgsCommandLineUtils.allVersions(),
+        versions=qgis_version_details() if not app._hide_presence_versions else [],
         result_expires=app.conf.result_expires,
         callbacks=list(app.processes_callbacks.schemes),
     ).model_dump()
@@ -214,6 +227,9 @@ class QgisWorker(Worker):
 
         # Allow worker to restart pool
         self.conf.worker_pool_restarts = True
+
+        # Hide presence versions
+        self._hide_presence_versions = conf.worker.hide_presence_versions
 
         self._workdir = conf.processing.workdir
         self._store_url = conf.processing.store_url

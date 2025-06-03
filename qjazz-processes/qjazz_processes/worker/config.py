@@ -103,6 +103,17 @@ class WorkerConfig(CeleryConfig):
         """,
     )
 
+    hide_presence_versions: bool = Field(
+        default=False,
+        title="Hide presence versions",
+        description="""
+        Hide version details in presence.
+        This may be useful when you do not want to
+        display versions of libraries and OS for security
+        reasons.
+        """,
+    )
+
 
 # Allow type validation
 class ConfigProto(Protocol):

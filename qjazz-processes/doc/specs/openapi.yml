@@ -737,7 +737,9 @@ definitions:
       qgisVersionInfo:
         type: integer
       versionDetails:
-        type: string
+        items:
+          type: string
+        type: array
       callbacks:
         items:
           type: string

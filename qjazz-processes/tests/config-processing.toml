@@ -15,6 +15,7 @@ cleanup_interval = 300
 reload_monitor = "$location/.reloadmon"
 broker_host = "localhost"
 backend_host = "localhost:6379/0"
+#hide_presence_versions = true
 
 [worker.scheduler]
 #enabled = true

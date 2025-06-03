@@ -91,6 +91,15 @@ cleanup_interval = 3600
 # The restart is graceful, all running jobs are terminated normally.
 # 
 #reload_monitor =   	# Optional
+#
+# Hide presence versions
+#
+# Hide version details in presence.
+# This may be useful when you do not want to
+# display versions of libraries and OS for security
+# reasons.
+# 
+hide_presence_versions = false
 
 #
 [worker.broker_tls]

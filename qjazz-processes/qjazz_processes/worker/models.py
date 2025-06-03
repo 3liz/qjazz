@@ -22,7 +22,7 @@ class WorkerPresenceV1(WorkerVersion1):
     links: Sequence[LinkHttp]
     online_since: float
     qgis_version_info: int
-    versions: str
+    versions: Sequence[str]
     result_expires: int
     callbacks: Sequence[str]
 
