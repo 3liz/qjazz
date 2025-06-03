@@ -8,9 +8,10 @@ from qjazz_contrib.core.models import Field
 
 def dump_callback_config_schema(name: str, CallbackConfigType: Type) -> None:
     """Dump schema as toml configuration"""
+
     class CallbackConfig(ConfigBase):
         enabled: bool = Field(True, title="Enable callback")
-        handler: Literal[(name,)] = Field(name)                   # type: ignore [valid-type]
+        handler: Literal[(name,)] = Field(name)  # type: ignore [valid-type]
         config: CallbackConfigType = Field(CallbackConfigType())  # type: ignore [valid-type]
 
     class ConfigModel(ConfigBase):

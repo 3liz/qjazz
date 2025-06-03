@@ -109,7 +109,6 @@ CallbacksConfig = Annotated[
 ]
 
 
-
 @contextmanager
 def infallible(uri: str):
     try:

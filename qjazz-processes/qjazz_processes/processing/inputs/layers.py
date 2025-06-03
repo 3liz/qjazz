@@ -22,7 +22,6 @@ from qgis.core import (
     QgsProcessingParameterField,
     QgsProcessingParameterFieldMapping,
     QgsProcessingParameterLimitedDataTypes,
-    QgsProcessingUtils,
     QgsProject,
     QgsRectangle,
     QgsVectorLayer,
@@ -41,7 +40,10 @@ from qjazz_processes.schemas import (
 
 from ..utils import (
     ProcessingSourceType,
+    compatible_annotation_layers,
     compatible_layers,
+    compatible_pointcloud_layers,
+    compatible_raster_layers,
     compatible_vector_layers,
     get_valid_filename,
     raw_destination_sink,
@@ -168,7 +170,7 @@ class ParameterFeatureSource(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return QgsProcessingUtils.compatibleVectorLayers(project, param.dataTypes())
+        return compatible_vector_layers(project, param.dataTypes())
 
     @classmethod
     def create_model(
@@ -262,7 +264,7 @@ class ParameterRasterLayer(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return QgsProcessingUtils.compatibleRasterLayers(project)
+        return compatible_raster_layers(project)
 
 
 #
@@ -277,7 +279,7 @@ class ParameterPointCloudLayer(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return QgsProcessingUtils.compatiblePointCloudLayers(project)
+        return compatible_pointcloud_layers(project)
 
 
 #
@@ -328,7 +330,7 @@ class ParameterDxfLayers(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return (layer for layer in QgsProcessingUtils.compatibleVectorLayers(project) if layer.isSpatial())
+        return (layer for layer in compatible_vector_layers(project) if layer.isSpatial())
 
 
 #
@@ -338,8 +340,12 @@ class ParameterDxfLayers(ParameterMapLayer):
 
 class ParameterAnnotationLayer(ParameterMapLayer):
     @classmethod
-    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Sequence[str]:
-        return QgsProcessingUtils.compatibleAnnotationLayers(project)
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return compatible_annotation_layers(project)
 
 
 #
@@ -351,8 +357,12 @@ class ParameterTinInputLayers(ParameterMapLayer):
     _multiple = True
 
     @classmethod
-    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Sequence[str]:
-        return QgsProcessingUtils.compatibleVectorLayer(project)
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable[QgsMapLayer]:
+        return compatible_vector_layers(project)
 
     @classmethod
     def create_model(
@@ -774,7 +784,7 @@ class ParameterAlignRasterLayers(InputParameter):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return QgsProcessingUtils.compatibleRasterLayers(project)
+        return compatible_raster_layers(project)
 
     @classmethod
     def create_model(

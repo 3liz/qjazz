@@ -56,6 +56,7 @@ def test_parameter_layer_vectorlayer(projects):
 
     inp = InputParameter(param, project)
     assert isinstance(inp, ParameterVectorLayer)
+    assert len(list(ParameterVectorLayer.compatible_layers(param, project))) > 0
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectorlayer::", schema)
@@ -63,14 +64,21 @@ def test_parameter_layer_vectorlayer(projects):
     assert "france_parts" in schema["enum"]
 
 
-def test_parameter_layer_rasterlayer():
+def test_parameter_layer_rasterlayer(projects):
+    project = projects.get("/samples/raster_layer")
+
     param = QgsProcessingParameterRasterLayer("RasterLayer")
 
-    inp = InputParameter(param)
+    inp = InputParameter(param, project)
     assert isinstance(inp, ParameterRasterLayer)
+    assert len(list(ParameterRasterLayer.compatible_layers(param, project))) > 0
 
     schema = inp.json_schema()
     print("\ntest_parameter_layer_rasterlayer::", schema)
+
+    # XXX: const is used on literals when there is only a single
+    # value
+    assert "raster_layer" == schema["const"]
 
 
 def test_parameter_layer_featuresource(qgis_session):

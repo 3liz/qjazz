@@ -225,4 +225,3 @@ def dump_toml_schema() -> None:
         "qjazz_processes.callbacks.HttpCallback",
         HttpCallbackConfig,
     )
-

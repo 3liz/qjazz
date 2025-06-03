@@ -8,6 +8,7 @@ from typing import (
     Iterator,
     Optional,
     Sequence,
+    Type,
 )
 from urllib.parse import urlsplit
 
@@ -94,11 +95,43 @@ def is_compatible_vector_layer(
 
 def compatible_vector_layers(
     project: QgsProject,
-    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+    dtypes: Optional[Container[ProcessingSourceType]] = None,  # type: ignore [valid-type]
 ) -> Iterator[QgsMapLayer]:
     for layer in project.mapLayers().values():
-        if isinstance(layer, QgsVectorLayer) and is_compatible_vector_layer(layer, dtypes):
+        if isinstance(layer, QgsVectorLayer) and (not dtypes or is_compatible_vector_layer(layer, dtypes)):
             yield layer
+
+
+#
+# NOTE: We cannot use QgsProcessingUtils.compatibleXXXLayer() since it checks
+# for valid layers and we want to be enable to check unresolved layers
+#
+
+
+def compatible_layers_type(project: QgsProject, layer_type: Type) -> Iterator[QgsMapLayer]:
+    for layer in project.mapLayers().values():
+        if isinstance(layer, layer_type):
+            yield layer
+
+
+def compatible_raster_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
+    yield from compatible_layers_type(project, QgsRasterLayer)
+
+
+def compatible_pointcloud_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
+    yield from compatible_layers_type(project, QgsPointCloudLayer)
+
+
+def compatible_annotation_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
+    yield from compatible_layers_type(project, QgsAnnotationLayer)
+
+
+def compatible_vectortile_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
+    yield from compatible_layers_type(project, QgsVectorTileLayer)
+
+
+def compatible_mesh_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
+    yield from compatible_layers_type(project, QgsMeshLayer)
 
 
 # TODO Add plugin and tiled scene layers
@@ -121,7 +154,7 @@ def compatible_layers(
                     yield layer
                 case QgsVectorTileLayer() if ProcessingSourceType.VectorTile.value in dtypes:
                     yield layer
-                case QgsPointCloudLayer() if ProcessingSourceType.PointCloud in dtypes:
+                case QgsPointCloudLayer() if ProcessingSourceType.PointCloud.value in dtypes:
                     yield layer
     else:
         yield from project.mapLayers().values()
