@@ -29,7 +29,15 @@ paths:
   /processes/:
     get:
       summary: Get available processes
-      description: "Returns the list of available for the\ngiven ServiceId\n"
+      description: "Returns the list of available processes\n"
+      parameters:
+      - in: query
+        name: service
+        schema:
+          type: string
+        required: false
+        description: "The service requested.\nIf not set, the default behavior is
+          to return\nthe first service in the configured service list.\n"
       tags:
       - processes
       responses:
@@ -128,9 +136,10 @@ paths:
         name: status
         required: false
         schema:
-          type: arary
+          type: array
           items:
             type: string
+          description: Filter by status
       - in: query
         name: processID
         required: false
@@ -138,6 +147,13 @@ paths:
           type: array
           items:
             type: string
+        description: Filter by process
+      - in: query
+        name: service
+        required: false
+        schema:
+          type: string
+        description: Filter by service
       tags:
       - jobs
       responses:
@@ -164,6 +180,12 @@ paths:
           type: string
         required: true
         description: Job id
+      - in: query
+        name: details
+        schema:
+          type: boolean
+        required: false
+        description: Job extended details
       tags:
       - jobs
       responses:
@@ -393,6 +415,21 @@ definitions:
     required:
     - mediaType
     type: object
+  Subscriber:
+    properties:
+      successUri:
+        format: uri
+        minLength: 1
+        type: string
+      failedUri:
+        format: uri
+        minLength: 1
+        type: string
+      inProgressUri:
+        format: uri
+        minLength: 1
+        type: string
+    type: object
   JobExecute:
     properties:
       inputs:
@@ -405,6 +442,8 @@ definitions:
           $ref: '#/definitions/Output'
         default: {}
         type: object
+      subscriber:
+        $ref: '#/definitions/Subscriber'
     title: JobExecute
     type: object
   JobException:
@@ -698,7 +737,13 @@ definitions:
       qgisVersionInfo:
         type: integer
       versionDetails:
-        type: string
+        items:
+          type: string
+        type: array
+      callbacks:
+        items:
+          type: string
+        type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
@@ -707,6 +752,7 @@ definitions:
     - name
     - qgisVersionInfo
     - versionDetails
+    - callbacks
     - links
     type: object
   ServicesResponse:
@@ -863,6 +909,7 @@ definitions:
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback
         items:
           type: string
         type: array

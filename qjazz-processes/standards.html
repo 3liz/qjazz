@@ -18,9 +18,7 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Inputs and Outputs" href="parameters.html" />
-    <link rel="prev" title="Job access" href="jobrealm.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,26 +41,16 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start">Quick start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="processing.html">Running QGIS Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="processing.html#exposing-processing-algorithms">Exposing processing algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Settings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Compliance to OGC standards</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#notes-on-schemas">Notes on schemas</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#value-passing-and-transmission-mode">Value passing and transmission mode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#qualified-input-and-output-values">Qualified input and output values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#multiple-media-types">Multiple media types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#formats">Formats</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#additional-formats">Additional formats</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html#callbacks">Callbacks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution.html">Job execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">Qjazz-Processes API</a></li>
 </ul>
 
@@ -131,7 +119,7 @@ as server-side decision.</div>
 <section id="multiple-media-types">
 <span id="media-types"></span><h2>Multiple media types<a class="headerlink" href="#multiple-media-types" title="Link to this heading"></a></h2>
 <p>Inputs and outputs may describe multiple media types an inputs and outputs in <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/combining#oneOf">oneOf</a> composite schema.</p>
-<p>Consider the following example for return a geometry:</p>
+<p>Consider the following example for return a geometry in the response body:</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
   <span class="s2">&quot;anyOf&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -151,7 +139,15 @@ as server-side decision.</div>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>One possible response would be:</p>
+<p>On execution, the <code class="docutils literal notranslate"><span class="pre">output</span></code> field of the request body would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;mediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and the corresponding response would be:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;.....&quot;</span>
   <span class="s2">&quot;mediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
@@ -187,8 +183,9 @@ standards extend its usage to any object.</p>
 <dd class="field-even"><p>Indicates that the object is an instance of an <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi/schemas/processes-core/bbox.yaml">OGC bounding box</a></p>
 </dd>
 </dl>
+</section>
 <section id="additional-formats">
-<span id="id3"></span><h3>Additional formats<a class="headerlink" href="#additional-formats" title="Link to this heading"></a></h3>
+<span id="id3"></span><h2>Additional formats<a class="headerlink" href="#additional-formats" title="Link to this heading"></a></h2>
 <p>According to JsonSchema specification, additional schema
 properties start with an <code class="code docutils literal notranslate"><span class="pre">x-*</span></code> prefix</p>
 <p>Additional OGC specific properties are prefixed with <code class="code docutils literal notranslate"><span class="pre">x-ogc-*</span></code>.</p>
@@ -216,15 +213,11 @@ properties start with an <code class="code docutils literal notranslate"><span c
 </dl>
 </section>
 </section>
-</section>
 
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="jobrealm.html" class="btn btn-neutral float-left" title="Job access" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="parameters.html" class="btn btn-neutral float-right" title="Inputs and Outputs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
+          <footer>
 
   <hr/>
 

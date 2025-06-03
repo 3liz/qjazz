@@ -56,7 +56,7 @@ Multiple media types
 
 Inputs and outputs may describe multiple media types an inputs and outputs in `oneOf <https://json-schema.org/understanding-json-schema/reference/combining#oneOf>`_ composite schema.
 
-Consider the following example for return a geometry:
+Consider the following example for return a geometry in the response body:
 
 Example::
 
@@ -76,8 +76,17 @@ Example::
         },
       ]
     }    
-    
-One possible response would be::
+
+
+On execution, the ``output`` field of the request body would be::
+
+    {
+      format: {
+        "mediaType": "application/wkt"
+      }    
+    }
+
+and the corresponding response would be::
     
     {
       "value": "....."
@@ -113,7 +122,7 @@ The OGC standards defines additional formats:
 .. _additional_formats:
 
 Additional formats
-^^^^^^^^^^^^^^^^^^
+------------------
 
 According to JsonSchema specification, additional schema
 properties start with an :code:`x-*` prefix

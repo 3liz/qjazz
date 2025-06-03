@@ -6,7 +6,7 @@ Configuration Settings
 Configuration can be done either by using a `toml <https://toml.io/en/>`_ configuration file,
 environnement variable or secret files.
 
-The configuration framework is based on the [pydantic settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/?query=Settings) package which provides strong validation for configuration
+The configuration framework is based on the `pydantic settings <https://docs.pydantic.dev/latest/concepts/pydantic_settings/?query=Settings>`_ package which provides strong validation for configuration
 data.
 
 
@@ -78,6 +78,8 @@ Configuration precedence is (by decreasing priority):
 - Default values
 
 
+.. _worker_configuration:
+
 Worker configuration
 --------------------
 
@@ -86,10 +88,41 @@ Worker configuration
    :linenos:
 
 
+.. _server_configuration:
+
 Server configuration
 --------------------
 
 .. literalinclude:: configs/server.toml
    :language: toml
    :linenos:
+
+
+Callbacks
+=========
+
+Callbacks requirements are `specified by OGC standards <https://docs.ogc.org/is/18-062r2/18-062r2.html#toc52>`_. 
+
+It allows to set up a push based mechanism for processes results to others services.
+
+Originally, only http POST requests are considered but Qjazz processes support arbitrary
+uri schemes.
+
+Callbacks handlers are declared in worker configuration under the ``[callbacks.<scheme>]``
+section along with their configuration and the import string to the class implementing the
+callback support.
+
+Qjazz implement natively http callbacks. 
+A the moment, only http callbacks are natively implemented in QJazz. 
+
+
+HTTP Callback configuration
+---------------------------
+
+.. literalinclude:: configs/callback_http.toml
+   :language: toml
+   :linenos:
+
+
+
 

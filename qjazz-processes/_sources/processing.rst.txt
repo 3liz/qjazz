@@ -126,7 +126,7 @@ not ``QgsInterface`` is provided.
       loaded from |ProjectName|.
     | Implementors should take care to check the value of the ``iface`` parameter
       and drop all gui initialization if not set.
-    | The only thing to do is to registor the providers the same way as for 
+    | The only thing to do is to register the providers the same way as for 
       using in Qgis Desktop.   
 
 
