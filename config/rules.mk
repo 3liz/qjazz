@@ -4,6 +4,7 @@ TOPTARGET:=test
 .PHONY: $(DIRS)
 
 TOPTARGETS:=\
+bin-test \
 test \
 lint \
 lint-preview \

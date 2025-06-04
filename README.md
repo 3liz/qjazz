@@ -67,7 +67,7 @@ Celery workers.
 ### Requirements
 
 - Python 3.12+
-- Qgis 3.34+
+- Qgis 3.34+ (3.40+ recommended)
 - Linux/Posix based platform
 
 If you plan to use the processing services then the following extra services are
