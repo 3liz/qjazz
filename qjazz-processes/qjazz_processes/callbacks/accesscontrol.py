@@ -24,11 +24,8 @@ from pydantic import (
     TypeAdapter,
 )
 
-from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.config import ConfigBase
 from qjazz_contrib.core.models import Field
-
-from .callbacks import Url
 
 IPValidator: TypeAdapter = TypeAdapter(IPvAnyAddress)
 HostValidator: TypeAdapter = TypeAdapter(IPvAnyAddress | str)
@@ -98,14 +95,12 @@ class AccessControlConfig(ConfigBase):
         else:
             return self.allow_ip(ip, hostname) and not self.deny_ip(ip, hostname)
 
-    def check_url(self, url: Url) -> bool:
-        assert_precondition(url.scheme in ("http", "https"))
-
-        host = HostValidator.validate_python(url.hostname)
+    def check_hostname(self, hostname: str) -> bool:
+        host = HostValidator.validate_python(hostname)
         match host:
             case str():
-                for _, _, _, _, addr in getaddrinfo(host, url.port or url.scheme):
-                    if self.check_ip(IPValidator.validate_python(addr[0]), url.hostname):
+                for _, _, _, _, addr in getaddrinfo(host, "http"):
+                    if self.check_ip(IPValidator.validate_python(addr[0]), hostname):
                         return True
             case IPv4Address() | IPv6Address():
                 return self.check_ip(host)

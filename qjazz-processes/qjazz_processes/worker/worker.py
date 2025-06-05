@@ -479,7 +479,7 @@ def on_task_prerun(
         return
 
     subscriber = MaybeSubscriber.validate_python(kwargs["__run_config__"]["request"].get("subscriber"))
-    if subscriber and subscriber.in_progress_uri_x:
+    if subscriber and subscriber.in_progress_uri:
         cast(QgisWorker, task.app).processes_callbacks.in_progress(
             str(subscriber.in_progress_uri),
             task_id,

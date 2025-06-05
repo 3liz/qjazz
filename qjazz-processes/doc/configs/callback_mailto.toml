@@ -30,6 +30,16 @@ smtp_tls = false
 # From address
 #mail_from =   	# Required
 #
+# Format
+#
+# The format of the e-mail body
+body_format = "plain"
+#
+# Attach results
+#
+# Send job resurts as attachment
+send_results_as_attachment = false
+#
 # Request timeout
 #
 # The request timeout value in seconds

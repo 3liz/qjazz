@@ -32,7 +32,7 @@ def test_callback_acl_allow():
     assert conf.check_ip(ip_address("192.168.0.8"))
     assert conf.check_ip(ip_address("172.10.0.1"))
 
-    assert conf.check_url(urlsplit("http://projects.3liz.org"))
+    assert conf.check_hostname("projects.3liz.org")
 
 
 def test_callback_acl_deny():
@@ -53,7 +53,7 @@ def test_callback_acl_deny():
     assert not conf.check_ip(ip_address("192.168.0.8"))
     assert not conf.check_ip(ip_address("172.10.0.1"))
 
-    assert not conf.check_url(urlsplit("http://projects.3liz.org"))
+    assert not conf.check_hostname("projects.3liz.org")
 
 
 def test_callback_http_request(httpserver):

@@ -220,7 +220,7 @@ class ConfBuilder:
         self._model: Type[BaseModel] | None = None
         self._conf: BaseModel | None = None
         self._model_changed = True
-        self._timestamp = 0.
+        self._timestamp = 0.0
 
     @property
     def version(self):
@@ -387,7 +387,7 @@ class ConfigProxy[T: ConfigBase]:
         *,
         default: Optional[T] = None,
     ):
-        self._timestamp = -1.
+        self._timestamp = -1.0
         self._builder = builder
         self._configpath = configpath
         if default:

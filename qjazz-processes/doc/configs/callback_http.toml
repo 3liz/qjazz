@@ -3,29 +3,86 @@
 [callbacks]
 
 #
-[callbacks.https]
+[callbacks.mailto]
 #
 # Enable callback
 enabled = true
-handler = "qjazz_processes.callbacks.Http"
+handler = "qjazz_processes.callbacks.MailTo"
 
 #
-[callbacks.https.config]
+[callbacks.mailto.config]
 #
-# Path to CA file
-#ca_cert =   	# Optional
+# SMTP host
+#smtp_host =   	# Required
 #
-# User agent
-user_agent = "Qjazz processes v0.2.0"
+# SMTP port
+smtp_port = 587
+#
+# SMTP login
+#smtp_login =   	# Optional
+#
+# SMTP password
+smtp_password = ""
+#
+# TLS/SSL
+smtp_tls = false
+#
+# From address
+#mail_from =   	# Required
+#
+# Format
+#
+# The format of the e-mail body
+body_format = "plain"
+#
+# Attach results
+#
+# Send job results as attachment
+send_results_as_attachment = false
 #
 # Request timeout
 #
-# The request timeout value for both connect and read timeout.
-# 
+# The request timeout value in seconds
 timeout = 5
+#
+# Debug mode
+debug = false
 
 #
-[callbacks.https.config.acl]
+# Subject and body to set on success notification
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_success]
+subject = "[Qjazz:$service] Job $process successfull"
+body = '''
+The job $jobid ($process) has been executed with success.
+'''
+
+#
+# Subject and body to set on failed notification.
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_failed]
+subject = "[QJazz:$service] Job $process failed"
+body = '''
+The job $jobid ($process) has failed.
+'''
+
+#
+# Subject and body to set on inProgresss notification.
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_in_progress]
+subject = "[QJazz:$service] Job $process started"
+body = '''
+The job $jobid ($process) has started.
+'''
+
+#
+[callbacks.mailto.config.acl]
 #
 # Authorization order
 #

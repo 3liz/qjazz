@@ -59,10 +59,19 @@ HandlerConfigOptions = Annotated[
 ]
 
 
+# For syntactic sugar in config file
+_handler_aliases = {
+    "qjazz_processes.callbacks.Test": "qjazz_processes.callbacks.handlers.test.TestCallback",
+    "qjazz_processes.callbacks.Http": "qjazz_processes.callbacks.handlers.http.HttpCallback",
+    "qjazz_processes.callbacks.MailTo": "qjazz_processes.callback.handler.mailto.MailToCallback",
+}
+
+
 class HandlerConfig(ConfigBase):
     enabled: bool = Field(True, title="Enable callback")
     handler: Annotated[
         ImportString,
+        BeforeValidator(lambda s: _handler_aliases.get(s, s)),
         WithJsonSchema({"type": "string"}),
         Field(
             validate_default=True,

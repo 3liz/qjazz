@@ -3,14 +3,19 @@
 #
 import smtplib
 
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from string import Template
+from textwrap import dedent
 from typing import (
     Annotated,
     Iterator,
+    Literal,
     Optional,
     Sequence,
     TypedDict,
+    cast,
 )
 from urllib.parse import parse_qs
 
@@ -84,7 +89,25 @@ class MailToCallbackConfig(ConfigBase):
 
     mail_from: EmailStr = Field(title="From address")
 
+    body_format: Literal["plain", "html"] = Field(
+        "plain",
+        title="Format",
+        description="The format of the e-mail body",
+    )
+
+    send_results_as_attachment: bool = Field(
+        False,
+        title="Attach results",
+        description="Send job results as attachment",
+    )
+
     content_success: MailContent = Field(
+        MailContent(
+            subject="[Qjazz:$service] Job $process successfull",
+            body=dedent("""
+            The job $jobid ($process) has been executed with success.
+            """),
+        ),
         description="""
         Subject and body to set on success notification
         If a subject is provided then it will override the configuration value.
@@ -92,6 +115,12 @@ class MailToCallbackConfig(ConfigBase):
     )
 
     content_failed: MailContent = Field(
+        MailContent(
+            subject="[QJazz:$service] Job $process failed",
+            body=dedent("""
+            The job $jobid ($process) has failed.
+            """),
+        ),
         description="""
         Subject and body to set on failed notification.
         If a subject is provided then it will override the configuration value.
@@ -99,6 +128,12 @@ class MailToCallbackConfig(ConfigBase):
     )
 
     content_in_progress: MailContent = Field(
+        MailContent(
+            subject="[QJazz:$service] Job $process started",
+            body=dedent("""
+            The job $jobid ($process) has started.
+            """),
+        ),
         description="""
         Subject and body to set on inProgresss notification.
         If a subject is provided then it will override the configuration value.
@@ -156,11 +191,13 @@ class MailToCallback(CallbackHandler):
 
         # mailto must conform to RFC 2368 (https://datatracker.ietf.org/doc/html/rfc2368)
         # that is the path is the email address
-
         params = parse_qs(url.query)
-        to_recipients = list(get_recipients("to", url, params))
-        cc_recipients = list(get_recipients("cc", url, params))
-        bcc_recipients = list(get_recipients("bcc", url, params))
+        to_recipients = list(get_recipients("to", url, params, self._conf.acl))
+        cc_recipients = list(get_recipients("cc", url, params, self._conf.acl))
+        bcc_recipients = list(get_recipients("bcc", url, params, self._conf.acl))
+
+        if not to_recipients and not cc_recipients and not bcc_recipients:
+            raise ValueError("MailTo callback: no valid recipients for '%s'", url.geturl())
 
         from_addr = self._conf.mail_from
 
@@ -171,15 +208,34 @@ class MailToCallback(CallbackHandler):
             jobid=job_id,
         )
 
-        # TODO: templating
         subject = params.get("subject", (content.subject.safe_substitute(context),))[0]
         body = content.body.safe_substitute(context)
 
-        msg = MIMEText(body, "plain", _charset="utf-8")
+        text = MIMEText(body, self._conf.body_format, _charset="utf-8")
+
+        msg: MIMEText | MIMEMultipart
+        if results and self._conf.send_results_as_attachment:
+            multipart = True
+            msg = MIMEMultipart()
+        else:
+            multipart = False
+            msg = text
+
         msg["Subject"] = subject
         msg["From"] = from_addr
         msg["To"] = ",".join(to_recipients)
         msg["Cc"] = ",".join(cc_recipients)
+
+        if multipart:
+            # Create attachment
+            filename = f"results-{job_id}.json"
+            part = MIMEApplication(
+                TypeAdapter(JobResults).dump_json(cast(JobResults, results), indent=4),
+                name=filename,
+            )
+            part["Content-Disposition"] = f"attachment; filename={filename}"
+            msg.attach(text)
+            msg.attach(part)
 
         hostname = self._conf.smtp_host
         user = self._conf.smtp_login
@@ -210,7 +266,7 @@ class MailToCallback(CallbackHandler):
 EMailValidator: TypeAdapter = TypeAdapter(EmailStr)
 
 
-def get_recipients(p: str, url: Url, params: dict[str, list[str]]) -> Iterator[str]:
+def _get_recipients(p: str, url: Url, params: dict[str, list[str]]) -> Iterator[str]:
     if p == "to" and url.path:
         yield EMailValidator.validate_python(url.path)
     # Get 'to' parameters
@@ -218,7 +274,24 @@ def get_recipients(p: str, url: Url, params: dict[str, list[str]]) -> Iterator[s
         yield EMailValidator.validate_python(addr)
 
 
+def get_recipients(
+    p: str,
+    url: Url,
+    params: dict[str, list[str]],
+    acl: AccessControlConfig,
+) -> Iterator[str]:
+    for recipient in _get_recipients(p, url, params):
+        if acl.check_hostname(recipient.split("@")[1]):
+            yield recipient
+        else:
+            logger.error("MailTo callback: unathorized recipient '%s'", recipient)
+
+
 def dump_toml_schema() -> None:
     from ..doc import dump_callback_config_schema
 
     dump_callback_config_schema("mailto", "qjazz_processes.callbacks.MailTo", MailToCallbackConfig)
+
+
+if __name__ == "__main__":
+    dump_toml_schema()

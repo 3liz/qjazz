@@ -5,13 +5,16 @@ from importlib.metadata import version
 from typing import (
     Optional,
     Sequence,
+    cast,
 )
 
 import requests
 
 from pydantic import (
+    AnyHttpUrl,
     FilePath,
     PositiveInt,
+    TypeAdapter,
 )
 
 from qjazz_contrib.core import logger
@@ -69,10 +72,11 @@ class HttpCallback(CallbackHandler):
         url: Url,
         job_id: str,
         data: Optional[JobResults] = None,
-    ) -> Optional[requests.Response]:
-        if not self._conf.acl.check_url(url):
-            logger.error("Host not allowed in HTTP callback: %s", url.hostname)
-            return None
+    ) -> requests.Response:
+        _ = TypeAdapter(AnyHttpUrl).validate_python(url.geturl())
+
+        if not self._conf.acl.check_hostname(cast(str, url.hostname)):
+            raise ValueError("Host not allowed in HTTP callback: %s", url.hostname)
 
         headers = {
             "x-job-id": job_id,
@@ -108,3 +112,7 @@ def dump_toml_schema() -> None:
     from ..doc import dump_callback_config_schema
 
     dump_callback_config_schema("https", "qjazz_processes.callbacks.Http", HttpCallbackConfig)
+
+
+if __name__ == "__main__":
+    dump_toml_schema()

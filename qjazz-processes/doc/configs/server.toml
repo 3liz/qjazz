@@ -18,7 +18,7 @@ description = "Publish Qgis processing algorithms as OGC api processes"
 # The module implementing the access policy for
 # processes execution.
 # 
-policy_class = "qjazz_processes.server.policies.DefaultAccessPolicy"
+policy_class = "qjazz_processes.server.policies.default.DefaultAccessPolicy"
 config = {}
 
 

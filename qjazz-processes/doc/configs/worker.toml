@@ -395,7 +395,7 @@ config = {}
 # the 'install' list.
 # If the list is empty, the 'QGIS_PLUGINPATH'
 # variable will be checked.
-paths = []
+paths = ["/home/david/.qjazz/plugins"]
 #
 # Installable plugins
 #

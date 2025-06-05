@@ -27,6 +27,7 @@ def test_execute_clipbyextent(host):
             },
         },
         "subscriber": {
+            #"successUri": "mailto:david@3liz.com?to=rldhont@3liz.com",
             "successUri": "test://callback/success/?job_id={job_id}",
             "inProgressUri": "test://in_progress/?job_id={job_id}",
         },
