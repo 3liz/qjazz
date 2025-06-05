@@ -112,8 +112,7 @@ Callbacks handlers are declared in worker configuration under the ``[callbacks."
 section along with their configuration and the import string to the class implementing the
 callback support.
 
-Qjazz implement natively http callbacks. 
-A the moment, only http callbacks are natively implemented in QJazz. 
+Qjazz implement natively 'http' and 'mailto' scheme callbacks. 
 
 
 HTTP Callback configuration
@@ -128,5 +127,14 @@ HTTP Callback configuration
     For serving both http and https use ``[callbacks."http,https"]``.
 
 
+
+MailTo Callback configuration
+-----------------------------
+
+Allow sending e-mail with callbacks.
+
+.. literalinclude:: configs/callback_http.toml
+   :language: toml
+   :linenos:
 
 

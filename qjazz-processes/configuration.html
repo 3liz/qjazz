@@ -58,6 +58,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#callbacks">Callbacks</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#http-callback-configuration">HTTP Callback configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mailto-callback-configuration">MailTo Callback configuration</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
@@ -554,7 +555,7 @@ secret files.</p>
 <span class="linenos">393</span><span class="c1"># the &#39;install&#39; list.</span>
 <span class="linenos">394</span><span class="c1"># If the list is empty, the &#39;QGIS_PLUGINPATH&#39;</span>
 <span class="linenos">395</span><span class="c1"># variable will be checked.</span>
-<span class="linenos">396</span><span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos">396</span><span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/home/david/.qjazz/plugins&quot;</span><span class="p">]</span>
 <span class="linenos">397</span><span class="c1">#</span>
 <span class="linenos">398</span><span class="c1"># Installable plugins</span>
 <span class="linenos">399</span><span class="c1">#</span>
@@ -710,7 +711,7 @@ secret files.</p>
 <span class="linenos"> 16</span><span class="c1"># The module implementing the access policy for</span>
 <span class="linenos"> 17</span><span class="c1"># processes execution.</span>
 <span class="linenos"> 18</span><span class="c1"># </span>
-<span class="linenos"> 19</span><span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.server.policies.DefaultAccessPolicy&quot;</span>
+<span class="linenos"> 19</span><span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.server.policies.default.DefaultAccessPolicy&quot;</span>
 <span class="linenos"> 20</span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
 <span class="linenos"> 21</span>
 <span class="linenos"> 22</span>
@@ -975,74 +976,252 @@ uri schemes.</p>
 <p>Callbacks handlers are declared in worker configuration under the <code class="docutils literal notranslate"><span class="pre">[callbacks.&quot;&lt;scheme,...&gt;&quot;]</span></code>
 section along with their configuration and the import string to the class implementing the
 callback support.</p>
-<p>Qjazz implement natively http callbacks.
-A the moment, only http callbacks are natively implemented in QJazz.</p>
+<p>Qjazz implement natively ‘http’ and ‘mailto’ scheme callbacks.</p>
 <section id="http-callback-configuration">
 <h2>HTTP Callback configuration<a class="headerlink" href="#http-callback-configuration" title="Link to this heading"></a></h2>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">[callbacks]</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="c1">#</span>
-<span class="linenos"> 4</span><span class="k">[callbacks.https]</span>
-<span class="linenos"> 5</span><span class="c1">#</span>
-<span class="linenos"> 6</span><span class="c1"># Enable callback</span>
-<span class="linenos"> 7</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="linenos"> 8</span><span class="n">handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.callbacks.Http&quot;</span>
-<span class="linenos"> 9</span>
-<span class="linenos">10</span><span class="c1">#</span>
-<span class="linenos">11</span><span class="k">[callbacks.https.config]</span>
-<span class="linenos">12</span><span class="c1">#</span>
-<span class="linenos">13</span><span class="c1"># Path to CA file</span>
-<span class="linenos">14</span><span class="c1">#ca_cert =   	# Optional</span>
-<span class="linenos">15</span><span class="c1">#</span>
-<span class="linenos">16</span><span class="c1"># User agent</span>
-<span class="linenos">17</span><span class="n">user_agent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Qjazz processes v0.2.0&quot;</span>
-<span class="linenos">18</span><span class="c1">#</span>
-<span class="linenos">19</span><span class="c1"># Request timeout</span>
-<span class="linenos">20</span><span class="c1">#</span>
-<span class="linenos">21</span><span class="c1"># The request timeout value for both connect and read timeout.</span>
-<span class="linenos">22</span><span class="c1"># </span>
-<span class="linenos">23</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
-<span class="linenos">24</span>
-<span class="linenos">25</span><span class="c1">#</span>
-<span class="linenos">26</span><span class="k">[callbacks.https.config.acl]</span>
-<span class="linenos">27</span><span class="c1">#</span>
-<span class="linenos">28</span><span class="c1"># Authorization order</span>
-<span class="linenos">29</span><span class="c1">#</span>
-<span class="linenos">30</span><span class="c1"># Set the order of evaluation of allow and deny directives:</span>
-<span class="linenos">31</span><span class="c1"># - Allow: allow by default  except thoses in deny then</span>
-<span class="linenos">32</span><span class="c1">#   put back those in deny with the allow directive.</span>
-<span class="linenos">33</span><span class="c1"># - Deny: deny by default  except thoses in allow then deny</span>
-<span class="linenos">34</span><span class="c1">#   those in allow with the deny directive.</span>
-<span class="linenos">35</span><span class="c1"># </span>
-<span class="linenos">36</span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span>
-<span class="linenos">37</span><span class="c1">#</span>
-<span class="linenos">38</span><span class="c1"># Allowed addresses</span>
-<span class="linenos">39</span><span class="c1">#</span>
-<span class="linenos">40</span><span class="c1"># List of allowed hosts. An host may be a IP addresse at IP range</span>
-<span class="linenos">41</span><span class="c1"># in CIDR format or a FQDN or FQDN suffix starting with a dot (and</span>
-<span class="linenos">42</span><span class="c1"># an optional &#39;*&#39;).</span>
-<span class="linenos">43</span><span class="c1"># </span>
-<span class="linenos">44</span><span class="c1">#</span>
-<span class="linenos">45</span><span class="c1"># Example:</span>
-<span class="linenos">46</span><span class="c1">#</span>
-<span class="linenos">47</span><span class="c1"># allow = [</span>
-<span class="linenos">48</span><span class="c1">#     &quot;foo.bar.com&quot;,</span>
-<span class="linenos">49</span><span class="c1">#     &quot;*.mydomain.com&quot;,</span>
-<span class="linenos">50</span><span class="c1">#     &quot;192.168.0.0/24&quot;,</span>
-<span class="linenos">51</span><span class="c1">#     &quot;192.168.1.2&quot;,</span>
-<span class="linenos">52</span><span class="c1"># ]</span>
-<span class="linenos">53</span><span class="c1"># </span>
-<span class="linenos">54</span><span class="n">allow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
-<span class="linenos">55</span><span class="c1">#</span>
-<span class="linenos">56</span><span class="c1"># Forbidden addresses</span>
-<span class="linenos">57</span><span class="c1">#</span>
-<span class="linenos">58</span><span class="c1"># List of forbidden hosts in the same format as for &#39;allow&#39; list.</span>
-<span class="linenos">59</span><span class="n">deny</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="k">[callbacks]</span>
+<span class="linenos">  2</span>
+<span class="linenos">  3</span><span class="c1">#</span>
+<span class="linenos">  4</span><span class="k">[callbacks.mailto]</span>
+<span class="linenos">  5</span><span class="c1">#</span>
+<span class="linenos">  6</span><span class="c1"># Enable callback</span>
+<span class="linenos">  7</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">  8</span><span class="n">handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.callbacks.MailTo&quot;</span>
+<span class="linenos">  9</span>
+<span class="linenos"> 10</span><span class="c1">#</span>
+<span class="linenos"> 11</span><span class="k">[callbacks.mailto.config]</span>
+<span class="linenos"> 12</span><span class="c1">#</span>
+<span class="linenos"> 13</span><span class="c1"># SMTP host</span>
+<span class="linenos"> 14</span><span class="c1">#smtp_host =   	# Required</span>
+<span class="linenos"> 15</span><span class="c1">#</span>
+<span class="linenos"> 16</span><span class="c1"># SMTP port</span>
+<span class="linenos"> 17</span><span class="n">smtp_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">587</span>
+<span class="linenos"> 18</span><span class="c1">#</span>
+<span class="linenos"> 19</span><span class="c1"># SMTP login</span>
+<span class="linenos"> 20</span><span class="c1">#smtp_login =   	# Optional</span>
+<span class="linenos"> 21</span><span class="c1">#</span>
+<span class="linenos"> 22</span><span class="c1"># SMTP password</span>
+<span class="linenos"> 23</span><span class="n">smtp_password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="linenos"> 24</span><span class="c1">#</span>
+<span class="linenos"> 25</span><span class="c1"># TLS/SSL</span>
+<span class="linenos"> 26</span><span class="n">smtp_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 27</span><span class="c1">#</span>
+<span class="linenos"> 28</span><span class="c1"># From address</span>
+<span class="linenos"> 29</span><span class="c1">#mail_from =   	# Required</span>
+<span class="linenos"> 30</span><span class="c1">#</span>
+<span class="linenos"> 31</span><span class="c1"># Format</span>
+<span class="linenos"> 32</span><span class="c1">#</span>
+<span class="linenos"> 33</span><span class="c1"># The format of the e-mail body</span>
+<span class="linenos"> 34</span><span class="n">body_format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;plain&quot;</span>
+<span class="linenos"> 35</span><span class="c1">#</span>
+<span class="linenos"> 36</span><span class="c1"># Attach results</span>
+<span class="linenos"> 37</span><span class="c1">#</span>
+<span class="linenos"> 38</span><span class="c1"># Send job results as attachment</span>
+<span class="linenos"> 39</span><span class="n">send_results_as_attachment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 40</span><span class="c1">#</span>
+<span class="linenos"> 41</span><span class="c1"># Request timeout</span>
+<span class="linenos"> 42</span><span class="c1">#</span>
+<span class="linenos"> 43</span><span class="c1"># The request timeout value in seconds</span>
+<span class="linenos"> 44</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
+<span class="linenos"> 45</span><span class="c1">#</span>
+<span class="linenos"> 46</span><span class="c1"># Debug mode</span>
+<span class="linenos"> 47</span><span class="n">debug</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 48</span>
+<span class="linenos"> 49</span><span class="c1">#</span>
+<span class="linenos"> 50</span><span class="c1"># Subject and body to set on success notification</span>
+<span class="linenos"> 51</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 52</span><span class="c1"># </span>
+<span class="linenos"> 53</span><span class="c1">#</span>
+<span class="linenos"> 54</span><span class="k">[callbacks.mailto.config.content_success]</span>
+<span class="linenos"> 55</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[Qjazz:$service] Job $process successfull&quot;</span>
+<span class="linenos"> 56</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 57</span><span class="s1">The job $jobid ($process) has been executed with success.</span>
+<span class="linenos"> 58</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 59</span>
+<span class="linenos"> 60</span><span class="c1">#</span>
+<span class="linenos"> 61</span><span class="c1"># Subject and body to set on failed notification.</span>
+<span class="linenos"> 62</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 63</span><span class="c1"># </span>
+<span class="linenos"> 64</span><span class="c1">#</span>
+<span class="linenos"> 65</span><span class="k">[callbacks.mailto.config.content_failed]</span>
+<span class="linenos"> 66</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[QJazz:$service] Job $process failed&quot;</span>
+<span class="linenos"> 67</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 68</span><span class="s1">The job $jobid ($process) has failed.</span>
+<span class="linenos"> 69</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 70</span>
+<span class="linenos"> 71</span><span class="c1">#</span>
+<span class="linenos"> 72</span><span class="c1"># Subject and body to set on inProgresss notification.</span>
+<span class="linenos"> 73</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 74</span><span class="c1"># </span>
+<span class="linenos"> 75</span><span class="c1">#</span>
+<span class="linenos"> 76</span><span class="k">[callbacks.mailto.config.content_in_progress]</span>
+<span class="linenos"> 77</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[QJazz:$service] Job $process started&quot;</span>
+<span class="linenos"> 78</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 79</span><span class="s1">The job $jobid ($process) has started.</span>
+<span class="linenos"> 80</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 81</span>
+<span class="linenos"> 82</span><span class="c1">#</span>
+<span class="linenos"> 83</span><span class="k">[callbacks.mailto.config.acl]</span>
+<span class="linenos"> 84</span><span class="c1">#</span>
+<span class="linenos"> 85</span><span class="c1"># Authorization order</span>
+<span class="linenos"> 86</span><span class="c1">#</span>
+<span class="linenos"> 87</span><span class="c1"># Set the order of evaluation of allow and deny directives:</span>
+<span class="linenos"> 88</span><span class="c1"># - Allow: allow by default  except thoses in deny then</span>
+<span class="linenos"> 89</span><span class="c1">#   put back those in deny with the allow directive.</span>
+<span class="linenos"> 90</span><span class="c1"># - Deny: deny by default  except thoses in allow then deny</span>
+<span class="linenos"> 91</span><span class="c1">#   those in allow with the deny directive.</span>
+<span class="linenos"> 92</span><span class="c1"># </span>
+<span class="linenos"> 93</span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span>
+<span class="linenos"> 94</span><span class="c1">#</span>
+<span class="linenos"> 95</span><span class="c1"># Allowed addresses</span>
+<span class="linenos"> 96</span><span class="c1">#</span>
+<span class="linenos"> 97</span><span class="c1"># List of allowed hosts. An host may be a IP addresse at IP range</span>
+<span class="linenos"> 98</span><span class="c1"># in CIDR format or a FQDN or FQDN suffix starting with a dot (and</span>
+<span class="linenos"> 99</span><span class="c1"># an optional &#39;*&#39;).</span>
+<span class="linenos">100</span><span class="c1"># </span>
+<span class="linenos">101</span><span class="c1">#</span>
+<span class="linenos">102</span><span class="c1"># Example:</span>
+<span class="linenos">103</span><span class="c1">#</span>
+<span class="linenos">104</span><span class="c1"># allow = [</span>
+<span class="linenos">105</span><span class="c1">#     &quot;foo.bar.com&quot;,</span>
+<span class="linenos">106</span><span class="c1">#     &quot;*.mydomain.com&quot;,</span>
+<span class="linenos">107</span><span class="c1">#     &quot;192.168.0.0/24&quot;,</span>
+<span class="linenos">108</span><span class="c1">#     &quot;192.168.1.2&quot;,</span>
+<span class="linenos">109</span><span class="c1"># ]</span>
+<span class="linenos">110</span><span class="c1"># </span>
+<span class="linenos">111</span><span class="n">allow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos">112</span><span class="c1">#</span>
+<span class="linenos">113</span><span class="c1"># Forbidden addresses</span>
+<span class="linenos">114</span><span class="c1">#</span>
+<span class="linenos">115</span><span class="c1"># List of forbidden hosts in the same format as for &#39;allow&#39; list.</span>
+<span class="linenos">116</span><span class="n">deny</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>For serving both http and https use <code class="docutils literal notranslate"><span class="pre">[callbacks.&quot;http,https&quot;]</span></code>.</p>
+</div>
+</section>
+<section id="mailto-callback-configuration">
+<h2>MailTo Callback configuration<a class="headerlink" href="#mailto-callback-configuration" title="Link to this heading"></a></h2>
+<p>Allow sending e-mail with callbacks.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="k">[callbacks]</span>
+<span class="linenos">  2</span>
+<span class="linenos">  3</span><span class="c1">#</span>
+<span class="linenos">  4</span><span class="k">[callbacks.mailto]</span>
+<span class="linenos">  5</span><span class="c1">#</span>
+<span class="linenos">  6</span><span class="c1"># Enable callback</span>
+<span class="linenos">  7</span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">  8</span><span class="n">handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qjazz_processes.callbacks.MailTo&quot;</span>
+<span class="linenos">  9</span>
+<span class="linenos"> 10</span><span class="c1">#</span>
+<span class="linenos"> 11</span><span class="k">[callbacks.mailto.config]</span>
+<span class="linenos"> 12</span><span class="c1">#</span>
+<span class="linenos"> 13</span><span class="c1"># SMTP host</span>
+<span class="linenos"> 14</span><span class="c1">#smtp_host =   	# Required</span>
+<span class="linenos"> 15</span><span class="c1">#</span>
+<span class="linenos"> 16</span><span class="c1"># SMTP port</span>
+<span class="linenos"> 17</span><span class="n">smtp_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">587</span>
+<span class="linenos"> 18</span><span class="c1">#</span>
+<span class="linenos"> 19</span><span class="c1"># SMTP login</span>
+<span class="linenos"> 20</span><span class="c1">#smtp_login =   	# Optional</span>
+<span class="linenos"> 21</span><span class="c1">#</span>
+<span class="linenos"> 22</span><span class="c1"># SMTP password</span>
+<span class="linenos"> 23</span><span class="n">smtp_password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="linenos"> 24</span><span class="c1">#</span>
+<span class="linenos"> 25</span><span class="c1"># TLS/SSL</span>
+<span class="linenos"> 26</span><span class="n">smtp_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 27</span><span class="c1">#</span>
+<span class="linenos"> 28</span><span class="c1"># From address</span>
+<span class="linenos"> 29</span><span class="c1">#mail_from =   	# Required</span>
+<span class="linenos"> 30</span><span class="c1">#</span>
+<span class="linenos"> 31</span><span class="c1"># Format</span>
+<span class="linenos"> 32</span><span class="c1">#</span>
+<span class="linenos"> 33</span><span class="c1"># The format of the e-mail body</span>
+<span class="linenos"> 34</span><span class="n">body_format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;plain&quot;</span>
+<span class="linenos"> 35</span><span class="c1">#</span>
+<span class="linenos"> 36</span><span class="c1"># Attach results</span>
+<span class="linenos"> 37</span><span class="c1">#</span>
+<span class="linenos"> 38</span><span class="c1"># Send job results as attachment</span>
+<span class="linenos"> 39</span><span class="n">send_results_as_attachment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 40</span><span class="c1">#</span>
+<span class="linenos"> 41</span><span class="c1"># Request timeout</span>
+<span class="linenos"> 42</span><span class="c1">#</span>
+<span class="linenos"> 43</span><span class="c1"># The request timeout value in seconds</span>
+<span class="linenos"> 44</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
+<span class="linenos"> 45</span><span class="c1">#</span>
+<span class="linenos"> 46</span><span class="c1"># Debug mode</span>
+<span class="linenos"> 47</span><span class="n">debug</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="linenos"> 48</span>
+<span class="linenos"> 49</span><span class="c1">#</span>
+<span class="linenos"> 50</span><span class="c1"># Subject and body to set on success notification</span>
+<span class="linenos"> 51</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 52</span><span class="c1"># </span>
+<span class="linenos"> 53</span><span class="c1">#</span>
+<span class="linenos"> 54</span><span class="k">[callbacks.mailto.config.content_success]</span>
+<span class="linenos"> 55</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[Qjazz:$service] Job $process successfull&quot;</span>
+<span class="linenos"> 56</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 57</span><span class="s1">The job $jobid ($process) has been executed with success.</span>
+<span class="linenos"> 58</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 59</span>
+<span class="linenos"> 60</span><span class="c1">#</span>
+<span class="linenos"> 61</span><span class="c1"># Subject and body to set on failed notification.</span>
+<span class="linenos"> 62</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 63</span><span class="c1"># </span>
+<span class="linenos"> 64</span><span class="c1">#</span>
+<span class="linenos"> 65</span><span class="k">[callbacks.mailto.config.content_failed]</span>
+<span class="linenos"> 66</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[QJazz:$service] Job $process failed&quot;</span>
+<span class="linenos"> 67</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 68</span><span class="s1">The job $jobid ($process) has failed.</span>
+<span class="linenos"> 69</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 70</span>
+<span class="linenos"> 71</span><span class="c1">#</span>
+<span class="linenos"> 72</span><span class="c1"># Subject and body to set on inProgresss notification.</span>
+<span class="linenos"> 73</span><span class="c1"># If a subject is provided then it will override the configuration value.</span>
+<span class="linenos"> 74</span><span class="c1"># </span>
+<span class="linenos"> 75</span><span class="c1">#</span>
+<span class="linenos"> 76</span><span class="k">[callbacks.mailto.config.content_in_progress]</span>
+<span class="linenos"> 77</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[QJazz:$service] Job $process started&quot;</span>
+<span class="linenos"> 78</span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 79</span><span class="s1">The job $jobid ($process) has started.</span>
+<span class="linenos"> 80</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 81</span>
+<span class="linenos"> 82</span><span class="c1">#</span>
+<span class="linenos"> 83</span><span class="k">[callbacks.mailto.config.acl]</span>
+<span class="linenos"> 84</span><span class="c1">#</span>
+<span class="linenos"> 85</span><span class="c1"># Authorization order</span>
+<span class="linenos"> 86</span><span class="c1">#</span>
+<span class="linenos"> 87</span><span class="c1"># Set the order of evaluation of allow and deny directives:</span>
+<span class="linenos"> 88</span><span class="c1"># - Allow: allow by default  except thoses in deny then</span>
+<span class="linenos"> 89</span><span class="c1">#   put back those in deny with the allow directive.</span>
+<span class="linenos"> 90</span><span class="c1"># - Deny: deny by default  except thoses in allow then deny</span>
+<span class="linenos"> 91</span><span class="c1">#   those in allow with the deny directive.</span>
+<span class="linenos"> 92</span><span class="c1"># </span>
+<span class="linenos"> 93</span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span>
+<span class="linenos"> 94</span><span class="c1">#</span>
+<span class="linenos"> 95</span><span class="c1"># Allowed addresses</span>
+<span class="linenos"> 96</span><span class="c1">#</span>
+<span class="linenos"> 97</span><span class="c1"># List of allowed hosts. An host may be a IP addresse at IP range</span>
+<span class="linenos"> 98</span><span class="c1"># in CIDR format or a FQDN or FQDN suffix starting with a dot (and</span>
+<span class="linenos"> 99</span><span class="c1"># an optional &#39;*&#39;).</span>
+<span class="linenos">100</span><span class="c1"># </span>
+<span class="linenos">101</span><span class="c1">#</span>
+<span class="linenos">102</span><span class="c1"># Example:</span>
+<span class="linenos">103</span><span class="c1">#</span>
+<span class="linenos">104</span><span class="c1"># allow = [</span>
+<span class="linenos">105</span><span class="c1">#     &quot;foo.bar.com&quot;,</span>
+<span class="linenos">106</span><span class="c1">#     &quot;*.mydomain.com&quot;,</span>
+<span class="linenos">107</span><span class="c1">#     &quot;192.168.0.0/24&quot;,</span>
+<span class="linenos">108</span><span class="c1">#     &quot;192.168.1.2&quot;,</span>
+<span class="linenos">109</span><span class="c1"># ]</span>
+<span class="linenos">110</span><span class="c1"># </span>
+<span class="linenos">111</span><span class="n">allow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="linenos">112</span><span class="c1">#</span>
+<span class="linenos">113</span><span class="c1"># Forbidden addresses</span>
+<span class="linenos">114</span><span class="c1">#</span>
+<span class="linenos">115</span><span class="c1"># List of forbidden hosts in the same format as for &#39;allow&#39; list.</span>
+<span class="linenos">116</span><span class="n">deny</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+</pre></div>
 </div>
 </section>
 </section>
