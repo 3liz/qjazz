@@ -1,0 +1,103 @@
+
+
+[callbacks]
+
+#
+[callbacks.mailto]
+#
+# Enable callback
+enabled = true
+handler = "qjazz_processes.callbacks.MailTo"
+
+#
+[callbacks.mailto.config]
+#
+# SMTP host
+#smtp_host =   	# Required
+#
+# SMTP port
+smtp_port = 587
+#
+# SMTP login
+#smtp_login =   	# Optional
+#
+# SMTP password
+smtp_password = ""
+#
+# TLS/SSL
+smtp_tls = false
+#
+# From address
+#mail_from =   	# Required
+#
+# Request timeout
+#
+# The request timeout value in seconds
+timeout = 5
+#
+# Debug mode
+debug = false
+
+#
+# Subject and body to set on success notification
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_success]
+#subject =   	# Required
+#body =   	# Required
+
+#
+# Subject and body to set on failed notification.
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_failed]
+#subject =   	# Required
+#body =   	# Required
+
+#
+# Subject and body to set on inProgresss notification.
+# If a subject is provided then it will override the configuration value.
+# 
+#
+[callbacks.mailto.config.content_in_progress]
+#subject =   	# Required
+#body =   	# Required
+
+#
+[callbacks.mailto.config.acl]
+#
+# Authorization order
+#
+# Set the order of evaluation of allow and deny directives:
+# - Allow: allow by default  except thoses in deny then
+#   put back those in deny with the allow directive.
+# - Deny: deny by default  except thoses in allow then deny
+#   those in allow with the deny directive.
+# 
+order = "Allow"
+#
+# Allowed addresses
+#
+# List of allowed hosts. An host may be a IP addresse at IP range
+# in CIDR format or a FQDN or FQDN suffix starting with a dot (and
+# an optional '*').
+# 
+#
+# Example:
+#
+# allow = [
+#     "foo.bar.com",
+#     "*.mydomain.com",
+#     "192.168.0.0/24",
+#     "192.168.1.2",
+# ]
+# 
+allow = []
+#
+# Forbidden addresses
+#
+# List of forbidden hosts in the same format as for 'allow' list.
+deny = []
+

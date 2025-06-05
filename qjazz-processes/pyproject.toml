@@ -23,6 +23,7 @@ version = "0.2.0"
 [project.optional-dependencies]
 server = ["aiohttp"]
 minio = ["minio"]
+mail = ["email-validator"]
 
 [[project.authors]]
 name = "David Marteau"

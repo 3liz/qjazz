@@ -124,13 +124,13 @@ def describe_process(_state, ident: str, project_path: str | None) -> dict | Non
 @functools.cache
 def qgis_version_details() -> Sequence[str]:
     from qgis.core import QgsCommandLineUtils
+
     return tuple(
         filter(
             None,
             (line.strip() for line in QgsCommandLineUtils.allVersions().split("\n")),
         ),
     )
-
 
 
 @inspect_command()
@@ -479,10 +479,11 @@ def on_task_prerun(
         return
 
     subscriber = MaybeSubscriber.validate_python(kwargs["__run_config__"]["request"].get("subscriber"))
-    if subscriber and subscriber.in_progress_uri:
-        task.app.processes_callbacks.in_progress(
+    if subscriber and subscriber.in_progress_uri_x:
+        cast(QgisWorker, task.app).processes_callbacks.in_progress(
             str(subscriber.in_progress_uri),
             task_id,
+            kwargs["__meta__"],
         )
 
 
@@ -506,15 +507,17 @@ def on_task_postrun(
 
     match state:
         case celery.states.SUCCESS if subscriber.success_uri:
-            task.app.processes_callbacks.on_success(
+            cast(QgisWorker, task.app).processes_callbacks.on_success(
                 str(subscriber.success_uri),
                 task_id,
+                kwargs["__meta__"],
                 retval,
             )
         case celery.states.FAILURE if subscriber.failed_uri:
-            task.app.processes_callbacks.on_failure(
+            cast(QgisWorker, task.app).processes_callbacks.on_failure(
                 str(subscriber.failed_uri),
                 task_id,
+                kwargs["__meta__"],
             )
 
 

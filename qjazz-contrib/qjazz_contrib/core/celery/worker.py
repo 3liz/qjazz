@@ -170,6 +170,7 @@ class Job(celery.Task):
         else:
             args = ()
 
+        # TODO: replace __dict__ with 'model_dump()'
         out = self.run(*args, **meta.__run_config__.__dict__)
         # Return output as json compatible format
         return outputs.dump_python(out, mode="json", by_alias=True, exclude_none=True)

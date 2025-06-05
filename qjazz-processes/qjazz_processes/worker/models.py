@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import (
     Literal,
+    Optional,
     Sequence,
+    TypedDict,
 )
 
 from pydantic import TypeAdapter
@@ -46,3 +48,12 @@ class ProcessFilesVersionV1(WorkerVersion1):
 
 ProcessFilesVersion = ProcessFilesVersionV1
 ProcessFiles = ProcessFilesVersionV1
+
+
+class JobMeta(TypedDict):
+    created: str
+    realm: Optional[str]
+    service: str
+    process_id: str
+    expires: int
+    tag: Optional[str]

@@ -5,15 +5,16 @@
 from ipaddress import ip_address
 from urllib.parse import urlsplit
 
+from qjazz_processes.callbacks.accesscontrol import AccessControlConfig
 from qjazz_processes.callbacks.handlers.http import (
     HttpCallback,
     HttpCallbackConfig,
 )
 
 
-def test_callback_http_allow():
+def test_callback_acl_allow():
     """Allow by default"""
-    conf = HttpCallbackConfig(
+    conf = AccessControlConfig(
         allow=(
             "192.168.0.8",
             ".foo.com",
@@ -34,9 +35,9 @@ def test_callback_http_allow():
     assert conf.check_url(urlsplit("http://projects.3liz.org"))
 
 
-def test_callback_http_deny():
+def test_callback_acl_deny():
     """Deny by default"""
-    conf = HttpCallbackConfig(
+    conf = AccessControlConfig(
         allow=(
             "*.foo.com",
             "192.168.0.0/24",
@@ -56,7 +57,7 @@ def test_callback_http_deny():
 
 
 def test_callback_http_request(httpserver):
-    handler = HttpCallback("http", HttpCallbackConfig())
+    handler = HttpCallback(("http",), HttpCallbackConfig())
 
     results = {
         "foo": "bar",

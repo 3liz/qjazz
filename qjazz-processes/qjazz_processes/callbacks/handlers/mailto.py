@@ -1,0 +1,224 @@
+#
+# mailto callback
+#
+import smtplib
+
+from email.mime.text import MIMEText
+from string import Template
+from typing import (
+    Annotated,
+    Iterator,
+    Optional,
+    Sequence,
+    TypedDict,
+)
+from urllib.parse import parse_qs
+
+from pydantic import (
+    EmailStr,
+    PlainSerializer,
+    PlainValidator,
+    PositiveInt,
+    SecretStr,
+    TypeAdapter,
+    WithJsonSchema,
+)
+
+from qjazz_contrib.core import logger
+from qjazz_contrib.core.config import ConfigBase
+from qjazz_contrib.core.models import Field, Option
+
+from ..accesscontrol import AccessControlConfig
+from ..callbacks import CallbackHandler, JobMeta, JobResults, Url
+
+#
+# Handle mailto urls,  i.e:
+#
+# mailto:<recipient>@<domain>?<parameters>
+#
+# Parameters:
+# subject=<text>: Set the subject
+# to=<recipient>: Add extra recipients
+# cc=<recipient>: Add extra CC recipients
+#
+
+
+def _validate_template(v: str) -> Template:
+    t = Template(v)
+    if not t.is_valid():
+        raise ValueError("Invalid template")
+    return t
+
+
+TemplateStr = Annotated[
+    Template,
+    PlainValidator(_validate_template),
+    PlainSerializer(lambda t: t.safe_substitute(), return_type=str),
+    WithJsonSchema({"type": "string"}),
+]
+
+
+class MailContent(ConfigBase):
+    subject: TemplateStr
+    body: TemplateStr
+
+
+class MailToCallbackConfig(ConfigBase):
+    """Mail callback configuration
+
+    Callback handler for sending mails,
+    The callback uri must conform to RFC 2368 (https://www.rfc-editor.org/rfc/rfc2368)
+    body and subject may contains template variables:
+
+    $service: name of the service
+    $process: name of the process
+    $jobid: id of the job
+    $tag: Tag associated with the job
+    """
+
+    smtp_host: str = Field(title="SMTP host")
+    smtp_port: PositiveInt = Field(587, title="SMTP port")
+    smtp_login: Option[str] = Field(title="SMTP login")
+    smtp_password: SecretStr = Field("", title="SMTP password")
+    smtp_tls: bool = Field(False, title="TLS/SSL")
+
+    mail_from: EmailStr = Field(title="From address")
+
+    content_success: MailContent = Field(
+        description="""
+        Subject and body to set on success notification
+        If a subject is provided then it will override the configuration value.
+        """,
+    )
+
+    content_failed: MailContent = Field(
+        description="""
+        Subject and body to set on failed notification.
+        If a subject is provided then it will override the configuration value.
+        """,
+    )
+
+    content_in_progress: MailContent = Field(
+        description="""
+        Subject and body to set on inProgresss notification.
+        If a subject is provided then it will override the configuration value.
+        """,
+    )
+
+    timeout: PositiveInt = Field(
+        default=5,
+        title="Request timeout",
+        description="The request timeout value in seconds",
+    )
+
+    debug: bool = Field(False, title="Debug mode")
+
+    acl: AccessControlConfig = Field(AccessControlConfig())
+
+
+#
+# Callback implementation
+#
+
+
+class Context(TypedDict):
+    service: str
+    process: str
+    jobid: str
+    tag: Optional[str]
+
+
+class MailToCallback(CallbackHandler):
+    Config = MailToCallbackConfig
+
+    def __init__(self, schemes: Sequence[str], conf: MailToCallbackConfig):
+        self._conf = conf
+        self._schemes = schemes
+
+    def on_success(self, url: Url, job_id: str, meta: JobMeta, results: JobResults):
+        self.send_request(url, job_id, self._conf.content_success, meta, results)
+
+    def on_failure(self, url: Url, job_id: str, meta: JobMeta):
+        self.send_request(url, job_id, self._conf.content_failed, meta)
+
+    def in_progress(self, url: Url, job_id: str, meta: JobMeta):
+        self.send_request(url, job_id, self._conf.content_in_progress, meta)
+
+    def send_request(
+        self,
+        url: Url,
+        job_id: str,
+        content: MailContent,
+        meta: JobMeta,
+        results: Optional[JobResults] = None,
+    ):
+        """Send mail"""
+
+        # mailto must conform to RFC 2368 (https://datatracker.ietf.org/doc/html/rfc2368)
+        # that is the path is the email address
+
+        params = parse_qs(url.query)
+        to_recipients = list(get_recipients("to", url, params))
+        cc_recipients = list(get_recipients("cc", url, params))
+        bcc_recipients = list(get_recipients("bcc", url, params))
+
+        from_addr = self._conf.mail_from
+
+        context = Context(
+            service=meta["service"],
+            process=meta["process_id"],
+            tag=meta["tag"],
+            jobid=job_id,
+        )
+
+        # TODO: templating
+        subject = params.get("subject", (content.subject.safe_substitute(context),))[0]
+        body = content.body.safe_substitute(context)
+
+        msg = MIMEText(body, "plain", _charset="utf-8")
+        msg["Subject"] = subject
+        msg["From"] = from_addr
+        msg["To"] = ",".join(to_recipients)
+        msg["Cc"] = ",".join(cc_recipients)
+
+        hostname = self._conf.smtp_host
+        user = self._conf.smtp_login
+        password = self._conf.smtp_password
+
+        to_recipients.extend(cc_recipients)
+        to_recipients.extend(bcc_recipients)
+
+        logger.info("'%s' callback: sending mail to %s", url.scheme, to_recipients)
+
+        server = smtplib.SMTP()
+        # Workaround https://github.com/python/cpython/issues/80275
+        server._host = hostname  # type: ignore [attr-defined]
+        if self._conf.debug:
+            server.set_debuglevel(1)
+        server.connect(hostname, self._conf.smtp_port)
+        try:
+            if self._conf.smtp_tls:
+                server.starttls()
+            if user:
+                server.login(user, password.get_secret_value())
+
+            server.sendmail(from_addr, to_recipients, msg.as_string())
+        finally:
+            server.quit()
+
+
+EMailValidator: TypeAdapter = TypeAdapter(EmailStr)
+
+
+def get_recipients(p: str, url: Url, params: dict[str, list[str]]) -> Iterator[str]:
+    if p == "to" and url.path:
+        yield EMailValidator.validate_python(url.path)
+    # Get 'to' parameters
+    for addr in params.get(p, ()):
+        yield EMailValidator.validate_python(addr)
+
+
+def dump_toml_schema() -> None:
+    from ..doc import dump_callback_config_schema
+
+    dump_callback_config_schema("mailto", "qjazz_processes.callbacks.MailTo", MailToCallbackConfig)

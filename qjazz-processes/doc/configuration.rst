@@ -108,7 +108,7 @@ It allows to set up a push based mechanism for processes results to others servi
 Originally, only http POST requests are considered but Qjazz processes support arbitrary
 uri schemes.
 
-Callbacks handlers are declared in worker configuration under the ``[callbacks.<scheme>]``
+Callbacks handlers are declared in worker configuration under the ``[callbacks."<scheme,...>"]``
 section along with their configuration and the import string to the class implementing the
 callback support.
 
@@ -122,6 +122,10 @@ HTTP Callback configuration
 .. literalinclude:: configs/callback_http.toml
    :language: toml
    :linenos:
+
+.. note::
+
+    For serving both http and https use ``[callbacks."http,https"]``.
 
 
 

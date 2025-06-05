@@ -3,17 +3,29 @@
 [callbacks]
 
 #
-[callbacks.http]
+[callbacks.https]
 #
 # Enable callback
 enabled = true
-handler = "qjazz_processes.callbacks.HttpCallback"
+handler = "qjazz_processes.callbacks.Http"
 
 #
-[callbacks.http.config]
+[callbacks.https.config]
 #
 # Path to CA file
 #ca_cert =   	# Optional
+#
+# User agent
+user_agent = "Qjazz processes v0.2.0"
+#
+# Request timeout
+#
+# The request timeout value for both connect and read timeout.
+# 
+timeout = 5
+
+#
+[callbacks.https.config.acl]
 #
 # Authorization order
 #
@@ -47,13 +59,4 @@ allow = []
 #
 # List of forbidden hosts in the same format as for 'allow' list.
 deny = []
-#
-# User agent
-user_agent = "Qjazz processes v0.2.0"
-#
-# Request timeout
-#
-# The request timeout value for both connect and read timeout.
-# 
-timeout = 5
 

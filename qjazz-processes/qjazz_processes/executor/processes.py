@@ -7,7 +7,6 @@ from typing import (
     Iterator,
     Optional,
     Sequence,
-    TypedDict,
     assert_never,
 )
 
@@ -36,21 +35,17 @@ from ..worker.exceptions import (
     ProcessesException,
     ServiceNotAvailable,
 )
-from ..worker.models import Link, ProcessFiles, ProcessLog
+from ..worker.models import (
+    JobMeta,
+    Link,
+    ProcessFiles,
+    ProcessLog,
+)
 from .protocols import ExecutorProtocol, ServiceDict
 
 #
 #  Processes
 #
-
-
-class JobMeta(TypedDict):
-    created: str
-    realm: Optional[str]
-    service: str
-    process_id: str
-    expires: int
-    tag: Optional[str]
 
 
 class Processes(ExecutorProtocol):

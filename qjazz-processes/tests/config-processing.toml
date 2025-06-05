@@ -55,10 +55,7 @@ force_readonly_layers = true
 #secure = false
 
 [callbacks.test]
-handler = "qjazz_processes.callbacks.TestCallback"
+handler = "qjazz_processes.callbacks.Test"
 
-[callbacks.http]
-handler = "qjazz_processes.callbacks.HttpCallback"
-
-[callbacks.https]
-handler = "qjazz_processes.callbacks.HttpCallback"
+[callbacks."http,https"]
+handler = "qjazz_processes.callbacks.Http"

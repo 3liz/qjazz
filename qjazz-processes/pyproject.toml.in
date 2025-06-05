@@ -23,6 +23,7 @@ version = "${PIN_VERSION}"
 [project.optional-dependencies]
 server = ["aiohttp"]
 minio = ["minio"]
+mail = ["email-validator"]
 
 [[project.authors]]
 name = "David Marteau"

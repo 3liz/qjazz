@@ -514,7 +514,7 @@ config = {}
 # Example:
 #
 # [callbacks.https]
-# handler = "qjazz_processes.callbacks.HttpCallback",
+# handler = "qjazz_processes.callbacks.Http",
 # 
 [callbacks.'key']
 #
