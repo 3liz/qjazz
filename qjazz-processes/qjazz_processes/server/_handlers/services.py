@@ -26,7 +26,7 @@ class ServiceItem(swagger.JsonModel):
     title: str = Field("")
     description: str = Field("")
     qgis_version_info: int
-    version_details: Sequence[str]
+    version_details: str | Sequence[str]
     callbacks: Sequence[str]
     links: Sequence[Link]
 

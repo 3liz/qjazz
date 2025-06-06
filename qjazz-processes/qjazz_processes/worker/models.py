@@ -6,7 +6,7 @@ from typing import (
     TypedDict,
 )
 
-from pydantic import TypeAdapter
+from pydantic import Field, TypeAdapter
 
 from ..schemas import JsonModel, Link, LinkHttp
 
@@ -24,9 +24,9 @@ class WorkerPresenceV1(WorkerVersion1):
     links: Sequence[LinkHttp]
     online_since: float
     qgis_version_info: int
-    versions: Sequence[str]
+    versions: str | Sequence[str]
     result_expires: int
-    callbacks: Sequence[str]
+    callbacks: Sequence[str] = Field([])
 
 
 WorkerPresenceVersion = WorkerPresenceV1
