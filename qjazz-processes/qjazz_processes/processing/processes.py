@@ -158,6 +158,12 @@ class ProcessAlgorithm:
             MetadataValue(role="RequiresProject", title="Requires project", value=self.require_project),
         ]
 
+        help_string = alg.helpString()
+        if help_string:
+            description.metadata.append(
+                MetadataValue(role="HelpString", title="Help string", value=help_string),
+            )
+
         return description
 
     def summary(self) -> ProcessSummary:

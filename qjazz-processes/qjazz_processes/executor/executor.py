@@ -223,6 +223,7 @@ class Executor(
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
+        with_details: bool = False,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
         return self._jobs(
@@ -231,6 +232,7 @@ class Executor(
             realm=realm,
             cursor=cursor,
             limit=limit,
+            with_details=with_details,
         )
 
     def log_details(

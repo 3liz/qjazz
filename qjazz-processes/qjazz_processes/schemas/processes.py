@@ -67,14 +67,14 @@ ValuePassing = Sequence[Literal["byValue", "byReference"]]
 
 
 class InputDescription(DescriptionType):
-    schema_: JsonValue = Field(alias="schema")
+    schema_: dict[str, JsonValue] = Field(alias="schema")
     value_passing: ValuePassing = ("byValue",)
     min_occurs: _PositiveInt = 1
     max_occurs: _NonZeroPositiveInt | Literal["unbounded"] = 1
 
 
 class OutputDescription(DescriptionType):
-    schema_: JsonValue = Field(alias="schema")
+    schema_: dict[str, JsonValue] = Field(alias="schema")
     value_passing: ValuePassing = ("byValue",)
 
 

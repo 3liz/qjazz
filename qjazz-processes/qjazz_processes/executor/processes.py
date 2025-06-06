@@ -562,6 +562,7 @@ class Processes(ExecutorProtocol):
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
+        with_details: bool = False,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
 
@@ -579,7 +580,7 @@ class Processes(ExecutorProtocol):
                 if not service:
                     destinations = self.get_destinations(ti.service, services)
 
-                st = self._job_status(ti.job_id, destinations)
+                st = self._job_status(ti.job_id, destinations, with_details=with_details)
                 if not st:
                     st = self._job_status_pending(ti)
                 if st:
