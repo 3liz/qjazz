@@ -277,9 +277,11 @@ class Processes(HandlerProto):
         else:
             priority = 0
 
-        # Check if processes allows for async execution
+        # TODO: Check if processes allows for async execution
 
         execute_sync = prefer.execute_sync()
+        if execute_sync:
+            logger.debug("Running synchronous execution for %s (%s)", process_id, service)
 
         result = self._executor.execute(
             service,
@@ -311,6 +313,7 @@ class Processes(HandlerProto):
                     body=JobResultsAdapter.dump_json(job_result, by_alias=True, exclude_none=True),
                 )
             except celery.exceptions.TimeoutError:
+                # Check for allowed async execution
                 # If wait is set then fallback to asynchronous response
                 if not prefer.execute_async:
                     logger.error("Synchronous request timeout")

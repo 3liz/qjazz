@@ -444,7 +444,6 @@ def list_jobs(
 ):
     """List jobs"""
 
-
     from .executor import JobStatus
 
     executor = ctx.obj.setup()
@@ -459,8 +458,7 @@ def list_jobs(
     has_next = True
 
     def pred(job: JobStatus) -> bool:
-        return (not filter_tags or job.tag in filter_tags) and \
-            (not filter_status or job.status in filter_status)
+        return (not filter_tags or job.tag in filter_tags) and (not filter_status or job.status in filter_status)
 
     while has_next:
         jobs = executor.jobs(service, realm=realm, limit=limit, cursor=index, with_details=True)
@@ -473,6 +471,7 @@ def list_jobs(
                 resp = job.model_dump_json(indent=4)
                 click.echo(resp)
         else:
+
             def status_color(status: str) -> str | None:
                 col: str | None
                 match status:
@@ -490,9 +489,9 @@ def list_jobs(
                 for i, p in enumerate(filtered_jobs):
                     status = p.status
                     fg = status_color(status)
-                    bS = "S" if  p.run_config and p.run_config.get("subscriber") else " "
+                    bS = "S" if p.run_config and p.run_config.get("subscriber") else " "
                     echo(f"{bS} ", nl=False)
-                    echo(f"{i+index+1:>4} ", nl=False)
+                    echo(f"{i + index + 1:>4} ", nl=False)
                     echo(style(f"{p.job_id:<40}", fg=fg), nl=False)
                     echo(style(f"{p.process_id:<40}", fg="blue"), nl=False)
                     echo(style(f"{status[:4].upper()} ", fg=fg, bold=True))
@@ -500,7 +499,7 @@ def list_jobs(
                         echo(style(f"       \u2b11 {p.tag}", italic=True))
             else:
                 for p in filtered_jobs:
-                    for k, v in p.model_dump(mode='json', by_alias=True).items():
+                    for k, v in p.model_dump(mode="json", by_alias=True).items():
                         if k == "links":
                             continue
                         echo(f"{style(k, fg='blue'):<25}{style(v, fg='green')}")
@@ -514,7 +513,7 @@ def list_jobs(
                 break
 
 
-@jobs.command('status')
+@jobs.command("status")
 @click.argument("job_id")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")
 @click.pass_context
@@ -533,7 +532,7 @@ def jobs_status(ctx: click.Context, job_id: str, json_format: bool):
     else:
         echo("\n")
         echo(style(f"Job {job_id}", bold=True))
-        for name, output in job.model_dump(mode='json', by_alias=True, exclude_none=True).items():
+        for name, output in job.model_dump(mode="json", by_alias=True, exclude_none=True).items():
             echo(click.style(f"  {name:<15}", bold=True), nl=False)
             match output:
                 case list():
@@ -541,19 +540,18 @@ def jobs_status(ctx: click.Context, job_id: str, json_format: bool):
                 case dict():
                     echo()
                     for k, v in output.items():
-                       echo(f"    {style(k, fg='blue')}: {style(dump_json(v), fg='green')}")
+                        echo(f"    {style(k, fg='blue')}: {style(dump_json(v), fg='green')}")
                 case _:
-                    echo(style(output, fg='green'))
+                    echo(style(output, fg="green"))
 
 
 #
-@jobs.command('results')
+@jobs.command("results")
 @click.argument("job_id")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")
 @click.pass_context
 def jobs_results(ctx: click.Context, job_id: str, json_format: bool):
     """Display job results"""
-
 
     executor = ctx.obj.setup()
 
@@ -575,22 +573,22 @@ def jobs_results(ctx: click.Context, job_id: str, json_format: bool):
                 case dict():
                     echo()
                     for k, v in output.items():
-                       echo(f"    {style(k, fg='blue')}: {style(dump_json(v), fg='green')}")
+                        echo(f"    {style(k, fg='blue')}: {style(dump_json(v), fg='green')}")
                 case _:
-                    echo(style(output, fg='green'))
-
-
-
+                    echo(style(output, fg="green"))
 
 
 def dump_json(v):
-    v = TypeAdapter(JsonValue).dump_json(
-        v,
-        exclude_none=True,
-        indent=4,
-    ).decode()
+    v = (
+        TypeAdapter(JsonValue)
+        .dump_json(
+            v,
+            exclude_none=True,
+            indent=4,
+        )
+        .decode()
+    )
     return indent(v, "    ").lstrip()
-
 
 
 main()
