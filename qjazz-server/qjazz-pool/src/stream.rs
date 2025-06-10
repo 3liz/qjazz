@@ -18,7 +18,7 @@ impl<'a> ByteStream<'a> {
         Self { io, done: false }
     }
 
-    /// Get result as owned data
+    /// Get result as shared data
     pub async fn next(&mut self) -> Result<Option<&[u8]>> {
         if self.done {
             return Ok(None);

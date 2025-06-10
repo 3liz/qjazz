@@ -431,7 +431,7 @@ impl Worker {
         Ok(ObjectStream::new(io))
     }
 
-    /// Return project information from loaded project in cache
+    /// Returns project information from loaded project in cache
     /// The method will NOT load the project in cache
     pub async fn project_info(&mut self, uri: &str) -> Result<msg::ProjectInfo> {
         self.io()?
