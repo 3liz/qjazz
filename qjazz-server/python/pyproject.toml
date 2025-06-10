@@ -11,7 +11,7 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "qjazz-contrib==0.2.0",
+    "qjazz-contrib==0.3.0",
     "aiohttp",
     "grpcio",
     "grpcio-tools",
@@ -22,7 +22,7 @@ dependencies = [
     "ruamel.yaml",
     "msgpack",
 ]
-version = "0.2.0"
+version = "0.3.0"
 
 [project.optional-dependencies]
 amqp = ["py-amqp-client>=2.0.0"]
