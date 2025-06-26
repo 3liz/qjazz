@@ -23,10 +23,11 @@ class WorkerPresenceV1(WorkerVersion1):
     description: str
     links: Sequence[LinkHttp]
     online_since: float
-    qgis_version_info: int
+    qgis_version_info: Optional[int] = None
     versions: str | Sequence[str]
     result_expires: int
     callbacks: Sequence[str] = Field([])
+    entrypoint: Optional[str] = None
 
 
 WorkerPresenceVersion = WorkerPresenceV1

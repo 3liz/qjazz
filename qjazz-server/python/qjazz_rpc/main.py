@@ -2,7 +2,7 @@ import os
 import sys
 
 from contextlib import closing
-from typing import cast
+from typing import Protocol, cast
 
 from pydantic import ConfigDict, Field
 
@@ -31,6 +31,10 @@ class WorkerConfig(config.ConfigBase):
     )
 
 
+class ConfigProto(Protocol):
+    logging: logger.LoggingConfig
+
+
 def run(name: str, projects: list[str]) -> None:
     rendez_vous = RendezVous()
 
@@ -46,7 +50,7 @@ def run(name: str, projects: list[str]) -> None:
             file=sys.stderr,
         )
 
-    logger.setup_log_handler(confservice.conf.logging.level)
+    logger.setup_log_handler(cast(ConfigProto, confservice.conf).logging.level)
 
     # Create proxy for allow update
     qgis_conf = cast(QgisConfig, config.ConfigProxy(confservice, f"{WORKER_SECTION}.qgis"))

@@ -2,7 +2,14 @@ import sys
 
 from pathlib import Path
 from textwrap import indent, shorten
-from typing import Optional, Sequence, cast, get_args
+from typing import (
+    Any,
+    Optional,
+    Protocol,
+    Sequence,
+    cast,
+    get_args,
+)
 
 import click
 
@@ -19,6 +26,11 @@ PathType = click.Path(
     dir_okay=False,
     path_type=Path,
 )
+
+
+def error_exit(msg: str):
+    click.echo(style(f"ERR: {msg}", fg="red"), err=True)
+    sys.exit(1)
 
 
 @click.group()
@@ -85,6 +97,9 @@ def setup_executor_context(
     from .executor import Executor, ExecutorConfig
 
     def executor_setup() -> Executor:
+        class ConfigProto(Protocol):
+            executor: ExecutorConfig
+
         logger.set_log_level(
             logger.LogLevel.DEBUG if verbose else logger.LogLevel.ERROR,
         )
@@ -97,7 +112,7 @@ def setup_executor_context(
         confservice.validate(cnf)
         if verbose:
             click.echo(confservice.conf)
-        return Executor(cast(ExecutorConfig, confservice.conf.executor))
+        return Executor(cast(ConfigProto, confservice.conf).executor)
 
     ctx.obj = SimpleNamespace(
         configpath=configpath,
@@ -159,7 +174,7 @@ def list_services(ctx: click.Context, json_format: bool, long_format: bool):
 
 
 @control.command("reload")
-@click.argument("service")
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
 @click.pass_context
 def reload_service(ctx: click.Context, service: str):
     """Reload worker pool for SERVICE"""
@@ -174,7 +189,7 @@ def reload_service(ctx: click.Context, service: str):
 
 
 @control.command("shutdown")
-@click.argument("service")
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
 @click.pass_context
 def shutdown_service(ctx: click.Context, service: str):
     """Shutdown service"""
@@ -189,7 +204,7 @@ def shutdown_service(ctx: click.Context, service: str):
 
 
 @control.command("ping")
-@click.argument("service")
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
 @click.option(
     "--repeat",
     "-n",
@@ -246,7 +261,7 @@ def processes(
 
 
 @processes.command("ls")
-@click.argument("service")
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")
 @click.pass_context
 def list_processes(ctx: click.Context, service: str, json_format: bool):
@@ -283,17 +298,16 @@ def list_processes(ctx: click.Context, service: str, json_format: bool):
                     echo(style(indent(p.description, "    "), italic=True))
 
     except ServiceNotAvailable:
-        click.echo("Service not available", err=True)
-        sys.exit(1)
+        error_exit("Service not available")
 
 
 @processes.command("describe")
-@click.argument("service")
 @click.argument("ident")
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
 @click.option("--project", help="Project name")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")
 @click.pass_context
-def describe_processes(
+def describe_process(
     ctx: click.Context,
     service: str,
     ident: str,
@@ -311,6 +325,9 @@ def describe_processes(
 
     try:
         processes = executor.describe(service, ident, project=project)
+        if processes is None:
+            error_exit(f"Process '{ident}' not found for service '{service}'")
+
         if json_format:
             resp = TypeAdapter(ProcessDescription).dump_json(
                 processes,
@@ -387,9 +404,117 @@ def describe_processes(
             echo()
 
     except ServiceNotAvailable:
-        click.echo("Service not available", err=True)
-        sys.exit(1)
+        error_exit("Service not available")
 
+
+@processes.command("execute")
+@click.argument("ident")
+@click.argument("inputs", nargs=-1, type=click.UNPROCESSED)
+@click.option("--service", "-S", required=True, envvar="QJAZZ_SERVICE")
+@click.option("--project", help="Project name")
+@click.option("--tag")
+@click.option("--realm")
+@click.option("--timeout", type=int)
+@click.option("--priority", type=int, default=0, help="Job priority")
+@click.option("--nowait", is_flag=True, help="Do not wait for result")
+@click.option("--outputs", help="Job output specification")
+@click.pass_context
+def execute_process(
+    ctx: click.Context,
+    ident: str,
+    inputs: Sequence[str],
+    service: str,
+    project: Optional[str],
+    tag: Optional[str],
+    realm: Optional[str],
+    timeout: Optional[int],
+    priority: int,
+    nowait: bool,
+    outputs: Optional[str],
+):
+    """Execute process IDENT
+
+    Parameters are <key>=<value> pair
+
+    If inputs is '-', inputs data are in Json format
+    from standard input
+    """
+    from pydantic import TypeAdapter
+
+    from .executor import ServiceNotAvailable
+    from .schemas import JobExecute, JobResults, JsonDict, Output
+
+    executor = ctx.obj.setup()
+    executor.update_services()
+
+    OutputDict = dict[str, Output]
+
+    inps: JsonDict
+    outs: OutputDict
+
+    if inputs and inputs[0] == "-":
+        inps = TypeAdapter(JsonDict).validate_json("".join(line for line in sys.stdin))
+    else:
+        # Parse kv arguments
+        def kv(s: str) -> tuple[str, JsonValue]:
+            t = s.split('=', maxsplit=1)
+            if len(t) !=2:
+                error_exit("Missing value for {s}")
+            value: Any = t[1]
+            if value.startswith("["):
+                if not value.endswith("]"):
+                    error_exit(f"Missing ']' for {t[0]}")
+                value = value[1:-1].split(",")
+            elif value.startswith("{"):
+                try:
+                    value = TypeAdapter(JsonValue).validate_json(value)
+                except Exception as err:
+                    error_exit(f"{err}")
+
+            return (t[0], value)
+
+        inps = dict(kv(inp) for inp in inputs)
+
+    if outputs:
+        outs = TypeAdapter(OutputDict).validate_json(outputs)
+    else:
+        outs = {}
+
+    try:
+        result = executor.execute(
+            service,
+            ident,
+            request=JobExecute(
+                inputs=inps,
+                outputs=outs,
+            ),
+            project=project,
+            context={},
+            realm=realm,
+            # Set the pending timeout to the wait preference
+            pending_timeout=timeout,
+            tag=tag,
+            priority=priority,
+        )
+
+        if not nowait:
+            try:
+                job_results = result.get(timeout)
+            except Exception as err:
+                error_exit(f"{err}: {result.status().model_dump_json()}")
+
+            out = TypeAdapter(JobResults).dump_json(
+                job_results,
+                by_alias=True,
+                exclude_none=True,
+            ).decode()
+        else:
+            out = result.status().model_dump_json()
+
+        click.echo(out)
+
+    except ServiceNotAvailable:
+        error_exit("Service not available")
 
 #
 # Jobs
@@ -416,7 +541,7 @@ def jobs(
 
 
 @jobs.command("ls")
-@click.option("--service", help="Filter by service")
+@click.option("--service", help="Filter by service", envvar="QJAZZ_SERVICE")
 @click.option("--realm", help="Filter by realm")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")
 @click.option("-s", "--short", is_flag=True, help="Short display")

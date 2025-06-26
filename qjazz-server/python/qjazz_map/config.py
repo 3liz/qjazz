@@ -164,7 +164,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProto:
                 includes = str(configpath.joinpath(includes))
             load_include_config_files(includes, conf)
 
-        return confservice.conf
+        return cast(ConfigProto, confservice.conf)
 
     except ConfigError as err:
         print("Configuration error:", err, file=sys.stderr, flush=True)  # noqa T201

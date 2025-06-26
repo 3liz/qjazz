@@ -19,5 +19,9 @@ export PYTEST_ADDOPTS=-m "not services"
 
 SCAN_OPTS=-x qjazz_processes/tests
 
+EXAMPLES=examples
+
 include $(topsrcdir)/config/rules.mk
 
+typing::
+	$(MYPY) -p $(EXAMPLES)

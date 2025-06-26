@@ -11,6 +11,7 @@ import celery.states
 from pydantic import (
     DirectoryPath,
     FilePath,
+    JsonValue,
     NonNegativeInt,
 )
 
@@ -271,10 +272,14 @@ class Celery(celery.Celery):
             )
             self.setup_security()
 
-    def run_configs(self, destinations: Optional[Sequence[str]] = None) -> Sequence[dict]:
+    def run_configs(
+        self,
+        destinations: Optional[Sequence[str]] = None,
+        timeout: float = 1.0,
+    ) -> dict[str, JsonValue]:
         """Return active worker's run configs"""
         return self.control.broadcast(
-            "_run_configs",
+            "run_configs",
             reply=True,
             destination=destinations,
         )

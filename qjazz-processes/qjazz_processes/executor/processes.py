@@ -151,6 +151,7 @@ class Processes(ExecutorProtocol):
             self.meta = meta
             self.expires = expires
             self.pending_timeout = pending_timeout
+            self.entrypoint = service_details.entrypoint or ident
 
         def register(self, this: "Processes", job_id: str) -> JobStatus:
             """Register job"""
@@ -212,7 +213,7 @@ class Processes(ExecutorProtocol):
 
         result = self._execute_task(
             service,
-            "process_execute",
+            builder.entrypoint,
             run_config=dict(
                 ident=ident,
                 request=request.model_dump(mode="json"),

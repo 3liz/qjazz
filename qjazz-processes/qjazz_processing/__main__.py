@@ -57,18 +57,14 @@ def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
     if dump:
-        from typing import cast
-
-        from pydantic import BaseModel
-
         from qjazz_processes.worker.config import load_configuration
 
-        conf = cast(BaseModel, load_configuration())
+        conf = load_configuration()
         click.echo(conf.model_dump_json(indent=4))
     else:
         from .jobs import app
 
-        app.start_worker(loglevel=loglevel)
+    app.start_worker(loglevel=loglevel)
 
 
 @main.command("beat")
@@ -111,13 +107,13 @@ def run_scheduler(configpath: Optional[Path], loglevel: str):
 def install_plugins(configpath: Optional[Path], force: bool):
     """Install plugins"""
     from qjazz_contrib.core import logger
-    from qjazz_processes.worker.config import CONFIG_ENV_PATH, load_configuration
+    from qjazz_processes.worker.prelude import CONFIG_ENV_PATH, QgisWorker
 
     if configpath:
         os.environ[CONFIG_ENV_PATH] = str(configpath)
 
     try:
-        conf = load_configuration()
+        conf = QgisWorker.load_configuration()
     except FileNotFoundError as err:
         click.echo(f"FATAL: {err}", err=True)
         sys.exit(1)

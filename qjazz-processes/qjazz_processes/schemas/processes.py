@@ -87,7 +87,7 @@ JobControlOptions = Literal["sync-execute", "async-execute", "dismiss"]
 
 class ProcessSummary(DescriptionType):
     id_: str = Field(alias="id", title="Process id")
-    version: str
+    version: str = "n/a"
     job_control_options: Sequence[JobControlOptions] = (
         "sync-execute",
         "async-execute",

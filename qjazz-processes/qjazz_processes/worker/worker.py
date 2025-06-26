@@ -14,6 +14,7 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
+    Protocol,
     Sequence,
     cast,
 )
@@ -44,7 +45,14 @@ from ..processing.config import ProcessingConfig
 from ..schemas import JobResults, Subscriber
 from . import registry
 from .cache import ProcessCacheProtocol
-from .config import load_configuration
+from .config import (
+    CONFIG_ENV_PATH,  # noqa F401
+    confservice,
+    load_configuration,
+)
+from .config import (
+    ConfigProto as BaseConfigProto,
+)
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
 from .models import (
@@ -60,7 +68,19 @@ from .watch import WatchFile
 LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
 
 
-PROCESS_EXECUTE_TASK = "process_execute"
+PROCESS_ENTRYPOINT = "process_execute"
+
+#
+# Config
+#
+
+
+# Allow type validation
+class ConfigProto(BaseConfigProto, Protocol):
+    processing: ProcessingConfig
+
+
+confservice.add_section("processing", ProcessingConfig, field=...)
 
 
 FILE_LINKS = "links.json"
@@ -150,6 +170,7 @@ def presence(_state) -> dict:
         versions=qgis_version_details() if not app._hide_presence_versions else [],
         result_expires=app.conf.result_expires,
         callbacks=list(app.processes_callbacks.schemes),
+        entrypoint=PROCESS_ENTRYPOINT,
     ).model_dump()
 
 
@@ -202,8 +223,12 @@ def download_url(state, job_id, resource, expiration):
 class QgisWorker(Worker):
     _storage: Storage
 
+    @staticmethod
+    def load_configuration() -> ConfigProto:
+        return cast(ConfigProto, load_configuration())
+
     def __init__(self, **kwargs) -> None:
-        conf = load_configuration()
+        conf = QgisWorker.load_configuration()
         if logger.is_enabled_for(logger.LogLevel.DEBUG):
             logger.debug("== Worker configuration ==\n%s", conf.model_dump_json(indent=4))
 
@@ -475,7 +500,7 @@ def on_task_prerun(
     kwargs: Mapping,
     **_,
 ):
-    if task.name != f"{task.app.service_name}.{PROCESS_EXECUTE_TASK}":
+    if task.name != f"{task.app.service_name}.{PROCESS_ENTRYPOINT}":
         return
 
     subscriber = MaybeSubscriber.validate_python(kwargs["__run_config__"]["request"].get("subscriber"))
@@ -498,7 +523,7 @@ def on_task_postrun(
     state: str,
     **_,
 ):
-    if task.name != f"{task.app.service_name}.{PROCESS_EXECUTE_TASK}":
+    if task.name != f"{task.app.service_name}.{PROCESS_ENTRYPOINT}":
         return
 
     subscriber = MaybeSubscriber.validate_python(kwargs["request"].get("subscriber"))

@@ -310,9 +310,9 @@ class ConfBuilder:
         self._model_changed = True
 
     @property
-    def conf(self):
+    def conf(self) -> BaseModel:
         self.update_config()
-        return self._conf
+        return cast(BaseModel, self._conf)
 
     #
     # Service registration
@@ -413,7 +413,7 @@ class ConfigProxy[T: ConfigBase]:
     def __update(self) -> ConfigBase:
         if self._builder._timestamp > self._timestamp:
             self._timestamp = self._builder._timestamp
-            self._conf = self._builder.conf
+            self._conf = cast(T, self._builder.conf)
             for attr in self._configpath.split("."):
                 if attr:
                     self._conf = getattr(self._conf, attr)

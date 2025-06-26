@@ -21,7 +21,6 @@ from qjazz_contrib.core.models import Field
 from qjazz_processes.schemas import LinkHttp
 
 from ..callbacks import CallbacksConfig
-from ..processing.config import ProcessingConfig
 from .storage import StorageConfig
 
 CONFIG_ENV_PATH = "QJAZZ_PROCESSES_CONFIG"
@@ -115,10 +114,12 @@ class WorkerConfig(CeleryConfig):
     )
 
 
+confservice = config.ConfBuilder()
+
+
 # Allow type validation
 class ConfigProto(Protocol):
     logging: logger.LoggingConfig
-    processing: ProcessingConfig
     worker: WorkerConfig
     storage: StorageConfig
     callbacks: CallbacksConfig
@@ -126,13 +127,10 @@ class ConfigProto(Protocol):
     def model_dump_json(*args, **kwargs) -> str: ...
 
 
-confservice = config.ConfBuilder()
-
 #
-# Add processing/storage configuration
+# Add storage/callbacks sections
 #
 
-confservice.add_section("processing", ProcessingConfig, field=...)
 confservice.add_section("storage", StorageConfig)
 confservice.add_section("callbacks", CallbacksConfig)
 
@@ -150,12 +148,12 @@ def load_configuration() -> ConfigProto:
     confservice.validate(cnf)
     confservice.register_as_service()
 
-    conf = confservice.conf
+    conf = cast(ConfigProto, confservice.conf)
     logger.setup_log_handler(conf.logging.level)
     # Do not propagate otherwise logging will echo
     # to Celery logger
     logger.logger().propagate = False
-    return cast(ConfigProto, conf)
+    return conf
 
 
 def dump_worker_config() -> None:

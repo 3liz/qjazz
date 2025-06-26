@@ -1,7 +1,9 @@
+import asyncio
 import inspect
 import types
 
 from functools import cached_property
+from textwrap import dedent
 from typing import (
     Any,
     Callable,
@@ -14,8 +16,12 @@ from typing import (
 import celery
 import celery.states
 
+from celery.worker.control import (
+    inspect_command,
+)
 from pydantic import (
     BaseModel,
+    Field,
     JsonValue,
     TypeAdapter,
     ValidationError,
@@ -141,25 +147,58 @@ class _Dict(dict):
 #
 
 
+class InputDescription(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    schema_: JsonValue = Field(alias="schema")
+
+
+class OutputDescription(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    schema_: JsonValue = Field(alias="schema")
+
+
+class RunConfigSchema(BaseModel):
+    id_: str = Field(alias="id")
+    title: str
+    description: Optional[str] = None
+    inputs: dict[str, InputDescription]
+    outputs: dict[str, OutputDescription]
+
+
 class Job(celery.Task):
+    RUN_CONFIGS: ClassVar[dict[str, RunConfigSchema]] = {}
+
     _worker_job_context: ClassVar[dict] = {}
 
     # To be set in decorator
     run_context: bool = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         # Analyse argument and build the
         # run config schema
 
         self.typing = False  # Disable argument type checking
-        self.__config__ = create_job_run_config(self.__wrapped__)
 
-    def __call__(self, *args, **kwargs):
+        # Remove service prefix
+        jobname = self.name.removeprefix(f"{self.app._name}.")
+
+        model, schema = job_run_config(jobname, self.__wrapped__)
+
+        if inspect.iscoroutine(self.__wrapped__):
+            logger.trace("=%s: Registered coroutine methode", self.name)
+
+        self.__config__ = model
+
+        Job.RUN_CONFIGS[jobname] = schema
+
+    def __call__(self, *args, **kwargs) -> JsonValue:
         #
         # Override the call method in order to validate
-        # the json input
+        # the json outputs
         #
         _, outputs = self.__config__
 
@@ -172,6 +211,8 @@ class Job(celery.Task):
 
         # TODO: replace __dict__ with 'model_dump()'
         out = self.run(*args, **meta.__run_config__.__dict__)
+        if inspect.iscoroutine(out):
+            out = asyncio.run(out)
         # Return output as json compatible format
         return outputs.dump_python(out, mode="json", by_alias=True, exclude_none=True)
 
@@ -232,6 +273,7 @@ class Job(celery.Task):
             ]
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
+            # XXX Return specific error
             raise ValueError("Invalid arguments")
         finally:
             kwargs.update(__meta__=meta)
@@ -254,6 +296,14 @@ class Job(celery.Task):
         )
 
 
+# Add our broadcast inspect command
+# for returning run configs in a format nicer
+# than the 'registered' inspect command
+@inspect_command()
+def run_configs(_) -> dict[str, JsonValue]:
+    return {k: v.model_dump(by_alias=True, mode="json") for k, v in Job.RUN_CONFIGS.items()}
+
+
 #
 # Run configs
 #
@@ -265,10 +315,28 @@ class RunConfig(BaseModel, frozen=True, extra="ignore"):
     pass
 
 
-def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapter]:
+def _format_doc(wrapped: Callable) -> tuple[str, str]:
+    # Get title and description from docstring
+    if wrapped.__doc__:
+        doc = dedent(wrapped.__doc__)
+        title, *rest = doc.strip("\n ").split("\n", maxsplit=1)
+        description = rest[0].strip("\n") if rest else ""
+    else:
+        title = wrapped.__qualname__
+        description = ""
+
+    return (title, description)
+
+
+def job_run_config(
+    jobname: str,
+    wrapped: Callable,
+) -> tuple[tuple[type[RunConfig], TypeAdapter], RunConfigSchema]:
     """Build a RunConfig from fonction signature"""
     s = inspect.signature(wrapped)
     qualname = wrapped.__qualname__
+
+    title, description = _format_doc(wrapped)
 
     def _models() -> Iterator[tuple[str, Any]]:
         for p in s.parameters.values():
@@ -298,6 +366,18 @@ def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapt
         **inputs_,
     )
 
+    # Build schema for each properties
+    def input_schemas():
+        for name, (anno, default) in inputs_.items():
+            s = TypeAdapter(anno).json_schema()
+            if default != ...:
+                s["default"] = default
+            yield name, InputDescription(
+                title=s.pop("title", ""),
+                description=s.pop("description", ""),
+                schema=s,
+            )
+
     # Outputs
     if s.return_annotation is not inspect.Signature.empty:
         return_annotation = s.return_annotation
@@ -305,5 +385,23 @@ def create_job_run_config(wrapped: Callable) -> tuple[type[RunConfig], TypeAdapt
         return_annotation = None
 
     outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue)
+    output_schema = outputs.json_schema()
 
-    return (inputs, outputs)
+    return (
+        (inputs, outputs),
+        RunConfigSchema(
+            id=jobname,
+            title=title,
+            description=description,
+            inputs=dict(input_schemas()),
+            outputs={
+                "output": OutputDescription(
+                    title=output_schema.pop("title", ""),
+                    description=output_schema.pop("description", None),
+                    schema=output_schema,
+                ),
+            }
+            if return_annotation
+            else {},
+        ),
+    )

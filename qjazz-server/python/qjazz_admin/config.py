@@ -114,6 +114,7 @@ class ConfigUrl(ConfigBase):
 
 
 class ConfigProto(Protocol):
+    logging: logger.LoggingConfig
     admin_config_url: ConfigUrl
     admin_http: HttpConfig
     resolvers: ResolverConfig

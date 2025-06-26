@@ -56,7 +56,7 @@ def load_configuration(
     confservice.validate(cnf)
     logger.setup_log_handler(logger.LogLevel.TRACE if verbose else logger.LogLevel.ERROR)
 
-    return confservice.conf
+    return cast(ConfigProto, confservice.conf)
 
 
 def init_qgis(

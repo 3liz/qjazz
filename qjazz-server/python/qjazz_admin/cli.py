@@ -6,7 +6,7 @@ import sys
 
 from functools import wraps
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import click
 
@@ -30,19 +30,20 @@ def load_configuration(configpath: Optional[Path], verbose: bool = False) -> Con
         cnf = {}
     try:
         confservice.validate(cnf)
+
+        conf = cast(ConfigProto, confservice.conf)
+
         # Load external configuration if requested
-        asyncio.run(confservice.conf.admin_config_url.load_configuration())
+        asyncio.run(conf.admin_config_url.load_configuration())
         if verbose:
             click.echo(confservice.conf.model_dump_json(indent=4))
     except config.ConfigError as err:
         click.echo(f"Configuration error: {err}", err=True)
         sys.exit(1)
 
-    conf = confservice.conf
-
     logger.setup_log_handler(logger.LogLevel.TRACE if verbose else conf.logging.level)
 
-    return confservice.conf
+    return conf
 
 
 def get_pool(conf: ResolverConfig, name: str) -> Optional[PoolClient]:

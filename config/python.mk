@@ -18,22 +18,22 @@ deliver::
 	twine upload -r storage $(SDIST)/*
 
 lint::
-	@ruff check  --output-format=concise  $(PYTHON_PKG) $(TESTDIR)
+	@ruff check  --output-format=concise  $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 lint-preview::
-	@ruff check --preview $(PYTHON_PKG) $(TESTDIR)
+	@ruff check --preview $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 lint-fix::
-	@ruff check --fix $(PYTHON_PKG) $(TESTDIR)
+	@ruff check --fix $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 lint-fix-preview::
-	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR)
+	@ruff check --preview --fix $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 format-diff::
-	@ruff format --diff $(PYTHON_PKG) $(TESTDIR)
+	@ruff format --diff $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 format::
-	@ruff format $(PYTHON_PKG) $(TESTDIR)
+	@ruff format $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
 install::
 	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
