@@ -2,7 +2,7 @@
 level = "debug"
 
 [worker] 
-service_name="Generic_example"
+service_name="genericexample"
 title="An example of generic service"
 description="""
 Generic service allow defining generic tasks not 

@@ -1,7 +1,7 @@
 
 topsrcdir:=$(shell realpath $(DEPTH))
 
-VERSION=0.3.1
+VERSION=0.4.0
 
 ifdef CI_COMMIT_TAG
 ifeq ($(shell echo $(CI_COMMIT_TAG) | head -c 8), release-)

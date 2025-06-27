@@ -11,14 +11,14 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "qjazz-contrib[celery]==0.3.1",
+    "qjazz-contrib[celery]==0.4.0",
     "pydantic-extra-types",
     "click",
     "requests",
     "aiofiles",
     "ruamel.yaml",
 ]
-version = "0.3.1"
+version = "0.4.0"
 
 [project.optional-dependencies]
 server = ["aiohttp"]

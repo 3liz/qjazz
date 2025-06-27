@@ -390,11 +390,6 @@ class Processes(HandlerProto):
                 rel="self",
                 title="job execution",
             ),
-            make_link(
-                request,
-                path=self.format_path(request, f"/processes/{job_status.job_id}/results"),
-                rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
-            ),
         ]
 
         if job_status.status == JobStatus.SUCCESS:

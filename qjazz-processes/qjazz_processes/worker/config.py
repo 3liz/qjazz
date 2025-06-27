@@ -6,6 +6,7 @@ import sys
 
 from pathlib import Path
 from typing import (
+    Annotated,
     Optional,
     Protocol,
     Sequence,
@@ -54,6 +55,9 @@ def lookup_config_path() -> Optional[Path]:
 # Worker configuration
 #
 
+# Force service name to be compliant with AWS bucket name.
+ServiceName = Annotated[str, Field(pattern=r'^[a-z0-9]+$')]
+
 
 @config.section("worker", field=...)
 class WorkerConfig(CeleryConfig):
@@ -63,8 +67,7 @@ class WorkerConfig(CeleryConfig):
     Configure celery worker settings
     """
 
-    service_name: str = Field(
-        pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_\-]+$",
+    service_name: ServiceName = Field(
         title="Name of the service",
         description="""
         Name used as location service name
@@ -158,4 +161,7 @@ def load_configuration() -> ConfigProto:
 
 def dump_worker_config() -> None:
     """Dump configuration as toml configuration file"""
+    from ..processing.config import ProcessingConfig
+
+    confservice.add_section("processing", ProcessingConfig, field=...)
     confservice.dump_toml_schema(sys.stdout)

@@ -65,8 +65,6 @@ def on_task_postrun(
     state: str,
     **_,
 ):
-    task.app.task_postrun_callbacks(task_id, state, retval, kwargs)
-
     subscriber = MaybeSubscriber.validate_python(kwargs["request"].get("subscriber"))
     if not subscriber:
         return

@@ -3,7 +3,7 @@
 level = "debug"
 
 [worker]
-service_name = "Test"
+service_name = "test"
 title="Test service"
 description="""
 Qgis service running test algorithms

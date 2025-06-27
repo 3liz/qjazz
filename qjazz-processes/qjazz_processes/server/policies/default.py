@@ -64,11 +64,14 @@ class DefaultAccessPolicy(AccessPolicy):
                     break
             else:
                 # Return the first available service
-                for detail in self.executor.services:
-                    service = detail.service
-                    break
+                if self.executor.num_services <= 1:
+                    for detail in self.executor.services:
+                        service = detail.service
+                        break
+                    else:
+                        ErrorResponse.raises(web.HTTPServiceUnavailable, "No service available")
                 else:
-                    ErrorResponse.raises(web.HTTPServiceUnavailable, "No service available")
+                    ErrorResponse.raises(web.HTTPBadRequest, "Service required")
 
         return service
 

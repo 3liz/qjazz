@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## Added
+
+* [processes] Implement generic worker/job 
+
+## [Fixed]
+
+* [processes] Constrain service id
+
+
 ## 0.3.0 - 2025-06-10
 
 ## Added

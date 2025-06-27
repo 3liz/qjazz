@@ -78,6 +78,10 @@ class ExecutorBase:
         for _, pr in self._services.values():
             yield pr
 
+    @property
+    def num_services(self) -> int:
+        return len(self._services)
+
     def get_services(self) -> ServiceDict:
         # Return services destinations (blocking)
         presences = self.presences()

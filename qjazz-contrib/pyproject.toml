@@ -17,7 +17,7 @@ dependencies = [
   'typing-extensions',
   'posix_ipc',
 ]
-version = "0.3.1"
+version = "0.4.0"
 
 [project.optional-dependencies]
 celery = [ "celery>=5.4", "redis>=5.0.8" ]

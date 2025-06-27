@@ -334,7 +334,7 @@ class S3ProtocolHandler(ProtocolHandler):
                 )
 
     #
-    # Implement the ResourceStore Protocal
+    # Implement the ResourceStore Protocol
     #
 
     def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
