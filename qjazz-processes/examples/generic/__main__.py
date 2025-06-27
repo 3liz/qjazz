@@ -11,9 +11,11 @@ PathType = click.Path(
     path_type=Path,
 )
 
+
 @click.group()
 def main():
     pass
+
 
 #
 # Server
@@ -44,9 +46,11 @@ def run_worker(configpath: Path, loglevel: str, dump_config: bool):
 
     if dump_config:
         from qjazz_processes.worker.config import load_configuration
+
         click.echo(load_configuration().model_dump_json())
     else:
         from .jobs import app
+
         app.start_worker(loglevel=loglevel)
 
 

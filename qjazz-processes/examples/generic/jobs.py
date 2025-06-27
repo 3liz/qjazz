@@ -19,13 +19,13 @@ from qjazz_processes.worker.generic import (
 # Worker
 #
 
-class Worker(GenericWorker):
 
-    #def on_worker_ready(self) -> None:
+class Worker(GenericWorker):
+    # def on_worker_ready(self) -> None:
     #    "Set custom initialization"
     #    super().on_worker_ready()
 
-    #def on_worker_shutdown(self) -> None:
+    # def on_worker_shutdown(self) -> None:
     #    "Set custom shutdown
     #    super().on_worker_shutdown()
 
@@ -75,18 +75,17 @@ class ComplexArg(JsonModel):
 
     This is a more complex argument with many fields
     """
+
     flag: Literal["One", "Two"] = Field(default="One", title="Flag")
-    value: str = Field(
-        title="String",
-        description="A literal string"
-    )
+    value: str = Field(title="String", description="A literal string")
 
 
 class ComplexReturnValue(JsonModel):
-    """ A complex return value
+    """A complex return value
 
     This is a complex return value with many fields
     """
+
     num: int = Field(title="A number", description="A literal integer")
     val: str = Field(title="A string", description="A literal string")
 
@@ -109,5 +108,3 @@ def task_two(
     )
 
     return ComplexReturnValue(num=3, val="Here is a number three")
-
-

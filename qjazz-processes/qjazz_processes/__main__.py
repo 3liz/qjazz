@@ -457,9 +457,9 @@ def execute_process(
     else:
         # Parse kv arguments
         def kv(s: str) -> tuple[str, JsonValue]:
-            t = s.split('=', maxsplit=1)
-            if len(t) !=2:
-                error_exit("Missing value for {s}")
+            t = s.split("=", maxsplit=1)
+            if len(t) != 2:
+                error_exit(f"Missing value for {s}")
             value: Any = t[1]
             if value.startswith("["):
                 if not value.endswith("]"):
@@ -503,11 +503,15 @@ def execute_process(
             except Exception as err:
                 error_exit(f"{err}: {result.status().model_dump_json()}")
 
-            out = TypeAdapter(JobResults).dump_json(
-                job_results,
-                by_alias=True,
-                exclude_none=True,
-            ).decode()
+            out = (
+                TypeAdapter(JobResults)
+                .dump_json(
+                    job_results,
+                    by_alias=True,
+                    exclude_none=True,
+                )
+                .decode()
+            )
         else:
             out = result.status().model_dump_json()
 
@@ -515,6 +519,7 @@ def execute_process(
 
     except ServiceNotAvailable:
         error_exit("Service not available")
+
 
 #
 # Jobs

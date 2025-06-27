@@ -1,3 +1,3 @@
-# Generic service example
+# Generic QJazz service example
 
-Example of Creating a generic service
+Example of Creating a generic QJazz service

@@ -1,24 +1,17 @@
 """Generic worker
 
 - Does not depend on QGIS
-- Define processes frow worker jobs
-
+- Define processes from worker jobs
 """
 
 from pathlib import Path
 from time import time
 from typing import (
-    Mapping,
     Sequence,
     cast,
 )
 
-import celery
-import redis
-
 from celery.signals import (
-    task_postrun,
-    task_prerun,
     worker_before_create_process,
     worker_ready,
     worker_shutdown,
@@ -33,17 +26,15 @@ from qjazz_contrib.core.celery import Job, Worker
 from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.utils import to_utc_datetime
 
-from ..callbacks import Callbacks
 from ..schemas import (
-    JobResults,
     JsonValue,
     ProcessSummary,
     ProcessSummaryList,
-    Subscriber,
 )
 from . import registry
 from .config import load_configuration
 from .exceptions import DismissedTaskError
+from .mixins.callbacks import Callbacks, CallbacksMixin
 from .models import (
     Link,
     ProcessFilesVersion,
@@ -158,7 +149,7 @@ def download_url(state, job_id, resource, expiration):
 #
 
 
-class GenericWorker(Worker):
+class GenericWorker(Worker, CallbacksMixin):
     _storage: Storage
 
     def __init__(self, **kwargs) -> None:
@@ -212,19 +203,6 @@ class GenericWorker(Worker):
     def on_worker_shutdown(self) -> None:
         pass
 
-
-    def lock(self, name: str) -> redis.lock.Lock:
-        # Create a redis lock for handling race conditions
-        # with multiple workers
-        # See https://redis-py-doc.readthedocs.io/en/master/#redis.Redis.lock
-        # The lock will hold only for 20s
-        # so operation using the lock should not exceed this duration.
-        return self.backend.client.lock(
-            f"lock:{self._service_name}:{name}",
-            blocking_timeout=0,  # Do not block
-            timeout=60,  # Hold lock 1mn max
-        )
-
     def job_log(self, job_id: str) -> ProcessLogVersion:
         """Return job log"""
         logfile = self._workdir.joinpath(job_id, "processing.log")
@@ -267,69 +245,11 @@ class GenericWorker(Worker):
 
 
 #
-# Callbacks
-#
-
-MaybeSubscriber: TypeAdapter = TypeAdapter(Subscriber | None)
-
-
-@task_prerun.connect
-def on_task_prerun(
-    sender: object,
-    task_id: str,
-    task: celery.Task,
-    args: Sequence,
-    kwargs: Mapping,
-    **_,
-):
-    # This handler is called "before" the 'before_start' method
-    request = kwargs["__run_config__"]["request"]
-
-    subscriber = MaybeSubscriber.validate_python(request.get("subscriber"))
-    if subscriber and subscriber.in_progress_uri:
-        cast(GenericWorker, task.app).processes_callbacks.in_progress(
-            str(subscriber.in_progress_uri),
-            task_id,
-            kwargs["__meta__"],
-        )
-
-@task_postrun.connect
-def on_task_postrun(
-    sender: object,
-    task_id: str,
-    task: celery.Task,
-    args: Sequence,
-    kwargs: Mapping,
-    retval: JobResults,
-    state: str,
-    **_,
-):
-    subscriber = MaybeSubscriber.validate_python(kwargs.get("subscriber"))
-    if not subscriber:
-        return
-
-    match state:
-        case celery.states.SUCCESS if subscriber.success_uri:
-            cast(GenericWorker, task.app).processes_callbacks.on_success(
-                str(subscriber.success_uri),
-                task_id,
-                kwargs["__meta__"],
-                retval,
-            )
-        case celery.states.FAILURE if subscriber.failed_uri:
-            cast(GenericWorker, task.app).processes_callbacks.on_failure(
-                str(subscriber.failed_uri),
-                task_id,
-                kwargs["__meta__"],
-            )
-
-
-#
 # Jobs
 #
 
-class GenericJob(Job):
 
+class GenericJob(Job):
     def __call__(self, *arg, **kwargs) -> JsonValue:
         # Output must be wrapped in a dictionnary in order
         # to conform to the run_config schema
@@ -351,6 +271,4 @@ class GenericJob(Job):
             super().before_start(task_id, args, kwargs)
         finally:
             # Keep subscriber for postrun
-            kwargs["subscriber"] = request["subscriber"]
-
-
+            kwargs["request"] = {"subscriber": request["subscriber"]}

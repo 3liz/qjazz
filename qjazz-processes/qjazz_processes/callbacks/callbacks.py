@@ -63,7 +63,7 @@ HandlerConfigOptions = Annotated[
 _handler_aliases = {
     "qjazz_processes.callbacks.Test": "qjazz_processes.callbacks.handlers.test.TestCallback",
     "qjazz_processes.callbacks.Http": "qjazz_processes.callbacks.handlers.http.HttpCallback",
-    "qjazz_processes.callbacks.MailTo": "qjazz_processes.callback.handler.mailto.MailToCallback",
+    "qjazz_processes.callbacks.MailTo": "qjazz_processes.callbacks.handlers.mailto.MailToCallback",
 }
 
 
@@ -162,26 +162,26 @@ class Callbacks:
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            with infallible(uri):
+            with infaillible(uri):
                 handler.on_success(url, job_id, meta, results)
 
     def on_failure(self, uri: str, job_id: str, meta: JobMeta):
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            with infallible(uri):
+            with infaillible(uri):
                 handler.on_failure(url, job_id, meta)
 
     def in_progress(self, uri: str, job_id: str, meta: JobMeta):
         rv = self.get_handler_for(uri)
         if rv:
             url, handler = rv
-            with infallible(uri):
+            with infaillible(uri):
                 handler.in_progress(url, job_id, meta)
 
 
 @contextmanager
-def infallible(uri):
+def infaillible(uri):
     try:
         yield
     except Exception:

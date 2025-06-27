@@ -12,19 +12,15 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
-    Mapping,
     Optional,
     Protocol,
     Sequence,
     cast,
 )
 
-import celery
 import redis
 
 from celery.signals import (
-    task_postrun,
-    task_prerun,
     worker_before_create_process,
     worker_ready,
     worker_shutdown,
@@ -40,9 +36,7 @@ from qjazz_contrib.core.celery import Job, Worker
 from qjazz_contrib.core.condition import assert_precondition
 from qjazz_contrib.core.utils import to_utc_datetime
 
-from ..callbacks import Callbacks
 from ..processing.config import ProcessingConfig
-from ..schemas import JobResults, Subscriber
 from . import registry
 from .cache import ProcessCacheProtocol
 from .config import (
@@ -55,6 +49,7 @@ from .config import (
 )
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
+from .mixins.callbacks import Callbacks, CallbacksMixin
 from .models import (
     Link,
     ProcessFilesVersion,
@@ -220,7 +215,7 @@ def download_url(state, job_id, resource, expiration):
 #
 
 
-class QgisWorker(Worker):
+class QgisWorker(Worker, CallbacksMixin):
     _storage: Storage
 
     @staticmethod
@@ -482,68 +477,6 @@ class QgisWorker(Worker):
     @property
     def processes_callbacks(self) -> Callbacks:
         return self._processes_callbacks
-
-
-#
-# Callbacks
-#
-
-MaybeSubscriber: TypeAdapter = TypeAdapter(Subscriber | None)
-
-
-@task_prerun.connect
-def on_task_prerun(
-    sender: object,
-    task_id: str,
-    task: celery.Task,
-    args: Sequence,
-    kwargs: Mapping,
-    **_,
-):
-    if task.name != f"{task.app.service_name}.{PROCESS_ENTRYPOINT}":
-        return
-
-    subscriber = MaybeSubscriber.validate_python(kwargs["__run_config__"]["request"].get("subscriber"))
-    if subscriber and subscriber.in_progress_uri:
-        cast(QgisWorker, task.app).processes_callbacks.in_progress(
-            str(subscriber.in_progress_uri),
-            task_id,
-            kwargs["__meta__"],
-        )
-
-
-@task_postrun.connect
-def on_task_postrun(
-    sender: object,
-    task_id: str,
-    task: celery.Task,
-    args: Sequence,
-    kwargs: Mapping,
-    retval: JobResults,
-    state: str,
-    **_,
-):
-    if task.name != f"{task.app.service_name}.{PROCESS_ENTRYPOINT}":
-        return
-
-    subscriber = MaybeSubscriber.validate_python(kwargs["request"].get("subscriber"))
-    if not subscriber:
-        return
-
-    match state:
-        case celery.states.SUCCESS if subscriber.success_uri:
-            cast(QgisWorker, task.app).processes_callbacks.on_success(
-                str(subscriber.success_uri),
-                task_id,
-                kwargs["__meta__"],
-                retval,
-            )
-        case celery.states.FAILURE if subscriber.failed_uri:
-            cast(QgisWorker, task.app).processes_callbacks.on_failure(
-                str(subscriber.failed_uri),
-                task_id,
-                kwargs["__meta__"],
-            )
 
 
 #
