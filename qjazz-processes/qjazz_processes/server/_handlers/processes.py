@@ -21,6 +21,7 @@ from .protos import (
     JobExecute,
     JobResultsAdapter,
     JobStatus,
+    JsonDict,
     Link,
     ProcessNotFound,
     ProcessSummary,
@@ -72,17 +73,11 @@ class Processes(HandlerProto):
                             $ref: '#/definitions/ProcessList'
         """
         # Get service processes from cache
-        service = self.get_service(request, raise_error=False)
+        service = self.get_service(request)
         try:
             processes = await self._executor.processes(service, timeout=self._timeout)
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
-        except ServiceNotAvailable:
-            ErrorResponse.raises(
-                web.HTTPForbidden,
-                "Service not available",
-                details={"service": service},
-            )
 
         def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
             if self._accesspolicy.execute_permission(request, service, td.id_):
@@ -283,14 +278,16 @@ class Processes(HandlerProto):
         if execute_sync:
             logger.debug("Running synchronous execution for %s (%s)", process_id, service)
 
+        context: JsonDict = dict(
+            public_url=public_url(request, ""),
+        )
+
         result = self._executor.execute(
             service,
             process_id,
             request=execute_request,
             project=project,
-            context=dict(
-                public_url=public_url(request, ""),
-            ),
+            context=context,
             realm=realm,
             # Set the pending timeout to the wait preference
             pending_timeout=prefer.wait,
@@ -353,8 +350,8 @@ class Processes(HandlerProto):
             except ProcessNotFound as err:
                 logger.error("Process exception [job: %s]: %s", result.job_id, err)
                 ErrorResponse.raises(
-                    web.HTTPForbidden,
-                    f"{process_id} is not available",
+                    web.HTTPNotFound,
+                    f"{process_id} not found",
                     details={"jobId": result.job_id},
                 )
             #
@@ -424,8 +421,8 @@ class Processes(HandlerProto):
     ):
         if not self._accesspolicy.execute_permission(request, service, process_id, project):
             ErrorResponse.raises(
-                web.HTTPUnauthorized,
-                "You are not allowed to access this process",
+                web.HTTPForbidden,
+                f"Process {process_id} not available",
             )
 
 

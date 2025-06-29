@@ -86,7 +86,7 @@ class StorageConfig(ConfigBase):
     def validate_config(self) -> Self:
         klass = self.storage_class
         if not issubclass(klass, Storage):
-            raise ValueError(f"{klass} does not suppert Storage protocol")
+            raise ValueError(f"{klass} does not support Storage protocol")
 
         self._storage_conf: BaseModel | None = None
         if hasattr(klass, "Config") and issubclass(klass.Config, BaseModel):

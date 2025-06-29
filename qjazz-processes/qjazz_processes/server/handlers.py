@@ -15,7 +15,6 @@ from ._handlers import (
 from .accesspolicy import AccessPolicy
 from .executor import AsyncExecutor
 from .jobrealm import JobRealmConfig
-from .models import ErrorResponse
 from .storage import StorageConfig
 
 API_VERSION = "v1"
@@ -130,12 +129,9 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
             query=query,
         )
 
-    def get_service(self, request: web.Request, raise_error: bool = True) -> str:
+    def get_service(self, request: web.Request) -> str:
         """Get known service name from request"""
-        service = self._accesspolicy.get_service(request)
-        if raise_error and not self._executor.known_service(service):
-            ErrorResponse.raises(web.HTTPServiceUnavailable, "Service not known")
-        return service
+        return self._accesspolicy.get_service(request)
 
     def get_project(self, request: web.Request) -> Optional[str]:
         project = self._accesspolicy.get_project(request)

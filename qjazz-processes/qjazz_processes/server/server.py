@@ -336,7 +336,7 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
     return site
 
 
-def create_app(conf: ConfigProto) -> web.Application:
+def create_app(conf: ConfigProto, executor: Optional[AsyncExecutor] = None) -> web.Application:
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
@@ -355,7 +355,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     app.on_response_prepare.append(set_server_headers)
 
     # Executor
-    executor = AsyncExecutor(conf.executor)
+    executor = executor or AsyncExecutor(conf.executor)
 
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
@@ -430,9 +430,9 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     return _swagger_doc(app, config.oapi if config else swagger.OapiConfig())
 
 
-async def _serve(conf: ConfigProto):
+async def _serve(conf: ConfigProto, executor: Optional[AsyncExecutor] = None):
     """Start the web server"""
-    app = create_app(conf)
+    app = create_app(conf, executor)
 
     runner = web.AppRunner(app, handler_cancellation=True)
 
