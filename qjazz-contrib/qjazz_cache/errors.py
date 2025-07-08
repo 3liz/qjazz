@@ -1,16 +1,19 @@
-class InvalidCacheRootUrl(Exception):
+
+from qjazz_contrib.core.errors import QJazzException
+
+
+class InvalidCacheRootUrl(QJazzException):
     pass
 
 
-class ResourceNotAllowed(Exception):
+class ResourceNotAllowed(QJazzException):
     pass
 
 
-class StrictCheckingFailure(Exception):
+class StrictCheckingFailure(QJazzException):
     pass
 
 
-class UnreadableResource(Exception):
-    """Indicates that the  ressource exists but is not readable"""
-
+class UnreadableResource(QJazzException):
+    """Indicates that the ressource exists but is not readable"""
     pass

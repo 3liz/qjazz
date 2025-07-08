@@ -3,7 +3,7 @@
 #
 import os
 
-from contextlib import contextmanager
+from contextlib import chdir, contextmanager  # noqa F401
 from functools import cached_property
 from pathlib import Path
 from string import Template
@@ -311,17 +311,6 @@ class QgisServerContext(QgisContext):
 def execute_context(workdir: Path, task_id: str):
     with chdir(workdir), logger.logfile(workdir, "processing"), memlog(task_id):
         yield
-
-
-@contextmanager
-def chdir(workdir: Path):
-    # XXX Python 3.11 use `contextlib.chdir`
-    curdir = os.getcwd()
-    os.chdir(workdir)
-    try:
-        yield
-    finally:
-        os.chdir(curdir)
 
 
 @contextmanager

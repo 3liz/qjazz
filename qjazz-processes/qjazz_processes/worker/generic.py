@@ -7,9 +7,11 @@
 from pathlib import Path
 from time import time
 from typing import (
+    Optional,
     Sequence,
     cast,
 )
+from uuid import UUID
 
 from celery.signals import (
     worker_before_create_process,
@@ -24,7 +26,6 @@ from pydantic import TypeAdapter
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Job, Worker
 from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.utils import to_utc_datetime
 
 from ..schemas import (
     JsonValue,
@@ -35,13 +36,15 @@ from . import registry
 from .config import load_configuration
 from .exceptions import DismissedTaskError
 from .mixins.callbacks import Callbacks, CallbacksMixin
+from .mixins.joblog import JoblogMixin
+from .mixins.storage import StorageMixin
 from .models import (
     Link,
     ProcessFilesVersion,
-    ProcessLogVersion,
     WorkerPresenceVersion,
 )
 from .storage import Storage
+from .threads import PeriodicTasks
 
 LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
 
@@ -111,15 +114,6 @@ def presence(_state) -> dict:
 
 
 @inspect_command(
-    args=[("job_id", str)],
-)
-def job_log(state, job_id):
-    """Return job log"""
-    app = cast(GenericWorker, state.consumer.app)
-    return app.job_log(job_id).model_dump()
-
-
-@inspect_command(
     args=[("job_id", str), ("public_url", str)],
 )
 def job_files(state, job_id, public_url):
@@ -128,29 +122,14 @@ def job_files(state, job_id, public_url):
     return app.job_files(job_id, public_url).model_dump()
 
 
-@inspect_command(
-    args=[("job_id", str), ("resource", str), ("expiration", int)],
-)
-def download_url(state, job_id, resource, expiration):
-    try:
-        app = cast(GenericWorker, state.consumer.app)
-        return app.download_url(
-            job_id,
-            resource,
-            expiration,
-        ).model_dump()
-    except FileNotFoundError as err:
-        logger.error(err)
-        return None
-
-
 #
 # Worker
 #
 
 
-class GenericWorker(Worker, CallbacksMixin):
+class GenericWorker(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
     _storage: Storage
+    _class_id: Optional[UUID] = None
 
     def __init__(self, **kwargs) -> None:
         conf = load_configuration()
@@ -181,51 +160,35 @@ class GenericWorker(Worker, CallbacksMixin):
         # Hide presence versions
         self._hide_presence_versions = conf.worker.hide_presence_versions
 
-        self._workdir = Path()
+        self._workdir = Path().absolute()
 
         assert_precondition(not hasattr(GenericWorker, "_storage"))
         GenericWorker._storage = conf.storage.create_instance()
 
         self._processes_callbacks = Callbacks(conf.callbacks)
+        self._periodic_tasks = PeriodicTasks()
+
         self._service_name = service_name
         self._service_title = conf.worker.title
         self._service_description = conf.worker.description
         self._service_links = conf.worker.links
         self._online_since = time()
 
+        self._periodic_tasks.add("cleanup", self.cleanup_expired_jobs, conf.worker.cleanup_interval)
+
     @property
     def service_name(self) -> str:
         return self._service_name
 
     def on_worker_ready(self) -> None:
-        pass
+        self._periodic_tasks.start()
 
     def on_worker_shutdown(self) -> None:
-        pass
-
-    def job_log(self, job_id: str) -> ProcessLogVersion:
-        """Return job log"""
-        logfile = self._workdir.joinpath(job_id, "processing.log")
-        if not logfile.exists():
-            text = "No log available"
-        else:
-            with logfile.open() as f:
-                text = f.read()
-
-        return ProcessLogVersion(timestamp=to_utc_datetime(time()), log=text)
+        self._periodic_tasks.shutdown()
 
     def job_files(self, job_id: str, public_url: str | None) -> ProcessFilesVersion:
         """Returns job execution files"""
         return ProcessFilesVersion(links=())
-
-    def download_url(self, job_id: str, resource: str, expiration: int) -> Link:
-        """Returns a temporary download url"""
-        return self._storage.download_url(
-            job_id,
-            resource,
-            workdir=self._workdir,
-            expires=expiration,
-        )
 
     @property
     def processes_callbacks(self) -> Callbacks:
@@ -241,6 +204,7 @@ class GenericWorker(Worker, CallbacksMixin):
             versions=[],
             result_expires=self.conf.result_expires,
             callbacks=list(self.processes_callbacks.schemes),
+            class_id=self._class_id,
         )
 
 
@@ -261,6 +225,10 @@ class GenericJob(Job):
         ti = registry.find_job(self.app, task_id)
         if not ti or ti.dismissed:
             raise DismissedTaskError(task_id)
+
+        self._worker_job_context.update(
+            workdir=self.app._workdir.joinpath(task_id),
+        )
 
         # We receive argument as job processes request
         # in order to match the task signature, replace

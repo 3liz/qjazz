@@ -1,30 +1,27 @@
-from pathlib import Path
 from typing import (
     Annotated,
     Optional,
 )
 
 from pydantic import (
-    AfterValidator,
     BeforeValidator,
-    DirectoryPath,
 )
 
 from qjazz_cache.prelude import ProjectsConfig
 from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigBase, Template, TemplateStr, TLSConfig
+from qjazz_contrib.core.config import (
+    AbsoluteDirectoryPath,
+    ConfigBase,
+    Template,
+    TemplateStr,
+    TLSConfig,
+)
 from qjazz_contrib.core.models import Field
 from qjazz_contrib.core.qgis import (
     QgisNetworkConfig,
     QgisPluginConfig,
 )
 from qjazz_processes.schemas import WGS84
-
-
-def _validate_absolute_path(p: Path) -> Path:
-    if not p.is_absolute():
-        raise ValueError(f"Path {p} must be absolute")
-    return p
 
 
 def _validate_qgis_setting(value: str | bool | float | int) -> str:
@@ -53,10 +50,7 @@ class ProcessingConfig(ConfigBase):
         default=QgisPluginConfig(),
         title="Plugin configuration",
     )
-    workdir: Annotated[
-        DirectoryPath,
-        AfterValidator(_validate_absolute_path),
-    ] = Field(
+    workdir: AbsoluteDirectoryPath = Field(
         title="Working directory",
         description="""
         Parent working directory where processes are executed.
@@ -156,10 +150,7 @@ class ProcessingConfig(ConfigBase):
         Otherwise, they will be stored in the job folder.
         """,
     )
-    raw_destination_root_path: Annotated[
-        Optional[DirectoryPath],
-        AfterValidator(lambda p: p and _validate_absolute_path(p)),
-    ] = Field(
+    raw_destination_root_path: Optional[AbsoluteDirectoryPath] = Field(
         default=None,
         title="Raw destination root path",
         description="""

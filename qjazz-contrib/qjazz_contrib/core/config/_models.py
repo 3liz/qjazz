@@ -4,10 +4,12 @@ import ssl
 import string
 import sys
 
+from pathlib import Path
 from typing import Annotated, Optional, Tuple
 
 from pydantic import (
     AfterValidator,
+    DirectoryPath,
     Field,
     FilePath,
     PlainSerializer,
@@ -18,6 +20,7 @@ from pydantic import (
 from ._service import ConfigBase
 
 __all__ = [
+    "AbsoluteDirectoryPath",
     "NetInterface",
     "TLSConfig",
     "Template",
@@ -113,3 +116,21 @@ TemplateStr = Annotated[
     PlainSerializer(lambda t: t.template, return_type=str),
     WithJsonSchema({"type": "str"}),
 ]
+
+#
+# Paths
+#
+
+def _validate_absolute_path(p: Path) -> Path:
+    if not p.is_absolute():
+        raise ValueError(f"Path {p} must be absolute")
+    return p
+
+
+AbsoluteDirectoryPath = Annotated[
+    DirectoryPath,
+    AfterValidator(_validate_absolute_path),
+]
+
+
+

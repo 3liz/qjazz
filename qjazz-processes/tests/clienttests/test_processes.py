@@ -121,7 +121,7 @@ def test_unknownprocess(host):
         json={},
     )
 
-    assert rv.status_code == 403
+    assert rv.status_code == 404
 
 
 @pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")

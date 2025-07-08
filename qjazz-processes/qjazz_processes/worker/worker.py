@@ -3,7 +3,6 @@
 #
 import functools
 import mimetypes
-import shutil
 
 from itertools import chain
 from pathlib import Path
@@ -17,8 +16,6 @@ from typing import (
     Sequence,
     cast,
 )
-
-import redis
 
 from celery.signals import (
     worker_before_create_process,
@@ -34,7 +31,6 @@ from pydantic import TypeAdapter
 from qjazz_contrib.core import logger
 from qjazz_contrib.core.celery import Job, Worker
 from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.utils import to_utc_datetime
 
 from ..processing.config import ProcessingConfig
 from . import registry
@@ -50,14 +46,15 @@ from .config import (
 from .context import QgisContext, store_reference_url
 from .exceptions import DismissedTaskError
 from .mixins.callbacks import Callbacks, CallbacksMixin
+from .mixins.joblog import JoblogMixin
+from .mixins.storage import StorageMixin
 from .models import (
     Link,
     ProcessFilesVersion,
-    ProcessLogVersion,
     WorkerPresenceVersion,
 )
 from .storage import Storage
-from .threads import Event, PeriodicTask
+from .threads import PeriodicTasks
 from .watch import WatchFile
 
 LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
@@ -169,22 +166,6 @@ def presence(_state) -> dict:
     ).model_dump()
 
 
-@control_command()
-def cleanup(state):
-    """Run cleanup task"""
-    app = cast(QgisWorker, state.consumer.app)
-    app.cleanup_expired_jobs()
-
-
-@inspect_command(
-    args=[("job_id", str)],
-)
-def job_log(state, job_id):
-    """Return job log"""
-    app = cast(QgisWorker, state.consumer.app)
-    return app.job_log(job_id).model_dump()
-
-
 @inspect_command(
     args=[("job_id", str), ("public_url", str)],
 )
@@ -194,28 +175,12 @@ def job_files(state, job_id, public_url):
     return app.job_files(job_id, public_url).model_dump()
 
 
-@inspect_command(
-    args=[("job_id", str), ("resource", str), ("expiration", int)],
-)
-def download_url(state, job_id, resource, expiration):
-    try:
-        app = cast(QgisWorker, state.consumer.app)
-        return app.download_url(
-            job_id,
-            resource,
-            expiration,
-        ).model_dump()
-    except FileNotFoundError as err:
-        logger.error(err)
-        return None
-
-
 #
 # Worker
 #
 
 
-class QgisWorker(Worker, CallbacksMixin):
+class QgisWorker(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
     _storage: Storage
 
     @staticmethod
@@ -251,27 +216,11 @@ class QgisWorker(Worker, CallbacksMixin):
         # Hide presence versions
         self._hide_presence_versions = conf.worker.hide_presence_versions
 
-        self._workdir = conf.processing.workdir
-        self._store_url = conf.processing.store_url
-        self._processing_config = conf.processing
-
         assert_precondition(not hasattr(QgisWorker, "_storage"))
         QgisWorker._storage = conf.storage.create_instance()
 
         self._processes_callbacks = Callbacks(conf.callbacks)
-
-        #
-        # Init cleanup task
-        #
-        def cleanup_task():
-            logger.info("Cleanup task started")
-            while not self._cleanup_event.wait(self._cleanup_interval):
-                self.cleanup_expired_jobs()
-            logger.info("Cleanup task stopped")
-
-        self._cleanup_interval = conf.worker.cleanup_interval
-        self._shutdown_event = Event()
-        self._periodic_tasks: list[PeriodicTask] = []
+        self._periodic_tasks = PeriodicTasks()
 
         self._service_name = service_name
         self._service_title = conf.worker.title
@@ -279,14 +228,17 @@ class QgisWorker(Worker, CallbacksMixin):
         self._service_links = conf.worker.links
         self._online_since = time()
 
-        self._reload_monitor = conf.worker.reload_monitor
+        self.add_periodic_task("cleanup", self.cleanup_expired_jobs, conf.worker.cleanup_interval)
 
+        self._workdir = conf.processing.workdir
+        self._store_url = conf.processing.store_url
+        self._processing_config = conf.processing
+
+        self._reload_monitor = conf.worker.reload_monitor
         self.processes_cache = None
 
     def start_worker(self, **kwargs):
         self.processes_cache = self.create_processes_cache()
-
-        self.add_periodic_task("cleanup", self.cleanup_expired_jobs, self._cleanup_interval)
 
         if self._reload_monitor:
             watch = WatchFile(self._reload_monitor, self.reload_processes)
@@ -295,9 +247,7 @@ class QgisWorker(Worker, CallbacksMixin):
         super().start_worker(**kwargs)
 
     def add_periodic_task(self, name: str, target: Callable[[], None], timeout: float):
-        self._periodic_tasks.append(
-            PeriodicTask(name, target, timeout, event=self._shutdown_event),
-        )
+        self._periodic_tasks.add(name, target, timeout)
 
     @property
     def processing_config(self) -> ProcessingConfig:
@@ -306,18 +256,6 @@ class QgisWorker(Worker, CallbacksMixin):
     @property
     def service_name(self) -> str:
         return self._service_name
-
-    def lock(self, name: str) -> redis.lock.Lock:
-        # Create a redis lock for handling race conditions
-        # with multiple workers
-        # See https://redis-py-doc.readthedocs.io/en/master/#redis.Redis.lock
-        # The lock will hold only for 20s
-        # so operation using the lock should not exceed this duration.
-        return self.backend.client.lock(
-            f"lock:{self._service_name}:{name}",
-            blocking_timeout=0,  # Do not block
-            timeout=60,  # Hold lock 1mn max
-        )
 
     def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
         """Return a proper reference url for the resource"""
@@ -328,29 +266,6 @@ class QgisWorker(Worker, CallbacksMixin):
             public_url,
         )
 
-    def cleanup_expired_jobs(self) -> None:
-        """Cleanup all expired jobs"""
-        try:
-            with self.lock("cleanup-batch"):
-                logger.trace("Running cleanup task")
-                # Search for expirable jobs resources
-                for p in self._workdir.glob(f"*/.job-expire-{self.service_name}"):
-                    jobdir = p.parent
-                    job_id = jobdir.name
-                    if registry.exists(self, job_id):
-                        continue
-
-                    logger.info("=== Cleaning jobs resource: %s", job_id)
-                    self._storage.remove(job_id, workdir=self._workdir)
-
-                    try:
-                        shutil.rmtree(jobdir)
-                    except Exception as err:
-                        logger.error("Failed to remove directory '%s': %s", jobdir, err)
-
-        except redis.lock.LockError:
-            pass
-
     def reload_processes(self) -> None:
         """Reload processes"""
         if self.processes_cache:
@@ -359,9 +274,7 @@ class QgisWorker(Worker, CallbacksMixin):
         self.control.pool_restart(destination=(self.worker_hostname,))
 
     def on_worker_ready(self) -> None:
-        # Launch periodic cleanup task
-        for task in self._periodic_tasks:
-            task.start()
+        self._periodic_tasks.start()
         # Start process cache
         if self.processes_cache:
             self.processes_cache.update()
@@ -370,22 +283,7 @@ class QgisWorker(Worker, CallbacksMixin):
         # Stop proccess cache
         if self.processes_cache:
             self.processes_cache.stop()
-        # Stop cleanup scheduler
-        self._worker_handle = None
-        self._shutdown_event.set()
-        for task in self._periodic_tasks:
-            task.join(timeout=5.0)
-
-    def job_log(self, job_id: str) -> ProcessLogVersion:
-        """Return job log"""
-        logfile = self._workdir.joinpath(job_id, "processing.log")
-        if not logfile.exists():
-            text = "No log available"
-        else:
-            with logfile.open() as f:
-                text = f.read()
-
-        return ProcessLogVersion(timestamp=to_utc_datetime(time()), log=text)
+        self._periodic_tasks.shutdown()
 
     def job_files(self, job_id: str, public_url: str | None) -> ProcessFilesVersion:
         """Returns job execution files"""
@@ -404,15 +302,6 @@ class QgisWorker(Worker, CallbacksMixin):
             files = ProcessFilesVersion(links=())
 
         return files
-
-    def download_url(self, job_id: str, resource: str, expiration: int) -> Link:
-        """Returns a temporary download url"""
-        return self._storage.download_url(
-            job_id,
-            resource,
-            workdir=self._workdir,
-            expires=expiration,
-        )
 
     def store_files(self, job_id: str, add_auxiliary_files: bool = True):
         """Move files to storage

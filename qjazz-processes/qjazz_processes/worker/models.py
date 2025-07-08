@@ -5,6 +5,7 @@ from typing import (
     Sequence,
     TypedDict,
 )
+from uuid import UUID
 
 from pydantic import Field, TypeAdapter
 
@@ -28,6 +29,7 @@ class WorkerPresenceV1(WorkerVersion1):
     result_expires: int
     callbacks: Sequence[str] = Field([])
     entrypoint: Optional[str] = None
+    class_id: Optional[UUID] = None
 
 
 WorkerPresenceVersion = WorkerPresenceV1

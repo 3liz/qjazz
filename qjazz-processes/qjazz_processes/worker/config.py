@@ -56,7 +56,7 @@ def lookup_config_path() -> Optional[Path]:
 #
 
 # Force service name to be compliant with AWS bucket name.
-ServiceName = Annotated[str, Field(pattern=r'^[a-z0-9]+$')]
+ServiceName = Annotated[str, Field(pattern=r"^[a-z0-9]+$")]
 
 
 @config.section("worker", field=...)
