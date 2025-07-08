@@ -348,11 +348,15 @@ def create_app(conf: ConfigProto, executor: Optional[AsyncExecutor] = None) -> w
         },
     )
 
+    # NOTE: The following two statements trigger mypy error
+    # mypy: 1.16.1
+    # aiosignal: 1.4.0
+
     # CORS support
-    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin))
+    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin)) # type: ignore [arg-type]
 
     # Default server headers
-    app.on_response_prepare.append(set_server_headers)
+    app.on_response_prepare.append(set_server_headers) # type: ignore [arg-type]
 
     # Executor
     executor = executor or AsyncExecutor(conf.executor)
