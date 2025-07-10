@@ -226,10 +226,6 @@ class GenericJob(Job):
         if not ti or ti.dismissed:
             raise DismissedTaskError(task_id)
 
-        self._worker_job_context.update(
-            workdir=self.app._workdir.joinpath(task_id),
-        )
-
         # We receive argument as job processes request
         # in order to match the task signature, replace
         # the __run_config__ with the request 'inputs'

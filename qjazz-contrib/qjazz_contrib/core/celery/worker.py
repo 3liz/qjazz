@@ -5,11 +5,14 @@ import types
 from functools import cached_property
 from textwrap import dedent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
     Iterator,
+    MutableMapping,
     Optional,
+    Sequence,
     TypeAlias,
 )
 
@@ -136,10 +139,21 @@ class Worker(Celery):
         )
 
 
+
+class RunConfig(BaseModel, frozen=True, extra="ignore"):
+    """Base config model for tasks"""
+
+    pass
+
+
 # Create a dict class on wich we can
 # add attributes
 class _Dict(dict):
-    pass
+    if TYPE_CHECKING:
+        __run_config__: RunConfig
+        __context__: JobContext
+    else:
+        pass
 
 
 #
@@ -216,7 +230,7 @@ class Job(celery.Task):
         # Return output as json compatible format
         return outputs.dump_python(out, mode="json", by_alias=True, exclude_none=True)
 
-    def before_start(self, task_id, args, kwargs):
+    def before_start(self, task_id: str, args: Sequence, kwargs: MutableMapping):
         #
         # We expect the following as arguments:
         #
@@ -236,6 +250,8 @@ class Job(celery.Task):
         context = kwargs.pop("__context__", {})
         context.update(self._worker_job_context)
         context.update(task_id=task_id)
+
+        self.update_run_context(task_id, context)
 
         meta = kwargs.pop("__meta__", {})
         meta.update(
@@ -278,6 +294,9 @@ class Job(celery.Task):
         finally:
             kwargs.update(__meta__=meta)
 
+    def update_run_context(self, task_id: str, context: dict[str, Any]):
+        pass
+
     def set_progress(
         self,
         percent_done: Optional[float] = None,
@@ -307,12 +326,6 @@ def run_configs(_) -> dict[str, JsonValue]:
 #
 # Run configs
 #
-
-
-class RunConfig(BaseModel, frozen=True, extra="ignore"):
-    """Base config model for tasks"""
-
-    pass
 
 
 def _format_doc(wrapped: Callable) -> tuple[str, str]:

@@ -8,6 +8,7 @@ from itertools import chain
 from pathlib import Path
 from time import time
 from typing import (
+    Any,
     Callable,
     Iterable,
     Iterator,
@@ -374,10 +375,9 @@ class QgisWorker(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
 
 
 class QgisJob(Job):
-    def before_start(self, task_id, args, kwargs):
+    def update_run_context(self, task_id: str, context: dict[str, Any]):
         # Add qgis context in job context
-        self._worker_job_context.update(qgis_context=self.app.create_context())
-        super().before_start(task_id, args, kwargs)
+        context.update(qgis_context=self.app.create_context())
 
 
 class QgisProcessJob(QgisJob):
