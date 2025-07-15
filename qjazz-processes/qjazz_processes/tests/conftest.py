@@ -184,10 +184,12 @@ def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
 
 @pytest.fixture(scope="function")
 def server_app(rootdir: Path) -> web.Application:
-    from qjazz_processes.server import cli, server
+    from qjazz_processes.server import cli, executor, server
 
+    conf = cli.load_configuration(rootdir.joinpath("server-config.toml"))
     return server.create_app(
-        cli.load_configuration(rootdir.joinpath("server-config.toml")),
+        conf,
+        executor.AsyncExecutor(conf.executor),
     )
 
 

@@ -278,9 +278,7 @@ class Processes(HandlerProto):
         if execute_sync:
             logger.debug("Running synchronous execution for %s (%s)", process_id, service)
 
-        context: JsonDict = dict(
-            public_url=public_url(request, ""),
-        )
+        context = await self.create_run_context(service, process_id, request)
 
         result = self._executor.execute(
             service,
@@ -424,6 +422,9 @@ class Processes(HandlerProto):
                 web.HTTPForbidden,
                 f"Process {process_id} not available",
             )
+
+    async def create_run_context(self, service: str, ident: str, request: web.Request) -> JsonDict:
+        return dict(public_url=public_url(request, ""))
 
 
 #

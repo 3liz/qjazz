@@ -336,7 +336,11 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
     return site
 
 
-def create_app(conf: ConfigProto, executor: Optional[AsyncExecutor] = None) -> web.Application:
+def create_app(
+    conf: ConfigProto,
+    executor: AsyncExecutor,
+    handler_mixin: Optional[type[object]] = None,
+) -> web.Application:
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
@@ -353,21 +357,28 @@ def create_app(conf: ConfigProto, executor: Optional[AsyncExecutor] = None) -> w
     # aiosignal: 1.4.0
 
     # CORS support
-    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin)) # type: ignore [arg-type]
+    app.on_response_prepare.append(set_access_control_headers(conf.http.cross_origin))  # type: ignore [arg-type]
 
     # Default server headers
-    app.on_response_prepare.append(set_server_headers) # type: ignore [arg-type]
-
-    # Executor
-    executor = executor or AsyncExecutor(conf.executor)
+    app.on_response_prepare.append(set_server_headers)  # type: ignore [arg-type]
 
     # Access policy
     access_policy = create_access_policy(conf.access_policy, app, executor)
 
     cache = ServiceCache()
 
+    HandlerImpl: type[object]
+    if handler_mixin:
+        # Mypy just don't know how to handle this
+        # See https://github.com/python/mypy/issues/2813#issuecomment-474916770
+        class Override(handler_mixin, Handler): # type: ignore [valid-type,misc]
+            pass
+        HandlerImpl = Override
+    else:
+        HandlerImpl = Handler
+
     # Handler
-    handler = Handler(
+    handler = HandlerImpl(
         executor=executor,
         policy=access_policy,
         timeout=conf.http.timeout,
@@ -434,9 +445,8 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     return _swagger_doc(app, config.oapi if config else swagger.OapiConfig())
 
 
-async def _serve(conf: ConfigProto, executor: Optional[AsyncExecutor] = None):
+async def _serve(conf: ConfigProto, app: web.Application):
     """Start the web server"""
-    app = create_app(conf, executor)
 
     runner = web.AppRunner(app, handler_cancellation=True)
 
@@ -464,4 +474,5 @@ async def _serve(conf: ConfigProto, executor: Optional[AsyncExecutor] = None):
 
 
 def serve(conf: ConfigProto):
-    asyncio.run(_serve(conf))
+    app = create_app(conf, AsyncExecutor(conf.executor))
+    asyncio.run(_serve(conf, app))

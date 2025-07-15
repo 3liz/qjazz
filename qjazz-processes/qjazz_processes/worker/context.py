@@ -1,5 +1,5 @@
 #
-# Processing worker
+# QGIS context
 #
 import os
 
@@ -34,6 +34,7 @@ from ..processing.prelude import (
     JobResults,
     ProcessingContext,
 )
+from .contextutils import execute_context
 from .exceptions import ProjectRequired
 
 
@@ -300,28 +301,3 @@ class QgisServerContext(QgisContext):
         CacheManager.initialize_handlers(conf.projects)
         cm = CacheManager(conf.projects)
         cm.register_as_service()
-
-
-#
-# Utils
-#
-
-
-@contextmanager
-def execute_context(workdir: Path, task_id: str):
-    with chdir(workdir), logger.logfile(workdir, "processing"), memlog(task_id):
-        yield
-
-
-@contextmanager
-def memlog(task_id: str):
-    import psutil
-
-    process = psutil.Process(os.getpid())
-    rss = process.memory_info().rss
-    mb = 1024 * 1024.0
-    try:
-        yield
-    finally:
-        _leaked = (process.memory_info().rss - rss) / mb
-        logger.info("Task %s leaked %.3f Mb", task_id, _leaked)

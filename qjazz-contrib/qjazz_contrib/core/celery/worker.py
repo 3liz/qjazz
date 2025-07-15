@@ -129,12 +129,14 @@ class Worker(Celery):
                 return f"got customer id : {ctx.customer_id}"
         """
         base = kwargs.pop("base", Job)
+        metadata = kwargs.pop("metadata", ())
         return super().task(
             *args,
             name=f"{self.main}.{name}",
             base=base,
             track_started=True,
             _worker_job_context=self._job_context,
+            _metadata=metadata,
             **kwargs,
         )
 
@@ -160,6 +162,11 @@ class _Dict(dict):
 # Celery task override
 #
 
+class Metadata(BaseModel):
+    role: str
+    title: Optional[str] = None
+    value: Optional[JsonValue]
+
 
 class InputDescription(BaseModel):
     title: Optional[str] = None
@@ -177,6 +184,7 @@ class RunConfigSchema(BaseModel):
     id_: str = Field(alias="id")
     title: str
     description: Optional[str] = None
+    metadata: Sequence[Metadata] = ()
     inputs: dict[str, InputDescription]
     outputs: dict[str, OutputDescription]
 
@@ -185,6 +193,7 @@ class Job(celery.Task):
     RUN_CONFIGS: ClassVar[dict[str, RunConfigSchema]] = {}
 
     _worker_job_context: ClassVar[dict] = {}
+    _metadata: ClassVar[Sequence[Metadata]] = ()
 
     # To be set in decorator
     run_context: bool = False
@@ -200,7 +209,7 @@ class Job(celery.Task):
         # Remove service prefix
         jobname = self.name.removeprefix(f"{self.app._name}.")
 
-        model, schema = job_run_config(jobname, self.__wrapped__)
+        model, schema = job_run_config(jobname, self.__wrapped__, self._metadata)
 
         if inspect.iscoroutine(self.__wrapped__):
             logger.trace("=%s: Registered coroutine methode", self.name)
@@ -344,6 +353,7 @@ def _format_doc(wrapped: Callable) -> tuple[str, str]:
 def job_run_config(
     jobname: str,
     wrapped: Callable,
+    metadata: Sequence[Metadata],
 ) -> tuple[tuple[type[RunConfig], TypeAdapter], RunConfigSchema]:
     """Build a RunConfig from fonction signature"""
     s = inspect.signature(wrapped)
@@ -406,6 +416,7 @@ def job_run_config(
             id=jobname,
             title=title,
             description=description,
+            metadata=metadata,
             inputs=dict(input_schemas()),
             outputs={
                 "output": OutputDescription(

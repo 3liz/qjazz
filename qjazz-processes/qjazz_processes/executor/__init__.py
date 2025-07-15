@@ -4,6 +4,7 @@ from .executor import (  # noqa F403
     Executor,
     ExecutorConfig,
     JobStatus,
+    PresenceDetails,
     ProcessDescription,
     ProcessSummary,
     ServiceDict,

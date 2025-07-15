@@ -32,7 +32,7 @@ class ErrorResponse(JsonModel):
                 message=message,
                 details=details,
             ).model_dump_json(),
-        )
+        ) from None
 
     @classmethod
     def response(
