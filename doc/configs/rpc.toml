@@ -164,7 +164,7 @@ use_default_server_handler = false
 #
 # Use aliases for QGIS server apis.
 # 
-api_aliases = {}
+api_aliases = {'WFS3'='OGC WFS3 (Draft)', 'LIZMAP'='Lizmap'}
 
 #
 # Projects configuration
@@ -242,6 +242,19 @@ allow_direct_path_resolution = false
 # Configure storage handlers.
 # The name will be used as scheme for project's search path
 # configuration.
+# 
+#
+# Example:
+#
+# [projects.search_paths]
+# "/public/location1/" = "postgres1://?dbname=mydatabase1"
+# "/public/location2/" = "postgres1://?dbname=mydatabase2"
+# 
+# [projects.handlers.postgres1]
+# handler_class = qjazz_cache.handlers.postgresql.PostgresHandler
+# 
+# [projects.handlers.postgres1.config]
+# uri = "postgresql://user@host/?schema=myschema"
 # 
 #
 [worker.qgis.projects.handlers.'key']

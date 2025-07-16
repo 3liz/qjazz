@@ -50,16 +50,16 @@ backends_request_timeout = 30
 # Shutdown grace period
 shutdown_timeout = 30
 
-#[backends.key]
+[backends.'key']
 #
 # Hostname
-#host = "localhost"
+host = "localhost"
 #
 # Port
-#port = 23456
+port = 23456
 #
 # Enable TLS
-#enable_tls = false
+enable_tls = false
 #
 # CA file
 #cafile =   	# Optional
@@ -75,10 +75,10 @@ shutdown_timeout = 30
 #client_cert_file =   	# Optional
 #
 # A descriptive title
-#title = ""
+title = ""
 #
 # A description of the service
-#description = ""
+description = ""
 #
 # Route to service
 #route =   	# Required
@@ -89,14 +89,14 @@ shutdown_timeout = 30
 # If a Qgis worker takes more than the corresponding value
 # a timeout error (504) is returned to the client.
 # 
-#timeout = 20
+timeout = 20
 #
 # Forwarded headers
 #
 # Set the headers that will be forwarded to the Qgis server backend.
 # This may be useful if you have plugins that may deal with request headers.
 # 
-#forward_headers = ["x-qgis-*","x-lizmap-*"]
+forward_headers = ["x-qgis-*","x-lizmap-*"]
 #
 # Allow direct path resolution
 #
@@ -104,7 +104,7 @@ shutdown_timeout = 30
 # WARNING: allowing this may be a security vulnerabilty.
 # See worker configuration for details.
 # 
-#allow_direct_resolution = false
+allow_direct_resolution = false
 #
 # Disable catalog root api
 #
@@ -112,12 +112,12 @@ shutdown_timeout = 30
 # a 403 HTTP response with an informative message that the
 # catalog has been disabled for the channel.
 # 
-#disable_root_catalog = false
+disable_root_catalog = false
 
 #
 # Api endpoints
 #
-#[[backends.key.api]]
+[[backends.'key'.api]]
 #
 # Api endpoint
 #endpoint =   	# Required
@@ -132,10 +132,10 @@ shutdown_timeout = 30
 #delegate_to =   	# Optional
 #
 # Descriptive name
-#name = ""
+name = ""
 #
 # Api description
-#description = ""
+description = ""
 #
 # Enable html in delegated endpoint
 #
@@ -144,7 +144,7 @@ shutdown_timeout = 30
 # template resource resolution in Qgis server when using
 # delegated api endpoint."
 # 
-#enable_html_delegate = false
+enable_html_delegate = false
 
 #
 # Path to services configuration files

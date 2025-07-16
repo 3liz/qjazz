@@ -2,3 +2,5 @@ sphinx
 sphinx-rtd-theme
 sphinxcontrib-httpdomain
 swagger-plugin-for-sphinx
+# See https://github.com/SAP/swagger-plugin-for-sphinx/issues/269
+typing_extensions 

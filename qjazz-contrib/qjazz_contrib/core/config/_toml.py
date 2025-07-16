@@ -59,7 +59,7 @@ def _field_default_repr(field_default: Any) -> str:  # noqa ANN401
         case tuple(t) | set(t) | list(t):
             return f"[{','.join(_to_string(v) for v in t)}]"
         case dict(t):
-            return f"{t}"
+            return  "{" + ", ".join(f"'{k}'='{v}'" for k,v in t.items()) + "}"
         case default:
             return f'"{default}"'
 
@@ -157,6 +157,9 @@ def _dump_section(
         fields_default = model_default.model_dump(mode="json")
     else:
         fields_default = model_default
+
+    if not isinstance(fields_default, dict):
+        fields_default = {}
 
     for name, field in model.model_fields.items():
         field_default = fields_default.get(name)

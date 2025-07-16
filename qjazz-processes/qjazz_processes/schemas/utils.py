@@ -1,12 +1,12 @@
 from collections.abc import Callable
-
-from pydantic import TypeAdapter
-from pydantic.config import JsonDict
-from typing_extensions import (
+from typing import (
     Any,
     Optional,
     TypeAlias,
 )
+
+from pydantic import TypeAdapter
+from pydantic.config import JsonDict
 
 from qjazz_processes.schemas import (
     InputDescription,
