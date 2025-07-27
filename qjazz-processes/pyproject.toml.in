@@ -22,7 +22,7 @@ version = "${PIN_VERSION}"
 
 [project.optional-dependencies]
 server = ["aiohttp"]
-minio = ["minio"]
+minio = ["minio<7.2.16"]
 mail = ["email-validator"]
 
 [[project.authors]]
