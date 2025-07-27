@@ -305,7 +305,7 @@ fn item_url(item: &CollectionsItem, public_url: &str) -> String {
 }
 
 fn to_error<E: std::fmt::Debug>(e: E) -> error::Error {
-    log::error!("Catalog error: {:?}", e);
+    log::error!("Catalog error: {e:?}");
     error::ErrorInternalServerError("Internal error")
 }
 

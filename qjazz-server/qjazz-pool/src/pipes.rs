@@ -69,7 +69,7 @@ impl Pipe {
             Ok(0) | Err(Errno::EWOULDBLOCK) => Ok(false),
             Ok(_) => self.drain_blocking(fd).await, // Pull out remaining data
             Err(errno) => {
-                log::error!("Drain: I/O error: {:#?}", errno);
+                log::error!("Drain: I/O error: {errno:#?}");
                 Err(Error::from(errno))
             }
         }
@@ -90,7 +90,7 @@ impl Pipe {
                     Ok(0) | Err(Errno::EWOULDBLOCK) => return Ok(len > 0),
                     Ok(n) => len += n,
                     Err(errno) => {
-                        log::error!("Drain: I/O error: {:#?}", errno);
+                        log::error!("Drain: I/O error: {errno:#?}");
                         return Err(Error::from(errno));
                     }
                 }
@@ -101,7 +101,7 @@ impl Pipe {
             Ok(rv) => rv,
             Err(err) => {
                 if !err.is_cancelled() {
-                    log::error!("Drain task failed:  {:?}", err);
+                    log::error!("Drain task failed:  {err:?}");
                     Err(Error::TaskFailed("Drain task failed".to_string()))
                 } else {
                     log::trace!("Drain finished");

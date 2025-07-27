@@ -66,10 +66,10 @@ pub mod metadata {
                         .map(|v| md.insert(k, v))
                         .is_err()
                     {
-                        log::error!("Invalid medatata value {:?}", v);
+                        log::error!("Invalid medatata value {v:?}");
                     }
                 } else {
-                    log::error!("Failed to convert header key {:?}", k)
+                    log::error!("Failed to convert header key {k:?}")
                 }
             });
     }
@@ -168,7 +168,7 @@ impl RpcHttpResponseBuilder {
                     status_code = StatusCode::from_u16(
                         v.parse()
                             .inspect_err(|e| {
-                                log::error!("OWS: Invalid status code {:?}", e);
+                                log::error!("OWS: Invalid status code {e:?}");
                             })
                             .unwrap_or(500u16),
                     )
@@ -254,6 +254,7 @@ impl RpcHttpResponseBuilder {
 }
 
 // Handle response from RPC stream
+#[allow(clippy::large_enum_variant)]
 pub enum StreamedResponse {
     Fail(HttpResponse),
     Succ(RpcHttpResponseBuilder, ResponseStream),
@@ -308,7 +309,7 @@ impl StreamedResponse {
     ) -> StreamedResponse {
         match response {
             Err(status) => {
-                log::error!("Backend error:\t{}\t{}", name, status);
+                log::error!("Backend error:\t{name}\t{status}");
                 StreamedResponse::Fail(RpcHttpResponseBuilder::from_rpc_status(&status, request_id))
             }
             Ok(resp) => StreamedResponse::Succ(

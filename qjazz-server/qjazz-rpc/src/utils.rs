@@ -26,10 +26,10 @@ pub(crate) fn headers_to_metadata(
             if let Ok(k) = MetadataKey::from_str(k) {
                 metadata.insert(k, v);
             } else {
-                log::error!("Invalid response header key {:?}", k);
+                log::error!("Invalid response header key {k:?}");
             }
         } else {
-            log::error!("Invalid response header value {:?}", v);
+            log::error!("Invalid response header value {v:?}");
         }
     }
 }

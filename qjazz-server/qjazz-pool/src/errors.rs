@@ -61,6 +61,6 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 impl From<Error> for String {
     fn from(err: Error) -> String {
-        format!("{}", err)
+        format!("{err}")
     }
 }

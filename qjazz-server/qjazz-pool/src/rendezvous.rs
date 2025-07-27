@@ -171,7 +171,7 @@ impl RendezVous {
                             state.store(true, atomic::Ordering::Relaxed);
                         }
                         _ => {
-                            log::error!("Rendez-vous received invalid value {:?}", buf);
+                            log::error!("Rendez-vous received invalid value {buf:?}");
                         }
                     },
                     Err(Errno::EWOULDBLOCK) => {
@@ -180,7 +180,7 @@ impl RendezVous {
                         continue;
                     }
                     Err(errno) => {
-                        log::error!("Rendez-vous I/O error: {:#?}", errno);
+                        log::error!("Rendez-vous I/O error: {errno:#?}");
                         return Err(Error::from(errno));
                     }
                 }

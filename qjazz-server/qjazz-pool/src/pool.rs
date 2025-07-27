@@ -95,7 +95,7 @@ impl WorkerQueue {
         done_hint: bool,
     ) -> Result<()> {
         let pid = worker.id();
-        log::debug!("Recycling worker [{}]", pid);
+        log::debug!("Recycling worker [{pid}]");
 
         self.forget_pid(pid).await;
 
@@ -118,8 +118,8 @@ impl WorkerQueue {
                 let id = worker.id();
                 self.terminate_failure(worker).await?;
                 match rv {
-                    Err(Error::WorkerStalled) => log::error!("Killed stalled process {}", id),
-                    _ => log::error!("Worker failure {}: {:?}", id, rv),
+                    Err(Error::WorkerStalled) => log::error!("Killed stalled process {id}"),
+                    _ => log::error!("Worker failure {id}: {rv:?}"),
                 }
             }
             rv
@@ -264,7 +264,7 @@ impl Pool {
     fn cleanup_dead_workers(&self) {
         let dead_workers = self.queue.q.retain(|w| w.is_alive());
         if dead_workers > 0 {
-            log::warn!("Removed {} dead workers from queue !", dead_workers);
+            log::warn!("Removed {dead_workers} dead workers from queue !");
             self.queue
                 .dead_workers
                 .fetch_add(dead_workers, Ordering::Relaxed);
@@ -311,7 +311,7 @@ impl Pool {
 
         let launcher = self.builder.launcher();
 
-        log::debug!("Launching {} workers", n);
+        log::debug!("Launching {n} workers");
         let futures: Vec<_> = (0..n).map(|_| launcher.clone().spawn()).collect();
 
         // Start the workers asynchronously
@@ -338,7 +338,7 @@ impl Pool {
         if self.queue.is_closed() {
             return Err(Error::QueueIsClosed);
         }
-        log::debug!("Pool: Shrinking by {} workers", n);
+        log::debug!("Pool: Shrinking by {n} workers");
         let mut removed = self.queue.q.drain(n);
         self.num_processes -= removed.len();
         for mut w in removed.drain(..) {
@@ -360,7 +360,7 @@ impl Pool {
             loop {
                 let (active, _, _) = self.stats_raw();
                 if active > 0 {
-                    log::debug!("Active workers: {}", active);
+                    log::debug!("Active workers: {active}");
                     tokio::time::sleep(throttle).await;
                 } else {
                     log::debug!("No active workers");

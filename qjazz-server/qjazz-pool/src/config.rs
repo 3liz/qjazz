@@ -22,8 +22,7 @@ impl<const MIN: usize, const MAX: usize> TryFrom<usize> for BoundedUsize<MIN, MA
             Ok(Self(value))
         } else {
             Err(Error::InvalidConfigValue(format!(
-                "{} out of range {}..{}",
-                value, MIN, MAX
+                "{value} out of range {MIN}..{MAX}"
             )))
         }
     }

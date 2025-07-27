@@ -199,8 +199,7 @@ async fn verify_channel_mw(
                 HttpResponse::ServiceUnavailable()
                     .content_type("text/plain")
                     .body(format!(
-                        "Service '{}' not available, please retry later",
-                        name
+                        "Service '{name}' not available, please retry later"
                     ))
                     .map_into_right_body(),
             ));

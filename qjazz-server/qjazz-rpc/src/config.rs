@@ -193,7 +193,7 @@ impl Settings {
     }
 
     fn error<T: Display>(msg: T) -> ConfigError {
-        ConfigError::Message(format!("{}", msg))
+        ConfigError::Message(format!("{msg}"))
     }
 
     /// Create from default and environment variables
@@ -238,10 +238,7 @@ impl Settings {
 // Utils
 fn check_file_exists(path: &Option<PathBuf>, name: &str) -> Result<(), ConfigError> {
     match path {
-        None => Err(ConfigError::Message(format!(
-            "Path required for '{}'",
-            name
-        ))),
+        None => Err(ConfigError::Message(format!("Path required for '{name}'"))),
         Some(p) => {
             if !p.exists() {
                 Err(ConfigError::Message(format!(

@@ -323,10 +323,10 @@ impl QgisAdmin for QgisAdminServicer {
     async fn set_config(&self, request: Request<JsonConfig>) -> Result<Response<Empty>, Status> {
         // Sync state
         let patch = serde_json::from_str::<serde_json::Value>(&request.into_inner().json)
-            .map_err(|err| Status::invalid_argument(format!("{:?}", err)))?;
+            .map_err(|err| Status::invalid_argument(format!("{err:?}")))?;
 
         if log::log_enabled!(log::Level::Debug) {
-            log::debug!("Updating configuration: {}", patch);
+            log::debug!("Updating configuration: {patch}");
         } else {
             log::info!("Updating configuration");
         }
@@ -346,7 +346,7 @@ impl QgisAdmin for QgisAdminServicer {
     async fn get_config(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
         Ok(Response::new(JsonConfig {
             json: serde_json::to_string(self.pool.read().await.options())
-                .map_err(|err| Status::internal(format!("{}", err)))?,
+                .map_err(|err| Status::internal(format!("{err}")))?,
         }))
     }
 
@@ -446,24 +446,22 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
-        // We need a mutable reporter
-        let mut reporter = self.health_reporter.clone();
 
         match request.into_inner().status {
             st if st == ServingStatus::Serving as i32 => {
                 log::info!("Setting server serving status to SERVING");
-                reporter
+                self.health_reporter
                     .set_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
             }
             st if st == ServingStatus::NotServing as i32 => {
                 log::info!("Setting server serving status to NOT SERVING");
-                reporter
+                self.health_reporter
                     .set_not_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
             }
             st => {
-                return Err(Status::invalid_argument(format!("{}", st)));
+                return Err(Status::invalid_argument(format!("{st}")));
             }
         }
         Ok(Response::new(Empty {}))

@@ -179,7 +179,7 @@ impl WmsBuilder {
     // parameters
 
     fn write_error(err: fmt::Error) -> error::Error {
-        log::error!("Format error: {}", err);
+        log::error!("Format error: {err}");
         error::ErrorInternalServerError("Internal error")
     }
 
@@ -203,7 +203,7 @@ impl WmsBuilder {
 
     fn layers(mut self, param: &Params) -> Result<Self> {
         if let Some(collections) = &param.collections {
-            write!(self.opts, "&layers={}", collections).map_err(Self::write_error)?;
+            write!(self.opts, "&layers={collections}").map_err(Self::write_error)?;
         }
         Ok(self)
     }
@@ -220,11 +220,11 @@ impl WmsBuilder {
 
     fn subsetting(mut self, params: &Params) -> Result<Self> {
         if let Some(bbox) = &params.bbox {
-            write!(self.opts, "&bbox={}", bbox).map_err(Self::write_error)?;
+            write!(self.opts, "&bbox={bbox}").map_err(Self::write_error)?;
             // In no crs is specified then we SHALL assume that bbox is
             // expressed in CRS84
             let crs = params.bbox_crs.as_deref().unwrap_or(CRS84);
-            write!(self.opts, "&crs={}", crs).map_err(Self::write_error)?;
+            write!(self.opts, "&crs={crs}").map_err(Self::write_error)?;
         }
         Ok(self)
     }
@@ -249,7 +249,7 @@ impl WmsBuilder {
     fn bgcolor(mut self, params: &Params) -> Result<Self> {
         // No validation
         if let Some(color) = &params.bgcolor {
-            write!(self.opts, "&bgcolor={}", color).map_err(Self::write_error)?;
+            write!(self.opts, "&bgcolor={color}").map_err(Self::write_error)?;
         }
         Ok(self)
     }

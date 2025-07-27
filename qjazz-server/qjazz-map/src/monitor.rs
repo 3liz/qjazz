@@ -67,7 +67,7 @@ mod mon {
                     response_status: status.as_u16(),
                 };
                 tx.try_send(msg)
-                  .map_err(|e| Error::SendError(format!("{e}")))
+                    .map_err(|e| Error::SendError(format!("{e}")))
             } else {
                 Err(Error::SendError("Monitor is not configured".to_string()))
             }

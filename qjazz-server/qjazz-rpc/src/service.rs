@@ -135,9 +135,9 @@ impl QgisServerServicer {
                     Ok(report) => {
                         let _ = reporter
                             .send(report)
-                            .inspect_err(|e| log::error!("Failed to send report {:?}", e));
+                            .inspect_err(|e| log::error!("Failed to send report {e:?}"));
                     }
-                    Err(err) => log::error!("Failed to get report {:?}", err),
+                    Err(err) => log::error!("Failed to get report {err:?}"),
                 }
             }
             w.done();

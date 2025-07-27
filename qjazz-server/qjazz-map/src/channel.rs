@@ -64,9 +64,10 @@ impl Builder {
     }
 }
 
+#[allow(clippy::result_large_err)]
 fn service_definition(cfg: &ChannelConfig) -> Result<ServiceDefinition, Error> {
     ServiceDefinition::try_from(cfg.service())
-        .map_err(|e| Status::internal(format!("Cannot build service definition {:?}", e)))
+        .map_err(|e| Status::internal(format!("Cannot build service definition {e:?}")))
 }
 
 impl Channel {
@@ -80,7 +81,7 @@ impl Channel {
         if conf.enable_tls() {
             builder.with_tls(
                 conf.tls_config()
-                    .map_err(|e| Status::internal(format!("Client certificat error {:?}", e)))?,
+                    .map_err(|e| Status::internal(format!("Client certificat error {e:?}")))?,
             )
         } else {
             builder
@@ -88,7 +89,7 @@ impl Channel {
         .dns_probe_interval(conf.probe_interval())
         .channel()
         .await
-        .map_err(|e| Status::internal(format!("Failed to create load balanced channel {}", e)))
+        .map_err(|e| Status::internal(format!("Failed to create load balanced channel {e:?}")))
     }
 
     pub fn serving(&self) -> bool {
@@ -173,23 +174,22 @@ impl Channel {
                                 Err(status) => break Some(status),
                                 Ok(Some(status)) => match status.status {
                                     st if st == ServingStatus::Serving as i32 => {
-                                        log::info!("Backend: {}: status changed to SERVING", name);
+                                        log::info!("Backend: {name}: status changed to SERVING");
                                         serving.store(true, Ordering::Relaxed);
                                     }
                                     st if st == ServingStatus::NotServing as i32 => {
                                         log::info!(
-                                            "Backend: {}: status changed to NOT SERVING",
-                                            name
+                                            "Backend: {name}: status changed to NOT SERVING"
                                         );
                                         serving.store(false, Ordering::Relaxed);
                                     }
                                     _ => {
-                                        log::info!("Backend: {}: status changed to UNKNOWN", name);
+                                        log::info!("Backend: {name}: status changed to UNKNOWN");
                                         serving.store(false, Ordering::Relaxed);
                                     }
                                 },
                                 Ok(None) => {
-                                    log::info!("Backend: {}: No status", name);
+                                    log::info!("Backend: {name}: No status");
                                     break None;
                                 }
                             }
@@ -200,10 +200,10 @@ impl Channel {
                 serving.store(false, Ordering::Relaxed);
                 if let Some(status) = rv {
                     if status.code() != Code::Unavailable {
-                        log::error!("Backend error:\t{}\t{}", name, status);
+                        log::error!("Backend error:\t{name}\t{status}");
                     } else if matches!(available, Some(true) | None) {
                         available = Some(false);
-                        log::error!("Backend {}: UNAVAILABLE", name);
+                        log::error!("Backend {name}: UNAVAILABLE");
                     }
                 }
                 // Wait before reconnection attempt

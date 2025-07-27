@@ -16,8 +16,8 @@ path = "src/main.rs"
 [dependencies]
 qjazz-pool = "~0.1"
 qjazz-mon = { version = "~0.1", optional = true }
-tonic = { version = "0.12", features= ["tls"] }
-tonic-health = "0.12"
+tonic = { version = "0.13", features = ["tls-ring"] }
+tonic-health = "0.13"
 prost = "0.13"
 tokio = { workspace = true, features = ["sync"] }
 tokio-stream = "0.1"
@@ -40,6 +40,6 @@ monitor = ["qjazz-mon"]
 
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-build = "0.13"
 
 

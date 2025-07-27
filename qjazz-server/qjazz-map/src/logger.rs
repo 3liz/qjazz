@@ -84,7 +84,7 @@ where
             E: de::Error,
         {
             log::LevelFilter::from_str(value).map_err(|e| {
-                de::Error::invalid_value(de::Unexpected::Other(&format!("{}", e)), &self)
+                de::Error::invalid_value(de::Unexpected::Other(&format!("{e}")), &self)
             })
         }
     }

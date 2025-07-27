@@ -138,10 +138,10 @@ impl Server {
         // Read server certificate
 
         let cert_chain = CertificateDer::pem_file_iter(cert_path)
-            .map_err(|err| ConfigError::Message(format!("Server certificate error: {:?}", err)))?
+            .map_err(|err| ConfigError::Message(format!("Server certificate error: {err:?}")))?
             .map(|cert| {
                 cert.map_err(|err| {
-                    ConfigError::Message(format!("Server certificate error: {:?}", err))
+                    ConfigError::Message(format!("Server certificate error: {err:?}"))
                 })
             })
             .collect::<Result<Vec<CertificateDer>, _>>()?;
@@ -149,13 +149,13 @@ impl Server {
         // Read server key
 
         let key = PrivateKeyDer::from_pem_file(key_path)
-            .map_err(|err| ConfigError::Message(format!("Server tls key error: {:?}", err)))?;
+            .map_err(|err| ConfigError::Message(format!("Server tls key error: {err:?}")))?;
 
         if let Some(ca_path) = self.listen.tls_client_ca_file.as_ref() {
             let mut store = rustls::RootCertStore::empty();
 
             fn error<E: std::error::Error>(err: E) -> ConfigError {
-                ConfigError::Message(format!("Client certificate error {:?}", err))
+                ConfigError::Message(format!("Client certificate error {err:?}"))
             }
 
             //
@@ -177,7 +177,7 @@ impl Server {
             TlsServerConfig::builder().with_no_client_auth()
         }
         .with_single_cert(cert_chain, key)
-        .map_err(|err| ConfigError::Message(format!("TLS configuration error: {:}", err)))
+        .map_err(|err| ConfigError::Message(format!("TLS configuration error: {err:?}")))
         .map(Some)
     }
 }
@@ -235,7 +235,7 @@ impl Settings {
     }
 
     fn error<T: Display>(msg: T) -> ConfigError {
-        ConfigError::Message(format!("{}", msg))
+        ConfigError::Message(format!("{msg}"))
     }
 
     /// Create from default and environment variables

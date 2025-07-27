@@ -110,7 +110,7 @@ impl<'de> Deserialize<'de> for HeaderFilter {
                             .case_insensitive(true)
                             .build()
                             .map_err(|e| {
-                                log::error!("Invalid regular expression: {:?}", e);
+                                log::error!("Invalid regular expression: {e:?}");
                                 de::Error::invalid_value(de::Unexpected::Str(v), &self)
                             })?,
                     ))
@@ -233,7 +233,7 @@ impl ChannelConfig {
     }
     pub fn tls_config(&self) -> io::Result<ClientTlsConfig> {
         if !self.service.enable_tls {
-            return Err(io::Error::new(io::ErrorKind::Other, "TLS not enabled"));
+            return Err(io::Error::other("TLS not enabled"));
         }
 
         let mut tls = ClientTlsConfig::new().domain_name(self.hostname());

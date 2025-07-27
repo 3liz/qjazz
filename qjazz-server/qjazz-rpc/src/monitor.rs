@@ -24,9 +24,9 @@ mod mon {
 
         pub fn send(&self, report: JsonValue) -> Result<(), Error> {
             if let Some(tx) = &self.0 {
-                log::debug!("[Monitor] sending message {:?}", report);
+                log::debug!("[Monitor] sending message {report:?}");
                 tx.try_send(report)
-                  .map_err(|e| Error::SendError(format!("{e}")))?;
+                    .map_err(|e| Error::SendError(format!("{e}")))?;
             }
             Ok(())
         }

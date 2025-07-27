@@ -21,12 +21,12 @@ pub fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceCo
     move |cfg| {
         cfg.service(scope)
             .service(
-                web::resource(format!("{}.json", path).as_str())
+                web::resource(format!("{path}.json").as_str())
                     .app_data(api.clone())
                     .to(api::default_handler),
             )
             .service(
-                web::resource(format!("{}.html", path).as_str())
+                web::resource(format!("{path}.html").as_str())
                     .app_data(api.clone())
                     .to(api::default_handler),
             );

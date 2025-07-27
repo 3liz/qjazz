@@ -18,12 +18,9 @@ pub(crate) async fn serve(
     let addr = settings.rpc.listen().address();
 
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    let (health_reporter, health_service) = tonic_health::server::health_reporter();
 
-    let mut pool = Pool::new(qjazz_pool::Builder::from_options(
-        args,
-        settings.worker,
-    ));
+    let mut pool = Pool::new(qjazz_pool::Builder::from_options(args, settings.worker));
     pool.maintain_pool().await?;
 
     health_reporter
@@ -102,7 +99,7 @@ pub(crate) async fn serve(
     }
 
     // Start server
-    log::info!("RPC serving at {}", addr);
+    log::info!("RPC serving at {addr}");
     tokio::spawn(router.serve(addr));
 
     token.cancelled().await;

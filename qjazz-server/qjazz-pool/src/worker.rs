@@ -244,7 +244,7 @@ impl Worker {
         self.process.send_signal(signal::SIGHUP)?;
         // Pull output from current job.
         self.drain_until_task_done().await.inspect_err(|err| {
-            log::debug!("Worker cancel error: {:?}", err);
+            log::debug!("Worker cancel error: {err:?}");
         })
     }
 
@@ -488,7 +488,7 @@ pub struct WorkerId {
 impl fmt::Display for WorkerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(v) = &self.value {
-            write!(f, "{}", v)
+            write!(f, "{v}")
         } else {
             write!(f, "<notset>")
         }
