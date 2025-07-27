@@ -5,7 +5,7 @@ pytest-httpserver
 ruff
 mypy
 mypy-extensions
-types-protobuf < 6
+types-protobuf
 types-psutil
 types-PyYAML
 types-toml
