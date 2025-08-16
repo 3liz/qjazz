@@ -111,6 +111,7 @@ doc:
     - make -C qjazz-processes/doc html deploy-ci
   tags:
     - factory-plain
+  allow_failure: true
   only:
     refs:
     - tags
