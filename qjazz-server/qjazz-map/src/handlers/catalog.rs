@@ -395,7 +395,7 @@ impl JsonPage {
         Ok(())
     }
 
-    fn links(&mut self) -> Result<Links> {
+    fn links(&mut self) -> Result<Links<'_>> {
         if let Some(serde_json::Value::Array(v)) = self.0.get_mut("links") {
             Ok(Links(v))
         } else {

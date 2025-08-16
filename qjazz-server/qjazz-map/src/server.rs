@@ -192,18 +192,18 @@ async fn verify_channel_mw(
     next: middleware::Next<impl body::MessageBody>,
 ) -> Result<ServiceResponse<EitherBody<impl body::MessageBody>>> {
     // Check if channel is serving
-    if let Some(channel) = req.app_data::<web::Data<Channel>>() {
-        if !channel.serving() {
-            let name = channel.name().to_string();
-            return Ok(req.into_response(
-                HttpResponse::ServiceUnavailable()
-                    .content_type("text/plain")
-                    .body(format!(
-                        "Service '{name}' not available, please retry later"
-                    ))
-                    .map_into_right_body(),
-            ));
-        }
+    if let Some(channel) = req.app_data::<web::Data<Channel>>()
+        && !channel.serving()
+    {
+        let name = channel.name().to_string();
+        return Ok(req.into_response(
+            HttpResponse::ServiceUnavailable()
+                .content_type("text/plain")
+                .body(format!(
+                    "Service '{name}' not available, please retry later"
+                ))
+                .map_into_right_body(),
+        ));
     }
     Ok(next.call(req).await?.map_into_left_body())
 }

@@ -446,7 +446,6 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
-
         match request.into_inner().status {
             st if st == ServingStatus::Serving as i32 => {
                 log::info!("Setting server serving status to SERVING");

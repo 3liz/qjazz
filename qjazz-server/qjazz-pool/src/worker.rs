@@ -350,7 +350,7 @@ impl Worker {
     }
 
     /// Get a ByteStream from worker io
-    pub fn byte_stream(&mut self) -> Result<ByteStream> {
+    pub fn byte_stream(&mut self) -> Result<ByteStream<'_>> {
         Ok(ByteStream::new(self.io()?))
     }
 
@@ -412,7 +412,7 @@ impl Worker {
     }
 
     /// List all items in cache
-    pub async fn list_cache(&mut self) -> Result<ObjectStream<msg::CacheInfo>> {
+    pub async fn list_cache(&mut self) -> Result<ObjectStream<'_, msg::CacheInfo>> {
         let io = self.io()?;
         io.put_message(msg::ListCacheMsg.into()).await?;
         Ok(ObjectStream::new(io))
@@ -425,7 +425,7 @@ impl Worker {
     pub async fn catalog(
         &mut self,
         location: Option<&str>,
-    ) -> Result<ObjectStream<msg::CatalogItem>> {
+    ) -> Result<ObjectStream<'_, msg::CatalogItem>> {
         let io = self.io()?;
         io.put_message(msg::CatalogMsg { location }.into()).await?;
         Ok(ObjectStream::new(io))
@@ -445,7 +445,7 @@ impl Worker {
     //
 
     /// List loaded plugins
-    pub async fn list_plugins(&mut self) -> Result<ObjectStream<msg::PluginInfo>> {
+    pub async fn list_plugins(&mut self) -> Result<ObjectStream<'_, msg::PluginInfo>> {
         let io = self.io()?;
         io.put_message(msg::PluginsMsg.into()).await?;
         Ok(ObjectStream::new(io))

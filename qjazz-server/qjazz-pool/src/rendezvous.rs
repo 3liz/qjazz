@@ -49,10 +49,10 @@ pub struct RendezVous {
 
 impl Drop for RendezVous {
     fn drop(&mut self) {
-        if let Some(handle) = &mut self.handle {
-            if !handle.is_finished() {
-                handle.abort();
-            }
+        if let Some(handle) = &mut self.handle
+            && !handle.is_finished()
+        {
+            handle.abort();
         }
     }
 }
@@ -96,11 +96,11 @@ impl RendezVous {
     /// Stop the listener and wait for its task
     /// completion
     pub async fn stop(&mut self) {
-        if let Some(handle) = &mut self.handle {
-            if !handle.is_finished() {
-                handle.abort();
-                let _ = handle.await;
-            }
+        if let Some(handle) = &mut self.handle
+            && !handle.is_finished()
+        {
+            handle.abort();
+            let _ = handle.await;
         }
     }
 
