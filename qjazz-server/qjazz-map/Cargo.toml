@@ -18,6 +18,7 @@ path = "src/main.rs"
 qjazz-mon = { version = "~0.1", optional = true }
 actix-web = { version = "4", features = ["rustls-0_23"] }
 tonic = { workspace = true }
+tonic-prost = { workspace = true }
 tonic-health = { workspace = true }
 prost = { workspace = true }
 clap = { version = "4", features = ["derive"] }
@@ -26,7 +27,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 tokio-util = { workspace = true }
-ginepro = "0.9"
+ginepro = { git = "https://github.com/dmarteau/ginepro.git", branch="tonic-0.14-support" }
 config = { workspace = true, features = ["toml"] }
 subst = "0.3"
 env_logger = { workspace = true }
@@ -45,4 +46,4 @@ bitflags = "2"
 monitor = ["qjazz-mon"]
 
 [build-dependencies]
-tonic-build = "0.13"
+tonic-prost-build = "0.14"

@@ -6,6 +6,6 @@
 // https://github.com/protocolbuffers/protobuf/releases/latest/download/protoc-29.1-linux-x86_64.zip
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tonic_build::compile_protos("proto/qjazz.proto")?;
+    tonic_prost_build::compile_protos("proto/qjazz.proto")?;
     Ok(())
 }
