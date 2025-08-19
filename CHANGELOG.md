@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Added
 
+* [server] Support for tonic 0.14
 * [processes] Implement generic worker/job 
 
 ## [Fixed]
