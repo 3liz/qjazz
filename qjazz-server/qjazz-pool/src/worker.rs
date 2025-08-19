@@ -179,7 +179,7 @@ impl Worker {
             .is_err()
             {
                 log::warn!(
-                    "Worker not {} (pid: {:?} terminated, kill forced...",
+                    "Worker  {} (pid: {:?}) not terminated, kill forced...",
                     self.name,
                     self.process.child.id(),
                 );

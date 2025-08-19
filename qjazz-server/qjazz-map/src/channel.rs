@@ -162,8 +162,8 @@ impl Channel {
 
         let future = async move {
             let mut available: Option<bool> = None;
+            let mut stub = HealthClient::new(channel.clone());
             loop {
-                let mut stub = HealthClient::new(channel.clone());
                 let rv = match stub.watch(request.clone()).await {
                     Err(status) => Some(status),
                     Ok(mut resp) => {
