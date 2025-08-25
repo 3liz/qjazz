@@ -102,16 +102,39 @@ tests:3.34:
 # Doc
 #-----------------
 
-doc:
+doc-build:
   image: ${REGISTRY_URL}/factory-ci-runner:build-doc
   stage: doc
   script: 
     - make -C doc
-    - deploy-doc doc/build/html/ doc/doc.manifest
     - make -C qjazz-processes/doc html deploy-ci
   tags:
     - factory-plain
   allow_failure: true
+  artifacts:
+    paths: 
+      - doc/build/html
+      - doc/doc.manifest
+      - qjazz-processes/doc/build/html
+      - qjazz-processes/doc/doc.manifest
+    expires_in: 1 week
+  only:
+    refs:
+    - tags
+    - main
+
+doc-deploy:
+  stage: doc
+  script:
+    - upload_to_doc_server doc/build/html library/ library/$CI_PROJECT_NAME/
+    - upload_to_doc_server doc/doc.manifest library/$CI_PROJECT_NAME/
+    - upload_to_doc_server qjazz-processes/doc/build/html library/qjazz-processes/
+    - upload_to_doc_server qjazz-processes/doc/doc.manifest library/qjazz-processes/
+  allow_failure: true
+  needs:
+    - doc-build
+  tags:
+    - libs-doc  
   only:
     refs:
     - tags

@@ -48,10 +48,6 @@ specs:
 	@echo "* Creating openapi specifications"
 	$(PYTHON) -m qjazz_processes.server openapi --yaml > ./specs/openapi.yml
 
-export CI_PROJECT_NAME=qjazz-processes
-deploy-ci:
-	deploy-doc build/html/ doc.manifest
-
 # Serve documentation
 serve:
 	python3 -m http.server -d ./build/html
