@@ -649,7 +649,7 @@ class Processes(ExecutorProtocol):
 
         match response:
             case {"error": msg}:
-                raise RuntimeError(f"Command 'process_files' failed with msg: {msg}")
+                raise RuntimeError(f"Command 'job_files' failed with msg: {msg}")
             case _:
                 return ProcessFiles.model_validate(response)
 

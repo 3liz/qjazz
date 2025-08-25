@@ -26,7 +26,7 @@ from ..executor import (
     RunProcessException,
 )
 from ..jobrealm import JOB_REALM_HEADER, JobRealmConfig
-from ..models import ErrorResponse
+from ..models import BoolParam, ErrorResponse
 from ..storage import StorageConfig
 from ..utils import Link, href, make_link, public_url
 

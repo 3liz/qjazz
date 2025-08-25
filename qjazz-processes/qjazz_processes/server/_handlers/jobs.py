@@ -10,6 +10,7 @@ from aiohttp import web
 from pydantic import Field, TypeAdapter
 
 from .protos import (
+    BoolParam,
     ErrorResponse,
     HandlerProto,
     JobResultsAdapter,
@@ -42,7 +43,6 @@ class LogResponse(swagger.JsonModel):
 
 LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
 PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
-BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
 
 
 class Jobs(HandlerProto):

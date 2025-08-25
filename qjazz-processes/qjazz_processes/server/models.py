@@ -9,6 +9,7 @@ from typing import (
 from aiohttp import web
 from pydantic import (
     JsonValue,
+    TypeAdapter,
 )
 
 from .swagger import JsonModel, model
@@ -50,5 +51,7 @@ class ErrorResponse(JsonModel):
             ).model_dump_json(),
         )
 
-
 RequestHandler = Callable[[web.Request], Awaitable[web.StreamResponse]]
+
+# Validators
+BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
