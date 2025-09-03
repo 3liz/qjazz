@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "qjazz-server"
@@ -25,7 +25,6 @@ dependencies = [
 version = "${PIN_VERSION}"
 
 [project.optional-dependencies]
-amqp = ["py-amqp-client>=2.0.0"]
 minio = ["minio<7.2.16"]
 
 [[project.authors]]
@@ -37,16 +36,16 @@ qjazz-server-admin = "qjazz_admin.cli:main"
 qjazz-config = "qjazz_rpc.cli:main"
 qjazz-rpc-client = "qjazz_rpc.client:cli_commands"
 
-[tool.setuptools.packages.find]
-exclude = [ "tests/*" ]
-include = [
-    "qjazz_rpc",
-    "qjazz_rpc.*",
-    "qjazz_map",
-    "qjazz_map.*",
-    "qjazz_admin",
-    "qjazz_admin.*",
-]
+[tool.uv.build-backend]
+module-name = ["qjazz_rpc", "qjazz_map", "qjazz_admin"]
+module-root = ""
+
+[tool.uv.sources]
+qjazz-contrib = { workspace = true }
+
+#
+# Ruff
+#
 
 [tool.ruff]
 extend = "../../config/ruff.toml"

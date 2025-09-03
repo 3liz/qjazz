@@ -69,9 +69,10 @@ build-extensions:release:
   stage: test
   resource_group: qjazz_tests
   script:
-    - make install install-dev
-    - pip list -l
+    - make install
     - make test
+  variables:
+      UV_LINK_MODE: copy
   tags:   
     - factory-plain
 
@@ -117,7 +118,7 @@ doc-build:
       - doc/doc.manifest
       - qjazz-processes/doc/build/html
       - qjazz-processes/doc/doc.manifest
-    expires_in: 1 week
+    expire_in: 1 week
   only:
     refs:
     - tags

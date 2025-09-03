@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "qjazz-processes"
@@ -33,14 +33,12 @@ email = "dmarteau@3liz.org"
 qjazz-processes = "qjazz_processes.__main__:main"
 qjazz-processing = "qjazz_processing.__main__:main"
 
-[tool.setuptools.packages.find]
-exclude = [ "tests/*" ]
-include = [
-    "qjazz_processes", 
-    "qjazz_processes.*",
-    "qjazz_processing",
-    "qjazz_processing.*",
-]
+[tool.uv.build-backend]
+module-name = [ "qjazz_processes", "qjazz_processing"]
+module-root = ""
+
+[tool.uv.sources]
+qjazz-contrib = { workspace = true }
 
 #
 # Ruff

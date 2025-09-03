@@ -3,6 +3,38 @@
 ARG REGISTRY_PREFIX=''
 ARG QGIS_FLAVOR=release
 
+FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS build
+
+RUN apt-get update -y \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y --no-install-recommends \
+        curl
+
+#Instal uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && cd /usr/local/bin \
+    && ln -s $HOME/.local/bin/uv \
+    && uv --version \
+    && mkdir -p /opt/local
+
+# Install qjazz in virtualenv
+RUN --mount=type=bind,target=/src,rw \
+    --mount=type=cache,target=/.python-cache \
+    uv venv --system-site-packages /opt/local/qjazz \
+    && uv pip install --python=/opt/local/qjazz/bin/python --compile-bytecode \
+        --cache-dir=/.python-cache --link-mode=copy pip \
+    && uv pip install --python=/opt/local/qjazz/bin/python --compile-bytecode \
+        --cache-dir=/.python-cache --link-mode=copy \
+        -r /src/requirements.txt \
+    && uv pip install --python=/opt/local/qjazz/bin/python \
+        --cache-dir=/.python-cache --no-deps --compile-bytecode \
+        /src/qjazz-contrib \
+        /src/qjazz-processes \
+        /src/qjazz-server/python \
+    && uv pip install --python=/opt/local/qjazz/bin/python \
+        --cache-dir=/.python-cache --compile-bytecode \
+        qgis-plugin-manager
+
 # ==============
 # QJazz platform
 # ==============
@@ -22,38 +54,16 @@ RUN apt-get update -y \
         less \
     && apt-get clean
 
-# Create virtualenv for installing modules
-RUN --mount=type=bind,target=/src,rw \
-    --mount=type=cache,target=/.python-cache \
-    mkdir -p /opt/local/ \
-    && python3 -m venv --system-site-packages /opt/local/qjazz \
-    && cd /usr/local/bin \
-    && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
-        pip setuptools wheel requests \
-    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /src/docker/requirements.txt \
-    && export QJAZZ_NO_BUILD_EXT_INSTALL=1 \
-    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
-        /src/qjazz-contrib \
-        /src/qjazz-processes \
-        /src/qjazz-server/python \
+COPY --from=build /opt/local/qjazz /opt/local/qjazz
+
+RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-processing \
     && ln -s /opt/local/qjazz/bin/qjazz-config \
     && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
+    && ln -s /opt/local/qjazz/bin/qgis-plugin-manager \
     ${NULL}
-
-# Install qgis-plugin-manager
-# Note: hit by https://github.com/pypa/setuptools/issues/4501
-# because packaging is installed system wide
-RUN --mount=type=cache,target=/.python-cache mkdir -p /opt/local/ \
-    && python3 -m venv --system-site-packages /opt/local/plugin-manager \
-    && cd /usr/local/bin \
-    && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
-        --cache-dir=/.python-cache pip setuptools wheel packaging \
-    && /opt/local/plugin-manager/bin/pip install -U --upgrade-strategy=eager \
-        --cache-dir=/.python-cache qgis-plugin-manager \
-    && cd /usr/local/bin && ln -s /opt/local/plugin-manager/bin/qgis-plugin-manager
 
 COPY docker/scripts/ /usr/local/bin/
 RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh \
@@ -113,7 +123,6 @@ LABEL org.opencontainers.image.ref.name="3liz/qjazz"
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --fix-missing --no-install-recommends \
-        python3-venv \
         python3-psutil \
         iputils-ping \
         bash-completion \
@@ -121,20 +130,9 @@ RUN apt-get update -y \
         less \
     && apt-get clean
 
-# Create virtualenv for installing modules
-RUN --mount=type=bind,target=/src,rw \
-    --mount=type=cache,target=/.python-cache \
-    mkdir -p /opt/local/ \
-    && python3 -m venv --system-site-packages /opt/local/qjazz \
-    && cd /usr/local/bin \
-    && /opt/local/qjazz/bin/pip install -U --cache-dir=/.python-cache \
-        pip setuptools wheel requests \
-    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /src/docker/requirements.txt \
-    && export QJAZZ_NO_BUILD_EXT_INSTALL=1 \
-    && /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache --no-deps \
-        /src/qjazz-contrib \
-        /src/qjazz-processes \
-        /src/qjazz-server/python \
+COPY --from=build /opt/local/qjazz /opt/local/qjazz
+
+RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
@@ -193,7 +191,7 @@ RUN useradd --uid=${factory_runner_uid} --home-dir=/home/factory-runner factory-
     && chown -R factory-runner:factory-runner /home/factory-runner \
     ${NULL}
 
-COPY --from=base --chown=factory-runner:factory-runner /opt/local/qjazz /opt/local/qjazz
+COPY --from=build --chown=factory-runner:factory-runner /opt/local/qjazz /opt/local/qjazz
 
 USER factory-runner 
 

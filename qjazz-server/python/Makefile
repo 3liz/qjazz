@@ -3,8 +3,6 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
-OPTIONAL_DEPENDENCIES=minio
-
 INSTALL_DEPENDENCIES=[minio]
 
 PYTHON_PKG= \

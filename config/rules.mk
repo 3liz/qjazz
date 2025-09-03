@@ -22,8 +22,6 @@ $(NULL)
 
 $(TOPTARGETS):: $(DIRS)
 
-requirements: $(DIRS)
-
 $(DIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 

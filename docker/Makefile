@@ -50,7 +50,7 @@ main:
 
 build-all: build noqgis-build tag noqgis-tag
 
-build: manifest requirements
+build: manifest
 	$(MAKE) -C .. configure
 	{ \
 	source $(MANIFEST); \
@@ -75,12 +75,6 @@ manifest:
 	@cat $(MANIFEST)
 
 .PHONY: $(REQUIREMENTS)
-
-# Merge requirement files
-requirements: $(REQUIREMENTS)
-	@echo "Merging requirements files"
-	@cat ../qjazz-contrib/$< ../qjazz-processes/$< ../qjazz-server/python/$< | sort | uniq > ./$<
-
 
 deliver: tag push
 
@@ -129,7 +123,7 @@ NOQGIS_BUILD_TARGET=noqgis
 NOQGIS_MANIFEST=factory-noqgis.manifest
 endif
 
-noqgis-build: noqgis-manifest requirements
+noqgis-build: noqgis-manifest
 	{ \
 	source $(NOQGIS_MANIFEST); \
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \

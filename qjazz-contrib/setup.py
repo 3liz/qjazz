@@ -1,8 +1,9 @@
 import os
 
-if os.getenv("QJAZZ_NO_BUILD_EXT_INSTALL") != "1":
+if os.getenv("QJAZZ_NO_BUILD_EXT_INSTALL") is None:
     from setuptools import Extension, setup
     setup(
+        packages=["qjazz_contrib"],
         ext_modules=[
             Extension(
                 name = "qjazz_contrib.core.qgis.qgis_binding",
@@ -24,5 +25,5 @@ if os.getenv("QJAZZ_NO_BUILD_EXT_INSTALL") != "1":
     )
 else:
     from setuptools import setup
-    setup()
+    setup(packages=["qjazz_contrib"]),
     print("NOTE: Building of extension disabled...")

@@ -42,7 +42,7 @@ services:
     image: rabbitmq:3-alpine
   
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
 
   #
   # Map server stack

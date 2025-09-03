@@ -1,0 +1,47 @@
+#
+# Define uv workspace and dependency groups
+#
+
+[dependency-groups]
+dev = [
+    "grpcio-tools",
+    "qgis-plugin-manager",
+    "setuptools", # Needed for building C extension
+    {include-group = "test"},
+    {include-group = "lint"},
+]
+test = [
+    "pytest >= 5.3",
+    "pytest-asyncio",
+    "pytest-aiohttp",
+    "pytest-httpserver",
+    "coverage",
+]
+lint = [
+    "ruff",
+    "mypy",
+    "mypy-extensions",
+    "types-protobuf",
+    "types-psutil",
+    "types-PyYAML",
+    "types-toml",
+    "types-requests",
+    "types-aiofiles",
+    "bandit",
+    "vulture",
+]
+doc = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-httpdomain",
+    "swagger-plugin-for-sphinx",
+]
+
+[tool.uv.workspace]
+members = [
+    "qjazz-contrib",
+    "qjazz-processes",
+    "qjazz-server/python",
+]
+
+

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "qjazz-contrib"
@@ -9,6 +9,7 @@ requires-python = ">= 3.12"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: POSIX",
 ]
 dependencies = [
@@ -26,18 +27,15 @@ celery = [ "celery>=5.4", "redis>=5.0.8" ]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
 
-[tool.setuptools.package-data]
-qjazz_contrib = [ "core/manifest.json" ]
-
-[tool.setuptools.packages.find]
-exclude = [ "tests/*" ]
-include = [
-    "qjazz_contrib", 
-    "qjazz_contrib.*",
-    "qjazz_cache",
-    "qjazz_cache.*",
-    "qjazz_ogc",
-    "qjazz_ogc.*",
+[tool.uv.build-backend]
+module-name = ["qjazz_contrib", "qjazz_ogc", "qjazz_cache"]
+module-root = ""
+source-include = [ 
+    "qjazz_contrib/core/qgis/*.so",
+    "qjazz_contrib/core/manifest.json",
+]
+source-exclude = [
+    "qjazz_contrib/core/qgis/qgis_binding.cpp",
 ]
 
 #

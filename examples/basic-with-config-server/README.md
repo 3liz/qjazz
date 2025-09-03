@@ -6,4 +6,4 @@ run:
 docker compose up
 ```
 
-then go to: http://localhost/basic/france_parts?SERVICE=WFS&REQUEST=GetCapabilities
+then go to: http://localhost:9080/basic/?SERVICE=WFS&REQUEST=GetCapabilities&MAP=/france_parts

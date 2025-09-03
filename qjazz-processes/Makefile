@@ -11,8 +11,6 @@ PYTHON_PKG= \
 
 TESTDIR=tests tests/plugins
 
-OPTIONAL_DEPENDENCIES=server minio mail
-
 INSTALL_DEPENDENCIES=[server,minio,mail]
 
 export PYTEST_ADDOPTS=-m "not services" 

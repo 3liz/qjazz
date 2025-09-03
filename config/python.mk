@@ -20,6 +20,8 @@ deliver::
 lint::
 	@ruff check  --output-format=concise  $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
+lint:: typecheck
+
 lint-preview::
 	@ruff check --preview $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
@@ -35,10 +37,10 @@ format-diff::
 format::
 	@ruff format $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
-install::
-	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
+#install::
+#	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
-typing:: $(PYTHON_PKG)
+typecheck:: $(PYTHON_PKG)
 	$(MYPY) $(foreach pkg,$^,-p $(pkg))
 
 scan::
@@ -47,17 +49,6 @@ scan::
 # Do not use in CI tests since it choke on false positive
 deadcode:: 
 	vulture $(PYTHON_PKG) --min-confidence 70
-
-
-.PHONY: $(REQUIREMENTS)
-
-# Output frozen requirements
-requirements: $(REQUIREMENTS)
-	@echo "Optional dependencies: $(OPTIONAL_DEPENDENCIES)"
-	pipdeptree -l -p $$($(DEPTH)/requirements $(OPTIONAL_DEPENDENCIES)) -f \
-	| sed "s/^[ \t]*//" | sed "/^\-e .*/d" \
-	| sort | uniq > $<
-	@echo "Requirements written in $<"
 
 
 ifndef TESTDIR

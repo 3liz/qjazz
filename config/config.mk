@@ -9,8 +9,6 @@ ifeq ($(shell echo $(CI_COMMIT_TAG) | head -c 8), release-)
 endif
 endif
 
-REQUIREMENTS=requirements.txt
-
 PYTHON=python3
 
 MYPY=mypy --config-file=$(topsrcdir)/config/mypy.ini
