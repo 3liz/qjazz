@@ -7,6 +7,8 @@ DIRS= \
 	python \
 	$(NULL)
 
+build:: build-release
+
 build-release:
 	cargo build --release  --bins
 

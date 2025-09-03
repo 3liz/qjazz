@@ -8,16 +8,14 @@ Requirements
 
 * The GNU `make` command 
 * [A recent rust toolchain](https://www.rust-lang.org/tools/install)
-* Python 3.12 with the following modules:
-    - setuptools
-    - build >= 1.2.2  
+* Python 3.12 minimum
+* [uv](https://docs.astral.sh/uv/)
+* A QGIS/pyQGIS environment
 * Define the environment variable `QJAZZ_NO_BUILD_EXT_INSTALL=1` unless you feel
   adventurous.
 
-
-Note that if your target platform has no Python 3.12 installed by default then you probalbly
-wont be able to install QGIS with python 3.12 support on it - unlees you compile QGIS
-explicitely with the Python 3.12 support. 
+Note that if your target platform has no Python 3.12+ installed by default then you probalbly wont be able to install QGIS with python 3.12+ support on it - unlees you compile QGIS
+explicitely with the Python 3.12+ support. 
 
 
 Building
