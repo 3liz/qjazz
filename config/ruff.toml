@@ -24,7 +24,7 @@ lines-between-types = 1
 known-first-party = [
     "qjazz_contrib", 
     "qjazz_cache",
-    "qjazz_rpcw",
+    "qjazz_rpc",
     "qjazz_admin",
     "qjazz_processes",
 ]

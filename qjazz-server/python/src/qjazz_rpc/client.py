@@ -154,7 +154,7 @@ def print_metadata(metadata):
 
 
 @click.group("commands")
-def cli_commands():
+def cli():
     """Send gRPC commands to the QGIS gRPC server
 
     \b
@@ -168,7 +168,7 @@ def cli_commands():
     pass
 
 
-@cli_commands.group("request")
+@cli.group("request")
 def request_commands():
     """Send Qgis requests"""
     pass
@@ -284,7 +284,7 @@ def api_request(
 #
 
 
-@cli_commands.group("cache")
+@cli.group("cache")
 def cache_commands():
     """Commands for cache management"""
     pass
@@ -411,7 +411,7 @@ def dump_cache():
 #
 
 
-@cli_commands.group("plugin")
+@cli.group("plugin")
 def plugin_commands():
     """Retrive Qgis plugin infos"""
     pass
@@ -446,7 +446,7 @@ def list_plugins():
 #
 
 
-@cli_commands.group("config")
+@cli.group("config")
 def config_commands():
     """Commands for configuration management"""
     pass
@@ -490,7 +490,7 @@ def set_loglevel(level: str):
 #
 
 
-@cli_commands.group("state")
+@cli.group("state")
 def status_commands():
     """Commands for retrieving and setting rpc service state"""
     pass
@@ -522,7 +522,7 @@ def enable_server():
         )
 
 
-@cli_commands.command("ping")
+@cli.command("ping")
 @click.option("--count", "-n", default=1, help="Number of requests to send")
 @click.option("--server", is_flag=True, help="Ping qgis server service")
 def ping(count: int, server: bool = False):
@@ -541,7 +541,7 @@ def ping(count: int, server: bool = False):
             instant.restart()
 
 
-@cli_commands.command("healthcheck")
+@cli.command("healthcheck")
 @click.option("--watch", "-w", is_flag=True, help="Watch status changes")
 @click.option("--set-error", is_flag=True, help="Exit with error if not serving")
 def healthcheck_status(watch: bool, set_error: bool):
@@ -560,7 +560,7 @@ def healthcheck_status(watch: bool, set_error: bool):
             sys.exit(1)
 
 
-@cli_commands.command("stats")
+@cli.command("stats")
 @click.option("--watch", "-w", is_flag=True, help="Watch mode")
 @click.option(
     "--interval",
@@ -579,7 +579,7 @@ def display_stats(watch: bool, interval: int):
             click.echo(MessageToJson(resp))
 
 
-@cli_commands.command("sleep")
+@cli.command("sleep")
 @click.option("--delay", "-d", type=int, default=3, help="Response delay in seconds")
 def sleep_request(delay: int):
     """Execute cancelable request"""
@@ -594,7 +594,7 @@ def sleep_request(delay: int):
             resp.cancel()
 
 
-@cli_commands.command("reload")
+@cli.command("reload")
 def reload():
     """Reload QGIS processes"""
     with connect() as stub:
@@ -602,4 +602,4 @@ def reload():
 
 
 if __name__ == "__main__":
-    cli_commands()
+    cli()

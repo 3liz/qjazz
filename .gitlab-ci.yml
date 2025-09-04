@@ -18,7 +18,7 @@ build-binaries:
   image: ${REGISTRY_URL}/factory-ci-runner:rust-noble
   stage: build
   script:
-    - make -C qjazz-server build-release
+    - make -C qjazz-server build
   environment:
     name: snap
   artifacts:

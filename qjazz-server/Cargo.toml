@@ -1,6 +1,9 @@
 [workspace]
 members = [
-    "qjazz-pool", "qjazz-rpc", "qjazz-map", "qjazz-mon"
+    "qjazz-rpc",
+    "qjazz-map",
+    "qjazz-mon",
+    "qjazz-pool",
 ]
 resolver = "2"
 
@@ -13,6 +16,8 @@ repository = "https://github.com/3liz/qjazz/"
 categories = ["science::geo"]
 
 [workspace.dependencies]
+qjazz-pool = { path = "qjazz-pool" }
+qjazz-mon = { path = "qjazz-mon" }
 thiserror = "2.0"
 log = "0.4"
 tokio = "1"
@@ -33,7 +38,3 @@ prost = "0.14"
 lto = true
 incremental = false
 
-[patch.crates-io]
-# Use local crates
-qjazz-pool = { path = "./qjazz-pool" }
-qjazz-mon = { path = "./qjazz-mon" }

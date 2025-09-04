@@ -35,7 +35,6 @@ qjazz-processing = "qjazz_processing.__main__:main"
 
 [tool.uv.build-backend]
 module-name = [ "qjazz_processes", "qjazz_processing"]
-module-root = ""
 
 [tool.uv.sources]
 qjazz-contrib = { workspace = true }
@@ -53,7 +52,7 @@ extend-exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]
-"qjazz_processes/tests/*" = ["T201"]
-"qjazz_processes/server/_handlers/protos.py" = ["F401"]
-"qjazz_processes/processing/prelude.py" = ["F401"]
+"src/qjazz_processes/tests/*" = ["T201"]
+"src/qjazz_processes/server/_handlers/protos.py" = ["F401"]
+"src/qjazz_processes/processing/prelude.py" = ["F401"]
 

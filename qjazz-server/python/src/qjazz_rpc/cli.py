@@ -43,11 +43,11 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
 
 
 @click.group()
-def cli_commands():
+def cli():
     pass
 
 
-@cli_commands.command("version")
+@cli.command("version")
 @click.option("--settings", is_flag=True, help="Show QGIS settings")
 def print_version(settings: bool):
     """Print version and exit"""
@@ -67,7 +67,7 @@ FilePathType = click.Path(
 )
 
 
-@cli_commands.command("config")
+@cli.command("config")
 @click.option(
     "--conf",
     "-C",
@@ -81,7 +81,7 @@ def print_config(conf: Optional[Path], pretty: bool = False):
     click.echo(load_configuration(conf).model_dump_json(indent=indent))
 
 
-@cli_commands.command("install-plugins")
+@cli.command("install-plugins")
 @click.option(
     "--conf",
     "-C",
@@ -103,9 +103,5 @@ def install_plugins(configpath: Optional[Path], force: bool):
         click.echo("Plugin installation set to manual: no plugins to install...")
 
 
-def main():
-    cli_commands()
-
-
 if __name__ == "__main__":
-    main()
+    cli()

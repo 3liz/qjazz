@@ -3,23 +3,21 @@ DEPTH=../..
 
 include $(DEPTH)/config/config.mk
 
+DIRS= \
+	src \
+	$(NULL)
+
+#
+# Python
+#
+#
 INSTALL_DEPENDENCIES=[minio]
 
-PYTHON_PKG= \
-	qjazz_rpc \
-	qjazz_map \
-	qjazz_admin \
-	$(NULL)
+PYTHON_PKG=src
 
 TESTDIR=tests
 
-proto:
-	cd qjazz_rpc/_grpc && python -m grpc_tools.protoc -I./protos \
-		--python_out=. \
-		--pyi_out=. \
-		--grpc_python_out=. \
-		./protos/qjazz.proto
-	@sed -i 's/import qjazz_pb2 as/from . import qjazz_pb2 as/' qjazz_rpc/_grpc/qjazz_pb2_grpc.py
+dist::
+	uv build --sdist --out-dir=$(DIST)
 
 include $(topsrcdir)/config/rules.mk
-

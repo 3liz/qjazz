@@ -1,9 +1,8 @@
 #
 # Define uv workspace and dependency groups
-#
-
 [dependency-groups]
 dev = [
+    "maturin<=2.0.0",
     "grpcio-tools",
     "qgis-plugin-manager",
     "setuptools", # Needed for building C extension

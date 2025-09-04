@@ -3,11 +3,7 @@ DEPTH=..
 
 include $(DEPTH)/config/config.mk
 
-PYTHON_PKG= \
-	qjazz_processes  \
-	qjazz_processing \
-	$(NULL)
-
+PYTHON_PKG=src
 
 TESTDIR=tests tests/plugins
 
@@ -19,7 +15,13 @@ SCAN_OPTS=-x qjazz_processes/tests
 
 EXAMPLES=examples
 
+dist::
+	uv build --sdist --out-dir=$(DIST)
+
 include $(topsrcdir)/config/rules.mk
+
+doc:: 
+	$(MAKE) -C doc
 
 typing::
 	$(MYPY) -p $(EXAMPLES)

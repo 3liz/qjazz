@@ -1,4 +1,6 @@
-
+#
+# Dual config for worker AND server
+#
 [logging]
 level = "debug"
 

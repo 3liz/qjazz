@@ -1,12 +1,11 @@
 #
-# Monitor that echo to stdout 
+# Monitor that echo to stdout
 #
 import os
 import sys
 
 from io import BytesIO
 from struct import unpack
-from typing import ByteString
 
 from msgpack import unpackb
 

@@ -57,11 +57,8 @@ RUN apt-get update -y \
 COPY --from=build /opt/local/qjazz /opt/local/qjazz
 
 RUN cd /usr/local/bin \
-    && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-processing \
-    && ln -s /opt/local/qjazz/bin/qjazz-config \
-    && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
     && ln -s /opt/local/qjazz/bin/qgis-plugin-manager \
     ${NULL}
 
@@ -93,6 +90,7 @@ VOLUME /home/qgis
 VOLUME /var/qjazz
 
 ENV QJAZZ_VOLUME=/var/qjazz
+ENV PATH=/opt/local/qjazz/bin:$PATH
 
 # Define here so that commands run with `docker exec`
 # may access the variable
@@ -133,9 +131,7 @@ RUN apt-get update -y \
 COPY --from=build /opt/local/qjazz /opt/local/qjazz
 
 RUN cd /usr/local/bin \
-    && ln -s /opt/local/qjazz/bin/qjazz-server-admin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
-    && ln -s /opt/local/qjazz/bin/qjazz-rpc-client \
     ${NULL}
 
 # Install binaries

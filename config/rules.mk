@@ -8,16 +8,16 @@ bin-test \
 test \
 lint \
 lint-preview \
-typing \
+typecheck \
 clean \
 configure \
 build \
 dist \
 deliver \
 install \
-install-dev \
 scan \
 deadcode \
+doc \
 $(NULL)
 
 $(TOPTARGETS):: $(DIRS)

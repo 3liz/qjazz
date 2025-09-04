@@ -15,7 +15,7 @@ name = "qjazz-map-bin"
 path = "src/main.rs"
 
 [dependencies]
-qjazz-mon = { version = "~0.1", optional = true }
+qjazz-mon = { workspace = true, optional = true }
 actix-web = { version = "4", features = ["rustls-0_23"] }
 tonic = { workspace = true }
 tonic-prost = { workspace = true }

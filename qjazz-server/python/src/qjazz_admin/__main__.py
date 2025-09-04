@@ -78,7 +78,7 @@ def global_options():
 
 
 @click.group()
-def cli_commands():
+def cli():
     pass
 
 
@@ -95,7 +95,7 @@ def print_pool_status(pool, statuses):
 #
 
 
-@cli_commands.command("watch")
+@cli.command("watch")
 @click.option("--host", help="Watch specific hostname")
 @global_options()
 def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
@@ -132,7 +132,7 @@ def watch(verbose: bool, host: Optional[str], configpath: Optional[Path]):
 #
 
 
-@cli_commands.command("pools")
+@cli.command("pools")
 @global_options()
 def list_pools(verbose: bool, configpath: Optional[Path]):
     """List all pools"""
@@ -152,7 +152,7 @@ def list_pools(verbose: bool, configpath: Optional[Path]):
     asyncio.run(_display())
 
 
-@cli_commands.command("stats")
+@cli.command("stats")
 @click.option("--host", help="Watch specific hostname", required=True)
 @click.option("--watch", is_flag=True, help="Check periodically")
 @click.option("--interval", help="Check interval (seconds)", default=3)
@@ -187,7 +187,7 @@ def stats(verbose: bool, host: str, watch: bool, interval: int, configpath: Opti
 #
 
 
-@cli_commands.group("conf")
+@cli.group("conf")
 def conf_commands():
     """Configuration management"""
     pass
@@ -268,7 +268,7 @@ def set_conf(
 #
 
 
-@cli_commands.command("catalog")
+@cli.command("catalog")
 @click.option("--location", help="Catalog location")
 @click.option("--host", help="Watch specific hostname", required=True)
 @global_options()
@@ -298,7 +298,7 @@ def print_catalog(
 #
 
 
-@cli_commands.group("cache")
+@cli.group("cache")
 def cache_commands():
     """Cache management"""
     pass
@@ -480,7 +480,7 @@ def project_info(
 #
 
 
-@cli_commands.command("plugins")
+@cli.command("plugins")
 @click.option("--host", help="Return project's informations", required=True)
 @global_options()
 def list_plugins(
@@ -502,7 +502,7 @@ def list_plugins(
         click.echo(f"ERROR: {host} not found", file=sys.stderr)
 
 
-@cli_commands.group("doc")
+@cli.group("doc")
 def doc_commands():
     """Manage documentation"""
     pass
@@ -550,7 +550,7 @@ def dump_config_schema(out_fmt: str, pretty: bool):
             confservice.dump_toml_schema(sys.stdout)
 
 
-@cli_commands.command("serve")
+@cli.command("serve")
 @global_options()
 def serve(
     verbose: bool,
@@ -563,5 +563,5 @@ def serve(
     server.serve(conf)
 
 
-def main():
-    cli_commands()
+if __name__ == "__main__":
+    cli()

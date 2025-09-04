@@ -3,12 +3,21 @@ requires = ["uv_build>=0.8.14,<0.9.0"]
 build-backend = "uv_build"
 
 [project]
-name = "qjazz-server"
+name = "qjazz-rpc"
 description = "Cloud ready Qgis server services"
+authors = [
+    { name = "David Marteau", email = "dmarteau@3liz.org" },
+]
 requires-python = ">= 3.12"
 classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.12",
-    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
     "qjazz-contrib==0.4.0",
@@ -27,18 +36,11 @@ version = "0.4.0"
 [project.optional-dependencies]
 minio = ["minio<7.2.16"]
 
-[[project.authors]]
-name = "David Marteau"
-email = "dmarteau@3liz.org"
-
 [project.scripts]
-qjazz-server-admin = "qjazz_admin.cli:main"
-qjazz-config = "qjazz_rpc.cli:main"
-qjazz-rpc-client = "qjazz_rpc.client:cli_commands"
+qjazz-config = "qjazz_rpc.cli:cli"
 
 [tool.uv.build-backend]
-module-name = ["qjazz_rpc", "qjazz_map", "qjazz_admin"]
-module-root = ""
+module-name = [ "qjazz_rpc"]
 
 [tool.uv.sources]
 qjazz-contrib = { workspace = true }
@@ -52,10 +54,8 @@ extend = "../../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]
-"qjazz_http/config.py" = ["T201"]
+"python/qjazz_http/config.py" = ["T201"]
 
 [tool.vulture]
 exclude = ["_grpc/"]
-
-
 

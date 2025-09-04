@@ -10,14 +10,13 @@ DIRS= \
 	$(NULL)
 
 
-install::
-	@uv sync --all-extras --frozen --active
+UV_INSTALL_GROUPS=$(foreach grp,$(INSTALL_GROUPS),--group $(grp))
 
-# Upgrade all packages dependencies - will update uv.lock
-upgrade::
-	@uv sync --all-extras --active
 
-upgrade:: requirements.txt
+clean-dist: 
+	rm -r $(DIST)
+
+clean:: clean-dist
 
 # Rebuild requirements only if uv.lock change
 requirements.txt: uv.lock
@@ -32,5 +31,19 @@ requirements.txt:
 		--no-editable \
 		--no-hashes -q -o requirements.txt
 
+install::
+	@uv sync --all-extras --frozen $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
+
+# Upgrade all packages dependencies - will update uv.lock
+upgrade::
+	@uv sync -U --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
+
+upgrade:: requirements.txt
+
+reinstall::
+	@uv sync --reinstall --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
+
 
 include $(topsrcdir)/config/rules.mk
+
+

@@ -14,8 +14,8 @@ name = "qjazz-rpc-bin"
 path = "src/main.rs"
 
 [dependencies]
-qjazz-pool = "~0.1"
-qjazz-mon = { version = "~0.1", optional = true }
+qjazz-pool = { workspace = true }
+qjazz-mon = { workspace = true, optional = true }
 tonic = { workspace = true }
 tonic-prost = { workspace = true }
 tonic-health = { workspace = true }

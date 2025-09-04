@@ -25,3 +25,5 @@ __output__
 /.env
 
 /external
+
+.buildconfig
