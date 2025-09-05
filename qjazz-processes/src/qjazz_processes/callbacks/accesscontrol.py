@@ -23,9 +23,8 @@ from pydantic import (
     IPvAnyNetwork,
     TypeAdapter,
 )
-
-from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import Field
+from qjazz_core.config import ConfigBase
+from qjazz_core.models import Field
 
 IPValidator: TypeAdapter = TypeAdapter(IPvAnyAddress)
 HostValidator: TypeAdapter = TypeAdapter(IPvAnyAddress | str)

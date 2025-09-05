@@ -11,7 +11,7 @@ from typing import (
 
 import redis
 
-from qjazz_contrib.core.celery import Celery
+from qjazz_core.celery import Celery
 
 from ..schemas import JobStatus
 

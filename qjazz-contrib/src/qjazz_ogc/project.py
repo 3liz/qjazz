@@ -19,7 +19,7 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils
 
-from qjazz_contrib.core.models import Option
+from qjazz_core.models import Option
 
 from .core import collections
 from .core.crs import Crs

@@ -16,7 +16,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from qgis.core import QgsProject
 
-from qjazz_contrib.core import componentmanager, logger
+from qjazz_core import componentmanager, logger
 
 from ..common import ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl

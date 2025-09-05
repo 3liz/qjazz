@@ -9,7 +9,7 @@ from typing import (
 
 import click
 
-from qjazz_contrib.core import config, logger
+from qjazz_core import config, logger
 
 from .doc import Worker
 
@@ -51,7 +51,7 @@ def cli():
 @click.option("--settings", is_flag=True, help="Show QGIS settings")
 def print_version(settings: bool):
     """Print version and exit"""
-    from qjazz_contrib.core import manifest, qgis
+    from qjazz_core import manifest, qgis
 
     short_commit = manifest.short_commit_id() or "n/a"
 
@@ -95,7 +95,7 @@ def install_plugins(configpath: Optional[Path], force: bool):
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    from qjazz_contrib.core.qgis import install_plugins
+    from qjazz_core.qgis import install_plugins
 
     if force or conf.worker.qgis.plugins.install_mode == "auto":
         install_plugins(conf.worker.qgis.plugins)

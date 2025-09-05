@@ -13,7 +13,7 @@ from typing import (
     Self,
 )
 
-from qjazz_contrib.core.models import (
+from qjazz_core.models import (
     JsonModel,
 )
 

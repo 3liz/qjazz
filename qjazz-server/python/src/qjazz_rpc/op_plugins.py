@@ -1,7 +1,7 @@
 #
 # Plugins inspection
 #
-from qjazz_contrib.core.qgis import QgisPluginService
+from qjazz_core.qgis import QgisPluginService
 
 from . import messages as _m
 

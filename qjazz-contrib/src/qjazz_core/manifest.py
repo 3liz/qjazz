@@ -17,7 +17,7 @@ class Manifest(BaseModel):
 def get_manifest() -> Manifest:
     from importlib import resources
 
-    path = cast(Path, resources.files("qjazz_contrib")).joinpath("core", "manifest.json")
+    path = cast(Path, resources.files("qjazz_core")).joinpath("manifest.json")
     if path.exists():
         try:
             with path.open() as m:

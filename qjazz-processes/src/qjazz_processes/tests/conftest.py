@@ -9,6 +9,7 @@ import pytest
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from qjazz_core import qgis
 
 from qgis.core import (
     Qgis,
@@ -18,7 +19,6 @@ from qgis.core import (
 from qgis.server import QgsServer
 
 from qjazz_cache.prelude import CacheManager, ProjectsConfig
-from qjazz_contrib.core import qgis
 from qjazz_processes.processing.prelude import (
     ProcessingConfig,
     ProcessingContext,
@@ -200,7 +200,7 @@ async def http_client(server_app: web.Application, aiohttp_client: Callable) -> 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     try:
-        from qjazz_contrib.core import qgis
+        from qjazz_core import qgis
 
         # On QGIS <= 3.34, explicite call to exit() is required
         # in order to prevent a segmentation fault.

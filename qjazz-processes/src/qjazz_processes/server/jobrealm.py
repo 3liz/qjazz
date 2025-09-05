@@ -6,9 +6,8 @@ from uuid import uuid4
 
 from aiohttp import web
 from pydantic import TypeAdapter, ValidationError
-
-from qjazz_contrib.core.config import ConfigBase, section
-from qjazz_contrib.core.models import Field
+from qjazz_core.config import ConfigBase, section
+from qjazz_core.models import Field
 
 from .models import ErrorResponse
 

@@ -14,6 +14,8 @@ from typing import (
     cast,
 )
 
+from qjazz_core import logger
+from qjazz_core.qgis import current_qgis_application, init_qgis_application
 from qjazz_ogc import Catalog, CatalogItem
 
 from qjazz_cache.prelude import (
@@ -22,8 +24,6 @@ from qjazz_cache.prelude import (
     CheckoutStatus,
     ProjectMetadata,
 )
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.qgis import current_qgis_application, init_qgis_application
 
 from .main import WORKER_SECTION, WorkerConfig
 
@@ -34,7 +34,7 @@ class ConfigProto(Protocol):
 
 def load_config(path: Optional[Path | str], **kwds) -> WorkerConfig:
     """ """
-    from qjazz_contrib.core import config
+    from qjazz_core import config
 
     confservice = config.ConfBuilder()
     confservice.add_section(WORKER_SECTION, WorkerConfig)

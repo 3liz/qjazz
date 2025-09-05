@@ -60,7 +60,7 @@ from typing import (
 from qgis.core import QgsProject
 from qgis.server import QgsServer
 
-from qjazz_contrib.core import componentmanager, logger
+from qjazz_core import componentmanager, logger
 
 # Import default handlers for auto-registration
 from .common import ProjectMetadata, ProtocolHandler, Url

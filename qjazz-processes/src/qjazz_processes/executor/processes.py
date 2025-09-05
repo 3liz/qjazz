@@ -12,10 +12,9 @@ from typing import (
 
 from celery.result import AsyncResult
 from pydantic import JsonValue
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.celery import Celery
-from qjazz_contrib.core.utils import to_utc_datetime, utc_now
+from qjazz_core import logger
+from qjazz_core.celery import Celery
+from qjazz_core.utils import to_utc_datetime, utc_now
 
 from ..schemas import (
     DateTime,

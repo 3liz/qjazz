@@ -17,9 +17,8 @@ from minio import Minio, commonconfig
 from minio.deleteobjects import DeleteObject
 from minio.lifecycleconfig import Expiration, LifecycleConfig, Rule
 from pydantic import Field, FilePath, SecretStr
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigSettings
+from qjazz_core import logger
+from qjazz_core.config import ConfigSettings
 
 from ..models import Link
 

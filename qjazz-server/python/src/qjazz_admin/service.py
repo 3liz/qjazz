@@ -10,7 +10,7 @@ from typing import (
     Sequence,
 )
 
-from qjazz_contrib.core import config, logger  # noqa
+from qjazz_core import config, logger  # noqa
 
 from .backend import RECONNECT_DELAY
 from .pool import PoolClient

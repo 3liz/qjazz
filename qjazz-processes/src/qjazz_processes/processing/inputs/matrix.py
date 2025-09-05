@@ -7,6 +7,8 @@ from typing import (
 )
 
 from pydantic import Field, JsonValue
+from qjazz_core import logger
+from qjazz_core.condition import assert_postcondition
 
 from qgis.core import (
     QgsProcessingContext,
@@ -15,8 +17,6 @@ from qgis.core import (
     QgsProject,
 )
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_processes.schemas import (
     Metadata,
     MetadataValue,

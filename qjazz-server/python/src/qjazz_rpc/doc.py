@@ -8,8 +8,7 @@ from typing import (
 )
 
 from pydantic import BeforeValidator, Field, FilePath
-
-from qjazz_contrib.core.config import ConfBuilder, ConfigBase
+from qjazz_core.config import ConfBuilder, ConfigBase
 
 from .config import QgisConfig
 

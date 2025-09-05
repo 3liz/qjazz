@@ -6,7 +6,7 @@ from typing import Optional
 
 import click
 
-from qjazz_contrib.core import config, manifest
+from qjazz_core import config, manifest
 
 PathType = click.Path(
     exists=True,
@@ -106,7 +106,8 @@ def run_scheduler(configpath: Optional[Path], loglevel: str):
 @click.option("--force", is_flag=True, help="Force installation")
 def install_plugins(configpath: Optional[Path], force: bool):
     """Install plugins"""
-    from qjazz_contrib.core import logger
+    from qjazz_core import logger
+
     from qjazz_processes.worker.prelude import CONFIG_ENV_PATH, QgisWorker
 
     if configpath:
@@ -121,7 +122,7 @@ def install_plugins(configpath: Optional[Path], force: bool):
     logger.setup_log_handler(conf.logging.level)
 
     if force or conf.processing.plugins.install_mode == "auto":
-        from qjazz_contrib.core.qgis import install_plugins
+        from qjazz_core.qgis import install_plugins
 
         install_plugins(conf.processing.plugins)
     else:
@@ -132,7 +133,7 @@ def install_plugins(configpath: Optional[Path], force: bool):
 @click.option("--settings", is_flag=True, help="Show QGIS settings")
 def print_version(settings: bool):
     """Show GIS library versions"""
-    from qjazz_contrib.core import manifest, qgis
+    from qjazz_core import manifest, qgis
 
     short_commit = manifest.short_commit_id() or "n/a"
 

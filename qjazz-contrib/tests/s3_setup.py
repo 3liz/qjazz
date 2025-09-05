@@ -1,6 +1,6 @@
 from qjazz_cache import CacheManager, ProjectsConfig
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.qgis import init_qgis_application
+from qjazz_core import logger
+from qjazz_core.qgis import init_qgis_application
 
 logger.setup_log_handler(logger.LogLevel.DEBUG)
 

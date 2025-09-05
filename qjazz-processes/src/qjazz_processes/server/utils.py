@@ -5,8 +5,7 @@ from typing import Optional
 import aiohttp
 
 from aiohttp import web
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from ..schemas import LinkHttp
 

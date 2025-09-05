@@ -13,14 +13,14 @@ from typing import (
 )
 
 from pydantic import ValidationError
+from qjazz_core import logger
+from qjazz_core.condition import assert_postcondition
 
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingParameterFileDestination,
 )
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_processes.schemas import (
     AnyFormat,
     Format,

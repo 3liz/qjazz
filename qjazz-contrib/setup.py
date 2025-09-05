@@ -4,11 +4,11 @@ if os.getenv("QJAZZ_NO_BUILD_EXT_INSTALL") is None:
     from setuptools import Extension, setup
     setup(
         package_dir={'': 'src'},
-        packages=["qjazz_contrib"],
+        packages=["qjazz_core"],
         ext_modules=[
             Extension(
-                name = "qjazz_contrib.core.qgis.qgis_binding",
-                sources = ["src/qjazz_contrib/core/qgis/qgis_binding.cpp"],
+                name = "qjazz_core.qgis.qgis_binding",
+                sources = ["src/qjazz_core/qgis/qgis_binding.cpp"],
                 include_dirs = [
                     "/usr/include/qgis",
                     "/usr/include/x86_64-linux-gnu/qt5",
@@ -26,5 +26,5 @@ if os.getenv("QJAZZ_NO_BUILD_EXT_INSTALL") is None:
     )
 else:
     from setuptools import setup
-    setup(packages=["qjazz_contrib"]),
+    setup(packages=["qjazz_core"]),
     print("NOTE: Building of extension disabled...")

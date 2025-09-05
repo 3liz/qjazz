@@ -20,7 +20,7 @@ from typing import (
 )
 from urllib.parse import SplitResult, urlsplit
 
-from qjazz_contrib.core.condition import assert_postcondition
+from qjazz_core.condition import assert_postcondition
 
 Url = SplitResult
 

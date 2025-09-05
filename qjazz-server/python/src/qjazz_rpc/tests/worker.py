@@ -12,8 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from pydantic import JsonValue
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from ..config import QgisConfig
 from .rendezvous import (

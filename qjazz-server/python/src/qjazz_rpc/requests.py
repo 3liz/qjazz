@@ -6,11 +6,11 @@ from contextlib import contextmanager
 from time import time
 from typing import Optional
 
+from qjazz_core import logger
+
 from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.server import QgsServerRequest, QgsServerResponse
-
-from qjazz_contrib.core import logger
 
 from . import messages as _m
 

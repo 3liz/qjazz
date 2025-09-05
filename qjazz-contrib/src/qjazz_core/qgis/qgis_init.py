@@ -62,8 +62,8 @@ def setup_qgis_application(
     :param boolean cleanup: Register atexit hook to close qgisapplication on exit().
         Note that prevents qgis to segfault when exiting. Default to True.
     """
-    from qjazz_contrib.core.semaphore import semaphore
-    from qjazz_contrib.core.timer import Instant
+    from qjazz_core.semaphore import semaphore
+    from qjazz_core.timer import Instant
 
     global qgis_application
     assert_precondition(qgis_application is None, "Qgis application already initialized")

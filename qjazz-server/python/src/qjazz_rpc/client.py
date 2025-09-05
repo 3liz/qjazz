@@ -23,9 +23,8 @@ from grpc_health.v1 import (
     health_pb2,  # HealthCheckRequest
     health_pb2_grpc,  # HealthStub
 )
-
-from qjazz_contrib.core.config import TLSConfig
-from qjazz_contrib.core.timer import Instant
+from qjazz_core.config import TLSConfig
+from qjazz_core.timer import Instant
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 

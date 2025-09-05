@@ -5,7 +5,7 @@ https://github.com/radiantearth/stac-spec/blob/master/commons/links.md
 
 from pydantic import HttpUrl
 
-from qjazz_contrib.core.models import (
+from qjazz_core.models import (
     Field,
     JsonModel,
     Option,

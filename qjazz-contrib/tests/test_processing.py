@@ -1,4 +1,4 @@
-from qjazz_contrib.core.qgis import (
+from qjazz_core.qgis import (
     PluginType,
     QgisPluginConfig,
     QgisPluginService,

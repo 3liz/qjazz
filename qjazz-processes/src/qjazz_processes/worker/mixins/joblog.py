@@ -6,8 +6,7 @@ from typing import (
 )
 
 from celery.worker.control import inspect_command
-
-from qjazz_contrib.core.utils import to_utc_datetime
+from qjazz_core.utils import to_utc_datetime
 
 from ..models import ProcessLogVersion
 

@@ -7,8 +7,8 @@ from typing import (
 )
 
 from celery.signals import worker_process_init
+from qjazz_core.celery import Job, JobContext
 
-from qjazz_contrib.core.celery import Job, JobContext
 from qjazz_processes.schemas import (
     JobExecute,
     JobResults,

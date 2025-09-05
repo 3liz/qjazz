@@ -12,7 +12,7 @@ from qjazz_cache.prelude import (
     ProjectMetadata,
 )
 from qjazz_cache.routes import DynamicRoute, StaticRoute
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 
 def test_search_paths(config):

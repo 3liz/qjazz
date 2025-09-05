@@ -13,12 +13,13 @@ from typing import (
     cast,
 )
 
-from qjazz_contrib.core import config, logger
-from qjazz_contrib.core.celery import CeleryConfig
-from qjazz_contrib.core.condition import (
+from qjazz_core import config, logger
+from qjazz_core.celery import CeleryConfig
+from qjazz_core.condition import (
     assert_precondition,
 )
-from qjazz_contrib.core.models import Field
+from qjazz_core.models import Field
+
 from qjazz_processes.schemas import LinkHttp
 
 from ..callbacks import CallbacksConfig

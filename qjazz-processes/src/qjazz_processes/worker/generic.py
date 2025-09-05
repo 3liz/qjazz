@@ -22,10 +22,9 @@ from celery.worker.control import (
     inspect_command,
 )
 from pydantic import TypeAdapter
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.celery import Job, Worker
-from qjazz_contrib.core.condition import assert_precondition
+from qjazz_core import logger
+from qjazz_core.celery import Job, Worker
+from qjazz_core.condition import assert_precondition
 
 from ..schemas import (
     JsonValue,

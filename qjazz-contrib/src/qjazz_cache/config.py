@@ -11,8 +11,8 @@ from pydantic import (
     WithJsonSchema,
 )
 
-from qjazz_contrib.core import config
-from qjazz_contrib.core.models import Field
+from qjazz_core import config
+from qjazz_core.models import Field
 
 from .handlers import HandlerConfig
 from .routes import Routes

@@ -13,9 +13,8 @@ from aiohttp.abc import AbstractAccessLogger
 from pydantic import (
     BaseModel,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigProxy
+from qjazz_core import logger
+from qjazz_core.config import ConfigProxy
 
 from . import swagger
 from .api import API_VERSION, ErrorResponse, Handlers

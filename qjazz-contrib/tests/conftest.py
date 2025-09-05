@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from qjazz_cache.prelude import CacheManager, ProjectsConfig
-from qjazz_contrib.core import logger, qgis
+from qjazz_core import logger, qgis
 
 
 @pytest.fixture(scope="session")
@@ -55,7 +55,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
 def pytest_sessionfinish(session, exitstatus):
     try:
-        from qjazz_contrib.core import qgis
+        from qjazz_core import qgis
 
         qgis.exit_qgis_application()
     except Exception:

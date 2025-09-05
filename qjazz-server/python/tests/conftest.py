@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
+
 from qjazz_rpc.config import ProjectsConfig, QgisConfig
 from qjazz_rpc.tests import Worker
 
@@ -27,7 +28,7 @@ def pytest_collection_modifyitems(config, items):
 
 def pytest_sessionfinish(session, exitstatus):
     try:
-        from qjazz_contrib.core import qgis
+        from qjazz_core import qgis
 
         qgis.exit_qgis_application()
     except Exception:
@@ -36,7 +37,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 @pytest.fixture(scope="session")
 def qgis_session(request: pytest.FixtureRequest) -> None:
-    from qjazz_contrib.core import logger, qgis
+    from qjazz_core import logger, qgis
 
     try:
         print("Initializing qgis application")

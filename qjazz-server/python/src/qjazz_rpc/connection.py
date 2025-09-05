@@ -7,8 +7,7 @@ from struct import pack, unpack
 from typing import ByteString
 
 from msgpack import unpackb
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .messages import Message, MessageAdapter
 

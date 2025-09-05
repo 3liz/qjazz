@@ -12,8 +12,7 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-
-from qjazz_contrib.core.config import ConfigBase, section
+from qjazz_core.config import ConfigBase, section
 
 from ..schemas import JsonModel
 

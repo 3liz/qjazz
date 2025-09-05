@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from qjazz_contrib.core import config
+from qjazz_core import config
 
 
 def setup_module():

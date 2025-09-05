@@ -6,11 +6,11 @@ from pydantic import (
     AfterValidator,
     BeforeValidator,
 )
+from qjazz_core import config
+from qjazz_core.models import Field
+from qjazz_core.qgis import QgisNetworkConfig, QgisPluginConfig
 
 from qjazz_cache.config import ProjectsConfig
-from qjazz_contrib.core import config
-from qjazz_contrib.core.models import Field
-from qjazz_contrib.core.qgis import QgisNetworkConfig, QgisPluginConfig
 
 
 def _validate_qgis_setting(value: str | bool | float | int) -> str:

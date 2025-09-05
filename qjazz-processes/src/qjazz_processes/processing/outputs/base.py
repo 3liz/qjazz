@@ -10,6 +10,7 @@ from typing import (
 )
 
 from pydantic import Field, JsonValue, TypeAdapter, ValidationError
+from qjazz_core import logger
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -17,7 +18,6 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
 )
 
-from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     Format,
     InputValueError,

@@ -4,14 +4,14 @@ from itertools import islice
 from typing import Iterator
 
 from pydantic import TypeAdapter
+from qjazz_core import logger
+from qjazz_core.timer import Instant
 from qjazz_ogc import Catalog, CatalogItem, Collection, LayerAccessor, OgcEndpoints
 from qjazz_ogc.stac import CatalogBase
 
 from qgis.core import QgsMapLayer
 
 from qjazz_cache.prelude import CacheManager
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.timer import Instant
 
 from . import messages as _m
 from .config import QgisConfig

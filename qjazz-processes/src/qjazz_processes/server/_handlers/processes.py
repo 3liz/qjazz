@@ -9,8 +9,7 @@ import celery.exceptions
 
 from aiohttp import web
 from pydantic import Field, PositiveInt, TypeAdapter, ValidationError
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .protos import (
     JOB_ID_HEADER,

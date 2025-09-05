@@ -1,8 +1,9 @@
+from qjazz_core.qgis import QgisPluginService
+
 from qgis.core import (
     QgsApplication,
 )
 
-from qjazz_contrib.core.qgis import QgisPluginService
 from qjazz_processes.processing.config import ProcessingConfig
 
 

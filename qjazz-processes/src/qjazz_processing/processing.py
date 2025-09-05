@@ -5,14 +5,15 @@
 from functools import cached_property
 from typing import Optional
 
-from qgis.core import QgsProcessingFeedback, QgsProject
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.qgis import (
+from qjazz_core import logger
+from qjazz_core.qgis import (
     PluginType,
     QgisPluginService,
     init_qgis_processing,
 )
+
+from qgis.core import QgsProcessingFeedback, QgsProject
+
 from qjazz_processes.processing.config import ProcessingConfig
 from qjazz_processes.processing.prelude import (
     JobExecute,

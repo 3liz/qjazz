@@ -10,7 +10,7 @@ from typing import Any, List, Optional, cast
 
 import click
 
-from qjazz_contrib.core import config, logger
+from qjazz_core import config, logger
 
 from .config import ConfigProto, confservice
 from .service import PoolClient, ResolverConfig, Service

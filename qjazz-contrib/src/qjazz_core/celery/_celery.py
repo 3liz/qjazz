@@ -15,11 +15,11 @@ from pydantic import (
     NonNegativeInt,
 )
 
-from qjazz_contrib.core.config import (
+from qjazz_core.config import (
     ConfigBase,
     TLSConfig,
 )
-from qjazz_contrib.core.models import Field
+from qjazz_core.models import Field
 
 
 class SecurityConfig(ConfigBase):

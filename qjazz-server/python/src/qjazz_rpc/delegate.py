@@ -18,10 +18,10 @@ the url and this does not work in delegated api url.
 
 import traceback
 
+from qjazz_core import logger
+
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext
-
-from qjazz_contrib.core import logger
 
 ROOT_DELEGATE = "/__delegate__"
 

@@ -8,7 +8,7 @@ from typing import Protocol
 from qgis.core import Qgis, QgsProject, QgsProjectBadLayerHandler
 from qgis.server import QgsServerProjectUtils
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .errors import StrictCheckingFailure, UnreadableResource
 

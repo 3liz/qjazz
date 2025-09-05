@@ -1,7 +1,6 @@
 #
 from pydantic import Field
-
-from qjazz_contrib.core.config import ConfigBase, TLSConfig
+from qjazz_core.config import ConfigBase, TLSConfig
 
 # Config
 #

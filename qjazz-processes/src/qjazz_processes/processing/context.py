@@ -6,15 +6,15 @@ from pathlib import Path
 from string import Template
 from typing import Optional, cast
 
+from qjazz_core import logger
+from qjazz_core.condition import assert_precondition
+
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
     QgsProcessingContext,
     QgsProject,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_precondition
 
 from .config import ProcessingConfig
 from .utils import get_valid_filename

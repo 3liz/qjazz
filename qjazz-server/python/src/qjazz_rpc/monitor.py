@@ -3,8 +3,8 @@
 #
 from typing import Optional, Protocol
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.timer import Instant
+from qjazz_core import logger
+from qjazz_core.timer import Instant
 
 from .messages import Connection, Response, send_reply
 

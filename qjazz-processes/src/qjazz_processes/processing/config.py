@@ -6,21 +6,21 @@ from typing import (
 from pydantic import (
     BeforeValidator,
 )
-
-from qjazz_cache.prelude import ProjectsConfig
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import (
+from qjazz_core import logger
+from qjazz_core.config import (
     AbsoluteDirectoryPath,
     ConfigBase,
     Template,
     TemplateStr,
     TLSConfig,
 )
-from qjazz_contrib.core.models import Field
-from qjazz_contrib.core.qgis import (
+from qjazz_core.models import Field
+from qjazz_core.qgis import (
     QgisNetworkConfig,
     QgisPluginConfig,
 )
+
+from qjazz_cache.prelude import ProjectsConfig
 from qjazz_processes.schemas import WGS84
 
 

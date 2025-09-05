@@ -6,7 +6,7 @@ from typing import Generator, Optional
 
 from posix_ipc import O_CREAT, Semaphore
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 
 @contextmanager

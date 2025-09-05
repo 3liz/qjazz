@@ -12,11 +12,10 @@ from pydantic import (
     JsonValue,
     WithJsonSchema,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_postcondition
-from qjazz_contrib.core.config import ConfigBase, section
-from qjazz_contrib.core.models import Field
+from qjazz_core import logger
+from qjazz_core.condition import assert_postcondition
+from qjazz_core.config import ConfigBase, section
+from qjazz_core.models import Field
 
 from .executor import AsyncExecutor
 

@@ -2,8 +2,8 @@ import sys
 
 from typing import Literal, Type
 
-from qjazz_contrib.core.config import ConfBuilder, ConfigBase
-from qjazz_contrib.core.models import Field
+from qjazz_core.config import ConfBuilder, ConfigBase
+from qjazz_core.models import Field
 
 
 def dump_callback_config_schema(scheme: str, name: str, CallbackConfigType: Type) -> None:

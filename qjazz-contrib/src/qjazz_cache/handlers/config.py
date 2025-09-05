@@ -21,8 +21,8 @@ from pydantic import (
     model_validator,
 )
 
-from qjazz_contrib.core import componentmanager, logger
-from qjazz_contrib.core.config import ConfigBase
+from qjazz_core import componentmanager, logger
+from qjazz_core.config import ConfigBase
 
 from ..common import ProtocolHandler
 

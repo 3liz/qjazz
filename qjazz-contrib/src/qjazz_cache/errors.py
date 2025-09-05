@@ -1,5 +1,5 @@
 
-from qjazz_contrib.core.errors import QJazzException
+from qjazz_core.errors import QJazzException
 
 
 class InvalidCacheRootUrl(QJazzException):

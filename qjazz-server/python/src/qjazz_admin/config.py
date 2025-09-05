@@ -7,9 +7,8 @@ from typing import (
 )
 
 from pydantic import AnyHttpUrl, Field
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import (
+from qjazz_core import logger
+from qjazz_core.config import (
     ConfBuilder,
     ConfigBase,
     NetInterface,

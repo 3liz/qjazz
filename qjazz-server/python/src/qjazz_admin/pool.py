@@ -17,8 +17,8 @@ import jsondiff
 from google.protobuf import json_format
 from google.protobuf.message import Message
 from pydantic import Json, JsonValue
+from qjazz_core import logger
 
-from qjazz_contrib.core import logger
 from qjazz_rpc._grpc import qjazz_pb2
 
 from .backend import RECONNECT_DELAY, Backend

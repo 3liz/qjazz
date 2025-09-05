@@ -15,8 +15,7 @@ import click
 
 from click import echo, style
 from pydantic import JsonValue, TypeAdapter
-
-from qjazz_contrib.core import config, manifest
+from qjazz_core import config, manifest
 
 from .schemas import JobStatusCode
 
@@ -66,7 +65,7 @@ def main(env_settings: config.EnvSettingsOption):
 @click.option("--dump-config", is_flag=True, help="Dump config and exit")
 def run_server(configpath: Path, verbose: bool, dump_config: bool):
     """Start server"""
-    from qjazz_contrib.core import logger
+    from qjazz_core import logger
 
     from .server import load_configuration, serve
 
@@ -92,7 +91,7 @@ def setup_executor_context(
 ):
     from types import SimpleNamespace
 
-    from qjazz_contrib.core import config, logger
+    from qjazz_core import config, logger
 
     from .executor import Executor, ExecutorConfig
 

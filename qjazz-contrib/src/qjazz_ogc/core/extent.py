@@ -13,7 +13,7 @@ from typing import (
 
 from annotated_types import Len
 
-from qjazz_contrib.core.models import (
+from qjazz_core.models import (
     Field,
     JsonModel,
     Nullable,

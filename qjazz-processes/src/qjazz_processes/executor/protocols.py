@@ -5,8 +5,7 @@ from typing import (
 )
 
 from pydantic import JsonValue
-
-from qjazz_contrib.core.celery import Celery
+from qjazz_core.celery import Celery
 
 from ..worker.models import WorkerPresence
 

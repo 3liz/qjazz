@@ -2,8 +2,7 @@
 # Test callback
 #
 from pydantic import TypeAdapter
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from ..callbacks import JobResults, Url
 

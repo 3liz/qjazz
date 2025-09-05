@@ -14,19 +14,20 @@ from typing import (
     Type,
 )
 
-from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
-from qgis.server import QgsServer
-
-from qjazz_cache.extras import evict_by_popularity
-from qjazz_cache.prelude import CacheManager
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_postcondition, assert_precondition
-from qjazz_contrib.core.qgis import (
+from qjazz_core import logger
+from qjazz_core.condition import assert_postcondition, assert_precondition
+from qjazz_core.qgis import (
     init_qgis_application,
     init_qgis_server,
     qgis_initialized,
     show_qgis_settings,
 )
+
+from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
+from qgis.server import QgsServer
+
+from qjazz_cache.extras import evict_by_popularity
+from qjazz_cache.prelude import CacheManager
 
 from ..processing.config import ProcessingConfig
 from ..processing.prelude import (

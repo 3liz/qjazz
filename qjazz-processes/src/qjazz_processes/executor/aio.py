@@ -10,7 +10,7 @@ from typing import (
     Sequence,
 )
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .commands import Commands
 

@@ -12,9 +12,8 @@ from celery.worker.control import (
     control_command,
     inspect_command,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.celery import Worker
+from qjazz_core import logger
+from qjazz_core.celery import Worker
 
 from .. import registry
 from ..models import Link

@@ -5,7 +5,8 @@ import os
 
 from pathlib import Path
 
-from qjazz_contrib.core import config, logger
+from qjazz_core import config, logger
+
 from qjazz_processes.executor import (
     Executor as _Executor,
 )

@@ -10,9 +10,8 @@ from pydantic import (
     AnyUrl,
     ByteSize,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_precondition
+from qjazz_core import logger
+from qjazz_core.condition import assert_precondition
 
 from ...schemas import Link as LinkAny
 from ..utils import public_url, stream_from

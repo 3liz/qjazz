@@ -14,8 +14,8 @@ from urllib.parse import urlunsplit
 
 from qgis.core import QgsApplication, QgsProject, QgsProjectStorage
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import (
+from qjazz_core import logger
+from qjazz_core.condition import (
     assert_postcondition,
     assert_precondition,
 )

@@ -4,9 +4,8 @@ from typing import (
 )
 
 from aiohttp import web
-
-from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import Field
+from qjazz_core.config import ConfigBase
+from qjazz_core.models import Field
 
 from ..accesspolicy import AccessPolicy
 from ..models import ErrorResponse

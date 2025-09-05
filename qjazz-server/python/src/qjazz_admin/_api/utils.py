@@ -14,7 +14,7 @@ from pydantic import (  # noqa F401
     ValidationError,
 )
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .. import service, swagger
 from ..models import ErrorResponse

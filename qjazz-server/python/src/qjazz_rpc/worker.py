@@ -12,21 +12,21 @@ from time import sleep, time
 from typing import List, Optional, Protocol, assert_never, cast
 
 from pydantic import JsonValue
-from qjazz_ogc import Catalog
-
-from qgis.core import QgsFeedback
-
-from qjazz_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigProxy
-from qjazz_contrib.core.qgis import (
+from qjazz_core import logger
+from qjazz_core.config import ConfigProxy
+from qjazz_core.qgis import (
     PluginType,
     QgisPluginService,
     Server,
     show_all_versions,
     show_qgis_settings,
 )
-from qjazz_contrib.core.timer import Instant
+from qjazz_core.timer import Instant
+from qjazz_ogc import Catalog
+
+from qgis.core import QgsFeedback
+
+from qjazz_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
 
 from . import messages as _m
 from . import op_cache, op_collections, op_plugins, op_requests

@@ -7,14 +7,15 @@ from string import capwords
 from typing import Optional, assert_never, cast
 from urllib.parse import urlunsplit
 
+from qjazz_core import logger
+from qjazz_core.condition import assert_precondition
+from qjazz_core.qgis import Server
+from qjazz_core.utils import to_rfc822
+
 from qgis.core import QgsFeedback, QgsProject
 from qgis.server import QgsServerRequest
 
 from qjazz_cache.prelude import CacheEntry, CacheManager, CheckoutStatus, ProjectMetadata
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.qgis import Server
-from qjazz_contrib.core.utils import to_rfc822
 
 from . import messages as _m
 from .config import QgisConfig

@@ -3,7 +3,7 @@ import traceback
 from threading import Event, Thread
 from typing import Callable
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 
 #

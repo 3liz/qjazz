@@ -10,9 +10,8 @@ from pydantic import (
     StringConstraints,
     WithJsonSchema,
 )
-
-from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import Field, Option
+from qjazz_core.config import ConfigBase
+from qjazz_core.models import Field, Option
 
 DEFAULT_PORT = 23456
 

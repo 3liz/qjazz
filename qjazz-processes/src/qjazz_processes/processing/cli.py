@@ -23,15 +23,14 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
+from qjazz_core import config, logger, qgis
+from qjazz_core.condition import assert_postcondition
 
 from qgis.core import (
     QgsApplication,
     QgsProcessingFeedback,
     QgsProject,
 )
-
-from qjazz_contrib.core import config, logger, qgis
-from qjazz_contrib.core.condition import assert_postcondition
 
 from .config import ProcessingConfig
 

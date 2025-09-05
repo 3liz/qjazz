@@ -15,10 +15,10 @@ from typing import (
 import requests
 
 from pydantic import JsonValue
+from qjazz_core import logger
 
 from qgis.core import QgsProject
 
-from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     Formats,
     InputValueError,

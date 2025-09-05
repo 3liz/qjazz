@@ -28,10 +28,9 @@ from pydantic import (
     TypeAdapter,
     WithJsonSchema,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import ConfigBase
-from qjazz_contrib.core.models import Field, Option
+from qjazz_core import logger
+from qjazz_core.config import ConfigBase
+from qjazz_core.models import Field, Option
 
 from ..accesscontrol import AccessControlConfig
 from ..callbacks import CallbackHandler, JobMeta, JobResults, Url

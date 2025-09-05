@@ -11,7 +11,7 @@
 from datetime import datetime as DateTimeType
 from typing import Sequence
 
-from qjazz_contrib.core.models import (
+from qjazz_core.models import (
     Field,
     Option,
 )

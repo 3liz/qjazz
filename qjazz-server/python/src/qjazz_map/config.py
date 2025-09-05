@@ -11,15 +11,14 @@ from typing import (
 )
 
 from pydantic import AnyHttpUrl, FilePath
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import (
+from qjazz_core import logger
+from qjazz_core.config import (
     ConfBuilder,
     ConfigBase,
     ConfigError,
     read_config_toml,
 )
-from qjazz_contrib.core.models import Field, Option
+from qjazz_core.models import Field, Option
 
 from .resolver import ChannelConfig
 

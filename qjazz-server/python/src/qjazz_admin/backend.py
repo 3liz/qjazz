@@ -19,8 +19,8 @@ from grpc_health.v1 import (
     health_pb2_grpc,  # HealthStub
 )
 from pydantic import Field, IPvAnyAddress, Json
+from qjazz_core import config, logger
 
-from qjazz_contrib.core import config, logger
 from qjazz_rpc._grpc import qjazz_pb2, qjazz_pb2_grpc
 
 

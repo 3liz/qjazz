@@ -7,7 +7,7 @@ from typing import Literal, Sequence
 
 from pydantic import HttpUrl
 
-from qjazz_contrib.core.models import (
+from qjazz_core.models import (
     Field,
     JsonModel,
     Option,

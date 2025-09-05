@@ -8,7 +8,7 @@ from typing import Optional, Self, Union
 
 from pydantic import HttpUrl
 
-from qjazz_contrib.core.models import JsonDict
+from qjazz_core.models import JsonDict
 
 
 class CrsRef(HttpUrl):

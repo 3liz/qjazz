@@ -1,8 +1,8 @@
 from typing import Protocol
 
-from qgis.core import QgsProcessingFeedback, QgsProject
+from qjazz_core import logger
 
-from qjazz_contrib.core import logger
+from qgis.core import QgsProcessingFeedback, QgsProject
 
 
 class Projects(Protocol):

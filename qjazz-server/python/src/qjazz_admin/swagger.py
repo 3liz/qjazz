@@ -22,8 +22,7 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-
-from qjazz_contrib.core.models import JsonModel
+from qjazz_core.models import JsonModel
 
 _Model = Union[type[BaseModel], TypeAdapter]
 

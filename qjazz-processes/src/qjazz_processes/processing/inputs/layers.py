@@ -11,6 +11,7 @@ from typing import (
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Extra, JsonValue
+from qjazz_core import logger
 
 from qgis.core import (
     Qgis,
@@ -27,7 +28,6 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
-from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     WGS84,
     BoundingBox,

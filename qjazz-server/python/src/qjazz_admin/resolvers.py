@@ -12,9 +12,8 @@ import dns.asyncresolver
 
 from dns.resolver import NoNameservers
 from pydantic import Field, IPvAnyAddress, TypeAdapter
-
-from qjazz_contrib.core import logger  # noqa
-from qjazz_contrib.core.config import (
+from qjazz_core import logger  # noqa
+from qjazz_core.config import (
     ConfigBase,
     TLSConfig,
 )

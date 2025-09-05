@@ -11,8 +11,7 @@ from typing import (
 )
 
 from aiohttp import web
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from .executor import (
     AsyncExecutor,

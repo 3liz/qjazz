@@ -2,8 +2,7 @@ from random import randint
 from typing import Sequence
 
 from pydantic import JsonValue
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from ..worker.exceptions import (
     ServiceNotAvailable,

@@ -17,6 +17,7 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
+from qjazz_core import logger
 
 from qgis.core import (
     Qgis,
@@ -39,7 +40,6 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QVariant
 
-from qjazz_contrib.core import logger
 from qjazz_processes.schemas import (
     WGS84,
     BoundingBox,

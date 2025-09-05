@@ -10,6 +10,8 @@ from typing import (
     Optional,
 )
 
+from qjazz_core import logger
+
 from qgis.core import (
     QgsMapLayer,
     QgsProcessingAlgorithm,
@@ -23,7 +25,6 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
-from qjazz_contrib.core import logger
 from qjazz_processes.schemas import RunProcessException
 
 

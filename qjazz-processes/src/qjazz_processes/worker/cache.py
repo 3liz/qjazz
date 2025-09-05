@@ -9,7 +9,7 @@ from typing import (
     cast,
 )
 
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from ..processing.config import ProcessingConfig
 from ..schemas import (

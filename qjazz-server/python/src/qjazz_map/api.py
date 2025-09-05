@@ -1,9 +1,8 @@
 from typing import Sequence
 
+from qjazz_core.models import JsonModel, Option
 from qjazz_ogc.core.collections import Collection
 from qjazz_ogc.stac import Link
-
-from qjazz_contrib.core.models import JsonModel, Option
 
 
 class LandinPage(JsonModel):

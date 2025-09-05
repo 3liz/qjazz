@@ -32,8 +32,8 @@ from pydantic import (
 )
 
 # from as_core.storage import StorageClient, StorageCreds, storage_client
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.utils import to_iso8601, utc_now
+from qjazz_core import logger
+from qjazz_core.utils import to_iso8601, utc_now
 
 from ._celery import Celery, CeleryConfig
 

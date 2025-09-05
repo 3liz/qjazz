@@ -10,6 +10,9 @@ from typing import (
 )
 from urllib.parse import urlunsplit
 
+from qjazz_core import logger
+from qjazz_core.utils import to_iso8601
+
 from qgis.core import QgsMapLayer
 
 from qjazz_cache.extras import evict_by_popularity
@@ -19,8 +22,6 @@ from qjazz_cache.prelude import (
     CheckoutStatus,
     ProjectMetadata,
 )
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.utils import to_iso8601
 
 from . import messages as _m
 from .config import QgisConfig

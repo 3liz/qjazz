@@ -14,6 +14,9 @@ from typing import (
 )
 from urllib.parse import quote, urlencode
 
+from qjazz_core import logger
+from qjazz_core.condition import assert_postcondition
+
 from qgis.core import (
     Qgis,
     QgsMapLayer,
@@ -22,8 +25,6 @@ from qgis.core import (
     QgsProcessingUtils,
 )
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_postcondition
 from qjazz_processes.schemas import (
     Format,
     Formats,

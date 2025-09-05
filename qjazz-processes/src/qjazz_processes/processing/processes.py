@@ -9,6 +9,10 @@ from typing import (
     TypeAlias,
 )
 
+from qjazz_core import logger
+from qjazz_core.condition import assert_precondition
+from qjazz_core.qgis import QgisPluginService
+
 from qgis.core import (
     Qgis,
     QgsApplication,
@@ -17,9 +21,6 @@ from qgis.core import (
     QgsProject,
 )
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.qgis import QgisPluginService
 from qjazz_processes.schemas import (
     InputValueError,
     JobExecute,

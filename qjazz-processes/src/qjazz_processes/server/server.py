@@ -21,9 +21,8 @@ from pydantic import (
     AnyHttpUrl,
     BaseModel,
 )
-
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.config import (
+from qjazz_core import logger
+from qjazz_core.config import (
     ConfBuilder,
     ConfigBase,
     NetInterface,
@@ -31,7 +30,7 @@ from qjazz_contrib.core.config import (
     read_config_toml,
     section,
 )
-from qjazz_contrib.core.models import Field
+from qjazz_core.models import Field
 
 from . import swagger
 from .accesspolicy import (

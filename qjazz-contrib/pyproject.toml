@@ -28,7 +28,7 @@ name = "David Marteau"
 email = "dmarteau@3liz.org"
 
 [tool.uv.build-backend]
-module-name = ["qjazz_contrib", "qjazz_ogc", "qjazz_cache"]
+module-name = ["qjazz_core", "qjazz_ogc", "qjazz_cache"]
 source-exclude = [
     "qjazz_contrib/core/qgis/qgis_binding.cpp",
 ]
@@ -42,6 +42,6 @@ extend = "../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201"]
-"src/qjazz_contrib/core/qgis/qgis_init.py" = ["T201"]
-"src/qjazz_contrib/core/config/_toml.py" = ["T201"]
+"src/qjazz_core/qgis/qgis_init.py" = ["T201"]
+"src/qjazz_core/config/_toml.py" = ["T201"]
  

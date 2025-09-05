@@ -18,9 +18,8 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
-
-from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.models import (
+from qjazz_core.condition import assert_precondition
+from qjazz_core.models import (
     Field,
     JsonDict,
     JsonModel,

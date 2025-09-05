@@ -26,8 +26,8 @@ from qjazz_cache.prelude import (
     ProtocolHandler,
     ResourceNotAllowed,
 )
-from qjazz_contrib.core import componentmanager, logger
-from qjazz_contrib.core.condition import assert_postcondition
+from qjazz_core import componentmanager, logger
+from qjazz_core.condition import assert_postcondition
 
 from .project import Collection
 

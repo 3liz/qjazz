@@ -10,8 +10,8 @@ from pydantic import (
     UrlConstraints,
 )
 
-from qjazz_contrib.core import componentmanager
-from qjazz_contrib.core.config import ConfigSettings
+from qjazz_core import componentmanager
+from qjazz_core.config import ConfigSettings
 
 from ..common import Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed

@@ -39,9 +39,9 @@ from pydantic import DirectoryPath, FilePath, SecretStr
 
 from qgis.core import Qgis, QgsPathResolver, QgsProject
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.condition import assert_precondition
-from qjazz_contrib.core.config import ConfigSettings
+from qjazz_core import logger
+from qjazz_core.condition import assert_precondition
+from qjazz_core.config import ConfigSettings
 
 from ..common import (
     ProjectMetadata,

@@ -5,7 +5,7 @@ from contextlib import chdir, contextmanager
 from pathlib import Path
 
 # from as_core.storage import StorageClient, StorageCreds, storage_client
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 
 @contextmanager

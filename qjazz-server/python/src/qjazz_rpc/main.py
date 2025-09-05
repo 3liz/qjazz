@@ -5,8 +5,7 @@ from contextlib import closing
 from typing import Protocol, cast
 
 from pydantic import ConfigDict, Field
-
-from qjazz_contrib.core import config, logger
+from qjazz_core import config, logger
 
 from .config import QgisConfig
 from .connection import Connection, RendezVous

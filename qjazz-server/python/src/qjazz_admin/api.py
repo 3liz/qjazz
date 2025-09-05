@@ -3,8 +3,7 @@ import traceback
 
 from aiohttp import WSMsgType, web
 from pydantic import BaseModel
-
-from qjazz_contrib.core import logger
+from qjazz_core import logger
 
 from . import swagger
 from ._api import _Backends, _Cache, _Config, _Plugins, _Projects
