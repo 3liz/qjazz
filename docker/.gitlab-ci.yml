@@ -7,8 +7,8 @@
   stage: docker
   script:
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR
-  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR TARGET=lizcloud
   - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
+  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR TARGET=lizcloud
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:

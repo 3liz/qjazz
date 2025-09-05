@@ -164,42 +164,17 @@ RUN /opt/local/qjazz/bin/pip install --no-cache-dir $PIP_OPTIONS "qjazz-lizcloud
 # Build an image usable as CI image for 
 # testing qjazz based services 
 # ==================================
-FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS ci
+FROM  ${REGISTRY_PREFIX}factory-ci-runner:qgis-${QGIS_FLAVOR} AS ci
 
-RUN apt-get update -y \
-    && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install -y --fix-missing --no-install-recommends \
-        git \
-        make \
-    && apt-get clean
+# Install the dev environment
+RUN --mount=type=bind,target=/src,rw \
+    cd src && uv sync --all-extras --frozen --active \
+        --no-cache \
+        --link-mode=copy \
+        --no-editable \
+        --compile-bytecode
 
-# XXX See values in ansible
-ARG factory_runner_uid=2024
-ARG factory_gid=2011
-ARG operator_uid=2001
-
-# Create runner user
-RUN useradd --uid=${factory_runner_uid} --home-dir=/home/factory-runner factory-runner \
-    && groupadd -g ${factory_gid} factory \
-    && groupadd -g ${operator_uid} devel \
-    && /usr/sbin/usermod -a -G factory,devel factory-runner \
-    && mkdir -p /home/factory-runner \
-    && chown -R factory-runner:factory-runner /home/factory-runner \
-    ${NULL}
-
-COPY --from=build --chown=factory-runner:factory-runner /opt/local/qjazz /opt/local/qjazz
-
-USER factory-runner 
-
-# Copy source files
-# NOTE: Not sure that is needed
-COPY qjazz-contrib /python_modules/qjazz-contrib
-COPY qjazz-processes /python_modules/qjazz-processes
-
-COPY dev-requirements.txt /dev-requirements.txt
-RUN --mount=type=cache,target=/.python-cache \
-    /opt/local/qjazz/bin/pip install --cache-dir=/.python-cache -r /dev-requirements.txt
-
+# Does not exists but could prevent errors
 ENV QJAZZ_HOME=/python_modules
 ENV PATH=/opt/local/qjazz/bin:$PATH
     
