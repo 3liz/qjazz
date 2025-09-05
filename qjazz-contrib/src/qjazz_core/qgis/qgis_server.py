@@ -39,7 +39,7 @@ class Server(Protocol[E]):
         """Create a  QgsServer"""
         inner = init_qgis_server(**kwargs)
         try:
-            from .qgis_binding import (  # type: ignore [import-untyped]
+            from .qgis_binding import (  # type: ignore [import-not-found]
                 ApiNotFoundError,
                 InternalError,
                 ProjectRequired,
