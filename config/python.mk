@@ -40,6 +40,8 @@ deadcode::
 ifndef TESTDIR
 test::
 else
-test:: lint scan
+test::
 	cd $(TESTDIR) && $(UV_RUN) pytest -v 
 endif
+
+prepare_commit:: lint scan test

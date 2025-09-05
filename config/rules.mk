@@ -7,6 +7,7 @@ TOPTARGETS:=\
 bin-test \
 test \
 lint \
+lint-fix \
 lint-preview \
 typecheck \
 clean \
@@ -18,6 +19,7 @@ install \
 scan \
 deadcode \
 doc \
+prepare_commit \
 $(NULL)
 
 $(TOPTARGETS):: $(DIRS)

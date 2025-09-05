@@ -18,6 +18,11 @@ ifdef VIRTUAL_ENV
 ACTIVE_VENV=--active
 endif
 
+# See https://docs.astral.sh/uv/reference/environment/#rust_log
+ifdef UV_DEBUG
+	export RUST_LOG=uv=debug
+endif
+
 UV_RUN=uv run $(ACTIVE_VENV)
 
 MYPY=$(UV_RUN) mypy --config-file=$(topsrcdir)/config/mypy.ini
