@@ -120,7 +120,7 @@ doc-build:
   stage: doc
   script: 
     - make -C doc
-    - make -C qjazz-processes/doc html deploy-ci
+    - make -C qjazz-processes/doc html
   tags:
     - factory-plain
   allow_failure: true

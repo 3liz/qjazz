@@ -30,7 +30,7 @@ email = "dmarteau@3liz.org"
 [tool.uv.build-backend]
 module-name = ["qjazz_core", "qjazz_ogc", "qjazz_cache"]
 source-exclude = [
-    "qjazz_contrib/core/qgis/qgis_binding.cpp",
+    "qjazz_core/qgis/qgis_binding.cpp",
 ]
 
 #

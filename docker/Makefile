@@ -51,7 +51,7 @@ main:
 build-all: build noqgis-build tag noqgis-tag
 
 build: manifest
-	$(MAKE) -C .. configure
+	$(MAKE) -C ../qjazz-contrib/  manifest
 	{ \
 	source $(MANIFEST); \
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \

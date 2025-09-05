@@ -14,8 +14,6 @@ dist::
 
 include $(topsrcdir)/config/rules.mk
 
-configure:: manifest
-
 manifest:
 	# Create manifest
 	@echo "{\"commit_id\": \"$(shell git rev-parse HEAD)\" }" > src/qjazz_core/manifest.json
