@@ -3,4 +3,5 @@ build
 build-*
 __pycache__
 manifest.json
+build_release
 qgis_binding.cpython-312-x86_64-linux-gnu.so

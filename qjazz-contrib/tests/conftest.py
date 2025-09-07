@@ -6,6 +6,7 @@ import pytest
 
 from qjazz_cache.prelude import CacheManager, ProjectsConfig
 from qjazz_core import logger, qgis
+from qjazz_store import store
 
 
 @pytest.fixture(scope="session")
@@ -60,3 +61,26 @@ def pytest_sessionfinish(session, exitstatus):
         qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()
+
+
+@pytest.fixture(scope="session")
+def store_endpoint() -> str:
+    return "localhost:9000"
+
+
+@pytest.fixture(scope="session")
+def store_creds(store_endpoint: str) -> store.StoreCreds:
+    return store.StoreCreds(
+        endpoint=store_endpoint,
+        access_key="qjazzadmin",
+        secret_key="qjazzadmin",
+        secure=False,
+    )
+
+
+@pytest.fixture(scope="session")
+def store_client(store_creds: store.StoreCreds) -> store.StoreClient:
+    m = store.store_client(store_creds)
+    if not m.bucket_exists("dev"):
+        m.make_bucket("dev")
+    return m

@@ -22,13 +22,14 @@ version = "${PIN_VERSION}"
 
 [project.optional-dependencies]
 celery = [ "celery>=5.4", "redis>=5.0.8" ]
+store = ["minio<7.2.16"]
 
 [[project.authors]]
 name = "David Marteau"
 email = "dmarteau@3liz.org"
 
 [tool.uv.build-backend]
-module-name = ["qjazz_core", "qjazz_ogc", "qjazz_cache"]
+module-name = ["qjazz_core", "qjazz_ogc", "qjazz_cache", "qjazz_store"]
 source-exclude = [
     "qjazz_core/qgis/qgis_binding.cpp",
 ]

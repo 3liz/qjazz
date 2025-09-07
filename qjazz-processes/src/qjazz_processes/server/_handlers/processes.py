@@ -11,6 +11,8 @@ from aiohttp import web
 from pydantic import Field, PositiveInt, TypeAdapter, ValidationError
 from qjazz_core import logger
 
+from ...schemas import get_annotation
+from ..headers import QJAZZ_IDENTITY_HEADER
 from .protos import (
     JOB_ID_HEADER,
     JOB_REALM_HEADER,
@@ -271,13 +273,20 @@ class Processes(HandlerProto):
         else:
             priority = 0
 
-        # TODO: Check if processes allows for async execution
+        # Check process
+        process = await self._executor.get_process_summary(service, process_id)
+        if not process:
+            return ErrorResponse.response(
+                404,
+                "Process not found",
+                details={"processId": process_id},
+            )
 
-        execute_sync = prefer.execute_sync()
+        execute_sync = prefer.execute_sync() and "sync-execute" in process.job_control_options
         if execute_sync:
             logger.debug("Running synchronous execution for %s (%s)", process_id, service)
 
-        context = await self.create_run_context(service, process_id, request)
+        context = await self.create_run_context(service, process, request)
 
         result = self._executor.execute(
             service,
@@ -422,8 +431,47 @@ class Processes(HandlerProto):
                 f"Process {process_id} not available",
             )
 
-    async def create_run_context(self, service: str, ident: str, request: web.Request) -> JsonDict:
+    def get_default_run_context(
+        self,
+        service: str,
+        process: ProcessSummary,
+        request: web.Request,
+    ) -> JsonDict:
         return dict(public_url=public_url(request, ""))
+
+    # Overridable
+    async def create_run_context(
+        self,
+        service: str,
+        process: ProcessSummary,
+        request: web.Request,
+    ) -> JsonDict:
+        context = self.get_default_run_context(service, process, request)
+
+        # Do the service process require a store ?
+        if get_annotation("RequireStore", process):
+            from ..context import update_store_context
+
+            creds = await self.store_creds()
+
+            await update_store_context(
+                context,
+                process,
+                service,
+                self.get_identity(request),
+                creds,
+                # Getting creds ensure that store is configured
+                ttl=self._store.acces_ttl,  # type: ignore [union-attr]
+            )
+
+        return context
+
+    def get_identity(self, request: web.Request) -> str:
+        identity = request.headers.get(QJAZZ_IDENTITY_HEADER)
+        if not identity:
+            ErrorResponse.raises(web.HTTPUnauthorized, "Identity required")
+
+        return identity
 
 
 #

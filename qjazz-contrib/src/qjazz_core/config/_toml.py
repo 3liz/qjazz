@@ -59,7 +59,7 @@ def _field_default_repr(field_default: Any) -> str:  # noqa ANN401
         case tuple(t) | set(t) | list(t):
             return f"[{','.join(_to_string(v) for v in t)}]"
         case dict(t):
-            return  "{" + ", ".join(f"'{k}'='{v}'" for k,v in t.items()) + "}"
+            return "{" + ", ".join(f"'{k}'='{v}'" for k, v in t.items()) + "}"
         case default:
             return f'"{default}"'
 

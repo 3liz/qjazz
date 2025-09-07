@@ -1,11 +1,11 @@
 #
 # Docker compose for running required tiers services 
 #
-# Run worker as:
-# qjazz-processing start -C tests/config-service.toml
+# Run processing worker as:
+# qjazz-processing start -C qjazz_processes/tests/config-service.toml
 #
-# Run server as:
-# qjazz-processes serve -C tests/config-server.toml
+# Run processes server as:
+# qjazz-processes serve -C qjazz_processes/tests/config-server.toml
 #
 
 services:
@@ -23,7 +23,7 @@ services:
     - server
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3-alpine
     ports:
     - 127.0.0.1:5671:5671
     - 127.0.0.1:5672:5672
@@ -37,9 +37,10 @@ services:
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "qjazzadmin"
+      MINIO_ROOT_PASSWORD: "qjazzadmin"
     ports:
     - 127.0.0.1:9000:9000
     - 127.0.0.1:9001:9001
-    profiles:
-    - minio
 

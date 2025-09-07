@@ -84,11 +84,14 @@ def list_processes(_state) -> list:
             ProcessSummary(
                 id=ident,
                 title=p.title,
-                metadata=[MetadataValue(
-                    role=md.role,
-                    title=md.title,
-                    value=md.value,
-                ) for md in p.metadata],
+                metadata=[
+                    MetadataValue(
+                        role=md.role,
+                        title=md.title,
+                        value=md.value,
+                    )
+                    for md in p.metadata
+                ],
                 description=p.description,
             )
             for ident, p in Job.RUN_CONFIGS.items()

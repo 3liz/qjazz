@@ -27,7 +27,7 @@ format::
 #	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
 typecheck:: $(PYTHON_PKG)
-	$(MYPY) $(PYTHON_PKG)
+	@$(MYPY) $(PYTHON_PKG)
 
 scan::
 	$(BANDIT) -r $(PYTHON_PKG) $(SCAN_OPTS)
@@ -41,7 +41,7 @@ ifndef TESTDIR
 test::
 else
 test::
-	cd $(TESTDIR) && $(UV_RUN) pytest -v 
+	cd $(TESTDIR) && $(UV_RUN) pytest -v $(TEST_OPTS) 
 endif
 
 prepare_commit:: lint scan test

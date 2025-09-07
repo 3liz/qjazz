@@ -189,7 +189,7 @@ def server_app(rootdir: Path) -> web.Application:
     conf = cli.load_configuration(rootdir.joinpath("server-config.toml"))
     return server.create_app(
         conf,
-        executor.AsyncExecutor(conf.executor),
+        executor.Executor(conf.executor),
     )
 
 

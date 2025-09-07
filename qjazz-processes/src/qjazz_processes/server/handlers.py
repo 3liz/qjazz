@@ -10,12 +10,14 @@ from ._handlers import (
     Processes,
     Services,
     Storage,
+    Store,
     WebUI,
 )
 from .accesspolicy import AccessPolicy
-from .executor import AsyncExecutor
+from .executor import Executor
 from .jobrealm import JobRealmConfig
 from .storage import StorageConfig
+from .store import StoreConfig
 
 API_VERSION = "v1"
 PACKAGE_NAME = "qjazz_processes"
@@ -32,16 +34,17 @@ def redirect_trailing_slash():
     return _redirect
 
 
-class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
+class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
     def __init__(
         self,
         *,
-        executor: AsyncExecutor,
+        executor: Executor,
         policy: AccessPolicy,
         timeout: int,
         enable_ui: bool,
         jobrealm: JobRealmConfig,
         storage: StorageConfig,
+        store: Optional[StoreConfig] = None,
     ):
         self._executor = executor
         self._accesspolicy = policy
@@ -49,6 +52,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
         self._enable_ui = enable_ui
         self._jobrealm = jobrealm
         self._storage = storage
+        self._store = store
 
         self._staticpath = Path(str(resources.files(PACKAGE_NAME))).joinpath("server", "html")
 
@@ -58,6 +62,7 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
         _routes = [
             # Landing page
             web.get(f"{prefix}/", self.landing_page, allow_head=False),
+            # Conformance
             web.get(f"{prefix}/conformance", self.conformance, allow_head=False),
             # Processes
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
@@ -69,6 +74,11 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
             web.get(f"{prefix}/jobs", redirect_trailing_slash(), allow_head=False),
         ]
 
+        #
+        # Define UI routes before other
+        # jobs routes in order to resolve
+        # ambiguities.
+        #
         if self._enable_ui:
             _routes.extend(
                 (
@@ -109,6 +119,20 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, LandingPage):
                 web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),
             ),
         )
+
+        #
+        # Store
+        #
+        if self._store:
+            _routes.extend(
+                [
+                    web.get(f"{prefix}/store/{{Name:.+}}", self.get_store),
+                    web.get(f"{prefix}/store/", self.list_store, allow_head=False),
+                    web.get(f"{prefix}/store", redirect_trailing_slash(), allow_head=False),
+                    web.post(f"{prefix}/store/{{Name:.+}}", self.put_store),
+                    web.delete(f"/{prefix}/store/{{Name:.+}}", self.delete_store),
+                ]
+            )
 
         return _routes
 

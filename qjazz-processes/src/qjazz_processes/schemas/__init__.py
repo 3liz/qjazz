@@ -54,6 +54,7 @@ from .models import (  # noqa F401
 
 from .utils import (  # noqa F401
     input_model_description,
+    get_annotation,
 )
 
 

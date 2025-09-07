@@ -1,4 +1,3 @@
-
 from qjazz_core.errors import QJazzException
 
 
@@ -16,4 +15,5 @@ class StrictCheckingFailure(QJazzException):
 
 class UnreadableResource(QJazzException):
     """Indicates that the ressource exists but is not readable"""
+
     pass

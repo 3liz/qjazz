@@ -1,7 +1,7 @@
 
 topsrcdir:=$(shell realpath $(DEPTH))
 
-VERSION=0.4.0
+-include $(topsrcdir)/config/build.mk
 
 ifdef CI_COMMIT_TAG
 ifeq ($(shell echo $(CI_COMMIT_TAG) | head -c 8), release-)
@@ -29,4 +29,7 @@ MYPY=$(UV_RUN) mypy --config-file=$(topsrcdir)/config/mypy.ini
 RUFF=$(UV_RUN) ruff
 BANDIT=$(UV_RUN) bandit
 
--include .buildconfig
+# Local (not commited) configuration
+BUILDCONFIG=$(DEPTH)/.buildconfig
+
+-include $(BUILDCONFIG)

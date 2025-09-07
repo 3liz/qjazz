@@ -8,12 +8,13 @@ from typing import (
 from pydantic import TypeAdapter
 from pydantic.config import JsonDict
 
-from qjazz_processes.schemas import (
+from .models import one_of, remove_auto_title
+from .processes import (
     InputDescription,
+    MetadataValue,
+    ProcessSummary,
     ValuePassing,
-    remove_auto_title,
 )
-from qjazz_processes.schemas.models import one_of
 
 
 def input_model_description(
@@ -49,3 +50,12 @@ def input_model_description(
         value_passing=value_passing or ("byValue",),
         **kwargs,
     )
+
+
+def get_annotation(role: str, process: ProcessSummary) -> bool:
+    """Get boolean metadata value"""
+    for md in process.metadata:
+        if isinstance(md, MetadataValue) and md.role == role:
+            return bool(md.value)
+    else:
+        return False

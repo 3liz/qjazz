@@ -48,7 +48,6 @@ from .protocols import ExecutorProtocol, ServiceDict
 
 
 class Processes(ExecutorProtocol):
-
     def _describe(
         self,
         destinations: Sequence[str],

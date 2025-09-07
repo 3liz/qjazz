@@ -39,12 +39,13 @@ from .accesspolicy import (
     create_access_policy,
 )
 from .cache import ServiceCache
-from .executor import AsyncExecutor, ExecutorConfig
+from .executor import Executor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, PACKAGE_NAME, Handler
 from .jobrealm import JobRealmConfig
 from .models import ErrorResponse, RequestHandler
 from .storage import StorageConfig
+from .store import StoreConfig
 
 try:
     __version__ = version("qjazz_processes")
@@ -118,6 +119,9 @@ confservice.add_section("executor", ExecutorConfig)
 # Add StorageConfig section
 confservice.add_section("storage", StorageConfig)
 
+# Add Store section
+confservice.add_section("store", Optional[StoreConfig], field=Field(None))
+
 
 # Allow type validation
 class ConfigProto(Protocol):
@@ -128,6 +132,7 @@ class ConfigProto(Protocol):
     oapi: swagger.OapiConfig
     job_realm: JobRealmConfig
     storage: StorageConfig
+    store: Optional[StoreConfig]
 
     def model_dump_json(self, *args, **kwargs) -> str: ...
 
@@ -337,8 +342,9 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
 
 def create_app(
     conf: ConfigProto,
-    executor: AsyncExecutor,
-    handler_mixin: Optional[type[object]] = None,
+    executor: Optional[Executor] = None,
+    *,
+    handler_overrides: Optional[type[object]] = None,
 ) -> web.Application:
     app = web.Application(
         middlewares=[
@@ -350,6 +356,8 @@ def create_app(
             "access_log_class": AccessLogger,
         },
     )
+
+    executor = executor or Executor(conf.executor)
 
     # NOTE: The following two statements trigger mypy error
     # mypy: 1.16.1
@@ -367,14 +375,18 @@ def create_app(
     cache = ServiceCache()
 
     HandlerImpl: type[object]
-    if handler_mixin:
+    if handler_overrides:
         # Mypy just don't know how to handle this
         # See https://github.com/python/mypy/issues/2813#issuecomment-474916770
-        class Override(handler_mixin, Handler): # type: ignore [valid-type,misc]
+        class Override(handler_overrides, Handler):  # type: ignore [valid-type,misc]
             pass
+
         HandlerImpl = Override
     else:
         HandlerImpl = Handler
+
+    if conf.store:
+        conf.store.configure_store()
 
     # Handler
     handler = HandlerImpl(
@@ -384,6 +396,7 @@ def create_app(
         enable_ui=conf.http.enable_ui,
         jobrealm=conf.job_realm,
         storage=conf.storage,
+        store=conf.store,
     )
 
     app.add_routes(handler.routes)
@@ -432,7 +445,7 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     for the REST api
     """
     handler = Handler(
-        executor=cast(AsyncExecutor, None),
+        executor=cast(Executor, None),
         policy=DummyAccessPolicy(),
         timeout=0,
         enable_ui=False,
@@ -473,5 +486,5 @@ async def _serve(conf: ConfigProto, app: web.Application):
 
 
 def serve(conf: ConfigProto):
-    app = create_app(conf, AsyncExecutor(conf.executor))
+    app = create_app(conf)
     asyncio.run(_serve(conf, app))

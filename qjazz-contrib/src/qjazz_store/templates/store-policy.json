@@ -1,0 +1,27 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": ["s3:ListAllMyBuckets", "s3:GetBucketLocation"],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::*"
+        },
+        {
+            "Action": ["s3:ListBucket"],
+            "Effect": "Allow",
+            "Resource": ["arn:aws:s3:::${service}"],
+            "Condition":{"StringEquals":{"s3:prefix":["", "${identity}"],"s3:delimiter":["/"]}}
+        },
+        {
+            "Action": ["s3:ListBucket"],
+            "Effect": "Allow",
+            "Resource": ["arn:aws:s3:::${service}"],
+            "Condition":{"StringLike":{"s3:prefix":["${identity}/*"]}}
+        },
+        {
+            "Effect": "Allow",
+            "Action": ["s3:*"],
+            "Resource": ["arn:aws:s3:::${service}/${identity}/*"]
+        }
+    ]
+}

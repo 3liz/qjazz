@@ -9,6 +9,9 @@ PYTHON_PKG=src
 
 TESTDIR=tests
 
+# Disable minio based tests
+TEST_OPTS=-m "not minio"
+
 dist::
 	uv build --sdist --out-dir=$(DIST)
 

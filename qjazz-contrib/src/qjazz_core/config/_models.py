@@ -121,6 +121,7 @@ TemplateStr = Annotated[
 # Paths
 #
 
+
 def _validate_absolute_path(p: Path) -> Path:
     if not p.is_absolute():
         raise ValueError(f"Path {p} must be absolute")
@@ -131,6 +132,3 @@ AbsoluteDirectoryPath = Annotated[
     DirectoryPath,
     AfterValidator(_validate_absolute_path),
 ]
-
-
-

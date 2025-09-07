@@ -51,6 +51,7 @@ class ErrorResponse(JsonModel):
             ).model_dump_json(),
         )
 
+
 RequestHandler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
 # Validators

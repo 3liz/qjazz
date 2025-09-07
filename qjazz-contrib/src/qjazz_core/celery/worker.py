@@ -141,7 +141,6 @@ class Worker(Celery):
         )
 
 
-
 class RunConfig(BaseModel, frozen=True, extra="ignore"):
     """Base config model for tasks"""
 
@@ -161,6 +160,7 @@ class _Dict(dict):
 #
 # Celery task override
 #
+
 
 class Metadata(BaseModel):
     role: str
@@ -395,10 +395,13 @@ def job_run_config(
             s = TypeAdapter(anno).json_schema()
             if default != ...:
                 s["default"] = default
-            yield name, InputDescription(
-                title=s.pop("title", ""),
-                description=s.pop("description", ""),
-                schema=s,
+            yield (
+                name,
+                InputDescription(
+                    title=s.pop("title", ""),
+                    description=s.pop("description", ""),
+                    schema=s,
+                ),
             )
 
     # Outputs
