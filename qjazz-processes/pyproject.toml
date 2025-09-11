@@ -11,7 +11,7 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "qjazz-contrib[celery]==0.4.0",
+    "qjazz-contrib[celery, store]==0.4.0",
     "pydantic-extra-types",
     "click",
     "requests",
@@ -22,8 +22,8 @@ version = "0.4.0"
 
 [project.optional-dependencies]
 server = ["aiohttp"]
-minio = ["minio<7.2.16"]
 mail = ["email-validator"]
+
 
 [[project.authors]]
 name = "David Marteau"

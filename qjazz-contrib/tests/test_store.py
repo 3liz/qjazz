@@ -78,7 +78,7 @@ async def test_store_access(store_creds: StoreCreds):
     service = "myservice"
     identity = "myidentity"
 
-    access_key, secret_key, expiration = await access.create_store_access(
+    access_key, secret_key, _expiration = await access.create_store_access(
         store_creds,
         service=service,
         identity=identity,
