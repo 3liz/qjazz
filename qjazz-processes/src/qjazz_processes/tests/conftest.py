@@ -163,7 +163,7 @@ def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None
                 case Co.REMOVED | Co.NOTFOUND:
                     raise FileNotFoundError(f"Project {url} not found")
                 case _:
-                    entry, _ = cm.update(cast(ProjectMetadata, md), status)
+                    entry, _ = cm.update(cast("ProjectMetadata", md), status)
                     project = entry.project
             return project
 

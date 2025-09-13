@@ -78,7 +78,7 @@ def test_parameter_layer_rasterlayer(projects):
 
     # XXX: const is used on literals when there is only a single
     # value
-    assert "raster_layer" == schema["const"]
+    assert schema["const"] == "raster_layer"
 
 
 def test_parameter_layer_featuresource(qgis_session):
@@ -135,7 +135,7 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     context = ProcessingContext(
         config.model_copy(
-            update=dict(raw_destination_input_sink=True),
+            update={"raw_destination_input_sink": True},
         ),
     )
 
@@ -149,10 +149,10 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     context = ProcessingContext(
         config.model_copy(
-            update=dict(
-                raw_destination_input_sink=True,
-                raw_destination_root_path=Path("/unsafe"),
-            ),
+            update={
+                "raw_destination_input_sink": True,
+                "raw_destination_root_path": Path("/unsafe"),
+            },
         ),
     )
 

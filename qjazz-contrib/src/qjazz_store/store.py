@@ -174,10 +174,7 @@ def put_store(
 
         # Metadata should contains the real object size in
         # case of data would be encrypted
-        if metadata:
-            content_size = metadata.get("content-size", obj.size)
-        else:
-            content_size = obj.size
+        content_size = metadata.get("content-size", obj.size) if metadata else obj.size
 
         return FileResource(
             name=obj.name,
@@ -237,7 +234,7 @@ async def list_store(
     def _resources() -> list[ResourceType]:
         objects = store.list_objects(service, prefix=prefix, recursive=recurse)
 
-        return list(to_resource(obj, root) for obj in objects if obj.object_name)
+        return [to_resource(obj, root) for obj in objects if obj.object_name]
 
     with store_error():
         return await asyncio.to_thread(_resources)
@@ -258,7 +255,7 @@ async def stat_store(
     with store_error():
         obj = await asyncio.to_thread(store.stat_object, service, f"{root}{name}")
 
-    return cast(FileResource, to_resource(obj, root))
+    return cast("FileResource", to_resource(obj, root))
 
 
 async def delete_store(

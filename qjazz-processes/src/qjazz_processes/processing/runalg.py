@@ -42,8 +42,7 @@ def validate_parameters(
         feedback.reportError(msg)
         if abort_on_error:
             raise RunProcessException(msg)
-        else:
-            return False
+        return False
 
     # Validate CRS
     if not alg.validateInputCrs(parameters, context):
@@ -71,7 +70,8 @@ def execute(
     # Collect destination names for destination parameters for restoring
     # them later
     destinations = {
-        p: v.destinationName for p, v in parameters.items() if isinstance(v, QgsProcessingOutputLayerDefinition)
+        p: v.destinationName for p, v in parameters.items()
+            if isinstance(v, QgsProcessingOutputLayerDefinition)
     }
 
     # Execute algorithm

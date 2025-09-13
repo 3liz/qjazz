@@ -47,15 +47,12 @@ def load_configuration(
     configpath: Optional[Path],
     verbose: bool = False,
 ) -> ConfigProto:
-    if configpath:
-        cnf = config.read_config_toml(configpath)
-    else:
-        cnf = {}
+    cnf = config.read_config_toml(configpath) if configpath else {}
 
     confservice.validate(cnf)
     logger.setup_log_handler(logger.LogLevel.TRACE if verbose else logger.LogLevel.ERROR)
 
-    return cast(ConfigProto, confservice.conf)
+    return cast("ConfigProto", confservice.conf)
 
 
 def init_qgis(
@@ -180,7 +177,7 @@ def dump_config(
                 confservice.dump_toml_schema(sys.stdout)
     else:
         conf = load_configuration(ctx.obj.configpath)
-        echo(cast(config.ConfigBase, conf).model_dump_json(indent=4))
+        echo(cast("config.ConfigBase", conf).model_dump_json(indent=4))
 
 
 #
@@ -221,10 +218,7 @@ def processing_providers(
     conf = load_configuration(ctx.obj.configpath)
     plugins = init_qgis(conf.processing, use_projects=False)
 
-    if all_providers:
-        providers = QgsApplication.processingRegistry().providers()
-    else:
-        providers = plugins.providers
+    providers = QgsApplication.processingRegistry().providers() if all_providers else plugins.providers
 
     for p in providers:
         echo(style(f"* {p.id():<20}", bold=True), nl=False)
@@ -373,8 +367,9 @@ def execute_processes(
         from io import StringIO
 
         s = StringIO()
-        for line in fileinput.input():
-            s.write(line)
+        with fileinput.input() as f:
+            for line in f:
+                s.write(line)
         inputs = s.getvalue()
 
     try:

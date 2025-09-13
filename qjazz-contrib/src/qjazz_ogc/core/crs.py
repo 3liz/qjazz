@@ -24,8 +24,7 @@ class CrsRef(HttpUrl):
         # Version is not required
         if version:
             return cls(f"{url_prefix}/def/crs/{name}/{version}/{code}")
-        else:
-            return cls(f"{url_prefix}/def/crs/{name}/{code}")
+        return cls(f"{url_prefix}/def/crs/{name}/{code}")
 
     @classmethod
     def from_epsg_code(cls, code: int | str) -> Self:

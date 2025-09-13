@@ -147,7 +147,7 @@ def load_configuration(
         cnf = {}
 
     confservice.validate(cnf)
-    return cast(ConfigProto, confservice.conf)
+    return cast("ConfigProto", confservice.conf)
 
 
 #
@@ -445,12 +445,12 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
     for the REST api
     """
     handler = Handler(
-        executor=cast(Executor, None),
+        executor=cast("Executor", None),
         policy=DummyAccessPolicy(),
         timeout=0,
         enable_ui=False,
-        jobrealm=cast(JobRealmConfig, None),
-        storage=cast(StorageConfig, None),
+        jobrealm=cast("JobRealmConfig", None),
+        storage=cast("StorageConfig", None),
     )
     app = web.Application()
     app.add_routes(handler.routes)

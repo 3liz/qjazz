@@ -81,8 +81,7 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
         inputdef = cls.get_input_definition(outdef, alg)
         if isinstance(inputdef, QgsProcessingParameterFileDestination):
             return output_file_formats(inputdef)
-        else:
-            return ()
+        return ()
 
     def validate_output(self, out: Output, param: Optional[InputParameterDef] = None):
         """Override"""

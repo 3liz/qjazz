@@ -92,8 +92,7 @@ class Processes(HandlerProto):
                     *td.links,
                 ]
                 return td
-            else:
-                return None
+            return None
 
         return web.Response(
             content_type="application/json",
@@ -165,8 +164,8 @@ class Processes(HandlerProto):
         return web.Response(
             content_type="application/json",
             text=td.model_copy(
-                update=dict(
-                    links=[
+                update={
+                    "links": [
                         make_link(
                             request,
                             path=self.format_path(
@@ -191,7 +190,7 @@ class Processes(HandlerProto):
                         ),
                         *td.links,
                     ],
-                ),
+                },
             ).model_dump_json(),
         )
 
@@ -326,10 +325,9 @@ class Processes(HandlerProto):
                         content_type="application/json",
                         text=job_status.model_dump_json() if job_status else "{}",
                     )
-                else:
-                    logger.warning(
-                        "Synchronous request timeout: falling back to async response.",
-                    )
+                logger.warning(
+                    "Synchronous request timeout: falling back to async response.",
+                )
             #
             # Handle parameter error as
             # bad request (400)
@@ -437,7 +435,7 @@ class Processes(HandlerProto):
         process: ProcessSummary,
         request: web.Request,
     ) -> JsonDict:
-        return dict(public_url=public_url(request, ""))
+        return {"public_url": public_url(request, "")}
 
     # Overridable
     async def create_run_context(

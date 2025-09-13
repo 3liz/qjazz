@@ -158,7 +158,7 @@ class ProcessingContext(QgsProcessingContext):
     ) -> str:
         assert_precondition(self._destination_project is not None, "Destination project required")
         return self._ows_reference(
-            Path(cast(QgsProject, self._destination_project).fileName()).stem,
+            Path(cast("QgsProject", self._destination_project).fileName()).stem,
             service,
             version=version,
             request=request,

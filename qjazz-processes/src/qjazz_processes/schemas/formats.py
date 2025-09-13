@@ -26,7 +26,7 @@ class Format:
     title: str = ""
 
     def __eq__(self, other: object) -> bool:
-        return self.media_type == cast(Self, other).media_type
+        return self.media_type == cast("Self", other).media_type
 
     @staticmethod
     def service(media_type: str) -> Optional[str]:

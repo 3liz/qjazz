@@ -114,8 +114,7 @@ class ComponentManager:
         fe = self._contractIDs.get(contractID)
         if fe:
             return fe.create_instance()
-        else:
-            raise FactoryNotFoundError(contractID)
+        raise FactoryNotFoundError(contractID)
 
     def get_service(self, contractID: str) -> Any:
         """Return instance object as singleton"""

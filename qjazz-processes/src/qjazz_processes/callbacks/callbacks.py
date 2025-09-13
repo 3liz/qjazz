@@ -99,8 +99,7 @@ class HandlerConfig(ConfigBase):
     def create_instance(self, schemes: Sequence[str]) -> CallbackHandler:
         if self._handler_conf:
             return self.handler(schemes, self._handler_conf)
-        else:
-            return self.handler(schemes)
+        return self.handler(schemes)
 
 
 #
@@ -152,10 +151,9 @@ class Callbacks:
         url = urlsplit(uri)
         handler = self._handlers.get(url.scheme)
         if handler:
-            return (url, cast(CallbackHandler, handler))
-        else:
-            logger.warning("No callback handler found for %s", uri)
-            return None
+            return (url, cast("CallbackHandler", handler))
+        logger.warning("No callback handler found for %s", uri)
+        return None
 
     def on_success(self, uri: str, job_id: str, meta: JobMeta, results: JobResults):
         rv = self.get_handler_for(uri)

@@ -16,4 +16,4 @@ def test_processing_plugin(plugindir):
 
     providers = list(s.providers)
     assert len(providers) == 3
-    assert "processing_test" in set(p.id() for p in providers)
+    assert "processing_test" in {p.id() for p in providers}

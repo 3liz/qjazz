@@ -40,7 +40,7 @@ def drop_project(conn: _m.Connection, cm: CacheManager, uri: str, cache_id: str 
 
     match status:
         case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-            e = cast(CacheEntry, md)
+            e = cast("CacheEntry", md)
             _, status = cm.update(e.md, Co.REMOVED)
 
             reply = _m.CacheInfo(
@@ -119,7 +119,7 @@ def checkout_project(
         if not pull:
             match status:
                 case Co.NEW:
-                    md = cast(ProjectMetadata, md)
+                    md = cast("ProjectMetadata", md)
                     reply = _m.CacheInfo(
                         uri=md.uri,
                         in_cache=False,
@@ -129,7 +129,7 @@ def checkout_project(
                         cache_id=cache_id,
                     )
                 case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED:
-                    reply = cache_info_from_entry(cast(CacheEntry, md), status, cache_id=cache_id)
+                    reply = cache_info_from_entry(cast("CacheEntry", md), status, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
@@ -142,7 +142,7 @@ def checkout_project(
         else:
             match status:
                 case Co.NEW:
-                    md = cast(ProjectMetadata, md)
+                    md = cast("ProjectMetadata", md)
                     if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
                         logger.error(
                             "Cannot add NEW project '%s': Maximum projects reached",
@@ -151,23 +151,23 @@ def checkout_project(
                         _m.send_reply(conn, "Max object reached on server", 403)
                         return
                     e, status = cm.update(md, status)
-                    e = cast(CacheEntry, e)
+                    e = cast("CacheEntry", e)
                     # Pin the entry since this object has been asked explicitely
                     # in cache
                     e.pin()
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 # UPDATED for the sake of exhaustiveness
                 case Co.UNCHANGED | Co.UPDATED:
-                    e = cast(CacheEntry, md)
+                    e = cast("CacheEntry", md)
                     e.pin()  # See above
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.NEEDUPDATE:
-                    e, status = cm.update(cast(CacheEntry, md).md, status)
-                    e = cast(CacheEntry, e)
+                    e, status = cm.update(cast("CacheEntry", md).md, status)
+                    e = cast("CacheEntry", e)
                     e.pin()  # See above
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 case Co.REMOVED:
-                    e, status = cm.update(cast(CacheEntry, md).md, status)
+                    e, status = cm.update(cast("CacheEntry", md).md, status)
                     reply = cache_info_from_entry(e, status, False, cache_id=cache_id)
                 case Co.NOTFOUND:
                     reply = _m.CacheInfo(
@@ -245,7 +245,7 @@ def send_project_info(
 
         match status:
             case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED:
-                entry = cast(CacheEntry, md)
+                entry = cast("CacheEntry", md)
                 layers = [_layer(n, lyr) for (n, lyr) in entry.project.mapLayers().items()]
                 _m.send_reply(
                     conn,

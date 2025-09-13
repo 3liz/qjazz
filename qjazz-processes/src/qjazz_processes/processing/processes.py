@@ -189,15 +189,13 @@ class ProcessAlgorithm:
 
     def description(self, project: Optional[QgsProject] = None) -> ProcessDescription:
         """Return a process description including inputs and outputs description"""
-        description = self._description.model_copy(
-            update=dict(
-                description=self._alg.shortHelpString() or self._alg.shortDescription(),
-                inputs={inp.name: inp.description() for inp in self.inputs(project)},
-                outputs={out.name: out.description() for out in self.outputs()},
-            ),
+        return self._description.model_copy(
+            update={
+                "description": self._alg.shortHelpString() or self._alg.shortDescription(),
+                "inputs": {inp.name: inp.description() for inp in self.inputs(project)},
+                "outputs": {out.name: out.description() for out in self.outputs()},
+            },
         )
-
-        return description
 
     def validate_execute_parameters(
         self,

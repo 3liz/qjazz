@@ -66,8 +66,7 @@ class QgisProcessingContext(QgisContext):
         if alg:
             project = self.project(project_path) if project_path else None
             return alg.description(project)
-        else:
-            return None
+        return None
 
     def validate(
         self,

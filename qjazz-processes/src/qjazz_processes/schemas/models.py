@@ -100,7 +100,7 @@ class OutputFormat(JsonModel):
     schema_: Option[AnyUrl | JsonDict] = Field(alias="schema")
 
     def __eq__(self, other: object) -> bool:
-        return self.media_type == cast(MediaTypeProtocol, other).media_type
+        return self.media_type == cast("MediaTypeProtocol", other).media_type
 
 
 class QualifiedInputValue(OutputFormat):

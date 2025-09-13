@@ -128,8 +128,10 @@ def _get_method_names_for_handler(route):
     # otherwise return the specific method.
     if route.method == METH_ANY:
         return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL}
-    else:
-        return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL and attr.upper() == route.method}
+    return {
+        attr for attr in dir(route.handler)
+        if attr.upper() in METH_ALL and attr.upper() == route.method
+    }
 
 
 def paths(app: web.Application) -> dict:
@@ -146,9 +148,9 @@ def paths(app: web.Application) -> dict:
                 continue
 
             url_info = route._resource.get_info()
-            if url_info.get("path", None):
-                url = url_info.get("path")
-            else:
+
+            url = url_info.get("path", None)
+            if url is None:
                 url = url_info.get("formatter")
 
             if not url:

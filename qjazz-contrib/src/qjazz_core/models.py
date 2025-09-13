@@ -32,10 +32,10 @@ def Field(
 
 
 #
-model_json_properties = dict(
-    alias_generator=alias_generators.to_camel,
-    populate_by_name=True,
-)
+model_json_properties = {
+    "alias_generator": alias_generators.to_camel,
+    "populate_by_name": True,
+}
 
 JsonDict: TypeAlias = dict[str, JsonValue]
 
@@ -69,22 +69,22 @@ def remove_auto_title(schema: JsonDict):
     match schema:
         case {"type": "object", "properties": dict(props)}:
             for k, v in props.items():
-                v = cast(JsonDict, v)
+                v = cast("JsonDict", v)
                 _pull_title(k, v)
                 remove_auto_title(v)
         case {"oneOf": seq} | {"allOf": seq} | {"anyOf": seq}:
-            for v in cast(list, seq):
-                remove_auto_title(cast(JsonDict, v))
+            for v in cast("list", seq):
+                remove_auto_title(cast("JsonDict", v))
     if "$defs" in schema:
-        for k, v in cast(JsonDict, schema["$defs"]).items():
-            v = cast(JsonDict, v)
+        for k, v in cast("JsonDict", schema["$defs"]).items():
+            v = cast("JsonDict", v)
             _pull_title(k, v)
             remove_auto_title(v)
 
 
 def _pull_title(k: str, v: JsonDict):
     title = v.get("title")
-    if title and cast(str, title).lower().replace(" ", "_") == k.lower():
+    if title and cast("str", title).lower().replace(" ", "_") == k.lower():
         v.pop("title")
 
 

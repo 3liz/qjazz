@@ -16,11 +16,8 @@ from .config import QgisConfig
 # Parse list from string
 def _parse_list(value: Union[list[str], str]) -> list[str]:
     if isinstance(value, str):
-        if value:
-            # Parse comma separated list
-            value = value.split(",")
-        else:
-            value = []
+        # Parse comma separated list
+        value = value.split(",") if value else []
     return value
 
 

@@ -72,8 +72,7 @@ class InputParameter[T]:
         # Note: createByDefault is defined for QgsProcessingParameteDestination
         if self._param.isDestination() and self._param.createByDefault():
             return self._param.name()
-        else:
-            return None
+        return None
 
     @classmethod
     def schema_format(cls) -> Optional[str]:

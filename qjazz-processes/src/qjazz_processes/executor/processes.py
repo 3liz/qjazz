@@ -213,11 +213,11 @@ class Processes(ExecutorProtocol):
         result = self._execute_task(
             service,
             builder.entrypoint,
-            run_config=dict(
-                ident=ident,
-                request=request.model_dump(mode="json"),
-                project_path=project,
-            ),
+            run_config={
+                "ident": ident,
+                "request": request.model_dump(mode="json"),
+                "project_path": project,
+                },
             meta=builder.meta,
             pending_timeout=builder.pending_timeout,
             context=context,
@@ -326,10 +326,8 @@ class Processes(ExecutorProtocol):
                 st, request = self._query_task(job_id, destinations)
                 if not request:
                     now_ts = time()
-                    if now_ts < ti.created + ti.pending_timeout:
-                        status = _S.PENDING
-                    else:
-                        status = _S.DONE  # job has expired
+                    # Check if job has expired
+                    status = _S.PENDING if now_ts < ti.created + ti.pending_timeout else _S.DONE
                 else:
                     match st:
                         case "active" | "scheduled" | "reserved":
@@ -551,8 +549,7 @@ class Processes(ExecutorProtocol):
         state = self._celery.backend.get_task_meta(job_id)
         if state["status"] == Celery.STATE_SUCCESS:
             return state["result"]
-        else:
-            return None
+        return None
 
     def _jobs(
         self,

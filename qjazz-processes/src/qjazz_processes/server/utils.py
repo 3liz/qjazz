@@ -46,16 +46,15 @@ async def stream_from(
     chunksize: int,
     ssl_context: ssl.SSLContext | bool = False,
 ):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(href, ssl=ssl_context) as resp:
-            if resp.status not in (200, 206):
-                logger.error("Connection to '%s' returned %s", href, resp.status)
-                raise web.HTTPBadGateway()
-            try:
-                await response.prepare(request)
-                async for chunk in resp.content.iter_chunked(chunksize):
-                    await response.write(chunk)
-                await response.write_eof()
-            except OSError as err:
-                logger.error("Connection cancelled: %s", err)
-                raise
+    async with aiohttp.ClientSession() as session, session.get(href, ssl=ssl_context) as resp:
+        if resp.status not in (200, 206):
+            logger.error("Connection to '%s' returned %s", href, resp.status)
+            raise web.HTTPBadGateway()
+        try:
+            await response.prepare(request)
+            async for chunk in resp.content.iter_chunked(chunksize):
+                await response.write(chunk)
+            await response.write_eof()
+        except OSError as err:
+            logger.error("Connection cancelled: %s", err)
+            raise

@@ -76,7 +76,7 @@ def handle_ows_request(
         request = "GetMap"
         try:
             assert_precondition(options is not None)
-            map_req = prepare_map_request(entry.project, cast(str, options))
+            map_req = prepare_map_request(entry.project, cast("str", options))
             method = QgsServerRequest.GetMethod
         except InvalidMapRequest as err:
             _m.send_reply(conn, f"Invalid request: {err}", 400)
@@ -247,14 +247,14 @@ def handle_generic_request(
         resp_hdrs.update(
             (
                 ("x-qgis-last-modified", to_rfc822(entry.last_modified)),
-                ("x-qgis-cache", "MISS" if cast(Co, co_status) in (Co.NEW, Co.UPDATED) else "HIT"),
+                ("x-qgis-cache", "MISS" if cast("Co", co_status) in (Co.NEW, Co.UPDATED) else "HIT"),
             )
         )
 
         response = Response(
             conn,
             target=target,
-            co_status=cast(Co, co_status).value,
+            co_status=cast("Co", co_status).value,
             headers=resp_hdrs,
             chunk_size=config.max_chunk_size,
             cache_id=cache_id,
@@ -332,13 +332,13 @@ def request_project_from_cache(
                 # may have changed. But in the other hand it could
                 # prevents access while project's ressource are
                 # not fully updated
-                entry = cast(CacheEntry, md)
+                entry = cast("CacheEntry", md)
                 if config.reload_outdated_project_on_request:
                     entry, co_status = cm.update(entry.md, co_status)
             # checkout() never return UPDATED but for
             # the sake of exhaustiveness
             case Co.UNCHANGED | Co.UPDATED:
-                entry = cast(CacheEntry, md)
+                entry = cast("CacheEntry", md)
             case Co.NEW:
                 if config.load_project_on_request:
                     if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
@@ -348,7 +348,7 @@ def request_project_from_cache(
                         )
                         _m.send_reply(conn, "Max object reached on server", 409)
                     else:
-                        entry, co_status = cm.update(cast(ProjectMetadata, md), co_status)
+                        entry, co_status = cm.update(cast("ProjectMetadata", md), co_status)
                 else:
                     logger.error("load_project_on_request disabled for '%s'", md.uri)  # type: ignore
                     _m.send_reply(conn, f"Resource not found: {target}", 404)
@@ -356,7 +356,7 @@ def request_project_from_cache(
                 # Do not serve a removed project
                 # Since layer's data may not exists
                 # anymore
-                entry = cast(CacheEntry, md)
+                entry = cast("CacheEntry", md)
                 logger.warning("Requested removed project: %s", entry.md.uri)  # type: ignore
                 _m.send_reply(conn, target, 410)
             case Co.NOTFOUND:

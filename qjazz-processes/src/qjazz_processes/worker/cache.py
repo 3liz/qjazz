@@ -95,7 +95,7 @@ class ProcessCache(mp.Process):
 
             self._sender.send((MsgType.DESCRIBE, ident, project))
             if self._sender.poll(POLL_TIMEOUT):
-                description = cast(ProcessDescription, self._sender.recv())
+                description = cast("ProcessDescription", self._sender.recv())
                 self._descriptions[key] = description
             else:
                 raise RuntimeError(f"Failed to get process description {ident} ({project})")
@@ -111,7 +111,7 @@ class ProcessCache(mp.Process):
 
         self._sender.send((MsgType.UPDATE,))
         if self._sender.poll(POLL_TIMEOUT):
-            self._processes = cast(list[ProcessSummary], self._sender.recv())
+            self._processes = cast("list[ProcessSummary]", self._sender.recv())
         else:
             raise RuntimeError("Failed to update process descriptions")
 

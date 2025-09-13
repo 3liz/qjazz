@@ -227,10 +227,7 @@ class Job(celery.Task):
 
         meta = kwargs.pop("__meta__")  # Remove metadata from arguments
 
-        if self.run_context:
-            args = (meta.__context__,)
-        else:
-            args = ()
+        args = (meta.__context__,) if self.run_context else ()
 
         # TODO: replace __dict__ with 'model_dump()'
         out = self.run(*args, **meta.__run_config__.__dict__)
@@ -288,14 +285,13 @@ class Job(celery.Task):
                 kwargs.clear()
                 kwargs.update(run_config)
         except ValidationError as e:
-            errors = [
-                d
-                for d in e.errors(
+            errors = list(
+                e.errors(
                     include_url=False,
                     include_input=False,
                     include_context=False,
                 )
-            ]
+            )
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
             # XXX Return specific error
@@ -316,11 +312,11 @@ class Job(celery.Task):
         """
         self.update_state(
             state=Worker.STATE_UPDATED,
-            meta=dict(
-                progress=int(percent_done + 0.5) if percent_done is not None else None,
-                message=message,
-                updated=to_iso8601(utc_now()),
-            ),
+            meta={
+                "progress": int(percent_done + 0.5) if percent_done is not None else None,
+                "message": message,
+                "updated": to_iso8601(utc_now()),
+            },
         )
 
 
@@ -380,7 +376,7 @@ def job_run_config(
                         ),
                     )
 
-    inputs_ = {name: model for name, model in _models()}
+    inputs_ = dict(_models())
 
     # Inputs
     inputs = create_model(
@@ -405,10 +401,7 @@ def job_run_config(
             )
 
     # Outputs
-    if s.return_annotation is not inspect.Signature.empty:
-        return_annotation = s.return_annotation
-    else:
-        return_annotation = None
+    return_annotation = s.return_annotation if s.return_annotation is not inspect.Signature.empty else None
 
     outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue)
     output_schema = outputs.json_schema()

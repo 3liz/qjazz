@@ -41,8 +41,7 @@ def Crs(inp: QgsCoordinateReferenceSystem) -> Optional[crs.Crs]:
         # Workaround using pyproj:
         #   returnreturn pyproj.CRS.from_wkt(inp.toWKT()).to_json_dict()
         return CrsRef.from_qgis(inp) or {"crs_wkt": inp.toWKT()}
-    else:
-        return CrsRef.default()
+    return CrsRef.default()
 
 
 def Crs3D(p: QgsProject | QgsMapLayer) -> Optional[crs.Crs]:
@@ -54,5 +53,4 @@ def QgsCrs3D(p: QgsProject | QgsMapLayer) -> QgsCoordinateReferenceSystem:
     """Return project's crs3D if available"""
     if Qgis.QGIS_VERSION_INT < 33800:
         return p.crs()
-    else:
-        return p.crs3D()
+    return p.crs3D()

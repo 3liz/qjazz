@@ -98,5 +98,4 @@ class StorageConfig(ConfigBase):
         logger.info("Initializing storage '%s'", str(self.storage_class))
         if self._storage_conf:
             return self.storage_class(self._storage_conf)
-        else:
-            return self.storage_class()
+        return self.storage_class()

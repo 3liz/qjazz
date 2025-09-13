@@ -22,7 +22,7 @@ class JoblogProto(Protocol):
 )
 def job_log(state, job_id):
     """Return job log"""
-    app = cast(JoblogProto, state.consumer.app)
+    app = cast("JoblogProto", state.consumer.app)
     return app.job_log(job_id).model_dump()
 
 

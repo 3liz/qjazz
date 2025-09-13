@@ -59,21 +59,20 @@ def _default_plugin_paths() -> list[Path]:
     path_env = os.getenv("QGIS_PLUGINPATH")
     if path_env:
         return [Path(p) for p in path_env.split(":")]
-    else:
-        path = Path(
-            os.getenv("QGIS_OPTIONS_PATH")
-            or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
-            or os.getenv("QGIS_HOME")
-            or Path.home().joinpath(".qjazz"),
-            "plugins",
-        )
-        return [path] if path.exists() else []
+    path = Path(
+        os.getenv("QGIS_OPTIONS_PATH")
+        or os.getenv("QGIS_CUSTOM_CONFIG_PATH")
+        or os.getenv("QGIS_HOME")
+        or Path.home().joinpath(".qjazz"),
+        "plugins",
+    )
+    return [path] if path.exists() else []
 
 
 class QgisPluginConfig(config.ConfigBase):
     paths: Annotated[
         Sequence[Path],
-        AfterValidator(lambda v: _default_plugin_paths() if not v else v),
+        AfterValidator(lambda v: v if v else _default_plugin_paths()),
     ] = Field(
         default=[],
         validate_default=True,
@@ -152,7 +151,7 @@ class Plugin:
             cp.read_file(f)
             metadata = {s: dict(p.items()) for s, p in cp.items()}
             metadata.pop("DEFAULT", None)
-            return cast(JsonDict, metadata)
+            return cast("JsonDict", metadata)
 
 
 class QgisPluginService:

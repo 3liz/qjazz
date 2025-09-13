@@ -44,8 +44,7 @@ def get_crs(p: QgsProject) -> QgsCoordinateReferenceSystem:
             qgis_crs = QgsCoordinateReferenceSystem.fromOgcWmsCrs(crs)
             if qgis_crs.isValid():
                 return qgis_crs
-            else:
-                logger.warning("Invalid WMS advertised CRS: %s (%s)", crs, p.fileName())
+            logger.warning("Invalid WMS advertised CRS: %s (%s)", crs, p.fileName())
 
     # Default to CRS84 (conformance)
     return CrsRef.default().to_qgis()

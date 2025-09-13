@@ -34,7 +34,7 @@ class FileLink(LinkAny):
 
     @classmethod
     def from_link(cls, link: LinkAny) -> Self:
-        size = cast(int, link.length)
+        size = cast("int", link.length)
         return cls(
             href=link.href,
             length=size,

@@ -108,16 +108,14 @@ def describe_process(_state, ident: str, project_path: str | None) -> dict | Non
     """Return process description"""
     p = Job.RUN_CONFIGS.get(ident)
     if p:
-        desc = p.model_dump(mode="json", exclude_none=True, by_alias=True)
-        return desc
-    else:
-        return None
+        return p.model_dump(mode="json", exclude_none=True, by_alias=True)
+    return None
 
 
 @inspect_command()
 def presence(_state) -> dict:
     """Returns informations about the service"""
-    app = cast(GenericWorker, _state.consumer.app)
+    app = cast("GenericWorker", _state.consumer.app)
     return app.presence().model_dump()
 
 
@@ -126,7 +124,7 @@ def presence(_state) -> dict:
 )
 def job_files(state, job_id, public_url):
     """Returns job execution files"""
-    app = cast(GenericWorker, state.consumer.app)
+    app = cast("GenericWorker", state.consumer.app)
     return app.job_files(job_id, public_url).model_dump()
 
 

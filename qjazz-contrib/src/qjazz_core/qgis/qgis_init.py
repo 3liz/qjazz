@@ -312,5 +312,4 @@ def show_qgis_settings() -> str:
     global qgis_application
     if qgis_application:
         return qgis_application.showSettings()
-    else:
-        return ""
+    return ""

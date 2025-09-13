@@ -40,7 +40,7 @@ def load_config(path: Optional[Path | str], **kwds) -> WorkerConfig:
     confservice.add_section(WORKER_SECTION, WorkerConfig)
 
     conf = config.read_config_toml(Path(path), **kwds) if path else {}
-    return cast(ConfigProto, confservice.validate(conf)).worker
+    return cast("ConfigProto", confservice.validate(conf)).worker
 
 
 def init_cache(conf: WorkerConfig) -> CacheManager:

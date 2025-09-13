@@ -87,7 +87,8 @@ class Routes:
         else:
             # Returns only static routes
             urls = (
-                (str(route._location), route._url) for route in self._routes.values() if isinstance(route, StaticRoute)
+                (str(route._location), route._url)
+                for route in self._routes.values() if isinstance(route, StaticRoute)
             )
 
         return urls
@@ -114,14 +115,12 @@ class StaticRoute(RouteDef):
     def relative_to(self, location: str) -> Optional[tuple[str, Url]]:
         if self._location.is_relative_to(location):
             return (str(self._location), self._url)
-        else:
-            return None
+        return None
 
     def resolve_path(self, path: PurePosixPath) -> Optional[tuple[str, Url]]:
         if path.is_relative_to(self._location):
             return (str(self._location), self._url)
-        else:
-            return None
+        return None
 
 
 class DynamicRoute(RouteDef):
@@ -176,8 +175,7 @@ class DynamicRoute(RouteDef):
         pmatch = self._pattern.match(location)
         if pmatch is None:
             return None
-        else:
-            return pmatch.groupdict()
+        return pmatch.groupdict()
 
     def relative_to(self, location: str) -> Optional[tuple[str, Url]]:
         # Location must match the url pattern

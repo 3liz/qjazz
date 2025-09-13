@@ -229,7 +229,7 @@ class MailToCallback(CallbackHandler):
             # Create attachment
             filename = f"results-{job_id}.json"
             part = MIMEApplication(
-                TypeAdapter(JobResults).dump_json(cast(JobResults, results), indent=4),
+                TypeAdapter(JobResults).dump_json(cast("JobResults", results), indent=4),
                 name=filename,
             )
             part["Content-Disposition"] = f"attachment; filename={filename}"

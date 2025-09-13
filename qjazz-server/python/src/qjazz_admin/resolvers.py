@@ -76,10 +76,7 @@ class Resolver(ConfigBase):
                     ),
                 )
             case str(host):
-                if self.ipv6:
-                    rdtype = "AAAA"
-                else:
-                    rdtype = "A"
+                rdtype = "AAAA" if self.ipv6 else "A"
                 try:
                     addresses = await dns.asyncresolver.resolve(host, rdtype)
                     IPAddressTA: TypeAdapter = TypeAdapter(IPvAnyAddress)

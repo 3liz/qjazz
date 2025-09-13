@@ -118,7 +118,7 @@ class PoolClient:
         addresses = set(configs)
 
         # Current backends
-        current_addr = set(s.address for s in self._backends)
+        current_addr = {s.address for s in self._backends}
 
         new_addr = addresses.difference(current_addr)
         removed_addr = current_addr.difference(addresses)
@@ -221,9 +221,8 @@ class PoolClient:
             except grpc.RpcError as err:
                 if err.code() == grpc.StatusCode.UNAVAILABLE:
                     logger.error("Server '{server.name}' is unreachable")
-                    return (server, dict(address=server.address, status="unavailable"))
-                else:
-                    raise
+                    return (server, {"address": server.address, "status": "unavailable"})
+                raise
 
         return await asyncio.gather(*(_stats(s) for s in self._backends))
 
@@ -238,7 +237,7 @@ class PoolClient:
                 resp = MessageToDict(stats)
                 resp.update(address=item.address, status="ok")
             else:
-                resp = dict(address=item.address, status="unreachable")
+                resp = {"address": item.address, "status": "unreachable"}
             return item, resp
 
         with self.sync_event() as sync:
@@ -474,9 +473,8 @@ class PoolClient:
             except grpc.RpcError as rpcerr:
                 if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
                     continue
-                else:
-                    logger.error("%s\t%s\t%s", s.address, rpcerr.code(), rpcerr.details())
-                    raise
+                logger.error("%s\t%s\t%s", s.address, rpcerr.code(), rpcerr.details())
+                raise
         if not serving:
             raise ServiceNotAvailable(self.address)
         return None  # Make mypy happy

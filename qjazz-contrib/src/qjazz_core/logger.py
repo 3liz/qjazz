@@ -54,7 +54,7 @@ class LoggingConfig(config.ConfigBase):
         PlainSerializer(lambda x: x.name, return_type=str),
         WithJsonSchema(
             {
-                "enum": [m for m in LogLevel.__members__],
+                "enum": list(LogLevel.__members__),
                 "type": "str",
             }
         ),

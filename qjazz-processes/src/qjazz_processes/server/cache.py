@@ -56,8 +56,7 @@ class ServiceCache:
                         if services:
                             _log_services(services)
                             return True
-                        else:
-                            logger.warning("No services availables")
+                        logger.warning("No services availables")
                 except Exception:
                     logger.error("Failed to update services: %s", traceback.format_exc())
 

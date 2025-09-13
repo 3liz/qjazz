@@ -88,7 +88,7 @@ class ExecutorBase:
         services: ServiceDict = {}
         for dest, pr in presences.items():
             dests, _ = services.setdefault(pr.service, ([], pr))
-            cast(list, dests).append(dest)
+            cast("list", dests).append(dest)
         return {k: (tuple(dests), pr) for k, (dests, pr) in services.items()}
 
     @property

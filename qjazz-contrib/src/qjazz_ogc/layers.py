@@ -34,10 +34,9 @@ class LayerAccessor:
         # if short name is not available
         if self.use_layer_ids:
             return self._project.mapLayer(name)
-        else:
-            layer = self._project.mapLayersByShortName(name)
-            if layer:
-                return layer[0]
+        layer = self._project.mapLayersByShortName(name)
+        if layer:
+            return layer[0]
         return None
 
     def layers(self) -> Iterator[QgsMapLayer]:
@@ -51,7 +50,7 @@ class LayerAccessor:
         """Get the layer name according if the shortname is set"""
         if self.use_layer_ids:
             return layer.id()
-        elif Qgis.QGIS_VERSION_INT < 33800:
+        if Qgis.QGIS_VERSION_INT < 33800:
             name = layer.shortName()
         else:
             name = layer.serverProperties().shortName()

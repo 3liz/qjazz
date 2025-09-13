@@ -214,7 +214,7 @@ def ows_request(
         chunk = next(stream)
         t_end = time()
 
-        fp = Path(output).open("w") if output else sys.stdout
+        fp = Path(output).open("w") if output else sys.stdout  # noqa SIM115
         fp.buffer.write(chunk.chunk)
         for chunk in stream:
             fp.buffer.write(chunk.chunk)
@@ -266,7 +266,7 @@ def api_request(
         chunk = next(stream)
         t_end = time()
 
-        fp = Path(output).open("w") if output else sys.stdout
+        fp = Path(output).open("w") if output else sys.stdout  # noqa SIM115
         fp.buffer.write(chunk.chunk)
         for chunk in stream:
             fp.buffer.write(chunk.chunk)
@@ -429,12 +429,12 @@ def list_plugins():
         for item in stream:
             click.echo(
                 json.dumps(
-                    dict(
-                        name=item.name,
-                        path=item.path,
-                        pluginType=item.plugin_type,
-                        metadata=json.loads(item.metadata),
-                    ),
+                    {
+                        "name": item.name,
+                        "path": item.path,
+                        "pluginType": item.plugin_type,
+                        "metadata": json.loads(item.metadata),
+                    },
                     indent=4,
                 ),
             )
@@ -465,7 +465,7 @@ def set_config(config: str):
     """Send CONFIG to remote"""
     with connect() as stub:
         if config.startswith("@"):
-            config = Path(config[1:]).open().read()
+            config = Path(config[1:]).read_text()
 
         # Validate as json
         try:

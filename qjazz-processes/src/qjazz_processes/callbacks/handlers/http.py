@@ -74,7 +74,7 @@ class HttpCallback(CallbackHandler):
     ) -> requests.Response:
         _ = TypeAdapter(AnyHttpUrl).validate_python(url.geturl())
 
-        if not self._conf.acl.check_hostname(cast(str, url.hostname)):
+        if not self._conf.acl.check_hostname(cast("str", url.hostname)):
             raise ValueError("Host not allowed in HTTP callback: %s", url.hostname)
 
         headers = {

@@ -83,10 +83,7 @@ class FileProtocolHandler(ProtocolHandler):
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Override"""
-        if isinstance(url, ProjectMetadata):
-            path = Path(url.uri)
-        else:
-            path = self._check_filepath(Path(url.path))
+        path = Path(url.uri) if isinstance(url, ProjectMetadata) else self._check_filepath(Path(url.path))
         if not path.exists():
             raise FileNotFoundError(str(path))
         return file_metadata(path)

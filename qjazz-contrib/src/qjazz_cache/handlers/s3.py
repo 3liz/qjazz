@@ -19,14 +19,13 @@ Limitations:
 
 - Not thread safe
 """
-
 import os
 
 from contextlib import contextmanager
-from datetime import datetime
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import (
+    TYPE_CHECKING,
     Iterator,
     Optional,
     cast,
@@ -54,6 +53,11 @@ from ..resources import (
     ResourceReader,
 )
 from ..storage import ProjectLoaderConfig, load_project_from_uri
+
+# Typing only import
+if TYPE_CHECKING:
+    from datetime import datetime
+
 
 if Qgis.QGIS_VERSION_INT < 33800:
     import warnings
@@ -225,7 +229,7 @@ class S3ProtocolHandler(ProtocolHandler):
         object_name = url.path
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         try:
             if not object_name.endswith(PROJECT_SFX):
@@ -243,7 +247,7 @@ class S3ProtocolHandler(ProtocolHandler):
                     raise
 
         assert_precondition(stat.last_modified is not None)
-        last_modified = cast(datetime, stat.last_modified)
+        last_modified = cast("datetime", stat.last_modified)
 
         return ProjectMetadata(
             uri=url._replace(path=object_name).geturl(),
@@ -263,7 +267,7 @@ class S3ProtocolHandler(ProtocolHandler):
         object_name = uri.path
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         try:
             # Download project in tmpdir
@@ -316,14 +320,14 @@ class S3ProtocolHandler(ProtocolHandler):
         prefix = uri.path.lstrip("/")
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         for obj in self._client.list_objects(bucket_name, prefix, recursive=True):
             path = PurePosixPath(obj.object_name)
 
             if path.suffix == ".qgz":
                 assert_precondition(obj.last_modified is not None)
-                last_modified = cast(datetime, obj.last_modified)
+                last_modified = cast("datetime", obj.last_modified)
 
                 yield ProjectMetadata(
                     uri=uri._replace(path=f"{path}").geturl(),
@@ -344,7 +348,7 @@ class S3ProtocolHandler(ProtocolHandler):
         object_name = uri.path
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         if name:
             object_name = str(PurePosixPath(object_name).joinpath(name))
@@ -386,13 +390,10 @@ class S3ProtocolHandler(ProtocolHandler):
         path = root.joinpath(subpath) if subpath else root
 
         prefix: str | None = str(path).removeprefix("/")
-        if prefix and not prefix.endswith("/"):
-            prefix = f"{prefix}/"
-        else:
-            prefix = None
+        prefix = f"{prefix}/" if prefix and not prefix.endswith("/") else None
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         for obj in self._client.list_objects(bucket_name, prefix=prefix):
             yield ResourceObject(
@@ -412,7 +413,7 @@ class S3ProtocolHandler(ProtocolHandler):
         object_name = uri.path
 
         assert_precondition(bucket_name is not None)
-        bucket_name = cast(str, bucket_name)
+        bucket_name = cast("str", bucket_name)
 
         if name:
             # Append name to path

@@ -129,8 +129,7 @@ class CacheManager:
         # Validate rooturls
         for route in config.search_paths.routes:
             path, rooturl = route.cannonical
-            if logger.is_enabled_for(logger.LogLevel.DEBUG):
-                logger.debug("Validating cache root url '%s' (path: '%s')", rooturl.geturl(), path)
+            logger.debug("Validating cache root url '%s' (path: '%s')", rooturl.geturl(), path)
             handler = cls.get_protocol_handler(rooturl.scheme)
             handler.validate_rooturl(rooturl, config, route.is_dynamic)
 
@@ -217,8 +216,8 @@ class CacheManager:
         if allow_direct or self.conf.allow_direct_path_resolution:
             # Use direct resolution based on scheme
             return validate_url(str(path))
-        else:
-            raise ResourceNotAllowed(str(path))
+
+        raise ResourceNotAllowed(str(path))
 
     def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """List compatible search paths"""
@@ -284,10 +283,7 @@ class CacheManager:
         except FileNotFoundError as err:
             # The argument is the resolved uri
             e = self._cache.get(err.args[0])
-            if e:
-                retval = (e, CheckoutStatus.REMOVED)
-            else:
-                retval = (None, CheckoutStatus.NOTFOUND)
+            retval = (e, CheckoutStatus.REMOVED) if e else (None, CheckoutStatus.NOTFOUND)
 
         return retval
 

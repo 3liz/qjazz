@@ -43,7 +43,7 @@ def load_default_project(cm: CacheManager):
         url = cm.resolve_path(default_project, allow_direct=True)
         md, status = cm.checkout(url)
         if status == Co.NEW:
-            cm.update(cast(ProjectMetadata, md), status)
+            cm.update(cast("ProjectMetadata", md), status)
         else:
             logger.error("The project %s does not exists", url)
 
@@ -93,12 +93,12 @@ def setup_server(conf: QgisConfig) -> Server:
 def worker_env() -> JsonValue:
     from qgis.core import Qgis
 
-    return dict(
-        qgis_version=Qgis.QGIS_VERSION_INT,
-        qgis_release=Qgis.QGIS_RELEASE_NAME,
-        versions=list(show_all_versions()),
-        environment=dict(os.environ),
-    )
+    return {
+        "qgis_version": Qgis.QGIS_VERSION_INT,
+        "qgis_release": Qgis.QGIS_RELEASE_NAME,
+        "versions": list(show_all_versions()),
+        "environment": dict(os.environ),
+    }
 
 
 class Feedback:
@@ -253,10 +253,7 @@ def qgis_server_run(
                 case _m.PutConfigMsg():
                     if isinstance(conf, ConfigProxy):
                         logger.notice("Updating configuration")
-                        if isinstance(msg.config, str):
-                            config_data = json.loads(msg.config)
-                        else:
-                            config_data = msg.config
+                        config_data = json.loads(msg.config) if isinstance(msg.config, str) else msg.config
                         confservice = conf.service
                         confservice.update_config(config_data)
                         # Update log level

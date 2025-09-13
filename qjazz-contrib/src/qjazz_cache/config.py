@@ -32,7 +32,7 @@ def validate_routes(v: str | dict[str, str]) -> Routes:
             pass
         case _:
             raise ValueError("Mapping or json string expected")
-    return Routes(cast(dict, v))
+    return Routes(cast("dict", v))
 
 
 RoutesDef = Annotated[

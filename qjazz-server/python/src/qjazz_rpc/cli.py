@@ -39,7 +39,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
         else:
             confservice.validate({})
 
-    return cast(ConfigProtocol, confservice.conf)
+    return cast("ConfigProtocol", confservice.conf)
 
 
 @click.group()

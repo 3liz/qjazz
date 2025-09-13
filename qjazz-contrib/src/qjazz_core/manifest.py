@@ -3,10 +3,13 @@
 import traceback
 
 from functools import cache
-from pathlib import Path
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from pydantic import BaseModel
+
+# Type only import
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class Manifest(BaseModel):
@@ -17,7 +20,7 @@ class Manifest(BaseModel):
 def get_manifest() -> Manifest:
     from importlib import resources
 
-    path = cast(Path, resources.files("qjazz_core")).joinpath("manifest.json")
+    path = cast("Path", resources.files("qjazz_core")).joinpath("manifest.json")
     if path.exists():
         try:
             with path.open() as m:

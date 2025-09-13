@@ -92,8 +92,7 @@ class ParameterGeometry(InputParameter):
         geomtypes = param.geometryTypes()
         if geomtypes:
             return Union[tuple(geometrytypes_to_model(geomtypes, param.allowMultipart()))]
-        else:
-            return geojson.Geometry
+        return geojson.Geometry
 
     @classmethod
     def create_model(
@@ -110,15 +109,13 @@ class ParameterGeometry(InputParameter):
             if g:
                 field.update(default=g)
 
-        _type = OneOf[  # type: ignore [misc, valid-type]
+        return OneOf[  # type: ignore [misc, valid-type]
             Union[
                 Annotated[_type, Field(json_schema_extra={"format": "geojson-geometry"})],
                 MediaType(str, Formats.WKT.media_type),
                 MediaType(str, Formats.GML.media_type),
             ],
         ]
-
-        return _type
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> QgsGeometry:
         # Check for qualified input
@@ -208,8 +205,7 @@ class ParameterCrs(InputParameter):
                 if crs.isValid:
                     field.update(default=crs.toOgcUrn())
 
-        _type = CrsDefinition
-        return _type
+        return CrsDefinition
 
     def value(
         self,
@@ -384,20 +380,15 @@ def qgsgeometry_to_point(
     g: QgsGeometry,
     crs: Optional[QgsCoordinateReferenceSystem] = None,
 ) -> QgsPointXY | QgsReferencedPointXY:
-    if g.wkbType() == QgsWkbTypes.Point:
-        p = g.asPoint()
-    else:
-        p = g.centroid().asPoint()
-
+    p = g.asPoint() if g.wkbType() == QgsWkbTypes.Point else g.centroid().asPoint()
     return QgsReferencedPointXY(p, crs) if crs else p
 
 
 def crs_to_ogc_urn(crs: QgsCoordinateReferenceSystem) -> str:
     if Qgis.QGIS_VERSION_INT >= 33800:
         return crs.toOgcUrn()
-    else:
-        path = (AnyUrl(crs.toOgcUri()).path or "").strip("/").replace("/", ":")
-        return f"urn:ogc:{path}"
+    path = (AnyUrl(crs.toOgcUri()).path or "").strip("/").replace("/", ":")
+    return f"urn:ogc:{path}"
 
 
 def qgsgeometry_to_json(

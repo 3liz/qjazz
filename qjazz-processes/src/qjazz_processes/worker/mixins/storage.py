@@ -2,6 +2,7 @@ import shutil
 
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Protocol,
     cast,
 )
@@ -13,11 +14,14 @@ from celery.worker.control import (
     inspect_command,
 )
 from qjazz_core import logger
-from qjazz_core.celery import Worker
 
 from .. import registry
 from ..models import Link
 from ..storage import Storage
+
+# Type only imports
+if TYPE_CHECKING:
+    from qjazz_core.celery import Worker
 
 
 class BackendProto(Protocol):
@@ -44,7 +48,7 @@ class StorageProto(Protocol):
 @control_command()
 def cleanup(state):
     """Run cleanup task"""
-    app = cast(StorageProto, state.consumer.app)
+    app = cast("StorageProto", state.consumer.app)
     app.cleanup_expired_jobs()
 
 
@@ -58,7 +62,7 @@ def cleanup(state):
 )
 def download_url(state, job_id, resource, expiration):
     try:
-        app = cast(StorageProto, state.consumer.app)
+        app = cast("StorageProto", state.consumer.app)
         return app.download_url(
             job_id,
             resource,
@@ -89,7 +93,7 @@ class StorageMixin(StorageProto):
                 for p in self._workdir.glob(f"*/.job-expire-{self.service_name}"):
                     jobdir = p.parent
                     job_id = jobdir.name
-                    if registry.exists(cast(Worker, self), job_id):
+                    if registry.exists(cast("Worker", self), job_id):
                         continue
 
                     logger.info("=== Cleaning jobs resource: %s", job_id)

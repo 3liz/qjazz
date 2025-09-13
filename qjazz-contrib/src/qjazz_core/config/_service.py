@@ -133,7 +133,7 @@ config_version = metadata.version("qjazz_contrib")
 
 def secrets_dir() -> str | None:
     secrets_dir: str | None = getenv("SETTINGS_SECRETS_DIR", "/run/secrets")
-    if not Path(cast(str, secrets_dir)).exists():
+    if not Path(cast("str", secrets_dir)).exists():
         secrets_dir = None
 
     return secrets_dir
@@ -270,7 +270,7 @@ class ConfBuilder:
         # Update timestamp so that we can check update in
         # proxy
         self._timestamp = time()
-        return cast(ConfigSettings, conf)
+        return cast("ConfigSettings", conf)
 
     def update_config(self, obj: Optional[dict] = None) -> ConfigSettings:
         """Update the configuration"""
@@ -283,7 +283,7 @@ class ConfBuilder:
                 data = obj or {}
 
             self.validate(data)
-        return cast(ConfigSettings, self._conf)
+        return cast("ConfigSettings", self._conf)
 
     def json_schema(self) -> dict[str, Any]:
         return self._get_model().model_json_schema()
@@ -312,7 +312,7 @@ class ConfBuilder:
     @property
     def conf(self) -> BaseModel:
         self.update_config()
-        return cast(BaseModel, self._conf)
+        return cast("BaseModel", self._conf)
 
     #
     # Service registration
@@ -413,7 +413,7 @@ class ConfigProxy[T: ConfigBase]:
     def __update(self) -> ConfigBase:
         if self._builder._timestamp > self._timestamp:
             self._timestamp = self._builder._timestamp
-            self._conf = cast(T, self._builder.conf)
+            self._conf = cast("T", self._builder.conf)
             for attr in self._configpath.split("."):
                 if attr:
                     self._conf = getattr(self._conf, attr)

@@ -50,8 +50,7 @@ def _field_default_repr(field_default: Any) -> str:  # noqa ANN401
             if "\n" in s:
                 # Handle multiline string
                 return f"'''{s}'''"
-            else:
-                return f'"{s}"'
+            return f'"{s}"'
         case bool(b):
             return "true" if b else "false"
         case int(n) | float(n):

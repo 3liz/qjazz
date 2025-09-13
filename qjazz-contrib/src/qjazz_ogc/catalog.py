@@ -70,11 +70,10 @@ def get_pinned_project(md: ProjectMetadata, cm: CacheManager) -> Optional[CacheE
     entry, co_status = cm.checkout(urlsplit(md.uri))
     match co_status:
         case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
-            entry = cast(CacheEntry, entry)
+            entry = cast("CacheEntry", entry)
             if entry.pinned:
                 return entry
-            else:
-                return None
+            return None
         case _:
             return None
 
@@ -168,13 +167,13 @@ class Catalog:
             except ResourceNotAllowed:
                 return None
 
-            location = cast(PurePosixPath, cm.find_location(ident))
+            location = cast("PurePosixPath", cm.find_location(ident))
             assert_postcondition(location is not None)
 
             md, status = cm.checkout(url)
             match status:
                 case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
-                    entry = cast(CacheEntry, md)
+                    entry = cast("CacheEntry", md)
                     if pinned and not entry.pinned:
                         # Handle only pinned items
                         return None
@@ -185,12 +184,12 @@ class Catalog:
             if status in (CheckoutStatus.REMOVED, CheckoutStatus.NOTFOUND):
                 del self._catalog[ident]
                 return None
-            if cast(ProjectMetadata, md).last_modified <= item.md.last_modified:
+            if cast("ProjectMetadata", md).last_modified <= item.md.last_modified:
                 return item
 
             location = item.location
 
-        md = cast(ProjectMetadata, md)
+        md = cast("ProjectMetadata", md)
         try:
             handler = cm.get_protocol_handler(md.scheme)
             item = new_catalog_item(
@@ -304,6 +303,9 @@ def check_project_version(
     minimum_qgis_version: tuple[int, int],
 ):
     project_ver = project.lastSaveVersion()
-    if not project_ver.isNull() and (project_ver.majorVersion(), project_ver.minorVersion()) < minimum_qgis_version:
+    if not project_ver.isNull() and (
+        project_ver.majorVersion(),
+        project_ver.minorVersion(),
+    ) < minimum_qgis_version:
         logger.warning("Project %s is too old (%s)", md.uri, project_ver.text())
         raise ProjectTooOld(str(md.uri))

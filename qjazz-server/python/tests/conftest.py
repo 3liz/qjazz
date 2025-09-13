@@ -47,7 +47,7 @@ def qgis_session(request: pytest.FixtureRequest) -> None:
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)
 
-    return None
+    return
 
 
 @pytest.fixture(scope="session")

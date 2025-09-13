@@ -69,8 +69,7 @@ class Commands(ExecutorProtocol):
 
         if not broadcast:
             return next(iter(resp[0].values()))
-        else:
-            return dict(next(iter(r.items())) for r in resp)
+        return dict(next(iter(r.items())) for r in resp)
 
     def _dests(self, service: str) -> Sequence[str]:
         dests = self.destinations(service)

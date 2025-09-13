@@ -203,8 +203,7 @@ def crs_ref(
     # Version is not required
     if version:
         return f"urn:ogc:def:crs:{auth_name}:{version}:{auth_code}"
-    else:
-        return f"urn:ogc:def:crs:{auth_name}:{auth_code}"
+    return f"urn:ogc:def:crs:{auth_name}:{auth_code}"
 
 
 def crs_ref_from_epsg(code: int | str) -> str:

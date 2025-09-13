@@ -42,10 +42,7 @@ class QgisStorageProtocolHandler(ProtocolHandler):
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Override"""
-        if isinstance(url, ProjectMetadata):
-            uri = url.uri
-        else:
-            uri = self.resolve_uri(url)
+        uri = url.uri if isinstance(url, ProjectMetadata) else self.resolve_uri(url)
 
         # Precondition
         # If there is problem here, then it comes from the

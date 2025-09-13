@@ -149,8 +149,7 @@ class OutputParameter[T]:
         """
         if out.autoCreated():
             return alg and alg.parameterDefinition(out.name())
-        else:
-            return None
+        return None
 
     @property
     def input_definition(self) -> Optional[QgsProcessingParameterDefinition]:

@@ -91,8 +91,7 @@ class AccessControlConfig(ConfigBase):
         # See description of 'order' about the logic
         if self.order == "Allow":
             return not self.deny_ip(ip, hostname) or self.allow_ip(ip, hostname)
-        else:
-            return self.allow_ip(ip, hostname) and not self.deny_ip(ip, hostname)
+        return self.allow_ip(ip, hostname) and not self.deny_ip(ip, hostname)
 
     def check_hostname(self, hostname: str) -> bool:
         host = HostValidator.validate_python(hostname)
@@ -125,6 +124,5 @@ def match_ip(
         case str() if hostname:
             if test_ip.startswith("."):
                 return hostname.endswith(test_ip)
-            else:
-                return test_ip == hostname
+            return test_ip == hostname
     return False  # Makes Mypy happy

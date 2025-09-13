@@ -77,14 +77,13 @@ class ParameterFile(InputParameter):
         ext = param.extension()
         media_type = mimetypes.types_map.get(ext, Formats.ANY.media_type)
 
-        _type = OneOf[  # type: ignore [misc, valid-type]
+        return OneOf[  # type: ignore [misc, valid-type]
             Union[
                 MediaType(str, media_type),
                 LinkReference,
             ],
         ]
 
-        return _type
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         param = self._param
@@ -93,18 +92,17 @@ class ParameterFile(InputParameter):
             # XXX Passing a folder is not really relevant for processes API
             # except if we allow raw input value
             if context and context.config.raw_destination_input_sink:
-                return cast(str, inp)
-            else:
-                logger.warning("Folder behavior not allowed for %s", param.name())
-                return ""
+                return cast("str", inp)
+            logger.warning("Folder behavior not allowed for %s", param.name())
+            return ""
 
         if context and context.config.raw_destination_input_sink:
             #
             # Allow referencing a file system resource
             #
-            _inp = cast(dict, inp)
+            _inp = cast("dict", inp)
             p = resolve_raw_reference(
-                cast(str, _inp.get("href", "")),
+                cast("str", _inp.get("href", "")),
                 context.workdir,
                 context.config.raw_destination_root_path,
                 param.extension(),
@@ -112,8 +110,7 @@ class ParameterFile(InputParameter):
             if p:
                 if not p.exists():
                     raise InputValueError(f"{param.name()}: file not found '{p}'")
-                else:
-                    return str(p)
+                return str(p)
 
         _inp = RefOrQualifiedInput.validate_python(inp)
 

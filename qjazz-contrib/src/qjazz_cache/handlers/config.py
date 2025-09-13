@@ -63,8 +63,7 @@ class HandlerConfig(ConfigBase):
     def create_instance(self) -> ProtocolHandler:
         if self._handler_conf:
             return self.handler(self._handler_conf)
-        else:
-            return self.handler()
+        return self.handler()
 
 
 def register_protocol_handler(scheme: str, conf: HandlerConfig):

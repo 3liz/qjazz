@@ -152,7 +152,7 @@ class S3Storage:
                 # Do not transfer what does not exist
                 logger.warning("File %s does not exists", file)
                 continue
-            elif file.is_absolute():
+            if file.is_absolute():
                 if not file.is_relative_to(workdir):
                     logger.warning("Cannot transfer non-relative file %s", file)
                     continue
@@ -188,9 +188,12 @@ class S3Storage:
         """Delete all resources in prefix 'job_id'"""
         logger.info("[S3] Deleting objects in %s/%s", self.bucket, job_id)
         client = self.client
-        delete_object_list = map(
-            lambda x: DeleteObject(x.object_name),
-            client.list_objects(self.bucket, f"{job_id}/", recursive=True),
+        delete_object_list = (
+            DeleteObject(o.object_name) for o in client.list_objects(
+                self.bucket,
+                f"{job_id}/",
+                recursive=True,
+            )
         )
 
         errors = client.remove_objects(self.bucket, delete_object_list)

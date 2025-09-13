@@ -248,8 +248,7 @@ class ParameterFeatureSource(ParameterMapLayer):
                     logger.debug("Applying feature source expression: %s", _inp.expression)
                     layer.selectByExpression(_inp.expression, behavior=behavior)
 
-        value = QgsProcessingFeatureSourceDefinition(source, selectedFeaturesOnly=has_selection)
-        return value
+        return QgsProcessingFeatureSourceDefinition(source, selectedFeaturesOnly=has_selection)
 
 
 #

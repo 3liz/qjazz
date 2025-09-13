@@ -167,7 +167,7 @@ def swagger_model() -> BaseModel:
     """Return the swagger model
     for the REST api
     """
-    handlers = Handlers(cast(Service, None))
+    handlers = Handlers(cast("Service", None))
     app = web.Application()
     app.add_routes(handlers.routes)
     return _swagger_doc(app)
@@ -177,7 +177,7 @@ def create_app(conf: ConfigProto) -> web.Application:
     """Create a web application"""
     service = Service(
         cast(
-            ResolverConfig,
+            "ResolverConfig",
             ConfigProxy(confservice, RESOLVERS_SECTION, default=conf.resolvers),
         ),
     )
@@ -236,9 +236,9 @@ def serve(conf: ConfigProto):
 
     match http.listen:
         case (str(address), port):
-            listen = dict(host=address.strip("[]"), port=port)
+            listen = {"host": address.strip("[]"), "port": port}
         case socket:
-            listen = dict(path=socket[len("unix:") :])
+            listen = {"path": socket[len("unix:") :]}
 
     logger.info(f"Server listening at {http.format_interface()}")
     web.run_app(

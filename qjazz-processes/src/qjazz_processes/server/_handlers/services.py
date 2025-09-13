@@ -37,7 +37,7 @@ class ServiceItem(swagger.JsonModel):
         details: PresenceDetails,
         format_path: PathFormatter,
     ) -> Self:
-        links = [link for link in details.links]
+        links = list(details.links)
         links.extend(
             (
                 make_link(

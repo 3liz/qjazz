@@ -29,13 +29,12 @@ def parse_bbox(r: QgsRectangle, invert_axis: bool = False) -> list[float]:
             r.yMaximum(),
             r.xMaximum(),
         ]
-    else:
-        return [
-            r.xMinimum(),
-            r.yMinimum(),
-            r.xMaximum(),
-            r.yMaximum(),
-        ]
+    return [
+        r.xMinimum(),
+        r.yMinimum(),
+        r.xMaximum(),
+        r.yMaximum(),
+    ]
 
 
 # Bbox format is [xmin, ymin [,zmin], xmax, ymax [,zmax]]
@@ -49,15 +48,14 @@ def parse_bbox3d(r: QgsBox3D, invert_axis: bool = False) -> list[float]:
             r.yMaximum(),
             r.zMaximum(),
         ]
-    else:
-        return [
-            r.yMinimum(),
-            r.xMinimum(),
-            r.zMinimum(),
-            r.yMaximum(),
-            r.xMaximum(),
-            r.zMaximum(),
-        ]
+    return [
+        r.yMinimum(),
+        r.xMinimum(),
+        r.zMinimum(),
+        r.yMaximum(),
+        r.xMaximum(),
+        r.zMaximum(),
+    ]
 
 
 def parse_extent(extent: QgsRectangle | QgsBox3D, invert_axis: bool = False) -> list[float]:
@@ -273,16 +271,14 @@ class TemporalExtent(extent.TemporalExtent):
                     ]
                 ],
             )
-        else:
-            return None
+        return None
 
     @classmethod
     def from_project(cls, p: QgsProject) -> Optional[Self]:
         ts = p.timeSettings()
         if ts:
             return cls.from_range(ts.temporalRange())
-        else:
-            return None
+        return None
 
     @classmethod
     def from_layer(cls, layer: QgsMapLayer) -> Optional[Self]:
@@ -301,8 +297,7 @@ class TemporalExtent(extent.TemporalExtent):
 
         if interval:
             return cls(interval=interval)
-        else:
-            return None
+        return None
 
 
 class Extent(extent.Extent):

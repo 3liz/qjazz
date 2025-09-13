@@ -312,8 +312,7 @@ def add_layer_to_load_on_completion(
             raise
 
         return layer, name
-    else:
-        return add_layer_details(output_name, value, hint, context)
+    return add_layer_details(output_name, value, hint, context)
 
 
 def add_layer_details(

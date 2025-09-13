@@ -49,10 +49,10 @@ def run(name: str, projects: list[str]) -> None:
             file=sys.stderr,
         )
 
-    logger.setup_log_handler(cast(ConfigProto, confservice.conf).logging.level)
+    logger.setup_log_handler(cast("ConfigProto", confservice.conf).logging.level)
 
     # Create proxy for allow update
-    qgis_conf = cast(QgisConfig, config.ConfigProxy(confservice, f"{WORKER_SECTION}.qgis"))
+    qgis_conf = cast("QgisConfig", config.ConfigProxy(confservice, f"{WORKER_SECTION}.qgis"))
 
     with closing(Connection()) as connection:
         # Create QGIS server

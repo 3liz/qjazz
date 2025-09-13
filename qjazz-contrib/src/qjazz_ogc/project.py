@@ -60,10 +60,7 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 
 def get_layer_short_name(layer: QgsMapLayer) -> str:
     """Get the layer name according if the shortname is set"""
-    if Qgis.QGIS_VERSION_INT < 33800:
-        name = layer.shortName()
-    else:
-        name = layer.serverProperties().shortName()
+    name = layer.shortName() if Qgis.QGIS_VERSION_INT < 33800 else layer.serverProperties().shortName()
     if not name:
         name = layer.name()
 
@@ -187,7 +184,7 @@ class Collection(collections.Collection):
             crs=crs_outputs,
             storage_crs=storage_crs,
             keywords=[kw for kw in keywords.split(",") if kw],
-            links=[link for link in layer_links()],
+            links=list(layer_links()),
             min_scale_denominator=min_scale_denominator,
             max_scale_denominator=max_scale_denominator,
             # Additions to STAC specs

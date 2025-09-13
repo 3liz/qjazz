@@ -44,17 +44,17 @@ def register(
     client = app.backend.client
     client.hset(
         key,
-        mapping=dict(
-            job_id=status.job_id,
-            created=created,
-            service=service,
-            realm=realm or "",
-            process_id=status.process_id,
-            dismissed=0,
-            pending_timeout=pending_timeout,
-            expires=expires,
-            tag=status.tag or "",
-        ),
+        mapping={
+            "job_id": status.job_id,
+            "created": created,
+            "service": service,
+            "realm": realm or "",
+            "process_id": status.process_id,
+            "dismissed": 0,
+            "pending_timeout": pending_timeout,
+            "expires": expires,
+            "tag": status.tag or "",
+        },
     )
     expiration_ts = created + expires + pending_timeout
     # Set expiration upper bound
@@ -86,8 +86,7 @@ def find_job(
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
         return _decode(client.hgetall(keys[0]))
-    else:
-        return None
+    return None
 
 
 def find_key(
@@ -100,8 +99,7 @@ def find_key(
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
         return tuple(keys[0].decode().split("::")[1:4])
-    else:
-        return None
+    return None
 
 
 def find_keys(
@@ -137,8 +135,7 @@ def dismiss(app: Celery, job_id: str, reset: bool = False) -> bool:
     if keys:
         client.hset(keys[0], "dismissed", 0 if reset else 1)
         return True
-    else:
-        return False
+    return False
 
 
 def delete(app: Celery, job_id: str) -> int:
@@ -148,8 +145,7 @@ def delete(app: Celery, job_id: str) -> int:
     if keys:
         client.delete(*keys)
         return 1
-    else:
-        return 0
+    return 0
 
 
 def lock(

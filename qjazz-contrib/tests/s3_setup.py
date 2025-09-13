@@ -12,12 +12,12 @@ projects = ProjectsConfig(
     handlers={
         "s3": {
             "handler": "qjazz_cache.handlers.s3.S3ProtocolHandler",
-            "config": dict(
-                endpoint="localhost:9000",
-                access_key="minioadmin",
-                secret_key="minioadmin",
-                secure=False,
-            ),
+            "config": {
+                "endpoint": "localhost:9000",
+                "access_key": "minioadmin",
+                "secret_key": "minioadmin",
+                "secure": False,
+            },
         },
     },
 )

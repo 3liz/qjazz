@@ -3,6 +3,7 @@
 #
 
 import asyncio
+import contextlib
 import os
 import signal
 import sys
@@ -76,10 +77,8 @@ class Worker:
         in the middle.
         """
         while self._rendez_vous.busy:
-            try:
+            with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self.io.drain(), 1)
-            except TimeoutError:
-                pass
 
     async def update_config(self, conf: QgisConfig):
         self._conf = conf

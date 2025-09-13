@@ -169,8 +169,7 @@ class CeleryConfig(ConfigBase):
         scheme = "rediss" if self.backend_use_tls else "redis"
         if self.backend_password:
             return f"{scheme}://:{self.backend_password}@{self.backend_host}"
-        else:
-            return f"{scheme}://{self.backend_host}"
+        return f"{scheme}://{self.backend_host}"
 
 
 class Celery(celery.Celery):

@@ -152,7 +152,7 @@ def load_configuration() -> ConfigProto:
     confservice.validate(cnf)
     confservice.register_as_service()
 
-    conf = cast(ConfigProto, confservice.conf)
+    conf = cast("ConfigProto", confservice.conf)
     logger.setup_log_handler(conf.logging.level)
     # Do not propagate otherwise logging will echo
     # to Celery logger

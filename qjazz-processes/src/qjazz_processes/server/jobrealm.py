@@ -61,10 +61,8 @@ class JobRealmConfig(ConfigBase):
         """
         if self.enabled:
             realm = request.headers.get(JOB_REALM_HEADER)
-            realm = self.validate_realm(realm) if realm else str(uuid4())
-            return realm
-        else:
-            return None
+            return self.validate_realm(realm) if realm else str(uuid4())
+        return None
 
     def job_realm(self, request: web.Request) -> Optional[str]:
         """Return job realm from headers

@@ -1,6 +1,8 @@
 import asyncio
 import traceback
 
+from typing import cast
+
 from aiohttp import WSMsgType, web
 from pydantic import BaseModel
 from qjazz_core import logger
@@ -8,7 +10,7 @@ from qjazz_core import logger
 from . import swagger
 from ._api import _Backends, _Cache, _Config, _Plugins, _Projects
 from ._api.utils import API_VERSION, BaseHandlers, _http_error
-from .config import confservice
+from .config import ConfigProto, confservice
 from .models import ErrorResponse
 from .pool import PoolClient
 
@@ -51,7 +53,11 @@ class Handlers(
             web.get(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.get_project, allow_head=False),
             web.delete(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.delete_project),
             web.put(f"/{API_VERSION}/pools/{{Id}}/cache/project", self.put_project),
-            web.get(f"/{API_VERSION}/pools/{{Id}}/cache/project/info", self.get_project_info, allow_head=False),
+            web.get(
+                f"/{API_VERSION}/pools/{{Id}}/cache/project/info",
+                self.get_project_info,
+                allow_head=False,
+            ),
             # Plugins
             web.get(f"/{API_VERSION}/pools/{{Id}}/plugins", self.get_plugins, allow_head=False),
             # Config
@@ -70,7 +76,7 @@ class Handlers(
                 text=ErrorResponse(message=f"Unknown pool '{Id}'").model_dump_json(),
             )
 
-    async def reload_config(self, request):
+    async def reload_config(self, request: web.Request) -> web.Response:
         """
         summary: Reload config
         description: |
@@ -95,26 +101,27 @@ class Handlers(
                         schema:
                             $ref: '#/definitions/ErrorResponse'
         """
-        cnf = confservice.conf.admin_config_url
-        if await cnf.load_configuration():
-            # Update log level
-            level = logger.set_log_level()
-            logger.info("Log level set to %s", level.name)
-
-            # Update service
-            await self.service.synchronize()
-
-            return web.Response(
-                content_type="application/json",
-                text=confservice.conf.model_dump_json(),
-            )
-        else:
+        cnf = cast("ConfigProto", confservice.conf).admin_config_url
+        if not await cnf.load_configuration():
             _http_error(
                 web.HTTPUnauthorized,
                 "No config url defined",
             )
 
-    async def ws_watch(self, request):
+        # Update log level
+        # FIXME
+        #level = logger.set_log_level()
+        #logger.info("Log level set to %s", level.name)
+
+        # Update service
+        await self.service.synchronize()
+
+        return web.Response(
+            content_type="application/json",
+            text=confservice.conf.model_dump_json(),
+        )
+
+    async def ws_watch(self, request: web.Request):
         """
         summary: Watch (websocket)
         description: |
@@ -158,7 +165,7 @@ class Handlers(
                     case WSMsgType.TEXT:
                         match msg.data:
                             case "close":
-                                ws.close()
+                                await ws.close()
                     case WSMsgType.ERROR:
                         logger.error("WS connection error %s", ws.exception())
         finally:

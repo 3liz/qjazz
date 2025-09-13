@@ -104,14 +104,11 @@ def setup_executor_context(
         )
         confservice = config.ConfBuilder()
         confservice.add_section("executor", ExecutorConfig)
-        if configpath:
-            cnf = config.read_config_toml(configpath)
-        else:
-            cnf = {}
+        cnf = config.read_config_toml(configpath) if configpath else {}
         confservice.validate(cnf)
         if verbose:
             click.echo(confservice.conf)
-        return Executor(cast(ConfigProto, confservice.conf).executor)
+        return Executor(cast("ConfigProto", confservice.conf).executor)
 
     ctx.obj = SimpleNamespace(
         configpath=configpath,
@@ -474,10 +471,7 @@ def execute_process(
 
         inps = dict(kv(inp) for inp in inputs)
 
-    if outputs:
-        outs = TypeAdapter(OutputDict).validate_json(outputs)
-    else:
-        outs = {}
+    outs = TypeAdapter(OutputDict).validate_json(outputs) if outputs else {}
 
     try:
         result = executor.execute(
@@ -587,7 +581,8 @@ def list_jobs(
     has_next = True
 
     def pred(job: JobStatus) -> bool:
-        return (not filter_tags or job.tag in filter_tags) and (not filter_status or job.status in filter_status)
+        return (not filter_tags or job.tag in filter_tags) \
+            and (not filter_status or job.status in filter_status)
 
     while has_next:
         jobs = executor.jobs(service, realm=realm, limit=limit, cursor=index, with_details=True)

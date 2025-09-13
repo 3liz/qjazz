@@ -5,9 +5,9 @@ import functools
 import mimetypes
 
 from itertools import chain
-from pathlib import Path
 from time import time
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -56,6 +56,11 @@ from .models import (
 from .storage import Storage
 from .threads import PeriodicTasks
 from .watch import WatchFile
+
+# Type only imports
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 LinkSequence: TypeAdapter[Sequence[Link]] = TypeAdapter(Sequence[Link])
 
@@ -106,7 +111,7 @@ def on_worker_before_create_process(sender, *args, **kwargs):
 @control_command()
 def reload_processes_cache(_state):
     """Reload the processes cache"""
-    app = cast(QgisWorker, _state.consumer.app)
+    app = cast("QgisWorker", _state.consumer.app)
     if app.processes_cache:
         app.processes_cache.update()
 
@@ -114,11 +119,10 @@ def reload_processes_cache(_state):
 @inspect_command()
 def list_processes(_state) -> list:
     """Return processes list"""
-    app = cast(QgisWorker, _state.consumer.app)
+    app = cast("QgisWorker", _state.consumer.app)
     if app.processes_cache:
         return app.processes_cache.processes
-    else:
-        return []
+    return []
 
 
 @inspect_command(
@@ -126,11 +130,10 @@ def list_processes(_state) -> list:
 )
 def describe_process(_state, ident: str, project_path: str | None) -> dict | None:
     """Return process description"""
-    app = cast(QgisWorker, _state.consumer.app)
+    app = cast("QgisWorker", _state.consumer.app)
     if app.processes_cache:
         return app.processes_cache.describe(ident, project_path)
-    else:
-        return None
+    return None
 
 
 @functools.cache
@@ -148,7 +151,7 @@ def qgis_version_details() -> Sequence[str]:
 @inspect_command()
 def presence(_state) -> dict:
     """Returns informations about the service"""
-    app = cast(QgisWorker, _state.consumer.app)
+    app = cast("QgisWorker", _state.consumer.app)
 
     from qgis.core import Qgis
 
@@ -171,7 +174,7 @@ def presence(_state) -> dict:
 )
 def job_files(state, job_id, public_url):
     """Returns job execution files"""
-    app = cast(QgisWorker, state.consumer.app)
+    app = cast("QgisWorker", state.consumer.app)
     return app.job_files(job_id, public_url).model_dump()
 
 
@@ -185,7 +188,7 @@ class QgisWorker(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
 
     @staticmethod
     def load_configuration() -> ConfigProto:
-        return cast(ConfigProto, load_configuration())
+        return cast("ConfigProto", load_configuration())
 
     def __init__(self, **kwargs) -> None:
         conf = QgisWorker.load_configuration()

@@ -221,7 +221,7 @@ class Jobs(HandlerProto):
 
                     yield st
 
-            jobs = [st for st in filtered_jobs()]
+            jobs = list(filtered_jobs())
 
         for st in jobs:
             location = self.format_path(request, f"/jobs/{st.job_id}")

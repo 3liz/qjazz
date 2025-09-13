@@ -146,5 +146,4 @@ class ParameterMeshDatasetTime(InputParameter):
 
         if isinstance(_inp, DefinedDatetime):
             return QDateTime(_inp.value)
-        else:
-            return _inp.model_dump(mode="json", by_alias=True)
+        return _inp.model_dump(mode="json", by_alias=True)

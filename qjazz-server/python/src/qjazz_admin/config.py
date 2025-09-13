@@ -6,7 +6,7 @@ from typing import (
     no_type_check,
 )
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl
 from qjazz_core import logger
 from qjazz_core.config import (
     ConfBuilder,
@@ -14,6 +14,7 @@ from qjazz_core.config import (
     NetInterface,
     TLSConfig,
 )
+from qjazz_core.models import Field
 
 from .resolvers import ResolverConfig
 
@@ -39,21 +40,22 @@ class HttpConfig(ConfigBase):
     cross_origin: Literal["all", "same-origin"] | AnyHttpUrl = Field(
         default="all",
         title="CORS origin",
-        description=(
-            "Allows to specify origin for CORS. If set 'all' will set\n"
-            "Access-Control-Allow-Origin to '*'; 'same-origin' return\n"
-            "the same value as the 'Origin' request header.\n"
-            "An url may may be specified, restricting allowed origin to "
-            "this url."
-        ),
+        description="""
+        Allows to specify origin for CORS. If set 'all' will set
+        Access-Control-Allow-Origin to '*'; 'same-origin' return
+        the same value as the 'Origin' request header.
+        An url may may be specified, restricting allowed origin to
+        this url.
+        """,
     )
 
     proxy_conf: bool = Field(
         default=False,
         title="Enable proxy_configuration",
-        description=(
-            "Indicates that the server is behind a reverse proxy.\nThis enable handling of forwarded proxy headers"
-        ),
+        description="""
+        Indicates that the server is behind a reverse proxy.
+        This enable handling of forwarded proxy headers"
+        """,
     )
 
     auth_tokens: List[str] = Field(
@@ -80,11 +82,11 @@ class ConfigUrl(ConfigBase):
     url: Optional[AnyHttpUrl] = Field(
         default=None,
         title="External configuration Url",
-        description=(
-            "The server will issue a GET method against this url at startup.\n"
-            "The method should returns a valid configuration fragment.\n"
-            "Note that this overrides all local settings."
-        ),
+        description="""
+        The server will issue a GET method against this url at startup.
+        The method should returns a valid configuration fragment.
+        Note that this overrides all local settings.
+        """,
     )
 
     async def load_configuration(self) -> bool:

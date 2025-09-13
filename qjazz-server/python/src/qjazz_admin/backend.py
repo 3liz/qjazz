@@ -4,6 +4,7 @@ import asyncio
 import json
 
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from pathlib import Path
 from typing import (
     AsyncGenerator,
     AsyncIterator,
@@ -81,10 +82,11 @@ class Backend:
         self._grace_period = grace_period
         self._shutdown_task: asyncio.Task | None = None
 
-        def _read_if(f):
+        def _read_if(f: Optional[Path]) -> Optional[bytes]:
             if f:
                 with f.open("rb") as fp:
                     return fp.read()
+            return None
 
         self._ssl_creds = (
             grpc.ssl_channel_credentials(
@@ -237,9 +239,8 @@ class Backend:
         except grpc.RpcError as rpcerr:
             if rpcerr.code() == grpc.StatusCode.UNAVAILABLE:
                 return False
-            else:
-                logger.error("%s\t%s\t%s", self._address, rpcerr.code(), rpcerr.details())
-                raise
+            logger.error("%s\t%s\t%s", self._address, rpcerr.code(), rpcerr.details())
+            raise
 
     async def watch(self) -> AsyncIterator[tuple[Self, bool]]:
         """Watch service status"""

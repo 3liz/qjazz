@@ -149,12 +149,9 @@ def load_include_config_files(includes: str, conf: ConfigProto):
 
 
 def load_configuration(configpath: Optional[Path]) -> ConfigProto:
-    if configpath:
-        cnf = read_config_toml(configpath)
-    else:
-        cnf = {}
+    cnf = read_config_toml(configpath) if configpath else {}
     try:
-        conf = cast(ConfigProto, confservice.validate(cnf))
+        conf = cast("ConfigProto", confservice.validate(cnf))
 
         if conf.includes:
             includes = conf.includes
@@ -163,7 +160,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProto:
                 includes = str(configpath.joinpath(includes))
             load_include_config_files(includes, conf)
 
-        return cast(ConfigProto, confservice.conf)
+        return cast("ConfigProto", confservice.conf)
 
     except ConfigError as err:
         print("Configuration error:", err, file=sys.stderr, flush=True)  # noqa T201

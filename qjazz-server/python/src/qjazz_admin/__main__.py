@@ -24,14 +24,11 @@ FilePathType = click.Path(
 
 
 def load_configuration(configpath: Optional[Path], verbose: bool = False) -> ConfigProto:
-    if configpath:
-        cnf = config.read_config_toml(configpath)
-    else:
-        cnf = {}
+    cnf = config.read_config_toml(configpath) if configpath else {}
     try:
         confservice.validate(cnf)
 
-        conf = cast(ConfigProto, confservice.conf)
+        conf = cast("ConfigProto", confservice.conf)
 
         # Load external configuration if requested
         asyncio.run(conf.admin_config_url.load_configuration())
@@ -236,7 +233,7 @@ def set_conf(
     file whose path follow '@'.
     """
     if newconf.startswith("@"):
-        newconf = Path(newconf[1:]).open().read()
+        newconf = Path(newconf[1:]).read_text()
 
     if validate:
         # Validate as json

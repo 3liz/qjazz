@@ -29,10 +29,7 @@ def bucket_reader(
     @contextmanager
     def open(obj: Object) -> Generator[Any, None, None]:
         assert_precondition(obj.name, "Object must have a valid name")  # type: ignore [arg-type]
-        if prefix:
-            object_name = str(PurePosixPath(prefix, obj.name))
-        else:
-            object_name = obj.name
+        object_name = str(PurePosixPath(prefix, obj.name)) if prefix else obj.name
 
         # Minio return an urllib3.response.HTTPResponse
         # which have a 'read' method

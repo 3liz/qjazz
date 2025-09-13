@@ -61,25 +61,23 @@ async def put_object_from_stream(
             """Return *at most* size bytes"""
             if self._is_eof:
                 return b""
-            elif self._left:
+            if self._left:
                 data, self._left = self._left, b""
                 return data
-            else:
-                b = q.get(block=True)
-                sz = len(b)
-                self._is_eof = sz == 0
-                if size <= 0 or sz <= size:
-                    return b
-                else:
-                    self._left = b[size:]
-                    return b[:size]
+            b = q.get(block=True)
+            sz = len(b)
+            self._is_eof = sz == 0
+            if size <= 0 or sz <= size:
+                return b
+            self._left = b[size:]
+            return b[:size]
 
     def _put_object() -> ObjectWriteResult:
         # See https://github.com/minio/minio-py/blob/master/minio/api.py
         return client.put_object(
             bucket_name,
             object_name,
-            cast(BinaryIO, _Reader()),
+            cast("BinaryIO", _Reader()),
             length=length,
             content_type=content_type,
             part_size=part_size,
@@ -125,15 +123,9 @@ def bucket_destination(
         metadata: Optional[Dict[str, str]] = None,
     ) -> ObjectWriteResult:
         assert_precondition(obj.name, "Object must have a valid name")  # type: ignore [arg-type]
-        if prefix:
-            object_name = str(PurePosixPath(prefix, obj.name))
-        else:
-            object_name = obj.name
+        object_name = str(PurePosixPath(prefix, obj.name)) if prefix else obj.name
 
-        if obj.size is None or obj.size < 0:
-            size = -1
-        else:
-            size = obj.size
+        size = -1 if obj.size is None or obj.size < 0 else obj.size
 
         return await put_object_from_stream(
             client,

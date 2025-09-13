@@ -95,7 +95,7 @@ class ParameterEnum(InputParameter):
                         default = set(default) if multiple else default[0]
                     case [int(), *_]:
                         if multiple:
-                            default = set(opts[k] for k in default)
+                            default = {opts[k] for k in default}
                         else:
                             default = opts[default[0]]
                     case int():
