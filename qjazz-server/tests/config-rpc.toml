@@ -10,7 +10,6 @@ tls_cert_file = "$location/certs/localhost.crt"
 name = "Test"
 num_processes = 2
 process_start_timeout = 10
-send_report = true
 
 [worker.qgis.plugins]
 paths = ['$location/plugins']

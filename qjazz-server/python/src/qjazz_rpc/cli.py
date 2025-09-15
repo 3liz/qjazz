@@ -90,15 +90,22 @@ def print_config(conf: Optional[Path], pretty: bool = False):
     type=FilePathType,
 )
 @click.option("--force", is_flag=True, help="Force installation")
-def install_plugins(configpath: Optional[Path], force: bool):
+@click.option(
+    "--list", "list_plugins",
+    is_flag=True,
+    help="List installed plugins without installing them",
+)
+def install_plugins(configpath: Optional[Path], force: bool, list_plugins: bool = False):
     """Install plugins"""
     conf = load_configuration(configpath)
     logger.setup_log_handler(conf.logging.level)
 
-    from qjazz_core.qgis import install_plugins
-
-    if force or conf.worker.qgis.plugins.install_mode == "auto":
-        install_plugins(conf.worker.qgis.plugins)
+    from qjazz_core.qgis import qgis_plugins
+    if list_plugins:
+        click.echo("Installed plugins:\n")
+        qgis_plugins._run_plugin_manager(conf.worker.qgis.plugins, "list")
+    elif force or conf.worker.qgis.plugins.install_mode == "auto":
+        qgis_plugins.install_plugins(conf.worker.qgis.plugins)
     else:
         click.echo("Plugin installation set to manual: no plugins to install...")
 

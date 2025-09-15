@@ -7,7 +7,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BeforeValidator, Field, FilePath
+from pydantic import BeforeValidator, Field, FilePath, PositiveInt
 from qjazz_core.config import ConfBuilder, ConfigBase
 
 from .config import QgisConfig
@@ -106,14 +106,9 @@ class Worker(ConfigBase):
             "error."
         ),
     )
-    max_failure_pressure: float = Field(
-        default=0.5,
-        title="Max failure pressure",
-        description=(
-            "The maximum allowed failure pressure.\n"
-            "If the failure pressure exceed this value then\n"
-            "the service will exit with critical error condition."
-        ),
+    max_chunk_size: PositiveInt = Field(
+        default=1024*1024,
+        title="Max chunk size",
     )
     restore_projects: Annotated[
         list[str],

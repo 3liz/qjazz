@@ -341,6 +341,26 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
     return minver <= version <= maxver
 
 
+def _run_plugin_manager(
+    conf: QgisPluginConfig,
+    /,
+    *args: str,
+    install_path: Optional[Path] = None,
+):
+    import subprocess  # nosec
+
+    assert_precondition(conf.plugin_manager.is_absolute())
+
+    install_path = install_path or conf.paths[0]
+    res = subprocess.run(
+        # SECURITY: path is checked to be absolute
+        [conf.plugin_manager, *args],  # nosec
+        cwd=str(install_path),
+    )
+    if res.returncode > 0:
+        raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
+
+
 def install_plugins(conf: QgisPluginConfig):
     """Install required plugins from installation"""
     plugins = conf.install
@@ -349,9 +369,6 @@ def install_plugins(conf: QgisPluginConfig):
         print("No plugins to install", file=sys.stderr)  # noqa T201
         return
 
-    import subprocess  # nosec
-
-    assert_precondition(conf.plugin_manager.is_absolute())
 
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
@@ -359,15 +376,10 @@ def install_plugins(conf: QgisPluginConfig):
     logger.info("Installing plugins in %s", install_path)
 
     def _run(*args):
-        res = subprocess.run(
-            # SECURITY: path is checked to be absolute
-            [conf.plugin_manager, *args],  # nosec
-            cwd=str(install_path),
-        )
-        if res.returncode > 0:
-            raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
+        _run_plugin_manager(conf, *args)
 
     sources_list = Path(os.getenv("QGIS_PLUGIN_MANAGER_SOURCES_FILE", install_path / "sources.list"))
+
     if not sources_list.exists():
         _run("init")
 
