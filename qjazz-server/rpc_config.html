@@ -326,7 +326,7 @@ by default.</p>
 <span class="c1">#</span>
 <span class="c1"># Use aliases for QGIS server apis.</span>
 <span class="c1"># </span>
-<span class="n">api_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="n">api_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s1">&#39;WFS3&#39;</span><span class="p">=</span><span class="s1">&#39;OGC WFS3 (Draft)&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;LIZMAP&#39;</span><span class="p">=</span><span class="s1">&#39;Lizmap&#39;</span><span class="p">}</span>
 
 <span class="c1">#</span>
 <span class="c1"># Projects configuration</span>
@@ -404,6 +404,19 @@ by default.</p>
 <span class="c1"># Configure storage handlers.</span>
 <span class="c1"># The name will be used as scheme for project&#39;s search path</span>
 <span class="c1"># configuration.</span>
+<span class="c1"># </span>
+<span class="c1">#</span>
+<span class="c1"># Example:</span>
+<span class="c1">#</span>
+<span class="c1"># [projects.search_paths]</span>
+<span class="c1"># &quot;/public/location1/&quot; = &quot;postgres1://?dbname=mydatabase1&quot;</span>
+<span class="c1"># &quot;/public/location2/&quot; = &quot;postgres1://?dbname=mydatabase2&quot;</span>
+<span class="c1"># </span>
+<span class="c1"># [projects.handlers.postgres1]</span>
+<span class="c1"># handler_class = qjazz_cache.handlers.postgresql.PostgresHandler</span>
+<span class="c1"># </span>
+<span class="c1"># [projects.handlers.postgres1.config]</span>
+<span class="c1"># uri = &quot;postgresql://user@host/?schema=myschema&quot;</span>
 <span class="c1"># </span>
 <span class="c1">#</span>
 <span class="k">[worker.qgis.projects.handlers.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>

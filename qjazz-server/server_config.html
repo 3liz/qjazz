@@ -193,16 +193,16 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># Shutdown grace period</span>
 <span class="n">shutdown_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span>
 
-<span class="c1">#[backends.key]</span>
+<span class="k">[backends.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
 <span class="c1">#</span>
 <span class="c1"># Hostname</span>
-<span class="c1">#host = &quot;localhost&quot;</span>
+<span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
 <span class="c1">#</span>
 <span class="c1"># Port</span>
-<span class="c1">#port = 23456</span>
+<span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">23456</span>
 <span class="c1">#</span>
 <span class="c1"># Enable TLS</span>
-<span class="c1">#enable_tls = false</span>
+<span class="n">enable_tls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 <span class="c1">#</span>
 <span class="c1"># CA file</span>
 <span class="c1">#cafile =   	# Optional</span>
@@ -218,10 +218,10 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1">#client_cert_file =   	# Optional</span>
 <span class="c1">#</span>
 <span class="c1"># A descriptive title</span>
-<span class="c1">#title = &quot;&quot;</span>
+<span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 <span class="c1">#</span>
 <span class="c1"># A description of the service</span>
-<span class="c1">#description = &quot;&quot;</span>
+<span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 <span class="c1">#</span>
 <span class="c1"># Route to service</span>
 <span class="c1">#route =   	# Required</span>
@@ -232,14 +232,14 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># If a Qgis worker takes more than the corresponding value</span>
 <span class="c1"># a timeout error (504) is returned to the client.</span>
 <span class="c1"># </span>
-<span class="c1">#timeout = 20</span>
+<span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span>
 <span class="c1">#</span>
 <span class="c1"># Forwarded headers</span>
 <span class="c1">#</span>
 <span class="c1"># Set the headers that will be forwarded to the Qgis server backend.</span>
 <span class="c1"># This may be useful if you have plugins that may deal with request headers.</span>
 <span class="c1"># </span>
-<span class="c1">#forward_headers = [&quot;x-qgis-*&quot;,&quot;x-lizmap-*&quot;]</span>
+<span class="n">forward_headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;x-qgis-*&quot;</span><span class="p">,</span><span class="s2">&quot;x-lizmap-*&quot;</span><span class="p">]</span>
 <span class="c1">#</span>
 <span class="c1"># Allow direct path resolution</span>
 <span class="c1">#</span>
@@ -247,7 +247,7 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># WARNING: allowing this may be a security vulnerabilty.</span>
 <span class="c1"># See worker configuration for details.</span>
 <span class="c1"># </span>
-<span class="c1">#allow_direct_resolution = false</span>
+<span class="n">allow_direct_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 <span class="c1">#</span>
 <span class="c1"># Disable catalog root api</span>
 <span class="c1">#</span>
@@ -255,12 +255,12 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># a 403 HTTP response with an informative message that the</span>
 <span class="c1"># catalog has been disabled for the channel.</span>
 <span class="c1"># </span>
-<span class="c1">#disable_root_catalog = false</span>
+<span class="n">disable_root_catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 
 <span class="c1">#</span>
 <span class="c1"># Api endpoints</span>
 <span class="c1">#</span>
-<span class="c1">#[[backends.key.api]]</span>
+<span class="k">[[backends.</span><span class="s1">&#39;key&#39;</span><span class="k">.api]]</span>
 <span class="c1">#</span>
 <span class="c1"># Api endpoint</span>
 <span class="c1">#endpoint =   	# Required</span>
@@ -275,10 +275,10 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1">#delegate_to =   	# Optional</span>
 <span class="c1">#</span>
 <span class="c1"># Descriptive name</span>
-<span class="c1">#name = &quot;&quot;</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 <span class="c1">#</span>
 <span class="c1"># Api description</span>
-<span class="c1">#description = &quot;&quot;</span>
+<span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 <span class="c1">#</span>
 <span class="c1"># Enable html in delegated endpoint</span>
 <span class="c1">#</span>
@@ -287,7 +287,7 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1"># template resource resolution in Qgis server when using</span>
 <span class="c1"># delegated api endpoint.&quot;</span>
 <span class="c1"># </span>
-<span class="c1">#enable_html_delegate = false</span>
+<span class="n">enable_html_delegate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 
 <span class="c1">#</span>
 <span class="c1"># Path to services configuration files</span>
