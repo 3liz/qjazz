@@ -22,10 +22,10 @@
       <script>
 window.onload = () => {
   
-  window.ui = SwaggerUIBundle({
-    url: "_static/specs/openapi.yml",
-    dom_id: "#swagger-ui-container",
-  })
+  var options = {...{}};
+  options.url = "_static/specs/openapi.yml";
+  options.dom_id = "#swagger-ui-container";
+  SwaggerUIBundle(options);
   
 }</script>
     <script src="_static/js/theme.js"></script>
