@@ -55,7 +55,7 @@ lint = [
     { name = "types-toml" },
     { name = "vulture" },
 ]
-test = [
+tests = [
     { name = "coverage" },
     { name = "pytest", specifier = ">=5.3" },
     { name = "pytest-aiohttp" },

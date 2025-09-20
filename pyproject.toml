@@ -6,10 +6,10 @@ dev = [
     "grpcio-tools",
     "qgis-plugin-manager",
     "setuptools", # Needed for building C extension
-    {include-group = "test"},
+    {include-group = "tests"},
     {include-group = "lint"},
 ]
-test = [
+tests = [
     "pytest >= 5.3",
     "pytest-asyncio",
     "pytest-aiohttp",

@@ -18,6 +18,16 @@ clean-dist:
 
 clean:: clean-dist
 
+#
+# Requirements
+#
+
+REQUIREMENT_GROUPS=\
+	tests \
+	lint \
+	doc \
+	$(NULL)
+
 # Rebuild requirements only if uv.lock change
 requirements.txt: uv.lock
 
@@ -31,6 +41,29 @@ requirements.txt:
 		--no-editable \
 		--no-hashes -q -o requirements.txt
 
+update-requirements: requirements.txt $(patsubst %, update-requirements-%, $(REQUIREMENT_GROUPS))
+
+# Update requirements groups
+
+# Test requirements require project's dependencies
+update-requirements-tests:
+	@echo "Updating requirements for 'tests'"; \
+	uv export --all-extras --no-dev --group tests --format requirements.txt \
+		--no-annotate \
+		--no-editable \
+		--no-hashes \
+		-q -o requirements/tests.txt;
+
+update-requirements-%:
+	@echo "Updating requirements for '$*'"; \
+	uv export --format requirements.txt \
+		--no-annotate \
+		--no-editable \
+		--no-hashes \
+		--only-group $*\
+		-q -o requirements/$*.txt;
+
+# Install all dev requirementa using frozen packagess 
 install::
 	@uv sync --all-extras --frozen $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
 
@@ -38,7 +71,7 @@ install::
 upgrade::
 	@uv sync -U --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
 
-upgrade:: requirements.txt
+upgrade:: update-requirements
 
 reinstall::
 	@uv sync --reinstall --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)

@@ -16,6 +16,7 @@ extend-select = [
 ignore = [
     "ANN002",
     "ANN003",
+    "ANN401", # Dynamically typed expressions (Any)
     "RUF100",
     "RUF029",
     "RUF052",

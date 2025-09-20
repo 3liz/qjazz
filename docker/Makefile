@@ -74,8 +74,6 @@ manifest:
     echo commitid=$(COMMITID) >> $(MANIFEST); }
 	@cat $(MANIFEST)
 
-.PHONY: $(REQUIREMENTS)
-
 deliver: tag push
 
 ifndef BUILD_RELEASE
