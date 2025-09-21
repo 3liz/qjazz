@@ -1,16 +1,21 @@
-import asyncio  # noqa
+import asyncio
+import json
 
+from pathlib import PurePosixPath
 from time import time
 
 import pytest
 
+from qjazz_ogc import OgcEndpoints
+from qjazz_ogc.stac import CatalogBase
+
 from qjazz_rpc import messages
-from qjazz_rpc.tests.worker import Worker, NoDataResponse
+from qjazz_rpc.tests.worker import NoDataResponse, Worker
 
 pytest_plugins = ("pytest_asyncio",)
 
 
-async def test_rpc_io(worker: Worker):
+async def test_worker_io_ping(worker: Worker):
     """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
@@ -18,7 +23,7 @@ async def test_rpc_io(worker: Worker):
 
     # Test ping message as dict
     status, resp = await worker.io.send_message(
-        {"msg_id": messages.MsgType.PING, "echo": "hello"},
+        {"msg_id": messages.MsgType.PING, "echo": "hello"},   # type: ignore [arg-type]
     )
     assert status == 200
     assert resp == "hello"
@@ -54,7 +59,7 @@ async def test_rpc_io(worker: Worker):
         assert len(chunk) > 0
 
 
-async def test_rpc_chunked_response(worker: Worker):
+async def test_worker_io_chunked_response(worker: Worker):
     """Test Response with chunk"""
     status, _ = await worker.io.send_message(messages.PingMsg())
     assert status == 200
@@ -86,7 +91,7 @@ async def test_rpc_chunked_response(worker: Worker):
         assert len(chunk) > 0
 
 
-async def test_rpc_cache_api(worker: Worker):
+async def test_worker_io_cache_api(worker: Worker):
     """Test worker cache api"""
     # Pull
     status, resp = await worker.io.send_message(
@@ -136,8 +141,8 @@ async def test_rpc_cache_api(worker: Worker):
         _ = await worker.io.read_message()
 
 
-async def test_rpc_catalog(worker: Worker):
-    """Test worker cache api"""
+async def test_worker_io_catalog(worker: Worker):
+    """Test worker catalog api"""
     await worker.io.put_message(messages.CatalogMsg(location="/france"))
     status, item = await worker.io.read_message()
     count = 0
@@ -153,7 +158,7 @@ async def test_rpc_catalog(worker: Worker):
     assert count == 3
 
 
-async def test_rpc_ows_chunked_request(worker: Worker):
+async def test_worker_io_ows_chunked_request(worker: Worker):
     """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
@@ -191,7 +196,7 @@ async def test_rpc_ows_chunked_request(worker: Worker):
         await worker.wait_ready()
 
 
-async def test_rpc_api_request(worker: Worker):
+async def test_worker_io_api_request(worker: Worker):
     """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
@@ -223,7 +228,7 @@ async def test_rpc_api_request(worker: Worker):
     print(f"> chunks: {count}")
 
 
-async def test_rpc_api_delegate_request(worker: Worker):
+async def test_worker_io_api_delegate_request(worker: Worker):
     """Test worker process"""
     # Test ping message
     status, _ = await worker.io.send_message(messages.PingMsg())
@@ -253,3 +258,64 @@ async def test_rpc_api_delegate_request(worker: Worker):
         assert len(chunk) > 0
 
     print(f"> chunks: {count}")
+
+
+async def test_ogc_catalog_api(worker: Worker):
+    """Test worker catalog api"""
+    await worker.io.put_message(
+        messages.CollectionsMsg(
+            start=0,
+            end=50,
+        ),
+    )
+
+    status, resp = await worker.io.read_message()
+    print("\n::test_ogc_api::catalog", status)
+    assert status == 200
+
+    resp = messages.CollectionsPage.model_validate(resp)
+
+    assert not resp.next
+    assert len(resp.items) > 0
+    assert len(resp.items) < 50
+
+    schema = json.loads(resp.schema_)
+    print("\n::test_ogc_api::catalog::schema\n", schema)
+
+    print("\n::test_ogc_api::catalog::items:")
+    print("\n".join(n.name for n in resp.items))
+
+    item = resp.items[0]
+    print("\n::test_ogc_api::catalog::item", item)
+
+    coll = CatalogBase.model_validate_json(item.json_)
+
+    assert coll.id == item.name
+    assert item.endpoints == OgcEndpoints.MAP.value
+
+
+async def test_ogc_catalog_prefix(worker: Worker):
+    """Test worker catatalog api"""
+
+    prefix = "/france/"
+
+    await worker.io.put_message(
+        messages.CollectionsMsg(
+            start=0,
+            end=50,
+            location=prefix,
+        ),
+    )
+
+    status, resp = await worker.io.read_message()
+    print("\n::test_ogc_api::catalog_prefix", status)
+    assert status == 200
+
+    resp = messages.CollectionsPage.model_validate(resp)
+
+    assert len(resp.items) > 0
+    for item in resp.items:
+        print("\n::test_ogc_api::catalog_prefix::item", item)
+        assert PurePosixPath(item.name).is_relative_to(prefix)
+
+

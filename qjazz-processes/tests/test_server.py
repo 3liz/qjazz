@@ -60,8 +60,8 @@ async def test_server_processes(workdir: Path, http_client: TestClient):
     data = await resp.text()
     print("test_server_execution::", data)
 
-    res = JobStatus.model_validate_json(data)
-    print("test_server_execution::status", res.status)
+    jobstatus = JobStatus.model_validate_json(data)
+    print("test_server_execution::status", jobstatus.status)
 
     #
     # Test jobs
@@ -73,5 +73,5 @@ async def test_server_processes(workdir: Path, http_client: TestClient):
     data = await resp.text()
     print("test_server_jobs::", data)
 
-    res = jobs.JobList.model_validate_json(data)
-    assert len(res.jobs) >= 1
+    joblist = jobs.JobList.model_validate_json(data)
+    assert len(joblist.jobs) >= 1

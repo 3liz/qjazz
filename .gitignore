@@ -26,4 +26,5 @@ __output__
 
 /external
 
-.buildconfig
+.localconfig.mk
+.coverage

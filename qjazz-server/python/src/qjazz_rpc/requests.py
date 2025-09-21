@@ -2,7 +2,6 @@
 
 import traceback
 
-from contextlib import contextmanager
 from time import time
 from typing import Optional
 
@@ -125,14 +124,6 @@ class Response(QgsServerResponse):
             ),
         )
         self._header_written = True
-
-    @contextmanager
-    def _error(self):
-        try:
-            yield
-        except Exception:
-            logger.critical(traceback.format_exc())
-            self.sendError(500)
 
     def flush(self) -> None:
         """Write the data to the queue

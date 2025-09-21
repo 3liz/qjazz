@@ -56,3 +56,21 @@ extend-exclude = [
 "src/qjazz_processes/server/_handlers/protos.py" = ["F401"]
 "src/qjazz_processes/processing/prelude.py" = ["F401"]
 
+
+#
+# Coverage
+#
+[tool.coverage.run]
+source =  [
+    "src/qjazz_processes",
+]
+branch = true
+relative_files = true
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "if TYPE_CHECKING",
+    '\(Protocol\):$',
+    'assert_never',
+]

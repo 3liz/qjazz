@@ -20,6 +20,7 @@ scan \
 deadcode \
 doc \
 prepare_commit \
+coverage \
 $(NULL)
 
 $(TOPTARGETS):: $(DIRS)

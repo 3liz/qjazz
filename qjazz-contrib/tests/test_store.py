@@ -3,6 +3,7 @@ import dataclasses
 import importlib.resources
 
 from io import BytesIO
+from typing import TYPE_CHECKING, cast
 
 import minio
 import pytest
@@ -18,9 +19,12 @@ from qjazz_store import (
     store_client as _store_client,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 def test_store_resource_files() -> None:
-    root = importlib.resources.files("qjazz_store").joinpath("templates")
+    root = cast("Path", importlib.resources.files("qjazz_store").joinpath("templates"))
     assert root.exists()
 
     path = root.joinpath("store-policy.json")

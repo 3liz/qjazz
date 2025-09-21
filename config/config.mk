@@ -30,6 +30,6 @@ RUFF=$(UV_RUN) ruff
 BANDIT=$(UV_RUN) bandit
 
 # Local (not commited) configuration
-BUILDCONFIG=$(DEPTH)/.buildconfig
+BUILDCONFIG=$(DEPTH)/.localconfig.mk
 
 -include $(BUILDCONFIG)

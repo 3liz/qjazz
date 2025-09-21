@@ -17,11 +17,11 @@ from qjazz_processes.executor import (
 confservice = config.ConfBuilder()
 confservice.add_section("executor", ExecutorConfig)
 
-logger.setup_log_handler(confservice.conf.logging.level)
+logger.setup_log_handler(confservice.conf.logging.level) # type: ignore [attr-defined]
 
 
 def Executor() -> _Executor:
-    return _Executor(confservice.conf.executor)
+    return _Executor(confservice.conf.executor) # type: ignore [attr-defined]
 
 
 # Set config path for worker

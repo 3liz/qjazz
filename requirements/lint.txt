@@ -4,20 +4,19 @@ bandit==1.8.6
 colorama==0.4.6 ; sys_platform == 'win32'
 markdown-it-py==4.0.0
 mdurl==0.1.2
-mypy==1.17.1
+mypy==1.18.2
 mypy-extensions==1.1.0
 pathspec==0.12.1
 pygments==2.19.2
 pyyaml==6.0.2
 rich==14.1.0
-ruff==0.13.0
+ruff==0.13.1
 stevedore==5.5.0
 types-aiofiles==24.1.0.20250822
-types-protobuf==6.30.2.20250822
+types-protobuf==6.32.1.20250918
 types-psutil==7.0.0.20250822
-types-pyyaml==6.0.12.20250822
-types-requests==2.32.4.20250809
-types-toml==0.10.8.20240310
+types-pyyaml==6.0.12.20250915
+types-requests==2.32.4.20250913
 typing-extensions==4.15.0
 urllib3==2.5.0
 vulture==2.14

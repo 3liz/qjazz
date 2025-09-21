@@ -45,4 +45,25 @@ extend = "../config/ruff.toml"
 "tests/*" = ["T201"]
 "src/qjazz_core/qgis/qgis_init.py" = ["T201"]
 "src/qjazz_core/config/_toml.py" = ["T201"]
- 
+
+
+#
+# Coverage
+#
+[tool.coverage.run]
+source =  [
+    "src/qjazz_core",
+    "src/qjazz_cache",
+    "src/qjazz_ogc",
+    "src/qjazz_store",
+]
+branch = true
+relative_files = true
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "if TYPE_CHECKING",
+    '\(Protocol\):$',
+    'assert_never',
+]

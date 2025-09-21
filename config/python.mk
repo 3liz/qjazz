@@ -27,7 +27,7 @@ format::
 #	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
 typecheck:: $(PYTHON_PKG)
-	@$(MYPY) $(PYTHON_PKG)
+	@$(MYPY) $(PYTHON_PKG) $(TESTDIR)
 
 scan::
 	$(BANDIT) -r $(PYTHON_PKG) $(SCAN_OPTS)
@@ -36,12 +36,23 @@ scan::
 deadcode:: 
 	vulture $(PYTHON_PKG) --min-confidence 70
 
+#
+# Coverage
+#
+
+covtest: 
+	@ $(UV_RUN) coverage run -m pytest $(TEST_OPTS) $(TESTDIR)/
+
+coverage:: covtest
+	@echo building coverage html
+	@ $(UV_RUN) coverage html
+
 
 ifndef TESTDIR
 test::
 else
 test::
-	cd $(TESTDIR) && $(UV_RUN) pytest -v $(TEST_OPTS) 
+	$(UV_RUN) pytest -v $(TEST_OPTS) $(TESTDIR)
 endif
 
 prepare_commit:: lint scan test

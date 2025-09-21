@@ -5,7 +5,7 @@ import os
 
 from string import capwords
 from typing import Optional, assert_never, cast
-from urllib.parse import urlunsplit
+from urllib.parse import parse_qs, urlunsplit
 
 from qjazz_core import logger
 from qjazz_core.condition import assert_precondition
@@ -95,8 +95,15 @@ def handle_ows_request(
         method = QgsServerRequest.GetMethod
 
     if options:
+        options = options.removeprefix("?")
         # Rebuild URL for Qgis server
-        # XXX options is the full query string
+        params = tuple(k.upper() for k in parse_qs(options))
+        if "SERVICE" not in params:
+            options = f"SERVICE={service or 'WMS'}&{options}"
+        if "REQUEST" not in options and request:
+            options = f"REQUEST={request}&{options}"
+        if "VERSION" not in options and msg.version:
+            options = f"VERSION={msg.version}&{options}"
         url = f"{msg.url or ''}?{options}"
     else:
         url = f"{msg.url or ''}?SERVICE={service or 'WMS'}&REQUEST={request}"

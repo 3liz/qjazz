@@ -11,7 +11,7 @@ from qjazz_store import store
 
 @pytest.fixture(scope="session")
 def rootdir(request: pytest.FixtureRequest) -> Path:
-    return Path(request.config.rootdir.strpath)
+    return request.config.rootpath
 
 
 @pytest.fixture(scope="session")

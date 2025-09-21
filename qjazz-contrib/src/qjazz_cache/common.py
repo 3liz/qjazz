@@ -13,7 +13,6 @@ import urllib.parse
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import (
-    Callable,
     Iterator,
     Optional,
     Protocol,
@@ -79,11 +78,3 @@ class ProtocolHandler(Protocol):
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
         """List all projects availables from the given uri"""
 
-
-@dataclass(frozen=True)
-class ResourceReader:
-    read: Callable[..., bytes]
-    close: Callable[[], None]
-    size: int
-    content_type: Optional[str]
-    uri: str

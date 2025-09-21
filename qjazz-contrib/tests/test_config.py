@@ -3,7 +3,7 @@ from pydantic import Field
 from qjazz_core import config
 
 
-def setup_module():
+def setup_module() -> None:
     """Setup config model"""
 
     class SubConfig(config.ConfigBase):
@@ -19,25 +19,25 @@ def setup_module():
     assert "test1" in builder._global_sections
 
 
-def test_config_default():
+def test_config_default() -> None:
     """Test config with default settings"""
     builder = config.ConfBuilder()
     builder.validate({})
-    test = builder.conf.test1
+    test = builder.conf.test1  # type: ignore [attr-defined]
     assert test.foo == False  # noqa
     assert test.sub.bar == "Hello"
 
 
-def test_config_validate():
+def test_config_validate() -> None:
     """Test config with default settings"""
     builder = config.ConfBuilder()
     builder.validate({"test1": {"foo": True, "sub": {"bar": "World"}}})
-    test = builder.conf.test1
+    test = builder.conf.test1  # type: ignore [attr-defined]
     assert test.foo == True  # noqa
     assert test.sub.bar == "World"
 
 
-def test_config_update():
+def test_config_update() -> None:
     """Test updating service"""
     builder = config.ConfBuilder()
     builder.validate({})
@@ -60,7 +60,7 @@ def test_config_update():
     builder.add_section("test", Test)
     assert builder._model_changed
 
-    test = builder.conf.test
+    test = builder.conf.test  # type: ignore [attr-defined]
     assert test.foo == 2
     assert test.bar.alpha == 0
     assert test.bar.beta == 0
@@ -81,7 +81,7 @@ def test_config_update():
         },
     )
 
-    test = builder.conf.test
+    test = builder.conf.test  # type: ignore [attr-defined]
     assert test.foo == 3
     assert test.bar.alpha == 1
     assert test.bar.beta == 0
@@ -89,12 +89,12 @@ def test_config_update():
     assert test.simple_dict == {"c": 2}
 
 
-def test_config_proxy():
+def test_config_proxy() -> None:
     """Test configuration proxy"""
     builder = config.ConfBuilder()
     builder.validate({})
 
-    proxy = config.ConfigProxy(builder, "test1.sub")
+    proxy = config.ConfigProxy(builder, "test1.sub") # type: ignore [var-annotated]
     assert proxy.bar == "Hello"
 
     builder.validate({"test1": {"sub": {"bar": "World"}}})

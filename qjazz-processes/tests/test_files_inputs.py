@@ -64,6 +64,7 @@ def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
     context.job_id = "test_parameter_raw_file"
 
     raw_destination_path = processing_raw_config.raw_destination_root_path
+    assert raw_destination_path is not None
 
     param = QgsProcessingParameterFile("test_parameter_raw_file", extension=".txt")
 

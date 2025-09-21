@@ -13,7 +13,7 @@ import requests
 def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = None):
     """ Execute a process and return its status json
     """
-    headers = {}
+    headers: dict = {}
     if respond_async:
         headers.update(Prefer="respond-async")
 

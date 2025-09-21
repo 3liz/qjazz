@@ -1,4 +1,4 @@
-from qjazz_cache import CacheManager, ProjectsConfig
+from qjazz_cache.prelude import CacheManager, ProjectsConfig
 from qjazz_core import logger
 from qjazz_core.qgis import init_qgis_application
 

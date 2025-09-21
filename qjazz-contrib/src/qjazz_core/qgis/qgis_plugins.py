@@ -241,6 +241,7 @@ class QgisPluginService:
                     )
                     logger.info(f"Loaded plugin {plugin}")
                 except Exception:
+                    # TODO: Have an option to ignore plugin errors
                     raise PluginError(
                         f"Error loading plugin '{plugin}':\n{traceback.format_exc()}",
                     ) from None
@@ -260,6 +261,7 @@ def find_plugins(
 ) -> Iterator[tuple[str, configparser.ConfigParser]]:
     """return list of plugins in given path"""
     path = Path(path)
+    logger.info("Looking for plugin in %s", path)
     for plugin in path.glob("*"):
         if not plugin.is_dir():
             # Warn about dangling symlink
@@ -274,7 +276,7 @@ def find_plugins(
                 )
             continue
 
-        logger.debug(f"Looking for plugin in '{plugin}'")
+        logger.debug(f"Checking plugin metadata in '{plugin}'")
 
         metadata_file = plugin / "metadata.txt"
         if not metadata_file.exists():

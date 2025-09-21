@@ -376,9 +376,3 @@ def send_nodata(conn: Connection):
 #
 # XXX Note that data sent by child *MUST* be retrieved in parent
 # side, otherwise cpu goes wild.
-
-
-def cast_into[T](o: Any, t: type[T]) -> T:  # noqa ANN401
-    if not isinstance(o, t):
-        raise ValueError(f"Cast failed, Expecting {t}, not {type(o)}")
-    return o

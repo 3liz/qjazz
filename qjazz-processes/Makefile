@@ -5,7 +5,7 @@ include $(DEPTH)/config/config.mk
 
 PYTHON_PKG=src
 
-TESTDIR=tests tests/plugins
+TESTDIR=tests
 
 INSTALL_DEPENDENCIES=[server,minio,mail]
 

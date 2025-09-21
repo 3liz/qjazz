@@ -9,7 +9,7 @@ _baseurl = None
 
 @pytest.fixture(scope='session')
 def rootdir(request: pytest.FixtureRequest) -> Path:
-    return Path(request.config.rootdir.strpath)
+    return request.config.rootpath
 
 
 @pytest.fixture(scope='session')

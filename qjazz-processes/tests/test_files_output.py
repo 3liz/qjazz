@@ -12,7 +12,11 @@ from qjazz_processes.processing.outputs import (
     OutputFile,
     OutputParameter,
 )
-from qjazz_processes.schemas import InputValueError, Output
+from qjazz_processes.schemas import (
+    InputValueError,
+    Output,
+    OutputFormatDefinition,
+)
 
 
 def test_output_file(qgis_session: ProcessingConfig):
@@ -41,6 +45,8 @@ def test_output_file(qgis_session: ProcessingConfig):
     assert inputdef is not None
 
     param = InputParameter(inputdef)
+
+    assert isinstance(param, OutputFormatDefinition)
 
     # Invalid format should raise InputValueError
     with pytest.raises(InputValueError):

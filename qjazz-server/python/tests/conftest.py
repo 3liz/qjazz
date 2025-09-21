@@ -2,13 +2,20 @@ import os
 import traceback
 
 from pathlib import Path
+from typing import AsyncGenerator, Generator
 
 import pytest
 
 from qjazz_core import logger
+from qjazz_core.qgis import Server
 
-from qjazz_rpc.config import ProjectsConfig, QgisConfig
+from qjazz_rpc.config import (
+    ProjectsConfig,
+    QgisConfig,
+    QgisPluginConfig,
+)
 from qjazz_rpc.tests import Worker
+from qjazz_rpc.worker import Feedback
 
 # Disable loglevel setting notice
 os.environ["QJAZZ_LOGLEVEL_NOTICE"] = "no"
@@ -36,23 +43,13 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest.fixture(scope="session")
-def qgis_session(request: pytest.FixtureRequest) -> None:
-    from qjazz_core import logger, qgis
-
-    try:
-        print("Initializing qgis application")
-        qgis.init_qgis_application()
-        if logger.is_enabled_for(logger.LogLevel.DEBUG):
-            print(qgis.show_qgis_settings())
-    except ModuleNotFoundError:
-        pytest.exit("Qgis installation is required", returncode=1)
-
-    return
+def data(request: pytest.FixtureRequest) -> Path:
+    return request.config.rootpath.joinpath("data")
 
 
 @pytest.fixture(scope="session")
-def data(request: pytest.FixtureRequest) -> Path:
-    return Path(request.config.rootdir.strpath, "data")
+def plugins(request: pytest.FixtureRequest) -> Path:
+    return request.config.rootpath.joinpath("plugins")
 
 
 @pytest.fixture(scope="session")
@@ -71,10 +68,61 @@ def projects(data: Path) -> ProjectsConfig:
 
 
 @pytest.fixture(scope="function")
-async def worker(projects: ProjectsConfig) -> Worker:
+async def worker(projects: ProjectsConfig) -> AsyncGenerator[Worker, None]:
     """Setup configuration"""
     logger.setup_log_handler(None)
     worker = Worker(config=QgisConfig(projects=projects))
     await worker.start()
     yield worker
     await worker.terminate()
+
+
+@pytest.fixture(scope="session")
+def feedback() -> Feedback:
+    return Feedback()
+
+
+# Plugins config
+@pytest.fixture(scope="session")
+def plugins_config(plugins: Path) -> QgisPluginConfig:
+    """Setup configuration"""
+    return QgisPluginConfig(
+        paths=(plugins,),
+    )
+
+
+# Qgis Config
+@pytest.fixture(scope="session")
+def qgis_config(projects: ProjectsConfig, plugins_config: QgisPluginConfig) -> QgisConfig:
+    return QgisConfig(
+        projects=projects,
+        plugins=plugins_config,
+        use_default_server_handler=False,
+    )
+
+# Qgis server
+@pytest.fixture(scope="package")
+def qgis_server(qgis_config: QgisConfig, feedback: Feedback) -> Generator[Server, None, None]:
+    """Return server"""
+    from qjazz_core.qgis import PluginType, QgisPluginService
+
+    from qjazz_cache.prelude import CacheManager
+    from qjazz_rpc.worker import setup_server
+
+    server = setup_server(qgis_config)
+
+    cm = CacheManager(qgis_config.projects, server.inner)
+    cm.register_as_service()
+
+    server_iface = server.inner.serverInterface()
+
+    plugin_s = QgisPluginService(qgis_config.plugins)
+    plugin_s.load_plugins(PluginType.SERVER, server_iface)
+    plugin_s.register_as_service()
+
+    yield  server
+
+    # Require to prevent crash when releasing server in tests
+    # Related to QgsProject::setInstance(NULL) in binding code
+    # Neet do investigate what's going on in QGIS
+    cm.clear()

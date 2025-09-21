@@ -2,6 +2,7 @@
 # Define uv workspace and dependency groups
 [dependency-groups]
 dev = [
+    "coverage[toml]",
     "maturin<=2.0.0",
     "grpcio-tools",
     "qgis-plugin-manager",
@@ -23,7 +24,6 @@ lint = [
     "types-protobuf",
     "types-psutil",
     "types-PyYAML",
-    "types-toml",
     "types-requests",
     "types-aiofiles",
     "bandit",
