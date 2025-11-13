@@ -52,7 +52,7 @@ build-binaries:
     name: snap
   artifacts:
     paths:
-    - "qjazz-contrib/qjazz_contrib/core/qgis/*.so"
+    - "qjazz-contrib/src/qjazz_core/qgis/*.so"
   tags:
   - factory-plain
 
