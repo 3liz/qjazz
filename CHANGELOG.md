@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## 0.5.0
+
+## Added
+
+* [processes] Add store API
+* [rpc] Add list plugins command to qjazz-config utility
+* [rpc] Restore qjazz-rpc-client as script
+
+
+## 0.4.0
+
 ## Added
 
 * [server] Support for tonic 0.14
