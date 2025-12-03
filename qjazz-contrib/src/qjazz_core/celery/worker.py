@@ -17,7 +17,6 @@ from typing import (
 )
 
 import celery
-import celery.states
 
 from celery.worker.control import (
     inspect_command,
@@ -153,8 +152,6 @@ class _Dict(dict):
     if TYPE_CHECKING:
         __run_config__: RunConfig
         __context__: JobContext
-    else:
-        pass
 
 
 #

@@ -328,6 +328,7 @@ def get_store(
         nonlocal decoder
 
         if not decoder:
+
             def _decode(r: BytesIO) -> Iterator[bytes]:
                 chunk = r.read(part_size)
                 while chunk:

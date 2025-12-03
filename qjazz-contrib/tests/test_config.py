@@ -94,7 +94,7 @@ def test_config_proxy() -> None:
     builder = config.ConfBuilder()
     builder.validate({})
 
-    proxy = config.ConfigProxy(builder, "test1.sub") # type: ignore [var-annotated]
+    proxy = config.ConfigProxy(builder, "test1.sub")  # type: ignore [var-annotated]
     assert proxy.bar == "Hello"
 
     builder.validate({"test1": {"sub": {"bar": "World"}}})

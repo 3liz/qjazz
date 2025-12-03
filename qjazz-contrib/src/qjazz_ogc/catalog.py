@@ -303,9 +303,13 @@ def check_project_version(
     minimum_qgis_version: tuple[int, int],
 ):
     project_ver = project.lastSaveVersion()
-    if not project_ver.isNull() and (
-        project_ver.majorVersion(),
-        project_ver.minorVersion(),
-    ) < minimum_qgis_version:
+    if (
+        not project_ver.isNull()
+        and (
+            project_ver.majorVersion(),
+            project_ver.minorVersion(),
+        )
+        < minimum_qgis_version
+    ):
         logger.warning("Project %s is too old (%s)", md.uri, project_ver.text())
         raise ProjectTooOld(str(md.uri))

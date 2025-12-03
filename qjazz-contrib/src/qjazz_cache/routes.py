@@ -88,7 +88,8 @@ class Routes:
             # Returns only static routes
             urls = (
                 (str(route._location), route._url)
-                for route in self._routes.values() if isinstance(route, StaticRoute)
+                for route in self._routes.values()
+                if isinstance(route, StaticRoute)
             )
 
         return urls

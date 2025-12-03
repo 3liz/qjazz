@@ -123,5 +123,3 @@ def test_invalid_path(config: ProjectsConfig):
     with pytest.raises(ResourceNotAllowed):
         url = cm.resolve_path("/i_do_not_exists")
         print("\n::test_resource_stream::url", url)
-
-

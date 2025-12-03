@@ -359,19 +359,18 @@ class CacheManager:
 
         # Prevent circular ownership
         if isinstance(md, CacheEntry):
-            last_used_mem = md.debug_meta.load_memory_bytes
             md = md.md
-        else:
-            last_used_mem = 0
+
         #
         # This is a best effort to get meaningful information
         # about how memory is used by a project. So we
         # keep with last mesured footprint in case of reloading
         # a project:
         #
-        used_mem = self._process.memory_info().rss - s_mem if self._process else None
-        if used_mem is not None and used_mem < last_used_mem:
-            used_mem = last_used_mem
+        if self._process and s_mem is not None:
+            used_mem = self._process.memory_info().rss - s_mem
+        else:
+            used_mem = None
 
         return CacheEntry(
             md,

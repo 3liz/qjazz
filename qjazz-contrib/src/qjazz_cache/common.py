@@ -77,4 +77,3 @@ class ProtocolHandler(Protocol):
     @abstractmethod
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
         """List all projects availables from the given uri"""
-

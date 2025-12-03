@@ -371,7 +371,6 @@ def install_plugins(conf: QgisPluginConfig):
         print("No plugins to install", file=sys.stderr)  # noqa T201
         return
 
-
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
 
