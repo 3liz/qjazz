@@ -39,20 +39,15 @@ impl<'de> Deserialize<'de> for Method {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 enum Origins {
     #[serde(rename = "any")]
+    #[default]
     Any,
     #[serde(rename = "same-origin")]
     SameOrigin,
     #[serde(rename = "hosts")]
     Hosts(Vec<String>),
-}
-
-impl Default for Origins {
-    fn default() -> Self {
-        Self::Any
-    }
 }
 
 impl Origins {

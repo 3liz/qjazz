@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* Implement support for admin api 
 * Fix QGIS deprecated api
 
 ## 0.5.0

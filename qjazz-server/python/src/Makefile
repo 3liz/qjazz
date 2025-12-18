@@ -3,11 +3,9 @@ DEPTH=../../..
 
 include $(DEPTH)/config/config.mk
 
-upgrade:: proto
+build:: proto
 
-install:: proto
-
-proto:
+proto: qjazz_rpc/_grpc/protos/qjazz.proto
 	cd qjazz_rpc/_grpc && python -m grpc_tools.protoc -I./protos \
 		--python_out=. \
 		--pyi_out=. \

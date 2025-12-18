@@ -171,6 +171,8 @@ message ProjectInfo {
         string layer_id = 1;
         string name = 2;
         string source = 3;
+        string provider = 7;
+        string layer_type = 8;
         string crs = 4;
         bool is_valid = 5;
         bool is_spatial = 6;

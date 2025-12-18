@@ -7,9 +7,10 @@ use actix_web::{
 
 use futures::future::try_join_all;
 
+use crate::admin::admin;
 use crate::channel::{self, Channel};
 use crate::config::Settings;
-use crate::handlers::utils::request;
+use crate::requests::request;
 use crate::resolver::Channels;
 use crate::services::{api_scope, catalog, landing_page, ows_resource};
 
@@ -90,6 +91,7 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
     |cfg| {
         let cfg = cfg
             .service(web::scope("/").configure(ows_resource))
+            .configure(admin)
             .configure(catalog);
         channel
             .api_endpoints()
@@ -103,6 +105,7 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
 fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     let scope = web::scope(channel.route())
         .wrap(middleware::from_fn(verify_channel_mw))
+        .configure(admin)
         .configure(catalog)
         .configure(ows_resource);
 

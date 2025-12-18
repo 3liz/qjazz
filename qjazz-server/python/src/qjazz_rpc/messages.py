@@ -236,6 +236,8 @@ class LayerInfo(Response):
     layer_id: str
     name: str
     source: str
+    provider: str
+    layer_type: str
     crs: str
     is_valid: bool
     is_spatial: bool

@@ -8,11 +8,10 @@ pub mod landing_page;
 pub mod legend;
 pub mod map;
 pub mod response;
-pub mod utils;
 
 use crate::channel::qjazz_service::{ApiRequest, OwsRequest};
+use crate::requests::request;
 use response::{execute_api_request, execute_ows_request};
-use utils::request;
 
 //
 // Ows handler

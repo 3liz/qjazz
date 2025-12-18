@@ -122,6 +122,7 @@ class Catalog:
             public_path = public_path.removesuffix(".qgs").removesuffix(".qgz")
             item = catalog.get(public_path)
 
+            # Check for update
             if not item or md.last_modified > item.md.last_modified:
                 try:
                     item = new_catalog_item(

@@ -160,6 +160,28 @@ impl HeaderFilters {
     }
 }
 
+/// Channel admin configuration
+#[derive(Default, Debug, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct AdminConfig {
+    /// Enable admin api
+    enabled: bool,
+    /// Disclose sensitive information
+    /// like paths and internal uris.
+    disclosed: bool,
+}
+
+impl AdminConfig {
+    #[inline]
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+    #[inline]
+    pub fn undisclosed(&self) -> bool {
+        !self.disclosed
+    }
+}
+
 /// Backend channel service configuration
 #[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -192,6 +214,8 @@ pub struct ChannelConfig {
     /// 403 HTTP response with an informative message that the
     /// catalog has been disabled for the channel.
     pub disable_root_catalog: bool,
+    /// Configure admin api
+    pub admin: AdminConfig,
     /// Channel request timeout
     timeout: Option<u64>,
 }

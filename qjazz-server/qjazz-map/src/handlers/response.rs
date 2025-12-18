@@ -18,6 +18,8 @@ use crate::channel::{
     qjazz_service::{ApiRequest, OwsRequest, ResponseChunk},
 };
 
+use crate::responses::HttpStatusCode;
+
 struct AnyError;
 
 impl<T> From<T> for AnyError
@@ -31,23 +33,6 @@ where
 
 pub mod metadata {
     use super::*;
-
-    /*
-    pub fn insert_header(md: &mut MetadataMap, key: &str, value: &str) -> Result<(), error::Error> {
-        MetadataKey::from_str(key)
-            .inspect_err(|e| log::error!("{e}"))
-            .map_err(AnyError::from)
-            .and_then(|k| {
-                MetadataValue::from_str(value)
-                    .inspect_err(|e| log::error!("{e}"))
-                    .map_err(AnyError::from)
-                    .map(|v| {
-                        md.insert(k, v);
-                    })
-            })
-            .map_err(|_| error::ErrorInternalServerError("Internal error"))
-    }
-    */
 
     // Convert headers to metadata (infallible)
     pub fn insert_from_headers<F: FnMut(&str) -> bool>(
@@ -195,44 +180,9 @@ impl RpcHttpResponseBuilder {
     // See https://grpc.io/docs/guides/status-codes/
     // for details about gRPC error codes.
     pub fn from_rpc_status(status: &tonic::Status, request_id: Option<String>) -> HttpResponse {
-        let code = match status.code() {
-            tonic::Code::DeadlineExceeded => StatusCode::GATEWAY_TIMEOUT,
-            tonic::Code::PermissionDenied => StatusCode::FORBIDDEN,
-            // XXX Cancelled is usually a response to an action from the caller.
-            // Having this error here means that some external cause occured on
-            // service side.
-            tonic::Code::Cancelled => StatusCode::SERVICE_UNAVAILABLE,
-            tonic::Code::Internal | tonic::Code::ResourceExhausted => {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-            tonic::Code::Unimplemented => StatusCode::NOT_IMPLEMENTED,
-            tonic::Code::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
-            tonic::Code::Unauthenticated => StatusCode::UNAUTHORIZED,
-
-            // User code generated errors
-            // see https://grpc.io/docs/guides/status-codes
-            //
-            // Usually occurs when a non-Qgis error
-            // is raised before reaching qgis server.
-            code => {
-                let code = match code {
-                    tonic::Code::InvalidArgument => StatusCode::BAD_REQUEST,
-                    tonic::Code::NotFound => StatusCode::NOT_FOUND,
-                    tonic::Code::AlreadyExists => StatusCode::CONFLICT,
-                    tonic::Code::FailedPrecondition => StatusCode::PRECONDITION_FAILED,
-                    tonic::Code::Aborted => StatusCode::SERVICE_UNAVAILABLE,
-                    // tonic::Code::OK
-                    // tonic::Code::OutOfRange
-                    // tonic::Code::Dataloss
-                    // tonic::Code::Unknown
-
-                    // Consider these errors as legitimate Ok responses
-                    // or error which is out of gRPC namespace.
-                    // In this case the error code may be  found in
-                    // the metadata.
-                    _ => StatusCode::OK,
-                };
-
+        let code = match HttpStatusCode::from(status) {
+            HttpStatusCode::Rpc(code) => code,
+            HttpStatusCode::User(code) => {
                 return Self::builder_from_metadata(code, status.metadata(), request_id)
                     .content_type("text/plain")
                     .body(status.message().to_string());

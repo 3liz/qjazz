@@ -8,7 +8,7 @@ use actix_web::{HttpRequest, Responder, web};
 use crate::channel::Channel;
 use crate::channel::qjazz_service::OwsRequest;
 use crate::handlers::response::execute_ows_request;
-use crate::handlers::utils::request;
+use crate::requests::request;
 
 //
 //  Default legend handler

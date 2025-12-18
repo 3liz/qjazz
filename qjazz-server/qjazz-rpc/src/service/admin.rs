@@ -381,6 +381,8 @@ impl QgisAdmin for QgisAdminServicer {
                     layer_id: l.layer_id,
                     name: l.name,
                     source: l.source,
+                    provider: l.provider,
+                    layer_type: l.layer_type,
                     crs: l.crs,
                     is_valid: l.is_valid,
                     is_spatial: l.is_spatial,

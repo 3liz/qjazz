@@ -11,7 +11,7 @@ use std::fmt::{self, Write};
 use crate::channel::Channel;
 use crate::channel::qjazz_service::OwsRequest;
 use crate::handlers::response::execute_ows_request;
-use crate::handlers::utils::request;
+use crate::requests::request;
 
 use crate::models::bbox::{Bbox, CRS84};
 //use crate::models::point::Point;

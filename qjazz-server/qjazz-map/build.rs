@@ -9,8 +9,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_prost_build::configure()
         .build_server(false)
         // Uncomment the following for exporting in json
-        //.type_attribute(".", "#[derive(Serialize)]");
-        //.type_attribute(".", "#[serde(rename_all = \"camelCase\")]");
+        .type_attribute(".", "#[derive(serde::Serialize)]")
+        .type_attribute(".", "#[serde(rename_all = \"camelCase\")]")
         .compile_protos(&["proto/qjazz.proto"], &["proto"])?;
     Ok(())
 }

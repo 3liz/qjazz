@@ -13,7 +13,7 @@ DIRS= \
 
 include $(topsrcdir)/config/rules.mk
 
-build::
+bin-build:
 	cargo build --release --bins --features monitor
 
 BINS=\
@@ -21,7 +21,7 @@ BINS=\
 	qjazz-rpc-bin \
 	$(NULL)
 
-dist:: build
+dist:: bin-build
 	@for f in $(BINS); do \
 		cp -v target/release/$$f $(DIST)/; \
 	done

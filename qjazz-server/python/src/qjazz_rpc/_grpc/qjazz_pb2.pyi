@@ -207,20 +207,24 @@ class ProjectRequest(_message.Message):
 class ProjectInfo(_message.Message):
     __slots__ = ("status", "uri", "filename", "crs", "last_modified", "storage", "has_bad_layers", "layers", "cache_id")
     class Layer(_message.Message):
-        __slots__ = ("layer_id", "name", "source", "crs", "is_valid", "is_spatial")
+        __slots__ = ("layer_id", "name", "source", "provider", "layer_type", "crs", "is_valid", "is_spatial")
         LAYER_ID_FIELD_NUMBER: _ClassVar[int]
         NAME_FIELD_NUMBER: _ClassVar[int]
         SOURCE_FIELD_NUMBER: _ClassVar[int]
+        PROVIDER_FIELD_NUMBER: _ClassVar[int]
+        LAYER_TYPE_FIELD_NUMBER: _ClassVar[int]
         CRS_FIELD_NUMBER: _ClassVar[int]
         IS_VALID_FIELD_NUMBER: _ClassVar[int]
         IS_SPATIAL_FIELD_NUMBER: _ClassVar[int]
         layer_id: str
         name: str
         source: str
+        provider: str
+        layer_type: str
         crs: str
         is_valid: bool
         is_spatial: bool
-        def __init__(self, layer_id: _Optional[str] = ..., name: _Optional[str] = ..., source: _Optional[str] = ..., crs: _Optional[str] = ..., is_valid: bool = ..., is_spatial: bool = ...) -> None: ...
+        def __init__(self, layer_id: _Optional[str] = ..., name: _Optional[str] = ..., source: _Optional[str] = ..., provider: _Optional[str] = ..., layer_type: _Optional[str] = ..., crs: _Optional[str] = ..., is_valid: bool = ..., is_spatial: bool = ...) -> None: ...
     STATUS_FIELD_NUMBER: _ClassVar[int]
     URI_FIELD_NUMBER: _ClassVar[int]
     FILENAME_FIELD_NUMBER: _ClassVar[int]

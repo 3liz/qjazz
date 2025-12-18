@@ -330,6 +330,8 @@ pub struct LayerInfo {
     pub layer_id: String,
     pub name: String,
     pub source: String,
+    pub provider: String,
+    pub layer_type: String,
     pub crs: String,
     pub is_valid: bool,
     pub is_spatial: bool,

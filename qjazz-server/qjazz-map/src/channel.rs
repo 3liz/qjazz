@@ -23,6 +23,7 @@ pub mod qjazz_service {
     tonic::include_proto!("qjazz");
 }
 
+use qjazz_service::qgis_admin_client::QgisAdminClient;
 use qjazz_service::qgis_server_client::QgisServerClient;
 
 pub type Error = Status;
@@ -31,6 +32,9 @@ pub struct Builder {
     name: String,
     config: ChannelConfig,
 }
+
+pub type QjazzAdminClient = QgisAdminClient<LoadBalancedChannel>;
+pub type QjazzServerClient = QgisServerClient<LoadBalancedChannel>;
 
 pub struct Channel {
     name: String,
@@ -127,8 +131,13 @@ impl Channel {
     }
 
     /// Return a client stub interface for service
-    pub fn client(&self) -> QgisServerClient<LoadBalancedChannel> {
+    pub fn client(&self) -> QjazzServerClient {
         QgisServerClient::new(self.channel.clone())
+    }
+
+    /// Return a client stub interface for admin service
+    pub fn admin_client(&self) -> QjazzAdminClient {
+        QgisAdminClient::new(self.channel.clone())
     }
 
     pub fn api_endpoints(&self) -> &[web::Data<ApiEndPoint>] {
@@ -145,6 +154,18 @@ impl Channel {
     #[inline]
     pub fn timeout(&self) -> Duration {
         self.config.timeout()
+    }
+
+    /// Return admin api status
+    #[inline]
+    pub fn admin(&self) -> bool {
+        self.config.admin.enabled()
+    }
+
+    /// Return disclosed/undisclosed admin api status
+    #[inline]
+    pub fn undisclosed(&self) -> bool {
+        self.config.admin.undisclosed()
     }
 
     /// Haltch check for the backend

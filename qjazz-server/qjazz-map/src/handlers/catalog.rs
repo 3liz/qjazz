@@ -11,9 +11,9 @@ use crate::channel::{
     qjazz_service::{CollectionsPage, CollectionsRequest, collections_page::CollectionsItem},
 };
 use crate::handlers::response::RpcHttpResponseBuilder;
-use crate::handlers::utils::request;
 use crate::models::apis::OgcEndpoints;
 use crate::models::{Link, rel};
+use crate::requests::request;
 
 const MAX_PAGE_LIMIT: u16 = 50;
 

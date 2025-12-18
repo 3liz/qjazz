@@ -13,7 +13,7 @@ from urllib.parse import urlunsplit
 from qjazz_core import logger
 from qjazz_core.utils import to_iso8601
 
-from qgis.core import QgsMapLayer
+from qgis.core import Qgis, QgsMapLayer
 
 from qjazz_cache.extras import evict_by_popularity
 from qjazz_cache.prelude import (
@@ -234,6 +234,8 @@ def send_project_info(
             layer_id=layer_id,
             name=layer.name(),
             source=layer.publicSource(),
+            provider=layer.providerType(),
+            layer_type=Qgis.LayerType(layer.type()).name,
             crs=layer.crs().authid(),
             is_valid=layer.isValid(),
             is_spatial=layer.isSpatial(),
@@ -264,7 +266,7 @@ def send_project_info(
                     ),
                 )
             case Co.NOTFOUND | Co.NEW | Co.UPDATED:
-                _m.send_reply(conn, f"Resource not found: {urlunsplit(url)}", 404)
+                _m.send_reply(conn, f"Resource not available in cache: {urlunsplit(url)}", 404)
             case _ as unreachable:
                 assert_never(unreachable)
     except CacheManager.ResourceNotAllowed as err:

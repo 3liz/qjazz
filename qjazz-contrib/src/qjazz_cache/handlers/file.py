@@ -19,7 +19,7 @@ from qgis.core import QgsProject
 from qjazz_core import componentmanager, logger
 
 from ..common import ProjectMetadata, ProtocolHandler, Url
-from ..errors import InvalidCacheRootUrl
+from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
 from ..resources import (
     ResourceObject,
     ResourceReader,
@@ -49,9 +49,9 @@ class FileProtocolHandler(ProtocolHandler):
         pass
 
     def _check_filepath(self, path: Path) -> Path:
-        """Validate Qgis project file path, add necis"""
+        """Validate Qgis project file path, add ncis"""
         if not path.is_absolute():
-            raise ValueError(f"file path must be absolute not {path}")
+            raise ResourceNotAllowed(f"file path must be absolute not {path}")
 
         exists = False
         if path.suffix not in PROJECT_SFX:
