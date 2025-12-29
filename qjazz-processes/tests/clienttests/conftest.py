@@ -23,7 +23,7 @@ def host(request):
 
 
 def pytest_addoption(parser):
-    parser.addoption("--host", metavar="HOST", default="http://localhost:4000")
+    parser.addoption("--host", metavar="HOST", default="http://localhost:9180")
 
 
 def pytest_configure(config):

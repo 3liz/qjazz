@@ -1,6 +1,6 @@
 
 [worker]
-service_name = "Example1"
+service_name = "example1"
 concurrency = 4
 result_expires = 900
 cleanup_interval = 300

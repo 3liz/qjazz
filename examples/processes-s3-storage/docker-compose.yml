@@ -13,11 +13,11 @@ services:
       CONF_PROCESSING__ADVERTISED_SERVICES_URL: "http://localhost:9080/results/?MAP=$$jobId/$$name"
       CONF_STORAGE__STORAGE_CLASS: qjazz_processes.worker.storages.s3.S3Storage
       # Note: this may be set in the config file:
-      CONF_S3_ENDPOINT: "minio:9000"
-      CONF_S3_ACCESS_KEY: minioadmin
-      CONF_S3_SECRET_KEY: minioadmin
+      CONF_S3_ENDPOINT: "s3:9000"
       CONF_S3_BUCKET_NAME: examples
       CONF_S3_SECURE: no
+      CONF_S3_SECRET_KEY: s3admin
+      CONF_S3_ACCESS_KEY: s3admin
     depends_on:
     - rabbitmq
     - redis
@@ -63,9 +63,9 @@ services:
       CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__HANDLER: "qjazz_cache.handlers.s3.S3ProtocolHandler"
       CONF_WORKER__QGIS__PROJECTS__HANDLERS__S3__CONFIG: >-
         {
-          "endpoint": "minio:9000",
-          "access_key": "minioadmin",
-          "secret_key": "minioadmin",
+          "endpoint": "s3:9000",
+          "access_key": "s3admin",
+          "secret_key": "s3admin",
           "secure": false
         }
     volumes:
@@ -84,11 +84,19 @@ services:
     command: ["qjazz-map", "serve"]
 
   #
-  # Minio service for s3 storage
-  #
-  minio:
-    image: minio/minio
-    command: ["server", "/data", "--console-address", ":9001"]
+  # Service for s3 storage
+  # see: https://docs.rustfs.com/installation/docker/
+  s3:
+    image: rustfs/rustfs
+    volumes:
+    - { type: volume, source: s3data, target: /var/lib/data }
+    environment:
+    - RUSTFS_CONSOLE_ENABLE=true
+    - RUSTFS_ACCESS_KEY=s3admin
+    - RUSTFS_SECRET_KEY=s3admin
     ports:
     - 127.0.0.1:9000:9000
     - 127.0.0.1:9001:9001
+volumes:
+  s3data:
+    driver: local

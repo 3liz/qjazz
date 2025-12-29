@@ -12,6 +12,7 @@ def test_landing_page(host):
     data = rv.json()
     assert "links" in data
     rels = set(link["rel"] for link in  data["links"])
+    print("\n::test_landing_page::rels::", rels)
     assert "http://www.opengis.net/def/rel/ogc/1.0/conformance" in rels
     assert "http://www.opengis.net/def/rel/ogc/1.0/job-list" in rels
 

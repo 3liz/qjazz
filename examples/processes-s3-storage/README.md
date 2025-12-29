@@ -15,7 +15,7 @@ This examples run the following services:
 
 * Qjazz map frontend http server
 * Qjazz QGIS rpc service (QGIS server pool)
-* [Minio](https://github.com/minio/minio) (S3 storage)
+* [RustFs](https://github.com/RustFS/RustFS) (S3 storage)
 * Qjazz processes server
 * Qjazz processing service
 * RabbitMQ (Celery)

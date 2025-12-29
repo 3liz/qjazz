@@ -45,7 +45,7 @@ create_qgis_cache_directories() {
 if [[ "$UID" != "0" ]]; then 
     CONF_USER=$UID:$(id -g)
 else    
-    CONF_USER=${CONF_USER:-"1001:1001"}
+    CONF_USER=${CONF_USER:-"1000:1000"}
 fi
 
 if [[ "$CONF_USER" =~ ^root:? ]] || [[ "$CONF_USER" =~ ^0:? ]]; then
