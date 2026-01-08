@@ -23,17 +23,6 @@ API_VERSION = "v1"
 PACKAGE_NAME = "qjazz_processes"
 
 
-def redirect_trailing_slash():
-    """Redirect with a trailing slash"""
-
-    async def _redirect(request):  # noqa RUF029
-        qs = request.query_string
-        path = f"{request.path}/?{qs}" if qs else f"{request.path}/"
-        raise web.HTTPPermanentRedirect(path)
-
-    return _redirect
-
-
 class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
     def __init__(
         self,
@@ -66,12 +55,10 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
             web.get(f"{prefix}/conformance", self.conformance, allow_head=False),
             # Processes
             web.get(f"{prefix}/processes/", self.list_processes, allow_head=False),
-            web.get(f"{prefix}/processes", redirect_trailing_slash(), allow_head=False),
             web.get(f"{prefix}/processes/{{Ident}}", self.describe_process, allow_head=False),
             web.post(f"{prefix}/processes/{{Ident}}/execution", self.execute_process),
             # Jobs
             web.get(f"{prefix}/jobs/", self.list_jobs, allow_head=False),
-            web.get(f"{prefix}/jobs", redirect_trailing_slash(), allow_head=False),
         ]
 
         #
@@ -83,13 +70,8 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
             _routes.extend(
                 (
                     # Jobs UI
-                    web.get(f"{prefix}/jobs.html", redirect_trailing_slash(), allow_head=False),
+                    web.get(f"{prefix}/jobs.html/", self.ui_dashboard, allow_head=False),
                     web.get(f"{prefix}/jobs.html/{{Path:.*}}", self.ui_dashboard, allow_head=False),
-                    web.get(
-                        rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}",
-                        redirect_trailing_slash(),
-                        allow_head=False,
-                    ),
                     web.get(
                         rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}/{{Path:.*}}",
                         self.ui_jobdetails,
@@ -107,16 +89,10 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
                 # Log
                 web.get(f"{prefix}/jobs/{{JobId}}/log", self.job_log, allow_head=False),
                 # Files
-                web.get(
-                    f"{prefix}/jobs/{{JobId}}/files",
-                    redirect_trailing_slash(),
-                    allow_head=False,
-                ),
                 web.get(f"{prefix}/jobs/{{JobId}}/files/", self.job_files, allow_head=False),
                 web.get(f"{prefix}/jobs/{{JobId}}/files/{{Resource:.+}}", self.job_download),
                 # Services
                 web.get(f"{prefix}/services/", self.list_services, allow_head=False),
-                web.get(f"{prefix}/services", redirect_trailing_slash(), allow_head=False),
             ),
         )
 
@@ -128,7 +104,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
                 [
                     web.get(f"{prefix}/store/{{Name:.+}}", self.get_store),
                     web.get(f"{prefix}/store/", self.list_store, allow_head=False),
-                    web.get(f"{prefix}/store", redirect_trailing_slash(), allow_head=False),
                     web.post(f"{prefix}/store/{{Name:.+}}", self.put_store),
                     web.delete(f"/{prefix}/store/{{Name:.+}}", self.delete_store),
                 ]

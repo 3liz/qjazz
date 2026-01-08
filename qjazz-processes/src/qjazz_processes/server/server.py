@@ -17,6 +17,7 @@ from typing import (
 
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
+from aiohttp.web_middlewares import normalize_path_middleware
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -351,6 +352,8 @@ def create_app(
             unhandled_exceptions,
             log_incoming_request,
             forwarded(conf.http.proxy),
+            # Redirect trailing slash
+            normalize_path_middleware(append_slash=True),
         ],
         handler_args={
             "access_log_class": AccessLogger,

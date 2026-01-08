@@ -170,6 +170,9 @@ class InputValueError(Exception):
                 include_context=False,
                 include_input=False,
             )
-            super().__init__(f'{{ "message": "{msg}", "details": {text} }}')
+            response = f'{{ "message": "{msg}", "details": {text} }}'
         else:
-            super().__init__(msg)
+            response = msg
+
+        self.response = response
+        super().__init__(response)

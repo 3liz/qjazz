@@ -336,7 +336,7 @@ class Processes(HandlerProto):
                 logger.error("Input value error %s", err)
                 raise web.HTTPBadRequest(
                     content_type="application/json",
-                    text=str(err),
+                    text=err.response,
                 )
             #
             # Processing exception

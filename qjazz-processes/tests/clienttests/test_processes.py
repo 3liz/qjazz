@@ -106,7 +106,7 @@ def test_executeprocess_sync(host):
 
     # Get files
     rv = requests.get(f"{host}/jobs/{job_id}/files")
-    print("\n", rv.text)
+    print("\n::test_executeprocess_sync::files", rv.status_code, rv.text)
     assert rv.status_code == 200
     assert len(rv.json()['files']) > 0
 
