@@ -76,16 +76,20 @@ build-docker:noqgis:
 # release
 # ----------
 
+.release_rules: &release_rules
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^release-\d+\.\d+\.\d+(:?-.*)$/'
+      when: always
+    - when: never
+
 .release:
+  <<: *release_rules
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: release
   script:
     - release-image qjazz-$QGIS_FLAVOR
   environment:
     name: production
-  only:
-    refs:
-      - tags
   variables:
     FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}-lizcloud.manifest"
   when: manual
@@ -120,15 +124,13 @@ release:3.34:
 #
 
 release:noqgis:
+  <<: *release_rules
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: release
   script:
     - release-image qjazz-noqgis
   environment:
     name: production
-  only:
-    refs:
-      - tags
   variables:
     FACTORY_MANIFEST: "docker/factory-noqgis-lizcloud.manifest"
   when: manual
@@ -143,15 +145,13 @@ release:noqgis:
 # ------------------
 
 .push:
+  <<: *release_rules
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: post-release
   script:
     - push-to-docker-hub --clean
   environment:
     name: production
-  only:
-    refs:
-      - tags
   variables:
     FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
   tags:
@@ -179,15 +179,13 @@ push:3.34:
     - build-docker:3.34
 
 push:noqgis:
+  <<: *release_rules
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: post-release
   script:
     - push-to-docker-hub --clean
   environment:
     name: production
-  only:
-    refs:
-      - tags
   variables:
     FACTORY_MANIFEST: "docker/factory-noqgis.manifest"
   tags:
