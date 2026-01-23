@@ -23,11 +23,11 @@ ifdef UV_DEBUG
 	export RUST_LOG=uv=debug
 endif
 
-UV_RUN=uv run $(ACTIVE_VENV)
+RUN=uv run $(ACTIVE_VENV)
 
-MYPY=$(UV_RUN) mypy --config-file=$(topsrcdir)/config/mypy.ini
-RUFF=$(UV_RUN) ruff
-BANDIT=$(UV_RUN) bandit
+MYPY=$(RUN) mypy --config-file=$(topsrcdir)/config/mypy.ini
+RUFF=$(RUN) ruff
+BANDIT=$(RUN) bandit
 
 # Local (not commited) configuration
 BUILDCONFIG=$(DEPTH)/.localconfig.mk

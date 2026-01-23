@@ -41,18 +41,18 @@ deadcode::
 #
 
 covtest: 
-	@ $(UV_RUN) coverage run -m pytest $(TEST_OPTS) $(TESTDIR)/
+	@ $(RUN) coverage run -m pytest $(TEST_OPTS) $(TESTDIR)/
 
 coverage:: covtest
 	@echo building coverage html
-	@ $(UV_RUN) coverage html
+	@ $(RUN) coverage html
 
 
 ifndef TESTDIR
 test::
 else
 test::
-	$(UV_RUN) pytest -v $(TEST_OPTS) $(TESTDIR)
+	$(RUN) pytest -v $(TEST_OPTS) $(TESTDIR)
 endif
 
 prepare_commit:: lint scan test
