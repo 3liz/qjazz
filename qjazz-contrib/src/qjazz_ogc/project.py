@@ -168,8 +168,14 @@ class Collection(collections.Collection):
         # Only default style
         if not styles or len(styles) == 1:
             styles = None
-        legend_url = layer.legendUrl() or None
-        legend_format = layer.legendUrlFormat() or None
+
+        if Qgis.QGIS_VERSION_INT < 34400:
+            legend_url = layer.legendUrl() or None
+            legend_format = layer.legendUrlFormat() or None
+        else:
+            props = layer.serverProperties()
+            legend_url = props.legendUrl() or None
+            legend_format = props.legendUrlFormat() or None
 
         return cls(
             id=layer.name(),
