@@ -117,7 +117,7 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     assert len(layers) == 1
 
     layer = layers[0]
-    if Qgis.QGIS_VERSION_INT >= 33800:
+    if Qgis.versionInt() >= 33800:
         print("\ntest_algorithms_copylayer::dataUrl", layer.serverProperties().dataUrl())
     else:
         print("\ntest_algorithms_copylayer::dataUrl", layer.dataUrl())
@@ -174,7 +174,7 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     output_layer = layers[0]
     assert output_layer.featureCount() == srclayer.featureCount()
 
-    if Qgis.QGIS_VERSION_INT >= 33800:
+    if Qgis.versionInt() >= 33800:
         server_properties = output_layer.serverProperties()
         print(
             "\ntest_algorithms_nativewrapper::dataUrl",
@@ -190,7 +190,7 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
 
     default_ext = QgsProcessingUtils.defaultVectorExtension()
 
-    if Qgis.QGIS_VERSION_INT >= 33800:
+    if Qgis.versionInt() >= 33800:
         url_format = output_layer.serverProperties().dataUrlFormat()
     else:
         url_format = output_layer.dataUrlFormat()

@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
 
-if Qgis.QGIS_VERSION_INT < 33800:
+if Qgis.versionInt() < 33800:
     import warnings
 
     warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})")
@@ -260,7 +260,7 @@ class S3ProtocolHandler(ProtocolHandler):
 
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """Return project associated with metadata"""
-        assert_precondition(Qgis.QGIS_VERSION_INT >= 33800, "Qgis 3.38+ required")
+        assert_precondition(Qgis.versionInt() >= 33800, "Qgis 3.38+ required")
         assert_precondition(config.force_readonly_layers)
 
         uri = urlsplit(md.uri)

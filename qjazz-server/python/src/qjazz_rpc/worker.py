@@ -94,8 +94,8 @@ def worker_env() -> JsonValue:
     from qgis.core import Qgis
 
     return {
-        "qgis_version": Qgis.QGIS_VERSION_INT,
-        "qgis_release": Qgis.QGIS_RELEASE_NAME,
+        "qgis_version": Qgis.versionInt(),
+        "qgis_release": Qgis.releaseName(),
         "versions": list(show_all_versions()),
         "environment": dict(os.environ),
     }

@@ -34,7 +34,7 @@ from qjazz_processes.schemas import (
 
 ProcessingSourceType: type[Any]
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     # In qgis 3.36+ ProcessingSourceType is a real python enum
     ProcessingSourceType = Qgis.ProcessingSourceType
 else:
@@ -59,7 +59,7 @@ else:
 LayerType = Qgis.LayerType
 
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     ProcessingFileParameterBehavior = Qgis.ProcessingFileParameterBehavior
 else:
     from qgis.core import QgsProcessingParameterFile

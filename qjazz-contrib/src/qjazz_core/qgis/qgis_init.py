@@ -77,8 +77,8 @@ def setup_qgis_application(
     from qgis.core import Qgis, QgsApplication
     from qgis.PyQt.QtCore import QCoreApplication
 
-    if Qgis.QGIS_VERSION_INT < 33400:
-        raise RuntimeError(f"You need QGIS3.34 minimum (found {Qgis.QGIS_VERSION_INT})")
+    if Qgis.versionInt() < 33400:
+        raise RuntimeError(f"You need QGIS3.34 minimum (found {Qgis.versionInt()})")
 
     #  We MUST set the QT_QPA_PLATFORM to prevent
     #  Qt trying to connect to display in containers
@@ -254,7 +254,7 @@ def load_qgis_settings(
     if not allow_python_embedded:
         # Disable python embedded and override previous settings
         logger.info("Disabling Python Embedded in QGIS")
-        if Qgis.QGIS_VERSION_INT < 34000:
+        if Qgis.versionInt() < 34000:
             qgssettings.setEnumValue("qgis/enableMacros", Qgis.PythonMacroMode.Never)
         else:
             qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)

@@ -170,7 +170,7 @@ class SpatialExtent(extent.SpatialExtent):
         )
         storage_crs_bbox = parse_extent(extent, storage_crs_qgis.hasAxisInverted())
 
-        if Qgis.QGIS_VERSION_INT >= 33800:
+        if Qgis.versionInt() >= 33800:
             elev = p.elevationProperties()
             if elev:
                 elev_range = elev.elevationRange()
@@ -208,7 +208,7 @@ class SpatialExtent(extent.SpatialExtent):
         storage_extents = list(layer_extents_from_metadata(provider, storage_crs, p))
         if not storage_extents:
             # Try to calculate directly from the provider
-            if Qgis.QGIS_VERSION_INT < 33800:
+            if Qgis.versionInt() < 33800:
                 extent = layer.extent()
             else:
                 # XXX Do not use `QgsDataProvider::extent3D: QGIS crash (segfault)

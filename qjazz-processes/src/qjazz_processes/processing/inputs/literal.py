@@ -270,7 +270,7 @@ class ParameterDuration(ParameterNumber):
 #
 
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     NumberParameterType = Qgis.ProcessingNumberParameterType
 else:
     NumberParameterType = QgsProcessingParameterNumber

@@ -385,7 +385,7 @@ def qgsgeometry_to_point(
 
 
 def crs_to_ogc_urn(crs: QgsCoordinateReferenceSystem) -> str:
-    if Qgis.QGIS_VERSION_INT >= 33800:
+    if Qgis.versionInt() >= 33800:
         return crs.toOgcUrn()
     path = (AnyUrl(crs.toOgcUri()).path or "").strip("/").replace("/", ":")
     return f"urn:ogc:{path}"

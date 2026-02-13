@@ -548,7 +548,7 @@ class ParameterVectorTileDestination(ParameterLayerDestination):
 # QgsProcessingParameterField
 #
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     FieldParameterDataType = Qgis.ProcessingFieldParameterDataType
 
     def field_datatype_name(value: Qgis.ProcessingFieldParameterDataType) -> str:

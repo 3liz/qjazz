@@ -35,7 +35,7 @@ def pytest_report_header(config):
 
     gdal_version = gdal.VersionInfo("VERSION_NUM")
     return (
-        f"QGIS : {Qgis.QGIS_VERSION_INT}\n"
+        f"QGIS : {Qgis.versionInt()}\n"
         f"Python GDAL : {gdal_version}\n"
         f"Python : {sys.version}\n"
         f"QT : {Qt.QT_VERSION_STR}"
@@ -204,7 +204,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
         # On QGIS <= 3.34, explicite call to exit() is required
         # in order to prevent a segmentation fault.
-        if Qgis.QGIS_VERSION_INT <= 34000:
+        if Qgis.versionInt() <= 34000:
             qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()

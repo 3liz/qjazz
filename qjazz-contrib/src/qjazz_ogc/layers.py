@@ -50,7 +50,7 @@ class LayerAccessor:
         """Get the layer name according if the shortname is set"""
         if self.use_layer_ids:
             return layer.id()
-        if Qgis.QGIS_VERSION_INT < 33800:
+        if Qgis.versionInt() < 33800:
             name = layer.shortName()
         else:
             name = layer.serverProperties().shortName()

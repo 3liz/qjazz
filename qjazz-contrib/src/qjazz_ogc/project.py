@@ -60,7 +60,7 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 
 def get_layer_short_name(layer: QgsMapLayer) -> str:
     """Get the layer name according if the shortname is set"""
-    name = layer.shortName() if Qgis.QGIS_VERSION_INT < 33800 else layer.serverProperties().shortName()
+    name = layer.shortName() if Qgis.versionInt() < 33800 else layer.serverProperties().shortName()
     if not name:
         name = layer.name()
 
@@ -126,7 +126,7 @@ class Collection(collections.Collection):
         # XXX Create an SPDX AND expression for all licences in list
         licence = " AND ".join(md.licenses()) or "other"
 
-        if Qgis.QGIS_VERSION_INT < 33800:
+        if Qgis.versionInt() < 33800:
             title = layer.title()
             abstract = layer.abstract()
             attribution = layer.attribution()
@@ -169,7 +169,7 @@ class Collection(collections.Collection):
         if not styles or len(styles) == 1:
             styles = None
 
-        if Qgis.QGIS_VERSION_INT < 34400:
+        if Qgis.versionInt() < 34400:
             legend_url = layer.legendUrl() or None
             legend_format = layer.legendUrlFormat() or None
         else:

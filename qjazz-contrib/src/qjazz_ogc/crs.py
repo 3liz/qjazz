@@ -51,6 +51,6 @@ def Crs3D(p: QgsProject | QgsMapLayer) -> Optional[crs.Crs]:
 
 def QgsCrs3D(p: QgsProject | QgsMapLayer) -> QgsCoordinateReferenceSystem:
     """Return project's crs3D if available"""
-    if Qgis.QGIS_VERSION_INT < 33800:
+    if Qgis.versionInt() < 33800:
         return p.crs()
     return p.crs3D()

@@ -20,7 +20,7 @@ from .base import (
 # QgsProcessingParameterDateTime
 #
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     DateTimeParameterDataType = Qgis.ProcessingDateTimeParameterDataType
 else:
     DateTimeParameterDataType = QgsProcessingParameterDateTime

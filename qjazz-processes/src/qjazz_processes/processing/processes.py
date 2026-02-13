@@ -39,7 +39,7 @@ from .outputs import OutputParameter, OutputParameterDef
 ProcessingAlgorithmFlag: TypeAlias  # type: ignore [valid-type]
 ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]
 
-if Qgis.QGIS_VERSION_INT >= 33600:
+if Qgis.versionInt() >= 33600:
     # In qgis 3.36+ ProcessingAlgorithmFlags is a real python enum
     ProcessingAlgorithmFlag = Qgis.ProcessingAlgorithmFlag
     ProcessingAlgorithmFlags = Qgis.ProcessingAlgorithmFlags

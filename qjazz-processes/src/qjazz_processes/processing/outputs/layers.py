@@ -121,7 +121,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 
         if datasource.exists() and datasource.is_relative_to(context.workdir):
             media_type = mimetypes.types_map.get(datasource.suffix, Formats.ANY.media_type)
-            if Qgis.QGIS_VERSION_INT >= 33800:
+            if Qgis.versionInt() >= 33800:
                 props = layer.serverProperties()
                 props.setDataUrl(context.file_reference(datasource))
                 props.setDataUrlFormat(media_type)
