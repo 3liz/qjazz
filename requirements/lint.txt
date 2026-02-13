@@ -2,20 +2,20 @@
 #    uv export --format requirements.txt --no-annotate --no-editable --no-hashes --only-group lint -o requirements/lint.txt
 bandit==1.9.3
 colorama==0.4.6 ; sys_platform == 'win32'
-librt==0.7.8 ; platform_python_implementation != 'PyPy'
+librt==0.8.0 ; platform_python_implementation != 'PyPy'
 markdown-it-py==4.0.0
 mdurl==0.1.2
 mypy==1.19.1
 mypy-extensions==1.1.0
-pathspec==1.0.3
+pathspec==1.0.4
 pygments==2.19.2
 pyyaml==6.0.3
-rich==14.2.0
-ruff==0.14.14
+rich==14.3.2
+ruff==0.15.1
 stevedore==5.6.0
 types-aiofiles==25.1.0.20251011
 types-protobuf==6.32.1.20251210
-types-psutil==7.2.1.20260116
+types-psutil==7.2.2.20260130
 types-pyyaml==6.0.12.20250915
 types-requests==2.32.4.20260107
 typing-extensions==4.15.0
