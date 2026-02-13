@@ -30,8 +30,8 @@ clap = { version = "4", features=["derive"] }
 serde = { workspace = true, features=["derive"] }
 serde_json = { workspace = true }
 subst = "0.3"
-signal-hook = "0.3"
-procfs = "0.17"
+signal-hook = "0.4"
+procfs = "0.18"
 nix = { workspace = true }
 sysconf = "0.3"
 

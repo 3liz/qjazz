@@ -9,8 +9,8 @@ import traceback
 from contextlib import closing
 from datetime import datetime
 
-from qjazz_contrib.core import logger
-from qjazz_contrib.core.utils import to_iso8601
+from qjazz_core import logger
+from qjazz_core.utils import to_iso8601
 from qjazz_cache.status import CheckoutStatus
 from qjazz_ogc import OgcEndpoints
 from qjazz_rpc.connection import Connection, RendezVous
@@ -98,6 +98,8 @@ def project_info(uri: str) -> m_.ProjectInfo:
             m_.LayerInfo(
                 layer_id="1234",
                 name="Layer",
+                provider="ogr",
+                layer_type="Vector", 
                 source="whatever",
                 crs="EPSG:4326",
                 is_valid=True,
