@@ -1,4 +1,6 @@
 
+export QGIS_SERVER_LIZMAP_REVEAL_SETTINGS=true
+
 run-map:
 	cargo run --bin qjazz-map-bin serve -C ./config-map.toml
 
