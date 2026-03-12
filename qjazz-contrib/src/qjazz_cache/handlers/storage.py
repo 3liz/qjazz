@@ -20,8 +20,7 @@ from qjazz_core.condition import (
     assert_precondition,
 )
 
-from ..common import ProjectMetadata, ProtocolHandler, Url
-from ..storage import ProjectLoaderConfig, load_project_from_uri
+from ..common import ProjectLoader, ProjectMetadata, ProtocolHandler, Url
 
 __all__ = []  # type: ignore
 
@@ -53,9 +52,9 @@ class QgisStorageProtocolHandler(ProtocolHandler):
         )
         return self._project_storage_metadata(uri, url.scheme)
 
-    def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
+    def load_project(self, md: ProjectMetadata, load_project_from_uri: ProjectLoader) -> QgsProject:
         """Override"""
-        return load_project_from_uri(md.uri, config)
+        return load_project_from_uri(md.uri)
 
     def projects(self, url: Url) -> Iterator[ProjectMetadata]:
         """Override"""

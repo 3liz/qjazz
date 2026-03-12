@@ -44,6 +44,7 @@ from qjazz_core.condition import assert_precondition
 from qjazz_core.config import ConfigSettings
 
 from ..common import (
+    ProjectLoader,
     ProjectMetadata,
     ProtocolHandler,
     Url,
@@ -53,7 +54,7 @@ from ..resources import (
     ResourceObject,
     ResourceReader,
 )
-from ..storage import ProjectLoaderConfig, load_project_from_uri
+from ..storage import ProjectLoaderConfig
 
 # Typing only import
 if TYPE_CHECKING:
@@ -258,10 +259,16 @@ class S3ProtocolHandler(ProtocolHandler):
             last_modified=int(last_modified.timestamp()),
         )
 
-    def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
+    def check_loader_config(self, config: ProjectLoaderConfig):
+        """Check configuration"""
+        assert_precondition(
+            config.force_readonly_layers,
+            "S3 handler requires readonly layers",
+        )
+
+    def load_project(self, md: ProjectMetadata, load_project_from_uri: ProjectLoader) -> QgsProject:
         """Return project associated with metadata"""
         assert_precondition(Qgis.versionInt() >= 33800, "Qgis 3.38+ required")
-        assert_precondition(config.force_readonly_layers)
 
         uri = urlsplit(md.uri)
         bucket_name = uri.hostname
@@ -313,7 +320,7 @@ class S3ProtocolHandler(ProtocolHandler):
         logger.debug("[S3] Loading project from '%s'", filename)
 
         with s3_storage_preprocessor(f"{object_path.parent}"):
-            return load_project_from_uri(f"{filename}", config)
+            return load_project_from_uri(f"{filename}")
 
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:
         """List all projects availables from the given uri"""

@@ -18,13 +18,13 @@ from qgis.core import QgsProject
 
 from qjazz_core import componentmanager, logger
 
-from ..common import ProjectMetadata, ProtocolHandler, Url
+from ..common import ProjectLoader, ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
 from ..resources import (
     ResourceObject,
     ResourceReader,
 )
-from ..storage import ProjectLoaderConfig, load_project_from_uri
+from ..storage import ProjectLoaderConfig
 
 # Allowed files suffix for projects
 PROJECT_SFX = (".qgs", ".qgz")
@@ -88,9 +88,9 @@ class FileProtocolHandler(ProtocolHandler):
             raise FileNotFoundError(str(path))
         return file_metadata(path)
 
-    def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
+    def load_project(self, md: ProjectMetadata, load_project_from_uri: ProjectLoader) -> QgsProject:
         """Override"""
-        return load_project_from_uri(md.uri, config)
+        return load_project_from_uri(md.uri)
 
     def projects(self, url: Url) -> Iterator[ProjectMetadata]:
         """List all projects availables from the given uri"""

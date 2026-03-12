@@ -13,9 +13,9 @@ from pydantic import (
 from qjazz_core import componentmanager
 from qjazz_core.config import ConfigSettings
 
-from ..common import Url
+from ..common import ProjectLoaderConfig, Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
-from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
+from .storage import QgisStorageProtocolHandler
 
 
 def _parameters(url: Url | AnyUrl) -> dict[str, str]:

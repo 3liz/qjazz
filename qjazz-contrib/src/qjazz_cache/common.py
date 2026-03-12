@@ -21,7 +21,7 @@ from typing import (
 
 from qgis.core import QgsProject
 
-from .storage import ProjectLoaderConfig
+from .storage import ProjectLoaderConfig, load_project_from_uri
 
 Url = urllib.parse.SplitResult
 
@@ -33,6 +33,10 @@ class ProjectMetadata:
     scheme: str
     storage: Optional[str]
     last_modified: float
+
+
+class ProjectLoader(Protocol):
+    def __call__(self, uri: str) -> QgsProject: ...
 
 
 @runtime_checkable
@@ -71,8 +75,18 @@ class ProtocolHandler(Protocol):
         """Return project metadata"""
 
     @abstractmethod
+    def load_project(self, md: ProjectMetadata, loader: ProjectLoader) -> QgsProject:
+        """Return project loaded from ProjectLoaderClosure"""
+        ...
+
     def project(self, md: ProjectMetadata, config: ProjectLoaderConfig) -> QgsProject:
         """Return project associated with metadata"""
+        self.check_loader_config(config)
+        return self.load_project(md, lambda uri: load_project_from_uri(uri, config))
+
+    def check_loader_config(self, config: ProjectLoaderConfig):
+        """Check configuration"""
+        pass
 
     @abstractmethod
     def projects(self, uri: Url) -> Iterator[ProjectMetadata]:

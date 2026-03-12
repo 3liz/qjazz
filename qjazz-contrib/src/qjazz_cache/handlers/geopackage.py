@@ -13,9 +13,9 @@ from qjazz_core import componentmanager
 from qjazz_core.condition import assert_postcondition
 from qjazz_core.config import ConfigSettings
 
-from ..common import Url
+from ..common import ProjectLoaderConfig, Url
 from ..errors import InvalidCacheRootUrl
-from .storage import ProjectLoaderConfig, QgisStorageProtocolHandler
+from .storage import QgisStorageProtocolHandler
 
 
 def _parameters(url: Url) -> dict[str, str]:

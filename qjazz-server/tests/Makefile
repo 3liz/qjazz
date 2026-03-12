@@ -4,6 +4,10 @@ export QGIS_SERVER_LIZMAP_REVEAL_SETTINGS=true
 run-map:
 	cargo run --bin qjazz-map-bin serve -C ./config-map.toml
 
+run-map-single-backend:
+	cargo run --bin qjazz-map-bin serve -C ./config-map-single.toml
+
+
 run-rpc:
 	cargo run --bin qjazz-rpc-bin serve -C ./config-rpc.toml
 

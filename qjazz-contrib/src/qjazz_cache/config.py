@@ -71,7 +71,13 @@ class ProjectsConfig(config.ConfigBase):
     force_readonly_layers: bool = Field(
         default=_getenv_bool("QGIS_SERVER_FORCE_READONLY_LAYERS", True),
         title="Force read only mode",
-        description="Force layers to open in read only mode",
+        description="""
+        Force layers to open in read only mode."
+        This is the default, unless you have really good reason
+        to open layers in write mode.
+        Note that some handlers (like S3) do not support opening layers
+        in write mode.
+        """,
     )
     ignore_bad_layers: bool = Field(
         default=_getenv_bool("QGIS_SERVER_IGNORE_BAD_LAYERS", False),
