@@ -63,16 +63,17 @@ build-extensions:3.34:
     QGIS_FLAVOR: '3.34'
     QJAZZ_NO_BUILD_EXT_INSTALL: '1'
 
+
+build-extensions:3.40:
+  extends: .build-extensions
+  variables:
+    QGIS_FLAVOR: '3.40'
+
+
 build-extensions:ltr:
   extends: .build-extensions
   variables:
     QGIS_FLAVOR: 'ltr'
-
-build-extensions:release:
-  extends: .build-extensions
-  variables:
-    QGIS_FLAVOR: 'release'
-
 
 #-----------------
 # Tests
@@ -95,12 +96,12 @@ tests:ltr:
   variables:
     QGIS_FLAVOR: "ltr"
 
-tests:release:
+tests:3.40:
   extends: .tests
   dependencies:
       - build-extensions:release
   variables:
-    QGIS_FLAVOR: "release"
+    QGIS_FLAVOR: "3.40"
 
 tests:3.34:
   extends: .tests

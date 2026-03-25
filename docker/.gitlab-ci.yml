@@ -34,13 +34,13 @@ build-docker:ltr:
   variables:
     QGIS_FLAVOR: "ltr"
 
-build-docker:release:
+build-docker:3.40:
   extends: .build-docker
   dependencies:
       - build-binaries
-      - build-extensions:release
+      - build-extensions:3.40
   variables:
-    QGIS_FLAVOR: "release"
+    QGIS_FLAVOR: "3.40"
 
 build-docker:3.34:
   extends: .build-docker
@@ -98,19 +98,19 @@ build-docker:noqgis:
   tags:
     - factory-dind
 
-release:release:
-  extends: .release
-  variables:
-    QGIS_FLAVOR: release
-  dependencies:
-    - build-docker:release
-
 release:ltr:
   extends: .release
   variables:
     QGIS_FLAVOR: ltr
   dependencies:
     - build-docker:ltr
+
+release:release:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: "3.40"
+  dependencies:
+    - build-docker:3.40
 
 release:3.34:
   extends: .release
@@ -157,19 +157,19 @@ release:noqgis:
   tags:
     - factory-dind
 
-push:release:
-  extends: .push
-  variables:
-    QGIS_FLAVOR: release
-  dependencies:
-    - build-docker:release
-
 push:ltr:
   extends: .push
   variables:
     QGIS_FLAVOR: ltr
   dependencies:
     - build-docker:ltr
+
+push:3.40:
+  extends: .push
+  variables:
+    QGIS_FLAVOR: "3.40"
+  dependencies:
+    - build-docker:3.40
 
 push:3.34:
   extends: .push
