@@ -99,7 +99,7 @@ tests:ltr:
 tests:3.40:
   extends: .tests
   dependencies:
-      - build-extensions:release
+      - build-extensions:3.40
   variables:
     QGIS_FLAVOR: "3.40"
 
