@@ -35,17 +35,15 @@ RUN --mount=type=bind,target=/src,rw \
         qgis-plugin-manager
 
 
-ARG PYPISERVER_URL=''
 ARG LIZCLOUD=''
 
-# Install lizcloud monitoring 
+# Install lizcloud support
 RUN --mount=type=bind,target=/src,rw \
     --mount=type=cache,target=/.python-cache \
     if [ "$LIZCLOUD" = "yes" ]; then \
-        uv pip install --python=/opt/local/qjazz/bin/python \
+        uv pip install --extra-index-url=https://packages.3liz.org/pub/whl/ \
+        --python=/opt/local/qjazz/bin/python \
         --cache-dir=/.python-cache --compile-bytecode \
-        --extra-index-url=$PYPISERVER_URL \
-        --allow-insecure-host=$PYPISERVER_URL \
         qjazz-lizcloud; \
     fi
 
