@@ -30,3 +30,4 @@ __output__
 .coverage
 
 .aider.*
+.activate-trixie

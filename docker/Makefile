@@ -20,7 +20,7 @@ BUILD_ARGS += --build-arg REGISTRY_PREFIX=$(REGISTRY_PREFIX)
 
 QGIS_IMAGE=$(REGISTRY_PREFIX)qgis-platform:$(FLAVOR)
 
-FLAVOR:=release
+FLAVOR:=ltr
 
 BUILD_TARGET=base
 MANIFEST=factory-$(FLAVOR).manifest
