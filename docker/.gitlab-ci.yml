@@ -6,9 +6,8 @@
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   stage: docker
   script:
-  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR
+  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR LIZCLOUD=yes
   - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
-  - make -C docker build deliver FLAVOR=$QGIS_FLAVOR TARGET=lizcloud
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
   - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
   environment:
@@ -16,7 +15,6 @@
   artifacts:
     paths:
     - "docker/factory-${QGIS_FLAVOR}.manifest"
-    - "docker/factory-${QGIS_FLAVOR}-lizcloud.manifest"
   only:
     refs:
     - tags
@@ -60,7 +58,6 @@ build-docker:noqgis:
   stage: docker
   script:
   - make -C docker noqgis-build noqgis-deliver
-  - make -C docker noqgis-build noqgis-deliver TARGET=lizcloud
   only:
     refs:
     - tags
@@ -70,7 +67,6 @@ build-docker:noqgis:
   artifacts:
     paths:
     - "docker/factory-noqgis.manifest"
-    - "docker/factory-noqgis-lizcloud.manifest"
 
 # -----------
 # release
@@ -91,7 +87,7 @@ build-docker:noqgis:
   environment:
     name: production
   variables:
-    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}-lizcloud.manifest"
+    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
   when: manual
   # See https://about.gitlab.com/blog/2021/05/20/dag-manual-fix/#what-if-i-dont-want-this-new-behavior
   allow_failure: false
@@ -132,7 +128,7 @@ release:noqgis:
   environment:
     name: production
   variables:
-    FACTORY_MANIFEST: "docker/factory-noqgis-lizcloud.manifest"
+    FACTORY_MANIFEST: "docker/factory-noqgis.manifest"
   when: manual
   allow_failure: false
   tags:

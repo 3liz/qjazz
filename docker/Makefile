@@ -20,30 +20,22 @@ BUILD_ARGS += --build-arg REGISTRY_PREFIX=$(REGISTRY_PREFIX)
 
 QGIS_IMAGE=$(REGISTRY_PREFIX)qgis-platform:$(FLAVOR)
 
-# CI build
-ifdef PYPISERVER
-PYPISERVER_SCHEME ?= https
-PIP_OPTIONS="--extra-index-url=$(PYPISERVER_SCHEME)://$(PYPISERVER) --trusted-host=$(PYPISERVER)"
-BUILD_ARGS += --build-arg PIP_OPTIONS=$(PIP_OPTIONS) $(DOCKER_BUILD_ARGS)
-endif
-
 FLAVOR:=release
 
-ifeq ($(TARGET),lizcloud)
-BUILD_TARGET=lizcloud
-LIZCLOUD_TAG=-lizcloud
-QJAZZ_VERSION_TAG=$(QJAZZ_DEV_TAG)$(LIZCLOUD_TAG)
-MANIFEST=factory-$(FLAVOR)-lizcloud.manifest
-else
 BUILD_TARGET=base
 MANIFEST=factory-$(FLAVOR).manifest
 QJAZZ_VERSION_TAG=$(QJAZZ_DEV_TAG)
-endif
 
 BUILDNAME=$(REGISTRY_PREFIX)$(NAME)
 BUILDIMAGE=$(BUILDNAME):qgis-$(FLAVOR)-$(VERSION)$(QJAZZ_VERSION_TAG)
 
-#BUILD_CACHE:=--force-rm --no-cache
+ifdef PYPISERVER
+PYPISERVER_SCHEME ?= https
+PYPISERVER_URL=$(PYPISERVER_SCHEME)://$(PYPISERVER)
+BUILD_ARGS += --build-arg PYPISERVER_URL=$(PYPISERVER_URL)
+endif
+
+#BUILD_OPTS:=--force-rm --no-cache
 
 main:
 	@echo "No default rule"
@@ -54,10 +46,11 @@ build: manifest
 	$(MAKE) -C ../qjazz-contrib/  manifest
 	{ \
 	source $(MANIFEST); \
-	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(BUILD_TARGET) \
+	docker build --rm $(BUILD_OPTS) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=${FLAVOR} \
+		--build-arg LIZCLOUD=${LIZCLOUD} \
 		--label org.opencontainers.image.version=$$version \
-		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager$(LIZCLOUD_TAG)  -f Dockerfile  ..;\
+		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..;\
 	}
 
 
@@ -92,13 +85,13 @@ tag:
 	{ set -e; source $(MANIFEST); \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version; \
 	docker tag $(BUILDIMAGE) $(BUILDNAME):$$version_short; \
-	docker tag $(BUILDIMAGE) $(BUILDNAME):qgis-$(FLAVOR)$(LIZCLOUD_TAG); \
+	docker tag $(BUILDIMAGE) $(BUILDNAME):qgis-$(FLAVOR); \
 	}
 push:
 	{ set -e; source $(MANIFEST); \
 	docker push $(BUILDNAME):$$version; \
 	docker push $(BUILDNAME):$$version_short; \
-	docker push $(BUILDNAME):qgis-$(FLAVOR)$(LIZCLOUD_TAG); \
+	docker push $(BUILDNAME):qgis-$(FLAVOR); \
 	}
 endif
 #
@@ -113,13 +106,8 @@ push-eager:
 
 BUILDNOQGISIMAGE=$(BUILDNAME):noqgis-$(VERSION)$(QJAZZ_VERSION_TAG)
 
-ifeq ($(TARGET),lizcloud)
-NOQGIS_BUILD_TARGET=noqgis-lizcloud
-NOQGIS_MANIFEST=factory-noqgis-lizcloud.manifest
-else
 NOQGIS_BUILD_TARGET=noqgis
 NOQGIS_MANIFEST=factory-noqgis.manifest
-endif
 
 noqgis-build: noqgis-manifest
 	{ \
@@ -127,7 +115,7 @@ noqgis-build: noqgis-manifest
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=$(FLAVOR) \
 		--label org.opencontainers.image.version=$$version \
-		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager$(LIZCLOUD_TAG)  -f Dockerfile  ..;\
+		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager -f Dockerfile  ..;\
 	}
 
 
