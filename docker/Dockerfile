@@ -64,6 +64,7 @@ RUN apt-get update -y \
         bash-completion \
         jq \
         less \
+        curl \
     && apt-get clean
 
 COPY --from=build /opt/local/qjazz /opt/local/qjazz
@@ -108,6 +109,9 @@ ENV PATH=/opt/local/qjazz/bin:$PATH
 # may access the variable
 ENV QGIS_PLUGINPATH=/var/qjazz/plugins
 
+HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
+    CMD /usr/local/bin/healthcheck.sh
+
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
 # ==================================
@@ -129,6 +133,7 @@ RUN apt-get update -y \
         bash-completion \
         jq \
         less \
+        curl \
     && apt-get clean
 
 COPY --from=build /opt/local/qjazz /opt/local/qjazz
@@ -148,6 +153,9 @@ ENV CONF_HTTP__LISTEN='["0.0.0.0", 9080]'
 ENV CONF_ADMIN_HTTP__LISTEN='["0.0.0.0", 9876]'
 
 EXPOSE 9443 9080 9876
+
+HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
+    CMD /usr/local/bin/healthcheck.sh
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 

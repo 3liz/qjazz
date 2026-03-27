@@ -10,4 +10,6 @@ if [ -n "$QJAZZ_CONFIG_EXEC" ]; then
     export QJAZZ_CONFIG_JSON=$($QJAZZ_CONFIG_EXEC)
 fi
 
+touch /tmp/.qjazz-map-running
+
 exec qjazz-map-bin "$@"

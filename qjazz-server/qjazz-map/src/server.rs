@@ -1,5 +1,5 @@
 use actix_web::{
-    App, HttpResponse, HttpServer, Result, body,
+    App, HttpResponse, HttpRequest, HttpServer, Responder, Result, body,
     body::EitherBody,
     dev::{ServiceRequest, ServiceResponse},
     middleware, web,
@@ -47,8 +47,16 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
 
     backends.watch();
 
+    // For healthcheck
+    async fn ping(_req: HttpRequest) -> impl Responder {
+        HttpResponse::Ok()
+            .content_type(mime::APPLICATION_JSON)
+            .finish()
+    }
+
     let server = HttpServer::new(move || {
         App::new()
+            .service(web::resource("/").head(ping))
             .wrap(cors.configure())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::from_fn(server_mw))
