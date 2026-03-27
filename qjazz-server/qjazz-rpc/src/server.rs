@@ -14,7 +14,7 @@ use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 pub(crate) async fn serve(
     args: String,
     settings: Settings,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> anyhow::Result<()> {
     let addr = settings.rpc.listen().address();
 
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs
@@ -121,7 +121,7 @@ pub(crate) async fn serve(
 
     log::info!("Server shutdown");
     if pool_owned.write().await.has_error() {
-        Err("Server terminated because of errors".into())
+        Err(anyhow::anyhow!("Server terminated because of errors"))
     } else {
         Ok(())
     }

@@ -1,6 +1,6 @@
+use anyhow::Context;
 use core::net::SocketAddr;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::{ffi::OsStr, fs};
@@ -127,7 +127,7 @@ use rustls_pki_types::{CertificateDer, PrivateKeyDer, pem::PemObject};
 use std::sync::Arc;
 
 impl Server {
-    pub fn tls_config(&self) -> Result<Option<TlsServerConfig>, ConfigError> {
+    pub fn tls_config(&self) -> anyhow::Result<Option<TlsServerConfig>> {
         if !self.listen.enable_tls {
             return Ok(None);
         }
@@ -137,48 +137,44 @@ impl Server {
 
         // Read server certificate
 
+        let cert_error_ctx = || format!("Server certificat error: {cert_path:?}");
         let cert_chain = CertificateDer::pem_file_iter(cert_path)
-            .map_err(|err| ConfigError::Message(format!("Server certificate error: {err:?}")))?
-            .map(|cert| {
-                cert.map_err(|err| {
-                    ConfigError::Message(format!("Server certificate error: {err:?}"))
-                })
-            })
-            .collect::<Result<Vec<CertificateDer>, _>>()?;
+            .with_context(cert_error_ctx)?
+            .collect::<Result<Vec<CertificateDer>, _>>()
+            .with_context(cert_error_ctx)?;
 
         // Read server key
 
         let key = PrivateKeyDer::from_pem_file(key_path)
-            .map_err(|err| ConfigError::Message(format!("Server tls key error: {err:?}")))?;
+            .with_context(|| format!("Server tls key error: {key_path:?}"))?;
 
         if let Some(ca_path) = self.listen.tls_client_ca_file.as_ref() {
             let mut store = rustls::RootCertStore::empty();
 
-            fn error<E: std::error::Error>(err: E) -> ConfigError {
-                ConfigError::Message(format!("Client certificate error {err:?}"))
-            }
+            let error_ctx = || format!("Client certificate error {ca_path:?}");
 
             //
             // Load client auth certificate
             //
             CertificateDer::pem_file_iter(ca_path)
-                .map_err(error)?
+                .with_context(error_ctx)?
                 .try_for_each(|cert| match cert {
-                    Ok(cert) => store.add(cert).map_err(error),
-                    Err(err) => Err(error(err)),
-                })?;
+                    Ok(cert) => store.add(cert),
+                    Err(err) => Err(rustls::Error::General(err.to_string())),
+                })
+                .with_context(error_ctx)?;
 
             let verifier = WebPkiClientVerifier::builder(Arc::new(store))
                 .build()
-                .map_err(error)?;
+                .with_context(error_ctx)?;
 
             TlsServerConfig::builder().with_client_cert_verifier(verifier)
         } else {
             TlsServerConfig::builder().with_no_client_auth()
         }
         .with_single_cert(cert_chain, key)
-        .map_err(|err| ConfigError::Message(format!("TLS configuration error: {err:?}")))
         .map(Some)
+        .context("TLS configuration error")
     }
 }
 
@@ -234,23 +230,19 @@ impl Settings {
             .and_then(|this: Self| this.validate())
     }
 
-    fn error<T: Display>(msg: T) -> ConfigError {
-        ConfigError::Message(format!("{msg}"))
-    }
-
     /// Create from default and environment variables
     pub fn new() -> Result<Self, ConfigError> {
         Self::build(Self::builder())
     }
 
     /// Load configuration from env (Json)
-    pub fn from_env<K: AsRef<OsStr>>(key: K) -> Result<Self, ConfigError> {
+    pub fn from_env<K: AsRef<OsStr>>(key: K) -> anyhow::Result<Self> {
         match std::env::var(key) {
-            Ok(content) => Self::build(
+            Ok(content) => Ok(Self::build(
                 Self::builder().add_source(config::File::from_str(&content, FileFormat::Json)),
-            ),
-            Err(std::env::VarError::NotPresent) => Self::new(),
-            Err(err) => Err(Self::error(err)),
+            )?),
+            Err(std::env::VarError::NotPresent) => Ok(Self::new()?),
+            Err(err) => Err(anyhow::anyhow!(err)),
         }
     }
 
@@ -260,19 +252,17 @@ impl Settings {
     }
 
     /// Load configuration with variable substitution
-    pub fn from_file_template(path: &Path) -> Result<Self, ConfigError> {
-        if let Some(loc) = path.parent() {
-            let location = loc.canonicalize().map_err(Self::error)?;
+    pub fn from_file_template(path: &Path) -> anyhow::Result<Self> {
+        Ok(if let Some(loc) = path.parent() {
+            let location = loc.canonicalize()?;
             let replace =
                 std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
-            let content =
-                subst::substitute(&fs::read_to_string(path).map_err(Self::error)?, &replace)
-                    .map_err(Self::error)?;
+            let content = subst::substitute(&fs::read_to_string(path)?, &replace)?;
             Self::build(
                 Self::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
-            )
+            )?
         } else {
-            Self::from_file(path)
-        }
+            Self::from_file(path)?
+        })
     }
 }

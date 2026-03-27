@@ -4,7 +4,6 @@
 //!
 use signal_hook::consts::signal::{SIGCHLD, SIGINT, SIGTERM};
 use signal_hook::iterator::{Signals, backend::Handle};
-use std::error::Error;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
@@ -19,7 +18,7 @@ pub(crate) fn handle_signals(
     pool: Arc<RwLock<Pool>>,
     token: CancellationToken,
     max_failure_pressure: f64,
-) -> Result<Handle, Box<dyn Error>> {
+) -> anyhow::Result<Handle> {
     let mut signals = Signals::new([SIGINT, SIGTERM, SIGCHLD])?;
 
     let handle = signals.handle();

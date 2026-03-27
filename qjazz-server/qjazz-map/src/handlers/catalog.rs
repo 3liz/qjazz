@@ -304,7 +304,7 @@ fn item_url(item: &CollectionsItem, public_url: &str) -> String {
     )
 }
 
-fn to_error<E: std::fmt::Debug>(e: E) -> error::Error {
+fn internal_error<E: std::fmt::Debug>(e: E) -> error::Error {
     log::error!("Catalog error: {e:?}");
     error::ErrorInternalServerError("Internal error")
 }
@@ -316,7 +316,7 @@ impl JsonPage {
 
     fn from_item(item: &CollectionsItem) -> Result<Self> {
         serde_json::from_str(&item.json)
-            .map_err(to_error)
+            .map_err(internal_error)
             .and_then(|v| match v {
                 serde_json::Value::Object(m) => Ok(Self(m)),
                 _ => Err(error::ErrorInternalServerError(
@@ -414,7 +414,7 @@ impl Links<'_> {
     }
 
     fn add(&mut self, link: Link) -> Result<&mut Self> {
-        self.0.push(serde_json::to_value(link).map_err(to_error)?);
+        self.0.push(serde_json::to_value(link).map_err(internal_error)?);
         Ok(self)
     }
 }

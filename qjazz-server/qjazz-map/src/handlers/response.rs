@@ -20,17 +20,6 @@ use crate::channel::{
 
 use crate::responses::HttpStatusCode;
 
-struct AnyError;
-
-impl<T> From<T> for AnyError
-where
-    T: std::error::Error,
-{
-    fn from(_: T) -> Self {
-        Self
-    }
-}
-
 pub mod metadata {
     use super::*;
 
@@ -45,12 +34,11 @@ pub mod metadata {
             .filter(|(k, _)| pred(k.as_str()))
             .for_each(|(k, v)| {
                 if let Ok(k) = MetadataKey::from_str(k.as_str()) {
-                    if v.to_str()
-                        .map_err(AnyError::from)
-                        .and_then(|v| MetadataValue::from_str(v).map_err(AnyError::from))
-                        .map(|v| md.insert(k, v))
-                        .is_err()
+                    if let Ok(s) = v.to_str()
+                        && let Ok(vv) = MetadataValue::from_str(s)
                     {
+                        md.insert(k, vv);
+                    } else {
                         log::error!("Invalid medatata value {v:?}");
                     }
                 } else {

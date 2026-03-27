@@ -4,7 +4,7 @@ use std::ops::Not;
 
 pub mod apis;
 pub mod bbox;
-pub mod point;
+//pub mod point;
 
 #[derive(Default, Debug, Serialize)]
 #[serde(default, rename_all = "camelCase")]

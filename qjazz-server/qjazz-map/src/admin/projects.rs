@@ -6,7 +6,7 @@ use crate::channel::{
     Channel, QjazzAdminClient,
     qjazz_service::{CheckoutRequest, DropRequest, Empty, ProjectRequest},
 };
-use crate::responses::{HttpStatusCode, undisclosed_uri, json_collection_stream};
+use crate::responses::{HttpStatusCode, json_collection_stream, undisclosed_uri};
 use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Result, error, web};
 use futures::stream::StreamExt;
 
@@ -173,7 +173,7 @@ async fn drop_project(channel: web::Data<Channel>, uri: String) -> Result<HttpRe
     let mut request = tonic::Request::new(DropRequest { uri: uri.clone() });
 
     let undisclosed = channel.undisclosed();
-    
+
     request.set_timeout(channel.timeout());
     match client.drop_project(request).await {
         Ok(resp) => Ok(HttpResponse::Ok()
@@ -218,7 +218,7 @@ async fn project_infos(channel: web::Data<Channel>, uri: String) -> Result<HttpR
     let mut request = tonic::Request::new(ProjectRequest { uri: uri.clone() });
 
     let undisclosed = channel.undisclosed();
-    
+
     request.set_timeout(channel.timeout());
     match client.get_project_info(request).await {
         Ok(resp) => Ok(HttpResponse::Ok()

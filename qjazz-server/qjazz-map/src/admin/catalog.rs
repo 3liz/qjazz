@@ -3,7 +3,7 @@
 //
 
 use crate::channel::{Channel, qjazz_service::CatalogRequest};
-use crate::responses::{HttpStatusCode, undisclosed_uri, json_collection_stream};
+use crate::responses::{HttpStatusCode, json_collection_stream, undisclosed_uri};
 use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Result, web};
 use futures::stream::StreamExt;
 

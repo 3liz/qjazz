@@ -31,6 +31,7 @@ ginepro = { git = "https://github.com/dmarteau/ginepro.git", branch="tonic-0.14-
 config = { workspace = true, features = ["toml"] }
 subst = "0.3"
 env_logger = { workspace = true }
+anyhow = { workspace = true }
 futures = "0.3"
 num_cpus = "1"
 regex = "1"

@@ -9,10 +9,11 @@ mod utils;
 
 use server::serve;
 
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use config::Settings;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 #[command(version, author, about, long_about=None)]
@@ -40,10 +41,15 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
 
     const CONF_ENV: &str = "QJAZZ_CONFIG_JSON";
+
+    fn load_settings(conf: &Path) -> anyhow::Result<Settings> {
+        Settings::from_file_template(conf)
+            .with_context(|| format!("Failed to read configuration from {conf:?}"))
+    }
 
     match &args.command {
         Some(Commands::Settings) => {
@@ -51,14 +57,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::Config { conf }) => {
             let settings = match conf {
-                Some(conf) => Settings::from_file_template(conf)?,
+                Some(conf) => load_settings(conf)?,
                 None => Settings::from_env(CONF_ENV)?,
             };
             serde_json::to_writer_pretty(io::stdout().lock(), &settings)?;
         }
         Some(Commands::Serve { conf }) => {
             let settings = match conf {
-                Some(conf) => Settings::from_file_template(conf)?,
+                Some(conf) => load_settings(conf)?,
                 None => Settings::from_env(CONF_ENV)?,
             };
             let mapserv_args = std::env::var_os("QJAZZ_RPC_ARGS");

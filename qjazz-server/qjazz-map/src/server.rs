@@ -18,7 +18,7 @@ use crate::services::{api_scope, catalog, landing_page, ows_resource};
 const LOGGER_FORMAT: &str =
     r#"[REQ:%{x-request-id}i] %a "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D"#;
 
-pub async fn serve(settings: Settings) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn serve(settings: Settings) -> anyhow::Result<()> {
     // Handle channel's connection
     let backends = Backends::connect(settings.backends).await?;
 

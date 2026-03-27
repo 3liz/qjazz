@@ -3,7 +3,6 @@
 //
 use nix::{sys::signal, unistd::Pid};
 use procfs::{Current, Meminfo, ProcResult, process::Process};
-use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
@@ -17,7 +16,7 @@ pub(crate) fn handle_oom(
     token: CancellationToken,
     high_water_mark: f64,
     throttle_duration: time::Duration,
-) -> Result<JoinHandle<()>, Box<dyn Error>> {
+) -> anyhow::Result<JoinHandle<()>> {
     // RSS is returned in number of memory pages
     // so we need the pagesize from sysconf
     // NOTE: on linux x64 the page size is 4096
