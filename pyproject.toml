@@ -35,6 +35,9 @@ doc = [
     "sphinxcontrib-httpdomain",
     "swagger-plugin-for-sphinx",
 ]
+tools = [
+    "ipython",
+]
 
 [tool.uv.workspace]
 members = [

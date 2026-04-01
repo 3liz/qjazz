@@ -23,6 +23,7 @@ clean:: clean-dist
 #
 
 REQUIREMENT_GROUPS=\
+	dev \
 	tests \
 	lint \
 	doc \
