@@ -8,12 +8,22 @@ import os
 import sys
 
 from pathlib import Path
-from typing import Iterator, Optional, no_type_check
+from typing import TYPE_CHECKING, Iterator, Optional, no_type_check
 
-import qgis  # noqa F401
+from qgis.core import Qgis
+
+if TYPE_CHECKING:
+    from qgis.core import QgsApplication
+    from qgis.server import QgsServer
 
 from .. import logger
 from ..condition import assert_precondition
+
+QGIS_VERSION_INT = Qgis.versionInt()
+QGIS_VERSION_3 = QGIS_VERSION_INT < 40000
+
+QGIS_MINIMUM_VERSION_INT = 33400
+QGIS_MINIMUM_VERSION = "3.34"
 
 
 def setup_qgis_paths(prefix: str) -> None:
@@ -27,10 +37,10 @@ def setup_qgis_paths(prefix: str) -> None:
 
 # We need to keep a reference instance of the qgis_application object
 # and not make this object garbage collected
-qgis_application: Optional["qgis.core.QgsApplication"] = None
+qgis_application: Optional["QgsApplication"] = None
 
 
-def current_qgis_application() -> Optional["qgis.core.QgsApplication"]:
+def current_qgis_application() -> Optional["QgsApplication"]:
     return qgis_application
 
 
@@ -77,8 +87,8 @@ def setup_qgis_application(
     from qgis.core import Qgis, QgsApplication
     from qgis.PyQt.QtCore import QCoreApplication
 
-    if Qgis.versionInt() < 33400:
-        raise RuntimeError(f"You need QGIS3.34 minimum (found {Qgis.versionInt()})")
+    if QGIS_VERSION_INT < QGIS_MINIMUM_VERSION_INT:
+        raise RuntimeError(f"You need QGIS {QGIS_MINIMUM_VERSION} minimum (found {Qgis.version()})")
 
     #  We MUST set the QT_QPA_PLATFORM to prevent
     #  Qt trying to connect to display in containers
@@ -160,7 +170,7 @@ def install_logger_hook(logprefix: str) -> None:
 
     # Add a hook to qgis  message log
 
-    def writelogmessage(message, tag, level):
+    def writelogmessage(message, tag, level, *args):
         arg = f"{logprefix} {tag}: {message}"
         if level == Qgis.Warning:
             logger.warning(arg)
@@ -171,7 +181,10 @@ def install_logger_hook(logprefix: str) -> None:
             logger.debug(arg)
 
     messageLog = QgsApplication.messageLog()
-    messageLog.messageReceived.connect(writelogmessage)
+    if QGIS_VERSION_3:
+        messageLog.messageReceived.connect(writelogmessage)
+    else:
+        messageLog.messageReceivedWithFormat.connect(writelogmessage)
 
 
 def init_qgis_application(**kwargs):
@@ -186,7 +199,7 @@ def init_qgis_processing() -> None:
     Processing.initialize()
 
 
-def init_qgis_server(**kwargs) -> "qgis.server.QgsServer":
+def init_qgis_server(**kwargs) -> "QgsServer":
     """Init QGIS server"""
     from qgis.server import QgsServer
 
@@ -240,8 +253,12 @@ def load_qgis_settings(
         os.environ["QGIS_CUSTOM_CONFIG_PATH"] = options_path
         os.environ["QGIS_OPTIONS_PATH"] = options_path
 
-    QSettings.setDefaultFormat(QSettings.IniFormat)
-    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
+    if QGIS_VERSION_3:
+        QSettings.setDefaultFormat(QSettings.IniFormat)
+        QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
+    else:
+        QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+        QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(settings_path))
 
     qgssettings = QgsSettings()
     logger.debug("Settings loaded from %s", qgssettings.fileName())
@@ -254,7 +271,7 @@ def load_qgis_settings(
     if not allow_python_embedded:
         # Disable python embedded and override previous settings
         logger.info("Disabling Python Embedded in QGIS")
-        if Qgis.versionInt() < 34000:
+        if QGIS_VERSION_INT < 34000:
             qgssettings.setEnumValue("qgis/enableMacros", Qgis.PythonMacroMode.Never)
         else:
             qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)
@@ -272,7 +289,9 @@ def set_proxy_configuration() -> None:
 
     proxy = nam.fallbackProxy()
     proxy_type = proxy.type()
-    if proxy_type == QNetworkProxy.NoProxy:
+
+    ProxyType = QNetworkProxy if QGIS_VERSION_3 else QNetworkProxy.ProxyType
+    if proxy_type == ProxyType.NoProxy:
         return
 
     logger.info(
@@ -280,11 +299,11 @@ def set_proxy_configuration() -> None:
         proxy.hostName(),
         proxy.port(),
         {
-            QNetworkProxy.DefaultProxy: "DefaultProxy",
-            QNetworkProxy.Socks5Proxy: "Socks5Proxy",
-            QNetworkProxy.HttpProxy: "HttpProxy",
-            QNetworkProxy.HttpCachingProxy: "HttpCachingProxy",
-            QNetworkProxy.HttpCachingProxy: "FtpCachingProxy",
+            ProxyType.DefaultProxy: "DefaultProxy",
+            ProxyType.Socks5Proxy: "Socks5Proxy",
+            ProxyType.HttpProxy: "HttpProxy",
+            ProxyType.HttpCachingProxy: "HttpCachingProxy",
+            ProxyType.HttpCachingProxy: "FtpCachingProxy",
         }.get(proxy_type, "Undetermined"),
     )
 

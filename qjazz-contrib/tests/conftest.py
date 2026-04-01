@@ -50,6 +50,9 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         qgis.init_qgis_processing()
         if logger.is_enabled_for(logger.LogLevel.DEBUG):
             print(qgis.show_qgis_settings())
+
+        # For testing purpose
+        qgis.set_proxy_configuration()
     except ModuleNotFoundError:
         pytest.exit("Qgis installation is required", returncode=1)
 

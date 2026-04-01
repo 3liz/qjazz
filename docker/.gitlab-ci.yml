@@ -24,6 +24,14 @@
 
 # XXX Matrix build does not allow using dependencies
 
+build-docker:release:
+  extends: .build-docker
+  dependencies:
+      - build-binaries-trixie
+      - build-extensions:release
+  variables:
+    QGIS_FLAVOR: "release"
+
 build-docker:ltr:
   extends: .build-docker
   dependencies:
@@ -94,6 +102,13 @@ build-docker:noqgis:
   tags:
     - factory-dind
 
+release:release:
+  extends: .release
+  variables:
+    QGIS_FLAVOR: release
+  dependencies:
+    - build-docker:release
+
 release:ltr:
   extends: .release
   variables:
@@ -101,7 +116,7 @@ release:ltr:
   dependencies:
     - build-docker:ltr
 
-release:release:
+release:3.40:
   extends: .release
   variables:
     QGIS_FLAVOR: "3.40"
@@ -152,6 +167,13 @@ release:noqgis:
     FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
   tags:
     - factory-dind
+
+push:release:
+  extends: .push
+  variables:
+    QGIS_FLAVOR: release
+  dependencies:
+    - build-docker:release
 
 push:ltr:
   extends: .push

@@ -12,7 +12,6 @@ from aiohttp.test_utils import TestClient
 from qjazz_core import qgis
 
 from qgis.core import (
-    Qgis,
     QgsProcessingFeedback,
     QgsProject,
 )
@@ -31,20 +30,20 @@ def pytest_report_header(config):
     from osgeo import gdal
 
     from qgis.core import Qgis
-    from qgis.PyQt import Qt
+    from qgis.PyQt.QtCore import QT_VERSION_STR
 
     gdal_version = gdal.VersionInfo("VERSION_NUM")
     return (
         f"QGIS : {Qgis.versionInt()}\n"
         f"Python GDAL : {gdal_version}\n"
         f"Python : {sys.version}\n"
-        f"QT : {Qt.QT_VERSION_STR}"
+        f"QT : {QT_VERSION_STR}"
     )
 
 
 @pytest.fixture(scope="session")
 def rootdir(request: pytest.FixtureRequest) -> Path:
-    return Path(request.config.rootdir.strpath)  # type: ignore [attr-defined]
+    return request.config.rootpath
 
 
 @pytest.fixture(scope="session")
@@ -186,7 +185,7 @@ def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
 def server_app(rootdir: Path) -> web.Application:
     from qjazz_processes.server import cli, executor, server
 
-    conf = cli.load_configuration(rootdir.joinpath("server-config.toml"))
+    conf = cli.load_configuration(rootdir.joinpath("config-server.toml"))
     return server.create_app(
         conf,
         executor.Executor(conf.executor),
@@ -201,10 +200,6 @@ async def http_client(server_app: web.Application, aiohttp_client: Callable) -> 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     try:
         from qjazz_core import qgis
-
-        # On QGIS <= 3.34, explicite call to exit() is required
-        # in order to prevent a segmentation fault.
-        if Qgis.versionInt() <= 34000:
-            qgis.exit_qgis_application()
+        qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()

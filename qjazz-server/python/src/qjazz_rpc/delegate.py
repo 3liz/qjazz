@@ -19,6 +19,7 @@ the url and this does not work in delegated api url.
 import traceback
 
 from qjazz_core import logger
+from qjazz_core.qgis import QGIS_VERSION_3
 
 from qgis.PyQt.QtCore import QUrl
 from qgis.server import QgsServerApi, QgsServerApiContext
@@ -27,7 +28,7 @@ ROOT_DELEGATE = "/__delegate__"
 
 # Predefined API aliases
 API_ALIASES = {
-    "WFS3": "OGC WFS3 (Draft)",
+    "WFS3": "OGC WFS3 (Draft)" if QGIS_VERSION_3 else "OAPIF",
     "LIZMAP": "Lizmap",  # Make the name case insensitive
 }
 

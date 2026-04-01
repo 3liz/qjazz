@@ -23,8 +23,7 @@ RUN --mount=type=bind,target=/src,rw \
     export UV_LINK_MODE=copy \
     && uv venv --system-site-packages /opt/local/qjazz \
     && uv pip install --python=/opt/local/qjazz/bin/python --compile-bytecode \
-        --cache-dir=/.python-cache --link-mode=copy \
-        -r /src/requirements.txt \
+        --cache-dir=/.python-cache -r /src/requirements.txt \
     && uv pip install --python=/opt/local/qjazz/bin/python \
         --cache-dir=/.python-cache --no-deps --compile-bytecode \
         /src/qjazz-contrib \

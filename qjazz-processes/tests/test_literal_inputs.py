@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -235,7 +235,9 @@ def test_parameter_datetime():
     assert schema["format"] == "date-time"
     assert schema["formatMinimum"] == qdt.toPyDateTime().isoformat()
 
-    value = inp.value(datetime.now().isoformat())
+    test_date = datetime.now() + timedelta(seconds=3)
+
+    value = inp.value(test_date.isoformat())
     assert param.checkValueIsAcceptable(value)
 
     param = QgsProcessingParameterDateTime("DateTime", maxValue=qdt)

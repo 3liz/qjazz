@@ -14,22 +14,18 @@
 
 extern "C" {
 
-#if !defined(SIP_USE_PYCAPSULE)
-    #error "SIP_USE_PYCAPSULE not defined !"
-#endif
-
 static const sipAPIDef* sip_api = NULL;
 static const sipTypeDef* sip_QgsServer_t = NULL;
 static const sipTypeDef* sip_QgsProject_t = NULL;
 static const sipTypeDef* sip_QgsServerResponse_t = NULL;
 static const sipTypeDef* sip_QgsServerRequest_t = NULL;
 
-static const sipTypeDef* sip_find_type(const char* name)
+static const sipTypeDef* sip_find_type(const char* name, const char* msg)
 {
     const sipTypeDef* st = (const sipTypeDef*)sip_api->api_find_type(name);
     if (!st) 
     {
-        PyErr_SetString(PyExc_RuntimeError, name);
+        PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
     return st;
@@ -37,26 +33,32 @@ static const sipTypeDef* sip_find_type(const char* name)
 
 bool sip_setup() 
 {
-    sip_api = (const sipAPIDef*)PyCapsule_Import("PyQt5.sip._C_API", 0);
+    sip_api = (const sipAPIDef*)PyCapsule_Import(PYQT_SIP_C_API, 0);
     if (!sip_api) 
     {
         PyErr_SetString(PyExc_RuntimeError, "Cannot get sip C API");
         return false;
     }
  
-    sip_QgsServer_t = sip_find_type("QgsServer");
+    sip_QgsServer_t = sip_find_type("QgsServer", "Cannot find sip type QgsServer");
     if (!sip_QgsServer_t)
         return false;
    
-    sip_QgsProject_t = sip_find_type("QgsProject");
+    sip_QgsProject_t = sip_find_type("QgsProject", "Cannot find sip type QgsProject");
     if (!sip_QgsProject_t)
         return false;
 
-    sip_QgsServerResponse_t = sip_find_type("QgsServerResponse");
+    sip_QgsServerResponse_t = sip_find_type(
+        "QgsServerResponse",
+        "Cannot find sip type QgsServerResponse"
+    );
     if (!sip_QgsServerResponse_t)
         return false;
 
-    sip_QgsServerRequest_t = sip_find_type("QgsServerRequest");
+    sip_QgsServerRequest_t = sip_find_type(
+        "QgsServerRequest",
+        "Cannot find sip type QgsServerRequest"
+    );
     if (!sip_QgsServerRequest_t)
         return false;
 

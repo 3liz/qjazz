@@ -6,6 +6,7 @@ from time import time
 from typing import Optional
 
 from qjazz_core import logger
+from qjazz_core.qgis import QGIS_VERSION_3
 
 from qgis.core import QgsFeedback
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
@@ -54,6 +55,7 @@ class Request(QgsServerRequest):
 # Define default chunk size to be 1Mo
 DEFAULT_CHUNK_SIZE = 1024 * 1024
 
+OpenReadWriteFlag = QIODevice.ReadWrite if QGIS_VERSION_3 else QIODevice.OpenModeFlag.ReadWrite
 
 class Response(QgsServerResponse):
     """Adaptor to handler response
@@ -75,7 +77,7 @@ class Response(QgsServerResponse):
     ):
         super().__init__()
         self._buffer = QBuffer()
-        self._buffer.open(QIODevice.ReadWrite)
+        self._buffer.open(OpenReadWriteFlag)
         self._finish = False
         self._conn = conn
         self._status_code = 200
