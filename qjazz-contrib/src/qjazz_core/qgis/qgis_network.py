@@ -50,7 +50,7 @@ class RequestPolicy(config.ConfigBase):
     @staticmethod
     def set_request_cache_policy(request: QNetworkRequest, policy: CachePolicy):
         request.setAttribute(
-            QNetworkRequest.CacheLoadControlAttribute,
+            QNetworkRequest.Attribute.CacheLoadControlAttribute,
             RequestPolicy.cache_policy_to_load_control(policy),
         )
 
@@ -151,7 +151,7 @@ def on_request_created(params: QgsNetworkRequestParameters):
 def on_reply_finished(reply: QgsNetworkReplyContent):
     """Run whenever a pending network reply is finished."""
     err = reply.error()
-    status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+    status = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute)
     url: str = reply.request().url().toDisplayString()
     if err != QNetworkReply.NoError:
         logger.error(

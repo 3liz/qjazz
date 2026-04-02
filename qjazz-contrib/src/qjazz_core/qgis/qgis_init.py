@@ -253,12 +253,8 @@ def load_qgis_settings(
         os.environ["QGIS_CUSTOM_CONFIG_PATH"] = options_path
         os.environ["QGIS_OPTIONS_PATH"] = options_path
 
-    if QGIS_VERSION_3:
-        QSettings.setDefaultFormat(QSettings.IniFormat)
-        QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings_path))
-    else:
-        QSettings.setDefaultFormat(QSettings.Format.IniFormat)
-        QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(settings_path))
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(settings_path))
 
     qgssettings = QgsSettings()
     logger.debug("Settings loaded from %s", qgssettings.fileName())
@@ -290,7 +286,7 @@ def set_proxy_configuration() -> None:
     proxy = nam.fallbackProxy()
     proxy_type = proxy.type()
 
-    ProxyType = QNetworkProxy if QGIS_VERSION_3 else QNetworkProxy.ProxyType
+    ProxyType = QNetworkProxy.ProxyType
     if proxy_type == ProxyType.NoProxy:
         return
 
