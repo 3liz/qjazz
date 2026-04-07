@@ -26,8 +26,6 @@ build::
 	@python -m qjazz_rpc.doc schema --format toml > ./configs/rpc.toml
 	@echo "* Creating proxy config documentation"
 	@python -m qjazz_map config --schema --format toml > ./configs/server.toml
-	@echo "* Creating admin config documentation"
-	@qjazz-server-admin doc config --format toml > ./configs/management.toml
 
 
 build::
@@ -35,12 +33,6 @@ build::
 	@python -m qjazz_rpc.doc schema > ./specs/rpc-config.json
 	@echo "* Creating server config schema specs"
 	@python -m qjazz_map config --schema > ./specs/server-config.json
-	@echo "* Creating admin config schema specs"
-	@qjazz-server-admin doc config  > ./specs/admin-config.json
-	@echo "* Creating admin openapi specs (YAML)"
-	@qjazz-server-admin doc openapi > ./specs/openapi-management.json
-	@echo "* Creating admin openapi specs (JSON)"
-	@qjazz-server-admin doc openapi --yaml > ./specs/openapi-management.yml
 
 
 clean:

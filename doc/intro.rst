@@ -38,15 +38,6 @@ Overview
     |  frontend/proxy  |                 |   service pools |
     |                  |                 |                 |
     --------------------                 -------------------
-                                                n |
-                                                  |
-                                                1 |   
-                                         -------------------
-                                         |                 |
-                                         |     Management  |
-                                         |     service     |
-                                         |                 |
-                                         -------------------
 
 .. _project_features:
 

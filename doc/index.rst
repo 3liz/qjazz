@@ -13,8 +13,6 @@ Welcome to qjazz's documentation!
    intro
    rpc_config
    server_config
-   management
-   management-api
 
 Indices and tables
 ==================

@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 * QGIS4 Support
 * Add healthcheck in docker images
 * Improve error handling
+* Remove qjazz-admin managment module
+    - Unnecssary code complexity
+    - Cache managment API implemented in map proxy server
+    - CLI managment tools.
 
 ## 0.6.0
 

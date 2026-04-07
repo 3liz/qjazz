@@ -1,9 +1,5 @@
 
 
-[logging]
-level = "INFO"
-
-
 [server]
 #
 # Use admin services
@@ -70,12 +66,8 @@ cancel_timeout = 3
 # error.
 max_waiting_requests = 50
 #
-# Max failure pressure
-#
-# The maximum allowed failure pressure.
-# If the failure pressure exceed this value then
-# the service will exit with critical error condition.
-max_failure_pressure = 0.5
+# Max chunk size
+max_chunk_size = 1048576
 #
 # Startup projects
 #
@@ -194,7 +186,12 @@ disable_getprint = false
 #
 # Force read only mode
 #
-# Force layers to open in read only mode
+# Force layers to open in read only mode."
+# This is the default, unless you have really good reason
+# to open layers in write mode.
+# Note that some handlers (like S3) do not support opening layers
+# in write mode.
+# 
 force_readonly_layers = true
 #
 # Ignore bad layers
