@@ -1,4 +1,7 @@
-"""gRPC Client test"""
+"""gRPC Client test
+
+Run qjazz RPC commands from CLI
+"""
 
 import json
 import os

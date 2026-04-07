@@ -75,6 +75,23 @@ class ApiEndpoint(ConfigBase):
     )
 
 
+class AdminConfig(ConfigBase):
+    enabled: bool = Field(
+        False,
+        title="Enable admin config",
+        description="""
+        Enable projects api management, allow the client to control
+        the project's backend cache
+        """,
+    )
+    disclosed: bool = Field(
+        False,
+        description="""
+        Disclose sensitive informations like paths and
+        internal uris.
+        """,
+    )
+
 class ChannelConfig(ConfigBase):
     host: str = Field("localhost", title="Hostname")
     port: int = Field(DEFAULT_PORT, title="Port")
@@ -145,3 +162,5 @@ class ChannelConfig(ConfigBase):
         catalog has been disabled for the channel.
         """,
     )
+    admin: AdminConfig = Field(AdminConfig())
+

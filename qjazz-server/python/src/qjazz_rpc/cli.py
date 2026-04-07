@@ -1,3 +1,9 @@
+""" Cli tool for:
+
+* Print configuration
+* Print version informations
+* Install plugins from configuration
+"""
 import os
 
 from pathlib import Path

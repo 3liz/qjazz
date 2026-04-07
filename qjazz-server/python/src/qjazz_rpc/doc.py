@@ -41,9 +41,13 @@ class Listen(ConfigBase):
         None,
         title="Path to TLS cert PEM file",
     )
+    tls_client_cafile: Optional[FilePath] = Field(
+        None,
+        title="Path ho TLS client CA file",
+    )
 
 
-class Server(ConfigBase):
+class Rpc(ConfigBase):
     listen: Listen = Field(Listen())
     enable_admin_services: bool = Field(
         True,
@@ -68,6 +72,21 @@ class Server(ConfigBase):
             "The maximum allowed failure pressure.\n"
             "If the failure pressure exceed this value then\n"
             "the service will exit with critical error condition,"
+        ),
+    )
+    high_water_mark: float = Field(
+        0.9,
+        description=(
+            "Set memory high water mark as fraction of total memory.\n"
+            "Workers are restarted if total memory percent usage of workers\n"
+            "exceed that value."
+        ),
+    )
+    oom_period: int = Field(
+        5,
+        description=(
+            "Interval in seconds between two check the out-of-memory\n"
+            "handler."
         ),
     )
 
@@ -147,7 +166,7 @@ if __name__ == "__main__":
 
         confservice = ConfBuilder()
 
-        confservice.add_section("server", Server)
+        confservice.add_section("rpc", Rpc)
         confservice.add_section("worker", Worker)
 
         indent = 4 if pretty else None

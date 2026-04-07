@@ -49,6 +49,13 @@ backends_request_timeout = 30
 #
 # Shutdown grace period
 shutdown_timeout = 30
+#
+# Use forwarded connection infos request headers.
+# This is required if your service is behind a reverse-proxy
+# in order to ensure that the correct URL is used for links
+# sent to the client.
+# 
+check_forwarded_headers = true
 
 [backends.'key']
 #
@@ -147,18 +154,17 @@ description = ""
 enable_html_delegate = false
 
 #
-# Path to services configuration files
+[backends.'key'.admin]
 #
-# Path or globbing to services configuration files.
-# Note that this section is ignored if remote configuration
-# is used.
+# Enable admin config
+#
+# Enable projects api management, allow the client to control
+# the project's backend cache
 # 
+enabled = false
 #
-# Path to services configuration files
-#
-# Path or globbing to services configuration files.
-# Note that this section is ignored if remote configuration
-# is used.
+# Disclose sensitive informations like paths and
+# internal uris.
 # 
-#includes =   	# Optional
+disclosed = false
 

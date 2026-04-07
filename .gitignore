@@ -29,5 +29,6 @@ __output__
 .localconfig.mk
 .coverage
 
+.agent
 .aider.*
 .activate-trixie

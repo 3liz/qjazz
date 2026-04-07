@@ -34,9 +34,8 @@ exclude_patterns = []
 
 #html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-html_static_path = [
-    "specs/openapi-management.yml",
-]
+#html_static_path = [
+#]
 
 # Fix for read the doc
 # See https://github.com/readthedocs/readthedocs.org/issues/2569

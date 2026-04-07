@@ -63,10 +63,21 @@ Integrated features:
 
 .. _quick_setup:
 
-Quick setup
-===========
+Quick Start with Docker
+=======================
 
 .. _docker_compose_setup:
+
+
+The fastest way to deploy QJazz is using Docker Compose and official QJazz image from
+`Docker hub <https://https://hub.docker.com/r/3liz/qjazz>`_
+
+Minimal Setup
+-------------
+
+Create a ``docker-compose.yml`` file:
+
+
 
 Docker compose setup
 --------------------
@@ -83,6 +94,8 @@ Running workers with docker compose:
 
 The simplest configuration for basic working installation is the following
 
+Create a ``docker-compose.yml`` file:
+
 .. code-block:: yaml
 
     services:
@@ -91,41 +104,46 @@ The simplest configuration for basic working installation is the following
       # qgis server
       #
       qgis-rpc:
-        image: 3liz/qjazz:qgis-ltr
+        image: 3liz/qjazz:qgis-3.40
         environment:
           CONF_DISPLAY_XVFB: ON
           CONF_LOGGING__LEVEL: debug
           CONF_WORKER__NAME: basic_worker
+          CONF_WORKER__NUM_PROCESSES: "2"
           CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS: >-
             { 
-              "/":/"qgis-projects" 
+              "/":"/qgis-projects" 
             }
         volumes:
-        - { type: bind, source: "/path/to/projects/", target: /qgis-projects } 
+        - { type: bind, source: "/path/to/qgis/projects/", target: /qgis-projects } 
         command: ["qjazz-rpc", "serve"]
       web:
         #
         # The web service communicate to (multiple) backends and route
         # request to the appropriate backend.
         #
-        image: 3liz/qjazz:qgis-ltr
+        image: 3liz/qjazz:qgis-3.40
         environment:
           CONF_LOGGING__LEVEL: debug
-          CONF_BACKENDS__BASIC__TITLE: "Basic backends"
+          CONF_BACKENDS__BASIC__TITLE: "QGIS Services"
           CONF_BACKENDS__BASIC__HOST: "qgis-rpc"
           CONF_BACKENDS__BASIC__ROUTE: "/"
         ports:
         - 127.0.0.1:9080:9080
         command: ["qjazz-map", "serve"]
 
-Run the stack with::
+Start the services:
+
+.. code-block:: bash
 
     docker compose up -d
+
+Access the service at: ``http://localhost:9080/``
 
 From here, open your navigator at http://localhost:9080/?MAP=/my_project&SERVICE=WMS&REQUEST=GetCapabilities
 in order to get the WMS Capabilities if your project is wms-enabled.
 
-See the working example in `examples/basic`
+See the working example in `examples/basic-qgis-services`
 
 
 .. _docker_scaling:
@@ -167,9 +185,9 @@ Managing individual service
 One way to manage workers individually is to use cli commands 
 from inside running containers::
 
-    docker compose exec [--index=n] qgis-rpc qjazz-server-cli
+    docker compose exec [--index=n] qgis-rpc qjazz-rpc-client
 
-The `qjazz-server-cli` enables you to retrieve various information 
+The `qjazz-rpc-client` enables you to retrieve various information 
 about the running service:
 
 - Get environment state
@@ -186,58 +204,4 @@ tool dedicated to this purpose.
 You may also run this command outside the service container by
 defining the `QGIS_GRPC_HOST` variable with the remote worker instance
 address.
-
-
-Configuration setup
-===================
-
-All services use configuration file in `toml <https://toml.io/en/>`_  format by default,
-but json and yaml may also be used.
-
-
-Using configuration file
-------------------------
-
-You may specify a configuration file with the `--conf` or `-C` option::
-        
-    qjazz-rpc  serve -C path/to/config/file.toml
-
-
-Using environment variables
----------------------------
-
-Configuration defaults may by overridden by environment variables.
-
-This is useful for playing nicely with docker-compose with small
-configuration settings.
-
-Configuration structure may be composed of simple values but also of more nested  
-complex type. 
-
-All configuration variables will start with the prefix `CONF_` followed by the field
-name (or toml section). Nested fields are separated by '__' and so on.
-
-If the nested type is too complex, the environment variable may contains the Json
-representation of the field.
-
-Examples:
-
-Environment variables::
-    
-    CONF_LOGGING__LEVEL=trace
-    CONF_WORKER__NAME=worker
-    CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS='{ "/": "/qgis-projects/france_parts" }'
-
-Which gives the toml equivalent:
-
-.. code-block:: toml
-
-    [loggin]
-    level = "debug"
-
-    [worker]
-    name = "worker"
-
-    [worker.projects.search_paths]
-    '/' = "/qgis-projects/france_parts"
 

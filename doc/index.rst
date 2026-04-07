@@ -9,10 +9,12 @@ Welcome to qjazz's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
- 
+  
    intro
+   install
    rpc_config
    server_config
+   rpc_cli
 
 Indices and tables
 ==================

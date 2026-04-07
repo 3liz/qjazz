@@ -1,6 +1,6 @@
 
 
-[server]
+[rpc]
 #
 # Use admin services
 enable_admin_services = true
@@ -19,9 +19,18 @@ shutdown_grace_period = 10
 # If the failure pressure exceed this value then
 # the service will exit with critical error condition,
 max_failure_pressure = 0.9
+#
+# Set memory high water mark as fraction of total memory.
+# Workers are restarted if total memory percent usage of workers
+# exceed that value.
+high_water_mark = 0.9
+#
+# Interval in seconds between two check the out-of-memory
+# handler.
+oom_period = 5
 
 #
-[server.listen]
+[rpc.listen]
 #
 # Socket address
 address = "127.0.0.1:23456"
@@ -36,6 +45,9 @@ enable_tls = false
 #
 # Path to TLS cert PEM file
 #tls_cert_file =   	# Optional
+#
+# Path ho TLS client CA file
+#tls_client_cafile =   	# Optional
 
 
 [worker]
