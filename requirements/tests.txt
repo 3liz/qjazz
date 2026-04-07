@@ -16,8 +16,8 @@ billiard==4.2.4
 celery==5.6.3
 certifi==2026.2.25
 cffi==2.0.0
-charset-normalizer==3.4.6
-click==8.3.1
+charset-normalizer==3.4.7
+click==8.3.2
 click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
@@ -47,7 +47,7 @@ pycparser==3.0 ; implementation_name != 'PyPy'
 pycryptodome==3.23.0
 pydantic==2.12.5
 pydantic-core==2.41.5
-pydantic-extra-types==2.11.1
+pydantic-extra-types==2.11.2
 pydantic-settings==2.13.1
 pygments==2.20.0
 pytest==9.0.2
@@ -64,10 +64,10 @@ setuptools==82.0.1
 six==1.17.0
 typing-extensions==4.15.0
 typing-inspection==0.4.2
-tzdata==2025.3
+tzdata==2026.1
 tzlocal==5.3.1
 urllib3==2.6.3
 vine==5.1.0
 wcwidth==0.6.0
-werkzeug==3.1.7
+werkzeug==3.1.8
 yarl==1.23.0

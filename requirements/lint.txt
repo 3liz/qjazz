@@ -11,13 +11,13 @@ pathspec==1.0.4
 pygments==2.20.0
 pyyaml==6.0.3
 rich==14.3.3
-ruff==0.15.8
+ruff==0.15.9
 stevedore==5.7.0
 types-aiofiles==25.1.0.20251011
-types-protobuf==6.32.1.20260221
-types-psutil==7.2.2.20260130
+types-protobuf==7.34.1.20260403
+types-psutil==7.2.2.20260402
 types-pyyaml==6.0.12.20250915
-types-requests==2.33.0.20260327
+types-requests==2.33.0.20260402
 typing-extensions==4.15.0
 urllib3==2.6.3
 vulture==2.16
