@@ -53,7 +53,6 @@ from typing import (
 from pydantic import (
     BaseModel,
     JsonValue,
-    TypeAdapter,
     ValidationError,
     create_model,
 )
@@ -206,17 +205,8 @@ class ConfBuilder:
     # in order to propagate modification of the configuration
     #
 
-    _global_sections: ClassVar[dict] = {}
-
-    _trace_output = TypeAdapter(bool).validate_python(
-        os.getenv("PY_QGIS_CONFSERVICE_TRACE", "no"),
-    )
-
-    def __init__(self, *, with_global_sections: bool = True):
-        if with_global_sections:
-            self._sections = self._global_sections.copy()
-        else:
-            self._sections = {}
+    def __init__(self) -> None:
+        self._sections: dict = {}
         self._model: Type[BaseModel] | None = None
         self._conf: BaseModel | None = None
         self._model_changed = True
@@ -225,11 +215,6 @@ class ConfBuilder:
     @property
     def version(self):
         return config_version
-
-    @classmethod
-    def _trace(cls, *args):
-        if cls._trace_output:
-            print("==CONFSERVICE:", *args, file=sys.stderr, flush=True)  # noqa T201
 
     def _create_base_model(self) -> Type[BaseModel]:
         def _model(model):
@@ -301,9 +286,9 @@ class ConfBuilder:
         name: str,
         model: Type | TypeAlias,
         field: Any = CreateDefault,  # noqa ANN401
+        *,
         replace: bool = False,
     ):
-        self._trace("Adding section:", name)
         if not replace and name in self._sections:
             raise SectionExists(name)
         self._sections[name] = (model,) if field is CreateDefault else (model, field)
@@ -328,36 +313,6 @@ class ConfBuilder:
         in the current context
         """
         return componentmanager.get_service(CONFIG_SERVICE_CONTRACTID)
-
-
-#
-# Config service
-#
-
-
-def section(
-    name: str,
-    *,
-    field: Any = CreateDefault,  # noqa ANN401
-) -> Callable:
-    """Decorator for config section definition
-
-    Store section that will be initialized with builder
-    instance
-
-    @config.section("server")
-    class ServerConfig(config.ConfigBase):
-        ...
-    """
-    ConfBuilder._trace("Adding section:", name)
-    if name in ConfBuilder._global_sections:
-        raise SectionExists(name)
-
-    def wrapper(model):
-        ConfBuilder._global_sections[name] = (model,) if field is CreateDefault else (model, field)
-        return model
-
-    return wrapper
 
 
 #

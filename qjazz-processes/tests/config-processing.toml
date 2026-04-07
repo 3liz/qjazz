@@ -41,16 +41,16 @@ force_readonly_layers = true
 #storage_class = "qjazz_processes.worker.storages.s3.S3Storage"
 
 # In docker use environment variables:
-# CONF_S3_ENDPOINT: "minio:9000"
-# CONF_S3_ACCESS_KEY: minioadmin
-# CONF_S3_SECRET_KEY: minioadmin
+# CONF_S3_ENDPOINT: "s3:9000"
+# CONF_S3_ACCESS_KEY: qjazzadmin
+# CONF_S3_SECRET_KEY: qjazzadmin
 # CONF_S3_BUCKET_NAME: test
 # CONF_S3_SECURE: no
 
 #[storage.config]
 #endpoint = "localhost:9000"
-#access_key = "minioadmin"
-#secret_key = "minioadmin"
+#access_key = "qjazzadmin"
+#secret_key = "qjazzadmin"
 #bucket_name = "test"
 #secure = false
 

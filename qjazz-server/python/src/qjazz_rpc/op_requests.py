@@ -111,7 +111,7 @@ def handle_ows_request(
             url += f"&VERSION={msg.version}"
 
     if msg.request_id:
-        log.accept(msg.request_id, entry.uri if entry else None)
+        log.accept(msg.request_id, entry.md.uri if entry else None)
 
     (req, resp, project) = handle_generic_request(
         url,
@@ -199,7 +199,7 @@ def handle_api_request(
         url += f"?{msg.options}"
 
     if msg.request_id:
-        log.accept(msg.request_id, entry.uri if entry else None)
+        log.accept(msg.request_id, entry.md.uri if entry else None)
 
     (req, resp, project) = handle_generic_request(
         url,
@@ -253,7 +253,7 @@ def handle_generic_request(
         resp_hdrs = resp_hdrs or {}
         resp_hdrs.update(
             (
-                ("x-qgis-last-modified", to_rfc822(entry.last_modified)),
+                ("x-qgis-last-modified", to_rfc822(entry.md.last_modified)),
                 ("x-qgis-cache", "MISS" if cast("Co", co_status) in (Co.NEW, Co.UPDATED) else "HIT"),
             )
         )

@@ -1,27 +1,25 @@
+from typing import Type
+
 from pydantic import Field
 
 from qjazz_core import config
 
 
-def setup_module() -> None:
-    """Setup config model"""
-
+def build_test1() -> Type[config.ConfigBase]:
     class SubConfig(config.ConfigBase):
         bar: str = "Hello"
 
-    @config.section("test1")
     class Test1(config.ConfigBase):
         foo: bool = False
         sub: SubConfig = SubConfig()
 
-    builder = config.ConfBuilder()
-
-    assert "test1" in builder._global_sections
+    return Test1
 
 
 def test_config_default() -> None:
     """Test config with default settings"""
     builder = config.ConfBuilder()
+    builder.add_section("test1", build_test1())
     builder.validate({})
     test = builder.conf.test1  # type: ignore [attr-defined]
     assert test.foo == False  # noqa
@@ -31,6 +29,7 @@ def test_config_default() -> None:
 def test_config_validate() -> None:
     """Test config with default settings"""
     builder = config.ConfBuilder()
+    builder.add_section("test1", build_test1())
     builder.validate({"test1": {"foo": True, "sub": {"bar": "World"}}})
     test = builder.conf.test1  # type: ignore [attr-defined]
     assert test.foo == True  # noqa
@@ -92,6 +91,7 @@ def test_config_update() -> None:
 def test_config_proxy() -> None:
     """Test configuration proxy"""
     builder = config.ConfBuilder()
+    builder.add_section("test1", build_test1())
     builder.validate({})
 
     proxy = config.ConfigProxy(builder, "test1.sub")  # type: ignore [var-annotated]

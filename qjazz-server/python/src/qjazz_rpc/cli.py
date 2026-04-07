@@ -26,6 +26,7 @@ def load_configuration(configpath: Optional[Path]) -> ConfigProtocol:
     config.set_env_settings_option("first")
 
     confservice = config.ConfBuilder()
+    confservice.add_section("logging", logger.LoggingConfig)
     confservice.add_section("worker", Worker)
 
     if configpath:

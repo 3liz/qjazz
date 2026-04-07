@@ -1,7 +1,8 @@
 # Cache status
 #
 # Defined in its own module for preventing us to import
-# QGIS stuff
+# QGIS stuff because it is used by modules in context where
+# QGIS is unavailable.
 #
 
 from enum import Enum

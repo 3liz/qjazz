@@ -1,14 +1,16 @@
 #
 # Define pre/post condition assertion
 #
-from typing import Optional
+from typing import Any, NoReturn, Optional
+
+from .errors import QJazzException
 
 
-class PreconditionError(Exception):
+class PreconditionError(QJazzException):
     pass
 
 
-class PostconditionError(Exception):
+class PostconditionError(QJazzException):
     pass
 
 
@@ -20,3 +22,8 @@ def assert_precondition(condition: bool, message: Optional[str] = None):
 def assert_postcondition(condition: bool, message: Optional[str] = None):
     if not condition:
         raise PostconditionError(message or "Post condition failed")
+
+
+def assert_unreachable(value: Any) -> NoReturn:
+    raise AssertionError(f"Expected unreachable code: {value}")
+

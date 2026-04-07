@@ -2,10 +2,10 @@
 # Docker compose for running required tiers services 
 #
 # Run processing worker as:
-# qjazz-processing start -C qjazz_processes/tests/config-service.toml
+# qjazz-processing serve -C qjazz-processes/tests/config-processing.toml
 #
 # Run processes server as:
-# qjazz-processes serve -C qjazz_processes/tests/config-server.toml
+# qjazz-processes serve -C qjazz-processes/tests/config-server.toml
 #
 
 services:
@@ -34,13 +34,20 @@ services:
     ports:
     - 127.0.0.1:6379:6379
 
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
+  s3:
+    image: rustfs/rusfs
+    volumes:
+    - { type: volume, source: s3data, target: /var/lib/data }    
     environment:
-      MINIO_ROOT_USER: "qjazzadmin"
-      MINIO_ROOT_PASSWORD: "qjazzadmin"
+      RUSTFS_CONSOLE_ENABLE: true
+      RUSTFS_ACCESS_KEY: "qjazzadmin"
+      RUSTFS_SECRET_KEY: "qjazzadmin"
     ports:
     - 127.0.0.1:9000:9000
     - 127.0.0.1:9001:9001
+    profiles:
+    - s3
 
+volumes:
+  s3data:
+    driver: local

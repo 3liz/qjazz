@@ -94,15 +94,17 @@ def _create_store(
         )
 
 
+def _ensure_client(store: StoreCreds | Minio) -> Minio:
+    return store_client(store) if isinstance(store, StoreCreds) else store
+
+
 async def create_store(
     store: StoreCreds | Minio,
     *,
     service: str,
     location: Optional[str] = None,
 ):
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
-
+    store = _ensure_client(store)
     await asyncio.to_thread(_create_store, store, service=service, location=location)
 
 
@@ -154,8 +156,8 @@ def put_store(
     service: str,
     identity: str,
 ) -> Generator[StreamWriter, None, None]:
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
+
+    store_client = _ensure_client(store)
 
     # Push stream to store
     async def _push(
@@ -164,7 +166,7 @@ def put_store(
         metadata: Optional[dict[str, str]] = None,
     ) -> FileResource:
         result = await push_object(
-            store,
+            store_client,
             stream,
             service=service,
             identity=identity,
@@ -228,11 +230,10 @@ async def list_store(
     root = f"{identity}/"
     prefix = f"{root}{prefix or ''}"
 
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
+    store_client = _ensure_client(store)
 
     def _resources() -> list[ResourceType]:
-        objects = store.list_objects(service, prefix=prefix, recursive=recurse)
+        objects = store_client.list_objects(service, prefix=prefix, recursive=recurse)
 
         return [to_resource(obj, root) for obj in objects if obj.object_name]
 
@@ -248,8 +249,8 @@ async def stat_store(
     identity: str,
 ) -> FileResource:
     """Get resource info"""
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
+    store = _ensure_client(store)
+
     root = f"{identity}/"
 
     with store_error():
@@ -267,8 +268,8 @@ async def delete_store(
     version_id: Optional[str] = None,
 ):
     """Delete resource"""
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
+    store = _ensure_client(store)
+
     with store_error():
         await asyncio.to_thread(
             store.remove_object,
@@ -316,8 +317,7 @@ def get_store(
 
     # Mino client expected to be thread safe:
     # See https://github.com/minio/minio-go/issues/598
-    if isinstance(store, StoreCreds):
-        store = store_client(store)
+    store = _ensure_client(store)
 
     with store_error():
         reader = bucket_reader(store, service, prefix=identity)

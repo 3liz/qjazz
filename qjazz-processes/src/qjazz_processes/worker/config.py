@@ -60,7 +60,6 @@ def lookup_config_path() -> Optional[Path]:
 ServiceName = Annotated[str, Field(pattern=r"^[a-z0-9]+$")]
 
 
-@config.section("worker", field=...)
 class WorkerConfig(CeleryConfig):
     """
     Worker configuration
@@ -132,9 +131,11 @@ class ConfigProto(Protocol):
 
 
 #
-# Add storage/callbacks sections
+# Add config sections
 #
 
+confservice.add_section("logging", logger.LoggingConfig)
+confservice.add_section("worker", WorkerConfig)
 confservice.add_section("storage", StorageConfig)
 confservice.add_section("callbacks", CallbacksConfig)
 

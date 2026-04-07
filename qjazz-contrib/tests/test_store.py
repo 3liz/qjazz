@@ -32,9 +32,8 @@ def test_store_resource_files() -> None:
 
 
 def test_store_policy_file():
-    with access._read_policy("myservice", "myidentity") as policy_file:
-        content = policy_file.open().read()
-        print("\n==Storage policy:\n", content)
+    with access._read_policy("myservice", "myidentity") as policy_file, policy_file.open() as f:
+        print("\n==Storage policy:\n", f.read())
     # Check policy_file is removed
     assert not policy_file.exists()
 

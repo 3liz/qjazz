@@ -36,7 +36,7 @@ from .config import ProcessingConfig
 
 confservice = config.ConfBuilder()
 
-confservice.add_section("processing", ProcessingConfig, field=...)
+confservice.add_section("processing", ProcessingConfig, ...)
 
 
 class ConfigProto(Protocol):

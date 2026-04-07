@@ -29,7 +29,6 @@ from qjazz_core.config import (
     NetInterface,
     TLSConfig,
     read_config_toml,
-    section,
 )
 from qjazz_core.models import Field
 
@@ -65,7 +64,6 @@ DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 
 
-@section("http")
 class HttpConfig(ConfigBase):
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
@@ -112,16 +110,21 @@ def format_interface(conf: HttpConfig) -> str:
             return str(socket)
 
 
-confservice = ConfBuilder()
+def _create_config() -> ConfBuilder:
+    confservice = ConfBuilder()
 
-# Add ExecutorConfig section
-confservice.add_section("executor", ExecutorConfig)
+    confservice.add_section("logging", logger.LoggingConfig)
+    confservice.add_section("oapi", swagger.OapiConfig)
+    confservice.add_section("job_realm", JobRealmConfig)
+    confservice.add_section("access_policy", AccessPolicyConfig)
+    confservice.add_section("http", HttpConfig)
+    confservice.add_section("executor", ExecutorConfig)
+    confservice.add_section("storage", StorageConfig)
+    confservice.add_section("store", Optional[StoreConfig], field=Field(None))
 
-# Add StorageConfig section
-confservice.add_section("storage", StorageConfig)
+    return confservice
 
-# Add Store section
-confservice.add_section("store", Optional[StoreConfig], field=Field(None))
+confservice = _create_config()
 
 
 # Allow type validation

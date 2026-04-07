@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from aiohttp import web
 from pydantic import TypeAdapter, ValidationError
-from qjazz_core.config import ConfigBase, section
+from qjazz_core.config import ConfigBase
 from qjazz_core.models import Field
 
 from .models import ErrorResponse
@@ -22,7 +22,6 @@ RealmToken: TypeAdapter = TypeAdapter(
 )
 
 
-@section("job_realm")
 class JobRealmConfig(ConfigBase):
     """
     Defining job realm allow filtering job's requests by a token that is

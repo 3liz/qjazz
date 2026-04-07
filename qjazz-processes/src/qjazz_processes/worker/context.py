@@ -246,7 +246,7 @@ class QgisContext:
                     # Evict project from cache
                     evicted = evict_by_popularity(cm)
                     if evicted:
-                        logger.debug("Evicted project from cache: %s", evicted.uri)
+                        logger.debug("Evicted project from cache: %s", evicted.md.uri)
                 entry, _ = cm.update(md, status)  # type: ignore [arg-type]
                 entry.hit_me()
                 project = entry.project

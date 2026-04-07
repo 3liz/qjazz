@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* QGIS4 Support
+* Add healthcheck in docker images
+* Improve error handling
+
 ## 0.6.0
 
 * Enable custom project loader with cache handler

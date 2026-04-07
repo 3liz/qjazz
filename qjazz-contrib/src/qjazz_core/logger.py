@@ -18,7 +18,7 @@ from typing import Annotated, Optional
 
 from pydantic import Field, PlainSerializer, PlainValidator, WithJsonSchema
 
-from . import config
+from .config import ConfigBase
 
 LOGGER = logging.getLogger("qjazz")
 
@@ -46,8 +46,7 @@ def _validate_log_level(v: str | LogLevel) -> LogLevel:
         raise ValueError(f"Invalid log level value '{v}'")
 
 
-@config.section("logging")
-class LoggingConfig(config.ConfigBase):
+class LoggingConfig(ConfigBase):
     level: Annotated[
         LogLevel,
         PlainValidator(_validate_log_level),

@@ -3,7 +3,7 @@ import sys
 import traceback
 
 from pathlib import Path
-from typing import Callable, Generator, Protocol, cast
+from typing import Callable, Generator, Protocol
 
 import pytest
 
@@ -147,8 +147,10 @@ class ProjectsProto(Protocol):
 @pytest.fixture(scope="session")
 def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None]:
     """Return wrapper around cache manager"""
+    from qjazz_core.condition import assert_unreachable
+
+    from qjazz_cache.prelude import CacheEntry, ProjectMetadata
     from qjazz_cache.prelude import CheckoutStatus as Co
-    from qjazz_cache.prelude import ProjectMetadata
 
     cm = cache_manager
 
@@ -157,14 +159,16 @@ def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None
             # Resolve location
             url = cm.resolve_path(name)
             # Check status
-            md, status = cm.checkout(url)
-            match status:
-                case Co.REMOVED | Co.NOTFOUND:
+            match cm.checkout(url):
+                case (_,  Co.REMOVED | Co.NOTFOUND):
                     raise FileNotFoundError(f"Project {url} not found")
-                case _:
-                    entry, _ = cm.update(cast("ProjectMetadata", md), status)
-                    project = entry.project
-            return project
+                case (ProjectMetadata() as md, status):
+                    entry, _ = cm.update(md, status)
+                case (CacheEntry() as e, status):
+                    entry, _ = cm.update(e.md, status)
+                case unreachable:
+                    assert_unreachable(unreachable)
+            return entry.project
 
     yield ProjectsImpl()
 

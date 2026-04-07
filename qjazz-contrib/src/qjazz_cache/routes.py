@@ -15,7 +15,6 @@ from typing import (
     Iterable,
     Iterator,
     Optional,
-    Pattern,
     Protocol,
 )
 from urllib.parse import SplitResult, urlsplit
@@ -24,7 +23,7 @@ from qjazz_core.condition import assert_postcondition
 
 Url = SplitResult
 
-ROUTE_RE: Final[Pattern[str]] = re.compile(r"(\{[_a-zA-Z][^{}]*(?:\{[^{}]*\}[^{}]*)*\})")
+ROUTE_RE: Final[re.Pattern[str]] = re.compile(r"(\{[_a-zA-Z][^{}]*(?:\{[^{}]*\}[^{}]*)*\})")
 PATH_SEP: Final[str] = re.escape("/")
 
 
@@ -127,9 +126,9 @@ class StaticRoute(RouteDef):
 class DynamicRoute(RouteDef):
     is_dynamic: Final[bool] = True
 
-    DYN = re.compile(r"\{(?P<var>[_a-zA-Z][_a-zA-Z0-9]*)\}")
-    DYN_WITH_RE = re.compile(r"\{(?P<var>[_a-zA-Z][_a-zA-Z0-9]*):(?P<re>.+)\}")
-    GOOD = r"[^{}/]+"
+    DYN: Final[re.Pattern[str]] = re.compile(r"\{(?P<var>[_a-zA-Z][_a-zA-Z0-9]*)\}")
+    DYN_WITH_RE: Final[re.Pattern[str]] = re.compile(r"\{(?P<var>[_a-zA-Z][_a-zA-Z0-9]*):(?P<re>.+)\}")
+    GOOD: Final[str] = r"[^{}/]+"
 
     def __init__(self, location: str, url: str):
         self._location = location

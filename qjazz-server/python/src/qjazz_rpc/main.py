@@ -38,6 +38,7 @@ def run(name: str, projects: list[str]) -> None:
     rendez_vous = RendezVous()
 
     confservice = config.ConfBuilder()
+    confservice.add_section("logging", logger.LoggingConfig)
     confservice.add_section(WORKER_SECTION, WorkerConfig)
     confservice.validate({})
 

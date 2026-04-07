@@ -11,6 +11,7 @@ from typing import (
 from urllib.parse import urlunsplit
 
 from qjazz_core import logger
+from qjazz_core.condition import assert_unreachable
 from qjazz_core.utils import to_iso8601
 
 from qgis.core import Qgis, QgsMapLayer
@@ -84,13 +85,13 @@ def cache_info_from_entry(
     cache_id: str = "",
 ) -> _m.CacheInfo:
     return _m.CacheInfo(
-        uri=e.uri,
+        uri=e.md.uri,
         in_cache=in_cache,
         timestamp=int(e.timestamp),
         status=status.value,
-        name=e.name,
-        storage=e.storage,
-        last_modified=timestamp_to_iso(e.last_modified),
+        name=e.md.name,
+        storage=e.md.storage,
+        last_modified=timestamp_to_iso(e.md.last_modified),
         saved_version=e.project.lastSaveVersion().text(),
         debug_metadata=e.debug_meta.__dict__.copy(),
         cache_id=cache_id,
@@ -117,9 +118,8 @@ def checkout_project(
         md, status = cm.checkout(url)
 
         if not pull:
-            match status:
-                case Co.NEW:
-                    md = cast("ProjectMetadata", md)
+            match md, status:
+                case (ProjectMetadata(), Co.NEW):
                     reply = _m.CacheInfo(
                         uri=md.uri,
                         in_cache=False,
@@ -128,21 +128,20 @@ def checkout_project(
                         last_modified=timestamp_to_iso(md.last_modified),
                         cache_id=cache_id,
                     )
-                case Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED:
-                    reply = cache_info_from_entry(cast("CacheEntry", md), status, cache_id=cache_id)
-                case Co.NOTFOUND:
+                case (CacheEntry(), Co.NEEDUPDATE | Co.UNCHANGED | Co.REMOVED | Co.UPDATED):
+                    reply = cache_info_from_entry(md, status, cache_id=cache_id)
+                case (_, Co.NOTFOUND):
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
                         in_cache=False,
                         status=status.value,
                         cache_id=cache_id,
                     )
-                case _ as unreachable:
-                    assert_never(unreachable)
+                case unreachable:
+                    assert_unreachable(unreachable)
         else:
-            match status:
-                case Co.NEW:
-                    md = cast("ProjectMetadata", md)
+            match (md, status):
+                case (ProjectMetadata(), Co.NEW):
                     if config.max_projects <= len(cm) and not evict_project_from_cache(cm):
                         logger.error(
                             "Cannot add NEW project '%s': Maximum projects reached",
@@ -157,27 +156,25 @@ def checkout_project(
                     e.pin()
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
                 # UPDATED for the sake of exhaustiveness
-                case Co.UNCHANGED | Co.UPDATED:
-                    e = cast("CacheEntry", md)
+                case (CacheEntry(), Co.UNCHANGED | Co.UPDATED):
+                    md.pin()  # See above
+                    reply = cache_info_from_entry(md, status, cache_id=cache_id)
+                case (CacheEntry(), Co.NEEDUPDATE):
+                    e, status = cm.update(md.md, status)
                     e.pin()  # See above
                     reply = cache_info_from_entry(e, status, cache_id=cache_id)
-                case Co.NEEDUPDATE:
-                    e, status = cm.update(cast("CacheEntry", md).md, status)
-                    e = cast("CacheEntry", e)
-                    e.pin()  # See above
-                    reply = cache_info_from_entry(e, status, cache_id=cache_id)
-                case Co.REMOVED:
-                    e, status = cm.update(cast("CacheEntry", md).md, status)
+                case (CacheEntry(), Co.REMOVED):
+                    e, status = cm.update(md.md, status)
                     reply = cache_info_from_entry(e, status, False, cache_id=cache_id)
-                case Co.NOTFOUND:
+                case (_, Co.NOTFOUND):
                     reply = _m.CacheInfo(
                         uri=urlunsplit(url),
                         in_cache=False,
                         status=status.value,
                         cache_id=cache_id,
                     )
-                case _ as unreachable:
-                    assert_never(unreachable)
+                case unreachable:
+                    assert_unreachable(unreachable)
 
         _m.send_reply(conn, reply)
 
@@ -317,6 +314,6 @@ def evict_project_from_cache(cm: CacheManager) -> bool:
     """
     evicted = evict_by_popularity(cm)
     if evicted:
-        logger.debug("Evicted '%s' from cache", evicted.uri)
+        logger.debug("Evicted '%s' from cache", evicted.md.uri)
 
     return bool(evicted)

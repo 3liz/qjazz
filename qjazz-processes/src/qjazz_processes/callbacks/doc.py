@@ -21,6 +21,6 @@ def dump_callback_config_schema(scheme: str, name: str, CallbackConfigType: Type
         **{scheme: (CallbackConfig, ...)},
     )
 
-    confservice = ConfBuilder(with_global_sections=False)
+    confservice = ConfBuilder()
     confservice.add_section("callbacks", model, ...)
     confservice.dump_toml_schema(sys.stdout)

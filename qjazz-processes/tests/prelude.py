@@ -15,6 +15,7 @@ from qjazz_processes.executor import (
 )
 
 confservice = config.ConfBuilder()
+confservice.add_section("logging", logger.LoggingConfig)
 confservice.add_section("executor", ExecutorConfig)
 
 logger.setup_log_handler(confservice.conf.logging.level) # type: ignore [attr-defined]

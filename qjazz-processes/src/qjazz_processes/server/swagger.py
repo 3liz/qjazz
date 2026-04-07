@@ -12,7 +12,7 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from qjazz_core.config import ConfigBase, section
+from qjazz_core.config import ConfigBase
 
 from ..schemas import JsonModel
 
@@ -26,7 +26,6 @@ def dump_json(v: JsonValue) -> str:
     return JsonAdapter.dump_json(v).decode()
 
 
-@section("oapi")
 class OapiConfig(ConfigBase):
     """OAPI configuration"""
 

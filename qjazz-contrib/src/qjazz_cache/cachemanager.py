@@ -98,17 +98,14 @@ class CacheEntry:
     hits: int = 0
     pinned: bool = False
 
-    # Delegate to ProjectMetadata
-    def __getattr__(self, attr):
-        return self.md.__getattribute__(attr)
-
     # Increase the number of hits
     def hit_me(self):
-        # Get around frozen
+        # Get around frozen (i.e interior mutability)
         self.__dict__["hits"] += 1
         self.__dict__["last_hit"] = time()
 
     def pin(self):
+        # Get around frozen (i.e interior mutability)
         self.__dict__["pinned"] = True
 
 
@@ -289,9 +286,9 @@ class CacheManager:
 
     def checkout_entry(self, entry: CacheEntry) -> tuple[CacheEntry, CheckoutStatus]:
         """Checkout from existing entry"""
-        handler = self.get_protocol_handler(entry.scheme)
+        handler = self.get_protocol_handler(entry.md.scheme)
         try:
-            md = handler.project_metadata(validate_url(entry.uri))
+            md = handler.project_metadata(validate_url(entry.md.uri))
             if md.last_modified > entry.md.last_modified:
                 retval = (entry, CheckoutStatus.NEEDUPDATE)
             else:

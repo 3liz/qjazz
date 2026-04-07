@@ -14,13 +14,12 @@ from pydantic import (
 )
 from qjazz_core import logger
 from qjazz_core.condition import assert_postcondition
-from qjazz_core.config import ConfigBase, section
+from qjazz_core.config import ConfigBase
 from qjazz_core.models import Field
 
 from .executor import AsyncExecutor
 
 
-@section("access_policy")
 class AccessPolicyConfig(ConfigBase):
     """Configure access policy"""
 

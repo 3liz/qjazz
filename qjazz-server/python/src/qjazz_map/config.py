@@ -82,6 +82,8 @@ class ConfigProto(Protocol):
 
 def create_config() -> ConfBuilder:
     builder = ConfBuilder()
+    # `[Logging]` section
+    builder.add_section("logging", logger.LoggingConfig)
 
     # Add the `[http]` configuration section
     builder.add_section("server", Server)
@@ -90,7 +92,7 @@ def create_config() -> ConfBuilder:
     builder.add_section(
         "backends",
         dict[str, ChannelConfig],
-        Field(default={}),
+        field=Field(default={}),
     )
 
     # Path to services configuration

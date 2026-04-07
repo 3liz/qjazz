@@ -11,6 +11,5 @@ from ._service import (  # noqa F401
     SettingsConfigDict,
     config_version,
     read_config_toml,
-    section,
     set_env_settings_option,
 )
