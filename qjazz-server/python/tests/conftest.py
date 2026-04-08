@@ -100,6 +100,7 @@ def qgis_config(projects: ProjectsConfig, plugins_config: QgisPluginConfig) -> Q
         use_default_server_handler=False,
     )
 
+
 # Qgis server
 @pytest.fixture(scope="package")
 def qgis_server(qgis_config: QgisConfig, feedback: Feedback) -> Generator[Server, None, None]:
@@ -120,7 +121,7 @@ def qgis_server(qgis_config: QgisConfig, feedback: Feedback) -> Generator[Server
     plugin_s.load_plugins(PluginType.SERVER, server_iface)
     plugin_s.register_as_service()
 
-    yield  server
+    yield server
 
     # Require to prevent crash when releasing server in tests
     # Related to QgsProject::setInstance(NULL) in binding code

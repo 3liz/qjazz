@@ -84,7 +84,6 @@ class ParameterFile(InputParameter):
             ],
         ]
 
-
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         param = self._param
 
@@ -234,7 +233,7 @@ def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer:
         kwargs.update(data=ref.body)
 
     if config:
-        timeout=config.download_timeout
+        timeout = config.download_timeout
         ssl = config.certificats
         if ssl.cafile:
             kwargs.update(verify=str(ssl.cafile))

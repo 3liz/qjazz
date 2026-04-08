@@ -70,8 +70,9 @@ def execute(
     # Collect destination names for destination parameters for restoring
     # them later
     destinations = {
-        p: v.destinationName for p, v in parameters.items()
-            if isinstance(v, QgsProcessingOutputLayerDefinition)
+        p: v.destinationName
+        for p, v in parameters.items()
+        if isinstance(v, QgsProcessingOutputLayerDefinition)
     }
 
     # Execute algorithm

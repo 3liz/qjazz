@@ -189,7 +189,8 @@ class S3Storage:
         logger.info("[S3] Deleting objects in %s/%s", self.bucket, job_id)
         client = self.client
         delete_object_list = (
-            DeleteObject(o.object_name) for o in client.list_objects(
+            DeleteObject(o.object_name)
+            for o in client.list_objects(
                 self.bucket,
                 f"{job_id}/",
                 recursive=True,

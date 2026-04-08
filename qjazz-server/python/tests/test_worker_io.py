@@ -23,7 +23,7 @@ async def test_worker_io_ping(worker: Worker):
 
     # Test ping message as dict
     status, resp = await worker.io.send_message(
-        {"msg_id": messages.MsgType.PING, "echo": "hello"},   # type: ignore [arg-type]
+        {"msg_id": messages.MsgType.PING, "echo": "hello"},  # type: ignore [arg-type]
     )
     assert status == 200
     assert resp == "hello"
@@ -317,5 +317,3 @@ async def test_ogc_catalog_prefix(worker: Worker):
     for item in resp.items:
         print("\n::test_ogc_api::catalog_prefix::item", item)
         assert PurePosixPath(item.name).is_relative_to(prefix)
-
-

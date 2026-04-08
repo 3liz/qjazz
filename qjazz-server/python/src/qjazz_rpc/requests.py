@@ -56,6 +56,7 @@ DEFAULT_CHUNK_SIZE = 1024 * 1024
 
 OpenReadWriteFlag = QIODevice.OpenModeFlag.ReadWrite
 
+
 class Response(QgsServerResponse):
     """Adaptor to handler response
 

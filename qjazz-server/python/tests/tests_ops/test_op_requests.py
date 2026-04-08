@@ -1,4 +1,3 @@
-
 from qjazz_cache.prelude import CacheManager
 from qjazz_rpc import messages, op_requests
 from qjazz_rpc.config import QgisConfig
@@ -155,6 +154,3 @@ def test_op_request_chunked_response(
     # Stream remaining bytes
     for chunk in conn.stream_bytes():
         assert len(chunk) > 0
-
-
-

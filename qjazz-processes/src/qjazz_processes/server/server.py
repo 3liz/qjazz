@@ -124,6 +124,7 @@ def _create_config() -> ConfBuilder:
 
     return confservice
 
+
 confservice = _create_config()
 
 

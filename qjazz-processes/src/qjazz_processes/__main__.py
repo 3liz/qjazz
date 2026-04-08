@@ -158,12 +158,12 @@ def list_services(ctx: click.Context, json_format: bool, long_format: bool):
         resp = TypeAdapter(ServiceDict).dump_json(services, indent=4)
         echo(resp)
     elif long_format:
-        for (_, s) in services.values():
+        for _, s in services.values():
             echo(style(f"{s.service:<15}", fg="green"), nl=False)
             echo(style(s.title, bold=True))
             echo(style(indent(s.description, "    "), italic=True))
     else:
-        for (_, s) in services.values():
+        for _, s in services.values():
             echo(style(f"{s.service:<15}", fg="green"), nl=False)
             echo(style(f"{shorten(s.title, 20, placeholder='...'):<20}", bold=True), nl=False)
             echo(style(shorten(s.description, 50, placeholder="..."), italic=True))
@@ -581,8 +581,9 @@ def list_jobs(
     has_next = True
 
     def pred(job: JobStatus) -> bool:
-        return (not filter_tags or job.tag in filter_tags) \
-            and (not filter_status or job.status in filter_status)
+        return (not filter_tags or job.tag in filter_tags) and (
+            not filter_status or job.status in filter_status
+        )
 
     while has_next:
         jobs = executor.jobs(service, realm=realm, limit=limit, cursor=index, with_details=True)

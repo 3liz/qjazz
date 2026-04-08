@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -42,7 +41,6 @@ def test_op_cache_checkout_pull(qgis_server: Server, feedback: Feedback, qgis_co
     assert resp.in_cache
     assert resp.pinned
 
-
     # Checkout
     conn.clear()
     op_cache.checkout_project(
@@ -82,7 +80,6 @@ def test_op_cache_checkout_pull(qgis_server: Server, feedback: Feedback, qgis_co
 
     resp = messages.CacheInfo.model_validate(resp)
     assert resp.status == messages.CheckoutStatus.NEEDUPDATE.value
-
 
     # List
     conn.clear()

@@ -162,7 +162,4 @@ def _get_method_names_for_handler(route):
     # otherwise return the specific method.
     if route.method == METH_ANY:
         return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL}
-    return {
-        attr for attr in dir(route.handler)
-        if attr.upper() in METH_ALL and attr.upper() == route.method
-    }
+    return {attr for attr in dir(route.handler) if attr.upper() in METH_ALL and attr.upper() == route.method}

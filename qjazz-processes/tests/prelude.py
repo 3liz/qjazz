@@ -16,11 +16,11 @@ confservice = config.ConfBuilder()
 confservice.add_section("logging", logger.LoggingConfig)
 confservice.add_section("executor", ExecutorConfig)
 
-logger.setup_log_handler(confservice.conf.logging.level) # type: ignore [attr-defined]
+logger.setup_log_handler(confservice.conf.logging.level)  # type: ignore [attr-defined]
 
 
 def Executor() -> BlockingExecutor:
-    return BlockingExecutor(confservice.conf.executor) # type: ignore [attr-defined]
+    return BlockingExecutor(confservice.conf.executor)  # type: ignore [attr-defined]
 
 
 # Set config path for worker

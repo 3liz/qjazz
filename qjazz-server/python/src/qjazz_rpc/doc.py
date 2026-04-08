@@ -84,10 +84,7 @@ class Rpc(ConfigBase):
     )
     oom_period: int = Field(
         5,
-        description=(
-            "Interval in seconds between two check the out-of-memory\n"
-            "handler."
-        ),
+        description=("Interval in seconds between two check the out-of-memory\nhandler."),
     )
 
 
@@ -126,7 +123,7 @@ class Worker(ConfigBase):
         ),
     )
     max_chunk_size: PositiveInt = Field(
-        default=1024*1024,
+        default=1024 * 1024,
         title="Max chunk size",
     )
     restore_projects: Annotated[

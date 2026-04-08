@@ -1,9 +1,10 @@
-""" Cli tool for:
+"""Cli tool for:
 
 * Print configuration
 * Print version informations
 * Install plugins from configuration
 """
+
 import os
 
 from pathlib import Path
@@ -98,7 +99,8 @@ def print_config(conf: Optional[Path], pretty: bool = False):
 )
 @click.option("--force", is_flag=True, help="Force installation")
 @click.option(
-    "--list", "list_plugins",
+    "--list",
+    "list_plugins",
     is_flag=True,
     help="List installed plugins without installing them",
 )
@@ -108,6 +110,7 @@ def install_plugins(configpath: Optional[Path], force: bool, list_plugins: bool 
     logger.setup_log_handler(conf.logging.level)
 
     from qjazz_core.qgis import qgis_plugins
+
     if list_plugins:
         click.echo("Installed plugins:\n")
         qgis_plugins._run_plugin_manager(conf.worker.qgis.plugins, "list")

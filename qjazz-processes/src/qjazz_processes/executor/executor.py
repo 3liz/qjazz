@@ -118,8 +118,7 @@ class ExecutorBase(Commands, Processes):
         return destinations
 
     def _update_services(self, services: ServiceDict) -> ServiceDict:
-        """Update service destinations
-        """
+        """Update service destinations"""
         self._services = services
         logger.trace("=update_services %s", self._services)
         self._last_updated = time()
@@ -129,6 +128,7 @@ class ExecutorBase(Commands, Processes):
 # =====================
 # Async Executor
 # =====================
+
 
 @dataclass
 class Result:
@@ -317,4 +317,3 @@ class AsyncExecutor(ExecutorBase):
             timeout=timeout,
             realm=realm,
         )
-

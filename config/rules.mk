@@ -9,6 +9,7 @@ test \
 lint \
 lint-fix \
 lint-preview \
+format \
 typecheck \
 clean \
 configure \

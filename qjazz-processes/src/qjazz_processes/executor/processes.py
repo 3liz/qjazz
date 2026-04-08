@@ -218,7 +218,7 @@ class Processes(ExecutorProtocol):
                 "ident": ident,
                 "request": request.model_dump(mode="json"),
                 "project_path": project,
-                },
+            },
             meta=builder.meta,
             pending_timeout=builder.pending_timeout,
             context=context,

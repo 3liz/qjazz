@@ -160,7 +160,7 @@ def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None
             url = cm.resolve_path(name)
             # Check status
             match cm.checkout(url):
-                case (_,  Co.REMOVED | Co.NOTFOUND):
+                case (_, Co.REMOVED | Co.NOTFOUND):
                     raise FileNotFoundError(f"Project {url} not found")
                 case (ProjectMetadata() as md, status):
                     entry, _ = cm.update(md, status)
@@ -204,6 +204,7 @@ async def http_client(server_app: web.Application, aiohttp_client: Callable) -> 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     try:
         from qjazz_core import qgis
+
         qgis.exit_qgis_application()
     except Exception:
         traceback.print_exc()

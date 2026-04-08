@@ -186,7 +186,6 @@ class ProcessingConfig(ConfigBase):
         description="Download timeout is seconds for reference values",
     )
 
-
     def settings(self) -> dict[str, str]:
         """Configure qgis processing settings"""
         settings = self.qgis_settings.copy()

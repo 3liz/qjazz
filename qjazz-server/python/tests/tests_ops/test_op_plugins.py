@@ -1,5 +1,3 @@
-
-
 from qjazz_core.qgis import QgisPluginService
 
 from qjazz_rpc import messages, op_plugins

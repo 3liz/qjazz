@@ -92,6 +92,7 @@ class AdminConfig(ConfigBase):
         """,
     )
 
+
 class ChannelConfig(ConfigBase):
     host: str = Field("localhost", title="Hostname")
     port: int = Field(DEFAULT_PORT, title="Port")
@@ -163,4 +164,3 @@ class ChannelConfig(ConfigBase):
         """,
     )
     admin: AdminConfig = Field(AdminConfig())
-

@@ -26,4 +26,3 @@ def assert_postcondition(condition: bool, message: Optional[str] = None):
 
 def assert_unreachable(value: Any) -> NoReturn:
     raise AssertionError(f"Expected unreachable code: {value}")
-

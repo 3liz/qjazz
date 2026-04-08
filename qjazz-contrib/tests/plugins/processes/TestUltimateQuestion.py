@@ -1,4 +1,5 @@
 """Test just returning simple value"""
+
 from typing import Any
 
 from qgis.core import (
