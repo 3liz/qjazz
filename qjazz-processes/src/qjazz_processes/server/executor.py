@@ -7,7 +7,7 @@ from typing import (
 
 from qjazz_core import logger
 
-from ..executor.aio import (  # noqa F401
+from ..executor import (  # noqa F401
     AsyncExecutor,
     ExecutorConfig,
     InputValueError,

@@ -93,9 +93,9 @@ def setup_executor_context(
 
     from qjazz_core import config, logger
 
-    from .executor import Executor, ExecutorConfig
+    from .executor.blocking import BlockingExecutor, ExecutorConfig
 
-    def executor_setup() -> Executor:
+    def executor_setup() -> BlockingExecutor:
         class ConfigProto(Protocol):
             executor: ExecutorConfig
 
@@ -108,7 +108,7 @@ def setup_executor_context(
         confservice.validate(cnf)
         if verbose:
             click.echo(confservice.conf)
-        return Executor(cast("ConfigProto", confservice.conf).executor)
+        return BlockingExecutor(cast("ConfigProto", confservice.conf).executor)
 
     ctx.obj = SimpleNamespace(
         configpath=configpath,

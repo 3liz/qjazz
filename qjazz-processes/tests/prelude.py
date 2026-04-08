@@ -7,10 +7,8 @@ from pathlib import Path
 
 from qjazz_core import config, logger
 
-from qjazz_processes.executor import (
-    Executor as _Executor,
-)
-from qjazz_processes.executor import (
+from qjazz_processes.executor.blocking import (
+    BlockingExecutor,
     ExecutorConfig,
 )
 
@@ -21,8 +19,8 @@ confservice.add_section("executor", ExecutorConfig)
 logger.setup_log_handler(confservice.conf.logging.level) # type: ignore [attr-defined]
 
 
-def Executor() -> _Executor:
-    return _Executor(confservice.conf.executor) # type: ignore [attr-defined]
+def Executor() -> BlockingExecutor:
+    return BlockingExecutor(confservice.conf.executor) # type: ignore [attr-defined]
 
 
 # Set config path for worker

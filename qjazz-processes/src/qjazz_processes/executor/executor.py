@@ -1,6 +1,10 @@
+import asyncio
+
 from dataclasses import dataclass
+from functools import partial
 from time import time
 from typing import (
+    Awaitable,
     Callable,
     Iterator,
     Optional,
@@ -42,7 +46,7 @@ class ExecutorConfig(ConfigBase):
     )
 
 
-class ExecutorBase:
+class ExecutorBase(Commands, Processes):
     def __init__(
         self,
         conf: Optional[ExecutorConfig] = None,
@@ -83,7 +87,11 @@ class ExecutorBase:
         return len(self._services)
 
     def get_services(self) -> ServiceDict:
-        # Return services destinations (blocking)
+        """Return services destinations (blocking)
+
+        Collapse presence details under unique
+        service name.
+        """
         presences = self.presences()
         services: ServiceDict = {}
         for dest, pr in presences.items():
@@ -103,36 +111,40 @@ class ExecutorBase:
     def destinations(self, service: str) -> Optional[Sequence[str]]:
         return self.get_destinations(service, self._services)
 
+    def ensure_destinations(self, service: str) -> Sequence[str]:
+        destinations = self.destinations(service)
+        if not destinations:
+            raise ServiceNotAvailable(service)
+        return destinations
 
-# =============================
-# Executor; Synchronous version
-# =============================
-
-
-@dataclass
-class Result:
-    job_id: str
-    get: Callable[[int | None], JobResults]
-    status: Callable[[], JobStatus]
-
-
-class Executor(
-    ExecutorBase,
-    Commands,
-    Processes,
-):
-    def update_services(self) -> ServiceDict:
-        """Update services destinations
-
-        Collapse presence details under unique service
-        name.
+    def _update_services(self, services: ServiceDict) -> ServiceDict:
+        """Update service destinations
         """
-        self._services = self.get_services()
+        self._services = services
         logger.trace("=update_services %s", self._services)
         self._last_updated = time()
         return self._services
 
-    def describe(
+
+# =====================
+# Async Executor
+# =====================
+
+@dataclass
+class Result:
+    job_id: str
+    get: Callable[[int], Awaitable[JobResults]]
+    status: Callable[[], Awaitable[JobStatus]]
+
+
+class AsyncExecutor(ExecutorBase):
+    async def update_services(self) -> ServiceDict:
+        """Update services destinations"""
+        return self._update_services(
+            await asyncio.to_thread(self.get_services),
+        )
+
+    async def describe(
         self,
         service: str,
         ident: str,
@@ -141,24 +153,21 @@ class Executor(
         timeout: Optional[int] = None,
     ) -> Optional[ProcessDescription]:
         """Return process description"""
-        destinations = self.destinations(service)
-        if not destinations:
-            raise ServiceNotAvailable(service)
-
-        return self._describe(
-            destinations,
+        return await asyncio.to_thread(
+            self._describe,
+            self.ensure_destinations(service),
             ident,
             project=project,
             timeout=timeout,
         )
 
-    def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
+    async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
         """Return process description summary"""
-        destinations = self.destinations(service)
-        if not destinations:
-            raise ServiceNotAvailable(service)
-
-        return self._processes(destinations, timeout)
+        return await asyncio.to_thread(
+            self._processes,
+            self.ensure_destinations(service),
+            timeout,
+        )
 
     def execute(
         self,
@@ -174,6 +183,9 @@ class Executor(
         countdown: Optional[int] = None,
         priority: int = 0,
     ) -> Result:
+        """Send an execute request
+        Returns an asynchronous  'Result' object
+        """
         job_id, _get_result, _get_status = self._execute(
             service,
             ident,
@@ -186,9 +198,14 @@ class Executor(
             countdown=countdown,
             priority=priority,
         )
-        return Result(job_id=job_id, get=_get_result, status=_get_status)
 
-    def dismiss(
+        return Result(
+            job_id=job_id,
+            get=partial(asyncio.to_thread, _get_result),  # type: ignore [call-arg]
+            status=partial(asyncio.to_thread, _get_status),
+        )
+
+    async def dismiss(
         self,
         job_id: str,
         *,
@@ -196,14 +213,15 @@ class Executor(
         timeout: int = 20,
     ) -> Optional[JobStatus]:
         """Delete job"""
-        return self._dismiss(
+        return await asyncio.to_thread(
+            self._dismiss,
             job_id,
             self._services,
             realm=realm,
             timeout=timeout,
         )
 
-    def job_status(
+    async def job_status(
         self,
         job_id: str,
         *,
@@ -211,35 +229,42 @@ class Executor(
         with_details: bool = False,
     ) -> Optional[JobStatus]:
         """Return job status"""
-        return self._job_status_ext(
+        return await asyncio.to_thread(
+            self._job_status_ext,
             job_id,
             self._services,
             realm,
             with_details,
         )
 
-    job_results = Processes._job_results
+    async def job_results(
+        self,
+        job_id: str,
+        *,
+        realm: Optional[str] = None,
+    ) -> Optional[JobResults]:
+        """Return job results"""
+        return await asyncio.to_thread(self._job_results, job_id, realm=realm)
 
-    def jobs(
+    async def jobs(
         self,
         service: Optional[str] = None,
         *,
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
-        with_details: bool = False,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
-        return self._jobs(
+        return await asyncio.to_thread(
+            self._jobs,
             self._services,
             service=service,
             realm=realm,
             cursor=cursor,
             limit=limit,
-            with_details=with_details,
         )
 
-    def log_details(
+    async def log_details(
         self,
         job_id: str,
         *,
@@ -247,14 +272,15 @@ class Executor(
         timeout: int = 20,
     ) -> Optional[ProcessLog]:
         """Return process execution logs"""
-        return self._log_details(
+        return await asyncio.to_thread(
+            self._log_details,
             job_id,
             self._services,
             realm=realm,
             timeout=timeout,
         )
 
-    def files(
+    async def files(
         self,
         job_id: str,
         *,
@@ -263,7 +289,8 @@ class Executor(
         timeout: int = 20,
     ) -> Optional[ProcessFiles]:
         """Return process execution files"""
-        return self._files(
+        return await asyncio.to_thread(
+            self._files,
             job_id,
             self._services,
             public_url=public_url,
@@ -271,7 +298,7 @@ class Executor(
             timeout=timeout,
         )
 
-    def download_url(
+    async def download_url(
         self,
         job_id: str,
         *,
@@ -281,7 +308,8 @@ class Executor(
         realm: Optional[str] = None,
     ) -> Optional[Link]:
         """Return download url"""
-        return self._download_url(
+        return await asyncio.to_thread(
+            self._download_url,
             job_id,
             self._services,
             resource=resource,
@@ -289,3 +317,4 @@ class Executor(
             timeout=timeout,
             realm=realm,
         )
+

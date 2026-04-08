@@ -3,6 +3,7 @@ import itertools
 from enum import IntEnum
 from time import time
 from typing import (
+    Any,
     Callable,
     Iterator,
     Optional,
@@ -585,14 +586,16 @@ class Processes(ExecutorProtocol):
 
         return list(itertools.islice(_pull(), cursor, cursor + limit))
 
-    def _log_details(
+    def _job_command(
         self,
+        name: str,
         job_id: str,
         services: ServiceDict,
         *,
         timeout: int,
-        realm: Optional[str] = None,
-    ) -> Optional[ProcessLog]:
+        realm: Optional[str],
+        arguments: dict[str, Any],
+    ) -> JsonValue:
         """Return process execution logs (blocking)"""
         ti = registry.find_job(self._celery, job_id, realm=realm)
         if not ti:
@@ -603,11 +606,29 @@ class Processes(ExecutorProtocol):
         if not destinations:
             raise ServiceNotAvailable(ti.service)
 
-        response = self.command(
-            "job_log",
-            arguments={"job_id": job_id},
+        return self.command(
+            name,
+            arguments={"job_id": job_id, **arguments},
             destination=destinations,
             timeout=timeout,
+        )
+
+    def _log_details(
+        self,
+        job_id: str,
+        services: ServiceDict,
+        *,
+        timeout: int,
+        realm: Optional[str] = None,
+    ) -> Optional[ProcessLog]:
+        """Return process execution logs (blocking)"""
+        response = self._job_command(
+            "job_log",
+            job_id,
+            services,
+            timeout=timeout,
+            realm=realm,
+            arguments={},
         )
 
         match response:
@@ -626,20 +647,14 @@ class Processes(ExecutorProtocol):
         realm: Optional[str] = None,
     ) -> Optional[ProcessFiles]:
         """Return process execution files (blocking)"""
-        ti = registry.find_job(self._celery, job_id, realm=realm)
-        if not ti:
-            return None
 
-        destinations = self.get_destinations(ti.service, services)
-        # XXX Check that services are online (test for presence)
-        if not destinations:
-            raise ServiceNotAvailable(ti.service)
-
-        response = self.command(
+        response = self._job_command(
             "job_files",
-            arguments={"job_id": job_id, "public_url": public_url},
-            destination=destinations,
+            job_id,
+            services,
             timeout=timeout,
+            realm=realm,
+            arguments={"public_url": public_url},
         )
 
         match response:
@@ -659,20 +674,14 @@ class Processes(ExecutorProtocol):
         realm: Optional[str] = None,
     ) -> Optional[Link]:
         """Return download_url (blocking)"""
-        ti = registry.find_job(self._celery, job_id, realm=realm)
-        if not ti:
-            return None
 
-        destinations = self.get_destinations(ti.service, services)
-        # XXX Check that services are online (test for presence)
-        if not destinations:
-            raise ServiceNotAvailable(ti.service)
-
-        response = self.command(
+        response = self._job_command(
             "download_url",
-            arguments={"job_id": job_id, "resource": resource, "expiration": expiration},
-            destination=destinations,
+            job_id,
+            services,
             timeout=timeout,
+            realm=realm,
+            arguments={"resource": resource, "expiration": expiration},
         )
 
         match response:
