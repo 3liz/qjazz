@@ -42,7 +42,7 @@ source-exclude = [
 extend = "../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["T201"]
+"tests/*" = ["T201", "S101"]
 "src/qjazz_core/qgis/qgis_init.py" = ["T201"]
 "src/qjazz_core/config/_toml.py" = ["T201"]
 

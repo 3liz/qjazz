@@ -9,17 +9,17 @@ extend-exclude = [
 [lint]
 extend-select = [
     "E", "F", "I", "ANN", "W", "T", "COM", "RUF",
-    "C4", "SIM", "TC", "RET",
+    "C4", "SIM", "TC", "RET", "S", "B", "PYI",
+    "PTH", "PERF", "FURB",
 ]
 # Removing COM812 which conflict with the formatter
 # See https://docs.astral.sh/ruff/rules/missing-trailing-comma/#ruff-format
 ignore = [
     "ANN002",
     "ANN003",
-    "ANN401", # Dynamically typed expressions (Any)
-    "RUF100",
-    "RUF029",
-    "RUF052",
+    "ANN401",  # Dynamically typed expressions (Any)
+    "RUF029",  # Unused async
+    "RUF052",  # Used dummy variable
     "COM812",
     "SIM108",  # Use ternary operator
     "SIM102",  # Use a single if
@@ -28,9 +28,6 @@ ignore = [
 [format]
 indent-style = "space"
 docstring-code-format = true
-
-[lint.per-file-ignores]
-"tests/*" = ["T201"]
 
 [lint.isort]
 lines-between-types = 1

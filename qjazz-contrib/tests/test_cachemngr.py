@@ -51,7 +51,7 @@ def test_collect_projects(data: Path, config: ProjectsConfig):
                 pytest.fail(reason=f"unexpected scheme: '{md.scheme}'")
 
 
-def test_collect_projects_from_search_path(data: Path, config: ProjectsConfig):
+def test_collect_projects_from_search_path(config: ProjectsConfig):
     cm = CacheManager(config)
 
     collected = list(cm.collect_projects("/france"))

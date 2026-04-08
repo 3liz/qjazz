@@ -200,7 +200,7 @@ class QgisContext:
         # Save list of published files
         with workdir.joinpath(self.PUBLISHED_FILES).open("w") as files:
             for file in context.files:
-                print(file, file=files)  # noqa T201
+                print(file, file=files)
 
         # Write modified project
         destination_project = context.destination_project

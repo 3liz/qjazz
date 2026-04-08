@@ -36,6 +36,9 @@ scan::
 deadcode:: 
 	vulture $(PYTHON_PKG) --min-confidence 70
 
+check-fix::
+	$(RUFF) check --output-format=concise --select=FIX  $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
+
 #
 # Coverage
 #

@@ -170,7 +170,7 @@ class OutputParameter[T]:
                 self.output_format = out.format
             except ValidationError:
                 logger.error(traceback.format_exc())
-                raise InputValueError(f"{self._out.name()}: Invalid format definition")
+                raise InputValueError(f"{self._out.name()}: Invalid format definition") from None
 
             # Test if format is in allowed_formats
             if self.output_format not in self.allowed_formats:

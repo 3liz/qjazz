@@ -258,7 +258,7 @@ class Processes(HandlerProto):
             raise web.HTTPBadRequest(
                 content_type="application/json",
                 text=err.json(include_context=False, include_url=False),
-            )
+            ) from None
 
         # Get execute preferences
         prefer = ExecutePrefs(request)
@@ -324,7 +324,7 @@ class Processes(HandlerProto):
                     raise web.HTTPGatewayTimeout(
                         content_type="application/json",
                         text=job_status.model_dump_json() if job_status else "{}",
-                    )
+                    ) from None
                 logger.warning(
                     "Synchronous request timeout: falling back to async response.",
                 )
@@ -337,7 +337,7 @@ class Processes(HandlerProto):
                 raise web.HTTPBadRequest(
                     content_type="application/json",
                     text=err.response,
-                )
+                ) from None
             #
             # Processing exception
             #

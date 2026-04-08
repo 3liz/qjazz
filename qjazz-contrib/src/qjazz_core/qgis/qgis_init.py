@@ -28,7 +28,7 @@ QGIS_MINIMUM_VERSION = "3.34"
 
 def setup_qgis_paths(prefix: str) -> None:
     """Init qgis paths"""
-    qgis_pluginpath = os.path.join(
+    qgis_pluginpath = os.path.join(  # noqa PTH118
         prefix,
         os.getenv("QGIS3_PLUGINPATH", "/usr/share/qgis/python/plugins/"),
     )
@@ -99,7 +99,7 @@ def setup_qgis_application(
     else:
         logger.debug(f"Using DISPLAY: {display}")
 
-    # XXX Set QGIS_PREFIX_PATH, it seems that setPrefixPath
+    # NOTE: Set QGIS_PREFIX_PATH, it seems that setPrefixPath
     # does not do the job correctly
     os.environ["QGIS_PREFIX_PATH"] = qgis_prefix
 
@@ -151,7 +151,7 @@ def setup_qgis_application(
         def exitQgis():
             # Closing QgsApplication on exit will
             # prevent our app to segfault on exit()
-            # XXX Doesn't seem necessary anymore
+            # NOTE: Doesn't seem necessary anymore
             if cleanup:
                 logger.debug(f"{logprefix} Installing cleanup hook")
                 exit_qgis_application()
@@ -208,7 +208,7 @@ def init_qgis_server(**kwargs) -> "QgsServer":
     server = QgsServer()
 
     # Update the network configuration
-    # XXX: At the time the settings are read, the networkmanager is already
+    # NOTE: At the time the settings are read, the networkmanager is already
     # initialized, but with the wrong settings
     set_proxy_configuration()
 
@@ -240,7 +240,7 @@ def load_qgis_settings(
         if not settings_path.is_dir():
             raise FileNotFoundError(f"{settings_path}")
 
-    # XXX: if we call initQgis then the settings used will be located in
+    # NOTE: if we call initQgis then the settings used will be located in
     # $QGIS_OPTIONS_PATH/profiles/default - while server will use the designated
     # path.
     #

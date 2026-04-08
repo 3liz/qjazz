@@ -6,7 +6,6 @@ from enum import IntEnum, StrEnum
 from typing import (
     Annotated,
     Any,
-    ByteString,
     Iterable,
     Literal,
     NewType,
@@ -340,13 +339,13 @@ Envelop = NewType("Envelop", tuple[int, Any])
 
 class Connection(Protocol):
     def recv(self) -> Message: ...
-    def send_bytes(self, data: ByteString): ...
+    def send_bytes(self, data: bytes): ...
 
     @property
     def cancelled(self) -> bool: ...
 
 
-def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
+def send_reply(conn: Connection, msg: Any, status: int = 200):
     """Send a reply in a envelope message"""
     if isinstance(msg, Response):
         msg = msg.dump_response()
@@ -354,7 +353,7 @@ def send_reply(conn: Connection, msg: Any, status: int = 200):  # noqa ANN401
 
 
 # Send a binary chunk
-def send_chunk(conn: Connection, data: ByteString):
+def send_chunk(conn: Connection, data: bytes):
     if len(data) > 0:
         conn.send_bytes(packb(206))
         conn.send_bytes(data)

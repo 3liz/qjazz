@@ -235,7 +235,7 @@ def qgis_server_run(
                 case _m.UpdateCacheMsg():
                     # We need to consume the iterator
                     # for updating the whole cache
-                    for item in cm.update_cache():
+                    for _ in cm.update_cache():
                         pass
                     _m.send_reply(conn, None)
                 case _m.GetProjectInfoMsg():

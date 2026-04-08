@@ -95,7 +95,7 @@ class SwaggerError(Exception):
     pass
 
 
-def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:  # noqa RUF027
+def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:
     """Build schema definitions dictionnary from models"""
     schema_definitions = {}
     for name, model in _models:
@@ -107,9 +107,7 @@ def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]
                 schema = model.model_json_schema(ref_template=ref_template)
         # Extract subdefinitions
         defs = schema.pop("$defs", {})
-        for n, d in defs.items():
-            schema_definitions[n] = d
-
+        schema_definitions.update(defs)
         schema_definitions[name] = schema
 
     return schema_definitions

@@ -292,7 +292,7 @@ class Job(celery.Task):
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
             # XXX Return specific error
-            raise ValueError("Invalid arguments")
+            raise ValueError("Invalid arguments") from None
         finally:
             kwargs.update(__meta__=meta)
 

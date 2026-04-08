@@ -24,7 +24,7 @@ from qjazz_cache.prelude import ProjectsConfig
 from qjazz_processes.schemas import WGS84
 
 
-def _validate_qgis_setting(value: str | bool | float | int) -> str:
+def _validate_qgis_setting(value: str | bool | float) -> str:
     match value:
         case str():
             return value
@@ -180,6 +180,12 @@ class ProcessingConfig(ConfigBase):
         from QGIS3.ini file."
         """,
     )
+    download_timeout: float = Field(
+        default=20.0,
+        title="Download timeout",
+        description="Download timeout is seconds for reference values",
+    )
+
 
     def settings(self) -> dict[str, str]:
         """Configure qgis processing settings"""

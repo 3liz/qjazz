@@ -55,7 +55,7 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
                     min(ml.maximumScale(), scales[1]),
                 )
 
-    return scales if scales else (None, None)
+    return scales or (None, None)
 
 
 def get_layer_short_name(layer: QgsMapLayer) -> str:

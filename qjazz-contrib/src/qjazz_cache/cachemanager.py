@@ -216,19 +216,19 @@ class CacheManager:
 
         raise ResourceNotAllowed(str(path))
 
-    def locations(self, location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
+    def locations(self, search_location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """List compatible search paths"""
-        return self.conf.search_paths.locations(location)
+        return self.conf.search_paths.locations(search_location)
 
     def collect_projects_ex(
         self,
-        location: Optional[str] = None,
+        search_location: Optional[str] = None,
     ) -> Iterator[tuple[ProjectMetadata, str, ProtocolHandler, PurePosixPath]]:
         """Collect projects metadata from search paths
 
         Yield tuple of (entry, public_path, handler) for all found  entries
         """
-        for location, url in self.locations(location):
+        for location, url in self.locations(search_location):
             try:
                 loc = PurePosixPath(location)
                 handler = self.get_protocol_handler(url.scheme)

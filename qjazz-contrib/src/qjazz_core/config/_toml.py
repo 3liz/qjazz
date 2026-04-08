@@ -32,7 +32,7 @@ def _print_field_doc(s: IO, field: FieldInfo):
                 print(f"# {line}", file=s)
 
 
-def _to_string(v: str | bool | int | float) -> str:
+def _to_string(v: str | bool | float) -> str:
     match v:
         case str(s):
             return f'"{s}"'
@@ -44,7 +44,7 @@ def _to_string(v: str | bool | int | float) -> str:
             return f'"{v!s}"'
 
 
-def _field_default_repr(field_default: Any) -> str:  # noqa ANN401
+def _field_default_repr(field_default: Any) -> str:
     match field_default:
         case str(s):
             if "\n" in s:
@@ -69,7 +69,7 @@ def _print_field(
     field: FieldInfo,
     *,
     comment: bool = False,
-    default: Any = None,  # noqa ANN401
+    default: Any = None,
 ):
     if default is not None:
         print(f"{name} = {_field_default_repr(default)}", file=s)
@@ -119,7 +119,7 @@ def _unpack_arg(t: Type) -> Type:
 def _dump_section(
     s: IO,
     model: Type[BaseModel],
-    model_default: Any,  # noqa ANN401
+    model_default: Any,
     section: str,
     comment: bool = False,
     is_list: bool = False,

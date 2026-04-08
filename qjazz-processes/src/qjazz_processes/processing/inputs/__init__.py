@@ -224,7 +224,7 @@ class _InputParameter:
     ) -> Mapping[str, Any]:
         """Convert inputs to parameters"""
 
-        def _value(inp: InputParameterDef) -> Any:  # noqa ANN401
+        def _value(inp: InputParameterDef) -> Any:
             v = params.get(inp.name)
             if not (v or inp.optional):
                 raise InputValueError(f"Missing parameter {inp.name}")

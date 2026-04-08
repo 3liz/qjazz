@@ -13,7 +13,7 @@ from qjazz_core.qgis import QgisNetworkConfig, QgisPluginConfig
 from qjazz_cache.config import ProjectsConfig
 
 
-def _validate_qgis_setting(value: str | bool | float | int) -> str:
+def _validate_qgis_setting(value: str | bool | float) -> str:
     match value:
         case str():
             return value

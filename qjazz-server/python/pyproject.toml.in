@@ -54,7 +54,7 @@ qjazz-contrib = { workspace = true }
 extend = "../../config/ruff.toml"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["T201"]
+"tests/*" = ["T201", "S101"]
 "python/qjazz_http/config.py" = ["T201"]
 
 [tool.vulture]

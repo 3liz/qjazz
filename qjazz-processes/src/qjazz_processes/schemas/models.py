@@ -24,7 +24,7 @@ from qjazz_core.models import (
     JsonDict,
     JsonModel,
     OneOf,  # noqa F401
-    Option,  # noqa F401
+    Option,
     one_of,  # noqa F401
     remove_auto_title,  # noqa F401
 )

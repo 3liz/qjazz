@@ -17,13 +17,12 @@ from pydantic import (
 from pydantic.aliases import PydanticUndefined
 
 
-# noqa ANN401
 def Field(
-    default: Any = PydanticUndefined,  # noqa ANN401
+    default: Any = PydanticUndefined,
     *,
     description: str | None = None,
     **kwargs,
-) -> Any:  # noqa ANN401
+) -> Any:
     return pydantic.Field(
         default,
         description=dedent(description.removeprefix("\n")) if description else None,

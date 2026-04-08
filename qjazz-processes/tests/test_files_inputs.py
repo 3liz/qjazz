@@ -40,7 +40,7 @@ def test_parameter_file(processing_config: ProcessingConfig):
     if expected.exists():
         expected.unlink()
 
-    ascii_content = "".join(random.choices(string.ascii_letters, k=20))
+    ascii_content = "".join(random.choices(string.ascii_letters, k=20))  # noqa S311
 
     value = inp.value(
         {

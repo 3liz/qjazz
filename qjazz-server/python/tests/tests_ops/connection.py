@@ -3,7 +3,6 @@ from io import BytesIO
 from struct import pack, unpack
 from typing import (
     Any,
-    ByteString,
     Iterator,
 )
 
@@ -24,7 +23,7 @@ class Connection:
     def recv(self) -> messages.Message:
         raise NotImplementedError
 
-    def send_bytes(self, data: ByteString):
+    def send_bytes(self, data: bytes):
         if self._cancelled:
             return
         size = len(data)

@@ -4,7 +4,6 @@ import sys
 from io import BytesIO
 from pathlib import Path
 from struct import pack, unpack
-from typing import ByteString
 
 from msgpack import unpackb
 from qjazz_core import logger
@@ -77,7 +76,7 @@ class Connection:
         msg = unpackb(data)
         return MessageAdapter.validate_python(msg)
 
-    def send_bytes(self, data: ByteString):
+    def send_bytes(self, data: bytes):
         if not self._cancelled:
             size = len(data)
             os.write(self._out, pack("!i", size))
@@ -92,7 +91,7 @@ class RendezVous:
         try:
             path = Path(os.environ["RENDEZ_VOUS"])
         except KeyError:
-            raise RuntimeError("No 'RENDEZ_VOUS' defined")
+            raise RuntimeError("No 'RENDEZ_VOUS' defined") from None
         if not path.exists():
             raise RuntimeError(f"No rendez vous at {path} !")
         self.fd = os.open(path, os.O_WRONLY)

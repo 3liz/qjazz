@@ -43,7 +43,7 @@ def config(data):
     return conf
 
 
-def pytest_sessionstart(session: pytest.Session) -> None:
+def pytest_sessionstart() -> None:
     try:
         print("Initializing qgis application")
         qgis.init_qgis_application()
@@ -57,7 +57,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         pytest.exit("Qgis installation is required", returncode=1)
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish():
     try:
         from qjazz_core import qgis
 
@@ -76,7 +76,7 @@ def store_creds(store_endpoint: str) -> store.StoreCreds:
     return store.StoreCreds(
         endpoint=store_endpoint,
         access_key="qjazzadmin",
-        secret_key="qjazzadmin",
+        secret_key="qjazzadmin",  # noqa S106
         secure=False,
     )
 

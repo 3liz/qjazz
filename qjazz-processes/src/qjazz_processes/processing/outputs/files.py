@@ -165,7 +165,7 @@ class OutputHtml(OutputFile):
                 raise InputValueError(f"{self._out.name()}: invalid format '{self.output_format}'")
         except ValidationError:
             logger.error(traceback.format_exc())
-            raise InputValueError(f"{self._out.name()}: Invalid format definition")
+            raise InputValueError(f"{self._out.name()}: Invalid format definition") from None
 
     @classmethod
     def get_output_formats(

@@ -49,7 +49,7 @@ class Commands(ExecutorProtocol):
         if not broadcast:
             # Pick a destination randomly, so that we can
             # use all availables workers
-            index = randint(0, len(destination) - 1)  # nosec B311
+            index = randint(0, len(destination) - 1)  # nosec B311  # noqa S311
             destination = (destination[index],)
 
         resp = self._celery.control.broadcast(

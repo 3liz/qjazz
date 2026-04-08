@@ -55,4 +55,4 @@ class LayerAccessor:
         else:
             name = layer.serverProperties().shortName()
 
-        return name if name else layer.name()
+        return name or layer.name()

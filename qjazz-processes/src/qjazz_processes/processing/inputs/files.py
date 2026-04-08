@@ -234,17 +234,19 @@ def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer:
         kwargs.update(data=ref.body)
 
     if config:
+        timeout=config.download_timeout
         ssl = config.certificats
         if ssl.cafile:
             kwargs.update(verify=str(ssl.cafile))
         if ssl.keyfile and ssl.certfile:
             kwargs.update(cert=(str(ssl.certfile), str(ssl.keyfile)))
+    else:
+        timeout = 20.0
 
-    resp = requests.request(method, href, headers=headers, stream=True, **kwargs)
+    resp = requests.request(method, href, headers=headers, stream=True, timeout=timeout, **kwargs)
     if resp.status_code not in (200, 206):
         raise InputValueError("Reference request error: ({resp.status_code}) {resp.text}")
 
     part_size = 1024 * 64
 
-    for chunk in resp.iter_content(chunk_size=part_size):
-        writer.write(chunk)
+    writer.writelines(resp.iter_content(chunk_size=part_size))

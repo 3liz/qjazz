@@ -18,6 +18,7 @@ deliver \
 install \
 scan \
 deadcode \
+check-fix \
 doc \
 prepare_commit \
 coverage \

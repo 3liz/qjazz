@@ -14,8 +14,6 @@ It is designed to have a general way about passing objects or behaviors to plugi
 or extension or other modules. It then enables for these modules or extensions to rely on the calling
 module behaviors without the need for these to do explicit imports
 """
-# Allow using 'Any' since component manager deal with anything
-# ruff: noqa: ANN401
 
 import sys
 

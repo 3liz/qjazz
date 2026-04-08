@@ -77,7 +77,7 @@ class GeoPackageHandler(QgisStorageProtocolHandler):
         if isinstance(url, str):
             url = urlsplit(url)
 
-        if _parameters(rooturl).get("projectName") == "{path}":  # noqa RUF027
+        if _parameters(rooturl).get("projectName") == "{path}":
             project = _parameters(url)["projectName"]
             path = path.joinpath(project)
 

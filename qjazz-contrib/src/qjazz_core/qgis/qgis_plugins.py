@@ -72,7 +72,7 @@ def _default_plugin_paths() -> list[Path]:
 class QgisPluginConfig(config.ConfigBase):
     paths: Annotated[
         Sequence[Path],
-        AfterValidator(lambda v: v if v else _default_plugin_paths()),
+        AfterValidator(lambda v: v or _default_plugin_paths()),
     ] = Field(
         default=[],
         validate_default=True,
@@ -354,7 +354,7 @@ def _run_plugin_manager(
     assert_precondition(conf.plugin_manager.is_absolute())
 
     install_path = install_path or conf.paths[0]
-    res = subprocess.run(
+    res = subprocess.run(  # noqa S603
         # SECURITY: path is checked to be absolute
         [conf.plugin_manager, *args],  # nosec
         cwd=str(install_path),

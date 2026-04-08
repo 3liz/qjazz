@@ -81,4 +81,4 @@ def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, 
         raise web.HTTPBadRequest(
             content_type="application/json",
             text=err.json(include_context=False, include_url=False),
-        )
+        ) from None

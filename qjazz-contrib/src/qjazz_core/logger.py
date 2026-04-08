@@ -43,7 +43,7 @@ def _validate_log_level(v: str | LogLevel) -> LogLevel:
     try:
         return LogLevel[v.upper()] if isinstance(v, str) else v
     except KeyError:
-        raise ValueError(f"Invalid log level value '{v}'")
+        raise ValueError(f"Invalid log level value '{v}'") from None
 
 
 class LoggingConfig(ConfigBase):

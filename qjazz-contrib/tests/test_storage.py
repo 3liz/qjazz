@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -5,8 +6,11 @@ import pytest
 from qjazz_cache import errors
 from qjazz_cache.prelude import CacheManager, ProjectsConfig
 
+if TYPE_CHECKING:
+    from qjazz_cache.routes import StaticRoute
 
-def test_storage_postgres(data, config):
+
+def test_storage_postgres(config: ProjectsConfig):
     cm = CacheManager(config)
 
     url = cm.resolve_path("/database/project.qgs")
@@ -35,7 +39,7 @@ def test_storage_postgres(data, config):
     assert parse_qs(resolved_url.query)["project"][0] == "project.qgs"
 
 
-def test_storage_geopackage(data, config):
+def test_storage_geopackage(config: ProjectsConfig):
     conf = ProjectsConfig(
         search_paths={
             "/mygpkg": "geopackage:/do/not/exists.gpkg&projectName={path}",
@@ -44,4 +48,4 @@ def test_storage_geopackage(data, config):
 
     with pytest.raises(errors.InvalidCacheRootUrl):
         handler = CacheManager.get_protocol_handler("geopackage")
-        handler.validate_rooturl(conf.search_paths._routes["/mygpkg"]._url, config)
+        handler.validate_rooturl(cast("StaticRoute", conf.search_paths._routes["/mygpkg"])._url, config)

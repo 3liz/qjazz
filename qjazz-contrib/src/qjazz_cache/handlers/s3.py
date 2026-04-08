@@ -64,7 +64,10 @@ if TYPE_CHECKING:
 if Qgis.versionInt() < 33800:
     import warnings
 
-    warnings.warn(f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})")
+    warnings.warn(
+        f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})",
+        stacklevel=1,
+    )
 
 gdal_version_info = tuple(int(n) for n in __gdal_version__.split("."))
 

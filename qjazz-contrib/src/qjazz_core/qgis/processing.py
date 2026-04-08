@@ -113,13 +113,13 @@ class ProcessesLoader:
                 styles.setdefault(alg, {})
                 for key, qmlpath in keys.items():
                     qml = path.parent.joinpath(qmlpath)
-                if qml.exists():
-                    styles[alg][key] = str(qml)
-                else:
-                    logger.warning("Style file not found:  %s", qml)
+                    if qml.exists():
+                        styles[alg][key] = str(qml)
+                    else:
+                        logger.warning("Style file not found:  %s", qml)
             RenderingStyles.styles.update(styles)
 
-    def init_processing(self, package: ModuleType) -> Any:  # noqa ANN401
+    def init_processing(self, package: ModuleType) -> Any:
         """Initialize processing plugin"""
         self._register = True
         try:

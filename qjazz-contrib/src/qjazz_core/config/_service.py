@@ -173,10 +173,10 @@ class ConfigSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],  # noqa F841 (unused variable)
+        settings_cls: Type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,  # noqa F841
+        dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         match cls.env_settings_precedence:
@@ -285,7 +285,7 @@ class ConfBuilder:
         self,
         name: str,
         model: Type | TypeAlias,
-        field: Any = CreateDefault,  # noqa ANN401
+        field: Any = CreateDefault,
         *,
         replace: bool = False,
     ):

@@ -1,6 +1,12 @@
 """Test just returning simple value"""
+from typing import Any
 
-from qgis.core import QgsProcessingAlgorithm, QgsProcessingOutputNumber
+from qgis.core import (
+    QgsFeedback,
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsProcessingOutputNumber,
+)
 
 
 class TestUltimateQuestion(QgsProcessingAlgorithm):
@@ -15,7 +21,7 @@ class TestUltimateQuestion(QgsProcessingAlgorithm):
     def displayName(self):
         return "Return answer to ultimate question"
 
-    def createInstance(self, config={}):
+    def createInstance(self, config=None):
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
@@ -29,5 +35,10 @@ class TestUltimateQuestion(QgsProcessingAlgorithm):
         """
         self.addOutput(QgsProcessingOutputNumber(self.OUTPUT, "Output"))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(
+        self,
+        parameters: dict[str, Any],
+        context: QgsProcessingContext,
+        feedback: QgsFeedback,
+    ) -> dict:
         return {self.OUTPUT: 42}
