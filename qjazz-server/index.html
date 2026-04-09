@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to qjazz’s documentation! &mdash; qjazz ${PIN_VERSION} documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=e556e3f7"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -44,14 +44,13 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-setup">Quick setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#configuration-setup">Configuration setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start-with-docker">Quick Start with Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#qgis-rpc-services">QGIS RPC services</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#configuration-system">Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">RPC Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
-<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a></li>
-<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a></li>
-<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_cli.html">RPC client CLI Reference</a></li>
 </ul>
 
         </div>
@@ -88,49 +87,60 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#features">Features</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-setup">Quick setup</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#docker-compose-setup">Docker compose setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start-with-docker">Quick Start with Docker</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#minimal-setup">Minimal Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#id1">Docker compose setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#scaling-your-services">Scaling your services</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#managing-qgis-services">Managing Qgis services</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#configuration-setup">Configuration setup</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#using-configuration-file">Using configuration file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#using-environment-variables">Using environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Principles</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#architecture-overview">Architecture Overview</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#qgis-processes">QGIS processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#configuration">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#qgis-rpc-services">QGIS RPC services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#life-cycle-and-pressure-conditions">Life cycle and pressure conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#process-timeout">Process timeout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#worker-pools">Worker Pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#fault-tolerance">Fault Tolerance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#deployment-options">Deployment Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#security-considerations">Security Considerations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#dynamic-paths">Dynamic paths</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#managing-cache">Managing cache</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#project-checkout">Project checkout</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#cache-restoration">Cache restoration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#configuration-system">Configuration System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#using-configuration-file">Using configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#using-environment-variables">Using environment variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#directory-structure">Directory Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#testing-the-installation">Testing the Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">RPC Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#toml-configuration">TOML configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#dynamic-configuration-setup">Dynamic configuration setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#hot-configuration">Hot Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="server_config.html#routing-ows-requests-to-qgis-pools">Routing OWS requests to Qgis pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server_config.html#routing-requests-to-qgis-pools">Routing requests to Qgis pools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="server_config.html#api-endpoints">Api endpoints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="server_config.html#service-configuration">Service configuration</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="management.html#running-management-from-cli">Running management from CLI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="management.html#management-from-rest-api">Management from REST api</a></li>
-<li class="toctree-l2"><a class="reference internal" href="management.html#configuration">Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="management.html#configuration-schema">Configuration schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_cli.html">RPC client CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#command-groups">Command Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#request-commands">Request Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#cache-commands">Cache Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#plugin-commands">Plugin Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#config-commands">Config Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#state-commands">State Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#direct-commands">Direct Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpc_cli.html#usage-examples">Usage Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="management.html#synchronizing-pool-cache">Synchronizing pool cache</a></li>
-<li class="toctree-l2"><a class="reference internal" href="management.html#adding-modifying-or-removing-pool-to-management-service">Adding, modifying or removing pool to management service</a></li>
-<li class="toctree-l2"><a class="reference internal" href="management.html#resyncing-with-rpc-pools-when-rescaling-rpc-services">Resyncing with rpc pools when rescaling rpc services</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
 </ul>
 </div>
 </section>

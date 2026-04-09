@@ -1,0 +1,871 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RPC client CLI Reference &mdash; qjazz ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="HTTP frontend" href="server_config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start-with-docker">Quick Start with Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#qgis-rpc-services">QGIS RPC services</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#configuration-system">Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">RPC Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RPC client CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-groups">Command Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#request-commands">Request Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#request-ows">request ows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#request-api">request api</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#cache-commands">Cache Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cache-checkout">cache checkout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-drop">cache drop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-clear">cache clear</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-list">cache list</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-update">cache update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-info">cache info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-catalog">cache catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-dump">cache dump</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#plugin-commands">Plugin Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#plugin-list">plugin list</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#config-commands">Config Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#config-get">config get</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-set">config set</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-log">config log</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#state-commands">State Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#state-env">state env</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#state-disable">state disable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#state-enable">state enable</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#direct-commands">Direct Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ping">ping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#healthcheck">healthcheck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stats">stats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sleep">sleep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reload">reload</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-examples">Usage Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#checking-service-health">Checking Service Health</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#managing-projects">Managing Projects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sending-requests">Sending Requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#service-configuration">Service Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#docker-container-usage">Docker/Container Usage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RPC client CLI Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/rpc_cli.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rpc-client-cli-reference">
+<span id="rpc-cli"></span><h1>RPC client CLI Reference<a class="headerlink" href="#rpc-client-cli-reference" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">qjazz-rpc-client</span></code> command provides a command-line interface for interacting with
+QJazz gRPC services. It allows you to manage caches, send requests, configure services,
+and monitor worker status.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>The CLI is available as the <code class="docutils literal notranslate"><span class="pre">qjazz-rpc-client</span></code> command when QJazz is installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>Or inside a Docker container:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>--help
+</pre></div>
+</div>
+</section>
+<section id="environment-variables">
+<h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading"></a></h2>
+<p>The CLI uses the following environment variables to connect to the gRPC server:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">QGIS_GRPC_HOST</span></code></p></td>
+<td><p>Address of the gRPC server (default: <code class="docutils literal notranslate"><span class="pre">localhost:23456</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONF_GRPC_USE_TLS</span></code></p></td>
+<td><p>Set to <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>, or <code class="docutils literal notranslate"><span class="pre">true</span></code> to enable TLS</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONF_GRPC_TLS_KEYFILE</span></code></p></td>
+<td><p>Path to the TLS client key file</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONF_GRPC_TLS_CERTFILE</span></code></p></td>
+<td><p>Path to the TLS client certificate file</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONF_GRPC_TLS_CAFILE</span></code></p></td>
+<td><p>Path to the CA server certificate file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="command-groups">
+<h2>Command Groups<a class="headerlink" href="#command-groups" title="Link to this heading"></a></h2>
+<p>The CLI is organized into the following command groups:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">request</span></code> - Send QGIS requests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cache</span></code> - Manage project cache</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plugin</span></code> - Retrieve QGIS plugin information</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config</span></code> - Manage server configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">state</span></code> - Control service state</p></li>
+<li><p>Direct commands - ping, healthcheck, stats, etc.</p></li>
+</ul>
+</section>
+<section id="request-commands">
+<h2>Request Commands<a class="headerlink" href="#request-commands" title="Link to this heading"></a></h2>
+<p>Send QGIS requests to the server.</p>
+<section id="request-ows">
+<span id="id1"></span><h3>request ows<a class="headerlink" href="#request-ows" title="Link to this heading"></a></h3>
+<p>Send an OWS (Open Web Services) request to the QGIS server.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>ows<span class="w"> </span>PROJECT<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROJECT</span></code> - The QGIS project path or URI</p></li>
+</ul>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--service</span></code>, <code class="docutils literal notranslate"><span class="pre">-s</span></code></p></td>
+<td><p>OWS service name (required).</p>
+<p>Examples: <code class="docutils literal notranslate"><span class="pre">WMS</span></code>, <code class="docutils literal notranslate"><span class="pre">WFS</span></code>, <code class="docutils literal notranslate"><span class="pre">WCS</span></code></p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--request</span></code>, <code class="docutils literal notranslate"><span class="pre">-r</span></code></p></td>
+<td><p>OWS request name (required).</p>
+<p>Examples: <code class="docutils literal notranslate"><span class="pre">GetCapabilities</span></code>, <code class="docutils literal notranslate"><span class="pre">GetMap</span></code>, <code class="docutils literal notranslate"><span class="pre">DescribeFeatureType</span></code></p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--version</span></code></p></td>
+<td><p>OWS service version (optional).</p>
+<p>Example: <code class="docutils literal notranslate"><span class="pre">1.3.0</span></code> for WMS</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--param</span></code>, <code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">KEY=VALUE</span></code></p></td>
+<td><p>Additional request parameters.</p>
+<p>Can be specified multiple times</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--headers</span></code>, <code class="docutils literal notranslate"><span class="pre">-H</span></code></p></td>
+<td><p>Show response headers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--url</span></code></p></td>
+<td><p>Origin URL for the request</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output</span></code>, <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">FILE</span></code></p></td>
+<td><p>Write output to file instead of stdout</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Get WMS capabilities:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>ows<span class="w"> </span>/path/to/project.qgs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--service<span class="w"> </span>WMS<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--request<span class="w"> </span>GetCapabilities
+</pre></div>
+</div>
+<p>Get a map image:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>ows<span class="w"> </span>/path/to/project.qgs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--service<span class="w"> </span>WMS<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--request<span class="w"> </span>GetMap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">LAYERS</span><span class="o">=</span>my_layer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">BBOX</span><span class="o">=</span><span class="m">0</span>,0,100,100<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">CRS</span><span class="o">=</span>EPSG:4326<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-o<span class="w"> </span>map.png
+</pre></div>
+</div>
+</section>
+<section id="request-api">
+<span id="id2"></span><h3>request api<a class="headerlink" href="#request-api" title="Link to this heading"></a></h3>
+<p>Send a QGIS API request.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>api<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--name</span></code></p></td>
+<td><p>API name (required). Example: <code class="docutils literal notranslate"><span class="pre">processi</span></code>, <code class="docutils literal notranslate"><span class="pre">wfs</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--path</span></code></p></td>
+<td><p>API path (default: <code class="docutils literal notranslate"><span class="pre">/</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--target</span></code></p></td>
+<td><p>Target QGIS project</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--param</span></code>, <code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">KEY=VALUE</span></code></p></td>
+<td><p>Query parameters. Can be specified multiple times</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--headers</span></code>, <code class="docutils literal notranslate"><span class="pre">-H</span></code></p></td>
+<td><p>Show response headers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--url</span></code></p></td>
+<td><p>Origin URL for the request</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output</span></code>, <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">FILE</span></code></p></td>
+<td><p>Write output to file instead of stdout</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Execute an OGC Features (OAPIF) request:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>api<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--name<span class="w"> </span>OAPIF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--path<span class="w"> </span>/collections.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>/route/to/project.qgs<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cache-commands">
+<h2>Cache Commands<a class="headerlink" href="#cache-commands" title="Link to this heading"></a></h2>
+<p>Manage the QGIS project cache.</p>
+<section id="cache-checkout">
+<span id="id3"></span><h3>cache checkout<a class="headerlink" href="#cache-checkout" title="Link to this heading"></a></h3>
+<p>Checkout a project from the cache. If <code class="docutils literal notranslate"><span class="pre">--pull</span></code> is specified, the project is loaded
+into the cache as a pinned item.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>checkout<span class="w"> </span>PROJECT<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROJECT</span></code> - The project path or URI to checkout</p></li>
+</ul>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--pull</span></code></p></td>
+<td><p>Load the project into cache as a pinned item</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Preview a project without caching:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>checkout<span class="w"> </span>/path/to/project.qgs
+</pre></div>
+</div>
+<p>Load and cache a project:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>checkout<span class="w"> </span>/path/to/project.qgs<span class="w"> </span>--pull
+</pre></div>
+</div>
+</section>
+<section id="cache-drop">
+<span id="id4"></span><h3>cache drop<a class="headerlink" href="#cache-drop" title="Link to this heading"></a></h3>
+<p>Remove a project from the cache.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>drop<span class="w"> </span>PROJECT
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROJECT</span></code> - The project path or URI to remove</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>drop<span class="w"> </span>/path/to/project.qgs
+</pre></div>
+</div>
+</section>
+<section id="cache-clear">
+<span id="id5"></span><h3>cache clear<a class="headerlink" href="#cache-clear" title="Link to this heading"></a></h3>
+<p>Clear the entire cache, removing all cached projects.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>clear
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>clear
+</pre></div>
+</div>
+</section>
+<section id="cache-list">
+<span id="id6"></span><h3>cache list<a class="headerlink" href="#cache-list" title="Link to this heading"></a></h3>
+<p>List all projects in the static (pinned) cache.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>list
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>list
+</pre></div>
+</div>
+</section>
+<section id="cache-update">
+<span id="id7"></span><h3>cache update<a class="headerlink" href="#cache-update" title="Link to this heading"></a></h3>
+<p>Update cache item states. This refreshes the metadata of cached projects.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>update
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>update
+</pre></div>
+</div>
+</section>
+<section id="cache-info">
+<span id="id8"></span><h3>cache info<a class="headerlink" href="#cache-info" title="Link to this heading"></a></h3>
+<p>Get detailed information about a specific project in the cache.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>info<span class="w"> </span>PROJECT
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROJECT</span></code> - The project path or URI</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>info<span class="w"> </span>/path/to/project.qgs
+</pre></div>
+</div>
+</section>
+<section id="cache-catalog">
+<span id="id9"></span><h3>cache catalog<a class="headerlink" href="#cache-catalog" title="Link to this heading"></a></h3>
+<p>List available projects from configured search paths.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>catalog<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--location</span></code></p></td>
+<td><p>Filter projects by location</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>catalog
+</pre></div>
+</div>
+<p>List projects from a specific location:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>catalog<span class="w"> </span>--location<span class="w"> </span>/projects/europe
+</pre></div>
+</div>
+</section>
+<section id="cache-dump">
+<span id="id10"></span><h3>cache dump<a class="headerlink" href="#cache-dump" title="Link to this heading"></a></h3>
+<p>Dump the complete cache state and configuration for all backend workers.
+This is a “stop the world” operation that waits for all workers to be available.
+Use only for debugging purposes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>dump
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>dump
+</pre></div>
+</div>
+<p><strong>Warning:</strong> This command may disrupt normal operations as it halts all workers.</p>
+</section>
+</section>
+<section id="plugin-commands">
+<h2>Plugin Commands<a class="headerlink" href="#plugin-commands" title="Link to this heading"></a></h2>
+<section id="plugin-list">
+<span id="id11"></span><h3>plugin list<a class="headerlink" href="#plugin-list" title="Link to this heading"></a></h3>
+<p>List all installed QGIS plugins.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>plugin<span class="w"> </span>list
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>plugin<span class="w"> </span>list
+</pre></div>
+</div>
+<p><strong>Output format:</strong></p>
+<p>Each plugin is displayed as a JSON object containing:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> - Plugin name</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code> - Plugin directory path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pluginType</span></code> - Plugin type</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">metadata</span></code> - Plugin metadata (parsed from metadata.txt)</p></li>
+</ul>
+</section>
+</section>
+<section id="config-commands">
+<h2>Config Commands<a class="headerlink" href="#config-commands" title="Link to this heading"></a></h2>
+<p>Manage server configuration.</p>
+<section id="config-get">
+<span id="id12"></span><h3>config get<a class="headerlink" href="#config-get" title="Link to this heading"></a></h3>
+<p>Retrieve the current server configuration.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>get
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>get
+</pre></div>
+</div>
+</section>
+<section id="config-set">
+<span id="id13"></span><h3>config set<a class="headerlink" href="#config-set" title="Link to this heading"></a></h3>
+<p>Set server configuration. Accepts JSON configuration directly or from a file.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>CONFIG<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> - JSON configuration string, or <code class="docutils literal notranslate"><span class="pre">&#64;filename</span></code> to read from file</p></li>
+</ul>
+<p><strong>Examples:</strong></p>
+<p>Set configuration directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="s1">&#39;{&quot;logging&quot;: {&quot;level&quot;: &quot;debug&quot;}}&#39;</span>
+</pre></div>
+</div>
+<p>Set configuration from a file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>@/path/to/config.json
+</pre></div>
+</div>
+</section>
+<section id="config-log">
+<span id="id14"></span><h3>config log<a class="headerlink" href="#config-log" title="Link to this heading"></a></h3>
+<p>Quick command to set the logging level.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>log<span class="w"> </span>LEVEL
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LEVEL</span></code> - Log level: <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">debug</span></code>, <code class="docutils literal notranslate"><span class="pre">info</span></code>, <code class="docutils literal notranslate"><span class="pre">warning</span></code>, <code class="docutils literal notranslate"><span class="pre">error</span></code></p></li>
+</ul>
+<p><strong>Examples:</strong></p>
+<p>Set debug logging:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>log<span class="w"> </span>debug
+</pre></div>
+</div>
+<p>Set error logging:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>log<span class="w"> </span>error
+</pre></div>
+</div>
+</section>
+</section>
+<section id="state-commands">
+<h2>State Commands<a class="headerlink" href="#state-commands" title="Link to this heading"></a></h2>
+<p>Control and query the gRPC service state.</p>
+<section id="state-env">
+<span id="id15"></span><h3>state env<a class="headerlink" href="#state-env" title="Link to this heading"></a></h3>
+<p>Get the current environment status of the service.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span>env
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span>env
+</pre></div>
+</div>
+</section>
+<section id="state-disable">
+<span id="id16"></span><h3>state disable<a class="headerlink" href="#state-disable" title="Link to this heading"></a></h3>
+<p>Disable the server from serving requests.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span>disable
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span>disable
+</pre></div>
+</div>
+<p>After running this command, the server will respond with a “not serving” status
+to all incoming requests.</p>
+</section>
+<section id="state-enable">
+<span id="id17"></span><h3>state enable<a class="headerlink" href="#state-enable" title="Link to this heading"></a></h3>
+<p>Enable the server to start serving requests.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span><span class="nb">enable</span>
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>state<span class="w"> </span><span class="nb">enable</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="direct-commands">
+<h2>Direct Commands<a class="headerlink" href="#direct-commands" title="Link to this heading"></a></h2>
+<section id="ping">
+<h3>ping<a class="headerlink" href="#ping" title="Link to this heading"></a></h3>
+<p>Ping the gRPC service to check connectivity and response time.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>ping<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--count</span></code>, <code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">N</span></code></p></td>
+<td><p>Number of ping requests to send (default: 1)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--server</span></code></p></td>
+<td><p>Ping the QGIS server service instead of the admin service</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Single ping:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>ping
+</pre></div>
+</div>
+<p>Multiple pings with 1-second interval:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>ping<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+<p>Ping the QGIS server service:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>ping<span class="w"> </span>--server
+</pre></div>
+</div>
+</section>
+<section id="healthcheck">
+<h3>healthcheck<a class="headerlink" href="#healthcheck" title="Link to this heading"></a></h3>
+<p>Check and monitor the health status of the gRPC server.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>healthcheck<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--watch</span></code>, <code class="docutils literal notranslate"><span class="pre">-w</span></code></p></td>
+<td><p>Watch mode: continuously monitor status changes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--set-error</span></code></p></td>
+<td><p>Exit with error code (1) if server is not serving</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Single health check:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>healthcheck
+</pre></div>
+</div>
+<p>Watch mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>healthcheck<span class="w"> </span>-w
+</pre></div>
+</div>
+<p>Exit with error if not healthy (useful for health checks in containers):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>healthcheck<span class="w"> </span>--set-error
+</pre></div>
+</div>
+</section>
+<section id="stats">
+<h3>stats<a class="headerlink" href="#stats" title="Link to this heading"></a></h3>
+<p>Display information about service processes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>stats<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--watch</span></code>, <code class="docutils literal notranslate"><span class="pre">-w</span></code></p></td>
+<td><p>Watch mode: continuously display stats</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--interval</span></code>, <code class="docutils literal notranslate"><span class="pre">-i</span> <span class="pre">SECONDS</span></code></p></td>
+<td><p>Interval between stats updates in watch mode (default: 1)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong></p>
+<p>Get current stats:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>stats
+</pre></div>
+</div>
+<p>Watch stats with 5-second interval:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>stats<span class="w"> </span>-w<span class="w"> </span>-i<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+</section>
+<section id="sleep">
+<h3>sleep<a class="headerlink" href="#sleep" title="Link to this heading"></a></h3>
+<p>Execute a cancelable request with a configurable delay. Useful for testing
+request cancellation behavior.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>sleep<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Options:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--delay</span></code>, <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">SECONDS</span></code></p></td>
+<td><p>Response delay in seconds (default: 3)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>sleep<span class="w"> </span>-d<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+<p>Press <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code> to cancel the request.</p>
+</section>
+<section id="reload">
+<h3>reload<a class="headerlink" href="#reload" title="Link to this heading"></a></h3>
+<p>Reload QGIS processes. This gracefully restarts the QGIS worker processes
+without interrupting the gRPC service.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>reload
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>reload
+</pre></div>
+</div>
+</section>
+</section>
+<section id="usage-examples">
+<h2>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading"></a></h2>
+<section id="checking-service-health">
+<h3>Checking Service Health<a class="headerlink" href="#checking-service-health" title="Link to this heading"></a></h3>
+<p>To verify a service is running correctly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if service is serving</span>
+qjazz-rpc-client<span class="w"> </span>healthcheck
+
+<span class="c1"># Watch for status changes</span>
+qjazz-rpc-client<span class="w"> </span>healthcheck<span class="w"> </span>-w
+
+<span class="c1"># Exit with error if not healthy (for container orchestrators)</span>
+qjazz-rpc-client<span class="w"> </span>healthcheck<span class="w"> </span>--set-error
+</pre></div>
+</div>
+</section>
+<section id="managing-projects">
+<h3>Managing Projects<a class="headerlink" href="#managing-projects" title="Link to this heading"></a></h3>
+<p>To manage QGIS projects in the cache:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List cached projects</span>
+qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>list
+
+<span class="c1"># Catalog available projects</span>
+qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>catalog
+
+<span class="c1"># Checkout and cache a project</span>
+qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>checkout<span class="w"> </span>/path/to/project.qgs<span class="w"> </span>--pull
+
+<span class="c1"># Get project info</span>
+qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>info<span class="w"> </span>/path/to/project.qgs
+
+<span class="c1"># Drop from cache when done</span>
+qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>drop<span class="w"> </span>/path/to/project.qgs
+</pre></div>
+</div>
+</section>
+<section id="sending-requests">
+<h3>Sending Requests<a class="headerlink" href="#sending-requests" title="Link to this heading"></a></h3>
+<p>To test QGIS requests directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get WMS capabilities</span>
+qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>ows<span class="w"> </span>/path/to/project.qgs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--service<span class="w"> </span>WMS<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--request<span class="w"> </span>GetCapabilities<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-o<span class="w"> </span>capabilities.xml
+
+<span class="c1"># Get a map image</span>
+qjazz-rpc-client<span class="w"> </span>request<span class="w"> </span>ows<span class="w"> </span>/path/to/project.qgs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--service<span class="w"> </span>WMS<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--request<span class="w"> </span>GetMap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">LAYERS</span><span class="o">=</span>my_layer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">BBOX</span><span class="o">=</span><span class="m">0</span>,0,100,100<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--param<span class="w"> </span><span class="nv">CRS</span><span class="o">=</span>EPSG:4326<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-o<span class="w"> </span>map.png
+</pre></div>
+</div>
+</section>
+<section id="service-configuration">
+<h3>Service Configuration<a class="headerlink" href="#service-configuration" title="Link to this heading"></a></h3>
+<p>To adjust service behavior:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># View current configuration</span>
+qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>get
+
+<span class="c1"># Quick log level change</span>
+qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>log<span class="w"> </span>debug
+
+<span class="c1"># Update full configuration</span>
+qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="s1">&#39;{&quot;logging&quot;: {&quot;level&quot;: &quot;debug&quot;}}&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="docker-container-usage">
+<h3>Docker/Container Usage<a class="headerlink" href="#docker-container-usage" title="Link to this heading"></a></h3>
+<p>Execute commands inside a running container:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic health check</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>healthcheck
+
+<span class="c1"># Change log level remotely</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span>log<span class="w"> </span>info
+
+<span class="c1"># List cached projects</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>list
+
+<span class="c1"># Watch stats</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>stats<span class="w"> </span>-w<span class="w"> </span>-i<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+<p>Accessing a remote service:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Connect to a remote gRPC server</span>
+<span class="nv">QGIS_GRPC_HOST</span><span class="o">=</span>remote-server:23456<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>healthcheck
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="server_config.html" class="btn btn-neutral float-left" title="HTTP frontend" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

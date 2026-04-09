@@ -14,28 +14,26 @@ directive of a proxy server.
 
 .. _server_routing:
 
-Routing OWS requests to Qgis pools
+Routing requests to Qgis pools
 ----------------------------------
 
 Each backend is configured with a :ref:`backend.\<id\> <server_config>` settings.
 
-Passing request for a particular backend is done with the route as leading path::
+.. code-block:: toml
 
-    [backend.pool1]
-    route = "/route_path"
+    [backends.pool1]
+    route = "/gis"
+    host = "qgis-rpc-pool1"
+    port = 23456
 
 
 .. note::
 
-    Project may be specified in several way:
+    Project may be specified in two ways:
 
     * Use `MAP` parameter::
 
-       https://test.com/route_path?MAP=/search_path/project_path&SERVICE=...
-
-    * Add project's search path to url path::
-        
-       https//test.com/route_path/search_path/#/project_path?SERVICE=...
+       https://test.com/gis?MAP=/search_path/project_path&SERVICE=...
 
     * Or specify the full project's search path  with the **X-Qgis-Project** header.
 

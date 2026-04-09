@@ -8,19 +8,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HTTP frontend &mdash; qjazz ${PIN_VERSION} documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=e556e3f7"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Advanced management" href="management.html" />
-    <link rel="prev" title="QGIS RPC services" href="rpc_config.html" /> 
+    <link rel="next" title="RPC client CLI Reference" href="rpc_cli.html" />
+    <link rel="prev" title="RPC Configuration" href="rpc_config.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,19 +45,18 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-setup">Quick setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#configuration-setup">Configuration setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">QGIS RPC services</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rpc_config.html#qgis-project-s-cache-overview">Qgis project’s cache overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start-with-docker">Quick Start with Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#qgis-rpc-services">QGIS RPC services</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html#configuration-system">Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">RPC Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">HTTP frontend</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#routing-ows-requests-to-qgis-pools">Routing OWS requests to Qgis pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#routing-requests-to-qgis-pools">Routing requests to Qgis pools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#api-endpoints">Api endpoints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#service-configuration">Service configuration</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="management.html">Advanced management</a></li>
-<li class="toctree-l1"><a class="reference internal" href="management.html#case-scenarios">Case scenarios</a></li>
-<li class="toctree-l1"><a class="reference internal" href="management-api.html">Managment API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_cli.html">RPC client CLI Reference</a></li>
 </ul>
 
         </div>
@@ -91,25 +90,21 @@ Qgis worker pool backends.</p>
 <p>Each backend is a gRPC client that will route incoming requests to the
 configured backend by defining a path root prefix similar to the <cite>root</cite>
 directive of a proxy server.</p>
-<section id="routing-ows-requests-to-qgis-pools">
-<span id="server-routing"></span><h2>Routing OWS requests to Qgis pools<a class="headerlink" href="#routing-ows-requests-to-qgis-pools" title="Link to this heading"></a></h2>
+<section id="routing-requests-to-qgis-pools">
+<span id="server-routing"></span><h2>Routing requests to Qgis pools<a class="headerlink" href="#routing-requests-to-qgis-pools" title="Link to this heading"></a></h2>
 <p>Each backend is configured with a <a class="reference internal" href="#server-config"><span class="std std-ref">backend.&lt;id&gt;</span></a> settings.</p>
-<p>Passing request for a particular backend is done with the route as leading path:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">backend</span><span class="o">.</span><span class="n">pool1</span><span class="p">]</span>
-<span class="n">route</span> <span class="o">=</span> <span class="s2">&quot;/route_path&quot;</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[backends.pool1]</span>
+<span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/gis&quot;</span>
+<span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qgis-rpc-pool1&quot;</span>
+<span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">23456</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Project may be specified in several way:</p>
+<p>Project may be specified in two ways:</p>
 <ul>
 <li><p>Use <cite>MAP</cite> parameter:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://test.com/route_path?MAP=/search_path/project_path&amp;SERVICE=...
-</pre></div>
-</div>
-</li>
-<li><p>Add project’s search path to url path:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="o">//</span><span class="n">test</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">route_path</span><span class="o">/</span><span class="n">search_path</span><span class="o">/</span><span class="c1">#/project_path?SERVICE=...</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://test.com/gis?MAP=/search_path/project_path&amp;SERVICE=...
 </pre></div>
 </div>
 </li>
@@ -192,6 +187,13 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="c1">#</span>
 <span class="c1"># Shutdown grace period</span>
 <span class="n">shutdown_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span>
+<span class="c1">#</span>
+<span class="c1"># Use forwarded connection infos request headers.</span>
+<span class="c1"># This is required if your service is behind a reverse-proxy</span>
+<span class="c1"># in order to ensure that the correct URL is used for links</span>
+<span class="c1"># sent to the client.</span>
+<span class="c1"># </span>
+<span class="n">check_forwarded_headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 
 <span class="k">[backends.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
 <span class="c1">#</span>
@@ -290,20 +292,19 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
 <span class="n">enable_html_delegate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 
 <span class="c1">#</span>
-<span class="c1"># Path to services configuration files</span>
+<span class="k">[backends.</span><span class="s1">&#39;key&#39;</span><span class="k">.admin]</span>
 <span class="c1">#</span>
-<span class="c1"># Path or globbing to services configuration files.</span>
-<span class="c1"># Note that this section is ignored if remote configuration</span>
-<span class="c1"># is used.</span>
+<span class="c1"># Enable admin config</span>
+<span class="c1">#</span>
+<span class="c1"># Enable projects api management, allow the client to control</span>
+<span class="c1"># the project&#39;s backend cache</span>
 <span class="c1"># </span>
+<span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 <span class="c1">#</span>
-<span class="c1"># Path to services configuration files</span>
-<span class="c1">#</span>
-<span class="c1"># Path or globbing to services configuration files.</span>
-<span class="c1"># Note that this section is ignored if remote configuration</span>
-<span class="c1"># is used.</span>
+<span class="c1"># Disclose sensitive informations like paths and</span>
+<span class="c1"># internal uris.</span>
 <span class="c1"># </span>
-<span class="c1">#includes =   	# Optional</span>
+<span class="n">disclosed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 </pre></div>
 </div>
 </section>
@@ -313,8 +314,8 @@ by separating the search path from the api path with a <cite>_</cite>:</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="rpc_config.html" class="btn btn-neutral float-left" title="QGIS RPC services" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="management.html" class="btn btn-neutral float-right" title="Advanced management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="rpc_config.html" class="btn btn-neutral float-left" title="RPC Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rpc_cli.html" class="btn btn-neutral float-right" title="RPC client CLI Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

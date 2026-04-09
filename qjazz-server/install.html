@@ -1,0 +1,578 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation and Principles &mdash; qjazz ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RPC Configuration" href="rpc_config.html" />
+    <link rel="prev" title="Description" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start-with-docker">Quick Start with Docker</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation and Principles</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#software-requirements">Software Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#process-pool-architecture">Process Pool architecture</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#qgis-rpc-services">QGIS RPC services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#life-cycle-and-pressure-conditions">Life cycle and pressure conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#process-timeout">Process timeout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#worker-pools">Worker Pools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fault-tolerance">Fault Tolerance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-options">Deployment Options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standalone-qgis-server">Standalone QGIS Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaled-deployment">Scaled Deployment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#with-qgis-plugins">With QGIS Plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#with-tls">With TLS</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#security-considerations">Security Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#configuration-system">Configuration System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#using-configuration-file">Using configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-environment-variables">Using environment variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#directory-structure">Directory Structure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#volumes">Volumes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-the-installation">Testing the Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_config.html">RPC Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server_config.html">HTTP frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpc_cli.html">RPC client CLI Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation and Principles</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation-and-principles">
+<span id="installation"></span><h1>Installation and Principles<a class="headerlink" href="#installation-and-principles" title="Link to this heading"></a></h1>
+<p>This documentation is intended for system administrators who will:</p>
+<ul class="simple">
+<li><p>Install and configure QJazz services</p></li>
+<li><p>Deploy QJazz in production environments</p></li>
+<li><p>Manage and monitor QJazz infrastructure</p></li>
+<li><p>Troubleshoot deployment issues</p></li>
+</ul>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<section id="hardware-requirements">
+<h3>Hardware Requirements<a class="headerlink" href="#hardware-requirements" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Requirement</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>CPU</p></td>
+<td><p>Multi-core recommended.</p></td>
+</tr>
+<tr class="row-odd"><td><p>RAM</p></td>
+<td><p>4 GB minimum</p></td>
+</tr>
+<tr class="row-even"><td><p>Disk</p></td>
+<td><p>Fast SSD for project storage and temp files</p></td>
+</tr>
+<tr class="row-odd"><td><p>Network</p></td>
+<td><p>1 Gbps for internal gRPC communication</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Numbers above are only indicatives. Usually the RAM needed will hihly depends
+of the nature of the QGIS projects loaded.</p>
+<p>You have to be aware that projects are NOT shared across workers since each worker
+is an independant QGIS process.</p>
+</div>
+</section>
+<section id="software-requirements">
+<h3>Software Requirements<a class="headerlink" href="#software-requirements" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>OS</p></th>
+<th class="head"><p>Linux</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Software</p></td>
+<td><p>QGIS 3.34+ (3.40+ recommended)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Docker</p></td>
+<td><p>20.10+ with docker compose v2</p></td>
+</tr>
+<tr class="row-even"><td><p>Python</p></td>
+<td><p>3.12+ (provided by Docker image)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>QJazz is primarily deployed using Docker. Direct installation on bare metal or VMs
+is possible but requires building from source. See <a class="reference internal" href="#source-installation"><span class="std std-ref">Testing the Installation</span></a> for details.</p>
+</div>
+</section>
+</section>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
+<p>QJazz is a QGIS server framework composed of multiple services that work together to provide
+scalable geospatial services. The architecture follows a microservices pattern with clear separation
+of concerns.</p>
+<section id="process-pool-architecture">
+<h3>Process Pool architecture<a class="headerlink" href="#process-pool-architecture" title="Link to this heading"></a></h3>
+<p>The RPC service uses a Rust-based process pool to manage Python worker
+subprocesses. This architecture provides:</p>
+<ul class="simple">
+<li><p><strong>Isolation</strong>: Each QGIS process runs in its own subprocess</p></li>
+<li><p><strong>Fault tolerance</strong>: Failed processes are automatically restarted</p></li>
+<li><p><strong>Resource control</strong>: Fine-grained control over process lifecycle</p></li>
+<li><p><strong>Fair scheduling</strong>: Incoming requests are distributed using a fair-queuing algorithm</p></li>
+</ul>
+<p>The following diagram shows the relationship between QJazz components:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────────────────┐
+│                      Client Applications                        │
+│  (Web browsers, GIS clients, API consumers)                     │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ HTTP/WMS/WFS/WCS/...
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    qjazz-map (HTTP Frontend)                    │
+│  • Route requests to backend pools                              │
+│  • Load balancing                                               │
+│  • CORS handling                                                │
+│  • TLS termination                                              │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ gRPC
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    qjazz-rpc (gRPC Service)                     │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                 qjazz-pool (Process Manager)              │  │
+│  │  • Spawn/manage QGIS worker processes                     │  │
+│  │  • Fair-queuing request distribution                      │  │
+│  │  • Failure detection and recovery                         │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │
+│  │ Worker  │  │ Worker  │  │ Worker  │  (Python + QGIS Server)  │
+│  │   1     │  │   2     │  │   N     │                          │
+│  │ ┌─────┐ │  │ ┌─────┐ │  │ ┌─────┐ │                          │
+│  │ │QGIS │ │  │ │QGIS │ │  │ │QGIS │ │                          │
+│  │ │Proc │ │  │ │Proc │ │  │ │Proc │ │                          │
+│  │ └─────┘ │  │ └─────┘ │  │ └─────┘ │                          │
+│  └─────────┘  └─────────┘  └─────────┘                          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Project Storage Backends                     │
+│  ┌─────────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐   │
+│  │  Local      │  │PostgreSQL │  │   S3      │  │  Custom   │   │
+│  │  Filesystem │  │           │  │   Storage │  │  (plugin) │   │
+│  └─────────────┘  └───────────┘  └───────────┘  └───────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="qgis-rpc-services">
+<span id="rpc-services"></span><h1>QGIS RPC services<a class="headerlink" href="#qgis-rpc-services" title="Link to this heading"></a></h1>
+<p>RPC services runs QGIS server processes and expose <a class="reference external" href="https://grpc.io/">gRPC</a> interfaces.
+for requesting and managing the QGIS processes.</p>
+<section id="life-cycle-and-pressure-conditions">
+<h2>Life cycle and pressure conditions<a class="headerlink" href="#life-cycle-and-pressure-conditions" title="Link to this heading"></a></h2>
+<p>If a process crashes, the worker is then in a <em>degraded</em>
+state that can be monitored.</p>
+<p>In <em>degraded state</em>, the RPC service will try to restore dead workers so as to keep
+the number of live QGIS processes constante.</p>
+<p>In some situation the number of dead processes exceed some limite will
+stop with an error code.</p>
+<p>There is one condition for a worker to deliberately exit
+with a error condition: the <em>process failure pressure</em>.</p>
+<p>The process failure pressure is the ratio of failed processes over the initial
+number of configured processes. If this ratio raise above some configured limit,
+then the service will exit with critical error condition.</p>
+<p>Workers are monitored for:</p>
+<ul class="simple">
+<li><p><strong>Process crashes</strong>: Automatically detected and restarted</p></li>
+<li><p><strong>Request timeouts</strong>: Configurable via <code class="docutils literal notranslate"><span class="pre">server.timeout</span></code> and <code class="docutils literal notranslate"><span class="pre">worker.cancel_timeout</span></code></p></li>
+<li><p><strong>Failure pressure</strong>: Ratio of failed processes vs configured processes</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the failure pressure exceeds the configured limit (<code class="docutils literal notranslate"><span class="pre">max_failure_pressure</span></code>),
+the service exits with a critical error. This prevents degraded services from
+continuing to serve requests.</p>
+</div>
+</section>
+<section id="process-timeout">
+<h2>Process timeout<a class="headerlink" href="#process-timeout" title="Link to this heading"></a></h2>
+<p>A process may be deliberately killed (and thus increase the pressure) on long
+running requests.</p>
+<p>If the response time exceed the request <cite>server.timeout</cite> then the process processing the request
+is considered as stalled and asked to abort gracefully the request.
+The grace timeout is controlled by the <cite>worker.cancel_timeout</cite>; if the process fail to abort
+the request then the process is killed, which will increase the failure
+pressure.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line">When a worker die, the service will try to maintain the initial number of workers.
+Nevertheless, if too many workers die in a short amount the pressure can increase
+too much and the worker will exit.</div>
+<div class="line">If this occurs, this is usually because there is something wrong with the treatment of
+the  qgis request that must be investigated.</div>
+<div class="line">On production, Monitoring workers lifecycle may be useful to detect such situations.</div>
+</div>
+</div>
+</section>
+<section id="worker-pools">
+<h2>Worker Pools<a class="headerlink" href="#worker-pools" title="Link to this heading"></a></h2>
+<p>Workers can be grouped into pools that share the same configuration and network
+address. In Docker environments, scaling containers automatically creates pools.</p>
+<p>For examples, scaling a docker container with a running rpc-server in a docker compose
+stack automatically create a <em>pool</em> of workers.</p>
+<p>That is, a pool is addressed by a gRPC client as a single endpoint. (i.e <cite>qgis-rpc</cite> like in
+the <a class="reference internal" href="intro.html#docker-compose-setup"><span class="std std-ref">Docker compose setup</span></a> example.</p>
+<p>Pool Characteristics:</p>
+<ul class="simple">
+<li><p><strong>Single endpoint</strong>: Addressed as one gRPC endpoint by clients</p></li>
+<li><p><strong>Shared configuration</strong>: All workers in a pool have identical settings</p></li>
+<li><p><strong>Automatic scaling</strong>: Docker <code class="docutils literal notranslate"><span class="pre">--scale</span></code> creates additional workers</p></li>
+<li><p><strong>Load balancing</strong>: Requests distributed via round-robin</p></li>
+</ul>
+<p>You may increase or decrease the number of processes but another strategy is to
+scale the number of worker services while keeping the number of sub-processes relatively
+small.</p>
+<p>Depending of the situation it may be better to choose one or another strategy.</p>
+</section>
+<section id="fault-tolerance">
+<h2>Fault Tolerance<a class="headerlink" href="#fault-tolerance" title="Link to this heading"></a></h2>
+<p>The system implements several fault tolerance mechanisms:</p>
+<ol class="arabic simple">
+<li><p><strong>Process supervision</strong>: Dead processes are automatically restarted</p></li>
+<li><p><strong>Graceful degradation</strong>: Services continue with reduced capacity under failure pressure</p></li>
+<li><p><strong>Health checks</strong>: Built-in gRPC health checking protocol</p></li>
+<li><p><strong>Cache restoration</strong>: Pinned projects are restored on worker restart</p></li>
+</ol>
+</section>
+<section id="deployment-options">
+<h2>Deployment Options<a class="headerlink" href="#deployment-options" title="Link to this heading"></a></h2>
+<section id="standalone-qgis-server">
+<h3>Standalone QGIS Server<a class="headerlink" href="#standalone-qgis-server" title="Link to this heading"></a></h3>
+<p>Deploy only the RPC service for direct gRPC access:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">qgis-rpc</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-3.40</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gis-worker</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">{ &quot;/&quot;: &quot;/qgis-projects&quot; }</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./projects:/qgis-projects:ro</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+<section id="scaled-deployment">
+<h3>Scaled Deployment<a class="headerlink" href="#scaled-deployment" title="Link to this heading"></a></h3>
+<p>Scale workers horizontally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--scale<span class="w"> </span>qgis-rpc<span class="o">=</span><span class="m">4</span>
+</pre></div>
+</div>
+<p>The HTTP frontend automatically detects and uses all workers.</p>
+</section>
+<section id="with-qgis-plugins">
+<h3>With QGIS Plugins<a class="headerlink" href="#with-qgis-plugins" title="Link to this heading"></a></h3>
+<p>Mount plugin directories:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">qgis-rpc</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr-eager</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">worker</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PLUGINS__PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">&quot;/plugins&quot;</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./projects:/qgis-projects:ro</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./plugins:/plugins:ro</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+<section id="with-tls">
+<h3>With TLS<a class="headerlink" href="#with-tls" title="Link to this heading"></a></h3>
+<p>Enable TLS on both frontend and RPC services:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">qgis-rpc</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr-eager</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_GRPC_USE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;yes&quot;</span>
+<span class="w">      </span><span class="nt">CONF_GRPC_TLS_KEYFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/rpc.key</span>
+<span class="w">      </span><span class="nt">CONF_GRPC_TLS_CERTFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/rpc.crt</span>
+<span class="w">      </span><span class="nt">CONF_GRPC_TLS_CAFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/ca.crt</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./certs:/certs:ro</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+
+<span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr-eager</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CONF_SERVER__ENABLE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;yes&quot;</span>
+<span class="w">      </span><span class="nt">CONF_SERVER__TLS_KEY_FILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/web.key</span>
+<span class="w">      </span><span class="nt">CONF_SERVER__TLS_CERT_FILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/web.crt</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./certs:/certs:ro</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;443:9080&quot;</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-map&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="security-considerations">
+<h2>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Key security settings administrators should be aware of:</p>
+</div>
+<ul class="simple">
+<li><p><strong>enable_python_embedded</strong>: Disabled by default (<code class="docutils literal notranslate"><span class="pre">false</span></code>). Enables Python macros in projects.</p></li>
+<li><p><strong>allow_direct_path_resolution</strong>: Disabled by default. Allows raw filesystem paths in requests.</p></li>
+<li><p><strong>enable_tls</strong>: Should be enabled in production environments.</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration-system">
+<h1>Configuration System<a class="headerlink" href="#configuration-system" title="Link to this heading"></a></h1>
+<p>QJazz uses a layered configuration system:</p>
+<ol class="arabic simple">
+<li><p><strong>Configuration file</strong>: TOML format by default (JSON/YAML also supported)</p></li>
+<li><p><strong>Environment variables</strong>: Override file settings with <code class="docutils literal notranslate"><span class="pre">CONF_</span></code> prefix</p></li>
+<li><p><strong>Remote configuration</strong>: Fetch from URL at startup (Docker only)</p></li>
+</ol>
+<p>Configuration precedence (highest to lowest):</p>
+<ol class="arabic simple">
+<li><p>Command-line arguments</p></li>
+<li><p>Environment variables</p></li>
+<li><p>Configuration file</p></li>
+<li><p>Default values</p></li>
+</ol>
+<p>When reading configuration from file, the format is TOML
+by default.</p>
+<p>See <a class="reference internal" href="rpc_config.html#rpc-configuration"><span class="std std-ref">RPC Configuration</span></a> for the full
+RPC service configuration schema and <a class="reference internal" href="server_config.html#server-config"><span class="std std-ref">Service configuration</span></a> for the frontend proxy.</p>
+<section id="using-configuration-file">
+<h2>Using configuration file<a class="headerlink" href="#using-configuration-file" title="Link to this heading"></a></h2>
+<p>You may specify a configuration file with the <cite>–conf</cite> or <cite>-C</cite> option:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc<span class="w"> </span>serve<span class="w"> </span>-C<span class="w"> </span>path/to/config/file.toml
+</pre></div>
+</div>
+</section>
+<section id="using-environment-variables">
+<h2>Using environment variables<a class="headerlink" href="#using-environment-variables" title="Link to this heading"></a></h2>
+<p>Configuration defaults may by overridden by environment variables.</p>
+<p>This is useful for playing nicely with docker-compose with small
+configuration settings.</p>
+<p>Configuration structure may be composed of simple values but also of more nested
+complex type.</p>
+<p>All configuration variables will start with the prefix <cite>CONF_</cite> followed by the field
+name (or toml section). Nested fields are separated by ‘__’ and so on.</p>
+<p>If the nested type is too complex, the environment variable may contains the Json
+representation of the field.</p>
+<p>Examples:</p>
+<p>Environment variables:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CONF_LOGGING__LEVEL=trace
+CONF_WORKER__NAME=worker
+CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS=&#39;{ &quot;/&quot;: &quot;/qgis-projects/france_parts&quot; }&#39;
+</pre></div>
+</div>
+<p>Which gives the toml equivalent:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[loggin]</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span>
+
+<span class="k">[worker]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;worker&quot;</span>
+
+<span class="k">[worker.projects.search_paths]</span>
+<span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-projects/france_parts&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="directory-structure">
+<h2>Directory Structure<a class="headerlink" href="#directory-structure" title="Link to this heading"></a></h2>
+<p>Typical deployment layout:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>deployment/
+├── docker-compose.yml
+├── config/
+│   ├── rpc.toml
+│   └── server.toml
+├── projects/
+│   ├── public/
+│   │   └── project.qgs
+│   └── restricted/
+├── plugins/
+│   └── my_plugin/
+└── certs/
+    ├── server.key
+    └── server.crt
+</pre></div>
+</div>
+<section id="volumes">
+<h3>Volumes<a class="headerlink" href="#volumes" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Volume</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">/qgis-projects</span></code></p></td>
+<td><p>QGIS project files (read-only recommended)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">/qgis-plugins</span></code></p></td>
+<td><p>QGIS plugin directories</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="testing-the-installation">
+<span id="source-installation"></span><h2>Testing the Installation<a class="headerlink" href="#testing-the-installation" title="Link to this heading"></a></h2>
+<p>After deployment, verify the installation:</p>
+<ol class="arabic">
+<li><p><strong>Health Check</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>healthcheck
+</pre></div>
+</div>
+</li>
+<li><p><strong>List Cached Projects</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>qgis-rpc<span class="w"> </span>qjazz-rpc-client<span class="w"> </span>cache<span class="w"> </span>catalog
+</pre></div>
+</div>
+</li>
+<li><p><strong>Test WMS Request</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span><span class="s2">&quot;http://localhost:9080/?MAP=/public/project.qgs&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>View Logs</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>qgis-rpc
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-left" title="Description" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rpc_config.html" class="btn btn-neutral float-right" title="RPC Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

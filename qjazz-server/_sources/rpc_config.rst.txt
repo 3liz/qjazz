@@ -1,89 +1,12 @@
-
-.. _rpc_services:
-
-QGIS RPC services
-=================
-
-RPC services runs QGIS server processes and expose `gRPC <https://grpc.io/>`_ interfaces.
-for requesting and managing the QGIS processes.
-
-Workers may be grouped by *pools* that share the exact same configuration and network
-address.
-
-For examples, scaling a docker container with a running rpc-server in a docker compose
-stack automatically create a *pool* of workers.
-
-That is, a pool is addressed by a gRPC client as a single endpoint. (i.e `qgis-rpc` like in
-the :ref:`Docker compose setup <docker_compose_setup>` example.
-
-QGIS processes
---------------
-
-A worker may run a configurable number of QGIS processes.  Incoming QGIS requests
-to the gRPC service are distributed with a fair-queuing dispatching algorithm to 
-the child QGIS server processes.
-
-You may increase or decrease the number of processes but another strategy is to 
-scale the number of worker services while keeping the number of sub-processes relatively
-small. 
-
-Depending of the situation it may be better to choose one or another strategy.
-
-Life cycle and pressure conditions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If a processes crash, the worker is then in a *degraded* 
-state that can be monitored. 
-
-In *degraded state*, the RPC service will try to restore dead workers so as to keep
-the number of live QGIS processes constante.
-
-In some situation the number of dead process exceed some limite will
-stop with an error code.
-
-There is one condition for a worker to deliberately exit
-with a error condition: the *process failure pressure*.
-
-The process failure pressure is the ratio of failed processes over the initial
-number of configured processes. If this ratio raise above some configured limit,
-then the service will exit with critical error condition.
-
-
-Process timeout
-^^^^^^^^^^^^^^^
-
-A process may be deliberately killed (and thus increase the pressure) on long
-running requests.
-
-If the response time exceed the request `server.timeout` then the process processing the request
-is considered as stalled and asked to abort gracefully the request. 
-The grace timeout is controlled by the `worker.cancel_timeout`; if the process fail to abort
-the request then process is killed, which will increase the failure 
-pressure. 
-
-.. note::
-   | When a worker die, the service will try to maintain the initial number of workers.
-     Nevertheless, if too many workers die in a short amount the pressure can increase
-     too much and the worker will exit.
-   | If this occurs, this is usually because there is something wrong with the treatment of 
-     the  qgis request that must be investigated.
-   | On production, Monitoring workers lifecycle may be useful to detect such situations.
-
-
 .. _rpc_configuration:
 
-Configuration
--------------
-
-When reading configuration from file, the format is TOML
-by default. 
-
-Check the :download:`configuration json schema <specs/rpc-config.json>`.
+RPC Configuration
+=================
 
 .. _rpc_configuration_toml:
 
 TOML configuration
-^^^^^^^^^^^^^^^^^^
+------------------
 
 
 .. literalinclude:: configs/rpc.toml
@@ -91,7 +14,7 @@ TOML configuration
 
 
 Dynamic configuration setup
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 This is only available if you are running the service through the official docker image.
 
@@ -101,7 +24,7 @@ a configuration in *JSon* format.
 The executable is controlled by the `QJAZZ_CONFIG_EXEC` variable.
 
 The default settings allow you to define a remote URL for downloading the configuration at startup.
-See the `basic-with-config-server` example for an example of remote configuration setup. 
+Se the `basic-with-config-server` example for an example of remote configuration setup. 
 
 .. note::
    | You may define your own config setup by inheriting from the official Docker image
@@ -109,10 +32,27 @@ See the `basic-with-config-server` example for an example of remote configuratio
    | This may be useful if your are using alternate storage for your configuration settings.
 
 
+
+Check the :download:`configuration json schema <specs/rpc-config.json>`.
+
+
+Hot Configuration
+-----------------
+
+Configuration can be updated at runtime using the :ref:`rpc_cli`:
+
+.. code-block:: bash
+
+    qjazz-rpc-client config set '{"logging": {"level": "debug"}}'
+    qjazz-rpc-client  config log info
+
+
+
+   
 .. _rpc_cache_overview:
 
 Qgis project's cache overview
-=============================
+-----------------------------
 
 Each processes manage its own cache. This is due to a limitation in Qgis that
 prevent sharing resources between different processes and the fact that Qgis server
@@ -122,15 +62,25 @@ The cache in Qgis services do not use the default internal cache of Qgis server 
 its own caching system based on `QgsProjectStorage` objects. This ensure that any
 storage backends implemented or added in Qgis with plugins is supported.
 
-Project's access is *uniform*: the cache configuration define search paths which are indirection
-to the corresponding backends:
+It supports various storage backends including:
+
+- Local filesystem
+- PostgreSQL (via ``postgres://`` scheme)
+- S3 object storage
+- Custom backends via plugins
+
+Cache Search Paths
+^^^^^^^^^^^^^^^^^^
+
+Project's access is *uniform*: Projects are accessed through configured search paths
+that act as  indirection to storage backends:
 
 .. code-block:: toml
 
-   [worker.projects.search_paths]
-   '/a_path' = "/path/to/projects/"                  # Path to files volume
-   '/another/path' = "file:///other/projects/"       # With explicit scheme
-   '/path/to/postgres' = "postgres://?service=name"  # projects stored in postgres
+    [worker.qgis.projects.search_paths]
+    '/public' = "/path/to/projects/"                        # Path to files volume
+    '/db' = "postgres://?service=myproject&schema=public"   # Projects stored in postgres
+    '/s3' = "s3://mybucket/projects/"                       # S3 storage
 
 Any following subpath to a search path is considered as the relative project's path
 or the projects name user for url resolution::
@@ -148,7 +98,7 @@ project's path or name::
 
 
 Dynamic paths
--------------
+^^^^^^^^^^^^^
 
 Dynamic paths allows to define templated path stems that will by be substituted in the
 final path resolution::
@@ -167,7 +117,7 @@ and ``/alice/forests/coolmap.qgs`` will be resolved to::
 
 
 Managing cache
----------------
+^^^^^^^^^^^^^^
 
 .. highlight:: sh
 
@@ -185,7 +135,7 @@ Managing cache
 
 Cache can be managed with the :ref:`service cli command <managing_rpc_services>`::
 
-    Usage: qjazz-server-cli cache [OPTIONS] COMMAND [ARGS]...
+    Usage: qjazz-rpc-client cache [OPTIONS] COMMAND [ARGS]...
 
       Commands for cache management
 
@@ -204,7 +154,7 @@ Cache can be managed with the :ref:`service cli command <managing_rpc_services>`
 .. highlight:: txt
 
 Project checkout
-----------------
+^^^^^^^^^^^^^^^^
 
 Whenever a project is checked out from cache, a cache status is returned
 
@@ -243,7 +193,7 @@ You may *pull* the project to make it change state depending on its initial stat
 .. _rpc_cache_restoration:
 
 Cache restoration
------------------
+^^^^^^^^^^^^^^^^^
 
 Projects loaded with the cache management api are `pinned` in the cache: they cannot leave the cache
 except if removed explicitly.
@@ -275,13 +225,6 @@ it use the `CONF_WORKER__RESTORE_PROJECTS`).
     | Using a dynamic cache restoration could be useful when synchronizing cache from a pool
       of RPC services: if you keep a live version of the cache configuration accessible from 
       a remote location then all rpc services of your pool will by synchronized at startup.
-
-
-
-
-
-
-
 
 
 
