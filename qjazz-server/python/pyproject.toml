@@ -9,6 +9,7 @@ authors = [
     { name = "David Marteau", email = "dmarteau@3liz.org" },
 ]
 requires-python = ">= 3.12"
+licence = "Apache-2.0 OR MIT"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "License :: OSI Approved :: Apache Software License",

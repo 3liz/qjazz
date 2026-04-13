@@ -6,6 +6,7 @@ build-backend = "uv_build"
 name = "qjazz-contrib"
 description = "QJazz contrib utilities"
 requires-python = ">= 3.12"
+licence = "Apache-2.0 OR MIT"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
