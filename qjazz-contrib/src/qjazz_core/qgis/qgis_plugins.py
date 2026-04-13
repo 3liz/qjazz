@@ -315,7 +315,7 @@ def find_plugins(
             continue
 
         if not checkQgisVersion(min_ver, max_ver):
-            logger.warning(f"Unsupported version for plugin '{plugin}'. Discarding")
+            logger.warning(f"Unsupported QGIS version for plugin '{plugin}'. Discarding")
             continue
 
         yield plugin.name, cp
@@ -329,9 +329,6 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
         major = int(major)
         minor = int(ver[0]) if len(ver) > 0 else 0
         rev = int(ver[1]) if len(ver) > 1 else 0
-        if minor >= 99:
-            minor = rev = 0
-            major += 1
         if rev > 99:
             rev = 99
         return int(f"{major:d}{minor:02d}{rev:02d}")

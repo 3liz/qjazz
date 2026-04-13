@@ -8,60 +8,12 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "qjazz",
     "qjazz-contrib",
+    "qjazz-map",
     "qjazz-processes",
     "qjazz-rpc",
 ]
-
-[manifest.dependency-groups]
-dev = [
-    { name = "bandit" },
-    { name = "coverage" },
-    { name = "coverage", extras = ["toml"] },
-    { name = "grpcio-tools" },
-    { name = "maturin", specifier = "<=2.0.0" },
-    { name = "mypy" },
-    { name = "mypy-extensions" },
-    { name = "pytest", specifier = ">=5.3" },
-    { name = "pytest-aiohttp" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-httpserver" },
-    { name = "qgis-plugin-manager" },
-    { name = "ruff" },
-    { name = "setuptools" },
-    { name = "types-aiofiles" },
-    { name = "types-protobuf" },
-    { name = "types-psutil" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-    { name = "vulture" },
-]
-doc = [
-    { name = "sphinx" },
-    { name = "sphinx-rtd-theme" },
-    { name = "sphinxcontrib-httpdomain" },
-    { name = "swagger-plugin-for-sphinx" },
-]
-lint = [
-    { name = "bandit" },
-    { name = "mypy" },
-    { name = "mypy-extensions" },
-    { name = "ruff" },
-    { name = "types-aiofiles" },
-    { name = "types-protobuf" },
-    { name = "types-psutil" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-    { name = "vulture" },
-]
-tests = [
-    { name = "coverage" },
-    { name = "pytest", specifier = ">=5.3" },
-    { name = "pytest-aiohttp" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-httpserver" },
-]
-tools = [{ name = "ipython" }]
 
 [[package]]
 name = "aiofiles"
@@ -1670,15 +1622,15 @@ wheels = [
 
 [[package]]
 name = "pydantic-extra-types"
-version = "2.11.2"
+version = "2.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/d3/3be31542180c0300b6860129ff1e3a428f3ef580727616ce22462626129b/pydantic_extra_types-2.11.2.tar.gz", hash = "sha256:3a2b83b61fe920925688e7838b59caa90a45637d1dbba2b1364b8d1f7ff72a0a", size = 203929, upload-time = "2026-04-05T20:50:51.556Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/71/dba38ee2651f84f7842206adbd2233d8bbdb59fb85e9fa14232486a8c471/pydantic_extra_types-2.11.1.tar.gz", hash = "sha256:46792d2307383859e923d8fcefa82108b1a141f8a9c0198982b3832ab5ef1049", size = 172002, upload-time = "2026-03-16T08:08:03.92Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/a4/7b6ab05c18d6c6e682382a0f0235301684452c4131a869f45961d1d032c9/pydantic_extra_types-2.11.2-py3-none-any.whl", hash = "sha256:683b8943252543e49760f89733b1519bc62f31d1a287ebbdc5a7b7959fb4acfd", size = 82851, upload-time = "2026-04-05T20:50:50.036Z" },
+    { url = "https://files.pythonhosted.org/packages/17/c1/3226e6d7f5a4f736f38ac11a6fbb262d701889802595cdb0f53a885ac2e0/pydantic_extra_types-2.11.1-py3-none-any.whl", hash = "sha256:1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1", size = 79526, upload-time = "2026-03-16T08:08:02.533Z" },
 ]
 
 [[package]]
@@ -1836,6 +1788,126 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/30/5b1a619941bb458d1d3768377254d5d9e9965405daa2bd75f4317eae86f0/qgis_plugin_manager-1.7.5.tar.gz", hash = "sha256:aff9ac74d05ac96d5a5f28de44c3fa658df44ac033c8c74b8d3fb8d52a2d7774", size = 35066, upload-time = "2026-01-19T14:29:19.806Z" }
 
 [[package]]
+name = "qjazz"
+version = "0.7.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "qjazz-map" },
+    { name = "qjazz-processes" },
+    { name = "qjazz-rpc" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "coverage" },
+    { name = "grpcio-tools" },
+    { name = "maturin" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "packaging" },
+    { name = "pytest" },
+    { name = "pytest-aiohttp" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-httpserver" },
+    { name = "qgis-plugin-manager" },
+    { name = "ruff" },
+    { name = "setuptools" },
+    { name = "types-aiofiles" },
+    { name = "types-protobuf" },
+    { name = "types-psutil" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "vulture" },
+]
+doc = [
+    { name = "sphinx" },
+    { name = "sphinx-rtd-theme" },
+    { name = "sphinxcontrib-httpdomain" },
+    { name = "swagger-plugin-for-sphinx" },
+]
+lint = [
+    { name = "bandit" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "ruff" },
+    { name = "types-aiofiles" },
+    { name = "types-protobuf" },
+    { name = "types-psutil" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "vulture" },
+]
+tests = [
+    { name = "coverage" },
+    { name = "pytest" },
+    { name = "pytest-aiohttp" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-httpserver" },
+]
+tools = [
+    { name = "ipython" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "qjazz-map", editable = "qjazz-server/qjazz-map" },
+    { name = "qjazz-processes", editable = "qjazz-processes" },
+    { name = "qjazz-rpc", editable = "qjazz-server/qjazz-rpc" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "bandit" },
+    { name = "coverage" },
+    { name = "coverage", extras = ["toml"] },
+    { name = "grpcio-tools" },
+    { name = "maturin", specifier = "<=2.0.0" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "packaging", specifier = ">=24.2" },
+    { name = "pytest" },
+    { name = "pytest-aiohttp" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-httpserver" },
+    { name = "qgis-plugin-manager" },
+    { name = "ruff" },
+    { name = "setuptools" },
+    { name = "types-aiofiles" },
+    { name = "types-protobuf" },
+    { name = "types-psutil" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "vulture" },
+]
+doc = [
+    { name = "sphinx" },
+    { name = "sphinx-rtd-theme" },
+    { name = "sphinxcontrib-httpdomain" },
+    { name = "swagger-plugin-for-sphinx" },
+]
+lint = [
+    { name = "bandit" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "ruff" },
+    { name = "types-aiofiles" },
+    { name = "types-protobuf" },
+    { name = "types-psutil" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "vulture" },
+]
+tests = [
+    { name = "coverage" },
+    { name = "pytest" },
+    { name = "pytest-aiohttp" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-httpserver" },
+]
+tools = [{ name = "ipython" }]
+
+[[package]]
 name = "qjazz-contrib"
 version = "0.7.0"
 source = { editable = "qjazz-contrib" }
@@ -1866,6 +1938,10 @@ requires-dist = [
     { name = "typing-extensions" },
 ]
 provides-extras = ["celery", "store"]
+
+[[package]]
+name = "qjazz-map"
+source = { editable = "qjazz-server/qjazz-map" }
 
 [[package]]
 name = "qjazz-processes"
@@ -1903,8 +1979,7 @@ provides-extras = ["server", "mail"]
 
 [[package]]
 name = "qjazz-rpc"
-version = "0.7.0"
-source = { editable = "qjazz-server/python" }
+source = { editable = "qjazz-server/qjazz-rpc" }
 dependencies = [
     { name = "aiohttp" },
     { name = "click" },

@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 * Add healthcheck in docker images
 * Improve error handling
 * Remove qjazz-admin managment module
-    - Unnecssary code complexity
+    - Unnecessary code complexity
     - Cache managment API implemented in map proxy server
     - CLI managment tools.
 

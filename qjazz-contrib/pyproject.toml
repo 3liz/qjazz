@@ -5,8 +5,9 @@ build-backend = "uv_build"
 [project]
 name = "qjazz-contrib"
 description = "QJazz contrib utilities"
+version = "0.7.0"
 requires-python = ">= 3.12"
-licence = "Apache-2.0 OR MIT"
+license = "Apache-2.0 OR MIT"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
@@ -19,7 +20,6 @@ dependencies = [
   'typing-extensions',
   'posix_ipc',
 ]
-version = "0.7.0"
 
 [project.optional-dependencies]
 celery = [ "celery>=5.4", "redis>=5.0.8" ]

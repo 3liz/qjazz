@@ -1,3 +1,4 @@
+
 #
 # Define uv workspace and dependency groups
 [dependency-groups]
@@ -6,12 +7,13 @@ dev = [
     "maturin<=2.0.0",
     "grpcio-tools",
     "qgis-plugin-manager",
-    "setuptools", # Needed for building C extension
+    "setuptools",      # Needed for building C extension
+    "packaging>=24.2", # Needed by setuptools
     {include-group = "tests"},
     {include-group = "lint"},
 ]
 tests = [
-    "pytest >= 5.3",
+    "pytest",
     "pytest-asyncio",
     "pytest-aiohttp",
     "pytest-httpserver",
@@ -43,7 +45,9 @@ tools = [
 members = [
     "qjazz-contrib",
     "qjazz-processes",
-    "qjazz-server/python",
+    "qjazz-server/qjazz-rpc",
+    "qjazz-server/qjazz-map",
+    "qjazz-metapackage",
 ]
 
 

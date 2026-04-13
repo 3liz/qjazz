@@ -20,17 +20,17 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
 # Install qjazz in virtualenv
 RUN --mount=type=bind,target=/src,rw \
     --mount=type=cache,target=/.python-cache \
-    export UV_LINK_MODE=copy \
+    export UV_PROJECT_ENVIRONMENT=/opt/local/qjazz UV_LINK_MODE=copy \
     && uv venv --system-site-packages /opt/local/qjazz \
-    && uv pip install --python=/opt/local/qjazz/bin/python --compile-bytecode \
-        --cache-dir=/.python-cache -r /src/requirements.txt \
-    && uv pip install --python=/opt/local/qjazz/bin/python \
-        --cache-dir=/.python-cache --no-deps --compile-bytecode \
-        /src/qjazz-contrib \
-        /src/qjazz-processes \
-        /src/qjazz-server/python \
-    && uv pip install --python=/opt/local/qjazz/bin/python \
-        --cache-dir=/.python-cache --compile-bytecode \
+    && export UV_PYTHON=$UV_PROJECT_ENVIRONMENT/bin/python \
+    && uv pip install --compile-bytecode --cache-dir=/.python-cache \
+        -r /src/requirements.txt \
+    && uv pip install --no-deps --cache-dir=/.python-cache --compile-bytecode \
+        `ls -1 /src/dist/qjazz_contrib-*.whl` \
+        `ls -1 /src/dist/qjazz_map-*.whl` \
+        `ls -1 /src/dist/qjazz_rpc-*.whl` \
+        `ls -1 /src/dist/qjazz_processes-*.whl` \
+    && uv pip install --no-deps --cache-dir=/.python-cache --compile-bytecode \
         qgis-plugin-manager
 
 
@@ -43,6 +43,7 @@ RUN --mount=type=bind,target=/src,rw \
         uv pip install --extra-index-url=https://packages.3liz.org/pub/whl/ \
         --python=/opt/local/qjazz/bin/python \
         --cache-dir=/.python-cache --compile-bytecode \
+        --link-mode=copy \
         qjazz-lizcloud; \
     fi
 
@@ -69,6 +70,8 @@ RUN apt-get update -y \
 COPY --from=build /opt/local/qjazz /opt/local/qjazz
 
 RUN cd /usr/local/bin \
+    && ln -s /opt/local/qjazz/bin/qjazz-rpc-bin \
+    && ln -s /opt/local/qjazz/bin/qjazz-map-bin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     && ln -s /opt/local/qjazz/bin/qjazz-processing \
     && ln -s /opt/local/qjazz/bin/qgis-plugin-manager \
@@ -79,11 +82,6 @@ RUN chmod 0755 /usr/local/bin/qgis-docker-entrypoint.sh \
     && mkdir -p /home/qgis && chmod 777 /home/qgis \
     && mkdir -p /var/qjazz && chmod 777 /var/qjazz \
     && mkdir -p /etc/qjazz && chmod 755 /etc/qjazz 
-
-# Install binaries
-COPY qjazz-server/target/release/qjazz-rpc-bin \
-     qjazz-server/target/release/qjazz-map-bin \
-    /usr/local/bin/
 
 # Set path to the python executable
 ENV PYTHON_EXEC=/opt/local/qjazz/bin/python
@@ -141,9 +139,8 @@ RUN cd /usr/local/bin \
     && ln -s /opt/local/qjazz/bin/qjazz-processes \
     ${NULL}
 
-# Install binaries
-COPY qjazz-server/target/release/qjazz-map-bin /usr/local/bin/
-
+RUN cd /usr/local/bin && ln -s /opt/local/qjazz/bin/qjazz-map-bin 
+ 
 RUN mkdir -p /etc/qjazz && chmod 755 /etc/qjazz
 
 COPY docker/scripts/ /usr/local/bin/
@@ -168,13 +165,10 @@ FROM  ${REGISTRY_PREFIX}factory-ci-runner:qgis-${QGIS_FLAVOR} AS ci
 
 # Install the dev environment
 RUN --mount=type=bind,target=/src,rw \
-    cd src && uv sync --all-extras --frozen --active \
-        --inexact \
-        --no-cache \
-        --link-mode=copy \
-        --no-editable \
-        --compile-bytecode
-
+    uv pip install --compile-bytecode --no-cache \
+        -r /src/requirements.txt \
+        -r /src/requirements/dev.txt 
+ 
 # Does not exists but could prevent errors
 ENV QJAZZ_HOME=/python_modules
 ENV PATH=/opt/local/qjazz/bin:$PATH

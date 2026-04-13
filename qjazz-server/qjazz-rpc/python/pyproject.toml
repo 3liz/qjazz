@@ -1,0 +1,49 @@
+#
+# Used only for installing in dev mod and running tests
+# without trigger maturin rust build 
+# 
+[build-system]
+requires = ["uv_build>=0.9.2,<1.0.0"]
+build-backend = "uv_build"
+
+[project]
+name = "qjazz_rpc"
+requires-python = ">= 3.12"
+version = "0.0.0"
+
+[tool.uv.build-backend]
+module-name = [ "qjazz_rpc" ]
+module-root = ""
+
+#
+# Ruff
+#
+
+[tool.ruff]
+extend = "../../../config/ruff.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201", "S101"]
+
+[tool.vulture]
+exclude = ["_grpc/"]
+
+#
+# Coverage
+#
+[tool.coverage.run]
+source =  [
+    "qjazz_rpc",
+]
+branch = true
+relative_files = true
+omit = ["*_pb2.py", "*_pb2_grpc.py"]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "if TYPE_CHECKING",
+    '\(Protocol\):$',
+    'assert_never',
+    'case _ as unreachable',
+]

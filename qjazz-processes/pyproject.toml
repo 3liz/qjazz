@@ -5,6 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "qjazz-processes"
 description = "QJazz OGC processes "
+version = "0.7.0"
 requires-python = ">= 3.12"
 licence = "Apache-2.0 OR MIT"
 classifiers = [
@@ -12,14 +13,13 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 dependencies = [
-    "qjazz-contrib[celery, store]==0.7.0",
+    "qjazz-contrib[celery, store]>=0.7.0,<0.8",
     "pydantic-extra-types",
     "click",
     "requests",
     "aiofiles",
     "ruamel.yaml",
 ]
-version = "0.7.0"
 
 [project.optional-dependencies]
 server = ["aiohttp"]

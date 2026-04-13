@@ -4,20 +4,13 @@ DEPTH=../..
 include $(DEPTH)/config/config.mk
 
 DIRS= \
-	src \
+	python \
 	$(NULL)
 
 #
-# Python
+# Wheel
 #
-#
-INSTALL_DEPENDENCIES=[minio]
-
-PYTHON_PKG=src
-
-TESTDIR=tests
-
 dist::
-	uv build --sdist --out-dir=$(DIST)
+	maturin build --release --strip --out=$(DIST)
 
 include $(topsrcdir)/config/rules.mk

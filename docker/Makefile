@@ -5,6 +5,8 @@ DEPTH=..
 
 include $(DEPTH)/config/config.mk
 
+VERSION=$(shell uv version --short --directory $(DEPTH)/qjazz-metapackage)
+
 ifndef BUILD_RELEASE
 QJAZZ_DEV_TAG=-dev0
 endif
@@ -36,7 +38,7 @@ main:
 
 build-all: build noqgis-build tag noqgis-tag
 
-build: manifest
+build:: manifest
 	$(MAKE) -C ../qjazz-contrib/  manifest
 	{ \
 	source $(MANIFEST); \
@@ -166,3 +168,4 @@ build-ci:
 deliver-ci: 
 	docker push $(CI_IMAGE) 
 
+include $(topsrcdir)/config/rules.mk

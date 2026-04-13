@@ -3,8 +3,6 @@ DEPTH=..
 
 include $(DEPTH)/config/config.mk
 
-INSTALL_DEPENDENCIES=[celery]
-
 PYTHON_PKG=src
 
 TESTDIR=tests
@@ -13,7 +11,7 @@ TESTDIR=tests
 TEST_OPTS=-m "not minio"
 
 dist::
-	uv build --sdist --out-dir=$(DIST)
+	uv build --wheel --out-dir=$(DIST)
 
 include $(topsrcdir)/config/rules.mk
 

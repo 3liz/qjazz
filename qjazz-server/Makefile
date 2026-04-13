@@ -4,7 +4,8 @@ DEPTH=..
 include $(DEPTH)/config/config.mk
 
 DIRS= \
-	python \
+	qjazz-rpc \
+	qjazz-map \
 	$(NULL)
 
 #
@@ -12,19 +13,6 @@ DIRS= \
 #
 
 include $(topsrcdir)/config/rules.mk
-
-bin-build:
-	cargo build --release --bins --features monitor
-
-BINS=\
-	qjazz-map-bin \
-	qjazz-rpc-bin \
-	$(NULL)
-
-dist:: bin-build
-	@for f in $(BINS); do \
-		cp -v target/release/$$f $(DIST)/; \
-	done
 
 bin-test::
 	cargo test

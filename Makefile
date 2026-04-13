@@ -46,15 +46,6 @@ update-requirements: requirements.txt $(patsubst %, update-requirements-%, $(REQ
 
 # Update requirements groups
 
-# Test requirements require project's dependencies
-update-requirements-tests:
-	@echo "Updating requirements for 'tests'"; \
-	uv export --all-extras --no-dev --group tests --format requirements.txt \
-		--no-annotate \
-		--no-editable \
-		--no-hashes \
-		-q -o requirements/tests.txt;
-
 update-requirements-%:
 	@echo "Updating requirements for '$*'"; \
 	uv export --format requirements.txt \
@@ -77,6 +68,12 @@ upgrade:: update-requirements
 reinstall::
 	@uv sync --reinstall --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
 
+#
+# Buid python meta package
+#
+
+dist::
+	uv build --sdist --out-dir=$(DIST)
 
 include $(topsrcdir)/config/rules.mk
 

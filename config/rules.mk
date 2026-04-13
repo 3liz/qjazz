@@ -15,7 +15,6 @@ clean \
 configure \
 build \
 dist \
-deliver \
 install \
 scan \
 deadcode \
@@ -29,6 +28,11 @@ $(TOPTARGETS):: $(DIRS)
 
 $(DIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+dist-clean:
+	rm -rf $(DIST)/*
+
+clean:: dist-clean
 
 build::
 

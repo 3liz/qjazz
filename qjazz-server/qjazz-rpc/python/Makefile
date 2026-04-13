@@ -13,5 +13,12 @@ proto: qjazz_rpc/_grpc/protos/qjazz.proto
 		./protos/qjazz.proto
 	@sed -i 's/import qjazz_pb2 as/from . import qjazz_pb2 as/' qjazz_rpc/_grpc/qjazz_pb2_grpc.py
 
+#
+# Python
+#
+#
+PYTHON_PKG=qjazz_rpc
+
+TESTDIR=tests
 
 include $(topsrcdir)/config/rules.mk

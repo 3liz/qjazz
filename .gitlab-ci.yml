@@ -2,7 +2,8 @@ stages:
   - lint
   - build
   - test
-  - doc 
+  - package
+  - doc
   - docker
   - deploy
   - release
@@ -20,50 +21,28 @@ lint:
   image: ${REGISTRY_URL}/factory-ci-runner:qgis-release
   stage: lint
   script:
-    - make install lint
+    - uv pip install -r requirements.txt -r requirements/lint.txt
+    - make lint
   tags:   
     - factory-plain
-
-#-----------------
-# Build
-#-----------------
-
-.build-binaries:
-  image: ${REGISTRY_URL}/factory-ci-runner:rust-${OS_TARGET}
-  stage: build
-  script:
-    - make -C qjazz-server bin-build
-  environment:
-    name: snap
-  artifacts:
-    paths:
-    - "qjazz-server/target/release/qjazz-rpc-bin"
-    - "qjazz-server/target/release/qjazz-map-bin"
-  tags:
-  - factory-plain
-  
-build-binaries:
-  extends: .build-binaries
   variables:
-      OS_TARGET: noble
- 
-build-binaries-trixie:
-  extends: .build-binaries
-  variables:
-      OS_TARGET: trixie
+    UV_NO_SYNC: "true"
+    UV_NO_MANAGED_PYTHON: "true"
 
-#
+# ------------------------------
 # Build cpp Qgis server extension
-#
+# -------------------------------
+
 .build-extensions:
   image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
   stage: build
   script:
-    - make -C qjazz-contrib build
+    - make -C qjazz-contrib build dist
   environment:
     name: snap
   artifacts:
     paths:
+    - "dist/qjazz_contrib-*.whl"
     - "qjazz-contrib/src/qjazz_core/qgis/*.so"
   tags:
   - factory-plain
@@ -92,23 +71,61 @@ build-extensions:release:
     QGIS_FLAVOR: 'release'
 
 #-----------------
+# Build binaries
+#-----------------
+
+.build-binaries:
+  image: ${REGISTRY_URL}/factory-ci-runner:rust-${OS_TARGET}
+  stage: build
+  script:
+    - make dist
+  environment:
+    name: snap
+  artifacts:
+    paths:
+    - "dist/qjazz-*.tar.gz"
+    - "dist/qjazz_map-*.whl"
+    - "dist/qjazz_rpc-*.whl"
+    - "dist/qjazz_processes-*.whl"
+  tags:
+  - factory-plain
+  
+build-binaries:
+  extends: .build-binaries
+  variables:
+    OS_TARGET: noble
+ 
+build-binaries-trixie:
+  extends: .build-binaries
+  variables:
+    OS_TARGET: trixie
+
+
+#-----------------
 # Tests
 #-----------------
 
 .tests:
   image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
   stage: test
+  tags: 
+    - factory-plain
   resource_group: qjazz_tests
   script:
-    - make install
+    - uv pip install -r requirements.txt -r requirements/tests.txt
+    - uv pip install --no-deps -e qjazz-contrib
+    - uv pip install --no-deps -e qjazz-server/qjazz-rpc/python
+    - uv pip install --no-deps -e qjazz-processes
     - make test
-  tags:   
-    - factory-plain
+  variables:
+    UV_NO_SYNC: "true"
+    UV_NO_MANAGED_PYTHON: "true"
+    PYTEST_ADDOPTS: "--log-cli-level=info"
 
 tests:release:
   extends: .tests
   dependencies:
-      - build-extensions:ltr
+      - build-extensions:release
   variables:
     QGIS_FLAVOR: "release"
 
@@ -133,6 +150,56 @@ tests:3.34:
   variables:
     QGIS_FLAVOR: "3.34"
     QJAZZ_NO_BUILD_EXT_INSTALL: '1'
+
+#-----------------
+# Packages
+#-----------------
+
+.package:
+  image: ${REGISTRY_URL}/factory-ci-runner:fabric-ci
+  tags:
+  - fabric
+  stage: package
+  rules:
+    - if: $RELEASE_BRANCH == "true"
+  script:
+    - upload_to_packages_server `ls -1 dist/qjazz-*.tar.gz`  pub/qjazz/$QGIS_FLAVOR/qjazz
+    - upload_to_packages_server `ls -1 dist/qjazz_contrib-*.whl`  pub/qjazz/$QGIS_FLAVOR/qjazz-contrib
+    - upload_to_packages_server `ls -1 dist/qjazz_processes-*.whl`  pub/qjazz/$QGIS_FLAVOR/qjazz-processes
+    - upload_to_packages_server `ls -1 dist/qjazz_map-*.whl`  pub/qjazz/$QGIS_FLAVOR/qjazz-map
+    - upload_to_packages_server `ls -1 dist/qjazz_rpc-*.whl`  pub/qjazz/$QGIS_FLAVOR/qjazz-rpc
+
+package:release:
+  extends: .package
+  dependencies:
+      - build-extensions:release
+      - build-binaries-trixie
+  variables:
+    QGIS_FLAVOR: "release"
+
+package:ltr:
+  extends: .package
+  dependencies:
+      - build-extensions:ltr
+      - build-binaries
+  variables:
+    QGIS_FLAVOR: "ltr"
+
+package:3.40:
+  extends: .package
+  dependencies:
+      - build-extensions:3.40
+      - build-binaries
+  variables:
+    QGIS_FLAVOR: "3.40"
+
+package:3.34:
+  extends: .package
+  dependencies:
+      - build-extensions:3.34
+      - build-binaries
+  variables:
+    QGIS_FLAVOR: "3.34"
 
 
 #-----------------

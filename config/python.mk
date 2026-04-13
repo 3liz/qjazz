@@ -1,8 +1,4 @@
 
-configure::
-	@echo "Configuring $$(basename $$(pwd))"
-	@sed -e 's/$${PIN_VERSION}/$(VERSION)/g' pyproject.toml.in > pyproject.toml
-
 lint::
 	@$(RUFF) check --output-format=concise  $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
@@ -22,9 +18,6 @@ format-diff::
 
 format::
 	@$(RUFF) format $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
-
-#install::
-#	pip install -U --upgrade-strategy=eager -e .$(INSTALL_DEPENDENCIES)
 
 typecheck:: $(PYTHON_PKG)
 	@$(MYPY) $(PYTHON_PKG) $(TESTDIR)
