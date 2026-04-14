@@ -61,9 +61,9 @@ def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
 
         conf = load_configuration()
         click.echo(conf.model_dump_json(indent=4))
-    else:
-        from .jobs import app
+        return
 
+    from .jobs import app
     app.start_worker(loglevel=loglevel)
 
 

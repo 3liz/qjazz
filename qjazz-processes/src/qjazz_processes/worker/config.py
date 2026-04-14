@@ -135,7 +135,7 @@ class ConfigProto(Protocol):
 #
 
 confservice.add_section("logging", logger.LoggingConfig)
-confservice.add_section("worker", WorkerConfig)
+confservice.add_section("worker", WorkerConfig, ...)
 confservice.add_section("storage", StorageConfig)
 confservice.add_section("callbacks", CallbacksConfig)
 
