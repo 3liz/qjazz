@@ -7,6 +7,7 @@ DIRS= \
 	qjazz-contrib \
 	qjazz-server \
 	qjazz-processes \
+	qjazz-metapackage \
 	$(NULL)
 
 
@@ -67,13 +68,6 @@ upgrade:: update-requirements
 
 reinstall::
 	@uv sync --reinstall --all-extras $(ACTIVE_VENV) $(UV_INSTALL_GROUPS)
-
-#
-# Buid python meta package
-#
-
-dist::
-	uv build --sdist --out-dir=$(DIST)
 
 include $(topsrcdir)/config/rules.mk
 
