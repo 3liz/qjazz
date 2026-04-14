@@ -168,7 +168,7 @@ use_default_server_handler = false
 #
 # Use aliases for QGIS server apis.
 # 
-api_aliases = {'WFS3'='OGC WFS3 (Draft)', 'LIZMAP'='Lizmap'}
+api_aliases = {'WFS3'='OAPIF', 'LIZMAP'='Lizmap'}
 
 #
 # Projects configuration

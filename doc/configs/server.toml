@@ -129,16 +129,16 @@ disable_root_catalog = false
 # Api endpoint
 #endpoint =   	# Required
 #
-# Api name to delegate to
+# Delegate
 #
 # Api delegation allow for using a baseurl different
 # from the expected rootpath of qgis server api.
 # For exemple, wfs3 request may be mapped to a completely different
 # root path.
 # 
-#delegate_to =   	# Optional
+delegate = false
 #
-# Descriptive name
+# QGIS Api name
 name = ""
 #
 # Api description

@@ -46,8 +46,9 @@ class ApiEndpoint(ConfigBase):
         pattern=r"^[^\/]+",
         title="Api endpoint",
     )
-    delegate_to: Option[str] = Field(
-        title="Api name to delegate to",
+    delegate: bool = Field(
+        False,
+        title="Delegate",
         description="""
         Api delegation allow for using a baseurl different
         from the expected rootpath of qgis server api.
@@ -57,7 +58,7 @@ class ApiEndpoint(ConfigBase):
     )
     name: str = Field(
         default="",
-        title="Descriptive name",
+        title="QGIS Api name",
     )
     description: str = Field(
         default="",

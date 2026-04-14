@@ -306,7 +306,7 @@ pub struct ApiEndPoint {
     /// For exemple, wfs3 request may be mapped to a completely different
     /// root path.
     pub delegate: bool,
-    /// Descriptive name
+    /// QGIS api name
     pub name: String,
     /// Api description
     pub description: String,

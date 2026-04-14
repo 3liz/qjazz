@@ -3,12 +3,25 @@ requires = ["maturin>=1.12,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "qjazz-map"
+name = "qjazz_map"
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Rust",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "qjazz-contrib",
 ]
 dynamic = ["version"]
 
 [tool.maturin]
 bindings = "bin"
+python-source = "python"
+
+[tool.uv.sources]
+qjazz-contrib = { workspace = true }
+
+

@@ -27,7 +27,10 @@ from qjazz_cache.prelude import (
     ResourceNotAllowed,
 )
 from qjazz_core import componentmanager, logger
-from qjazz_core.condition import assert_postcondition
+from qjazz_core.condition import (
+    assert_postcondition,
+    assert_unreachable,
+)
 
 from .project import Collection
 
@@ -172,25 +175,36 @@ class Catalog:
             assert_postcondition(location is not None)
 
             md, status = cm.checkout(url)
-            match status:
-                case Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE:
-                    entry = cast("CacheEntry", md)
-                    if pinned and not entry.pinned:
+            match md, status:
+                case (CacheEntry(), Co.UNCHANGED | Co.UPDATED | Co.NEEDUPDATE):
+                    if pinned and not md.pinned:
                         # Handle only pinned items
                         return None
-                case CheckoutStatus.REMOVED | CheckoutStatus.NOTFOUND:
+                    md = md.md
+                case (_, CheckoutStatus.REMOVED | CheckoutStatus.NOTFOUND):
                     return None
+                case (ProjectMetadata(), CheckoutStatus.NEW):
+                    pass
+                case unreachable:
+                    assert_unreachable(unreachable)
         else:
             md, status = cm.checkout(urlsplit(item.md.uri))
-            if status in (CheckoutStatus.REMOVED, CheckoutStatus.NOTFOUND):
-                del self._catalog[ident]
-                return None
-            if cast("ProjectMetadata", md).last_modified <= item.md.last_modified:
+            match md, status:
+                case (_, CheckoutStatus.REMOVED, CheckoutStatus.NOTFOUND):
+                    del self._catalog[ident]
+                    return None
+                case (ProjectMetadata(), _):
+                    pass
+                case (CacheEntry(), _):
+                    md = md.md
+                case unreachable:
+                    assert_unreachable(unreachable)
+
+            if md.last_modified <= item.md.last_modified:
                 return item
 
             location = item.location
 
-        md = cast("ProjectMetadata", md)
         try:
             handler = cm.get_protocol_handler(md.scheme)
             item = new_catalog_item(
