@@ -9,8 +9,10 @@ version = "0.7.0"
 requires-python = ">= 3.12"
 licence = "Apache-2.0 OR MIT"
 classifiers = [
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.12",
-    "Operating System :: POSIX",
+    "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
     "qjazz-contrib[celery, store]>=0.7.0,<0.8",
