@@ -167,11 +167,7 @@ FROM  ${REGISTRY_PREFIX}factory-ci-runner:qgis-${QGIS_FLAVOR} AS ci
 RUN --mount=type=bind,target=/src,rw \
     uv pip install --compile-bytecode --no-cache \
         -r /src/requirements.txt \
-        -r /src/requirements/dev.txt 
- 
-# Does not exists but could prevent errors
-ENV QJAZZ_HOME=/python_modules
-ENV PATH=/opt/local/qjazz/bin:$PATH
-    
-
-
+        -r /src/requirements/dev.txt \
+    && uv pip install --no-deps --compile-bytecode \
+        -e /src/qjazz-contrib \
+        -e /src/qjazz-processes 
