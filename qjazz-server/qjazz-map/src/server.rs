@@ -56,7 +56,7 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
 
     let server = HttpServer::new(move || {
         App::new()
-            .service(web::resource("/").head(ping))
+            .service(web::resource("/ping").head(ping))
             .wrap(cors.configure())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::from_fn(server_mw))

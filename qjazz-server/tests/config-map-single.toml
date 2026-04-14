@@ -14,11 +14,11 @@ host = "localhost"
 port = 23456
 enable_tls = false
 cafile = "$location/certs/localhost.crt"
+admin = { enabled = true, disclosed = false }
 
 # With delegation
 [[backends.test.api]]
 endpoint = "features"
-delegate_to = "wfs3"
 name = "Features OGC Api"
 
 # Without delegation

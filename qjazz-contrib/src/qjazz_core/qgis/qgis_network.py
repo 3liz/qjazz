@@ -153,7 +153,7 @@ def on_reply_finished(reply: QgsNetworkReplyContent):
     err = reply.error()
     status = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute)
     url: str = reply.request().url().toDisplayString()
-    if err != QNetworkReply.NoError:
+    if err != QNetworkReply.NetworkError.NoError:
         logger.error(
             "NET: Request[%s] finished with error:  %s: %s <http status: %s>",
             reply.requestId(),
