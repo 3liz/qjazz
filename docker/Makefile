@@ -46,7 +46,7 @@ build:: manifest
 		--build-arg QGIS_FLAVOR=${FLAVOR} \
 		--build-arg LIZCLOUD=${LIZCLOUD} \
 		--label org.opencontainers.image.version=$$version \
-		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-eager  -f Dockerfile  ..;\
+		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-unstable  -f Dockerfile  ..;\
 	}
 
 
@@ -91,10 +91,14 @@ push:
 	}
 endif
 #
-# Push eager to docker-hub
+# Push unstable to docker-hub
 #
-push-eager:
-	docker push 3liz/$(NAME):qgis-$(FLAVOR)-eager
+push-unstable:
+ifndef BUILD_RELEASE
+	docker push 3liz/$(NAME):qgis-$(FLAVOR)-unstable
+else
+	@echo "Release build"
+endif
 
 # =============
 # No QGIS build
@@ -111,7 +115,7 @@ noqgis-build: noqgis-manifest
 	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=$(FLAVOR) \
 		--label org.opencontainers.image.version=$$version \
-		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-eager -f Dockerfile  ..;\
+		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-unstable -f Dockerfile  ..;\
 	}
 
 
@@ -146,10 +150,14 @@ noqgis-push:
 endif
 
 #
-# Push eager to docker-hub
+# Push unstable to docker-hub
 #
-noqgis-push-eager:
-	docker push 3liz/$(NAME):noqgis-eager
+noqgis-push-unstable:
+ifndef BUILD_RELEASE
+	docker push 3liz/$(NAME):noqgis-unstable
+else
+	@echo "Release build"
+endif
 
 #
 # CI image build

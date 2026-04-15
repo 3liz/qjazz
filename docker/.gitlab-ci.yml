@@ -1,6 +1,7 @@
 #-------------
 # Docker build
 #-------------
+
 .build-docker:
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   tags:
@@ -10,7 +11,7 @@
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR LIZCLOUD=yes
   - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
-  - make -C docker push-eager FLAVOR=$QGIS_FLAVOR
+  - make -C docker push-unstable FLAVOR=$QGIS_FLAVOR
   environment:
     name: snap
   artifacts:
