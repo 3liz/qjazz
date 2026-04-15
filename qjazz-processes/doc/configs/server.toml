@@ -12,6 +12,7 @@ description = "Publish Qgis processing algorithms as OGC api processes"
 
 # Defining job realm allow filtering job's requests by a token that is
 # set by the client when requesting task execution (see description below).
+# 
 [job_realm]
 #
 # Enable job realm header
@@ -231,6 +232,7 @@ enabled = false
 
 # The storage configuration is used for configuring the
 # connections to storage backends used by workers.
+# 
 [storage]
 #
 # Allow insecure downloads

@@ -1,2 +1,6 @@
 # reimport
-from .default import DefaultAccessPolicy  # noqa F401
+from .default import DefaultAccessPolicy
+
+__all__ = (
+    "DefaultAccessPolicy",
+)

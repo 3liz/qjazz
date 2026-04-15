@@ -1,3 +1,14 @@
+""" Access policy configuration
+
+Access policies control:
+
+- Which services a request can access
+- Which processes a user can execute
+- How services and projects are resolved from requests
+- How URLs are formatted for process links
+
+Custom access policies can be implemented in external python module.
+"""
 from abc import abstractmethod
 from typing import (
     Annotated,
@@ -80,7 +91,7 @@ class AccessPolicy(Protocol):
 
     @abstractmethod
     def get_project(self, request: web.Request) -> Optional[str]:
-        """Return project for therequest"""
+        """Return project for the request"""
         ...
 
     @property

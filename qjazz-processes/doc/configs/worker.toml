@@ -7,6 +7,7 @@ level = "INFO"
 # Worker configuration
 # 
 # Configure celery worker settings
+# 
 [worker]
 #
 # Celery amqp broker host

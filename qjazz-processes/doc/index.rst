@@ -13,6 +13,7 @@ Welcome to qjazz-processes's documentation!
    parameters
    execution
    jobrealm
+   policies
    openapi
 
 Indices and tables
