@@ -11,7 +11,6 @@ from ._handlers import (
     Services,
     Storage,
     Store,
-    WebUI,
 )
 from .accesspolicy import AccessPolicy
 from .executor import Executor
@@ -23,14 +22,13 @@ API_VERSION = "v1"
 PACKAGE_NAME = "qjazz_processes"
 
 
-class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
+class Handler(Services, Processes, Jobs, Storage, Store, LandingPage):
     def __init__(
         self,
         *,
         executor: Executor,
         policy: AccessPolicy,
         timeout: int,
-        enable_ui: bool,
         jobrealm: JobRealmConfig,
         storage: StorageConfig,
         store: Optional[StoreConfig] = None,
@@ -38,7 +36,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
         self._executor = executor
         self._accesspolicy = policy
         self._timeout = timeout
-        self._enable_ui = enable_ui
         self._jobrealm = jobrealm
         self._storage = storage
         self._store = store
@@ -60,25 +57,6 @@ class Handler(Services, Processes, Jobs, WebUI, Storage, Store, LandingPage):
             # Jobs
             web.get(f"{prefix}/jobs/", self.list_jobs, allow_head=False),
         ]
-
-        #
-        # Define UI routes before other
-        # jobs routes in order to resolve
-        # ambiguities.
-        #
-        if self._enable_ui:
-            _routes.extend(
-                (
-                    # Jobs UI
-                    web.get(f"{prefix}/jobs.html/", self.ui_dashboard, allow_head=False),
-                    web.get(f"{prefix}/jobs.html/{{Path:.*}}", self.ui_dashboard, allow_head=False),
-                    web.get(
-                        rf"{prefix}/jobs/{{JobId:[^/\.]+\.html}}/{{Path:.*}}",
-                        self.ui_jobdetails,
-                        allow_head=False,
-                    ),
-                ),
-            )
 
         _routes.extend(
             (

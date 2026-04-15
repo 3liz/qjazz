@@ -7,7 +7,6 @@ level = "INFO"
 # Worker configuration
 # 
 # Configure celery worker settings
-# 
 [worker]
 #
 # Celery amqp broker host
@@ -176,6 +175,43 @@ templated = false
 #href =   	# Required
 
 
+# Configure storage for processing data
+[storage]
+#
+# Storage module
+#
+# The module implementing storage accesses for
+# job's files.
+# 
+storage_class = "qjazz_processes.worker.storages.local.LocalStorage"
+config = {}
+
+#
+# Callbacks
+#
+# Define a mapping between a uri scheme and a handler for that
+# scheme.
+# 
+#
+# Example:
+#
+# [callbacks.https]
+# handler = "qjazz_processes.callbacks.Http",
+# 
+[callbacks.'key']
+#
+# Enable callback
+enabled = true
+#
+# Callback module
+#
+# The callback handler import string
+#handler =   	# Required
+#
+# Callback configuration
+config = {}
+
+
 [processing]
 #
 # Working directory
@@ -287,6 +323,11 @@ max_cached_projects = 10
 # from QGIS3.ini file."
 # 
 qgis_settings = {}
+#
+# Download timeout
+#
+# Download timeout is seconds for reference values
+download_timeout = 20.0
 
 #
 # Projects configuration
@@ -316,7 +357,12 @@ disable_getprint = false
 #
 # Force read only mode
 #
-# Force layers to open in read only mode
+# Force layers to open in read only mode."
+# This is the default, unless you have really good reason
+# to open layers in write mode.
+# Note that some handlers (like S3) do not support opening layers
+# in write mode.
+# 
 force_readonly_layers = true
 #
 # Ignore bad layers
@@ -395,7 +441,7 @@ config = {}
 # the 'install' list.
 # If the list is empty, the 'QGIS_PLUGINPATH'
 # variable will be checked.
-paths = ["/home/david/.qjazz/plugins"]
+paths = []
 #
 # Installable plugins
 #
@@ -491,41 +537,4 @@ trace = false
 #
 # Transfer timeout in ms
 #transfer_timeout =   	# Optional
-
-
-# Configure storage for processing data
-[storage]
-#
-# Storage module
-#
-# The module implementing storage accesses for
-# job's files.
-# 
-storage_class = "qjazz_processes.worker.storages.local.LocalStorage"
-config = {}
-
-#
-# Callbacks
-#
-# Define a mapping between a uri scheme and a handler for that
-# scheme.
-# 
-#
-# Example:
-#
-# [callbacks.https]
-# handler = "qjazz_processes.callbacks.Http",
-# 
-[callbacks.'key']
-#
-# Enable callback
-enabled = true
-#
-# Callback module
-#
-# The callback handler import string
-#handler =   	# Required
-#
-# Callback configuration
-config = {}
 

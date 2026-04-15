@@ -10,21 +10,8 @@ title = "Qjazz-Processes"
 description = "Publish Qgis processing algorithms as OGC api processes"
 
 
-# Configure access policy
-[access_policy]
-#
-# Access policy module
-#
-# The module implementing the access policy for
-# processes execution.
-# 
-policy_class = "qjazz_processes.server.policies.default.DefaultAccessPolicy"
-config = {}
-
-
 # Defining job realm allow filtering job's requests by a token that is
 # set by the client when requesting task execution (see description below).
-# 
 [job_realm]
 #
 # Enable job realm header
@@ -40,6 +27,18 @@ enabled = false
 # for all jobs.
 # 
 admin_tokens = []
+
+
+# Configure access policy
+[access_policy]
+#
+# Access policy module
+#
+# The module implementing the access policy for
+# processes execution.
+# 
+policy_class = "qjazz_processes.server.policies.default.DefaultAccessPolicy"
+config = {}
 
 
 [http]
@@ -67,9 +66,6 @@ update_interval = 30
 #
 # Backend request timeout
 timeout = 20
-#
-# Enable Web UI
-enable_ui = true
 
 #
 # TLS configuration
@@ -235,7 +231,6 @@ enabled = false
 
 # The storage configuration is used for configuring the
 # connections to storage backends used by workers.
-# 
 [storage]
 #
 # Allow insecure downloads
@@ -270,4 +265,28 @@ download_url_expiration = 3600
 #
 # Path to the TLS key file
 #keyfile =   	# Optional
+
+
+#[store]
+#
+# S3/Minio endpoint
+#endpoint = "localhost:9000"
+#cafile =   	# Optional
+#access_key =   	# Required
+#secret_key =   	# Required
+#
+# Enable TLS
+#enable_tls = false
+#
+# Check certificat
+#check_certificat = true
+#region =   	# Optional
+#
+# Access TTL
+#
+# Lifetime given to a job store access since the job was scheduled
+# for execution; the access credentials will no be
+# longer valid after this time.
+# 
+#access_ttl = 86400
 

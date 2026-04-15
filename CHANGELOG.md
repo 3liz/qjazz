@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* Remove jobs webui
+    - Use of deprecated framemorks
+    - Trigger security alerts
 * QGIS4 Support
 * Add healthcheck in docker images
 * Improve error handling

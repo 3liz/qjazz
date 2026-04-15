@@ -52,7 +52,6 @@ class HandlerProto(Protocol):
     _jobrealm: JobRealmConfig
     _storage: StorageConfig
     _store: Optional[StoreConfig]
-    _enable_ui: bool
 
     def get_service(self, request: web.Request) -> str: ...
 

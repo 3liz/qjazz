@@ -109,13 +109,6 @@ class LandingPage(HandlerProto):
                 path=self.format_path(request, "/jobs/"),
                 title="Job list",
             ),
-            make_link(
-                request,
-                rel="alternate",
-                mime_type="text/html",
-                path=self.format_path(request, "/jobs.html"),
-                title="Jobs html interface",
-            ),
         ]
 
         return web.Response(

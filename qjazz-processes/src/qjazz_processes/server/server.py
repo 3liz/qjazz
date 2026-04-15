@@ -99,8 +99,6 @@ class HttpConfig(ConfigBase):
 
     timeout: int = Field(20, gt=0, title="Backend request timeout")
 
-    enable_ui: bool = Field(True, title="Enable Web UI")
-
 
 def format_interface(conf: HttpConfig) -> str:
     match conf.listen:
@@ -400,7 +398,6 @@ def create_app(
         executor=executor,
         policy=access_policy,
         timeout=conf.http.timeout,
-        enable_ui=conf.http.enable_ui,
         jobrealm=conf.job_realm,
         storage=conf.storage,
         store=conf.store,
@@ -455,7 +452,6 @@ def swagger_model(config: Optional[ConfigProto] = None) -> BaseModel:
         executor=cast("Executor", None),
         policy=DummyAccessPolicy(),
         timeout=0,
-        enable_ui=False,
         jobrealm=cast("JobRealmConfig", None),
         storage=cast("StorageConfig", None),
     )
