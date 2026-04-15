@@ -117,6 +117,8 @@ void set_internal_error(QgsServerResponse& response, QgsException& exc, QString 
         Qgis::MessageLevel::Critical);
 }
 
+// XXX: We do not call the 'onSendResponse' callback.
+// that mean that filters will not be able to intercept the 'flush' action.
 struct Filters 
 {
     QgsServerFiltersMap filters;

@@ -30,5 +30,6 @@ __output__
 .coverage
 
 .agent
+.agents
 .aider.*
 .activate-trixie
