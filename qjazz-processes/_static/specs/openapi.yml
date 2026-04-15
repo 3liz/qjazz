@@ -566,7 +566,9 @@ definitions:
           - $ref: '#/definitions/MetadataValue'
         type: array
       schema:
-        $ref: '#/definitions/JsonValue'
+        additionalProperties:
+          $ref: '#/definitions/JsonValue'
+        type: object
       valuePassing:
         default:
         - byValue
@@ -651,7 +653,9 @@ definitions:
           - $ref: '#/definitions/MetadataValue'
         type: array
       schema:
-        $ref: '#/definitions/JsonValue'
+        additionalProperties:
+          $ref: '#/definitions/JsonValue'
+        type: object
       valuePassing:
         default:
         - byValue
@@ -687,6 +691,7 @@ definitions:
         title: Process id
         type: string
       version:
+        default: n/a
         type: string
       jobControlOptions:
         default:
@@ -717,113 +722,11 @@ definitions:
         type: object
     required:
     - id
-    - version
     title: ProcessDescription
     type: object
   JobResults:
     additionalProperties:
       $ref: '#/definitions/JsonValue'
-    type: object
-  ServiceItem:
-    properties:
-      name:
-        type: string
-      title:
-        default: ''
-        type: string
-      description:
-        default: ''
-        type: string
-      qgisVersionInfo:
-        type: integer
-      versionDetails:
-        items:
-          type: string
-        type: array
-      callbacks:
-        items:
-          type: string
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/LinkHttp'
-        type: array
-    required:
-    - name
-    - qgisVersionInfo
-    - versionDetails
-    - callbacks
-    - links
-    type: object
-  ServicesResponse:
-    properties:
-      services:
-        items:
-          $ref: '#/definitions/ServiceItem'
-        type: array
-    required:
-    - services
-    title: ServicesResponse
-    type: object
-  ProcessSummary:
-    properties:
-      title:
-        default: ''
-        type: string
-      description:
-        type: string
-      keywords:
-        default: []
-        items:
-          type: string
-        type: array
-      metadata:
-        default: []
-        items:
-          anyOf:
-          - $ref: '#/definitions/MetadataLink'
-          - $ref: '#/definitions/MetadataValue'
-        type: array
-      id:
-        title: Process id
-        type: string
-      version:
-        type: string
-      jobControlOptions:
-        default:
-        - sync-execute
-        - async-execute
-        - dismiss
-        items:
-          enum:
-          - sync-execute
-          - async-execute
-          - dismiss
-          type: string
-        type: array
-      links:
-        default: []
-        items:
-          $ref: '#/definitions/LinkHttp'
-        type: array
-    required:
-    - id
-    - version
-    type: object
-  ProcessList:
-    properties:
-      processes:
-        items:
-          $ref: '#/definitions/ProcessSummary'
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/LinkHttp'
-        type: array
-    required:
-    - processes
-    - links
-    title: ProcessList
     type: object
   JobList:
     properties:
@@ -856,6 +759,135 @@ definitions:
     - log
     - links
     title: LogResponse
+    type: object
+  Conformance:
+    properties:
+      conformsTo:
+        default:
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/core
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/ogc-process-description
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/json
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss
+        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback
+        items:
+          type: string
+        type: array
+    title: Conformance
+    type: object
+  LandingPageModel:
+    properties:
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - links
+    title: LandingPageModel
+    type: object
+  ProcessSummary:
+    properties:
+      title:
+        default: ''
+        type: string
+      description:
+        type: string
+      keywords:
+        default: []
+        items:
+          type: string
+        type: array
+      metadata:
+        default: []
+        items:
+          anyOf:
+          - $ref: '#/definitions/MetadataLink'
+          - $ref: '#/definitions/MetadataValue'
+        type: array
+      id:
+        title: Process id
+        type: string
+      version:
+        default: n/a
+        type: string
+      jobControlOptions:
+        default:
+        - sync-execute
+        - async-execute
+        - dismiss
+        items:
+          enum:
+          - sync-execute
+          - async-execute
+          - dismiss
+          type: string
+        type: array
+      links:
+        default: []
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - id
+    type: object
+  ProcessList:
+    properties:
+      processes:
+        items:
+          $ref: '#/definitions/ProcessSummary'
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - processes
+    - links
+    title: ProcessList
+    type: object
+  ServiceItem:
+    properties:
+      name:
+        type: string
+      title:
+        default: ''
+        type: string
+      description:
+        default: ''
+        type: string
+      qgisVersionInfo:
+        type: integer
+      versionDetails:
+        anyOf:
+        - type: string
+        - items:
+            type: string
+          type: array
+      callbacks:
+        items:
+          type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/LinkHttp'
+        type: array
+    required:
+    - name
+    - qgisVersionInfo
+    - versionDetails
+    - callbacks
+    - links
+    type: object
+  ServicesResponse:
+    properties:
+      services:
+        items:
+          $ref: '#/definitions/ServiceItem'
+        type: array
+    required:
+    - services
+    title: ServicesResponse
     type: object
   FileLink:
     properties:
@@ -899,31 +931,95 @@ definitions:
     - links
     title: FilesResponse
     type: object
-  Conformance:
+  DirResource:
+    additionalProperties: true
     properties:
-      conformsTo:
-        default:
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/core
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/ogc-process-description
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/json
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/oas30
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/job-list
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/dismiss
-        - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback
-        items:
-          type: string
-        type: array
-    title: Conformance
+      name:
+        title: Resource name
+        type: string
+      isDir:
+        const: true
+        default: true
+        type: boolean
+    required:
+    - name
     type: object
-  LandingPageModel:
+  FileResource:
+    additionalProperties: true
     properties:
+      name:
+        title: Resource name
+        type: string
+      size:
+        anyOf:
+        - type: integer
+        - type: 'null'
+        default:
+        title: Size in bytes
+      contentType:
+        anyOf:
+        - type: string
+        - type: 'null'
+      lastModified:
+        anyOf:
+        - format: date-time
+          type: string
+        - type: 'null'
+      encrypted:
+        type: boolean
+      version:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default:
+      isDir:
+        const: false
+        default: false
+        type: boolean
+    required:
+    - name
+    - contentType
+    - lastModified
+    - encrypted
+    type: object
+  ResourceType:
+    anyOf:
+    - $ref: '#/definitions/DirResource'
+    - $ref: '#/definitions/FileResource'
+  ResourceList:
+    properties:
+      resources:
+        items:
+          anyOf:
+          - $ref: '#/definitions/DirResource'
+          - $ref: '#/definitions/FileResource'
+        type: array
       links:
+        default: []
         items:
           $ref: '#/definitions/LinkHttp'
         type: array
     required:
-    - links
-    title: LandingPageModel
+    - resources
+    title: ResourceList
+    type: object
+  DeleteResponse:
+    properties:
+      resource:
+        type: string
+      status:
+        const: deleted
+        default: deleted
+        type: string
+      service:
+        type: string
+      role:
+        type: string
+    required:
+    - resource
+    - service
+    - role
+    title: DeleteResponse
     type: object
 tags:
 - description: Processes

@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access policies &mdash; qjazz-processes ${PIN_VERSION} documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e556e3f7"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Qjazz-Processes API" href="openapi.html" />
+    <link rel="prev" title="Job access" href="jobrealm.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qjazz-processes
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#quick-start">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Running QGIS Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html#exposing-processing-algorithms">Exposing processing algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html#callbacks">Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html">Inputs and Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution.html">Job execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jobrealm.html">Job access</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Access policies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-custom-access-policies">Implementing custom access policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#accesspolicy-protocol">AccessPolicy Protocol</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#class-attributes">Class Attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-a-custom-policy">Implementing a Custom Policy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">Qjazz-Processes API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qjazz-processes</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Access policies</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/policies.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="access-policies">
+<span id="id1"></span><h1>Access policies<a class="headerlink" href="#access-policies" title="Link to this heading"></a></h1>
+<p>Access policies control:</p>
+<ul class="simple">
+<li><p>Which services a request can access</p></li>
+<li><p>Which processes a user can execute</p></li>
+<li><p>How services and projects are resolved from requests</p></li>
+<li><p>How URLs are formatted for process links</p></li>
+</ul>
+<section id="implementing-custom-access-policies">
+<h2>Implementing custom access policies<a class="headerlink" href="#implementing-custom-access-policies" title="Link to this heading"></a></h2>
+<p>Custom access policies may be implemented from external modules.</p>
+<p>You may configure custom policies from the [access_policy] section of the
+server configuration:</p>
+<blockquote>
+<div><div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[access_policy]</span>
+<span class="c1">#</span>
+<span class="c1"># Access policy module</span>
+<span class="c1">#</span>
+<span class="c1"># The module implementing the access policy for</span>
+<span class="c1"># processes execution.</span>
+<span class="c1">#</span>
+<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mymodule.MyAccessPolicy&quot;</span>
+
+<span class="c1"># The configuration of the custom policies in TOML</span>
+<span class="c1"># format</span>
+<span class="k">[accesspolicy.config]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="accesspolicy-protocol">
+<h2>AccessPolicy Protocol<a class="headerlink" href="#accesspolicy-protocol" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">policy_class</span></code> must be an import string pointing to a class implementing the <code class="docutils literal notranslate"><span class="pre">AccessPolicy</span></code> protocol:</p>
+<section id="class-attributes">
+<h3>Class Attributes<a class="headerlink" href="#class-attributes" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">Config</span></code>: <code class="docutils literal notranslate"><span class="pre">type[ConfigBase]</span></code></dt><dd><p>A Pydantic model class for configuration. Defaults to <code class="docutils literal notranslate"><span class="pre">NoConfig</span></code>.</p>
+<p>The configuration will be validated against this model.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">executor</span></code>: <code class="docutils literal notranslate"><span class="pre">AsyncExecutor</span></code></dt><dd><p>Set automatically by the framework. Provides access to available services.</p>
+</dd>
+</dl>
+</section>
+<section id="methods">
+<h3>Methods<a class="headerlink" href="#methods" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">setup(app:</span> <span class="pre">web.Application)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></dt><dd><p>Called when the policy is initialized. Use to set up any resources.</p>
+<p><em>Default</em>: No-op.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">service_permission(request:</span> <span class="pre">aiohttp.web.Request,</span> <span class="pre">service:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></dt><dd><p>Check if the request has permission to access the specified service.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">execute_permission(request:</span> <span class="pre">web.Request,</span> <span class="pre">service:</span> <span class="pre">str,</span> <span class="pre">process_id:</span> <span class="pre">str,</span> <span class="pre">project:</span> <span class="pre">Optional[str]</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></dt><dd><p>Check if the request has permission to execute the given process.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">get_service(request:</span> <span class="pre">aiohttp.web.Request)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code></dt><dd><p>Resolve and return the service identifier for the request.
+Called when a request requires service resolution.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">get_project(request:</span> <span class="pre">aiohttp.web.Request)</span> <span class="pre">-&gt;</span> <span class="pre">Optional[str]</span></code></dt><dd><p>Resolve and return the project (QGIS project path) for the request.
+Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if no project is specified.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">prefix:</span> <span class="pre">str</span></code> (property)</dt><dd><p>URL prefix for the policy. Used in path formatting.</p>
+<p><em>Default</em>: Empty string.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">format_path(request:</span> <span class="pre">aiohttp.web.Request,</span> <span class="pre">path:</span> <span class="pre">str,</span> <span class="pre">service:</span> <span class="pre">Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">project:</span> <span class="pre">Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">*,</span> <span class="pre">query:</span> <span class="pre">Optional[str]</span> <span class="pre">=</span> <span class="pre">None)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code></dt><dd><p>Format a complete URL including service and project parameters.
+Used to generate process links in API responses.</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="implementing-a-custom-policy">
+<h2>Implementing a Custom Policy<a class="headerlink" href="#implementing-a-custom-policy" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p>Create a Python package with your policy class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_policy/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">my_policy.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyPolicyConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">my_policy.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyAccessPolicy</span>
+</pre></div>
+</div>
+</li>
+<li><p>Define a configuration model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_policy/config.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qjazz_core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qjazz_core.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyPolicyConfig</span><span class="p">(</span><span class="n">ConfigBase</span><span class="p">):</span>
+    <span class="n">allowed_services</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of allowed service names&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Implement the policy class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_policy/policy.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">aiohttp</span><span class="w"> </span><span class="kn">import</span> <span class="n">web</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qjazz_processes.server.accesspolicy</span><span class="w"> </span><span class="kn">import</span> <span class="n">AccessPolicy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qjazz_core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigBase</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyAccessPolicy</span><span class="p">(</span><span class="n">AccessPolicy</span><span class="p">):</span>
+    <span class="n">Config</span> <span class="o">=</span> <span class="n">MyPolicyConfig</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="n">MyPolicyConfig</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_allowed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">allowed_services</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">):</span>
+        <span class="c1"># Initialize resources if needed</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">service_permission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allowed</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute_permission</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span>
+        <span class="n">service</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">process_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">project</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="c1"># Add custom logic (e.g., check user permissions)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;map&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;/custom&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_path</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># Build URL with custom logic</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}{</span><span class="n">path</span><span class="si">}</span><span class="s2">?service=</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&amp;map=</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Configure the policy in your server settings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">AccessPolicyConfig</span><span class="p">(</span>
+    <span class="n">policy_class</span><span class="o">=</span><span class="s2">&quot;my_policy.policy.MyAccessPolicy&quot;</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;allowed_services&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;wfs&quot;</span><span class="p">,</span> <span class="s2">&quot;wms&quot;</span><span class="p">]},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="jobrealm.html" class="btn btn-neutral float-left" title="Job access" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="openapi.html" class="btn btn-neutral float-right" title="Qjazz-Processes API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, David Marteau - 3liz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
