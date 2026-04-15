@@ -2,8 +2,6 @@
 
 set -e
 
-# Qgis need a HOME
-export HOME=/home/qgis
 export QGIS_HOME=$HOME
 
 #
@@ -42,35 +40,11 @@ create_qgis_cache_directories() {
 }
 
 # Check for uid (running with --user)
-if [[ "$UID" != "0" ]]; then 
-    CONF_USER=$UID:$(id -g)
-else    
-    CONF_USER=${CONF_USER:-"1000:1000"}
-fi
+CONF_USER=$UID:$(id -g)
 
 if [[ "$CONF_USER" =~ ^root:? ]] || [[ "$CONF_USER" =~ ^0:? ]]; then
-    echo "CONF_USER must no be root !"
+    echo "Cannot run as root !"
     exit 1 
-fi
-
-if [ "$(id -u)" = '0' ]; then
-    # Delete any actual Xvfb lock file
-    # Because it can only be removed as root
-    rm -rf /tmp/.X99-lock
-
-    if [[ "$(stat -c '%u' $HOME)" == "0" ]] ; then
-        chown $CONF_USER $HOME
-        chmod 750 $HOME
-    fi
- 
-    if [[ "$(stat -c '%u' $QJAZZ_VOLUME)" == "0" ]] ; then
-        chown $CONF_USER $QJAZZ_VOLUME
-        chmod 750 $QJAZZ_VOLUME
-    fi
-    
-    REUID=`echo $CONF_USER|cut -d: -f1`
-    REGID=`echo $CONF_USER|cut -d: -f2` 
-    exec setpriv --clear-groups --reuid=$REUID --regid=$REGID "$BASH_SOURCE" "$@"
 fi
 
 

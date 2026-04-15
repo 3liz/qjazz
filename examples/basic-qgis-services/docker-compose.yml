@@ -12,6 +12,9 @@ services:
         }
     volumes:
     - { type: bind, source: "../../tests/data", target: /qgis-projects }
+    # Mount /tmp as tmpfs for removing Xvfb lock file when restarting
+    tmpfs:
+      - /tmp:size=1m 
     command: ["qjazz-rpc", "serve"]
   web:
     image: 3liz/qjazz:qgis-ltr-unstable

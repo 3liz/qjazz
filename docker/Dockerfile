@@ -96,18 +96,24 @@ EXPOSE 23456 9080 9443
 
 ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
 
+HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
+    CMD /usr/local/bin/healthcheck.sh
+
+# Create qgis user
+RUN set -eux; useradd qgis --home-dir=/home/qgis;
+
+USER qgis
+
 VOLUME /home/qgis
 VOLUME /var/qjazz
 
+ENV HOME=/home/qgis
 ENV QJAZZ_VOLUME=/var/qjazz
 ENV PATH=/opt/local/qjazz/bin:$PATH
 
 # Define here so that commands run with `docker exec`
 # may access the variable
 ENV QGIS_PLUGINPATH=/var/qjazz/plugins
-
-HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
-    CMD /usr/local/bin/healthcheck.sh
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
@@ -152,6 +158,11 @@ EXPOSE 9443 9080 9876
 
 HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
     CMD /usr/local/bin/healthcheck.sh
+
+# Create qgis user
+RUN set -eux; useradd -M qgis; 
+
+USER qgis
 
 CMD ["/usr/bin/bash","--rcfile","/usr/local/bin/bashrc","-i"]
 
