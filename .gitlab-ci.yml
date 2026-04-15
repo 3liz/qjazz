@@ -155,12 +155,16 @@ tests:3.34:
 # Packages
 #-----------------
 
+.release_rules:
+  - if: '$CI_COMMIT_TAG =~ /^release-\d+\.\d+\.\d+(?:-.*)?$/'
+
 .package:
   image: ${REGISTRY_URL}/factory-ci-runner:fabric-ci
   tags:
   - fabric
   stage: package
   rules:
+    - !reference [.release_rules]
     - if: $RELEASE_BRANCH == "true"
   script:
     - upload_to_packages_server `ls -1 dist/qjazz-*.tar.gz`  pub/qjazz/$QGIS_FLAVOR/qjazz

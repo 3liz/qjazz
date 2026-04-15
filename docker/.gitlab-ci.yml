@@ -1,7 +1,6 @@
 #-------------
 # Docker build
 #-------------
-
 .build-docker:
   image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
   tags:
@@ -18,6 +17,7 @@
     paths:
     - "docker/factory-${QGIS_FLAVOR}.manifest"
   rules:
+    - !reference [.release_rules]
     - if: $RELEASE_BRANCH == "true"
 
 # XXX Matrix build does not allow using dependencies
@@ -77,10 +77,6 @@ build-docker:noqgis:
 # -----------
 # release
 # ----------
-
-.release_rules:
-  - if: '$CI_COMMIT_TAG =~ /^release-\d+\.\d+\.\d+(?:-.*)?$/'
-
 .release:
   rules:
     - !reference [.release_rules]
