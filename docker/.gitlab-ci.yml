@@ -8,6 +8,7 @@
   - factory-dind
   stage: docker
   script:
+  - docker info
   - make -C docker build deliver FLAVOR=$QGIS_FLAVOR LIZCLOUD=yes
   - make -C docker build-ci deliver-ci FLAVOR=$QGIS_FLAVOR
   - cat $DOCKERPASS | docker login -u 3liz --password-stdin
@@ -20,6 +21,9 @@
   rules:
     - !reference [.release_rules]
     - if: $RELEASE_BRANCH == "true"
+  variables:
+    DOCKER_ATTESTATION: 'true'
+    DOCKER_DRIVER: ''
 
 # XXX Matrix build does not allow using dependencies
 
@@ -74,6 +78,9 @@ build-docker:noqgis:
   artifacts:
     paths:
     - "docker/factory-noqgis.manifest"
+  variables:
+    DOCKER_ATTESTATION: 'true'
+    DOCKER_DRIVER: ''
 
 # -----------
 # release
