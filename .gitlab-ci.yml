@@ -18,7 +18,7 @@ variables:
 #-----------------
 
 lint:
-  image: ${REGISTRY_URL}/factory-ci-runner:qgis-release
+  image: ${REGISTRY_URL}/factory-ci-runner:qgis-${QGIS_FLAVOR}
   stage: lint
   script:
     - uv pip install -r requirements.txt -r requirements/lint.txt
@@ -28,6 +28,9 @@ lint:
   variables:
     UV_NO_SYNC: "true"
     UV_NO_MANAGED_PYTHON: "true"
+  parallel:
+    matrix:
+      - QGIS_FLAVOR: ["ltr", "release"]
 
 # ------------------------------
 # Build cpp Qgis server extension
@@ -46,14 +49,6 @@ lint:
     - "qjazz-contrib/src/qjazz_core/qgis/*.so"
   tags:
   - factory-plain
-
-# XXX We cannot use artifacts with parallel/matrix
-build-extensions:3.34:
-  extends: .build-extensions
-  variables:
-    QGIS_FLAVOR: '3.34'
-    QJAZZ_NO_BUILD_EXT_INSTALL: '1'
-
 
 build-extensions:3.40:
   extends: .build-extensions
@@ -143,14 +138,6 @@ tests:3.40:
   variables:
     QGIS_FLAVOR: "3.40"
 
-tests:3.34:
-  extends: .tests
-  dependencies:
-      - build-extensions:3.34
-  variables:
-    QGIS_FLAVOR: "3.34"
-    QJAZZ_NO_BUILD_EXT_INSTALL: '1'
-
 #-----------------
 # Packages
 #-----------------
@@ -196,15 +183,6 @@ package:3.40:
       - build-binaries
   variables:
     QGIS_FLAVOR: "3.40"
-
-package:3.34:
-  extends: .package
-  dependencies:
-      - build-extensions:3.34
-      - build-binaries
-  variables:
-    QGIS_FLAVOR: "3.34"
-
 
 #-----------------
 # Doc

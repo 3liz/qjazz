@@ -200,8 +200,9 @@ def resolve_path(value: str, context: Optional[ProcessingContext]) -> Path:
 
     p = Path(value)
     if context and context.config.raw_destination_input_sink:
+        raw_destination_root_path = context.config.raw_destination_root_path or workdir
         assert_postcondition(
-            p.is_relative_to(context.raw_destination_root_path) or p.is_relative_to(workdir),
+            p.is_relative_to(raw_destination_root_path),
             f"Invalid path: {p}",
         )
     else:

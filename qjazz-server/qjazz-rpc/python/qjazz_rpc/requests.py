@@ -17,17 +17,17 @@ from . import messages as _m
 def _to_qgis_method(method: _m.HTTPMethod) -> QgsServerRequest.Method:
     match method:
         case _m.HTTPMethod.GET:
-            return QgsServerRequest.GetMethod
+            return QgsServerRequest.Method.GetMethod
         case _m.HTTPMethod.HEAD:
-            return QgsServerRequest.HeadMethod
+            return QgsServerRequest.Method.HeadMethod
         case _m.HTTPMethod.POST:
-            return QgsServerRequest.PostMethod
+            return QgsServerRequest.Method.PostMethod
         case _m.HTTPMethod.PUT:
-            return QgsServerRequest.PutMethod
+            return QgsServerRequest.Method.PutMethod
         case _m.HTTPMethod.DELETE:
-            return QgsServerRequest.DeleteMethod
+            return QgsServerRequest.Method.DeleteMethod
         case _m.HTTPMethod.PATCH:
-            return QgsServerRequest.PatchMethod
+            return QgsServerRequest.Method.PatchMethod
         case _:
             # Other methods are not implemented
             # in QgisServerRequest
@@ -39,7 +39,7 @@ class Request(QgsServerRequest):
         self,
         url: str,
         method: QgsServerRequest.Method,
-        headers: dict[str, str],
+        headers: dict[str | None, str | None],
         data: Optional[bytes],
     ):
         self._data = data
@@ -145,7 +145,8 @@ class Response(QgsServerResponse):
             self._send_response()
 
         # Send data as chunks
-        data = memoryview(self._buffer.data())
+        # NOTE: Mypy doesn't know that QByteArray implement the Buffer protocol
+        data = memoryview(self._buffer.data())  # type: ignore [arg-type]
         MAX_CHUNK_SIZE = self._chunk_size
         chunks = (data[i : i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
         for chunk in chunks:
@@ -159,7 +160,7 @@ class Response(QgsServerResponse):
 
         self._buffer.buffer().clear()
 
-    def header(self, key: str) -> str:
+    def header(self, key: str) -> str:  # type: ignore [override]
         return self._headers.get(key) or ""
 
     def headers(self) -> dict[str, str]:
@@ -171,13 +172,13 @@ class Response(QgsServerResponse):
     def data(self) -> QByteArray:
         return self._buffer.data()
 
-    def setHeader(self, key: str, value: str) -> None:
+    def setHeader(self, key: str, value: str) -> None:  # type: ignore [override]
         if not self._header_written:
             self._headers[key] = value
         else:
             logger.error("Cannot set header after header written")
 
-    def removeHeader(self, key: str) -> None:
+    def removeHeader(self, key: str) -> None:  # type: ignore [override]
         self._headers.pop(key, None)
 
     def sendError(self, code: int, message: Optional[str] = None) -> None:

@@ -5,7 +5,6 @@ from typing import (
 )
 
 from qgis.core import (
-    Qgis,
     QgsMapLayer,
     QgsProject,
 )
@@ -50,9 +49,6 @@ class LayerAccessor:
         """Get the layer name according if the shortname is set"""
         if self.use_layer_ids:
             return layer.id()
-        if Qgis.versionInt() < 33800:
-            name = layer.shortName()
-        else:
-            name = layer.serverProperties().shortName()
 
-        return name or layer.name()
+        props = layer.serverProperties()
+        return props.shortName() if props else layer.name()

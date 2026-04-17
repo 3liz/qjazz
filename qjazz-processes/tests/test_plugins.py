@@ -12,6 +12,7 @@ def test_plugins_provider(
     plugins: QgisPluginService,
 ):
     registry = QgsApplication.processingRegistry()
+    assert registry is not None
 
     # Output published providers
     print("\ntest_plugins_provider:providers", [p.id() for p in plugins.providers])

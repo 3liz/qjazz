@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import (
+    TYPE_CHECKING,
     Iterable,
     Literal,
     Optional,
     Sequence,
     Union,
+    cast,
 )
 
 from pydantic import BaseModel, Field, JsonValue, TypeAdapter
@@ -25,6 +27,13 @@ from .base import (
 )
 from .layers import ParameterMapLayer
 
+if TYPE_CHECKING:
+    from qgis.core import (
+        QgsMeshLayer,
+        QgsProcessingParameterMeshDatasetGroups,
+        QgsProcessingParameterMeshDatasetTime,
+    )
+
 #
 # QgsProcessingParameterMeshLayer
 #
@@ -32,7 +41,11 @@ from .layers import ParameterMapLayer
 
 class ParameterMeshLayer(ParameterMapLayer):
     @classmethod
-    def compatible_layers(cls, param: ParameterDefinition, project: QgsProject) -> Iterable[str]:
+    def compatible_layers(
+        cls,
+        param: ParameterDefinition,
+        project: QgsProject,
+    ) -> Iterable["QgsMeshLayer"]:
         return QgsProcessingUtils.compatibleMeshLayers(project)
 
 
@@ -44,17 +57,19 @@ class ParameterMeshLayer(ParameterMapLayer):
 class ParameterMeshDatasetGroups(InputParameter):
     _ParameterType = set[
         Literal[  # type: ignore [valid-type]
-            QgsMeshDatasetGroupMetadata.DataOnFaces,
-            QgsMeshDatasetGroupMetadata.DataOnVertices,
-            QgsMeshDatasetGroupMetadata.DataOnVolumes,
-            QgsMeshDatasetGroupMetadata.DataOnEdges,
+            QgsMeshDatasetGroupMetadata.DataType.DataOnFaces,
+            QgsMeshDatasetGroupMetadata.DataType.DataOnVertices,
+            QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes,
+            QgsMeshDatasetGroupMetadata.DataType.DataOnEdges,
         ],
     ]
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterMeshDatasetGroups, cls).metadata(param)
-        mesh_layer_param = param.meshLayerParameterName()
+
+        tparam = cast("QgsProcessingParameterMeshDatasetGroups", param)
+        mesh_layer_param = tparam.meshLayerParameterName()
         if mesh_layer_param:
             md.append(
                 MetadataValue(
@@ -118,7 +133,9 @@ class ParameterMeshDatasetTime(InputParameter):
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterMeshDatasetTime, cls).metadata(param)
-        mesh_layer_param = param.meshLayerParameterName()
+
+        tparam = cast("QgsProcessingParameterMeshDatasetTime", param)
+        mesh_layer_param = tparam.meshLayerParameterName()
         if mesh_layer_param:
             md.append(
                 MetadataValue(
@@ -126,7 +143,7 @@ class ParameterMeshDatasetTime(InputParameter):
                     value=mesh_layer_param,
                 ),
             )
-        group_param = param.datasetGroupParameterName()
+        group_param = tparam.datasetGroupParameterName()
         if group_param:
             md.append(
                 MetadataValue(

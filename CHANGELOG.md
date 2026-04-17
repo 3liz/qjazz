@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* Drop QGIS 3.34 support
+
+## 0.7.0
+
 * Remove jobs webui
     - Use of deprecated framemorks
     - Trigger security alerts

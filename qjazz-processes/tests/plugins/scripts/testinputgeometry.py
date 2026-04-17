@@ -8,7 +8,8 @@ from qgis.processing import alg
     type=alg.GEOMETRY,
     name="INPUT",
     label="Vector point",
-    geometryTypes=[QgsWkbTypes.PointGeometry],
+    # NOTE: Not correctly typed 
+    geometryTypes=[QgsWkbTypes.GeometryType.Point],  # type: ignore [attr-defined]
     help="multipoint",
     allowMultipart=True,
 )

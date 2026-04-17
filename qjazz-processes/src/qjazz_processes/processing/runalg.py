@@ -5,14 +5,18 @@ import traceback
 
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Mapping,
     Optional,
+    cast,
 )
 
 from qjazz_core import logger
 
-from qgis.core import (
+# NOTE: QGIS _core.pyi missed QgsProcessingException
+from qgis.core import (  # type: ignore [attr-defined]
+    Qgis,
     QgsMapLayer,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
@@ -22,21 +26,23 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsProcessingUtils,
     QgsProject,
-    QgsWkbTypes,
 )
 
 from qjazz_processes.schemas import RunProcessException
 
+if TYPE_CHECKING:
+    from qgis.core import QgsMapLayerStore
+
 
 def validate_parameters(
     alg: QgsProcessingAlgorithm,
-    parameters: Mapping[str, QgsProcessingParameterDefinition],
+    parameters: dict[str, QgsProcessingParameterDefinition],
     feedback: QgsProcessingFeedback,
     context: QgsProcessingContext,
     abort_on_error: bool = False,
 ) -> bool:
     # Check parameters value
-    ok, msg = alg.checkParameterValues(parameters, context)
+    ok, msg = alg.checkParameterValues(parameters, context)  # type: ignore [arg-type]
     if not ok:
         msg = f"Processing parameters error:\n{msg}"
         feedback.reportError(msg)
@@ -45,18 +51,15 @@ def validate_parameters(
         return False
 
     # Validate CRS
-    if not alg.validateInputCrs(parameters, context):
-        feedback.pushInfo(
-            "Warning: not all input layers use the same CRS\n",
-            "This can cause unexpected results",
-        )
+    if not alg.validateInputCrs(parameters, context):  # type: ignore [arg-type]
+        feedback.pushInfo("Warning: not all input layers use the same CRS\nThis can cause unexpected results")
 
     return True
 
 
 def execute(
     alg: QgsProcessingAlgorithm,
-    parameters: Mapping[str, QgsProcessingParameterDefinition],
+    parameters: dict[str, QgsProcessingParameterDefinition],
     feedback: QgsProcessingFeedback,
     context: QgsProcessingContext,
 ) -> Mapping[str, Any]:
@@ -77,7 +80,7 @@ def execute(
 
     # Execute algorithm
     try:
-        results, ok = alg.run(parameters, context, feedback, catchExceptions=False)
+        results, ok = alg.run(parameters, context, feedback, catchExceptions=False)  # type: ignore [arg-type]
         if not ok:
             logger.error(f"Algorithm {alg.id()} returned ok={ok}")
     except QgsProcessingException as err:
@@ -156,11 +159,13 @@ def process_layer_outputs(
                     lyrname,
                     details.outputName,
                 )
-                details.project.addMapLayer(context.temporaryLayerStore().takeMapLayer(layer))
+                details.project.addMapLayer(
+                    cast("QgsMapLayerStore", context.temporaryLayerStore()).takeMapLayer(layer),
+                )
 
             # Handle post processing
-            if details.postProcessor():
-                details.postProcessor().postProcessLayer(layer, context, feedback)
+            if (post_processor := details.postProcessor()) is not None:
+                post_processor.postProcessLayer(layer, context, feedback)
         except Exception:
             logger.error(f"Processing: Error loading result layer:\n{traceback.format_exc()}")
             wrongLayers.append(str(lyrname))
@@ -209,15 +214,15 @@ def set_output_layer_style(
         # Load default styles
         layer.loadDefaultStyle()
 
-        if layer.type() == QgsMapLayer.RasterLayer:
+        if layer.type() == QgsMapLayer.LayerType.RasterLayer:  # type: ignore [attr-defined]
             style = QgisProcessingConfig.getSetting(QgisProcessingConfig.RASTER_STYLE)
-        else:
-            if layer.geometryType() == QgsWkbTypes.PointGeometry:
+        elif layer.type() == QgsMapLayer.LayerType.VectorLayer:  # type: ignore [attr-defined]
+            if layer.geometryType() == Qgis.GeometryType.Point:  # type: ignore [attr-defined]
                 style = QgisProcessingConfig.getSetting(QgisProcessingConfig.VECTOR_POINT_STYLE)
-            elif layer.geometryType() == QgsWkbTypes.LineGeometry:
+            elif layer.geometryType() == Qgis.GeometryType.Line:  # type: ignore [attr-defined]
                 style = QgisProcessingConfig.getSetting(QgisProcessingConfig.VECTOR_LINE_STYLE)
             else:
                 style = QgisProcessingConfig.getSetting(QgisProcessingConfig.VECTOR_POLYGON_STYLE)
     if style:
         logger.trace("Adding style '%s' to layer %s (output_name %s)", style, details.name, output_name)
-        layer.loadNamedStyle(style)
+        layer.loadNamedStyle(str(style))

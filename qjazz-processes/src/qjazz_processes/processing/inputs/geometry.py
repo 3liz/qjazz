@@ -1,6 +1,7 @@
 import re
 
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Iterator,
@@ -12,7 +13,6 @@ from typing import (
 
 from osgeo import ogr
 from pydantic import (
-    AnyUrl,
     Field,
     JsonValue,
     TypeAdapter,
@@ -25,18 +25,12 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsProcessingContext,
-    QgsProcessingParameterCoordinateOperation,
-    QgsProcessingParameterCrs,
-    QgsProcessingParameterExtent,
-    QgsProcessingParameterGeometry,
-    QgsProcessingParameterPoint,
     QgsProcessingParameters,
     QgsProject,
     QgsRectangle,
     QgsReferencedGeometry,
     QgsReferencedPointXY,
     QgsReferencedRectangle,
-    QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QVariant
 
@@ -55,9 +49,17 @@ from .base import (
     InputParameter,
     Metadata,
     MetadataValue,
-    ParameterDefinition,
     ProcessingContext,
 )
+
+if TYPE_CHECKING:
+    from qgis.core import (
+        QgsProcessingParameterCoordinateOperation,
+        QgsProcessingParameterCrs,
+        QgsProcessingParameterExtent,
+        QgsProcessingParameterGeometry,
+        QgsProcessingParameterPoint,
+    )
 
 #
 # QgsProcessingParameterGeometry
@@ -65,7 +67,7 @@ from .base import (
 
 
 def geometrytypes_to_model(
-    seq: Sequence[Qgis.GeometryType],
+    seq: Sequence[int],
     allowMultipart: bool,
 ) -> Iterator[TypeAlias]:
     for t in seq:
@@ -88,7 +90,7 @@ class ParameterGeometry(InputParameter):
     _SchemaFormat = "geojson-geometry"
 
     @classmethod
-    def get_geometry_type(cls, param: QgsProcessingParameterGeometry) -> TypeAlias:
+    def get_geometry_type(cls, param: "QgsProcessingParameterGeometry") -> TypeAlias:
         geomtypes = param.geometryTypes()
         if geomtypes:
             return Union[tuple(geometrytypes_to_model(geomtypes, param.allowMultipart()))]
@@ -97,21 +99,20 @@ class ParameterGeometry(InputParameter):
     @classmethod
     def create_model(
         cls,
-        param: ParameterDefinition,
+        param: "QgsProcessingParameterGeometry",
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-        _type: Any = cls.get_geometry_type(param)
         if not validation_only:
-            default = field.pop("default", None)
-            g = default and qgsgeometry_to_json(_type, default, project and project.crs())
-            if g:
-                field.update(default=g)
+            geometry_type = cls.get_geometry_type(param)
+            if default := field.pop("default", None):
+                if g := qgsgeometry_to_json(geometry_type, default, project.crs() if project else None):
+                    field.update(default=g)
 
         return OneOf[  # type: ignore [misc, valid-type]
             Union[
-                Annotated[_type, Field(json_schema_extra={"format": "geojson-geometry"})],
+                Annotated[geometry_type, Field(json_schema_extra={"format": "geojson-geometry"})],
                 MediaType(str, Formats.WKT.media_type),
                 MediaType(str, Formats.GML.media_type),
             ],
@@ -152,12 +153,13 @@ class ParameterGeometry(InputParameter):
 #
 
 
+# NOTE: we break override rule because we want to inherit from
 class ParameterPoint(ParameterGeometry):
     @classmethod
-    def get_geometry_type(cls, _: QgsProcessingParameterPoint) -> TypeAlias:
+    def get_geometry_type(cls, _: "QgsProcessingParameterPoint") -> TypeAlias:  # type: ignore [override]
         return geojson.Point
 
-    def value(
+    def value(  # type: ignore [override]
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
@@ -169,7 +171,7 @@ class ParameterPoint(ParameterGeometry):
             case QgsGeometry():
                 p = qgsgeometry_to_point(g)
             case _:
-                raise InputValueError("Geometry expected")
+                raise InputValueError(f"Geometry expected, not {type(g)}")
 
         return p
 
@@ -185,7 +187,7 @@ class ParameterCrs(InputParameter):
     @classmethod
     def create_model(
         cls,
-        param: QgsProcessingParameterCrs,
+        param: "QgsProcessingParameterCrs",
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -197,12 +199,12 @@ class ParameterCrs(InputParameter):
                 if project:
                     context.setProject(project)
 
-                crs = QgsProcessingParameters.parametrAsCrs(
+                crs = QgsProcessingParameters.parameterAsCrs(
                     param,
                     {param.name(): default},
                     context,
                 )
-                if crs.isValid:
+                if crs.isValid():
                     field.update(default=crs.toOgcUrn())
 
         return CrsDefinition
@@ -244,7 +246,7 @@ class ParameterCoordinateOperation(InputParameter):
     _ParameterType = str
 
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterCoordinateOperation) -> list[Metadata]:
+    def metadata(cls, param: "QgsProcessingParameterCoordinateOperation") -> list[Metadata]:
         md = super(ParameterCoordinateOperation, cls).metadata(param)
 
         source_crs_param = param.sourceCrsParameterName()
@@ -307,7 +309,7 @@ class ParameterExtent(InputParameter):
     @classmethod
     def create_model(
         cls,
-        param: QgsProcessingParameterExtent,
+        param: "QgsProcessingParameterExtent",
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -380,15 +382,12 @@ def qgsgeometry_to_point(
     g: QgsGeometry,
     crs: Optional[QgsCoordinateReferenceSystem] = None,
 ) -> QgsPointXY | QgsReferencedPointXY:
-    p = g.asPoint() if g.wkbType() == QgsWkbTypes.Point else g.centroid().asPoint()
+    p = g.asPoint() if g.wkbType() == Qgis.WkbType.Point else g.centroid().asPoint()
     return QgsReferencedPointXY(p, crs) if crs else p
 
 
 def crs_to_ogc_urn(crs: QgsCoordinateReferenceSystem) -> str:
-    if Qgis.versionInt() >= 33800:
-        return crs.toOgcUrn()
-    path = (AnyUrl(crs.toOgcUri()).path or "").strip("/").replace("/", ":")
-    return f"urn:ogc:{path}"
+    return crs.toOgcUrn()
 
 
 def qgsgeometry_to_json(
@@ -399,13 +398,13 @@ def qgsgeometry_to_json(
     """Convert Qgis geometry to GeoJson object"""
     out: Any
     match g:
-        case QgsReferencedPointXY(g):
+        case QgsReferencedPointXY():
             crs = g.crs()
             out = geojson.Point.from_xy(g.x(), g.y())
-        case QgsPointXY(g):
+        case QgsPointXY():
             crs = QgsCoordinateReferenceSystem()
             out = geojson.Point.from_xy(g.x(), g.y())
-        case QgsReferencedGeometry(g):
+        case QgsReferencedGeometry():
             crs = g.crs()
             out = TypeAdapter(GeometryType).validate_json(g.asJson())
         case QgsGeometry():

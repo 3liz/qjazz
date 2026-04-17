@@ -79,6 +79,7 @@ class ProcessingConfig(ConfigBase):
     # XXX Must set in Settings `default-output-vector-layer-ext`
     default_vector_file_ext: Optional[str] = Field(
         default="fgb",
+        alias="default_vector_file_format",
         title="Default vector file extension",
         description="""
         Define the default vector file extensions for vector destination
@@ -217,25 +218,13 @@ class ProcessingConfig(ConfigBase):
 
         # Configure default vector extensions
         if self.default_vector_file_ext:
-            from qgis.core import QgsVectorFileWriter
-
-            exts = QgsVectorFileWriter.supportedFormatExtensions()
             ext = self.default_vector_file_ext
-            idx = exts.index(ext)
-            settings["qgis/configuration/default-output-vector-layer-ext"] = idx
-            settings["qgis/configuration/default-output-vector-ext"] = self.default_vector_file_ext
-            # Qgis > 33800
+            settings["qgis/configuration/default-output-vector-ext"] = ext
 
         # Configure default raster extensions
         if self.default_raster_file_ext:
-            from qgis.core import QgsRasterFileWriter
-
-            exts = QgsRasterFileWriter.supportedFormatExtensions()
             ext = self.default_raster_file_ext
-            idx = exts.index(ext)
-            settings["qgis/configuration/default-output-raster-layer-ext"] = idx
             settings["qgis/configuration/default-output-raster-ext"] = ext
-            # Qgis > 33800
 
         return settings
 

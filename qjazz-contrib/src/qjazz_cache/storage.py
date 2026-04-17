@@ -50,9 +50,10 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
     logger.debug("Reading Qgis project '%s'", uri)
 
     # see https://github.com/qgis/QGIS/pull/49266
-    project = QgsProject(capabilities=Qgis.ProjectCapabilities())
+    # NOTE: Missing 'ProjectCapabilities' and 'ProjectReadFlags' in Qgis type declaration (_core.pyi)
+    project = QgsProject(capabilities=Qgis.ProjectCapabilities())  # type: ignore [attr-defined]
 
-    readflags = Qgis.ProjectReadFlags()
+    readflags = Qgis.ProjectReadFlags()  # type: ignore [attr-defined]
     if config.dont_resolve_layers:
         # Activate all optimisation flags
         readflags |= Qgis.ProjectReadFlag.TrustLayerMetadata

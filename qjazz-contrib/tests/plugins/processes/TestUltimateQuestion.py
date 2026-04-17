@@ -1,11 +1,11 @@
 """Test just returning simple value"""
 
-from typing import Any
+from typing import Optional
 
 from qgis.core import (
-    QgsFeedback,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
+    QgsProcessingFeedback,
     QgsProcessingOutputNumber,
 )
 
@@ -38,8 +38,8 @@ class TestUltimateQuestion(QgsProcessingAlgorithm):
 
     def processAlgorithm(
         self,
-        parameters: dict[str, Any],
+        parameters: dict,
         context: QgsProcessingContext,
-        feedback: QgsFeedback,
+        feedback: Optional[QgsProcessingFeedback],
     ) -> dict:
         return {self.OUTPUT: 42}

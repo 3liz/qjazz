@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
+    Container,
     Iterable,
     Literal,
     Optional,
@@ -56,6 +58,14 @@ from .base import (
     ProcessingContext,
 )
 
+if TYPE_CHECKING:
+    from qgis.core import (
+        QgsProcessingDestinationParameter,
+        QgsProcessingParameterAggregate,
+        QgsProcessingParameterMultipleLayers,
+        QgsProcessingParameterVectorDestination,
+    )
+
 #
 # Layers input may be passed in various forms:
 #
@@ -70,18 +80,24 @@ from .base import (
 class ParameterMapLayer(InputParameter):
     _multiple: bool = False
 
+    @staticmethod
+    def data_types(param: ParameterDefinition) -> Container[int]:
+        return (
+            param.dataTypes()
+            if isinstance(
+                param,
+                QgsProcessingParameterLimitedDataTypes,
+            )
+            else ()
+        )
+
     @classmethod
     def compatible_layers(
         cls,
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        if isinstance(param, QgsProcessingParameterLimitedDataTypes):
-            dtypes = param.dataTypes()
-        else:
-            dtypes = ()
-
-        return compatible_layers(project, dtypes)
+        return compatible_layers(project, cls.data_types(param))
 
     @classmethod
     def create_model(
@@ -114,17 +130,17 @@ class ParameterMultipleLayers(ParameterMapLayer):
     _multiple = True
 
     @classmethod
-    def compatible_layers(
+    def compatible_layers(  # type: ignore [override]
         cls,
-        param: ParameterDefinition,
+        param: "QgsProcessingParameterMultipleLayers",
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
         return compatible_layers(project, (param.layerType(),))
 
     @classmethod
-    def create_model(
+    def create_model(  # type: ignore [override]
         cls,
-        param: ParameterDefinition,
+        param: "QgsProcessingParameterMultipleLayers",
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -155,7 +171,7 @@ class ParameterVectorLayer(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return compatible_vector_layers(project, param.dataTypes())
+        return compatible_vector_layers(project, ParameterMapLayer.data_types(param))
 
 
 #
@@ -172,7 +188,7 @@ class ParameterFeatureSource(ParameterMapLayer):
         param: ParameterDefinition,
         project: QgsProject,
     ) -> Iterable[QgsMapLayer]:
-        return compatible_vector_layers(project, param.dataTypes())
+        return compatible_vector_layers(project, ParameterMapLayer.data_types(param))
 
     @classmethod
     def create_model(
@@ -214,7 +230,7 @@ class ParameterFeatureSource(ParameterMapLayer):
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
-    ) -> QgsProcessingFeatureSourceDefinition:
+    ) -> "QgsProcessingFeatureSourceDefinition":
         _inp = self.validate(inp)
 
         has_selection = False
@@ -233,7 +249,10 @@ class ParameterFeatureSource(ParameterMapLayer):
                 if not layer:
                     raise InputValueError(f"No layer '{_inp.source}' found")
 
-                behavior = QgsVectorLayer.SetSelection
+                if not isinstance(layer, QgsVectorLayer):
+                    raise InputValueError("'{_inp.source}' is not a vector layer")
+
+                behavior = Qgis.SelectBehavior.SetSelection
 
                 # Apply filter rect first
                 if _inp.intersect:
@@ -241,7 +260,7 @@ class ParameterFeatureSource(ParameterMapLayer):
                     bbox = _inp.intersect
                     rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
                     layer.selectByRect(rect, behavior=behavior)
-                    behavior = QgsVectorLayer.IntersectSelection
+                    behavior = Qgis.SelectBehavior.IntersectSelection
 
                 # Selection by expression
                 if _inp.expression:
@@ -398,7 +417,10 @@ class ParameterTinInputLayers(ParameterMapLayer):
 #
 
 
-class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
+class ParameterLayerDestination[P: "QgsProcessingDestinationParameter"](
+    InputParameter[P, QgsProcessingOutputLayerDefinition],
+    OutputFormatDefinition,
+):
     def initialize(self):
         # Get default extensionfrom default value
         param = self._param
@@ -410,7 +432,7 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
     def get_default_value(
         cls,
         defval: str | QgsProcessingOutputLayerDefinition,
-        param: ParameterDefinition,
+        param: P,
     ) -> tuple[str, str]:
         #
         # Get the file extension as we need it
@@ -426,14 +448,18 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
                 if url.path and url.scheme.lower() in ("", "file"):
                     p = Path(url.path)
                     ext = p.suffix or ext
-                    defval = defval.destinationName or p.stem
+                    dest = defval.destinationName or p.stem
+            else:
+                dest = defval.destinationName or ""
+        else:
+            dest = defval
 
-        return defval, ext
+        return dest, ext
 
     @classmethod
     def create_model(
         cls,
-        param: ParameterDefinition,
+        param: P,
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -454,7 +480,7 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
-    ) -> QgsProcessingOutputLayerDefinition:
+    ) -> "QgsProcessingOutputLayerDefinition":
         context = context or ProcessingContext()
 
         destination = self.validate(inp)
@@ -477,7 +503,6 @@ class ParameterLayerDestination(InputParameter, OutputFormatDefinition):
             #
             # Enforce pushing created layers to layersToLoadOnCompletion list
             # i.e layer will be stored in the destination project
-
             output_name = get_valid_filename(self._param.name())
             # Use canonical file name
             sink = str(context.workdir.joinpath(f"{output_name}{extension}"))
@@ -506,12 +531,12 @@ class ParameterRasterDestination(ParameterLayerDestination):
 
 class ParameterVectorDestination(ParameterLayerDestination):
     @classmethod
-    def metadata(cls, param: QgsProcessingParameterField) -> list[Metadata]:
+    def metadata(cls, param: "QgsProcessingParameterVectorDestination") -> list[Metadata]:
         md = super(ParameterVectorDestination, cls).metadata(param)
         md.append(
             MetadataValue(
                 role="dataType",
-                value=ProcessingSourceType(param.dataType()).name,
+                value=ProcessingSourceType(param.dataType()).name,  # type: ignore [attr-defined]
             ),
         )
         return md
@@ -548,38 +573,12 @@ class ParameterVectorTileDestination(ParameterLayerDestination):
 # QgsProcessingParameterField
 #
 
-if Qgis.versionInt() >= 33600:
-    FieldParameterDataType = Qgis.ProcessingFieldParameterDataType
-
-    def field_datatype_name(value: Qgis.ProcessingFieldParameterDataType) -> str:
-        return value.name
-else:
-    FieldParameterDataType = QgsProcessingParameterField
-
-    def field_datatype_name(value: int) -> str:  # type: ignore [misc]
-        match value:
-            case QgsProcessingParameterField.Any:
-                field_datatype = "Any"
-            case QgsProcessingParameterField.Numeric:
-                field_datatype = "Numeric"
-            case QgsProcessingParameterField.String:
-                field_datatype = "String"
-            case QgsProcessingParameterField.DateTime:
-                field_datatype = "DateTime"
-            case QgsProcessingParameterField.Binary:
-                field_datatype = "Binary"
-            case QgsProcessingParameterField.Boolean:
-                field_datatype = "Boolean"
-            case _:
-                raise ValueError(f"Unexpected field_datatype: {value}")
-        return field_datatype
-
 
 class ParameterField(InputParameter):
     @classmethod
     def metadata(cls, param: QgsProcessingParameterField) -> list[Metadata]:
         md = super(ParameterField, cls).metadata(param)
-        md.append(MetadataValue(role="dataType", value=field_datatype_name(param.dataType())))
+        md.append(MetadataValue(role="dataType", value=param.dataType().name))  # type: ignore [attr-defined]
         md.append(MetadataValue(role="defaultToAllFields", value=param.defaultToAllFields()))
 
         parent_layer_param = param.parentLayerParameterName()
@@ -661,7 +660,7 @@ class ParameterExpression(InputParameter):
     @classmethod
     def metadata(cls, param: QgsProcessingParameterExpression) -> list[Metadata]:
         md = super(ParameterExpression, cls).metadata(param)
-        md.append(MetadataValue(role="expressionType", value=param.expressionType().name))
+        md.append(MetadataValue(role="expressionType", value=param.expressionType().name))  # type: ignore [attr-defined]
         parent_layer_parameter = param.parentLayerParameterName()
         if parent_layer_parameter:
             md.append(
@@ -681,7 +680,7 @@ class ParameterExpression(InputParameter):
 
 class ParameterBand(InputParameter):
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
+    def metadata(cls, param: "QgsProcessingParameterBand") -> list[Metadata]:
         md = super(ParameterBand, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:
@@ -732,7 +731,7 @@ class ParameterAggregate(InputParameter):
     _ParameterType = Sequence[AggregateItem]
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
+    def metadata(cls, param: "QgsProcessingParameterAggregate") -> list[Metadata]:
         md = super(ParameterAggregate, cls).metadata(param)
         parent_layer_param = param.parentLayerParameterName()
         if parent_layer_param:

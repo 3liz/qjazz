@@ -16,6 +16,8 @@ from typing import (
 
 from pydantic import BaseModel
 
+from ..condition import assert_not_none
+
 if sys.version_info < (3, 11):
     import tomli as toml  # type: ignore
 else:
@@ -40,7 +42,7 @@ class ProcessesLoader:
         self._providers = providers
         self._register = False
 
-        reg = QgsApplication.processingRegistry()
+        reg = assert_not_none(QgsApplication.processingRegistry())
         reg.providerAdded.connect(self._registerProvider)
 
         # Support models and script
@@ -54,7 +56,7 @@ class ProcessesLoader:
         # From /usr/share/qgis/python/plugins/processing/core/Processing.py
         #
         self._register = False
-        reg = QgsApplication.processingRegistry()
+        reg = assert_not_none(QgsApplication.processingRegistry())
 
         def _load_builtin(n: str) -> Optional[QgsProcessingProvider]:
             p = None

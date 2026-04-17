@@ -1,7 +1,6 @@
 from typing import Iterable, Iterator, Optional, Self, assert_never
 
 from qgis.core import (
-    Qgis,
     QgsBox3D,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
@@ -84,7 +83,7 @@ def transform_extent(
     r: QgsRectangle,
     from_crs: QgsCoordinateReferenceSystem,
     dest_crs: QgsCoordinateReferenceSystem,
-    p: QgsProject,
+    p: Optional[QgsProject],
 ) -> QgsRectangle:
     transform = QgsCoordinateTransform(from_crs, dest_crs, p)
     transform.setBallparkTransformsAreAppropriate(True)
@@ -92,7 +91,9 @@ def transform_extent(
 
 
 def compute_extent_from_layers(
-    p: QgsProject, dest_crs: Optional[QgsCoordinateTransform] = None, layers: Optional[Iterable[str]] = None
+    p: QgsProject,
+    dest_crs: Optional[QgsCoordinateReferenceSystem] = None,
+    layers: Optional[Iterable[str]] = None,
 ) -> QgsRectangle:
     """Combine extent from layers
 
@@ -124,7 +125,7 @@ def compute_extent_from_layers(
 def layer_extents_from_metadata(
     provider: QgsDataProvider,
     storage_crs: QgsCoordinateReferenceSystem,
-    project: QgsProject,
+    project: Optional[QgsProject],
 ) -> Iterator[QgsBox3D]:
     # Trust metadata
     md = provider.layerMetadata()
@@ -155,7 +156,7 @@ class SpatialExtent(extent.SpatialExtent):
         extent = Pu.wmsExtent(p)
         if extent.isEmpty():
             # Compute extent from layers
-            extent = compute_extent_from_layers(p, layers)
+            extent = compute_extent_from_layers(p, layers=layers)
 
         if extent.isEmpty():
             return None
@@ -170,14 +171,12 @@ class SpatialExtent(extent.SpatialExtent):
         )
         storage_crs_bbox = parse_extent(extent, storage_crs_qgis.hasAxisInverted())
 
-        if Qgis.versionInt() >= 33800:
-            elev = p.elevationProperties()
-            if elev:
-                elev_range = elev.elevationRange()
-                if not elev_range.isInfinite():
-                    zmin, zmax = elev_range.lower(), elev_range.upper()
-                    extend_bbox_3d(bbox, zmin, zmax)
-                    extend_bbox_3d(storage_crs_bbox, zmin, zmax)
+        if elev := p.elevationProperties():
+            elev_range = elev.elevationRange()
+            if not elev_range.isInfinite():
+                zmin, zmax = elev_range.lower(), elev_range.upper()
+                extend_bbox_3d(bbox, zmin, zmax)
+                extend_bbox_3d(storage_crs_bbox, zmin, zmax)
 
         return cls(
             bbox=[bbox],
@@ -205,19 +204,24 @@ class SpatialExtent(extent.SpatialExtent):
 
         p = layer.project()
 
-        storage_extents = list(layer_extents_from_metadata(provider, storage_crs, p))
+        extent: QgsRectangle | QgsBox3D
+
+        storage_extents: list[QgsRectangle | QgsBox3D] = list(
+            layer_extents_from_metadata(
+                provider,
+                storage_crs,
+                p,
+            )
+        )
+
         if not storage_extents:
-            # Try to calculate directly from the provider
-            if Qgis.versionInt() < 33800:
+            # XXX Do not use `QgsDataProvider::extent3D: QGIS crash (segfault)
+            # when asking for extent3D with some providers
+            extent = layer.extent3D()
+            if not extent.is3D():
+                # XXX: fallback to 2D extent since extend3D() may be inconsistant
+                # in regard to the 2D extent
                 extent = layer.extent()
-            else:
-                # XXX Do not use `QgsDataProvider::extent3D: QGIS crash (segfault)
-                # when asking for extent3D with some providers
-                extent = layer.extent3D()
-                if not extent.is3D():
-                    # XXX: fallback to 2D extent since extend3D() may be inconsistant
-                    # in regard to the 2D extent
-                    extent = layer.extent()
 
             if not extent.isEmpty():
                 storage_extents = [extent]
@@ -228,7 +232,7 @@ class SpatialExtent(extent.SpatialExtent):
         default_crs_qgis = default_crs.to_qgis()
 
         # Get bbox extents in default crs
-        def bbox_extents() -> Iterator[QgsBox3D]:
+        def bbox_extents() -> Iterator[QgsRectangle | QgsBox3D]:
             for box in storage_extents:
                 match box:
                     case QgsBox3D():
@@ -285,7 +289,11 @@ class TemporalExtent(extent.TemporalExtent):
         if isinstance(layer, QgsVectorLayer) and not layer.isSpatial():
             return None
 
-        xt = layer.dataProvider().layerMetadata().extent()
+        provider = layer.dataProvider()
+        if provider is None:
+            return None
+
+        xt = provider.layerMetadata().extent()
         interval = [
             [
                 DateTime(tr.begin()),

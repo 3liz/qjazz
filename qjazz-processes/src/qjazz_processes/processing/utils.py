@@ -1,14 +1,13 @@
 import re
 
 from collections.abc import Container
-from enum import Enum
 from pathlib import Path
 from typing import (
-    Any,
     Iterator,
     Optional,
     Sequence,
     Type,
+    no_type_check,
 )
 from urllib.parse import urlsplit
 
@@ -18,7 +17,6 @@ from qgis.core import (
     QgsMapLayer,
     QgsMeshLayer,
     QgsPointCloudLayer,
-    QgsProcessing,
     QgsProcessingDestinationParameter,
     QgsProcessingParameterFileDestination,
     QgsProject,
@@ -32,39 +30,8 @@ from qjazz_processes.schemas import (
     mimetypes,
 )
 
-ProcessingSourceType: type[Any]
-
-if Qgis.versionInt() >= 33600:
-    # In qgis 3.36+ ProcessingSourceType is a real python enum
-    ProcessingSourceType = Qgis.ProcessingSourceType
-else:
-
-    class _ProcessingSourceType(Enum):
-        MapLayer = QgsProcessing.TypeMapLayer
-        VectorAnyGeometry = QgsProcessing.TypeVectorAnyGeometry
-        VectorPoint = QgsProcessing.TypeVectorPoint
-        VectorLine = QgsProcessing.TypeVectorLine
-        VectorPolygon = QgsProcessing.TypeVectorPolygon
-        Raster = QgsProcessing.TypeRaster
-        File = QgsProcessing.TypeFile
-        Vector = QgsProcessing.TypeVector
-        Mesh = QgsProcessing.TypeMesh
-        Plugin = QgsProcessing.TypePlugin
-        PointCloud = QgsProcessing.TypePointCloud
-        Annotation = QgsProcessing.TypeAnnotation
-        VectorTile = QgsProcessing.TypeVectorTile
-
-    ProcessingSourceType = _ProcessingSourceType
-
+ProcessingSourceType = Qgis.ProcessingSourceType
 LayerType = Qgis.LayerType
-
-
-if Qgis.versionInt() >= 33600:
-    ProcessingFileParameterBehavior = Qgis.ProcessingFileParameterBehavior
-else:
-    from qgis.core import QgsProcessingParameterFile
-
-    ProcessingFileParameterBehavior = QgsProcessingParameterFile.Behavior
 
 
 #
@@ -77,9 +44,10 @@ else:
 #  loaded with 'dont_resolve_layers' option.
 
 
+@no_type_check
 def is_compatible_vector_layer(
     layer: QgsVectorLayer,
-    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+    dtypes: Container[int],
 ) -> bool:
     _PT = ProcessingSourceType
 
@@ -95,7 +63,7 @@ def is_compatible_vector_layer(
 
 def compatible_vector_layers(
     project: QgsProject,
-    dtypes: Optional[Container[ProcessingSourceType]] = None,  # type: ignore [valid-type]
+    dtypes: Optional[Container[int]] = None,
 ) -> Iterator[QgsMapLayer]:
     for layer in project.mapLayers().values():
         if isinstance(layer, QgsVectorLayer) and (not dtypes or is_compatible_vector_layer(layer, dtypes)):
@@ -137,9 +105,10 @@ def compatible_mesh_layers(project: QgsProject) -> Iterator[QgsMapLayer]:
 # TODO Add plugin and tiled scene layers
 
 
+@no_type_check
 def compatible_layers(
     project: QgsProject,
-    dtypes: Container[ProcessingSourceType],  # type: ignore [valid-type]
+    dtypes: Container[int],
 ) -> Iterator[QgsMapLayer]:
     if dtypes:
         for layer in project.mapLayers().values():

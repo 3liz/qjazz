@@ -19,6 +19,7 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils
 
+from qjazz_core.condition import assert_not_none
 from qjazz_core.models import Option
 
 from .core import collections
@@ -60,11 +61,8 @@ def scale_denominators(p: QgsProject) -> tuple[Optional[float], Optional[float]]
 
 def get_layer_short_name(layer: QgsMapLayer) -> str:
     """Get the layer name according if the shortname is set"""
-    name = layer.shortName() if Qgis.versionInt() < 33800 else layer.serverProperties().shortName()
-    if not name:
-        name = layer.name()
-
-    return name
+    props = layer.serverProperties()
+    return props.shortName() if props else layer.name()
 
 
 class Collection(collections.Collection):
@@ -117,28 +115,25 @@ class Collection(collections.Collection):
     #
 
     @classmethod
-    def from_layer(cls, layer: QgsMapLayer, parent: Self) -> Self:
+    def from_layer(cls, layer: QgsMapLayer, parent: Self) -> Optional[Self]:
         """Build a Collection from a QGIS project"""
 
         provider = layer.dataProvider()
+        if not provider:
+            # Hue !? no provider !
+            return None
+
         md = provider.layerMetadata()
 
         # XXX Create an SPDX AND expression for all licences in list
         licence = " AND ".join(md.licenses()) or "other"
 
-        if Qgis.versionInt() < 33800:
-            title = layer.title()
-            abstract = layer.abstract()
-            attribution = layer.attribution()
-            attribution_url = layer.attributionUrl()
-            keywords = layer.keywordList()
-        else:
-            props = layer.serverProperties()
-            title = props.title()
-            abstract = props.abstract()
-            attribution = props.attribution()
-            attribution_url = props.attributionUrl()
-            keywords = props.keywordList()
+        props = assert_not_none(layer.serverProperties())
+        title = props.title()
+        abstract = props.abstract()
+        attribution = props.attribution()
+        attribution_url = props.attributionUrl()
+        keywords = props.keywordList()
 
         def layer_links() -> Iterator[links.Link]:
             if attribution_url:
@@ -164,16 +159,21 @@ class Collection(collections.Collection):
                     layer.maximumScale(),
                 )
 
-        styles = layer.styleManager().styles()
-        # Only default style
-        if not styles or len(styles) == 1:
+        style_mngr = layer.styleManager()
+        styles: Optional[list[str]]
+        if style_mngr is not None:
+            styles = style_mngr.styles()
+            # Only default style
+            if not styles or len(styles) == 1:
+                styles = None
+        else:
             styles = None
 
         if Qgis.versionInt() < 34400:
             legend_url = layer.legendUrl() or None
             legend_format = layer.legendUrlFormat() or None
         else:
-            props = layer.serverProperties()
+            props = assert_not_none(layer.serverProperties())
             legend_url = props.legendUrl() or None
             legend_format = props.legendUrlFormat() or None
 

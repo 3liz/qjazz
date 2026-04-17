@@ -221,7 +221,7 @@ class _InputParameter:
         inputs: Iterable[InputParameterDef],
         params: Mapping[str, JsonValue],
         context: ProcessingContext,
-    ) -> Mapping[str, Any]:
+    ) -> dict[str, Any]:
         """Convert inputs to parameters"""
 
         def _value(inp: InputParameterDef) -> Any:

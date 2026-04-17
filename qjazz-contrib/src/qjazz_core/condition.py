@@ -1,7 +1,11 @@
 #
 # Define pre/post condition assertion
 #
-from typing import Any, NoReturn, Optional
+from typing import (
+    Any,
+    NoReturn,
+    Optional,
+)
 
 from .errors import QJazzException
 
@@ -26,3 +30,9 @@ def assert_postcondition(condition: bool, message: Optional[str] = None):
 
 def assert_unreachable(value: Any) -> NoReturn:
     raise AssertionError(f"Expected unreachable code: {value}")
+
+
+def assert_not_none[T](value: Optional[T], message: Optional[str] = None) -> T:
+    if value is None:
+        raise AssertionError(message or "Unexpected None value")
+    return value

@@ -6,7 +6,6 @@ from typing import (
     Optional,
     Sequence,
     TypeAlias,
-    TypeVar,
 )
 
 from pydantic import Field, JsonValue, TypeAdapter, ValidationError
@@ -35,7 +34,7 @@ from qjazz_processes.schemas.models import one_of
 from ..context import ProcessingContext
 from ..inputs import InputParameterDef
 
-OutputDefinition = TypeVar("OutputDefinition", bound=QgsProcessingOutputDefinition)
+OutputDefinition = QgsProcessingOutputDefinition
 
 
 class OutputParameter[T]:
@@ -136,7 +135,7 @@ class OutputParameter[T]:
 
     @cached_property
     def allowed_formats(self) -> Sequence[Format]:
-        return self.get_output_formats(self._out, self._alg)
+        return self.get_output_formats(self._out, self._alg) if self._alg else ()
 
     @classmethod
     def get_input_definition(
@@ -148,7 +147,7 @@ class OutputParameter[T]:
         that have created this output definition
         """
         if out.autoCreated():
-            return alg and alg.parameterDefinition(out.name())
+            return alg.parameterDefinition(out.name()) if alg else None
         return None
 
     @property

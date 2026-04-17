@@ -4,6 +4,7 @@ import mimetypes
 from pathlib import Path
 from typing import (
     IO,
+    TYPE_CHECKING,
     Any,
     Optional,
     TypeAlias,
@@ -17,7 +18,7 @@ import requests
 from pydantic import JsonValue
 from qjazz_core import logger
 
-from qgis.core import QgsProject
+from qgis.core import Qgis, QgsProject
 
 from qjazz_processes.schemas import (
     Formats,
@@ -35,16 +36,19 @@ from qjazz_processes.schemas import (
 
 from ..config import ProcessingConfig
 from ..utils import (
-    ProcessingFileParameterBehavior,
     output_file_formats,
     resolve_raw_reference,
 )
 from .base import (
     InputParameter,
-    ParameterDefinition,
     ProcessingContext,
 )
 
+if TYPE_CHECKING:
+    from qgis.core import (
+        QgsProcessingParameterFile,
+        QgsProcessingParameterFileDestination,
+    )
 #
 # QgsProcessingParameterFile
 #
@@ -57,7 +61,7 @@ class ParameterFile(InputParameter):
     @classmethod
     def create_model(
         cls,
-        param: ParameterDefinition,
+        param: "QgsProcessingParameterFile",
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -70,7 +74,7 @@ class ParameterFile(InputParameter):
         # schema.
         #
         _type: Any = str
-        if param.behavior() == ProcessingFileParameterBehavior.Folder:
+        if param.behavior() == Qgis.ProcessingFileParameterBehavior.Folder:
             logger.warning("Folder behavior not allowed for %s", param.name())
             return _type
 
@@ -87,7 +91,7 @@ class ParameterFile(InputParameter):
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         param = self._param
 
-        if param.behavior() == ProcessingFileParameterBehavior.Folder:
+        if param.behavior() == Qgis.ProcessingFileParameterBehavior.Folder:
             # XXX Passing a folder is not really relevant for processes API
             # except if we allow raw input value
             if context and context.config.raw_destination_input_sink:
@@ -129,7 +133,7 @@ class ParameterFile(InputParameter):
                         else:
                             out.write(value.encode())
                     case LinkReference():
-                        download_ref(_inp, context and context.config, out)
+                        download_ref(_inp, context.config if context else None, out)
                     case _ as unreachable:
                         # XXX should never happen
                         assert_never(unreachable)  # type: ignore [arg-type]
@@ -155,7 +159,7 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
             self.output_extension = f".{ext}"
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
+    def metadata(cls, param: "QgsProcessingParameterFileDestination") -> list[Metadata]:
         md = super(ParameterFileDestination, cls).metadata(param)
 
         formats = output_file_formats(param)

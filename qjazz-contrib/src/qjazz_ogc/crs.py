@@ -3,7 +3,6 @@ from typing import Optional, Self
 
 # from pyproj
 from qgis.core import (
-    Qgis,
     QgsCoordinateReferenceSystem,
     QgsMapLayer,
     QgsProject,
@@ -40,7 +39,7 @@ def Crs(inp: QgsCoordinateReferenceSystem) -> Optional[crs.Crs]:
         # WKT json encoded
         # Workaround using pyproj:
         #   returnreturn pyproj.CRS.from_wkt(inp.toWKT()).to_json_dict()
-        return CrsRef.from_qgis(inp) or {"crs_wkt": inp.toWKT()}
+        return CrsRef.from_qgis(inp) or {"crs_wkt": inp.toWkt()}
     return CrsRef.default()
 
 
@@ -51,6 +50,4 @@ def Crs3D(p: QgsProject | QgsMapLayer) -> Optional[crs.Crs]:
 
 def QgsCrs3D(p: QgsProject | QgsMapLayer) -> QgsCoordinateReferenceSystem:
     """Return project's crs3D if available"""
-    if Qgis.versionInt() < 33800:
-        return p.crs()
     return p.crs3D()

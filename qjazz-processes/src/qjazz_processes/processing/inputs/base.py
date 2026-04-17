@@ -4,12 +4,12 @@ from typing import (
     Optional,
     Self,
     TypeAlias,
-    TypeVar,
 )
 
 from pydantic import Field, JsonValue, TypeAdapter
 
 from qgis.core import (
+    Qgis,
     QgsProcessingParameterDefinition,
     QgsProject,
 )
@@ -27,16 +27,16 @@ from qjazz_processes.schemas.models import one_of
 
 from ..context import ProcessingContext
 
-ParameterDefinition = TypeVar("ParameterDefinition", bound=QgsProcessingParameterDefinition)
+ParameterDefinition = QgsProcessingParameterDefinition
 
 
-class InputParameter[T]:
+class InputParameter[P: ParameterDefinition, T]:
     _ParameterType: TypeAlias | None = None
     _SchemaFormat: str | None = None
 
     def __init__(
         self,
-        param: ParameterDefinition,
+        param: P,
         project: Optional[QgsProject] = None,
         *,
         validation_only: bool = False,
@@ -63,6 +63,7 @@ class InputParameter[T]:
     def name(self) -> str:
         return self._param.name()
 
+    '''
     def optional_default_value(self, context: Optional[ProcessingContext] = None) -> Optional[T]:
         """Some optional destination parameters may
         force create a output value.
@@ -73,30 +74,31 @@ class InputParameter[T]:
         if self._param.isDestination() and self._param.createByDefault():
             return self._param.name()
         return None
+    '''
 
     @classmethod
     def schema_format(cls) -> Optional[str]:
         return cls._SchemaFormat
 
     @classmethod
-    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
+    def metadata(cls, param: P) -> list[Metadata]:
         return [MetadataValue(role="typeName", value=param.type())]
 
     @classmethod
-    def keywords(cls, param: ParameterDefinition) -> list[str]:
+    def keywords(cls, param: P) -> list[str]:
         return []
 
     def value_passing(self) -> ValuePassing:
         return ("byValue",)
 
-    def validate(self, inp: JsonValue) -> T:
+    def validate(self, inp: JsonValue) -> Any:
         return self._model.validate_python(inp)
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> T:
         return self.validate(inp)
 
     @classmethod
-    def default_value(cls, param: ParameterDefinition) -> T:
+    def default_value(cls, param: P) -> T:
         # Handle defaultValue
         # XXX In some case QVariant are
         # not converted to python object (SIP bug ?)
@@ -110,7 +112,7 @@ class InputParameter[T]:
     @classmethod
     def model(
         cls,
-        param: ParameterDefinition,
+        param: P,
         project: Optional[QgsProject] = None,
         *,
         validation_only: bool = False,
@@ -129,7 +131,7 @@ class InputParameter[T]:
     @classmethod
     def create_model(
         cls,
-        param: ParameterDefinition,
+        param: P,
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
@@ -140,11 +142,11 @@ class InputParameter[T]:
 
     @classmethod
     def hidden(cls, param: ParameterDefinition, project: Optional[QgsProject] = None) -> bool:
-        return int(param.flags()) & QgsProcessingParameterDefinition.FlagHidden != 0
+        return int(param.flags()) & Qgis.ProcessingParameterFlag.Hidden != 0
 
     @property
     def optional(self) -> bool:
-        return int(self._param.flags()) & QgsProcessingParameterDefinition.FlagOptional != 0
+        return int(self._param.flags()) & Qgis.ProcessingParameterFlag.Optional != 0
 
     def json_schema(self) -> JsonDict:
         """Create json schema"""

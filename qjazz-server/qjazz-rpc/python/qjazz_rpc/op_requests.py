@@ -77,7 +77,7 @@ def handle_ows_request(
         try:
             assert_precondition(options is not None)
             map_req = prepare_map_request(entry.project, cast("str", options))
-            method = QgsServerRequest.GetMethod
+            method = QgsServerRequest.Method.GetMethod
         except InvalidMapRequest as err:
             _m.send_reply(conn, f"Invalid request: {err}", 400)
             return
@@ -92,7 +92,7 @@ def handle_ows_request(
             _m.send_reply(conn, "HTTP Method not supported", 405)
             return
     else:
-        method = QgsServerRequest.GetMethod
+        method = QgsServerRequest.Method.GetMethod
 
     if options:
         options = options.removeprefix("?")

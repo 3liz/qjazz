@@ -61,6 +61,7 @@ from qgis.core import QgsProject
 from qgis.server import QgsServer
 
 from qjazz_core import componentmanager, logger
+from qjazz_core.condition import assert_not_none
 
 # Import default handlers for auto-registration
 from .common import ProjectMetadata, ProtocolHandler, Url
@@ -398,7 +399,7 @@ class CacheManager:
     def clear(self) -> None:
         """Clear all projects"""
         if self._server:
-            iface = self._server.serverInterface()
+            iface = assert_not_none(self._server.serverInterface())
             for e in self._cache.values():
                 path = e.project.fileName()
                 logger.trace(">> Removing server config cache for %s", path)
@@ -427,6 +428,6 @@ class CacheManager:
             # Update server cache
             path = entry.project.fileName()
             logger.trace("Removing Qgis cache for %s", path)
-            iface = self._server.serverInterface()
+            iface = assert_not_none(self._server.serverInterface())
             iface.removeConfigCacheEntry(path)
         return entry

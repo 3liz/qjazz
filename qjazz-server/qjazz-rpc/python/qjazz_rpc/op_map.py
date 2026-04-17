@@ -6,6 +6,7 @@ from typing import Any, Callable, Iterator
 from urllib.parse import parse_qs
 
 from qjazz_core import logger
+from qjazz_core.condition import assert_not_none
 from qjazz_ogc.crs import CrsRef
 from qjazz_ogc.extent import compute_extent_from_layers, transform_extent
 
@@ -57,7 +58,7 @@ def bbox_inv_aspect_ratio(params):
 
 
 def visible_layers(p: QgsProject) -> Iterator[str]:
-    for item in p.layerTreeRoot().children():
+    for item in assert_not_none(p.layerTreeRoot()).children():
         if item.isVisible():
             yield item.name()
 

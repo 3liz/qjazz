@@ -1,4 +1,4 @@
-""" Access policy configuration
+"""Access policy configuration
 
 Access policies control:
 
@@ -9,6 +9,7 @@ Access policies control:
 
 Custom access policies can be implemented in external python module.
 """
+
 from abc import abstractmethod
 from typing import (
     Annotated,

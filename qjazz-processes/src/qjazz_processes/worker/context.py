@@ -74,24 +74,24 @@ class Feedback(QgsProcessingFeedback):
     def _on_progress_changed(self, progress: float):
         self._progress_fun(progress, self._progress_msg)
 
-    def pushFormattedMessage(_html: str, text: str):
-        logger.info(text)
+    def pushFormattedMessage(self, _html: str | None, text: str | None):
+        logger.info(str(text))
 
-    def setProgressText(self, message: str):
-        self._progress_msg = message
-        self._progress_fun(self.percent(), self._progress_msg)
+    def setProgressText(self, message: str | None):
+        self._progress_msg = str(message)
+        self._progress_fun(self.progress(), self._progress_msg)
 
-    def reportError(self, error: str, fatalError: bool = False):
-        (logger.critical if fatalError else logger.error)(error)
+    def reportError(self, error: str | None, fatalError: bool = False):
+        (logger.critical if fatalError else logger.error)(str(error))
 
-    def pushInfo(self, info: str) -> None:
-        logger.info(info)
+    def pushInfo(self, info: str | None) -> None:
+        logger.info(str(info))
 
-    def pushWarning(self, warning: str) -> None:
-        logger.warning(warning)
+    def pushWarning(self, warning: str | None) -> None:
+        logger.warning(str(warning))
 
-    def pushDebugInfo(self, info: str) -> None:
-        logger.debug(info)
+    def pushDebugInfo(self, info: str | None) -> None:
+        logger.debug(str(info))
 
 
 Job = Callable[

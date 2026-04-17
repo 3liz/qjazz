@@ -17,13 +17,13 @@ if TYPE_CHECKING:
     from qgis.server import QgsServer
 
 from .. import logger
-from ..condition import assert_precondition
+from ..condition import assert_not_none, assert_precondition
 
 QGIS_VERSION_INT = Qgis.versionInt()
 QGIS_VERSION_3 = QGIS_VERSION_INT < 40000
 
-QGIS_MINIMUM_VERSION_INT = 33400
-QGIS_MINIMUM_VERSION = "3.34"
+QGIS_MINIMUM_VERSION_INT = 34000
+QGIS_MINIMUM_VERSION = "3.40"
 
 
 def setup_qgis_paths(prefix: str) -> None:
@@ -180,11 +180,13 @@ def install_logger_hook(logprefix: str) -> None:
             # Qgis may be somehow very noisy
             logger.debug(arg)
 
-    messageLog = QgsApplication.messageLog()
+    messageLog = assert_not_none(QgsApplication.messageLog())
     if QGIS_VERSION_3:
         messageLog.messageReceived.connect(writelogmessage)
     else:
-        messageLog.messageReceivedWithFormat.connect(writelogmessage)
+        # NOTE: see https://github.com/python/mypy/issues/19892
+        # There is actually no way to typecheck conditionally
+        messageLog.messageReceivedWithFormat.connect(writelogmessage)  # type: ignore [attr-defined]
 
 
 def init_qgis_application(**kwargs):
@@ -267,10 +269,8 @@ def load_qgis_settings(
     if not allow_python_embedded:
         # Disable python embedded and override previous settings
         logger.info("Disabling Python Embedded in QGIS")
-        if QGIS_VERSION_INT < 34000:
-            qgssettings.setEnumValue("qgis/enableMacros", Qgis.PythonMacroMode.Never)
-        else:
-            qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)
+        # NOTE: Missing QgsSettings.setEnumValue in QGIS python .pyi
+        qgssettings.setEnumValue("qgis/enablePythonEmbedded", Qgis.PythonEmbeddedMode.Never)  # type: ignore [attr-defined]
 
     return options_path
 
@@ -280,10 +280,14 @@ def set_proxy_configuration() -> None:
     from qgis.core import QgsNetworkAccessManager
     from qgis.PyQt.QtNetwork import QNetworkProxy
 
-    nam = QgsNetworkAccessManager.instance()
+    nam = assert_not_none(QgsNetworkAccessManager.instance())
     nam.setupDefaultProxyAndCache()
 
     proxy = nam.fallbackProxy()
+    if proxy is None:
+        logger.warning("No fallback proxy defined")
+        return
+
     proxy_type = proxy.type()
 
     ProxyType = QNetworkProxy.ProxyType

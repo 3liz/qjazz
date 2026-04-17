@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Iterator,
@@ -35,11 +36,15 @@ from pydantic import (
     JsonValue,
 )
 
-import qgis  # noqa F401
-
 from .. import componentmanager, config, logger
-from ..condition import assert_precondition
+from ..condition import assert_not_none, assert_precondition
 from .processing import BuiltinProviderSet
+
+if TYPE_CHECKING:
+    from qgis.core import (
+        QgsProcessingProvider,
+    )
+    from qgis.server import QgsServerInterface
 
 
 class PluginError(Exception):
@@ -181,7 +186,11 @@ class QgisPluginService:
         """
         return componentmanager.get_service(QGIS_PLUGIN_SERVICE_CONTRACTID)
 
-    def load_plugins(self, plugin_type: PluginType, interface: Optional["qgis.server.QgsServerInterface"]):
+    def load_plugins(
+        self,
+        plugin_type: PluginType,
+        interface: Optional["QgsServerInterface"],
+    ):
         """Load all plugins found"""
         if plugin_type == PluginType.PROCESSING:
             from .processing import ProcessesLoader
@@ -247,12 +256,12 @@ class QgisPluginService:
                     ) from None
 
     @property
-    def providers(self) -> Iterator["qgis.core.QgsProcessingProvider"]:
+    def providers(self) -> Iterator["QgsProcessingProvider"]:
         """Return published providers"""
         from qgis.core import QgsApplication
 
-        reg = QgsApplication.processingRegistry()
-        return (reg.providerById(_id) for _id in self._providers)
+        reg = assert_not_none(QgsApplication.processingRegistry())
+        return (p for _id in self._providers if (p := reg.providerById(_id)) is not None)
 
 
 def find_plugins(
@@ -333,7 +342,7 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
             rev = 99
         return int(f"{major:d}{minor:02d}{rev:02d}")
 
-    version = to_int(Qgis.QGIS_VERSION.split("-")[0])
+    version = to_int(Qgis.version().split("-")[0])
     minver = to_int(minver) if minver else version
     maxver = to_int(maxver) if maxver else version
 

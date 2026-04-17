@@ -46,8 +46,9 @@ def test_ogc_layer_collection(data: Path):
 
     coll = Collection.from_project("france_parts", project)
 
-    for layer in project.layerTreeRoot().customLayerOrder():
+    for layer in project.layerTreeRoot().customLayerOrder():  # type: ignore
         layer_coll = Collection.from_layer(layer, coll)
+        assert layer_coll is not None
         print("\n::test_ogc_layer_collection::\n", layer_coll.model_dump_json(indent=4))
 
         assert layer_coll.id == layer.name()

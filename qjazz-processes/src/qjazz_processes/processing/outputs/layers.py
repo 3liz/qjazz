@@ -15,10 +15,9 @@ from typing import (
 from urllib.parse import quote, urlencode
 
 from qjazz_core import logger
-from qjazz_core.condition import assert_postcondition
+from qjazz_core.condition import assert_not_none
 
 from qgis.core import (
-    Qgis,
     QgsMapLayer,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
@@ -121,13 +120,9 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 
         if datasource.exists() and datasource.is_relative_to(context.workdir):
             media_type = mimetypes.types_map.get(datasource.suffix, Formats.ANY.media_type)
-            if Qgis.versionInt() >= 33800:
-                props = layer.serverProperties()
-                props.setDataUrl(context.file_reference(datasource))
-                props.setDataUrlFormat(media_type)
-            else:
-                layer.setDataUrl(context.file_reference(datasource))
-                layer.setDataUrlFormat(media_type)
+            props = assert_not_none(layer.serverProperties())
+            props.setDataUrl(context.file_reference(datasource))
+            props.setDataUrlFormat(media_type)
 
 
 #
@@ -239,7 +234,7 @@ class OutputMultipleLayers(OutputLayerBase):
         context: ProcessingContext,
     ) -> JsonValue:
         layers = ",".join(
-            layer.name
+            layer.name()
             for layer, name in (
                 add_layer_details(
                     self.name,
@@ -273,9 +268,9 @@ class OutputMultipleLayers(OutputLayerBase):
 def add_layer_to_load_on_completion(
     value: str,
     output_name: str,
-    context: QgsProcessingContext,
+    context: ProcessingContext,
     hint: LayerHint,
-) -> QgsMapLayer:
+) -> tuple[QgsMapLayer, str]:
     """Add layer to load on completion
     The layer will be added to the destination project
 
@@ -286,12 +281,14 @@ def add_layer_to_load_on_completion(
         # in layer destination parameter
         try:
             details = context.layerToLoadOnCompletionDetails(value)
-            layer = QgsProcessingUtils.mapLayerFromString(
-                value,
-                context,
-                typeHint=details.layerTypeHint,
+            layer = assert_not_none(
+                QgsProcessingUtils.mapLayerFromString(
+                    value,
+                    context,
+                    typeHint=details.layerTypeHint,
+                ),
+                f"No layer found for '{value}'",
             )
-            assert_postcondition(layer is not None, f"No layer found for '{value}'")
             if details.name:
                 logger.debug(
                     "Skipping already added layer for %s (details name: %s)",
@@ -319,7 +316,7 @@ def add_layer_details(
     output_name: str,
     value: str,
     hint: LayerHint,
-    context: QgsProcessingContext,
+    context: ProcessingContext,
 ) -> tuple[QgsMapLayer, str]:
     #
     # Create new layer details and call addLayerToLoadOnCompletion
@@ -328,12 +325,14 @@ def add_layer_details(
     # Set empty name as we are calling setOutputLayerName
     details = QgsProcessingContext.LayerDetails("", context.destination_project, output_name, hint)
     try:
-        layer = QgsProcessingUtils.mapLayerFromString(
-            value,
-            context,
-            typeHint=details.layerTypeHint,
+        layer = assert_not_none(
+            QgsProcessingUtils.mapLayerFromString(
+                value,
+                context,
+                typeHint=details.layerTypeHint,
+            ),
+            f"No layer found for '{value}'",
         )
-        assert_postcondition(layer is not None, f"No layer found for '{value}'")
         # Fix layer name
         # Because if details name is empty it will be set to the file name
         # see https://qgis.org/api/qgsprocessingcontext_8cpp_source.html#l00128

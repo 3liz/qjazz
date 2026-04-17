@@ -1,6 +1,9 @@
 import datetime
 
-from typing import Optional
+from typing import (
+    Optional,
+    cast,
+)
 
 from pydantic import JsonValue
 
@@ -20,10 +23,7 @@ from .base import (
 # QgsProcessingParameterDateTime
 #
 
-if Qgis.versionInt() >= 33600:
-    DateTimeParameterDataType = Qgis.ProcessingDateTimeParameterDataType
-else:
-    DateTimeParameterDataType = QgsProcessingParameterDateTime
+DateTimeParameterDataType = Qgis.ProcessingDateTimeParameterDataType
 
 
 class ParameterDateTime(InputParameter):
@@ -85,7 +85,7 @@ class ParameterDateTime(InputParameter):
     ) -> QDate | QTime | QDateTime:
         _value = self.validate(inp)
 
-        match self._param.dataType():
+        match cast("QgsProcessingParameterDateTime", self._param).dataType():
             case DateTimeParameterDataType.Date:
                 _value = QDate(_value)
             case DateTimeParameterDataType.Time:

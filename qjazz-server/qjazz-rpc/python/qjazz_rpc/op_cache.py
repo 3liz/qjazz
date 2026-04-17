@@ -232,7 +232,7 @@ def send_project_info(
             name=layer.name(),
             source=layer.publicSource(),
             provider=layer.providerType(),
-            layer_type=Qgis.LayerType(layer.type()).name,
+            layer_type=Qgis.LayerType(layer.type()).name,  # type: ignore [attr-defined]
             crs=layer.crs().authid(),
             is_valid=layer.isValid(),
             is_spatial=layer.isSpatial(),

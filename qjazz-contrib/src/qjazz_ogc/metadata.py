@@ -16,10 +16,10 @@ def Keywords(md: QgsAbstractMetadataBase) -> list[str]:
 def Links(md: QgsAbstractMetadataBase) -> list[links.Link]:
     return [
         links.Link(
-            href=link.url(),
-            media_type=link.mimeType(),
-            title=link.name(),
-            description=link.description(),
+            href=link.url,
+            media_type=link.mimeType,
+            title=link.name,
+            description=link.description,
             rel="related",
         )
         for link in md.links()

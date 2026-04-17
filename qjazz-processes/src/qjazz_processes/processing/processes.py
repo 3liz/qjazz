@@ -2,15 +2,13 @@ from functools import cached_property
 from typing import (
     Any,
     Iterator,
-    Mapping,
     Optional,
     Self,
     Sequence,
-    TypeAlias,
 )
 
 from qjazz_core import logger
-from qjazz_core.condition import assert_precondition
+from qjazz_core.condition import assert_not_none, assert_precondition
 from qjazz_core.qgis import QgisPluginService
 
 from qgis.core import (
@@ -36,38 +34,7 @@ from .context import ProcessingContext
 from .inputs import InputParameter, InputParameterDef
 from .outputs import OutputParameter, OutputParameterDef
 
-ProcessingAlgorithmFlag: TypeAlias  # type: ignore [valid-type]
-ProcessingAlgorithmFlags: TypeAlias  # type: ignore [valid-type]
-
-if Qgis.versionInt() >= 33600:
-    # In qgis 3.36+ ProcessingAlgorithmFlags is a real python enum
-    ProcessingAlgorithmFlag = Qgis.ProcessingAlgorithmFlag
-    ProcessingAlgorithmFlags = Qgis.ProcessingAlgorithmFlags
-else:
-    from enum import Enum
-
-    ProcessingAlgorithmFlags = QgsProcessingAlgorithm.Flags
-
-    # NOTE: define only tested flags
-    class _ProcessingAlgorithmFlag(Enum):
-        HideFromToolbox = QgsProcessingAlgorithm.FlagHideFromToolbox
-        CanCancel = QgsProcessingAlgorithm.FlagCanCancel
-        KnownIssues = QgsProcessingAlgorithm.FlagKnownIssues
-        NotAvailableInStandaloneTool = QgsProcessingAlgorithm.FlagNotAvailableInStandaloneTool
-        RequiresProject = QgsProcessingAlgorithm.FlagRequiresProject
-        Deprecated = QgsProcessingAlgorithm.FlagDeprecated
-
-        def __or__(self, other: object) -> ProcessingAlgorithmFlags:
-            if isinstance(other, _ProcessingAlgorithmFlag):
-                other = other.value
-            return self.value | other
-
-        def __and__(self, other: object) -> ProcessingAlgorithmFlags:
-            if isinstance(other, _ProcessingAlgorithmFlag):
-                other = other.value
-            return self.value & other
-
-    ProcessingAlgorithmFlag = _ProcessingAlgorithmFlag
+ProcessingAlgorithmFlag = Qgis.ProcessingAlgorithmFlag
 
 
 class ProcessAlgorithm:
@@ -88,8 +55,8 @@ class ProcessAlgorithm:
     @classmethod
     def find_algorithm(cls, ident: str) -> Optional[Self]:
         """Retrieve algorithm by {provider}:{id} string"""
-        alg = QgsApplication.processingRegistry().algorithmById(ident)
-        return alg and cls(alg)
+        alg = assert_not_none(QgsApplication.processingRegistry()).algorithmById(ident)
+        return cls(alg) if alg else None
 
     # Methods
 
@@ -97,8 +64,12 @@ class ProcessAlgorithm:
         self._alg = alg
 
     @classmethod
-    def _check_flags(cls, alg: QgsProcessingAlgorithm, flags: ProcessingAlgorithmFlags) -> bool:
-        return bool(flags & alg.flags())
+    def _check_flags(
+        cls,
+        alg: QgsProcessingAlgorithm,
+        flags: ProcessingAlgorithmFlag | int,
+    ) -> bool:
+        return bool(flags & alg.flags())  # type: ignore [operator]
 
     @property
     def ident(self) -> str:
@@ -108,7 +79,7 @@ class ProcessAlgorithm:
     def hidden(cls, alg: QgsProcessingAlgorithm) -> bool:
         return cls._check_flags(
             alg,
-            ProcessingAlgorithmFlag.HideFromToolbox | ProcessingAlgorithmFlag.NotAvailableInStandaloneTool,
+            ProcessingAlgorithmFlag.HideFromToolbox | ProcessingAlgorithmFlag.NotAvailableInStandaloneTool,  # type: ignore [arg-type]
         )
 
     @classmethod
@@ -197,8 +168,8 @@ class ProcessAlgorithm:
         feedback: QgsProcessingFeedback,
         context: ProcessingContext,
     ) -> tuple[
-        Mapping[str, Any],
-        Mapping[str, InputParameterDef],
+        dict[str, Any],
+        dict[str, InputParameterDef],
         Sequence[OutputParameterDef],
     ]:
         """Validate parameters"""
@@ -215,7 +186,7 @@ class ProcessAlgorithm:
             out = request.outputs.get(o.name)
             if out:
                 inputdef = o.input_definition
-                o.validate_output(out, inputdef and inputs.get(inputdef.name()))
+                o.validate_output(out, inputs.get(str(inputdef.name())) if inputdef else None)
 
         # Convert inputs to parameters
         parameters = InputParameter.parameters(inputs.values(), request.inputs, context)

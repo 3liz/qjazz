@@ -106,30 +106,32 @@ def handle_layers(
     accessor = LayerAccessor(project)
 
     if msg.resource:
+        items: list[_m.CollectionsItem] = []
         # We are looking for single layer
         if msg.resource in parent.layers:
-            layer = accessor.layer_by_name(msg.resource)
-            items = (
-                [
-                    _m.CollectionsItem(
-                        name=msg.resource,
-                        json=Collection.from_layer(layer, parent.coll).model_dump_json(),
-                        endpoints=parent.layers[msg.resource].value,
-                    )
-                ]
-                if layer
-                else []
-            )
-        else:
-            items = []
+            if layer := accessor.layer_by_name(msg.resource):
+                if (coll := Collection.from_layer(layer, parent.coll)) is not None:
+                    items = [
+                        _m.CollectionsItem(
+                            name=msg.resource,
+                            json=coll.model_dump_json(),
+                            endpoints=parent.layers[msg.resource].value,
+                        )
+                    ]
     else:
         # Return the layers collection set
         def iter_catalog() -> Iterator[_m.CollectionsItem]:
             for layer in islice(iter_layers(accessor, parent), msg.start, msg.end):
                 name = accessor.layer_name(layer)
+                coll = Collection.from_layer(layer, parent.coll)
+
+                if coll is None:
+                    logger.error("Failed to get collection from layer: '%s'", name)
+                    continue
+
                 yield _m.CollectionsItem(
                     name=name,
-                    json=Collection.from_layer(layer, parent.coll).model_dump_json(),
+                    json=coll.model_dump_json(),
                     endpoints=parent.layers[name].value,
                 )
 

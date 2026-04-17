@@ -15,9 +15,10 @@ UV_INSTALL_GROUPS=$(foreach grp,$(INSTALL_GROUPS),--group $(grp))
 
 
 clean-dist: 
-	rm -r $(DIST)
+	rm -r $(DIST) || true
 
 clean:: clean-dist
+	rm -r ./**/.qjazz-settings || true
 
 #
 # Requirements

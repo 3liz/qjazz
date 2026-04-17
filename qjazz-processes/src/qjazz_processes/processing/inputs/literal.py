@@ -161,9 +161,9 @@ class ParameterNumber(InputParameter):
         set_number_minmax(param, field)
 
         match param.dataType():
-            case QgsProcessingParameterNumber.Double:
+            case Qgis.ProcessingNumberParameterType.Double:
                 _type = float
-            case QgsProcessingParameterNumber.Integer:
+            case Qgis.ProcessingNumberParameterType.Integer:
                 _type = int
             case invalid:
                 raise InputValueError(f"Invalid type for number: {invalid}")
@@ -269,11 +269,7 @@ class ParameterDuration(ParameterNumber):
 # QgsProcessingParameterRange
 #
 
-
-if Qgis.versionInt() >= 33600:
-    NumberParameterType = Qgis.ProcessingNumberParameterType
-else:
-    NumberParameterType = QgsProcessingParameterNumber
+NumberParameterType = Qgis.ProcessingNumberParameterType
 
 
 class ParameterRange(InputParameter):
@@ -443,9 +439,10 @@ class ParameterLayout(InputParameter):
 
         if project:
             managers = project.layoutManager()
-            values = tuple(layout.name() for layout in managers.printLayouts())
-            if values:
-                _type = Literal[values]
+            if managers is not None:
+                values = tuple(layout.name() for layout in managers.printLayouts())
+                if values:
+                    _type = Literal[values]
 
         return _type
 

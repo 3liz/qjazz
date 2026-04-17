@@ -9,14 +9,15 @@
 """Generic protocol handler for Qgis storage"""
 
 from datetime import datetime
-from typing import Iterator
+from typing import Iterator, cast
 from urllib.parse import urlunsplit
 
-from qgis.core import QgsApplication, QgsProject, QgsProjectStorage
+from qgis.core import QgsApplication, QgsProject
+from qgis.PyQt.QtCore import QDateTime
 
 from qjazz_core import logger
 from qjazz_core.condition import (
-    assert_postcondition,
+    assert_not_none,
     assert_precondition,
 )
 
@@ -35,9 +36,9 @@ class QgisStorageProtocolHandler(ProtocolHandler):
 
     def __init__(self, storage: str):
         """Retrieve the QgsProjectStorage"""
-        sr = QgsApplication.projectStorageRegistry()
-        self._storage: QgsProjectStorage = sr.projectStorageFromType(storage)
-        assert_postcondition(self._storage is not None)
+        sr = assert_not_none(QgsApplication.projectStorageRegistry())
+        self._storage = assert_not_none(sr.projectStorageFromType(storage))
+        # assert_postcondition(self._storage is not None)
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Override"""
@@ -76,12 +77,15 @@ class QgisStorageProtocolHandler(ProtocolHandler):
         if not res:
             logger.error("Failed to read storage metadata for %s", uri)
             raise FileNotFoundError(uri)
-        # XXX
-        last_modified = md.lastModified.toPyDateTime()
+
+        last_modified = md.lastModified
+        if isinstance(last_modified, QDateTime):
+            last_modified = last_modified.toPyDateTime()
+
         return ProjectMetadata(
             uri=uri,
-            name=md.name,
+            name=md.name or "",
             scheme=scheme,
             storage=self._storage.type(),
-            last_modified=datetime.timestamp(last_modified),
+            last_modified=datetime.timestamp(cast("datetime", last_modified)),
         )

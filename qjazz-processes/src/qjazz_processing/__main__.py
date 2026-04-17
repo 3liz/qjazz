@@ -64,6 +64,7 @@ def run_worker(configpath: Optional[Path], loglevel: str, dump: bool):
         return
 
     from .jobs import app
+
     app.start_worker(loglevel=loglevel)
 
 

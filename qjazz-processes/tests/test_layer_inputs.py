@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from qgis.core import (
+    Qgis,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterFeatureSource,
@@ -20,7 +21,6 @@ from qjazz_processes.processing.config import ProcessingConfig
 from qjazz_processes.processing.context import ProcessingContext
 from qjazz_processes.processing.inputs import InputParameter
 from qjazz_processes.processing.inputs.layers import (
-    FieldParameterDataType,
     ParameterAlignRasterLayers,
     ParameterFeatureSource,
     ParameterField,
@@ -195,7 +195,7 @@ def test_parameter_field():
     param = QgsProcessingParameterField(
         "Field",
         parentLayerParameterName="ParentLayer",
-        type=FieldParameterDataType.Numeric,
+        type=Qgis.ProcessingFieldParameterDataType.Numeric,
     )
 
     inp = InputParameter(param)

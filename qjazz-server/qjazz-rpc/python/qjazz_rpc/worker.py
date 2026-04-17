@@ -13,6 +13,7 @@ from typing import List, Optional, Protocol, assert_never, cast
 
 from pydantic import JsonValue
 from qjazz_core import logger
+from qjazz_core.condition import assert_not_none
 from qjazz_core.config import ConfigProxy
 from qjazz_core.qgis import (
     PluginType,
@@ -148,7 +149,7 @@ def qgis_server_run(
     # Register the cache manager as a service
     cm.register_as_service()
 
-    server_iface = server.inner.serverInterface()
+    server_iface = assert_not_none(server.inner.serverInterface())
 
     # Load plugins
     plugin_s = QgisPluginService(conf.plugins)
@@ -159,7 +160,7 @@ def qgis_server_run(
 
     # Register delegation api
     api_delegate = ApiDelegate(server_iface)
-    server_iface.serviceRegistry().registerApi(api_delegate)
+    assert_not_none(server_iface.serviceRegistry()).registerApi(api_delegate)
 
     load_default_project(cm)
 

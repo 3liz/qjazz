@@ -13,20 +13,20 @@ class Feedback(QgsProcessingFeedback):
     def __init__(self):
         super().__init__(False)
 
-    def pushFormattedMessage(_html: str, text: str):
-        logger.info(text)
+    def pushFormattedMessage(self, _html: str | None, text: str | None):
+        logger.info(str(text))
 
-    def setProgressText(self, message: str):
-        logger.info("Progress: %s", message)
+    def setProgressText(self, message: str | None):
+        logger.info("Progress: %s", str(message))
 
-    def reportError(self, error: str, fatalError: bool = False):
-        (logger.critical if fatalError else logger.error)(error)
+    def reportError(self, error: str | None, fatalError: bool = False):
+        (logger.critical if fatalError else logger.error)(str(error))
 
-    def pushInfo(self, info: str) -> None:
-        logger.info(info)
+    def pushInfo(self, info: str | None):
+        logger.info(str(info))
 
-    def pushWarning(self, warning: str) -> None:
-        logger.warning(warning)
+    def pushWarning(self, warning: str | None):
+        logger.warning(str(warning))
 
-    def pushDebugInfo(self, info: str) -> None:
-        logger.debug(info)
+    def pushDebugInfo(self, info: str | None):
+        logger.debug(str(info))

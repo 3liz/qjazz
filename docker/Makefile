@@ -38,7 +38,7 @@ main:
 
 build-all: build noqgis-build tag noqgis-tag
 
-ifeq($(DOCKER_ATTESTATION), true)
+ifeq ($(DOCKER_ATTESTATION), true)
 DOCKER_BUILDER_OPTS=--provenance=true --sbom=true
 endif
 

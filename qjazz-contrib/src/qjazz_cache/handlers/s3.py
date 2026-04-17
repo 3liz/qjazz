@@ -37,7 +37,7 @@ from minio import Minio, S3Error
 from osgeo.gdal import __version__ as __gdal_version__
 from pydantic import DirectoryPath, FilePath, SecretStr
 
-from qgis.core import Qgis, QgsPathResolver, QgsProject
+from qgis.core import QgsPathResolver, QgsProject
 
 from qjazz_core import logger
 from qjazz_core.condition import assert_precondition
@@ -61,14 +61,6 @@ if TYPE_CHECKING:
     from datetime import datetime
 
 
-if Qgis.versionInt() < 33800:
-    import warnings
-
-    warnings.warn(
-        f"S3 storage connector requires Qgis version > 3.38 (found {Qgis.version()})",
-        stacklevel=1,
-    )
-
 gdal_version_info = tuple(int(n) for n in __gdal_version__.split("."))
 
 # Allowed files suffix for projects
@@ -90,7 +82,8 @@ def s3_storage_preprocessor(prefix: str):
     # XXX Calling setPathPreprocessor with QGIS 3.34
     # cause a segfault
     # cf https://github.com/qgis/QGIS/issues/58112
-    ident = QgsPathResolver.setPathPreprocessor(to_vsis3)
+    # Note: QGIS _core.pyi defined signature is wrong
+    ident = QgsPathResolver.setPathPreprocessor(to_vsis3)  # type: ignore [arg-type]
     try:
         yield
     finally:
@@ -271,8 +264,6 @@ class S3ProtocolHandler(ProtocolHandler):
 
     def load_project(self, md: ProjectMetadata, load_project_from_uri: ProjectLoader) -> QgsProject:
         """Return project associated with metadata"""
-        assert_precondition(Qgis.versionInt() >= 33800, "Qgis 3.38+ required")
-
         uri = urlsplit(md.uri)
         bucket_name = uri.hostname
         object_name = uri.path

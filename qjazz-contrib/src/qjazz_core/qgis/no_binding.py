@@ -5,9 +5,12 @@ from typing import Optional, Self
 
 from qgis.core import QgsProject
 from qgis.server import (
+    QgsServer,
     QgsServerRequest,
     QgsServerResponse,
 )
+
+from ..condition import assert_not_none
 
 
 class ApiNotFoundError(Exception):  # type: ignore [no-redef]
@@ -27,7 +30,7 @@ class ServerWrapper:
     ProjectRequired = ProjectRequired
     InternalError = InternalError
 
-    def __init__(self, inner: QgsProject):
+    def __init__(self, inner: QgsServer):
         self._inner = inner
 
     def handle_request(
@@ -39,8 +42,8 @@ class ServerWrapper:
     ):
         if api:
             # Find the api
-            iface = self._inner.serverInterface()
-            if not iface.serviceRegistry().getApi(api):
+            iface = assert_not_none(self._inner.serverInterface())
+            if not assert_not_none(iface.serviceRegistry()).getApi(api):
                 raise ApiNotFoundError(api)
         elif not project:
             # Project is mandatory
@@ -49,7 +52,7 @@ class ServerWrapper:
         self._inner.handleRequest(request, response, project)
 
     @property
-    def inner(self) -> QgsProject:
+    def inner(self) -> QgsServer:
         return self._inner
 
     @classmethod
