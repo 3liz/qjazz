@@ -180,6 +180,12 @@ docker deployment.</p>
 <span class="w">        </span><span class="no">}</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/qgis/projects/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="c1"># Mount /tmp as tmpfs for removing Xvfb lock file when restarting</span>
+<span class="w">    </span><span class="c1"># container.</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="nt">tmpfs</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp:size=100m</span>
 <span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
 <span class="w">  </span><span class="nt">web</span><span class="p">:</span>
 <span class="w">    </span><span class="c1">#</span>
@@ -205,6 +211,27 @@ docker deployment.</p>
 <p>From here, open your navigator at <a class="reference external" href="http://localhost:9080/?MAP=/my_project&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities">http://localhost:9080/?MAP=/my_project&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities</a>
 in order to get the WMS Capabilities if your project is wms-enabled.</p>
 <p>See the working example in <cite>examples/basic-qgis-services</cite></p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<div class="line-block">
+<div class="line">When mounting host directory (projects, plugin dir, …) in the
+container, make sure that the directory content is readable from
+the container.</div>
+</div>
+<div class="line-block">
+<div class="line">One way to achieve that without modifying the user uid is to
+add a group to the running service which as read permission
+to the source files:</div>
+<div class="line"><br /></div>
+<div class="line-block">
+<div class="line">group_add:</div>
+<div class="line-block">
+<div class="line">- &lt;gid&gt;</div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+</div>
 </section>
 <section id="scaling-your-services">
 <span id="docker-scaling"></span><h2>Scaling your services<a class="headerlink" href="#scaling-your-services" title="Link to this heading"></a></h2>

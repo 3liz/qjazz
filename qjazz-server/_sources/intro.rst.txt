@@ -115,7 +115,13 @@ Create a ``docker-compose.yml`` file:
               "/":"/qgis-projects" 
             }
         volumes:
-        - { type: bind, source: "/path/to/qgis/projects/", target: /qgis-projects } 
+        - { type: bind, source: "/path/to/qgis/projects/", target: /qgis-projects }
+        #
+        # Mount /tmp as tmpfs for removing Xvfb lock file when restarting
+        # container.
+        #
+        tmpfs:
+            - /tmp:size=100m
         command: ["qjazz-rpc", "serve"]
       web:
         #
@@ -144,6 +150,20 @@ From here, open your navigator at http://localhost:9080/?MAP=/my_project&SERVICE
 in order to get the WMS Capabilities if your project is wms-enabled.
 
 See the working example in `examples/basic-qgis-services`
+
+.. important::
+
+    | When mounting host directory (projects, plugin dir, ...) in the
+      container, make sure that the directory content is readable from
+      the container.  
+    
+    | One way to achieve that without modifying the user uid is to 
+      add a group to the running service which as read permission 
+      to the source files:
+    |
+    |      group_add:
+    |        - <gid>
+    | 
 
 
 .. _docker_scaling:
