@@ -107,8 +107,9 @@ class Response(QgsServerResponse):
 
     def finish(self) -> None:
         """Terminate the request"""
-        self._finish = True
-        self.flush()
+        if not self._finish:
+            self._finish = True
+            self.flush()
 
     def _send_response(self):
         """Send response"""
