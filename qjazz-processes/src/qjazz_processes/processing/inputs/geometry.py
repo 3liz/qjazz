@@ -3,7 +3,6 @@ import re
 from typing import (
     TYPE_CHECKING,
     Annotated,
-    Any,
     Iterator,
     Optional,
     Sequence,
@@ -104,8 +103,10 @@ class ParameterGeometry(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
+
+        geometry_type = cls.get_geometry_type(param)
+
         if not validation_only:
-            geometry_type = cls.get_geometry_type(param)
             if default := field.pop("default", None):
                 if g := qgsgeometry_to_json(geometry_type, default, project.crs() if project else None):
                     field.update(default=g)
@@ -396,7 +397,6 @@ def qgsgeometry_to_json(
     default_crs: Optional[QgsCoordinateReferenceSystem] = None,
 ) -> Optional[geojson.Geometry]:
     """Convert Qgis geometry to GeoJson object"""
-    out: Any
     match g:
         case QgsReferencedPointXY():
             crs = g.crs()

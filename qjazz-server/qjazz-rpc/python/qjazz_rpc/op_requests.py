@@ -46,7 +46,7 @@ def handle_ows_request(
     """Handle OWS request"""
 
     logger.debug("Handling OWS request")
-    
+
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")

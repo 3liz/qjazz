@@ -16,6 +16,9 @@ from qjazz_processes.processing.inputs import (
     ParameterFileDestination,
 )
 
+# TODO: Test Qualified input value
+# TODO: Test Reference input value
+
 
 def test_parameter_file(processing_config: ProcessingConfig):
     context = ProcessingContext(processing_config)
@@ -96,7 +99,15 @@ def test_parameter_filedestination(qgis_session: ProcessingConfig):
     assert isinstance(inp, ParameterFileDestination)
 
     schema = inp.json_schema()
-    print("\ntest_parameter_file::schema", schema)
+    print("\ntest_parameter_filedestination::schema", schema)
+
+    # Check output formats metadata
+    output_formats_md = next(md.value for md in inp.metadata(param) if md.role == "outputFormats")  # type: ignore [union-attr]
+
+    print("\ntest_parameter_filedestination::formats", output_formats_md)
+    assert isinstance(output_formats_md, list)
+    assert len(output_formats_md) == 1
+    assert output_formats_md[0] == "text/plain"
 
     expected = context.workdir.joinpath(param.name()).with_suffix(".txt")
 

@@ -18,6 +18,7 @@ from qgis.core import (
 )
 
 from qjazz_processes.processing.inputs import InputParameter
+from qjazz_processes.processing.inputs.geometry import geojson, qgsgeometry_to_json
 from qjazz_processes.schemas import (
     Formats,
     InputValueError,
@@ -74,6 +75,11 @@ def test_parameter_point_gml(qgis_session):
     assert value.y() == 42.0
     assert value.crs().authid() == "EPSG:4326"
 
+    # Check back to json
+    jsonvalue = qgsgeometry_to_json(geojson.Point, value)
+    assert jsonvalue.type == "Point"
+    assert jsonvalue.crs is not None
+
 
 def test_parameter_point_wkt(qgis_session):
     """Test input point from wkt"""
@@ -118,7 +124,7 @@ def test_parameter_point_wkt(qgis_session):
     assert value.asWkt() == "POINT(6 10)"
 
 
-def test_parameter_geometry_json(qgis_session):
+def test_parameter_referenced_geometry(qgis_session):
     """Test passing crs from json"""
     param = QgsProcessingParameterGeometry("Geometry")
 
@@ -144,7 +150,7 @@ def test_parameter_geometry_json(qgis_session):
 
 
 def test_parameter_geometry_with_types():
-    """Test geometry with paramater types"""
+    """Test geometry with parameter types"""
     # Single geometry type
     param = QgsProcessingParameterGeometry("Geometry", geometryTypes=[Qgis.GeometryType.Line])
 
@@ -176,9 +182,33 @@ def test_parameter_geometry_with_types():
     assert value.wkbType() == QgsWkbTypes.MultiPoint
 
 
+def test_parameter_geometry_polygon():
+    """Test geometry with parameter types"""
+    # Single geometry type
+    param = QgsProcessingParameterGeometry("Geometry", geometryTypes=[Qgis.GeometryType.Polygon])
+
+    inp = InputParameter(param)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_geometry_polygon::", schema)
+
+    polygon = {
+        "coordinates": [[[10, 40], [40, 30], [20, 20], [30, 10], [10,40]]],
+        "type": "Polygon",
+    }
+
+    value = inp.value(polygon)
+    assert value.wkbType() == QgsWkbTypes.Polygon
+
+    # Check back to json
+    jsonvalue = qgsgeometry_to_json(geojson.Polygon, value)
+    assert jsonvalue.type == "Polygon"
+    assert jsonvalue.crs is None
+
+
 def test_parameter_crs(qgis_session):
     """Test CRS input"""
-    param = QgsProcessingParameterCrs("Crs")
+    param = QgsProcessingParameterCrs("Crs", defaultValue="EPSG:2154")
 
     inp = InputParameter(param)
 
