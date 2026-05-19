@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* Fix api path consistency in rpc Api message
 * Drop QGIS 3.34 support
 
 ## 0.7.0
