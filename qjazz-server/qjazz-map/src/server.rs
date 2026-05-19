@@ -58,7 +58,6 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
         App::new()
             .service(web::resource("/ping").head(ping))
             .wrap(cors.configure())
-            .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::from_fn(server_mw))
             .app_data(web::ThinData(proxy_headers))
             .configure(backends.clone().configure())

@@ -45,6 +45,8 @@ def handle_ows_request(
 ):
     """Handle OWS request"""
 
+    logger.debug("Handling OWS request")
+    
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
@@ -152,6 +154,7 @@ def handle_api_request(
     cache_id: str = "",
     feedback: QgsFeedback,
 ):
+    logger.debug("Handling API request")
     """Handle api request"""
     target = msg.target
     if not target:
@@ -193,6 +196,8 @@ def handle_api_request(
         url = msg.url
         if msg.path:
             url = f"{url.removesuffix('/')}/{msg.path.removeprefix('/')}"
+        else:
+            url = f"{url}/"
         api_name = config.api_aliases.get(msg.name.upper(), msg.name)
 
     if msg.options:
