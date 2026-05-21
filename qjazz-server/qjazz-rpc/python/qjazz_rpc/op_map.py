@@ -28,7 +28,7 @@ def lazy[**P, T](f: Callable[P, T], *args, **kwargs) -> Callable[[], T]:
 
     def wrapper() -> T:
         nonlocal value
-        if not value:
+        if value is None:
             value = f(*args, **kwargs)
         return value
 

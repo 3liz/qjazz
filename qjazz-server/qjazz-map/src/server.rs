@@ -112,6 +112,7 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
 fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
     let scope = web::scope(channel.route())
         .wrap(middleware::from_fn(verify_channel_mw))
+        .wrap(middleware::NormalizePath::trim())
         .configure(admin)
         .configure(catalog)
         .configure(ows_resource);
