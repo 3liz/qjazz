@@ -1,14 +1,14 @@
 [project]
 name = "qjazz"
 description = "QJazz server suite"
-version = "0.8.0"
+version = "0.8.1"
 requires-python = ">= 3.12"
 license = "Apache-2.0 OR MIT" 
 
 dependencies = [
-    "qjazz-map==0.8.0",
-    "qjazz-rpc==0.8.0",
-    "qjazz-processes==0.8.0",
+    "qjazz-map==0.8.1",
+    "qjazz-rpc==0.8.1",
+    "qjazz-processes==0.8.1",
 ]
 
 [tool.uv.sources]

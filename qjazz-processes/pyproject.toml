@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "qjazz-processes"
 description = "QJazz OGC processes "
-version = "0.8.0"
+version = "0.8.1"
 requires-python = ">= 3.12"
 licence = "Apache-2.0 OR MIT"
 classifiers = [
