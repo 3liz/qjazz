@@ -3,7 +3,7 @@
 //!
 
 use actix_web::web;
-use ginepro::{LoadBalancedChannel, ServiceDefinition};
+use tonic::transport;
 use tonic::{Code, Status};
 use tonic_health::pb::{
     HealthCheckRequest, health_check_response::ServingStatus, health_client::HealthClient,
@@ -33,8 +33,8 @@ pub struct Builder {
     config: ChannelConfig,
 }
 
-pub type QjazzAdminClient = QgisAdminClient<LoadBalancedChannel>;
-pub type QjazzServerClient = QgisServerClient<LoadBalancedChannel>;
+pub type QjazzAdminClient = QgisAdminClient<transport::Channel>;
+pub type QjazzServerClient = QgisServerClient<transport::Channel>;
 
 pub struct Channel {
     name: String,
@@ -43,7 +43,8 @@ pub struct Channel {
     // App shared data
     endpoints: Vec<web::Data<ApiEndPoint>>,
     serving: Arc<AtomicBool>,
-    channel: LoadBalancedChannel,
+    //channel: LoadBalancedChannel,
+    channel: transport::Channel,
 }
 
 impl Builder {
@@ -53,7 +54,7 @@ impl Builder {
 
     pub async fn connect(mut self) -> Result<Channel, Error> {
         log::debug!(
-            "Confguring backend '{}' at {:?}",
+            "Configuring backend '{}' at {:?}",
             self.name,
             self.config.service()
         );
@@ -68,32 +69,29 @@ impl Builder {
     }
 }
 
-#[allow(clippy::result_large_err)]
-fn service_definition(cfg: &ChannelConfig) -> Result<ServiceDefinition, Error> {
-    ServiceDefinition::try_from(cfg.service())
-        .map_err(|e| Status::internal(format!("Cannot build service definition {e:?}")))
-}
-
 impl Channel {
     pub fn builder(name: String, conf: ChannelConfig) -> Builder {
         Builder::new(name, conf)
     }
 
-    async fn connect(conf: &ChannelConfig) -> Result<LoadBalancedChannel, Error> {
-        let builder = LoadBalancedChannel::builder(service_definition(conf)?);
+    async fn connect(conf: &ChannelConfig) -> Result<transport::Channel, Error> {
+        let (host, port) = conf.service();
+        let scheme = if conf.enable_tls() { "https" } else { "http" };
+        let endpoint = transport::Channel::from_shared(format!("{scheme}://{host}:{port}"))
+            .map_err(|e| Status::internal(format!("{e}")))?;
 
-        if conf.enable_tls() {
-            builder.with_tls(
-                conf.tls_config()
-                    .map_err(|e| Status::internal(format!("Client certificat error {e:?}")))?,
-            )
+        Ok(if conf.enable_tls() {
+            let tls_config = conf
+                .tls_config()
+                .map_err(|e| Status::internal(format!("Client certificat error {e}")))?;
+
+            endpoint
+                .tls_config(tls_config)
+                .map_err(|e| Status::internal(format!("{e}")))?
         } else {
-            builder
+            endpoint
         }
-        .dns_probe_interval(conf.probe_interval())
-        .channel()
-        .await
-        .map_err(|e| Status::internal(format!("Failed to create load balanced channel {e:?}")))
+        .connect_lazy())
     }
 
     pub fn serving(&self) -> bool {

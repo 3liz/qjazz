@@ -1,5 +1,5 @@
 use actix_web::{
-    App, HttpResponse, HttpRequest, HttpServer, Responder, Result, body,
+    App, HttpRequest, HttpResponse, HttpServer, Responder, Result, body,
     body::EitherBody,
     dev::{ServiceRequest, ServiceResponse},
     middleware, web,

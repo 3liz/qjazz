@@ -414,7 +414,8 @@ impl Links<'_> {
     }
 
     fn add(&mut self, link: Link) -> Result<&mut Self> {
-        self.0.push(serde_json::to_value(link).map_err(internal_error)?);
+        self.0
+            .push(serde_json::to_value(link).map_err(internal_error)?);
         Ok(self)
     }
 }

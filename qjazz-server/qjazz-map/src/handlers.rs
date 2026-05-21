@@ -123,13 +123,13 @@ pub mod api {
         let content_type =
             request::header_as_str(&req, http::header::CONTENT_TYPE).map(String::from);
 
-        // Build the URL as the base path 
+        // Build the URL as the base path
         let url = request::public_url(
-            &req, 
+            &req,
             req.path()
-            .strip_suffix(&path)
-            .unwrap()
-            .trim_end_matches('/')
+                .strip_suffix(&path)
+                .unwrap()
+                .trim_end_matches('/'),
         );
 
         let request = ApiRequest {

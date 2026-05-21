@@ -27,7 +27,6 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 tokio-util = { workspace = true }
-ginepro = { git = "https://github.com/dmarteau/ginepro.git", branch="tonic-0.14-support" }
 config = { workspace = true, features = ["toml"] }
 subst = "0.3"
 env_logger = { workspace = true }
