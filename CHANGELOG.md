@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
-* Fix api path consistency in rpc Api message
+* Use homogenous versionning across all modules
 * Drop QGIS 3.34 support
+* Fix processes input 'geometry'
+* Fix api path in rpc Api message
 
 ## 0.7.0
 
