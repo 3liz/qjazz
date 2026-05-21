@@ -3,6 +3,7 @@
 ARG REGISTRY_PREFIX=''
 ARG QGIS_FLAVOR=ltr
 
+ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
 FROM  ${REGISTRY_PREFIX}qgis-platform:${QGIS_FLAVOR} AS build
 
 RUN apt-get update -y \

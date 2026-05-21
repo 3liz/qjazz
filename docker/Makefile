@@ -46,7 +46,7 @@ build:: manifest
 	$(MAKE) -C ../qjazz-contrib/  manifest
 	{ \
 	source $(MANIFEST); \
-	docker build --rm $(BUILD_OPTS) $(DOCKER_BUILDER_OPTS) $(BUILD_ARGS) --target $(BUILD_TARGET) \
+	docker buildx build --rm $(BUILD_OPTS) $(DOCKER_BUILDER_OPTS) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=${FLAVOR} \
 		--build-arg LIZCLOUD=${LIZCLOUD} \
 		--label org.opencontainers.image.version=$$version \
@@ -116,7 +116,7 @@ NOQGIS_MANIFEST=factory-noqgis.manifest
 noqgis-build: noqgis-manifest
 	{ \
 	source $(NOQGIS_MANIFEST); \
-	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
+	docker buildx build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=$(FLAVOR) \
 		--label org.opencontainers.image.version=$$version \
 		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-unstable -f Dockerfile  ..;\
@@ -170,7 +170,7 @@ endif
 CI_IMAGE=$(REGISTRY_PREFIX)factory-ci-runner:qjazz-$(FLAVOR)
 
 build-ci:
-	docker build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target ci \
+	docker buildx build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target ci \
 	--build-arg QGIS_FLAVOR=$(FLAVOR) \
 	--build-arg factory_runner_uid=$$(id -u) \
 	--label org.opencontainers.image.version=$(VERSION_TAG) \

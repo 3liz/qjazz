@@ -2224,7 +2224,7 @@ dependencies = [
 
 [[package]]
 name = "qjazz-map"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "actix-cors",
  "actix-web",
@@ -2258,7 +2258,7 @@ dependencies = [
 
 [[package]]
 name = "qjazz-mon"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "log",
  "rmp",
@@ -2271,7 +2271,7 @@ dependencies = [
 
 [[package]]
 name = "qjazz-pool"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bitflags",
  "env_logger",
@@ -2291,7 +2291,7 @@ dependencies = [
 
 [[package]]
 name = "qjazz-rpc"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "clap",
