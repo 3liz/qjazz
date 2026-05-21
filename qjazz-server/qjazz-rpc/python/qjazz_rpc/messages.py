@@ -1,7 +1,7 @@
 """Messages for communicating with the qgis server
 sub process
 """
-
+from collections.abc import Buffer, Sized
 from enum import IntEnum, StrEnum
 from typing import (
     Annotated,
@@ -18,6 +18,10 @@ from msgpack import packb
 from pydantic import BaseModel, Field, JsonValue, TypeAdapter
 
 from qjazz_cache.status import CheckoutStatus
+
+
+class MsgBuffer(Protocol, Buffer, Sized):
+    def __getitem__(self, slice):  ...
 
 
 class MsgType(IntEnum):
@@ -339,7 +343,7 @@ Envelop = NewType("Envelop", tuple[int, Any])
 
 class Connection(Protocol):
     def recv(self) -> Message: ...
-    def send_bytes(self, data: bytes): ...
+    def send_bytes(self, data: MsgBuffer): ...
 
     @property
     def cancelled(self) -> bool: ...
@@ -353,7 +357,7 @@ def send_reply(conn: Connection, msg: Any, status: int = 200):
 
 
 # Send a binary chunk
-def send_chunk(conn: Connection, data: bytes):
+def send_chunk(conn: Connection, data: MsgBuffer):
     if len(data) > 0:
         conn.send_bytes(packb(206))
         conn.send_bytes(data)

@@ -11,6 +11,7 @@ from typing import (
     ClassVar,
     Sequence,
     TypeAlias,
+    cast,
 )
 from urllib.parse import quote, urlencode
 
@@ -63,7 +64,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 
         formats = self.allowed_formats
         if formats:
-            schema = {
+            schema = cast("JsonDict", {
                 "$defs": {"Link": schema},
                 "oneOf": [
                     {
@@ -73,7 +74,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
                     }
                     for fmt in formats
                 ],
-            }
+            })
 
         return schema
 

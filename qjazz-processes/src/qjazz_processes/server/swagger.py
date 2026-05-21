@@ -2,6 +2,7 @@ from inspect import isclass
 from typing import (
     Optional,
     Sequence,
+    cast,
 )
 
 from aiohttp import web
@@ -97,7 +98,7 @@ class SwaggerError(Exception):
 
 def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]:
     """Build schema definitions dictionnary from models"""
-    schema_definitions = {}
+    schema_definitions: dict[str, JsonValue] = {}
     for name, model in _models:
         # print(model, file=sys.stderr)
         match model:
@@ -106,7 +107,7 @@ def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]
             case _:
                 schema = model.model_json_schema(ref_template=ref_template)
         # Extract subdefinitions
-        defs = schema.pop("$defs", {})
+        defs = cast("dict", schema.pop("$defs", {}))
         schema_definitions.update(defs)
         schema_definitions[name] = schema
 

@@ -22,7 +22,7 @@ class Connection:
     def recv(self) -> messages.Message:
         raise NotImplementedError
 
-    def send_bytes(self, data: bytes):
+    def send_bytes(self, data: messages.MsgBuffer):
         if self._cancelled:
             return
         size = len(data)

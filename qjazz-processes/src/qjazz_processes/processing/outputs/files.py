@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import (
     Optional,
     Sequence,
+    cast,
 )
 
 from pydantic import ValidationError
@@ -58,7 +59,7 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
 
         formats = self.allowed_formats
         if formats:
-            schema = {
+            schema = cast("JsonDict", {
                 "$defs": {"Link": schema},
                 "anyOf": [
                     {
@@ -68,7 +69,7 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
                     }
                     for fmt in formats
                 ],
-            }
+            })
 
         return schema
 

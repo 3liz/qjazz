@@ -98,7 +98,7 @@ class InputParameter[P: ParameterDefinition, T]:
         return self.validate(inp)
 
     @classmethod
-    def default_value(cls, param: P) -> T:
+    def default_value(cls, param: P) -> Optional[T]:
         # Handle defaultValue
         # XXX In some case QVariant are
         # not converted to python object (SIP bug ?)

@@ -8,7 +8,7 @@ from struct import pack, unpack
 from msgpack import unpackb
 from qjazz_core import logger
 
-from .messages import Message, MessageAdapter
+from .messages import Message, MessageAdapter, MsgBuffer
 
 
 class Connection:
@@ -76,7 +76,7 @@ class Connection:
         msg = unpackb(data)
         return MessageAdapter.validate_python(msg)
 
-    def send_bytes(self, data: bytes):
+    def send_bytes(self, data: MsgBuffer):
         if not self._cancelled:
             size = len(data)
             os.write(self._out, pack("!i", size))
