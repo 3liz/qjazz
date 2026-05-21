@@ -50,5 +50,7 @@ class LayerAccessor:
         if self.use_layer_ids:
             return layer.id()
 
-        props = layer.serverProperties()
-        return props.shortName() if props else layer.name()
+        if props := layer.serverProperties():
+            return props.shortName() or layer.name()
+
+        return layer.name()

@@ -6,6 +6,7 @@ from qgis.core import QgsProject
 from qjazz_cache.storage import load_project_from_uri
 from qjazz_ogc import Collection
 from qjazz_ogc.crs import CrsRef
+from qjazz_ogc.layers import LayerAccessor
 
 
 @dataclass
@@ -28,6 +29,15 @@ def test_ogc_default_crs():
 
     qgis_crs = crs.to_qgis()
     assert qgis_crs.isValid()
+
+
+def test_ogr_layer_accessor(data: Path):
+    """Ensure that layer has a valid name"""
+    project = load_project(data.joinpath("france_parts", "france_parts.qgs"))
+
+    accessor = LayerAccessor(project)
+    for layer in accessor.layers():
+        assert bool(accessor.layer_name(layer))
 
 
 def test_ogc_project_collection(data: Path):
