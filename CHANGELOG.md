@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## 0.8.1
+
+* Remove unreliable load balanced channel support
+
 ## 0.8.0 - 2026-05-21
 
 * Use homogenous versionning across all modules

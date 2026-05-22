@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "qjazz-processes"
 description = "QJazz OGC processes "
-version = "0.8.1"
+version = "0.8.2"
 requires-python = ">= 3.12"
 licence = "Apache-2.0 OR MIT"
 classifiers = [
@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
-    "qjazz-contrib[celery, store]==0.8.1",
+    "qjazz-contrib[celery, store]==0.8.2",
     "pydantic-extra-types",
     "click",
     "requests",
