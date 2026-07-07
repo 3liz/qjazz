@@ -15,7 +15,6 @@ use crate::errors::{Error, Result};
 use crate::messages::{Envelop, JsonValue, Message, Pickable};
 
 pub(crate) struct Pipe {
-    //stdin: ChildStdin,
     stdin: ChildStdin,
     stdout: ChildStdout,
     buffer: Vec<u8>,
@@ -29,7 +28,7 @@ pub(crate) struct PipeOptions {
 
 /// Communicate with stdout/stdin of child process
 ///
-/// Each chunk of data send by the childe process is always
+/// Each chunk of data send by the child process is always
 /// preceded by a big-endian 32 integer whose value is the size
 /// of the chunk of bytes that follows.
 impl Pipe {
@@ -227,7 +226,7 @@ where
         // We need to constrain the generic parameter T
         struct EnvelopVisitor<T>(PhantomData<T>);
 
-        // Envelop is serialized a tuple (status, msg)
+        // Envelop is serialized as tuple (status, msg)
         impl<'de, T> de::Visitor<'de> for EnvelopVisitor<T>
         where
             T: Deserialize<'de>,
