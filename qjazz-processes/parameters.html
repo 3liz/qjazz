@@ -97,12 +97,12 @@
 <section id="parameters-description">
 <h2>Parameters description<a class="headerlink" href="#parameters-description" title="Link to this heading"></a></h2>
 <p>Process description uses <a class="reference external" href="https://json-schema.org/draft/2020-12/json-schema-core">JSON Schema</a>
-framents te define the inputs and outputs parameters as description in the
-<cite>OGC process description &lt;https://docs.ogc.org/is/18-062r2/18-062r2.html#toc35</cite> document.</p>
+fragments te define the inputs and outputs parameters as description in the
+<a class="reference external" href="https://docs.ogc.org/is/18-062r2/18-062r2.html#toc35">OGC process description</a> document.</p>
 <p>This makes the task more complicated for api client to implement generic client since
 the variability of JSON schema is much more important than what was proposed by the WPS
 standards, but there is some invrariant rules.</p>
-<p>Qjazz-Processes map <cite>QgsProcessingParameterDefinition &lt;https://api.qgis.org/api/classQgsProcessingParameterDefinition.html&gt;_</cite> and <a class="reference external" href="https://api.qgis.org/api/classQgsProcessingOutputDefinition.html">QgsProcessingOutputDefinition</a> to JSON Schema.</p>
+<p>Qjazz-Processes map <a class="reference external" href="https://api.qgis.org/api/classQgsProcessingParameterDefinition.html">QgsProcessingParameterDefinition</a> and <a class="reference external" href="https://api.qgis.org/api/classQgsProcessingOutputDefinition.html">QgsProcessingOutputDefinition</a> to JSON Schema.</p>
 <p>The currrent implementation follow the schemas described in the <a class="reference external" href="https://github.com/opengeospatial/ogcapi-processes/tree/master">actual unreleased version of the standard</a>.</p>
 <p>That means that it may not be compliant for most of actual OGC api compliance validators which
 are strictly based on the version 1.0.0 of the standards.</p>

@@ -101,7 +101,7 @@ There is nothing special to do for using a Qgis plugin with |ProjectName|.
 
 As for Qgis desktop, |ProjectName| expect the a pluging to follow
 the same rules as for any other plugins `implementing processing 
-providers <https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/processing.html>`_`. 
+providers <https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/processing.html>`_. 
 
 As regular QGIS plugin, a metadata.txt file must be present with the variable
 ``hasProcessingProvider=yes`` indicating that the plugin is available as a processing 

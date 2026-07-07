@@ -5,14 +5,14 @@ Parameters description
 ----------------------
 
 Process description uses `JSON Schema <https://json-schema.org/draft/2020-12/json-schema-core>`_
-framents te define the inputs and outputs parameters as description in the 
-`OGC process description <https://docs.ogc.org/is/18-062r2/18-062r2.html#toc35` document.
+fragments te define the inputs and outputs parameters as description in the 
+`OGC process description <https://docs.ogc.org/is/18-062r2/18-062r2.html#toc35>`_ document.
 
 This makes the task more complicated for api client to implement generic client since
 the variability of JSON schema is much more important than what was proposed by the WPS
 standards, but there is some invrariant rules.
 
-|ProjectName| map `QgsProcessingParameterDefinition <https://api.qgis.org/api/classQgsProcessingParameterDefinition.html>_` and `QgsProcessingOutputDefinition  <https://api.qgis.org/api/classQgsProcessingOutputDefinition.html>`_ to JSON Schema. 
+|ProjectName| map `QgsProcessingParameterDefinition <https://api.qgis.org/api/classQgsProcessingParameterDefinition.html>`_ and `QgsProcessingOutputDefinition  <https://api.qgis.org/api/classQgsProcessingOutputDefinition.html>`_ to JSON Schema. 
 
 The currrent implementation follow the schemas described in the `actual unreleased version of the standard <https://github.com/opengeospatial/ogcapi-processes/tree/master>`_.
 

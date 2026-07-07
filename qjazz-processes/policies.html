@@ -239,10 +239,11 @@ Used to generate process links in API responses.</p>
 </div>
 </li>
 <li><p>Configure the policy in your server settings:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">AccessPolicyConfig</span><span class="p">(</span>
-    <span class="n">policy_class</span><span class="o">=</span><span class="s2">&quot;my_policy.policy.MyAccessPolicy&quot;</span><span class="p">,</span>
-    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;allowed_services&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;wfs&quot;</span><span class="p">,</span> <span class="s2">&quot;wms&quot;</span><span class="p">]},</span>
-<span class="p">)</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[access_policy]</span>
+<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_policy.policy.MyAccessPolicy&quot;</span>
+
+<span class="k">[accesspolicy.config]</span>
+<span class="n">allowed_services</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;wfs&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;wms&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 </li>

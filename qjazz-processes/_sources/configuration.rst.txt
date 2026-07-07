@@ -133,7 +133,7 @@ MailTo Callback configuration
 
 Allow sending e-mail with callbacks.
 
-.. literalinclude:: configs/callback_http.toml
+.. literalinclude:: configs/callback_mailto.toml
    :language: toml
    :linenos:
 
