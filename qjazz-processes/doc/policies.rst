@@ -166,9 +166,10 @@ Implementing a Custom Policy
 
 4. Configure the policy in your server settings:
 
-   .. code:: python
+   .. code-block:: toml
 
-       AccessPolicyConfig(
-           policy_class="my_policy.policy.MyAccessPolicy",
-           config={"allowed_services": ["wfs", "wms"]},
-       )
+      [access_policy]
+      policy_class = "my_policy.policy.MyAccessPolicy"
+      
+      [accesspolicy.config]
+      allowed_services = ["wfs", "wms"]

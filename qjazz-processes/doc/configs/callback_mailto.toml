@@ -37,7 +37,7 @@ body_format = "plain"
 #
 # Attach results
 #
-# Send job resurts as attachment
+# Send job results as attachment
 send_results_as_attachment = false
 #
 # Request timeout
@@ -54,8 +54,10 @@ debug = false
 # 
 #
 [callbacks.mailto.config.content_success]
-#subject =   	# Required
-#body =   	# Required
+subject = "[Qjazz:$service] Job $process successfull"
+body = '''
+The job $jobid ($process) has been executed with success.
+'''
 
 #
 # Subject and body to set on failed notification.
@@ -63,8 +65,10 @@ debug = false
 # 
 #
 [callbacks.mailto.config.content_failed]
-#subject =   	# Required
-#body =   	# Required
+subject = "[QJazz:$service] Job $process failed"
+body = '''
+The job $jobid ($process) has failed.
+'''
 
 #
 # Subject and body to set on inProgresss notification.
@@ -72,8 +76,10 @@ debug = false
 # 
 #
 [callbacks.mailto.config.content_in_progress]
-#subject =   	# Required
-#body =   	# Required
+subject = "[QJazz:$service] Job $process started"
+body = '''
+The job $jobid ($process) has started.
+'''
 
 #
 [callbacks.mailto.config.acl]

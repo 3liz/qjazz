@@ -40,7 +40,7 @@ configs:
 from qjazz_processes.worker.config import dump_worker_config; \
 dump_worker_config() " > ./configs/worker.toml
 	$(PYTHON) -m qjazz_processes.callbacks.handlers.http > ./configs/callback_http.toml
-	$(PYTHON) -m qjazz_processes.callbacks.handlers.mailto > ./configs/callback_http.toml
+	$(PYTHON) -m qjazz_processes.callbacks.handlers.mailto > ./configs/callback_mailto.toml
 
 
 specs: 
