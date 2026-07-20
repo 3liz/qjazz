@@ -31,7 +31,7 @@ RUN --mount=type=bind,target=/src,rw \
         `ls -1 /src/dist/qjazz_map-*.whl` \
         `ls -1 /src/dist/qjazz_rpc-*.whl` \
         `ls -1 /src/dist/qjazz_processes-*.whl` \
-    && uv pip install --no-deps --cache-dir=/.python-cache --compile-bytecode \
+    && uv pip install --cache-dir=/.python-cache --compile-bytecode \
         qgis-plugin-manager
 
 
