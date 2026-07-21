@@ -63,6 +63,7 @@ pub mod rel {
     pub const COLLECTION: &str = "collection";
     pub const CONFORMANCE: &str = "conformance";
     pub const API_CATALOG: &str = "api-catalog";
+    pub const CHILDREN: &str = "children";
     //pub const RELATED: &str = "related";
     pub const OGC_REL_MAP: &str = "[ogc-rel:map]";
     pub const OGC_REL_ITEM: &str = "[ogc-rel:item]";
