@@ -80,6 +80,7 @@ def handle_layers(
     cm: CacheManager,
     conf: QgisConfig,
 ):
+    # Location contains the project identity
     if not msg.location:
         _m.send_reply(conn, "Missing location", 500)
         return
@@ -87,9 +88,8 @@ def handle_layers(
     pinned = not conf.load_project_on_request
 
     catalog = Catalog.get_service()
-    catalog.update(cm, pinned)
 
-    parent = catalog.get_and_update(cm, msg.location)
+    parent = catalog.get_and_update(cm, msg.location, pinned=pinned)
     if not parent:
         _m.send_reply(conn, f"Resource not found: {msg.location}", 404)
         return
@@ -98,7 +98,7 @@ def handle_layers(
     # metadata
     entry, _ = get_project(conn, cm, conf, parent.public_path, False)
     if not entry:
-        logger.warning("Collection: to entry found for project <%s>", parent.public_path)
+        logger.warning("Collection: entry not found for project <%s>", parent.public_path)
         return
 
     project = entry.project
