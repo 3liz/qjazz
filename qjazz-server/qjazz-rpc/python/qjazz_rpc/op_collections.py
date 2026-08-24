@@ -51,6 +51,7 @@ def handle_catalog(
     else:
         # Return the full catalog
         instant = Instant()
+        # TODO: better handling of catalog update
         catalog.update(cm, not conf.load_project_on_request, prefix=msg.location)
         logger.info("Updated catalog (prefix: '%s') in %s ms", msg.location, instant.elapsed_ms)
 

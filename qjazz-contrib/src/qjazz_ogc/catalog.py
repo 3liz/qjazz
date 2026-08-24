@@ -106,7 +106,7 @@ class Catalog:
         self._schema = Collection.model_json_schema()
         self._minimum_qgis_version = get_minimum_qgis_version()
 
-    def update_items(
+    def _update_items(
         self,
         cm: CacheManager,
         pinned: bool = False,
@@ -146,15 +146,40 @@ class Catalog:
 
             yield item
 
+    def _clean(self, cm: CacheManager):
+        """Clean catalog for REMOVED/NOTFOUND items
+        """
+        def _removed_keys():
+            for ident in self._catalog:
+                try:
+                    url = cm.resolve_path(ident)
+                except ResourceNotAllowed:
+                    continue
+
+                _, status = cm.checkout(url)
+                if status in (CheckoutStatus.REMOVED, CheckoutStatus.NOTFOUND):
+                    yield ident
+
+        for key in list(_removed_keys()):
+            self._catalog.pop(key, None)
+
+
     def update(self, cm: CacheManager, pinned: bool = False, *, prefix: Optional[str] = None):
-        self._catalog = {
-            item.public_path: item
-            for item in self.update_items(
-                cm,
-                pinned,
-                prefix=prefix,
+        if prefix is None:
+            self._catalog = { 
+                item.public_path: item
+                for item in self._update_items(cm, pinned)
+            }
+        else:
+            self._clean(cm)
+            self._catalog.update(
+                (item.public_path, item)
+                for item in self._update_items(
+                    cm,
+                    pinned,
+                    prefix=prefix,
+                )
             )
-        }
 
     def get_and_update(
         self,
