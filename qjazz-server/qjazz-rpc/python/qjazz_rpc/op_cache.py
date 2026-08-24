@@ -190,15 +190,20 @@ def checkout_project(
 def send_cache_list(
     conn: _m.Connection,
     cm: CacheManager,
+    msg: _m.ListCacheMsg,
     cache_id: str = "",
 ):
     co = cm.checkout_iter()
 
     def collect() -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
-        for item in co:
+        for (item, status) in co:
             if conn.cancelled:
                 break
-            yield item
+            if msg.pinned_filter and not item.pinned:
+                continue
+            if msg.status_filter is not None and msg.status_filter != status:
+                continue
+            yield (item, status)
 
     # Stream CacheInfo
     _m.stream_data(

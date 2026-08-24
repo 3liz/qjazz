@@ -135,7 +135,12 @@ impl QgisAdmin for QgisAdminServicer {
         let (tx, rx) = mpsc::channel(32);
         tokio::spawn(async move {
             {
-                let mut stream = match w.list_cache().await {
+                let mut stream = match w.list_cache(
+                    qjazz_pool::worker::ListCacheFilter {
+                        pinned: true,
+                        ..Default::default()
+                    }
+                ).await {
                     Ok(stream) => stream,
                     Err(err) => {
                         let _ = tx.send(Err(Status::unknown(err))).await;
@@ -145,12 +150,7 @@ impl QgisAdmin for QgisAdminServicer {
                 loop {
                     if tx
                         .send(match stream.next().await {
-                            Ok(Some(item)) => {
-                                if !item.pinned {
-                                    continue;
-                                }
-                                Ok(CacheInfo::from(item))
-                            }
+                            Ok(Some(item)) => Ok(CacheInfo::from(item)),
                             Ok(None) => break,
                             Err(err) => Err(Status::unknown(err)),
                         })
@@ -206,7 +206,8 @@ impl QgisAdmin for QgisAdminServicer {
         }
 
         async fn list_cache(w: &mut qjazz_pool::Worker) -> Result<Vec<CacheInfo>, Status> {
-            let mut stream = w.list_cache().await.map_err(to_grpc_status)?;
+            let mut stream = w.list_cache(qjazz_pool::worker::ListCacheFilter::default())
+                .await.map_err(to_grpc_status)?;
             let mut items = vec![];
             loop {
                 match stream.next().await {

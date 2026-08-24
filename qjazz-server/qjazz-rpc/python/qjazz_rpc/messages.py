@@ -209,6 +209,8 @@ class ListCacheMsg(MsgModel):
     msg_id: Literal[MsgType.LIST_CACHE] = MsgType.LIST_CACHE
     # Filter by status
     status_filter: Optional[CheckoutStatus] = None
+    # Filter by pinning status
+    pinned_filter: bool = False
 
 
 #

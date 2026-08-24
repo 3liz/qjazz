@@ -277,7 +277,7 @@ def dispatch(
             cm.clear()
             _m.send_reply(conn, None)
         case _m.ListCacheMsg():
-            op_cache.send_cache_list(conn, cm, cache_id=name)
+            op_cache.send_cache_list(conn, cm, msg, cache_id=name)
         case _m.UpdateCacheMsg():
             # We need to consume the iterator
             # for updating the whole cache

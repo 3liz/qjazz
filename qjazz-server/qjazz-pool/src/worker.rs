@@ -412,9 +412,12 @@ impl Worker {
     }
 
     /// List all items in cache
-    pub async fn list_cache(&mut self) -> Result<ObjectStream<'_, msg::CacheInfo>> {
+    pub async fn list_cache(&mut self,  filter: ListCacheFilter) -> Result<ObjectStream<'_, msg::CacheInfo>> {
         let io = self.io()?;
-        io.put_message(msg::ListCacheMsg.into()).await?;
+        io.put_message(msg::ListCacheMsg {
+            status_filter: filter.status,
+            pinned_filter: filter.pinned,
+        }.into()).await?;
         Ok(ObjectStream::new(io))
     }
 
@@ -493,6 +496,12 @@ impl fmt::Display for WorkerId {
             write!(f, "<notset>")
         }
     }
+}
+
+#[derive(Default)]
+pub struct ListCacheFilter {
+    pub pinned: bool,
+    pub status: Option<msg::CheckoutStatusType>,
 }
 
 // =======================

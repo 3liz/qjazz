@@ -83,7 +83,7 @@ def test_op_cache_checkout_pull(qgis_server: Server, feedback: Feedback, qgis_co
 
     # List
     conn.clear()
-    op_cache.send_cache_list(conn, cm, cache_id=name)
+    op_cache.send_cache_list(conn, cm, messages.ListCacheMsg(), cache_id=name)
 
     status, resp = conn.read_message()
     assert status == 206
@@ -108,7 +108,7 @@ def test_op_cache_checkout_pull(qgis_server: Server, feedback: Feedback, qgis_co
     # Empty List
     # List
     conn.clear()
-    op_cache.send_cache_list(conn, cm, cache_id=name)
+    op_cache.send_cache_list(conn, cm, messages.ListCacheMsg(), cache_id=name)
 
     with pytest.raises(NoDataResponse):
         status, resp = conn.read_message()

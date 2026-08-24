@@ -253,6 +253,8 @@ pub struct CollectionsPage {
 // CACHE
 //
 
+pub type CheckoutStatusType = i64;
+
 #[allow(non_snake_case)]
 pub mod CheckoutStatus {
     pub const UNCHANGED: i64 = 0;
@@ -289,8 +291,11 @@ pub struct DropProjectMsg<'a> {
 pub struct ClearCacheMsg;
 
 /// List cache message
-#[derive(Serialize)]
-pub struct ListCacheMsg;
+#[derive(Default, Serialize)]
+pub struct ListCacheMsg {
+    pub status_filter: Option<CheckoutStatusType>,
+    pub pinned_filter: bool,
+}
 
 /// Update cache message
 #[derive(Serialize)]
@@ -311,7 +316,7 @@ pub struct CatalogMsg<'a> {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CacheInfo {
     pub uri: String,
-    pub status: i64,
+    pub status: CheckoutStatusType,
     pub in_cache: bool,
     pub timestamp: Option<i64>,
     pub name: Option<String>,
@@ -339,7 +344,7 @@ pub struct LayerInfo {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ProjectInfo {
-    pub status: i64,
+    pub status: CheckoutStatusType,
     pub uri: String,
     pub filename: String,
     pub crs: String,
