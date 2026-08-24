@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::pin::Pin;
 use std::time::Instant;
 use tokio::sync::mpsc;
@@ -34,38 +35,40 @@ impl Inner {
             _ => Status::unknown(err),
         })
     }
+}
 
-    pub fn get_ref(&self) -> &qjazz_pool::Receiver {
+impl Deref for Inner {
+    type Target = qjazz_pool::Receiver;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 //
-// Helper trait
+// Helper
 //
-trait Qjazz {
-    const HEADER_PREFIX: &str = "x-reply-header-";
+const HEADER_PREFIX: &str = "x-reply-header-";
 
-    // Handle response error
-    // Convert process status response to gRPC response
-    // whenever it is possible.
-    fn error(err: qjazz_pool::Error) -> Status {
-        match err {
-            qjazz_pool::Error::ResponseError(code, msg) => match code {
-                404 | 410 => Status::not_found(msg.to_string()),
-                403 => Status::permission_denied(msg.to_string()),
-                500 => Status::internal(msg.to_string()),
-                401 => Status::unauthenticated(msg.to_string()),
-                _ => {
-                    let mut status = Status::unknown(msg.to_string());
-                    status
-                        .metadata_mut()
-                        .insert("x-reply-status-code", code.into());
-                    status
-                }
-            },
-            _ => Status::unknown(err),
-        }
+// Handle response error
+// Convert process status response to gRPC response
+// whenever it is possible.
+fn to_grpc_status(err: qjazz_pool::Error) -> Status {
+    match err {
+        qjazz_pool::Error::ResponseError(code, msg) => match code {
+            404 | 410 => Status::not_found(msg.to_string()),
+            403 => Status::permission_denied(msg.to_string()),
+            500 => Status::internal(msg.to_string()),
+            401 => Status::unauthenticated(msg.to_string()),
+            _ => {
+                let mut status = Status::unknown(msg.to_string());
+                status
+                    .metadata_mut()
+                    .insert("x-reply-status-code", code.into());
+                status
+            }
+        },
+        _ => Status::unknown(err),
     }
 }
 
@@ -84,8 +87,6 @@ pub(crate) struct QgisServerServicer {
 }
 
 type Reporter = crate::monitor::Sender;
-
-impl Qjazz for QgisServerServicer {}
 
 impl QgisServerServicer {
     pub(crate) fn new(queue: qjazz_pool::Receiver, reporter: Reporter) -> Self {
@@ -159,7 +160,7 @@ impl QgisServer for QgisServerServicer {
         let echo = w
             .ping(&request.into_inner().echo)
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
         w.done();
         Ok(Response::new(PingReply { echo }))
     }
@@ -189,7 +190,7 @@ impl QgisServer for QgisServerServicer {
                 direct: req.direct,
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
-                header_prefix: Some(Self::HEADER_PREFIX),
+                header_prefix: Some(HEADER_PREFIX),
                 headers,
                 content_type: req.content_type.as_deref(),
                 method: req
@@ -201,7 +202,7 @@ impl QgisServer for QgisServerServicer {
                 send_report: self.reporter.is_configured(),
             })
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
 
         let rx = Self::stream_bytes(w, self.reporter.clone());
 
@@ -221,12 +222,12 @@ impl QgisServer for QgisServerServicer {
         request: Request<ApiRequest>,
     ) -> Result<Response<Self::ExecuteApiRequestStream>, Status> {
         let mut w = self.inner.get_worker().await?;
-        let headers = metadata_to_headers(request.metadata());
-        let req = request.get_ref();
 
         // Remember pid
         w.remember().await;
 
+        let headers = metadata_to_headers(request.metadata());
+        let req = request.get_ref();
         let resp = w
             .request(qjazz_pool::messages::ApiRequestMsg {
                 name: &req.name,
@@ -243,13 +244,13 @@ impl QgisServer for QgisServerServicer {
                 direct: req.direct,
                 options: req.options.as_deref(),
                 request_id: req.request_id.as_deref(),
-                header_prefix: Some(Self::HEADER_PREFIX),
+                header_prefix: Some(HEADER_PREFIX),
                 headers,
                 content_type: req.content_type.as_deref(),
                 send_report: self.reporter.is_configured(),
             })
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
 
         let rx = Self::stream_bytes(w, self.reporter.clone());
 
@@ -278,7 +279,7 @@ impl QgisServer for QgisServerServicer {
                 msg.start..msg.end,
             )
             .await
-            .map_err(Self::error)?,
+            .map_err(to_grpc_status)?,
         )))
     }
 }

@@ -303,7 +303,7 @@ def set_proxy_configuration() -> None:
             ProxyType.Socks5Proxy: "Socks5Proxy",
             ProxyType.HttpProxy: "HttpProxy",
             ProxyType.HttpCachingProxy: "HttpCachingProxy",
-            ProxyType.HttpCachingProxy: "FtpCachingProxy",
+            ProxyType.FtpCachingProxy: "FtpCachingProxy",
         }.get(proxy_type, "Undetermined"),
     )
 

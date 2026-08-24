@@ -25,11 +25,11 @@ pub(crate) fn handle_oom(
 
     let handle = tokio::spawn(async move {
         log::info!("Installing oom handler");
-        while !token.is_cancelled() {
-            time::sleep(throttle_duration).await;
-            if token.is_cancelled() {
-                break;
-            }
+        loop {
+            tokio::select! {
+                _ = token.cancelled() => { break; }
+                _ = time::sleep(throttle_duration) => {}
+            } 
             pool.read()
                 .await
                 .inspect_pids(|pids| {

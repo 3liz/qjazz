@@ -64,6 +64,9 @@ def handle_ows_request(
         target,
         allow_direct=msg.direct,
     )
+
+    # No project found
+    # 404 return code set in get_project -> request_project_from_cache
     if not entry:
         return
 
@@ -113,7 +116,7 @@ def handle_ows_request(
             url += f"&VERSION={msg.version}"
 
     if msg.request_id:
-        log.accept(msg.request_id, entry.md.uri if entry else None)
+        log.accept(msg.request_id, entry.md.uri)
 
     (req, resp, project) = handle_generic_request(
         url,
@@ -140,7 +143,7 @@ def handle_ows_request(
         request or "<UNKN>",
         target,
         resp,
-        entry.hits if entry else 0,
+        entry.hits,
     )
 
 

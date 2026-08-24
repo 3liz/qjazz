@@ -44,8 +44,7 @@ pub(crate) fn handle_signals(
                     // time for other child to die and so perform only one
                     // rescaling task.
                     log::debug!("SIGCHLD detected");
-                    if !rescaling.load(Ordering::Relaxed) {
-                        rescaling.store(true, Ordering::Relaxed);
+                    if !rescaling.swap(true, Ordering::Relaxed) {
                         let pool = pool.clone();
                         let token = token.clone();
                         let state = rescaling.clone();

@@ -37,6 +37,7 @@ impl Default for ListenConfig {
 
 impl ListenConfig {
     /// Return the socker addresss from this configuration
+    #[inline(always)]
     pub fn address(&self) -> SocketAddr {
         self.address
     }
@@ -105,9 +106,11 @@ impl Rpc {
         }
         self.listen.validate()
     }
+    #[inline(always)]
     pub fn listen(&self) -> &ListenConfig {
         &self.listen
     }
+    #[inline(always)]
     pub fn enable_admin_services(&self) -> bool {
         self.enable_admin_services
     }
@@ -117,17 +120,27 @@ impl Rpc {
     pub fn shutdown_grace_period(&self) -> Duration {
         Duration::from_secs(self.shutdown_grace_period)
     }
+    #[inline(always)]
     pub fn max_failure_pressure(&self) -> f64 {
         self.max_failure_pressure
     }
+    #[inline(always)]
     pub fn enable_tls(&self) -> bool {
         self.listen.enable_tls
     }
     pub fn tls_key(&self) -> io::Result<String> {
-        fs::read_to_string(self.listen.tls_key_file.as_ref().unwrap())
+        fs::read_to_string(
+            self.listen.tls_key_file
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No TLS key defined"))?
+        )
     }
     pub fn tls_cert(&self) -> io::Result<String> {
-        fs::read_to_string(self.listen.tls_cert_file.as_ref().unwrap())
+        fs::read_to_string(
+            self.listen.tls_cert_file
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No TLS cert defined"))?
+        )
     }
     pub fn tls_client_ca(&self) -> Option<io::Result<String>> {
         self.listen
@@ -135,6 +148,7 @@ impl Rpc {
             .as_deref()
             .map(fs::read_to_string)
     }
+    #[inline(always)]
     pub fn high_water_mark(&self) -> f64 {
         self.high_water_mark
     }

@@ -109,17 +109,17 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
 
         # Assume version 1.3.0
         if output_crs.hasAxisInverted():  # Inversion east/north, long/lat
-            inv_aspect_ratio = lambda: r.width() / r.height()  # noqa E731
             r.invert()
+            inv_aspect_ratio = r.width() / r.height()
         else:
-            inv_aspect_ratio = lambda: r.height() / r.width()  # noqa E731
+            inv_aspect_ratio = r.height() / r.width()
 
         content_bbox = f"{r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
         options = f"{options}&bbox={content_bbox}"
 
     else:
         content_bbox = params["bbox"]
-        inv_aspect_ratio = lambda: bbox_inv_aspect_ratio(params)  # noqa E731
+        inv_aspect_ratio = bbox_inv_aspect_ratio(params)
 
     headers["Content-Bbox"] = content_bbox
 
@@ -131,13 +131,13 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
             w = QgsServerProjectUtils.wmsMaxWidth(project)
             if w < 0:
                 w = DEFAULT_WITH
-            h = int(w * inv_aspect_ratio())
+            h = int(w * inv_aspect_ratio)
             options = f"{options}&width={w}&height={h}"
         case w, None:
-            h = int(w[0] * inv_aspect_ratio())
+            h = int(w[0] * inv_aspect_ratio)
             options = f"{options}&height={h}"
         case None, h:
-            w = int(h[0] / inv_aspect_ratio())
+            w = int(h[0] / inv_aspect_ratio)
             options = f"{options}&width={w}"
 
     # No layers set, set all visible layers from  treeRoot

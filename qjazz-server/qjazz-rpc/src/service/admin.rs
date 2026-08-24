@@ -25,8 +25,6 @@ pub struct QgisAdminServicer {
     uptime: Instant,
 }
 
-impl Qjazz for QgisAdminServicer {}
-
 impl QgisAdminServicer {
     pub(crate) fn new(
         queue: qjazz_pool::Receiver,
@@ -58,7 +56,7 @@ impl QgisAdmin for QgisAdminServicer {
         let echo = w
             .ping(&request.into_inner().echo)
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
         w.done();
         Ok(Response::new(PingReply { echo }))
     }
@@ -78,14 +76,13 @@ impl QgisAdmin for QgisAdminServicer {
         let resp = w
             .checkout_project(&req.uri, pull)
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
 
         w.done();
 
         if pull {
             // Trigger sync
             self.inner
-                .get_ref()
                 .update_cache(
                     if matches!(
                         resp.status,
@@ -114,16 +111,13 @@ impl QgisAdmin for QgisAdminServicer {
             w.checkout_project(&uri, false)
                 .await
                 .map(CacheInfo::from)
-                .map_err(Self::error)?,
+                .map_err(to_grpc_status)?,
         );
 
         w.done();
 
         // Sync state
-        self.inner
-            .get_ref()
-            .update_cache(restore::State::Remove(uri))
-            .await;
+        self.inner.update_cache(restore::State::Remove(uri)).await;
 
         Ok(response)
     }
@@ -180,10 +174,7 @@ impl QgisAdmin for QgisAdminServicer {
     // Clear cache
     async fn clear_cache(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
         // Sync state
-        self.inner
-            .get_ref()
-            .update_cache(restore::State::Clear)
-            .await;
+        self.inner.update_cache(restore::State::Clear).await;
 
         Ok(Response::new(Empty {}))
     }
@@ -191,10 +182,7 @@ impl QgisAdmin for QgisAdminServicer {
     // Update cache
     async fn update_cache(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
         // Sync state
-        self.inner
-            .get_ref()
-            .update_cache(restore::State::Update)
-            .await;
+        self.inner.update_cache(restore::State::Update).await;
 
         Ok(Response::new(Empty {}))
     }
@@ -212,13 +200,13 @@ impl QgisAdmin for QgisAdminServicer {
         // NOTE: This is a kind of 'stop the world' method since it waits
         // for all workers beeing availables
         // should be called only for debugging purposes
-        let mut workers = self.inner.get_ref().drain();
+        let mut workers = self.inner.drain();
         while workers.len() < num_workers {
             workers.push(self.inner.get_worker().await?)
         }
 
         async fn list_cache(w: &mut qjazz_pool::Worker) -> Result<Vec<CacheInfo>, Status> {
-            let mut stream = w.list_cache().await.map_err(QgisAdminServicer::error)?;
+            let mut stream = w.list_cache().await.map_err(to_grpc_status)?;
             let mut items = vec![];
             loop {
                 match stream.next().await {
@@ -245,7 +233,7 @@ impl QgisAdmin for QgisAdminServicer {
                     let config = match w.get_config().await {
                         Ok(config) => config.to_string(),
                         Err(err) => {
-                            let _ = tx.send(Err(QgisAdminServicer::error(err))).await;
+                            let _ = tx.send(Err(to_grpc_status(err))).await;
                             return;
                         }
                     };
@@ -339,7 +327,7 @@ impl QgisAdmin for QgisAdminServicer {
             .await
             .map_err(Status::invalid_argument)?;
 
-        self.inner.get_ref().update_config(patch).await;
+        self.inner.update_config(patch).await;
         Ok(Response::new(Empty {}))
     }
 
@@ -362,7 +350,7 @@ impl QgisAdmin for QgisAdminServicer {
         let mut resp = w
             .project_info(&request.into_inner().uri)
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
 
         w.done();
 
@@ -440,7 +428,7 @@ impl QgisAdmin for QgisAdminServicer {
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
         Ok(Response::new(JsonConfig {
-            json: w.get_env().await.map_err(Self::error)?.to_string(),
+            json: w.get_env().await.map_err(to_grpc_status)?.to_string(),
         }))
     }
     // Change QGIS server serving status
@@ -448,21 +436,21 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
-        match request.into_inner().status {
-            st if st == ServingStatus::Serving as i32 => {
+
+        let st = request.into_inner().status;
+
+        match ServingStatus::try_from(st).map_err(|e| Status::invalid_argument(format!("{st}: {e}")))? {
+            ServingStatus::Serving => {
                 log::info!("Setting server serving status to SERVING");
                 self.health_reporter
                     .set_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
             }
-            st if st == ServingStatus::NotServing as i32 => {
+            ServingStatus::NotServing => {
                 log::info!("Setting server serving status to NOT SERVING");
                 self.health_reporter
                     .set_not_serving::<QgisServerServer<QgisServerServicer>>()
                     .await
-            }
-            st => {
-                return Err(Status::invalid_argument(format!("{st}")));
             }
         }
         Ok(Response::new(Empty {}))
@@ -488,13 +476,13 @@ impl QgisAdmin for QgisAdminServicer {
         w.remember().await;
         w.sleep(request.into_inner().delay)
             .await
-            .map_err(Self::error)?;
+            .map_err(to_grpc_status)?;
         w.done();
         Ok(Response::new(Empty {}))
     }
     // Reload
     async fn reload(&self, _: Request<Empty>) -> Result<Response<Empty>, Status> {
-        self.inner.get_ref().reload();
+        self.inner.reload();
         Ok(Response::new(Empty {}))
     }
 }

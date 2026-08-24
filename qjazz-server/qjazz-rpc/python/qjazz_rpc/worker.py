@@ -2,7 +2,6 @@
 as a sub process
 """
 
-import json
 import os
 import signal
 import sys
@@ -14,7 +13,6 @@ from typing import List, Optional, Protocol, assert_never, cast
 from pydantic import JsonValue
 from qjazz_core import logger
 from qjazz_core.condition import assert_not_none
-from qjazz_core.config import ConfigProxy
 from qjazz_core.qgis import (
     PluginType,
     QgisPluginService,
@@ -30,7 +28,7 @@ from qgis.core import QgsFeedback
 from qjazz_cache.prelude import CacheManager, CheckoutStatus, ProjectMetadata
 
 from . import messages as _m
-from . import op_cache, op_collections, op_plugins, op_requests
+from . import op_cache, op_collections, op_config, op_plugins, op_requests
 from .config import QgisConfig
 from .delegate import ApiDelegate
 
@@ -183,107 +181,9 @@ def qgis_server_run(
             logger.debug("Received message: %s", msg.msg_id.name)
             logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
             duration = Instant()
-            match msg:
-                # --------------------
-                # Qgis server Requests
-                # --------------------
-                case _m.OwsRequestMsg():
-                    op_requests.handle_ows_request(
-                        conn,
-                        msg,
-                        server,
-                        cm,
-                        conf,
-                        cache_id=name,
-                        feedback=feedback.feedback,
-                    )
-                case _m.ApiRequestMsg():
-                    op_requests.handle_api_request(
-                        conn,
-                        msg,
-                        server,
-                        cm,
-                        conf,
-                        cache_id=name,
-                        feedback=feedback.feedback,
-                    )
-                # --------------------
-                # Collections
-                # --------------------
-                case _m.CollectionsMsg():
-                    op_collections.handle_collection(conn, msg, cm, conf)
-                # --------------------
-                # Global management
-                # --------------------
-                case _m.PingMsg():
-                    _m.send_reply(conn, msg.echo)
-                case _m.QuitMsg():
-                    _m.send_reply(conn, None)
-                    msg = None
-                    break
-                # --------------------
-                # Cache management
-                # --------------------
-                case _m.CheckoutProjectMsg():
-                    op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)
-                case _m.DropProjectMsg():
-                    op_cache.drop_project(conn, cm, msg.uri, name)
-                case _m.ClearCacheMsg():
-                    cm.clear()
-                    _m.send_reply(conn, None)
-                case _m.ListCacheMsg():
-                    op_cache.send_cache_list(conn, cm, cache_id=name)
-                case _m.UpdateCacheMsg():
-                    # We need to consume the iterator
-                    # for updating the whole cache
-                    for _ in cm.update_cache():
-                        pass
-                    _m.send_reply(conn, None)
-                case _m.GetProjectInfoMsg():
-                    op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
-                case _m.CatalogMsg():
-                    op_cache.send_catalog(conn, cm, msg.location)
-                # --------------------
-                # Plugin inspection
-                # --------------------
-                case _m.PluginsMsg():
-                    op_plugins.inspect_plugins(conn, plugin_s)
-                # --------------------
-                # Config
-                # --------------------
-                case _m.PutConfigMsg():
-                    if isinstance(conf, ConfigProxy):
-                        logger.notice("Updating configuration")
-                        config_data = json.loads(msg.config) if isinstance(msg.config, str) else msg.config
-                        confservice = conf.service
-                        confservice.update_config(config_data)
-                        # Update log level
-                        logger.set_log_level(confservice.conf.logging.level)
-                        _m.send_reply(conn, None)
-                    else:
-                        # It does no make sense to update configuration
-                        # If the configuration is not a proxy
-                        # since cache manager and others will hold immutable
-                        # instance of configuration
-                        _m.send_reply(conn, "", 403)
-                case _m.GetConfigMsg():
-                    if isinstance(conf, ConfigProxy):
-                        confservice = conf.service
-                        _m.send_reply(conn, confservice.conf.model_dump(mode="json"))
-                    else:
-                        _m.send_reply(conn, conf.model_dump(mode="json"))
-                # --------------------
-                # Status
-                # --------------------
-                case _m.GetEnvMsg():
-                    _m.send_reply(conn, worker_env())
-                # --------------------
-                # Sleep
-                # --------------------
-                case _m.SleepMsg():
-                    do_sleep(conn, msg, feedback.feedback)
-                case _ as unreachable:
-                    assert_never(unreachable)
+
+            dispatch(msg, server, conn, conf, name, cm, plugin_s, feedback)
+
         except KeyboardInterrupt:
             if conf.ignore_interrupt_signal:
                 logger.debug("Ignoring interrupt signal")
@@ -315,6 +215,103 @@ def qgis_server_run(
             feedback.reset()
 
     logger.debug("Worker exiting")
+
+
+def dispatch(
+    msg: _m.Message,
+    server: Server,
+    conn: _m.Connection,
+    conf: QgisConfig,
+    name: str,
+    cm: CacheManager,
+    plugin_s: QgisPluginService,
+    feedback: Feedback,
+):
+    """Dispatch message"""
+    match msg:
+        # --------------------
+        # Qgis server Requests
+        # --------------------
+        case _m.OwsRequestMsg():
+            op_requests.handle_ows_request(
+                conn,
+                msg,
+                server,
+                cm,
+                conf,
+                cache_id=name,
+                feedback=feedback.feedback,
+            )
+        case _m.ApiRequestMsg():
+            op_requests.handle_api_request(
+                conn,
+                msg,
+                server,
+                cm,
+                conf,
+                cache_id=name,
+                feedback=feedback.feedback,
+            )
+        # --------------------
+        # Collections
+        # --------------------
+        case _m.CollectionsMsg():
+            op_collections.handle_collection(conn, msg, cm, conf)
+        # --------------------
+        # Global management
+        # --------------------
+        case _m.PingMsg():
+            _m.send_reply(conn, msg.echo)
+        case _m.QuitMsg():
+            _m.send_reply(conn, None)
+            msg = None
+            return
+        # --------------------
+        # Cache management
+        # --------------------
+        case _m.CheckoutProjectMsg():
+            op_cache.checkout_project(conn, cm, conf, msg.uri, msg.pull, cache_id=name)
+        case _m.DropProjectMsg():
+            op_cache.drop_project(conn, cm, msg.uri, name)
+        case _m.ClearCacheMsg():
+            cm.clear()
+            _m.send_reply(conn, None)
+        case _m.ListCacheMsg():
+            op_cache.send_cache_list(conn, cm, cache_id=name)
+        case _m.UpdateCacheMsg():
+            # We need to consume the iterator
+            # for updating the whole cache
+            for _ in cm.update_cache():
+                pass
+            _m.send_reply(conn, None)
+        case _m.GetProjectInfoMsg():
+            op_cache.send_project_info(conn, cm, msg.uri, cache_id=name)
+        case _m.CatalogMsg():
+            op_cache.send_catalog(conn, cm, msg.location)
+        # --------------------
+        # Plugin inspection
+        # --------------------
+        case _m.PluginsMsg():
+            op_plugins.inspect_plugins(conn, plugin_s)
+        # --------------------
+        # Config
+        # --------------------
+        case _m.PutConfigMsg():
+            op_config.put_config(conn, msg, conf)
+        case _m.GetConfigMsg():
+            op_config.get_config(conn, conf)
+        # --------------------
+        # Status
+        # --------------------
+        case _m.GetEnvMsg():
+            _m.send_reply(conn, worker_env())
+        # --------------------
+        # Sleep
+        # --------------------
+        case _m.SleepMsg():
+            do_sleep(conn, msg, feedback.feedback)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def do_sleep(conn: _m.Connection, msg: _m.SleepMsg, feedback: QgsFeedback):

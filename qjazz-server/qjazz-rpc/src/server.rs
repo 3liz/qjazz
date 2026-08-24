@@ -11,10 +11,7 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 
 /// Run gRPC server
-pub(crate) async fn serve(
-    args: String,
-    settings: Settings,
-) -> anyhow::Result<()> {
+pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()> {
     let addr = settings.rpc.listen().address();
 
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs

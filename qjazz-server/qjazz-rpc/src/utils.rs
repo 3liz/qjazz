@@ -22,14 +22,10 @@ pub(crate) fn headers_to_metadata(
 ) {
     metadata.insert("x-reply-status-code", status.into());
     for (k, v) in headers.iter() {
-        if let Ok(v) = AsciiMetadataValue::from_str(v) {
-            if let Ok(k) = MetadataKey::from_str(k) {
-                metadata.insert(k, v);
-            } else {
-                log::error!("Invalid response header key {k:?}");
-            }
-        } else {
-            log::error!("Invalid response header value {v:?}");
-        }
+        let (Ok(k), Ok(v)) = (MetadataKey::from_str(k), AsciiMetadataValue::from_str(v)) else {
+            log::error!("Invalid response header {k:?} {v:?}");
+            continue;
+        };
+        metadata.insert(k, v);
     }
 }

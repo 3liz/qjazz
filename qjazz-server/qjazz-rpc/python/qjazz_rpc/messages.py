@@ -1,6 +1,7 @@
 """Messages for communicating with the qgis server
 sub process
 """
+
 from collections.abc import Buffer, Sized
 from enum import IntEnum, StrEnum
 from typing import (
@@ -8,7 +9,6 @@ from typing import (
     Any,
     Iterable,
     Literal,
-    NewType,
     Optional,
     Protocol,
     Union,
@@ -21,7 +21,7 @@ from qjazz_cache.status import CheckoutStatus
 
 
 class MsgBuffer(Protocol, Buffer, Sized):
-    def __getitem__(self, slice):  ...
+    def __getitem__(self, slice): ...
 
 
 class MsgType(IntEnum):
@@ -54,7 +54,7 @@ class HTTPMethod(StrEnum):
     HEAD = "HEAD"
     POST = "POST"
     PUT = "PUT"
-    DELETE = "DELATE"
+    DELETE = "DELETE"
     CONNECT = "CONNECT"
     OPTIONS = "OPTIONS"
     TRACE = "TRACE"
@@ -336,9 +336,6 @@ Message = Annotated[
 
 
 MessageAdapter: TypeAdapter[Message] = TypeAdapter(Message)
-
-
-Envelop = NewType("Envelop", tuple[int, Any])
 
 
 class Connection(Protocol):
