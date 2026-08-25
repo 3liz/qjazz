@@ -132,14 +132,14 @@ impl Rpc {
         fs::read_to_string(
             self.listen.tls_key_file
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No TLS key defined"))?
+            .ok_or_else(|| io::Error::other("No TLS key defined"))?
         )
     }
     pub fn tls_cert(&self) -> io::Result<String> {
         fs::read_to_string(
             self.listen.tls_cert_file
             .as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No TLS cert defined"))?
+            .ok_or_else(|| io::Error::other("No TLS cert defined"))?
         )
     }
     pub fn tls_client_ca(&self) -> Option<io::Result<String>> {

@@ -5,6 +5,7 @@ use crate::config::Settings;
 use crate::service::admin::{QgisAdminServer, QgisAdminServicer};
 use crate::service::{QgisServerServer, QgisServerServicer};
 use qjazz_pool::Pool;
+use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
@@ -97,9 +98,21 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
 
     // Start server
     log::info!("RPC serving at {addr}");
-    tokio::spawn(router.serve(addr));
+    let server_handle = tokio::spawn(router.serve(addr));
 
-    token.cancelled().await;
+    // Handle server bind error
+    tokio::select! {
+        v = server_handle => {
+            match v {
+                Err(_) => log::error!("Server task failed"),
+                Ok(rv) => if let Err(e) = rv {
+                    log::error!("{e}: {}", e.source().map(|e| e.to_string()).unwrap_or_default());
+                    token.cancel();
+                }
+            }
+        }
+        _ = token.cancelled() => {}
+    }
 
     // Wait for oom killer termination
     oom_killer.abort();

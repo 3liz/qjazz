@@ -238,7 +238,7 @@ impl Worker {
     pub async fn cancel(&mut self) -> Result<()> {
         log::debug!(
             "Cancelling job {}:{:?}",
-            &self.name,
+            self.name,
             self.process.child.id(),
         );
         self.process.send_signal(signal::SIGHUP)?;
