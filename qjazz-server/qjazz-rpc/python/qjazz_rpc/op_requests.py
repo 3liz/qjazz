@@ -102,12 +102,12 @@ def handle_ows_request(
     if options:
         options = options.removeprefix("?")
         # Rebuild URL for Qgis server
-        params = tuple(k.upper() for k in parse_qs(options))
+        params = frozenset(k.upper() for k in parse_qs(options))
         if "SERVICE" not in params:
             options = f"SERVICE={service or 'WMS'}&{options}"
-        if "REQUEST" not in options and request:
+        if "REQUEST" not in params and request:
             options = f"REQUEST={request}&{options}"
-        if "VERSION" not in options and msg.version:
+        if "VERSION" not in params and msg.version:
             options = f"VERSION={msg.version}&{options}"
         url = f"{msg.url or ''}?{options}"
     else:
