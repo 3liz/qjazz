@@ -200,15 +200,21 @@ impl QgisAdmin for QgisAdminServicer {
         // NOTE: This is a kind of 'stop the world' method since it waits
         // for all workers beeing availables
         // should be called only for debugging purposes.
-        //
+        let mut workers = self.inner.drain();
+        // Wait for busy workers 
         // Wait is bounded to 5s, so the response may be incomplete due 
         // to slow worker response.
-        let mut workers = self.inner.drain();
-        let _ = tokio::time::timeout(std::time::uration::from_secs(5), async {
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(5), async {
             while workers.len() < num_workers {
-                workers.push(self.inner.get_worker().await?)
+                workers.push(match self.inner.get_worker().await {
+                    Ok(w) => w,
+                    Err(e) => {
+                        log::error!("Error while waiting for worker: {e}");
+                        break;
+                    }
+                })
             }
-        }).await
+        }).await;
 
         async fn list_cache(w: &mut qjazz_pool::Worker) -> Result<Vec<CacheInfo>, Status> {
             let mut stream = w.list_cache(qjazz_pool::worker::ListCacheFilter::default())
