@@ -196,7 +196,7 @@ def send_cache_list(
     co = cm.checkout_iter()
 
     def collect() -> Iterator[tuple[CacheEntry, CheckoutStatus]]:
-        for (item, status) in co:
+        for item, status in co:
             if conn.cancelled:
                 break
             if msg.pinned_filter and not item.pinned:

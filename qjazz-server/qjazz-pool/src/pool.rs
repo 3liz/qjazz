@@ -282,7 +282,6 @@ impl Pool {
         #[allow(clippy::comparison_chain)]
         let rv = if nominal > current {
             self.grow(nominal - current).await.inspect(|_| {
-                self.num_processes = nominal;
                 self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
                 self.queue
                     .dead_workers

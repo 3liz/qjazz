@@ -64,17 +64,20 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
 
         formats = self.allowed_formats
         if formats:
-            schema = cast("JsonDict", {
-                "$defs": {"Link": schema},
-                "oneOf": [
-                    {
-                        "$ref": "#/$defs/Link",
-                        "contentMediaType": fmt.media_type,
-                        "title": fmt.title,
-                    }
-                    for fmt in formats
-                ],
-            })
+            schema = cast(
+                "JsonDict",
+                {
+                    "$defs": {"Link": schema},
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/Link",
+                            "contentMediaType": fmt.media_type,
+                            "title": fmt.title,
+                        }
+                        for fmt in formats
+                    ],
+                },
+            )
 
         return schema
 

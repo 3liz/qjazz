@@ -59,17 +59,20 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
 
         formats = self.allowed_formats
         if formats:
-            schema = cast("JsonDict", {
-                "$defs": {"Link": schema},
-                "anyOf": [
-                    {
-                        "$ref": "#/$defs/Link",
-                        "contentMediaType": fmt.media_type,
-                        "title": fmt.title,
-                    }
-                    for fmt in formats
-                ],
-            })
+            schema = cast(
+                "JsonDict",
+                {
+                    "$defs": {"Link": schema},
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Link",
+                            "contentMediaType": fmt.media_type,
+                            "title": fmt.title,
+                        }
+                        for fmt in formats
+                    ],
+                },
+            )
 
         return schema
 

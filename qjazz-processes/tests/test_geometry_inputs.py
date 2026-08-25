@@ -193,7 +193,7 @@ def test_parameter_geometry_polygon():
     print("\ntest_parameter_geometry_polygon::", schema)
 
     polygon = {
-        "coordinates": [[[10, 40], [40, 30], [20, 20], [30, 10], [10,40]]],
+        "coordinates": [[[10, 40], [40, 30], [20, 20], [30, 10], [10, 40]]],
         "type": "Polygon",
     }
 
