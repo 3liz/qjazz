@@ -143,7 +143,10 @@ async fn test_messages_io() {
     // UpdateCacheMsg + list_cache
     w.update_cache().await.unwrap();
 
-    let mut resp = w.list_cache(crate::worker::ListCacheFilter::default()).await.unwrap();
+    let mut resp = w
+        .list_cache(crate::worker::ListCacheFilter::default())
+        .await
+        .unwrap();
     let mut count = 0u32;
     while let Some(info) = resp.next().await.unwrap() {
         assert_eq!(info.cache_id, "test");

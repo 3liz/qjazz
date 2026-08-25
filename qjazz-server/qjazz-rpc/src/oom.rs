@@ -32,9 +32,7 @@ pub(crate) fn handle_oom(
             }
 
             // Drop guard before spawning kill task
-            let pids = {
-                pool.read().await.inspect_pids().await
-            };
+            let pids = { pool.read().await.inspect_pids().await };
 
             log::trace!("Running oom handler on pids {pids:?}");
             let _ = tokio::task::spawn_blocking(move || {

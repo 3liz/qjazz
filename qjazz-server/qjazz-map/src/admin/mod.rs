@@ -56,16 +56,13 @@ mod api {
         links: [Link<'a>; 4],
     }
 
-    // Admin entry points 
+    // Admin entry points
     pub async fn landing_page(req: HttpRequest) -> impl Responder {
         let public_url = request::public_url(&req, "");
 
         HttpResponse::Ok().json(LandingPage {
             links: [
-                Link::application_json(
-                    format!("{public_url}{}", req.path()).into(),
-                    rel::SELF,
-                ),
+                Link::application_json(format!("{public_url}{}", req.path()).into(), rel::SELF),
                 Link::application_json(
                     format!("{public_url}{}/plugins", req.path()).into(),
                     rel::CHILDREN,

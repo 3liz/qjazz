@@ -135,12 +135,13 @@ impl QgisAdmin for QgisAdminServicer {
         let (tx, rx) = mpsc::channel(32);
         tokio::spawn(async move {
             {
-                let mut stream = match w.list_cache(
-                    qjazz_pool::worker::ListCacheFilter {
+                let mut stream = match w
+                    .list_cache(qjazz_pool::worker::ListCacheFilter {
                         pinned: true,
                         ..Default::default()
-                    }
-                ).await {
+                    })
+                    .await
+                {
                     Ok(stream) => stream,
                     Err(err) => {
                         let _ = tx.send(Err(Status::unknown(err))).await;
@@ -201,8 +202,8 @@ impl QgisAdmin for QgisAdminServicer {
         // for all workers beeing availables
         // should be called only for debugging purposes.
         let mut workers = self.inner.drain();
-        // Wait for busy workers 
-        // Wait is bounded to 5s, so the response may be incomplete due 
+        // Wait for busy workers
+        // Wait is bounded to 5s, so the response may be incomplete due
         // to slow worker response.
         let _ = tokio::time::timeout(std::time::Duration::from_secs(5), async {
             while workers.len() < num_workers {
@@ -214,11 +215,14 @@ impl QgisAdmin for QgisAdminServicer {
                     }
                 })
             }
-        }).await;
+        })
+        .await;
 
         async fn list_cache(w: &mut qjazz_pool::Worker) -> Result<Vec<CacheInfo>, Status> {
-            let mut stream = w.list_cache(qjazz_pool::worker::ListCacheFilter::default())
-                .await.map_err(to_grpc_status)?;
+            let mut stream = w
+                .list_cache(qjazz_pool::worker::ListCacheFilter::default())
+                .await
+                .map_err(to_grpc_status)?;
             let mut items = vec![];
             loop {
                 match stream.next().await {
@@ -448,10 +452,11 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         request: Request<ServerStatus>,
     ) -> Result<Response<Empty>, Status> {
-
         let st = request.into_inner().status;
 
-        match ServingStatus::try_from(st).map_err(|e| Status::invalid_argument(format!("{st}: {e}")))? {
+        match ServingStatus::try_from(st)
+            .map_err(|e| Status::invalid_argument(format!("{st}: {e}")))?
+        {
             ServingStatus::Serving => {
                 log::info!("Setting server serving status to SERVING");
                 self.health_reporter

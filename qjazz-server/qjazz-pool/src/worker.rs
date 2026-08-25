@@ -236,11 +236,7 @@ impl Worker {
 
     /// Cancel the task by sending a SIGHUP signal
     pub async fn cancel(&mut self) -> Result<()> {
-        log::debug!(
-            "Cancelling job {}:{:?}",
-            self.name,
-            self.process.child.id(),
-        );
+        log::debug!("Cancelling job {}:{:?}", self.name, self.process.child.id(),);
         self.process.send_signal(signal::SIGHUP)?;
         // Pull output from current job.
         self.drain_until_task_done().await.inspect_err(|err| {
@@ -412,12 +408,19 @@ impl Worker {
     }
 
     /// List all items in cache
-    pub async fn list_cache(&mut self,  filter: ListCacheFilter) -> Result<ObjectStream<'_, msg::CacheInfo>> {
+    pub async fn list_cache(
+        &mut self,
+        filter: ListCacheFilter,
+    ) -> Result<ObjectStream<'_, msg::CacheInfo>> {
         let io = self.io()?;
-        io.put_message(msg::ListCacheMsg {
-            status_filter: filter.status,
-            pinned_filter: filter.pinned,
-        }.into()).await?;
+        io.put_message(
+            msg::ListCacheMsg {
+                status_filter: filter.status,
+                pinned_filter: filter.pinned,
+            }
+            .into(),
+        )
+        .await?;
         Ok(ObjectStream::new(io))
     }
 
