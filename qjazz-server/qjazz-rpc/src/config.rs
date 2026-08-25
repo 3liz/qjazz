@@ -228,26 +228,24 @@ impl Settings {
         }
     }
 
+    /*
     /// Load configuration from file
     pub fn from_file(path: &Path) -> Result<Self, ConfigError> {
         Self::build(Self::builder().add_source(config::File::from(path)))
     }
+    */
 
     /// Load configuration with variable substitution
     pub fn from_file_template(path: &Path) -> Result<Self, ConfigError> {
-        if let Some(loc) = path.parent() {
-            let location = loc.canonicalize().map_err(Self::error)?;
-            let replace =
-                std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
-            let content =
-                subst::substitute(&fs::read_to_string(path).map_err(Self::error)?, &replace)
-                    .map_err(Self::error)?;
-            Self::build(
-                Self::builder().add_source(config::File::from_str(&content, FileFormat::Toml)),
-            )
-        } else {
-            Self::from_file(path)
-        }
+        let loc = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        let location = loc.canonicalize().map_err(Self::error)?;
+        let replace = std::collections::BTreeMap::from([("location", location.to_string_lossy())]);
+        let content = subst::substitute(&fs::read_to_string(path).map_err(Self::error)?, &replace)
+            .map_err(Self::error)?;
+        Self::build(Self::builder().add_source(config::File::from_str(&content, FileFormat::Toml)))
     }
 }
 
