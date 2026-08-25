@@ -146,11 +146,10 @@ class Response(QgsServerResponse):
             self._send_response()
 
         # Send data as chunks
-        # NOTE: Mypy doesn't know that QByteArray implement the Buffer protocol
-        data = memoryview(self._buffer.data())  # type: ignore [arg-type]
         MAX_CHUNK_SIZE = self._chunk_size
-        chunks = (data[i : i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
-        for chunk in chunks:
+
+        while not self._buffer.atEnd():
+            chunk = self._buffer.read(MAX_CHUNK_SIZE)
             logger.trace("Sending chunk of %s bytes", len(chunk))
             _m.send_chunk(self._conn, chunk)
 
