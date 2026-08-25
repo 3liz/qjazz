@@ -11,6 +11,7 @@ from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from time import sleep, time
 from typing import (
+    Any,
     Generator,
     Optional,
     TypeVar,
@@ -218,9 +219,9 @@ def ows_request(
         t_end = time()
 
         fp = Path(output).open("w") if output else sys.stdout  # noqa SIM115
-        fp.buffer.write(chunk.chunk)
+        fp.write(chunk.chunk)
         for chunk in stream:
-            fp.buffer.write(chunk.chunk)
+            fp.write(chunk.chunk)
 
         if headers:
             print_metadata(stream.initial_metadata())
@@ -337,6 +338,7 @@ def list_cache():
     with connect() as stub:
         stream = stub.ListCache(qjazz_pb2.Empty())
         for item in stream:
+            count += 1
             click.echo(MessageToJson(item))
 
     click.echo(f"Returned {count} items", err=True)
@@ -345,29 +347,19 @@ def list_cache():
 @cache_commands.command("update")
 def update_cache():
     """Update cache item state"""
-    count = 0
     with connect() as stub:
-        stream = stub.UpdateCache(qjazz_pb2.Empty())
-        for item in stream:
-            click.echo(MessageToJson(item))
-
-    click.echo(f"Returned {count} items", err=True)
+        stub.UpdateCache(qjazz_pb2.Empty())
 
 
 @cache_commands.command("info")
 @click.argument("project", nargs=1)
 def project_info(project: str):
     """Return info from PROJECT in cache"""
-    count = 0
     with connect() as stub:
-        stream = stub.GetProjectInfo(
+        item = stub.GetProjectInfo(
             qjazz_pb2.ProjectRequest(uri=project),
         )
-        for item in stream:
-            count += 1
-            click.echo(MessageToJson(item))
-
-    click.echo(f"Returned {count} items", err=True)
+        click.echo(MessageToJson(item))
 
 
 @cache_commands.command("catalog")
@@ -551,6 +543,7 @@ def healthcheck_status(watch: bool, set_error: bool):
     with connect(stub=health_pb2_grpc.HealthStub, exit_on_error=not watch) as stub:
         ServingStatus = health_pb2.HealthCheckResponse.ServingStatus
         request = health_pb2.HealthCheckRequest(service="qjazz.QgisServer")
+        resp: Any | None = None
         if watch:
             for resp in stub.Watch(request):
                 click.echo(f"=: {ServingStatus.Name(resp.status)}")
@@ -558,7 +551,7 @@ def healthcheck_status(watch: bool, set_error: bool):
             resp = stub.Check(request)
             click.echo(f"=: {ServingStatus.Name(resp.status)}")
 
-        if set_error and resp.status != ServingStatus.SERVING:
+        if set_error and resp is not None and resp.status != ServingStatus.SERVING:
             sys.exit(1)
 
 
@@ -576,9 +569,10 @@ def display_stats(watch: bool, interval: int):
         resp = stub.Stats(qjazz_pb2.Empty())
         click.echo(MessageToJson(resp))
         if watch:
-            sleep(interval)
-            resp = stub.Stats(qjazz_pb2.Empty())
-            click.echo(MessageToJson(resp))
+            while True:
+                sleep(interval)
+                resp = stub.Stats(qjazz_pb2.Empty())
+                click.echo(MessageToJson(resp))
 
 
 @cli.command("sleep")

@@ -54,7 +54,7 @@ def get_crs(p: QgsProject) -> QgsCoordinateReferenceSystem:
 def bbox_inv_aspect_ratio(params):
     bbox = params["bbox"][0]
     c = tuple(float(x) for x in bbox.split(","))
-    return abs(c[3] - c[2]) / abs(c[1] - c[0])
+    return abs(c[3] - c[1]) / abs(c[2] - c[0])
 
 
 def visible_layers(p: QgsProject) -> Iterator[str]:
@@ -95,7 +95,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
         headers["Content-Crs"] = f"[{content_crs}]"  # CURIE notation
         options = f"{options}&crs={content_crs}"
     else:
-        content_crs = params[0]
+        content_crs = params["crs"][0]
         headers["Content-Crs"] = content_crs if content_crs.startswith("http") else f"[{content_crs}]"
 
     if "bbox" not in params:
@@ -116,9 +116,8 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
 
         content_bbox = f"{r.xMinimum()},{r.yMinimum()},{r.xMaximum()},{r.yMaximum()}"
         options = f"{options}&bbox={content_bbox}"
-
     else:
-        content_bbox = params["bbox"]
+        content_bbox = params["bbox"][0]
         inv_aspect_ratio = bbox_inv_aspect_ratio(params)
 
     headers["Content-Bbox"] = content_bbox
@@ -134,10 +133,10 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
             h = int(w * inv_aspect_ratio)
             options = f"{options}&width={w}&height={h}"
         case w, None:
-            h = int(w[0] * inv_aspect_ratio)
+            h = int(int(w[0]) * inv_aspect_ratio)
             options = f"{options}&height={h}"
         case None, h:
-            w = int(h[0] / inv_aspect_ratio)
+            w = int(int(h[0]) / inv_aspect_ratio)
             options = f"{options}&width={w}"
 
     # No layers set, set all visible layers from  treeRoot

@@ -48,6 +48,7 @@ def handle_catalog(
             if item
             else []
         )
+        total_len = 1
     else:
         # Return the full catalog
         instant = Instant()
@@ -64,13 +65,14 @@ def handle_catalog(
                 )
 
         items = list(iter_catalog())
+        total_len = len(catalog)
 
     _m.send_reply(
         conn,
         _m.CollectionsPage(
             schema=json.dumps(collection_schema),
             items=items,
-            next=msg.end < len(catalog),
+            next=msg.end < total_len,
         ),
     )
 

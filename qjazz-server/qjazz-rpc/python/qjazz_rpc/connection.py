@@ -53,11 +53,17 @@ class Connection:
         # Reset state
         self._cancelled = False
 
+        # `read` may legitimately return 1-3 bytes but this is very very uncommon
+        # and may indicate a pipe problem. So, atm, we consider that it always
+        # returns the correct number of bytes
         b = os.read(self._in, 4)
         # Take care if the parent close the connection then
         # read() will return an empty buffer (EOF)
         if b == b"":  # End of file: Parent closed the connection
             logger.error("Connection closed by parent")
+            raise SystemExit(1)
+        if len(b) != 4:
+            logger.error("Expecting four bytes header")
             raise SystemExit(1)
         (size,) = unpack("!i", b)
         data = os.read(self._in, size)
@@ -80,10 +86,9 @@ class Connection:
         if not self._cancelled:
             size = len(data)
             os.write(self._out, pack("!i", size))
-            if data:
-                written = 0
-                while written < size:
-                    written += os.write(self._out, data[written:])
+            written = 0
+            while written < size:
+                written += os.write(self._out, data[written:])
 
 
 class RendezVous:

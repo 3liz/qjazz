@@ -43,7 +43,7 @@ class Pipe:
 
     async def drain(self):
         """Pull out all remaining data from pipe"""
-        size = unpack("!i", await self._stdout.readexactly(4))
+        (size,) = unpack("!i", await self._stdout.readexactly(4))
         if size > 0:
             _ = await self._stdout.read(size)
 
@@ -134,7 +134,7 @@ class RendezVous:
             while self._running:
                 await avail.wait()
                 try:
-                    match os.read(fd, 1024):
+                    match os.read(fd, 1):
                         case b"\x00":  # DONE
                             self._done.set()
                         case b"\x01":  # BUSY
