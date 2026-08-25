@@ -227,24 +227,15 @@ impl Pool {
         self.failures() as f64 / self.num_processes as f64
     }
 
-    /// Inspect memoized pids
-    pub async fn inspect_pids<F>(&self, mut f: F)
-    where
-        F: FnMut(Vec<i32>),
-    {
-        // Ensure acquiring the locks during the shortest time
-        // as possible.
-        let processes = {
-            self.queue
-                .pids
-                .write()
-                .await
-                .iter()
-                .map(|id| *id as i32)
-                .collect::<Vec<_>>()
-        };
-
-        f(processes);
+    /// Return memoized pids
+    pub async fn inspect_pids(&self) -> Vec<i32> {
+        self.queue
+            .pids
+            .write()
+            .await
+            .iter()
+            .map(|id| *id as i32)
+            .collect::<Vec<_>>()
     }
 
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {

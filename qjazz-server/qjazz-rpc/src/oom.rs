@@ -29,20 +29,22 @@ pub(crate) fn handle_oom(
             tokio::select! {
                 _ = token.cancelled() => { break; }
                 _ = time::sleep(throttle_duration) => {}
-            } 
-            pool.read()
-                .await
-                .inspect_pids(|pids| {
-                    log::trace!("Running oom handler");
-                    tokio::task::spawn_blocking(move || {
-                        if let Err(error) =
-                            kill_out_of_memory_processes(pids, total_mem, pagesize, high_water_mark)
-                        {
-                            log::error!("Failed to run the oom killer {error}");
-                        }
-                    });
-                })
-                .await;
+            }
+
+            // Drop guard before spawning kill task
+            let pids = {
+                pool.read().await.inspect_pids().await
+            };
+
+            log::trace!("Running oom handler on pids {pids:?}");
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Err(error) =
+                    kill_out_of_memory_processes(pids, total_mem, pagesize, high_water_mark)
+                {
+                    log::error!("Failed to run the oom killer {error}");
+                }
+            })
+            .await;
         }
     });
     Ok(handle)
@@ -84,11 +86,10 @@ pub fn kill_out_of_memory_processes(
     let mut memory_fraction = mem_usage.iter().fold(0., |acc, (mem, _)| acc + mem);
     if memory_fraction > hwm {
         log::error!("CRITICAL: high memory water mark reached {memory_fraction}");
-
         // Sort child processes in descending order
         // kill child processes until memory get low
-        mem_usage.sort_by_key(|(mem, _)| (mem * 1000.0).trunc() as i64);
-        for (mem, proc) in mem_usage.iter().rev() {
+        mem_usage.sort_unstable_by(|a, b| b.0.total_cmp(&a.0));
+        for (mem, proc) in mem_usage.iter() {
             let pid = Pid::from_raw(proc.pid);
             log::error!("OOM: killing worker: {pid} (mem usage: {mem})");
             if let Err(err) = signal::kill(pid, signal::SIGKILL) {
