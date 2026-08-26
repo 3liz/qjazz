@@ -271,6 +271,9 @@ impl QgisServer for QgisServerServicer {
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
 
+        // Remember pid
+        w.remember().await;
+
         let msg = request.into_inner();
         let collections = w
             .collections(
