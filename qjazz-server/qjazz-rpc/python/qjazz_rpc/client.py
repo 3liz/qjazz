@@ -122,7 +122,7 @@ def connect(stub=qjazz_pb2_grpc.QgisAdminStub, exit_on_error: bool = True) -> Ge
 
     address = os.getenv("QGIS_GRPC_HOST", "localhost:23456")
 
-    if os.getenv("CONF_GRPC_USE_TLS", "").lower() in (1, "yes", "true"):
+    if os.getenv("CONF_GRPC_USE_TLS", "").lower() in ("1", "yes", "true"):
         ssl = TLSConfig(
             keyfile=os.getenv("CONF_GRPC_TLS_KEYFILE"),
             certfile=os.getenv("CONF_GRPC_TLS_CERTFILE"),

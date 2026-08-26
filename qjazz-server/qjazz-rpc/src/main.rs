@@ -26,8 +26,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Show QGIS settings
-    Settings,
     /// Print configuration in json format
     Config {
         /// Print configuration and exit
@@ -52,9 +50,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     match &args.command {
-        Some(Commands::Settings) => {
-            todo!();
-        }
         Some(Commands::Config { conf }) => {
             let settings = match conf {
                 Some(conf) => load_settings(conf)?,

@@ -288,7 +288,7 @@ def handle_generic_request(
 
     # XXX QGIS does not complies to standard and handle X-Qgis-* headers
     # in case sensitive way
-    req_hdrs = {capwords(k, sep="-"): v for k, v in headers if not k.startswith("grpc-")}
+    req_hdrs = {capwords(k, sep="-"): v for k, v in headers}
     if content_type:
         req_hdrs["Content-Type"] = content_type
 
