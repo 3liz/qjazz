@@ -195,7 +195,8 @@ impl QgisAdmin for QgisAdminServicer {
         &self,
         _: Request<Empty>,
     ) -> Result<Response<Self::DumpCacheStream>, Status> {
-        let num_workers = self.pool.read().await.options().num_processes();
+        // Get the number of workers created so far
+        let num_workers = self.pool.read().await.num_workers();
 
         // Drain all workers
         // NOTE: This is a kind of 'stop the world' method since it waits
@@ -443,9 +444,9 @@ impl QgisAdmin for QgisAdminServicer {
     async fn get_env(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
         // Wait for available worker
         let mut w = self.inner.get_worker().await?;
-        Ok(Response::new(JsonConfig {
-            json: w.get_env().await.map_err(to_grpc_status)?.to_string(),
-        }))
+        let json = w.get_env().await.map_err(to_grpc_status)?.to_string();
+        w.done();
+        Ok(Response::new(JsonConfig { json }))
     }
     // Change QGIS server serving status
     async fn set_server_serving_status(

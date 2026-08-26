@@ -10,7 +10,7 @@ pub(crate) fn metadata_to_headers(metadata: &MetadataMap) -> Vec<(&str, &str)> {
         .filter_map(|key_value| match key_value {
             // Filter tonic transport headers
             KeyAndValueRef::Ascii(key, value) => match key.as_str() {
-                "content-type"|"te"|"user-agent" => None,
+                "content-type" | "te" | "user-agent" => None,
                 key if key.starts_with("grpc-") => None,
                 key => value.to_str().map(|v| (key, v)).ok(),
             },

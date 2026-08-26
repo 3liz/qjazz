@@ -28,6 +28,7 @@ impl ScopedWorker {
     ///
     /// This is a hint to tell the recycler that there
     /// is no data left to read from the process.
+    #[inline(always)]
     pub fn done(&mut self) {
         self.done = true;
     }

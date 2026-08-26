@@ -1,5 +1,5 @@
 [logging]
-level = "debug"
+level = "trace"
 
 [rpc.listen]
 enable_tls = false

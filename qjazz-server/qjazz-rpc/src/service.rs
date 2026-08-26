@@ -272,15 +272,18 @@ impl QgisServer for QgisServerServicer {
         let mut w = self.inner.get_worker().await?;
 
         let msg = request.into_inner();
-        Ok(Response::new(CollectionsPage::from(
-            w.collections(
+        let collections = w
+            .collections(
                 msg.location.as_deref(),
                 msg.resource.as_deref(),
                 msg.start..msg.end,
             )
             .await
-            .map_err(to_grpc_status)?,
-        )))
+            .map_err(to_grpc_status)?;
+
+        w.done();
+
+        Ok(Response::new(CollectionsPage::from(collections)))
     }
 }
 
