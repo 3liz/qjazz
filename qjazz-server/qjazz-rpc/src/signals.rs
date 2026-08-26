@@ -55,7 +55,7 @@ pub(crate) fn handle_signals(
                             // Check failure pressure
                             let failure_pressure = pool.read().await.failure_pressure();
                             log::debug!("Failure pressure: {failure_pressure}");
-                            if failure_pressure > max_failure_pressure {
+                            if failure_pressure >= max_failure_pressure {
                                 log::error!("Max failure pressure exceeded, terminating server");
                                 pool.write().await.set_error();
                                 token.cancel();

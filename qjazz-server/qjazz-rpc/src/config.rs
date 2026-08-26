@@ -41,7 +41,7 @@ impl ListenConfig {
     pub fn address(&self) -> SocketAddr {
         self.address
     }
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&mut self) -> Result<(), ConfigError> {
         if self.enable_tls {
             check_file_exists(&self.tls_cert_file, "TLS cert file")
                 .and_then(|_| check_file_exists(&self.tls_key_file, "TLS key file"))
@@ -60,21 +60,25 @@ pub struct Rpc {
     /// Use admin services
     enable_admin_services: bool,
     /// Timeout for requests in seconds
+    /// Default to 20s.
     timeout: u64,
     /// The maximum amount of time to wait in seconds before
     /// closing connections. During this period,
     /// no new connections are allowed.
+    /// Default to 10s.
     shutdown_grace_period: u64,
     /// The maximum allowed failure pressure.
     /// If the failure pressure exceed this value then
     /// the service will exit with critical error condition
+    /// Value will be clamped between 0. and 1.
     max_failure_pressure: f64,
     /// Set memory high water mark as fraction of total memory.
     /// Workers are restarted if total memory percent usage of workers
     /// exceed that value.
+    /// Value will be clamped between 0. and 1.
     high_water_mark: f64,
     /// Interval in seconds between two check the out-of-memory
-    /// handler.
+    /// handler. The value must be greater than or equal to 3s.
     oom_period: u64,
 }
 
@@ -93,15 +97,12 @@ impl Default for Rpc {
 }
 
 impl Rpc {
-    pub fn validate(&self) -> Result<(), ConfigError> {
-        if self.high_water_mark <= 0. || self.high_water_mark > 1. {
-            return Err(ConfigError::Message(
-                "'high_water_mark' value must be between 0 and 1".to_string(),
-            ));
-        }
+    pub fn validate(&mut self) -> Result<(), ConfigError> {
+        self.high_water_mark = self.high_water_mark.clamp(0., 1.);
+        self.max_failure_pressure = self.high_water_mark.clamp(0., 1.);
         if self.oom_period < 3 {
             return Err(ConfigError::Message(
-                "'oom_period' must be higher than 3s".to_string(),
+                "'oom_period' must be higher than or equal to 3s".to_string(),
             ));
         }
         self.listen.validate()
@@ -179,7 +180,7 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn validate(self) -> Result<Self, ConfigError> {
+    fn validate(mut self) -> Result<Self, ConfigError> {
         self.rpc.validate()?;
         Ok(self)
     }

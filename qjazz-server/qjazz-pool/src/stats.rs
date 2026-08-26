@@ -29,21 +29,23 @@ impl Stats {
             instant: Instant::now(),
         }
     }
-
+    #[inline(always)]
     pub fn num_workers(&self) -> usize {
         self.num_workers
     }
-
+    #[inline(always)]
     pub fn request_pressure(&self) -> f64 {
         self.request_pressure
     }
-
+    #[inline(always)]
     pub fn active_workers(&self) -> usize {
         self.active
     }
+    #[inline(always)]
     pub fn idle_workers(&self) -> usize {
         self.idle
     }
+    #[inline(always)]
     pub fn dead_workers(&self) -> usize {
         self.dead
     }

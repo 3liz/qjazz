@@ -241,7 +241,7 @@ impl Pool {
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {
         let dead = self.dead_workers();
         let idle = self.queue.q.len();
-        let busy = self.num_processes - idle - dead;
+        let busy = self.num_processes.saturating_sub(idle + dead);
         (busy, idle, dead)
     }
 

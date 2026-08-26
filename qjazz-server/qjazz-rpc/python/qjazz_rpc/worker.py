@@ -175,13 +175,14 @@ def qgis_server_run(
         logger.debug("%s: Waiting for messages", name)
         try:
             rendez_vous.done()
-            msg = None  # Prevent unbound value if recv() is interrupted
+            duration = None  # Prevent unbound value if recv() is interrupted
+            msg = None       # See above
             msg = conn.recv()
             rendez_vous.busy()
             logger.debug("Received message: %s", msg.msg_id.name)
             logger.trace(">>> %s: %s", msg.msg_id.name, msg.__dict__)
-            duration = Instant()
 
+            duration = Instant()
             dispatch(msg, server, conn, conf, name, cm, plugin_s, feedback)
 
         except KeyboardInterrupt:
@@ -203,8 +204,8 @@ def qgis_server_run(
                 logger.critical("Unrecoverable error")
                 raise
         finally:
-            if msg and not conn.cancelled:
-                if logger.is_enabled_for(logger.LogLevel.DEBUG):
+            if logger.is_enabled_for(logger.LogLevel.DEBUG):
+                if msg and duration and not conn.cancelled:
                     logger.debug(
                         "%s\t%s\tResponse time: %d ms",
                         name,
