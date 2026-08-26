@@ -19,6 +19,7 @@ use tokio::sync::RwLock;
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     dead_workers: AtomicUsize,
+    num_workers: AtomicUsize,
     max_requests: AtomicUsize,
     generation: AtomicUsize,
     failures: AtomicUsize,
@@ -74,6 +75,7 @@ impl WorkerQueue {
     // Terminate a worker
     async fn terminate(&self, mut w: Worker) -> Result<()> {
         self.dead_workers.fetch_add(1, Ordering::Relaxed);
+        self.num_workers.fetch_sub(1, Ordering::Relaxed);
         w.terminate().await
     }
 
@@ -150,17 +152,19 @@ impl WorkerQueue {
 pub struct Pool {
     queue: Arc<WorkerQueue>,
     builder: Builder,
-    num_processes: usize,
     error: bool,
+    num_processes: usize,
 }
 
 impl Pool {
     /// Create a new pool instance from a Worker builder
     pub fn new(mut builder: Builder) -> Self {
         let opts = builder.options_mut();
+        let num_processes = opts.num_processes();
         Self {
             queue: Arc::new(WorkerQueue {
-                q: Queue::with_capacity(opts.num_processes()),
+                q: Queue::with_capacity(num_processes),
+                num_workers: AtomicUsize::new(0),
                 dead_workers: AtomicUsize::new(0),
                 max_requests: AtomicUsize::new(opts.max_waiting_requests()),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
@@ -169,8 +173,8 @@ impl Pool {
                 pids: RwLock::new(HashSet::new()),
             }),
             builder,
-            num_processes: 0,
             error: false,
+            num_processes,
         }
     }
 
@@ -193,6 +197,7 @@ impl Pool {
             self.builder.options().max_waiting_requests(),
             Ordering::Relaxed,
         );
+        self.num_processes = self.builder.options().num_processes();
         self.maintain_pool().await
     }
 
@@ -216,13 +221,13 @@ impl Pool {
         self.queue.q.num_waiters()
     }
 
-    /// Returns the number of worker created so far
+    /// Returns the number of live  workers
     pub fn num_workers(&self) -> usize {
-        self.num_processes
+        self.queue.num_workers.load(Ordering::Relaxed)
     }
 
     /// Returns the ratio of failures against
-    /// the number of created workers
+    /// the nominal number workers
     pub fn failure_pressure(&self) -> f64 {
         self.failures() as f64 / self.num_processes as f64
     }
@@ -241,7 +246,7 @@ impl Pool {
     pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {
         let dead = self.dead_workers();
         let idle = self.queue.q.len();
-        let busy = self.num_processes.saturating_sub(idle + dead);
+        let busy = self.num_workers() - idle;
         (busy, idle, dead)
     }
 
@@ -265,25 +270,18 @@ impl Pool {
     /// Maintain the pool at nominal number of live workers
     pub async fn maintain_pool(&mut self) -> Result<()> {
         self.cleanup_dead_workers();
-        let nominal = self.builder.options().num_processes();
-        let dead_workers = self.dead_workers();
+        let nominal = self.num_processes;
         let failures = self.failures();
-        let current = self.num_processes - dead_workers;
+        let current = self.num_workers();
 
         #[allow(clippy::comparison_chain)]
         let rv = if nominal > current {
             self.grow(nominal - current).await.inspect(|_| {
                 self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
-                self.queue
-                    .dead_workers
-                    .fetch_sub(dead_workers, Ordering::Relaxed);
             })
         } else if nominal < current {
             self.shrink(current - nominal).await.inspect(|_| {
                 self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
-                self.queue
-                    .dead_workers
-                    .fetch_sub(dead_workers, Ordering::Relaxed);
             })
         } else {
             Ok(())
@@ -318,7 +316,7 @@ impl Pool {
 
         // Update the queue
         self.queue.q.send_all(workers.drain(..));
-        self.num_processes += n;
+        self.queue.num_workers.fetch_add(n, Ordering::Relaxed);
         log::info!("Started {} workers in {} ms", n, ts.elapsed().as_millis());
         Ok(())
     }
@@ -330,7 +328,6 @@ impl Pool {
         }
         log::debug!("Pool: Shrinking by {n} workers");
         let mut removed = self.queue.q.drain(n);
-        self.num_processes -= removed.len();
         for mut w in removed.drain(..) {
             let _ = w.terminate().await;
         }
@@ -353,7 +350,7 @@ impl Pool {
                     log::debug!("Active workers: {active}");
                     tokio::time::sleep(throttle).await;
                 } else {
-                    log::debug!("No active workers");
+                    log::info!("No active workers");
                     break;
                 }
             }
@@ -362,11 +359,11 @@ impl Pool {
         // Drain all idle workers
         log::info!("Shutting down...");
         let mut removed = self.queue.q.drain(self.num_processes);
-        self.num_processes -= removed.len();
+        let num_workers = self.num_workers() - removed.len();
         for mut w in removed.drain(..) {
             let _ = w.terminate().await;
         }
-        log::debug!("Pool terminated (rem:  {})", self.num_processes);
+        log::debug!("Pool terminated (rem:  {})", num_workers);
     }
 }
 

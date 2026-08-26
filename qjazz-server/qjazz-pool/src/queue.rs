@@ -41,8 +41,7 @@ impl<T> Queue<T> {
         }
     }
 
-    /// Wait for object on the queue, returns `None` if the Queue is closed.
-    /// Once the queue is closed `recv` will always return `None`
+    /// Wait for object on the queue, returns `Err(Error::QueueIsClosed)` if the Queue is closed.
     pub async fn recv(&self) -> Result<T> {
         loop {
             if self.is_closed() {
