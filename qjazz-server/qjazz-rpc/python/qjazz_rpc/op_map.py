@@ -16,7 +16,7 @@ from qgis.core import (
 )
 from qgis.server import QgsServerProjectUtils
 
-DEFAULT_WITH = 1024
+DEFAULT_WIDTH = 1024
 
 
 class InvalidMapRequest(Exception):
@@ -129,7 +129,7 @@ def prepare_map_request(project: QgsProject, options: str) -> MapRequest:
         case None, None:
             w = QgsServerProjectUtils.wmsMaxWidth(project)
             if w < 0:
-                w = DEFAULT_WITH
+                w = DEFAULT_WIDTH
             h = int(w * inv_aspect_ratio)
             options = f"{options}&width={w}&height={h}"
         case w, None:

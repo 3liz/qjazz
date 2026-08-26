@@ -2,7 +2,7 @@ import os
 import traceback
 
 from pathlib import Path
-from typing import AsyncGenerator, Generator
+from typing import TYPE_CHECKING, AsyncGenerator, Generator
 
 import pytest
 
@@ -16,6 +16,9 @@ from qjazz_rpc.config import (
 )
 from qjazz_rpc.tests import Worker
 from qjazz_rpc.worker import Feedback
+
+if TYPE_CHECKING:
+    from qgis.core import QgsProject
 
 # Disable loglevel setting notice
 os.environ["QJAZZ_LOGLEVEL_NOTICE"] = "no"
@@ -127,3 +130,19 @@ def qgis_server(qgis_config: QgisConfig, feedback: Feedback) -> Generator[Server
     # Related to QgsProject::setInstance(NULL) in binding code
     # Neet do investigate what's going on in QGIS
     cm.clear()
+
+
+# Qgis project
+@pytest.fixture(scope="function")
+def qgis_project(qgis_server: Server, data: Path) -> Generator["QgsProject", None, None]:
+    """Return a loaded QgsProject
+
+    Note: requires the `qgis_server` fixture since a Qgis application
+    must be initialized before instanciating a project.
+    """
+    from qgis.core import QgsProject
+
+    project = QgsProject()
+    assert project.read(str(data.joinpath("france_parts", "france_parts.qgs")))
+    yield project
+    project.clear()
