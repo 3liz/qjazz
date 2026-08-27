@@ -124,14 +124,11 @@ impl Pipe {
     /// Read bytes chunk
     pub async fn read_bytes(&mut self) -> Result<Option<&[u8]>> {
         match self.stdout.read_i32().await? as usize {
-            size if size > self.buffer.capacity() => Err(Error::IoBufferOverflow),
+            size if size > self.buffer.len() => Err(Error::IoBufferOverflow),
             size if size > 0 => {
                 let buf = &mut self.buffer[..size];
-                let mut len = self.stdout.read(buf).await?;
-                while len < size {
-                    len += self.stdout.read(&mut buf[len..]).await?;
-                }
-                Ok(Some(&self.buffer[..size]))
+                self.stdout.read_exact(buf).await?;
+                Ok(Some(buf))
             }
             _ => Ok(None),
         }
