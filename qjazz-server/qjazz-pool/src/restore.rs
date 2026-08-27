@@ -53,20 +53,24 @@ impl Restore {
                 worker.checkout_project(uri, true).await?;
             }
         } else if last_update < self.update {
-            self.update_worker_config(worker).await?;
+            // We need to catch up with updated states
             // Update cache
             worker.update_cache().await?;
-            for rev in self.states.iter().rev() {
-                if rev.0 <= last_update {
-                    break;
-                }
+            for rev in self.states.iter().skip_while(|rev| rev.0 <= last_update) {
+                // prevent Remove -> Pull/Pull -> Remove sequence with the same uri by
+                // checking their existence in the pulled list.
                 match &rev.1 {
                     State::Pull(uri) => {
-                        let _ = worker.checkout_project(uri, true).await?;
+                        if self.pulls.contains(uri) {
+                            let _ = worker.checkout_project(uri, true).await?;
+                        }
                     }
                     State::Remove(uri) => {
-                        let _ = worker.drop_project(uri).await?;
+                        if !self.pulls.contains(uri) {
+                            let _ = worker.drop_project(uri).await?;
+                        }
                     }
+                    // Clear is always the first state
                     State::Clear => worker.clear_cache().await?,
                     State::Update => (),
                 };
@@ -103,10 +107,12 @@ impl Restore {
                 self.pulls.remove(uri);
             }
             State::Clear => {
+                // Clear all previous states
                 self.pulls.clear();
                 self.states.clear();
             }
             State::Update => {
+                // Only increment
                 self.update += 1;
                 return;
             }

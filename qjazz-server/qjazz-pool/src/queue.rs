@@ -110,7 +110,7 @@ impl<T> Queue<T> {
         v
     }
 
-    /// Close the queue and notify all waiters
+    /// Close the queue
     #[inline(always)]
     pub fn close(&self) {
         self.avails.close();
