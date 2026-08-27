@@ -5,14 +5,12 @@
 use crate::errors::{Error, Result};
 use parking_lot::Mutex;
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use tokio::sync::Notify;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use tokio::sync::Semaphore;
 
 pub struct Queue<T> {
     queue: Mutex<VecDeque<T>>,
-    notify: Notify,
-    closed: AtomicBool,
-    count: AtomicUsize,
+    avails: Semaphore,
     pending: AtomicUsize,
 }
 
@@ -34,36 +32,32 @@ impl<T> Queue<T> {
     fn from_queue(queue: VecDeque<T>) -> Self {
         Self {
             queue: Mutex::new(queue),
-            notify: Notify::new(),
-            closed: AtomicBool::new(false),
-            count: AtomicUsize::new(0),
+            avails: Semaphore::new(0),
             pending: AtomicUsize::new(0),
         }
     }
 
     /// Wait for object on the queue, returns `Err(Error::QueueIsClosed)` if the Queue is closed.
     pub async fn recv(&self) -> Result<T> {
-        loop {
-            if self.is_closed() {
-                return Err(Error::QueueIsClosed);
-            }
-            // Drain the queue
-            if let Some(item) = self.queue.lock().pop_front() {
-                self.count.fetch_sub(1, Ordering::Relaxed);
-                return Ok(item);
-            }
-            // Wait for value to be available
-            self.pending.fetch_add(1, Ordering::Relaxed);
-            self.notify.notified().await;
-            self.pending.fetch_sub(1, Ordering::Relaxed);
-        }
+        self.pending.fetch_add(1, Ordering::Relaxed);
+        self.avails
+            .acquire()
+            .await
+            .map_err(|_| Error::QueueIsClosed)?
+            .forget();
+        let item = self
+            .queue
+            .lock()
+            .pop_front()
+            .expect("FATAL: workers queue is empty while permits are availables !!!");
+        self.pending.fetch_sub(1, Ordering::Relaxed);
+        Ok(item)
     }
 
     /// Send an item to the queue
     pub async fn send(&self, item: T) {
         self.queue.lock().push_back(item);
-        self.count.fetch_add(1, Ordering::Relaxed);
-        self.notify.notify_one();
+        self.avails.add_permits(1)
     }
 
     /// Retain only the elements specified by the predicate
@@ -76,8 +70,7 @@ impl<T> Queue<T> {
         let mut q = self.queue.lock();
         let initial = q.len();
         q.retain_mut(f);
-        self.count.store(q.len(), Ordering::Relaxed);
-        initial - q.len()
+        self.avails.forget_permits(initial - q.len())
     }
 
     /// Send a list object to the queue
@@ -93,18 +86,16 @@ impl<T> Queue<T> {
                 1
             })
             .count();
-        // Update count
-        self.count.store(q.len(), Ordering::Relaxed);
-        (0..count).for_each(|_| self.notify.notify_one());
+        self.avails.add_permits(count);
     }
 
     /// Remove at most n elements
-    /// Returns the number of element removed
+    /// Returns the elements removed
     pub fn drain(&self, n: usize) -> Vec<T> {
         let mut q = self.queue.lock();
         let count = usize::min(n, q.len());
         let v = q.drain(0..count).collect();
-        self.count.store(q.len(), Ordering::Relaxed);
+        _ = self.avails.forget_permits(count);
         v
     }
 
@@ -114,32 +105,27 @@ impl<T> Queue<T> {
         F: FnMut(T) -> B,
     {
         let mut q = self.queue.lock();
-        let v = q.drain(..).map(f).collect();
-        self.count.store(0, Ordering::Relaxed);
+        let v: Vec<_> = q.drain(..).map(f).collect();
+        _ = self.avails.forget_permits(v.len());
         v
     }
 
     /// Close the queue and notify all waiters
+    #[inline(always)]
     pub fn close(&self) {
-        self.closed.store(true, Ordering::Relaxed);
-        self.notify.notify_waiters();
+        self.avails.close();
     }
 
     /// Returns `true` if the queue is closed
+    #[inline(always)]
     pub fn is_closed(&self) -> bool {
-        self.closed.load(Ordering::Relaxed)
+        self.avails.is_closed()
     }
-
-    /*
-    /// Returns 'true' if the queue is empty
-    pub fn is_empty(&self) -> bool {
-        self.count.load(Ordering::Relaxed) == 0
-    }
-    */
 
     /// Returns the number of elements in the queue
+    #[inline(always)]
     pub fn len(&self) -> usize {
-        self.count.load(Ordering::Relaxed)
+        self.avails.available_permits()
     }
 
     /// Returns the number of waiters

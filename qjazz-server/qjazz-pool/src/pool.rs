@@ -18,10 +18,14 @@ use tokio::sync::RwLock;
 
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
-    dead_workers: AtomicUsize,
+    // The actual number of living workers
     num_workers: AtomicUsize,
     max_requests: AtomicUsize,
     generation: AtomicUsize,
+    // Count worker's failure
+    // A failure is when a worker cannot be properly
+    // updated (errors while loading projects)
+    // or properly terminated (stalled workers)
     failures: AtomicUsize,
     restore: RwLock<Restore>,
     // Keep a list of busy worker's pid
@@ -74,7 +78,6 @@ impl WorkerQueue {
 
     // Terminate a worker
     async fn terminate(&self, mut w: Worker) -> Result<()> {
-        self.dead_workers.fetch_add(1, Ordering::Relaxed);
         self.num_workers.fetch_sub(1, Ordering::Relaxed);
         w.terminate().await
     }
@@ -83,6 +86,17 @@ impl WorkerQueue {
     async fn terminate_failure(&self, w: Worker) -> Result<()> {
         self.failures.fetch_add(1, Ordering::Relaxed);
         self.terminate(w).await
+    }
+
+    // Remove n workers from queue
+    async fn remove(&self, n: usize) -> usize {
+        let mut removed = self.q.drain(n);
+        let count = removed.len();
+        self.num_workers.fetch_sub(count, Ordering::Relaxed);
+        for mut w in removed.drain(..) {
+            let _ = w.terminate().await;
+        }
+        count
     }
 
     //
@@ -130,7 +144,9 @@ impl WorkerQueue {
 
     #[inline(always)]
     pub fn drain<B, F: FnMut(Worker) -> B>(&self, f: F) -> Vec<B> {
-        self.q.drain_map(f)
+        let v = self.q.drain_map(f);
+        self.num_workers.fetch_sub(v.len(), Ordering::Relaxed);
+        v
     }
     #[inline(always)]
     fn close(&self) {
@@ -165,7 +181,6 @@ impl Pool {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(num_processes),
                 num_workers: AtomicUsize::new(0),
-                dead_workers: AtomicUsize::new(0),
                 max_requests: AtomicUsize::new(opts.max_waiting_requests()),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
@@ -205,11 +220,6 @@ impl Pool {
         self.queue.clone()
     }
 
-    /// Returns the number of dead workers
-    pub fn dead_workers(&self) -> usize {
-        self.queue.dead_workers.load(Ordering::Relaxed)
-    }
-
     /// Returns the number of failures
     pub fn failures(&self) -> usize {
         self.queue.failures.load(Ordering::Relaxed)
@@ -227,7 +237,7 @@ impl Pool {
     }
 
     /// Returns the ratio of failures against
-    /// the nominal number workers
+    /// the nominal number of workers
     pub fn failure_pressure(&self) -> f64 {
         self.failures() as f64 / self.num_processes as f64
     }
@@ -243,11 +253,10 @@ impl Pool {
             .collect::<Vec<_>>()
     }
 
-    pub(crate) fn stats_raw(&self) -> (usize, usize, usize) {
-        let dead = self.dead_workers();
+    pub(crate) fn stats_raw(&self) -> (usize, usize) {
         let idle = self.queue.q.len();
         let busy = self.num_workers() - idle;
-        (busy, idle, dead)
+        (busy, idle)
     }
 
     /// Clean dead workers by removing them
@@ -261,9 +270,10 @@ impl Pool {
         let dead_workers = self.queue.q.retain(|w| w.is_alive());
         if dead_workers > 0 {
             log::warn!("Removed {dead_workers} dead workers from queue !");
+            // Remove dead workers from the count of live workers
             self.queue
-                .dead_workers
-                .fetch_add(dead_workers, Ordering::Relaxed);
+                .num_workers
+                .fetch_sub(dead_workers, Ordering::Relaxed);
         }
     }
 
@@ -327,10 +337,7 @@ impl Pool {
             return Err(Error::QueueIsClosed);
         }
         log::debug!("Pool: Shrinking by {n} workers");
-        let mut removed = self.queue.q.drain(n);
-        for mut w in removed.drain(..) {
-            let _ = w.terminate().await;
-        }
+        let _ = self.queue.remove(n).await;
         Ok(())
     }
 
@@ -345,7 +352,7 @@ impl Pool {
         let _ = tokio::time::timeout(grace_period, async {
             log::info!("Waiting for active workers....");
             loop {
-                let (active, _, _) = self.stats_raw();
+                let (active, _) = self.stats_raw();
                 if active > 0 {
                     log::debug!("Active workers: {active}");
                     tokio::time::sleep(throttle).await;
@@ -358,12 +365,9 @@ impl Pool {
         .await;
         // Drain all idle workers
         log::info!("Shutting down...");
-        let mut removed = self.queue.q.drain(self.num_processes);
-        let num_workers = self.num_workers() - removed.len();
-        for mut w in removed.drain(..) {
-            let _ = w.terminate().await;
-        }
-        log::debug!("Pool terminated (rem:  {})", num_workers);
+        let num_workers = self.num_workers();
+        let remain = num_workers - self.queue.remove(self.num_processes).await;
+        log::debug!("Pool terminated (rem:  {remain})");
     }
 }
 
@@ -395,24 +399,26 @@ mod tests {
         let mut pool = Pool::new(builder(num_processes));
 
         pool.maintain_pool().await.unwrap();
-        assert_eq!(pool.stats_raw(), (0, num_processes, 0));
+        assert_eq!(pool.num_workers(), num_processes);
+        assert_eq!(pool.stats_raw(), (0, num_processes));
 
         // Shrink the number of workers
         pool.shrink(1).await.unwrap();
         num_processes -= 1;
-        assert_eq!(pool.stats_raw(), (0, num_processes, 0));
+        assert_eq!(pool.num_workers(), num_processes);
+        assert_eq!(pool.stats_raw(), (0, num_processes));
 
         // Get a Receiver
         let queue = Receiver::new(&pool);
 
         let mut worker = queue.get().await.unwrap();
-        assert_eq!(pool.stats_raw(), (1, num_processes - 1, 0));
+        assert_eq!(pool.stats_raw(), (1, num_processes - 1));
 
         assert_eq!(worker.ping("hello").await.unwrap(), "hello");
         worker.done();
 
         let _ = worker.recycle().unwrap().await.unwrap();
-        assert_eq!(pool.stats_raw(), (0, num_processes, 0));
+        assert_eq!(pool.stats_raw(), (0, num_processes));
     }
 
     use crate::restore;
