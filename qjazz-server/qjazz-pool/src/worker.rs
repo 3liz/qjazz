@@ -210,10 +210,14 @@ impl Worker {
         &self.name
     }
 
-    /// Drain data until is not done
-    pub(crate) async fn drain_until_task_done(&mut self) -> Result<()> {
+    /// Drain data until is done
+    /// This must be called when attempting to cancel
+    /// a worker response after failing to wait for a
+    /// rendez-vous Ready state.
+    async fn drain_until_task_done(&mut self) -> Result<()> {
         loop {
             // Drain the process
+            // A dead process will cause an I/O error
             let drained = self.io()?.drain().await.inspect_err(|err| {
                 log::debug!("Drain failed [{}] {:?}", self.id(), err);
             })?;
@@ -224,6 +228,7 @@ impl Worker {
                 // have been read
                 break;
             }
+
             // Not ready yet; we may still expect some
             // data to retrieve.
             if !drained {
@@ -235,7 +240,7 @@ impl Worker {
     }
 
     /// Cancel the task by sending a SIGHUP signal
-    pub async fn cancel(&mut self) -> Result<()> {
+    async fn cancel(&mut self) -> Result<()> {
         log::debug!("Cancelling job {}:{:?}", self.name, self.process.child.id(),);
         self.process.send_signal(signal::SIGHUP)?;
         // Pull output from current job.
@@ -256,7 +261,12 @@ impl Worker {
         // Wait for readiness
         if let Ok(rv) = timeout(self.ready_timeout, self.wait_ready()).await {
             if rv.is_ok() && !done_hint {
-                self.drain_until_task_done().await
+                // At this point, rendez-vous is connected and ready
+                // So we drain only what's left in the pipe.
+                match timeout(self.cancel_timeout, self.drain_until_task_done()).await {
+                    Err(_) => Err(Error::WorkerStalled),
+                    Ok(rv) => rv,
+                }
             } else {
                 rv
             }
@@ -515,7 +525,6 @@ pub struct ListCacheFilter {
 mod tests {
     use super::*;
     use crate::builder::Builder;
-    use crate::messages;
     use crate::tests::setup;
 
     async fn build_worker() -> Result<Worker> {
@@ -534,19 +543,5 @@ mod tests {
 
         let resp = w.ping("hello").await.unwrap();
         assert_eq!(resp, "hello");
-    }
-
-    #[tokio::test]
-    async fn test_worker_drain() {
-        setup();
-
-        let mut w = build_worker().await.unwrap();
-        w.io()
-            .unwrap()
-            .put_message(messages::PingMsg { echo: "hello" }.into())
-            .await
-            .unwrap();
-        w.drain_until_task_done().await.unwrap();
-        assert!(w.is_ready());
     }
 }

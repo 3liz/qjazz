@@ -10,6 +10,7 @@ use std::ops::ControlFlow;
 use std::os::fd::{AsRawFd, RawFd};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::{ChildStdin, ChildStdout};
+use tokio_util::sync::CancellationToken;
 
 use crate::errors::{Error, Result};
 use crate::messages::{Envelop, JsonValue, Message, Pickable};
@@ -66,7 +67,12 @@ impl Pipe {
         // which is usually the case with fd opened through async call.
         match unistd::read(fd, &mut buf) {
             Ok(0) | Err(Errno::EWOULDBLOCK) => Ok(false),
-            Ok(_) => self.drain_blocking(fd).await, // Pull out remaining data
+            Ok(_) => {
+                let token = CancellationToken::new();
+                let rv = self.drain_blocking(fd, token.clone()).await; // Pull out remaining data
+                token.cancel();
+                rv
+            }
             Err(errno) => {
                 log::error!("Drain: I/O error: {errno:#?}");
                 Err(Error::from(errno))
@@ -74,18 +80,22 @@ impl Pipe {
         }
     }
 
-    async fn drain_blocking(&mut self, fd: RawFd) -> Result<bool> {
+    async fn drain_blocking(&mut self, fd: RawFd, token: CancellationToken) -> Result<bool> {
         // Run as blocking: reading directy will block so
         // it may take some time for large data.
+        //
+        // Return true if some data has been drained
         match tokio::task::spawn_blocking(move || {
-            let mut buffer = Vec::<u8>::with_capacity(4096);
             let mut len = 0;
-            // SAFETY: buf is waste container used to drain data and it will
-            // not go anywhere.
-            let buf: &mut [u8] = unsafe { std::mem::transmute(buffer.spare_capacity_mut()) };
+            let mut buf = [0u8; 4096];
             log::trace!("Entering blocking i/o drain...");
             loop {
-                match unistd::read(fd, buf) {
+                // We want to make sure that the task is stopped
+                if token.is_cancelled() {
+                    log::debug!("Drain cancelleled");
+                    break;
+                }
+                match unistd::read(fd, &mut buf) {
                     Ok(0) | Err(Errno::EWOULDBLOCK) => return Ok(len > 0),
                     Ok(n) => len += n,
                     Err(errno) => {
@@ -94,6 +104,7 @@ impl Pipe {
                     }
                 }
             }
+            Ok(true)
         })
         .await
         {

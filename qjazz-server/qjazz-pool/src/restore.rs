@@ -57,6 +57,7 @@ impl Restore {
             // Update cache
             worker.update_cache().await?;
             for rev in self.states.iter().skip_while(|rev| rev.0 <= last_update) {
+                // Replay states forward.
                 // prevent Remove -> Pull/Pull -> Remove sequence with the same uri by
                 // checking their existence in the pulled list.
                 match &rev.1 {
