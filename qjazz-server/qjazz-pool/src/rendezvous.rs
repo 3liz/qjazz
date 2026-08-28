@@ -6,14 +6,12 @@
 //!
 use nix::{errno::Errno, fcntl, fcntl::OFlag, sys::stat, unistd};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::atomic::{self, AtomicBool};
 use tempfile::TempDir;
 use tokio::io::unix::AsyncFd;
-use tokio::sync::Notify;
 use tokio::task;
 
 use crate::errors::{Error, Result};
+use crate::event::Event;
 
 /// Rendez-vous
 ///
@@ -43,8 +41,7 @@ pub struct RendezVous {
     tmp_dir: TempDir,
     path: PathBuf,
     handle: Option<task::JoinHandle<Result<()>>>,
-    notify: Arc<Notify>,
-    state: Arc<AtomicBool>,
+    ready: Event,
 }
 
 impl Drop for RendezVous {
@@ -66,9 +63,7 @@ impl RendezVous {
             tmp_dir,
             path,
             handle: None,
-            notify: Arc::new(Notify::new()),
-            // Start in BUSY state
-            state: Arc::new(AtomicBool::new(true)),
+            ready: Event::new(),
         })
     }
 
@@ -83,14 +78,12 @@ impl RendezVous {
 
     /// Check for ready state
     pub fn is_ready(&self) -> bool {
-        !self.state.load(atomic::Ordering::Relaxed)
+        self.ready.is_set()
     }
 
     /// Wait for ready state
     pub async fn wait_ready(&self) {
-        if !self.is_ready() {
-            self.notify.notified().await
-        }
+        self.ready.wait().await
     }
 
     /// Stop the listener and wait for its task
@@ -123,14 +116,15 @@ impl RendezVous {
         unistd::mkfifo(&self.path, stat::Mode::S_IRWXU)?;
 
         // Open file descriptor in non blocking mode
+        // Note: [nix::fcntl::open(...) return an OwnedFd
+        // so it will be closed on drop
         let fd = AsyncFd::new(fcntl::open(
             &self.path,
             OFlag::O_RDONLY | OFlag::O_NONBLOCK,
             stat::Mode::S_IRWXU,
         )?)?;
 
-        let notify = self.notify.clone();
-        let state = self.state.clone();
+        let ready = self.ready.clone();
 
         const MAX_EOF_RETURN: u16 = 10;
 
@@ -150,7 +144,7 @@ impl RendezVous {
                         eof += 1;
                         if eof > MAX_EOF_RETURN {
                             // Set the BUSY state
-                            state.store(true, atomic::Ordering::Relaxed);
+                            ready.clear();
                             log::error!("Too many EOF detected, client was probably closed");
                             return Err(Error::RendezVousDisconnected);
                         }
@@ -161,14 +155,13 @@ impl RendezVous {
                             // READY
                             eof = 0;
                             log::trace!("Rendez-vous: READY");
-                            state.store(false, atomic::Ordering::Relaxed);
-                            notify.notify_waiters();
+                            ready.set();
                         }
                         1 => {
                             // BUSY
                             eof = 0;
                             log::trace!("Rendez-vous: BUSY");
-                            state.store(true, atomic::Ordering::Relaxed);
+                            ready.clear();
                         }
                         _ => {
                             log::error!("Rendez-vous received invalid value {buf:?}");
@@ -181,6 +174,7 @@ impl RendezVous {
                     }
                     Err(errno) => {
                         log::error!("Rendez-vous I/O error: {errno:#?}");
+                        ready.clear();
                         return Err(Error::from(errno));
                     }
                 }

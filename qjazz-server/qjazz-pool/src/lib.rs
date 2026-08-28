@@ -13,6 +13,7 @@ pub mod worker;
 
 pub(crate) mod queue;
 pub(crate) mod utils;
+pub(crate) mod event;
 
 // reexport
 pub use builder::Builder;
