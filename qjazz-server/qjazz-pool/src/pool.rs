@@ -111,6 +111,12 @@ impl WorkerQueue {
         done_hint: bool,
     ) -> Result<()> {
         let pid = worker.id();
+        
+        if self.is_closed() {
+            let _ = self.terminate(worker).await;
+            return Ok(());
+        }
+
         log::debug!("Recycling worker [{pid}]");
 
         self.forget_pid(pid).await;
