@@ -16,10 +16,10 @@ pub struct Stats {
 
 impl Stats {
     pub fn new<T: Deref<Target = Pool>>(pool: T) -> Self {
-        let stats = pool.stats_raw();
+        let (active, idle) = pool.stats_raw();
         Self {
-            active: stats.0,
-            idle: stats.1,
+            active,
+            idle,
             failure_pressure: pool.failure_pressure(),
             request_pressure: pool.num_waiters() as f64
                 / pool.options().max_waiting_requests() as f64,

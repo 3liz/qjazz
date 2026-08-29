@@ -12,17 +12,7 @@ pub struct Queue<T> {
     avails: Semaphore,
 }
 
-impl<T> Default for Queue<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> Queue<T> {
-    pub fn new() -> Self {
-        Self::from_queue(VecDeque::new())
-    }
-
     pub fn with_capacity(capacity: usize) -> Self {
         Self::from_queue(VecDeque::with_capacity(capacity))
     }
@@ -74,14 +64,9 @@ impl<T> Queue<T> {
         I: IntoIterator<Item = T>,
     {
         let mut q = self.queue.lock();
-        let count = iter
-            .into_iter()
-            .map(|item| {
-                q.push_back(item);
-                1
-            })
-            .count();
-        self.avails.add_permits(count);
+        let before = q.len();
+        q.extend(iter);
+        self.avails.add_permits(q.len() - before);
     }
 
     /// Remove at most n elements

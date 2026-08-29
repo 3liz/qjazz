@@ -261,17 +261,21 @@ impl Worker {
     pub async fn cancel_timeout(&mut self, done_hint: bool) -> Result<()> {
         // Wait for readiness
         if let Ok(rv) = timeout(self.ready_timeout, self.wait_ready()).await {
-            if rv.is_ok() && !done_hint {
-                // At this point, rendez-vous is connected and ready
-                // So we drain only what's left in the pipe.
-                match timeout(self.cancel_timeout, self.drain_until_task_done()).await {
-                    Err(_) => Err(Error::WorkerStalled),
-                    Ok(rv) => rv,
+            // Rendez-vous is ready
+            match rv {
+                Ok(()) if done_hint => Ok(()),
+                Ok(()) => {
+                    // At this point, rendez-vous is connected and ready
+                    // So we drain only what's left in the pipe.
+                    match timeout(self.cancel_timeout, self.drain_until_task_done()).await {
+                        Err(_) => Err(Error::WorkerStalled),
+                        Ok(_) => Ok(()),
+                    }
                 }
-            } else {
-                rv
+                Err(e) => Err(e),
             }
         } else {
+            // Timeout failed, consider worker as stalled
             match timeout(self.cancel_timeout, self.cancel()).await {
                 Err(_) => Err(Error::WorkerStalled),
                 Ok(rv) => rv,

@@ -81,9 +81,7 @@ impl Pipe {
     }
 
     async fn drain_blocking(&mut self, fd: RawFd, token: CancellationToken) -> Result<bool> {
-        // Run as blocking: reading directy will block so
-        // it may take some time for large data.
-        //
+        // Run as blocking loop: it may take some time for large data.
         // Return true if some data has been drained
         match tokio::task::spawn_blocking(move || {
             let mut len = 0;

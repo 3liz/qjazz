@@ -147,29 +147,29 @@ impl WorkerQueue {
 
         // Check if worker must be replaced
         if worker.generation < self.generation() {
-            self.terminate(worker).await
-        } else {
-            // Try graceful cancel
-            let mut rv = worker.cancel_timeout(done_hint).await;
-            if rv.is_ok() {
-                // Update resources
-                rv = self.update(&mut worker).await;
-                if rv.is_ok() {
-                    self.q.send(worker).await;
-                } else {
-                    self.terminate_failure(worker).await?;
-                }
-            } else {
-                // Cancel failed, terminate the worker
-                let id = worker.id();
-                self.terminate_failure(worker).await?;
-                match rv {
-                    Err(Error::WorkerStalled) => log::error!("Killed stalled process {id}"),
-                    _ => log::error!("Worker failure {id}: {rv:?}"),
-                }
-            }
-            rv
+            return self.terminate(worker).await;
         }
+
+        // Try graceful cancel
+        let rv = match worker.cancel_timeout(done_hint).await {
+            Ok(_) => {
+                // Updateresources
+                let rv = self.update(&mut worker).await;
+                if rv.is_ok() {
+                    // Send back worker to queue
+                    self.q.send(worker).await;
+                    return Ok(());
+                }
+                rv
+            }
+            Err(err) => Err(err),
+        }
+        .inspect_err(|err| {
+            log::error!("Worker [{pid}] recycling failure with error:: {err}");
+        });
+
+        self.terminate_failure(worker).await?;
+        rv
     }
 
     #[inline(always)]
@@ -229,7 +229,7 @@ impl Pool {
         self.error = true
     }
 
-    pub fn has_error(&mut self) -> bool {
+    pub fn has_error(&self) -> bool {
         self.error
     }
 
@@ -315,19 +315,15 @@ impl Pool {
         let failures = self.failures();
         let current = self.num_workers();
 
-        #[allow(clippy::comparison_chain)]
-        let rv = if nominal > current {
-            self.grow(nominal - current).await.inspect(|_| {
-                self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
-            })
-        } else if nominal < current {
-            self.shrink(current - nominal).await.inspect(|_| {
-                self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
-            })
-        } else {
-            Ok(())
-        };
-        rv
+        match nominal.cmp(&current) {
+            cmp::Ordering::Greater => self.grow(nominal - current).await,
+            cmp::Ordering::Less => self.shrink(current - nominal).await,
+            cmp::Ordering::Equal => Ok(()),
+        }
+        // Reset failures count
+        .inspect(|_| {
+            self.queue.failures.fetch_sub(failures, Ordering::Relaxed);
+        })
     }
 
     /// Add workers to the pool

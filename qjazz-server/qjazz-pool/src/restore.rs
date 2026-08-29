@@ -26,10 +26,6 @@ pub struct Restore {
 }
 
 impl Restore {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn with_projects<I: IntoIterator<Item = String>>(iter: I) -> Self {
         Self {
             pulls: iter.into_iter().collect(),
