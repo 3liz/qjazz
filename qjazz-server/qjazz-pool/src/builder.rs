@@ -94,12 +94,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(builder.opts.num_processes.as_usize(), 1);
-        assert_eq!(
-            builder.opts.qgis,
-            json!({
-                "max_chunk_size": builder.opts.max_chunk_size
-            })
-        );
+        assert_eq!(builder.opts.qgis, json!({}));
 
         builder
             .patch(&json!({
@@ -116,7 +111,6 @@ mod tests {
         assert_eq!(
             builder.opts.qgis,
             json!({
-                "max_chunk_size": builder.opts.max_chunk_size,
                 "max_projects": 25
             })
         );

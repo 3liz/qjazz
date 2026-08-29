@@ -5,13 +5,11 @@
 use crate::errors::{Error, Result};
 use parking_lot::Mutex;
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::Semaphore;
 
 pub struct Queue<T> {
     queue: Mutex<VecDeque<T>>,
     avails: Semaphore,
-    pending: AtomicUsize,
 }
 
 impl<T> Default for Queue<T> {
@@ -33,13 +31,11 @@ impl<T> Queue<T> {
         Self {
             queue: Mutex::new(queue),
             avails: Semaphore::new(0),
-            pending: AtomicUsize::new(0),
         }
     }
 
     /// Wait for object on the queue, returns `Err(Error::QueueIsClosed)` if the Queue is closed.
     pub async fn recv(&self) -> Result<T> {
-        self.pending.fetch_add(1, Ordering::Relaxed);
         self.avails
             .acquire()
             .await
@@ -50,7 +46,6 @@ impl<T> Queue<T> {
             .lock()
             .pop_front()
             .expect("FATAL: workers queue is empty while permits are availables !!!");
-        self.pending.fetch_sub(1, Ordering::Relaxed);
         Ok(item)
     }
 
@@ -126,10 +121,5 @@ impl<T> Queue<T> {
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.avails.available_permits()
-    }
-
-    /// Returns the number of waiters
-    pub fn num_waiters(&self) -> usize {
-        self.pending.load(Ordering::Relaxed)
     }
 }

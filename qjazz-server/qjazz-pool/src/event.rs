@@ -1,6 +1,6 @@
 //!
 //! Create the a Event synchronization primitive that remember its last value.
-//! This is the equivalent of Python `asyncio.Event`. 
+//! This is the equivalent of Python `asyncio.Event`.
 //!
 use tokio::sync::watch;
 
@@ -22,7 +22,7 @@ impl Event {
 
     /// Clear (unset) the event.
     ///
-    /// Subsequent tasks awaiting on wait() will now block until the set() 
+    /// Subsequent tasks awaiting on wait() will now block until the set()
     /// method is called again.
     pub fn clear(&self) {
         self.0.send_replace(false);
@@ -35,7 +35,7 @@ impl Event {
 
     /// Wait until the event is set.
     ///
-    /// If the event is set, return True immediately. Otherwise block until 
+    /// If the event is set, return True immediately. Otherwise block until
     /// another task calls set().
     pub async fn wait(&self) {
         // `wait_for` evaluates the predicate against the *current* value first,

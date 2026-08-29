@@ -38,7 +38,7 @@ const LOG_CRITICAL: &str = "critical";
 const LOG_ERROR: &str = "error";
 const LOG_WARNING: &str = "warning";
 const LOG_INFO: &str = "info";
-const LOG_DEBUG: &str = "trace";
+const LOG_DEBUG: &str = "debug";
 const LOG_TRACE: &str = "trace";
 
 pub(crate) fn get_log_level() -> &'static str {
@@ -60,6 +60,7 @@ pub(crate) fn log_level_from_json(opts: &serde_json::Value) -> Option<&'static s
                 .as_str()
                 .and_then(|value| match value.to_ascii_lowercase().as_str() {
                     "error" => Some(LOG_ERROR),
+                    "warning" => Some(LOG_WARNING),
                     "info" => Some(LOG_INFO),
                     "debug" => Some(LOG_DEBUG),
                     "trace" => Some(LOG_TRACE),
@@ -120,7 +121,7 @@ impl Default for WorkerOptions {
             num_processes: BoundedUsize(1),
             process_start_timeout: DEFAULT_START_TIMEOUT_SEC,
             cancel_timeout: DEFAULT_CANCEL_TIMEOUT_SEC,
-            qgis: serde_json::json!({ "max_chunk_size": DEFAULT_MAX_CHUNK_SIZE }),
+            qgis: serde_json::json!({}),
             max_waiting_requests: BoundedUsize(DEFAULT_MAX_REQUESTS),
             max_chunk_size: BoundedUsize(DEFAULT_MAX_CHUNK_SIZE),
             restore_projects: Default::default(),

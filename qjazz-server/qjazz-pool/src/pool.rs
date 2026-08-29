@@ -10,17 +10,20 @@ use crate::queue::Queue;
 use crate::restore::Restore;
 use crate::worker::{Worker, WorkerId};
 use futures::future::try_join_all;
+use std::cmp;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, Semaphore};
 
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     // The actual number of living workers
     num_workers: AtomicUsize,
-    max_requests: AtomicUsize,
+    max_waiters: AtomicUsize,
+    // Waiters slots
+    waiters: Semaphore,
     generation: AtomicUsize,
     // Count worker's failure
     // A failure is when a worker cannot be properly
@@ -35,8 +38,28 @@ pub(crate) struct WorkerQueue {
 }
 
 impl WorkerQueue {
-    pub fn max_requests(&self) -> usize {
-        self.max_requests.load(Ordering::Relaxed)
+    pub fn max_waiters(&self) -> usize {
+        self.max_waiters.load(Ordering::Relaxed)
+    }
+
+    pub fn num_waiters(&self) -> usize {
+        self.max_waiters()
+            .saturating_sub(self.waiters.available_permits())
+    }
+
+    fn set_max_waiters(&self, max_waiting_requests: usize) {
+        let current = self.max_waiters();
+        match current.cmp(&max_waiting_requests) {
+            cmp::Ordering::Less => {
+                self.waiters.add_permits(max_waiting_requests - current);
+            }
+            cmp::Ordering::Greater => {
+                self.waiters.forget_permits(current - max_waiting_requests);
+            }
+            cmp::Ordering::Equal => return,
+        }
+        self.max_waiters
+            .store(max_waiting_requests, Ordering::Relaxed);
     }
 
     pub fn generation(&self) -> usize {
@@ -60,9 +83,10 @@ impl WorkerQueue {
     }
 
     pub async fn recv(&self) -> Result<Worker> {
-        if self.q.num_waiters() > self.max_requests() {
-            return Err(Error::MaxRequestsExceeded);
-        }
+        let _ = self
+            .waiters
+            .try_acquire()
+            .map_err(|_| Error::MaxRequestsExceeded)?;
         self.q.recv().await
     }
 
@@ -111,7 +135,7 @@ impl WorkerQueue {
         done_hint: bool,
     ) -> Result<()> {
         let pid = worker.id();
-        
+
         if self.is_closed() {
             let _ = self.terminate(worker).await;
             return Ok(());
@@ -183,11 +207,13 @@ impl Pool {
     pub fn new(mut builder: Builder) -> Self {
         let opts = builder.options_mut();
         let num_processes = opts.num_processes();
+        let max_waiting_requests = opts.max_waiting_requests();
         Self {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(num_processes),
                 num_workers: AtomicUsize::new(0),
-                max_requests: AtomicUsize::new(opts.max_waiting_requests()),
+                max_waiters: AtomicUsize::new(max_waiting_requests),
+                waiters: Semaphore::new(max_waiting_requests),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
                 failures: AtomicUsize::new(0),
@@ -214,10 +240,8 @@ impl Pool {
     /// Patch configuration
     pub async fn patch_config(&mut self, patch: &serde_json::Value) -> Result<()> {
         self.builder.patch(patch)?;
-        self.queue.max_requests.store(
-            self.builder.options().max_waiting_requests(),
-            Ordering::Relaxed,
-        );
+        self.queue
+            .set_max_waiters(self.builder.options().max_waiting_requests());
         self.num_processes = self.builder.options().num_processes();
         self.maintain_pool().await
     }
@@ -233,8 +257,9 @@ impl Pool {
 
     /// Returns the number of waiters for available
     /// worker
+    #[inline(always)]
     pub fn num_waiters(&self) -> usize {
-        self.queue.q.num_waiters()
+        self.queue.num_waiters()
     }
 
     /// Returns the number of live  workers
@@ -252,7 +277,7 @@ impl Pool {
     pub async fn inspect_pids(&self) -> Vec<i32> {
         self.queue
             .pids
-            .write()
+            .read()
             .await
             .iter()
             .map(|id| *id as i32)

@@ -90,6 +90,7 @@ impl WorkerLauncher {
             .kill_on_drop(true)
             .env("CONF_LOGGING__LEVEL", self.log_level)
             .env("CONF_WORKER__QGIS", self.qgis_options)
+            // Override any option set in 'qgis_options'
             .env("CONF_WORKER__QGIS__MAX_CHUNK_SIZE", buffer_size.to_string())
             .env("RENDEZ_VOUS", rendez_vous.path())
             .spawn()?;

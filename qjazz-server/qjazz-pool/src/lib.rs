@@ -11,9 +11,9 @@ pub mod stats;
 pub mod stream;
 pub mod worker;
 
+pub(crate) mod event;
 pub(crate) mod queue;
 pub(crate) mod utils;
-pub(crate) mod event;
 
 // reexport
 pub use builder::Builder;

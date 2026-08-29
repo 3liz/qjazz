@@ -11,6 +11,8 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 /// A Receiver for worker
+///
+/// Cannot be used outside tokio runtime context
 #[derive(Clone)]
 pub struct Receiver {
     queue: Arc<WorkerQueue>,
