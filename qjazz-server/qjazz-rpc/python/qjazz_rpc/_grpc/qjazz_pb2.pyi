@@ -88,7 +88,7 @@ class OwsRequest(_message.Message):
     content_type: str
     method: str
     body: bytes
-    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ..., method: _Optional[str] = ..., body: _Optional[bytes] = ...) -> None: ...
+    def __init__(self, service: _Optional[str] = ..., request: _Optional[str] = ..., target: _Optional[str] = ..., version: _Optional[str] = ..., url: _Optional[str] = ..., direct: _Optional[bool] = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ..., method: _Optional[str] = ..., body: _Optional[bytes] = ...) -> None: ...
 
 class ApiRequest(_message.Message):
     __slots__ = ("name", "path", "method", "data", "delegate", "target", "url", "direct", "options", "request_id", "content_type")
@@ -114,7 +114,7 @@ class ApiRequest(_message.Message):
     options: str
     request_id: str
     content_type: str
-    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: bool = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: bool = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., method: _Optional[str] = ..., data: _Optional[bytes] = ..., delegate: _Optional[bool] = ..., target: _Optional[str] = ..., url: _Optional[str] = ..., direct: _Optional[bool] = ..., options: _Optional[str] = ..., request_id: _Optional[str] = ..., content_type: _Optional[str] = ...) -> None: ...
 
 class CollectionsRequest(_message.Message):
     __slots__ = ("location", "resource", "start", "end")
@@ -145,7 +145,7 @@ class CollectionsPage(_message.Message):
     schema: str
     next: bool
     items: _containers.RepeatedCompositeFieldContainer[CollectionsPage.CollectionsItem]
-    def __init__(self, schema: _Optional[str] = ..., next: bool = ..., items: _Optional[_Iterable[_Union[CollectionsPage.CollectionsItem, _Mapping]]] = ...) -> None: ...
+    def __init__(self, schema: _Optional[str] = ..., next: _Optional[bool] = ..., items: _Optional[_Iterable[_Union[CollectionsPage.CollectionsItem, _Mapping]]] = ...) -> None: ...
 
 class CheckoutRequest(_message.Message):
     __slots__ = ("uri", "pull")
@@ -153,7 +153,7 @@ class CheckoutRequest(_message.Message):
     PULL_FIELD_NUMBER: _ClassVar[int]
     uri: str
     pull: bool
-    def __init__(self, uri: _Optional[str] = ..., pull: bool = ...) -> None: ...
+    def __init__(self, uri: _Optional[str] = ..., pull: _Optional[bool] = ...) -> None: ...
 
 class CacheInfo(_message.Message):
     __slots__ = ("uri", "status", "in_cache", "timestamp", "name", "storage", "last_modified", "saved_version", "debug_metadata", "cache_id", "last_hit", "hits", "pinned")
@@ -190,7 +190,7 @@ class CacheInfo(_message.Message):
     last_hit: int
     hits: int
     pinned: bool
-    def __init__(self, uri: _Optional[str] = ..., status: _Optional[int] = ..., in_cache: bool = ..., timestamp: _Optional[int] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ..., last_hit: _Optional[int] = ..., hits: _Optional[int] = ..., pinned: bool = ...) -> None: ...
+    def __init__(self, uri: _Optional[str] = ..., status: _Optional[int] = ..., in_cache: _Optional[bool] = ..., timestamp: _Optional[int] = ..., name: _Optional[str] = ..., storage: _Optional[str] = ..., last_modified: _Optional[str] = ..., saved_version: _Optional[str] = ..., debug_metadata: _Optional[_Mapping[str, int]] = ..., cache_id: _Optional[str] = ..., last_hit: _Optional[int] = ..., hits: _Optional[int] = ..., pinned: _Optional[bool] = ...) -> None: ...
 
 class DropRequest(_message.Message):
     __slots__ = ("uri",)
@@ -224,7 +224,7 @@ class ProjectInfo(_message.Message):
         crs: str
         is_valid: bool
         is_spatial: bool
-        def __init__(self, layer_id: _Optional[str] = ..., name: _Optional[str] = ..., source: _Optional[str] = ..., provider: _Optional[str] = ..., layer_type: _Optional[str] = ..., crs: _Optional[str] = ..., is_valid: bool = ..., is_spatial: bool = ...) -> None: ...
+        def __init__(self, layer_id: _Optional[str] = ..., name: _Optional[str] = ..., source: _Optional[str] = ..., provider: _Optional[str] = ..., layer_type: _Optional[str] = ..., crs: _Optional[str] = ..., is_valid: _Optional[bool] = ..., is_spatial: _Optional[bool] = ...) -> None: ...
     STATUS_FIELD_NUMBER: _ClassVar[int]
     URI_FIELD_NUMBER: _ClassVar[int]
     FILENAME_FIELD_NUMBER: _ClassVar[int]
@@ -243,7 +243,7 @@ class ProjectInfo(_message.Message):
     has_bad_layers: bool
     layers: _containers.RepeatedCompositeFieldContainer[ProjectInfo.Layer]
     cache_id: str
-    def __init__(self, status: _Optional[int] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: bool = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, status: _Optional[int] = ..., uri: _Optional[str] = ..., filename: _Optional[str] = ..., crs: _Optional[str] = ..., last_modified: _Optional[str] = ..., storage: _Optional[str] = ..., has_bad_layers: _Optional[bool] = ..., layers: _Optional[_Iterable[_Union[ProjectInfo.Layer, _Mapping]]] = ..., cache_id: _Optional[str] = ...) -> None: ...
 
 class PluginInfo(_message.Message):
     __slots__ = ("name", "path", "plugin_type", "metadata")

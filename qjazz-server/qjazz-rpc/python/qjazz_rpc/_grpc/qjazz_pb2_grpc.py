@@ -5,7 +5,7 @@ import warnings
 
 from . import qjazz_pb2 as qjazz__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.83.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class QgisServerStub(object):
+class QgisServerStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -56,7 +56,7 @@ class QgisServerStub(object):
                 _registered_method=True)
 
 
-class QgisServerServicer(object):
+class QgisServerServicer:
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
@@ -114,7 +114,7 @@ def add_QgisServerServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class QgisServer(object):
+class QgisServer:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -226,7 +226,7 @@ class QgisServer(object):
             _registered_method=True)
 
 
-class QgisAdminStub(object):
+class QgisAdminStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -322,7 +322,7 @@ class QgisAdminStub(object):
                 _registered_method=True)
 
 
-class QgisAdminServicer(object):
+class QgisAdminServicer:
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
@@ -523,7 +523,7 @@ def add_QgisAdminServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class QgisAdmin(object):
+class QgisAdmin:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
