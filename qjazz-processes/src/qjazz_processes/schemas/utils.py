@@ -57,5 +57,5 @@ def get_annotation(role: str, process: ProcessSummary) -> bool:
     for md in process.metadata:
         if isinstance(md, MetadataValue) and md.role == role:
             return bool(md.value)
-    else:
-        return False
+
+    return False

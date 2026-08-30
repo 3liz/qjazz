@@ -44,7 +44,6 @@ from typing import (
     Literal,
     Optional,
     Self,
-    Type,
     TypeAlias,
     assert_never,
     cast,
@@ -89,9 +88,9 @@ def dict_merge(dct: dict, merge_dct: dict, model: Optional[BaseModel]):
         if (k in model.__dict__ and isinstance(model.__dict__[k], BaseModel)) and (
             k in dct and isinstance(dct[k], dict) and isinstance(v, dict)
         ):
-            dict_merge(dct[k], merge_dct[k], model.__dict__[k])
+            dict_merge(dct[k], v, model.__dict__[k])
         else:
-            dct[k] = merge_dct[k]
+            dct[k] = v
 
 
 def read_config(cfgfile: Path, loads: Callable[[str], dict], **kwds) -> dict[str, JsonValue]:
@@ -173,7 +172,7 @@ class ConfigSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
@@ -207,7 +206,7 @@ class ConfBuilder:
 
     def __init__(self) -> None:
         self._sections: dict = {}
-        self._model: Type[BaseModel] | None = None
+        self._model: type[BaseModel] | None = None
         self._conf: BaseModel | None = None
         self._model_changed = True
         self._timestamp = 0.0
@@ -216,7 +215,7 @@ class ConfBuilder:
     def version(self):
         return config_version
 
-    def _create_base_model(self) -> Type[BaseModel]:
+    def _create_base_model(self) -> type[BaseModel]:
         def _model(model):
             assert_precondition(isinstance(model, tuple))
             match model:
@@ -233,7 +232,7 @@ class ConfBuilder:
             **{name: _model(model) for name, model in self._sections.items()},
         )
 
-    def _get_model(self) -> Type[BaseModel]:
+    def _get_model(self) -> type[BaseModel]:
         if self._model_changed or not self._model:
             self._model = self._create_base_model()
             self._model_changed = False
@@ -284,7 +283,7 @@ class ConfBuilder:
     def add_section(
         self,
         name: str,
-        model: Type | TypeAlias,
+        model: type | TypeAlias,
         field: Any = CreateDefault,
         *,
         replace: bool = False,

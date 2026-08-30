@@ -81,9 +81,6 @@ def run_server(configpath: Path, verbose: bool, dump_config: bool):
     serve(conf)
 
 
-#
-
-
 def setup_executor_context(
     ctx: click.Context,
     configpath: Optional[Path],
@@ -670,7 +667,6 @@ def jobs_status(ctx: click.Context, job_id: str, json_format: bool):
                     echo(style(output, fg="green"))
 
 
-#
 @jobs.command("results")
 @click.argument("job_id")
 @click.option("--json", "json_format", is_flag=True, help="Output json response")

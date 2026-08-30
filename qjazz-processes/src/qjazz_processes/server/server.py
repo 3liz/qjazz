@@ -200,7 +200,6 @@ async def cors_options_handler(
     allow_headers: str,
 ) -> web.Response:
     """Set correct headers for 'OPTIONS' method"""
-    allow_methods = allow_methods
     headers = {
         "Allow": allow_methods,
         "Access-Control-Allow-Headers": allow_headers,

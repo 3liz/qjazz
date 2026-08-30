@@ -4,7 +4,7 @@ CRS schema
 See https://schemas.opengis.net/ogcapi/maps/part1/1.0/openapi/schemas/common-geodata/crs.yaml
 """
 
-from typing import Optional, Self, Union
+from typing import Optional, Self
 
 from pydantic import HttpUrl
 
@@ -31,11 +31,11 @@ class CrsRef(HttpUrl):
         return cls.from_authority("EPSG", code)
 
     def to_ogc_urn(self) -> str:
-        return f"urn:ogc{(self.path or '').replace('/', ':')}"  #
+        return f"urn:ogc{(self.path or '').replace('/', ':')}"
 
 
 CRS84 = CrsRef.from_authority("OGC", "CRS84", version="1.3")
 CRS84h = CrsRef.from_authority("OGC", "CRS84h", version="0")
 
 
-Crs = Union[CrsRef, JsonDict]
+Crs = CrsRef | JsonDict

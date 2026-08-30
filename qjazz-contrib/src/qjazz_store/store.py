@@ -356,7 +356,7 @@ def get_store(
                     break
                 yield chunk
         except queue.Empty:
-            raise asyncio.TimeoutError() from None
+            raise TimeoutError() from None
         finally:
             exception = pull_task.exception()
             if exception:

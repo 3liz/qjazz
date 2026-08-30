@@ -30,7 +30,6 @@ def Field(
     )
 
 
-#
 model_json_properties = {
     "alias_generator": alias_generators.to_camel,
     "populate_by_name": True,

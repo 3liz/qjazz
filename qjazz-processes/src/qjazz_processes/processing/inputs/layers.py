@@ -600,7 +600,7 @@ class ParameterField(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-        _type: Any = str  #
+        _type: Any = str
 
         if param.allowMultiple():
             _type = Annotated[list[_type], Field(min_length=1)]  # type: ignore [misc]
@@ -701,7 +701,7 @@ class ParameterBand(InputParameter):
         project: Optional[QgsProject] = None,
         validation_only: bool = False,
     ) -> TypeAlias:
-        _type: Any = Annotated[int, Field(ge=0)]  #
+        _type: Any = Annotated[int, Field(ge=0)]
 
         if param.allowMultiple():
             _type = Annotated[list[_type], Field(min_length=1)]  # type: ignore [misc]

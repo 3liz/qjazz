@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import (
     Iterator,
-    Union,
 )
 from urllib.parse import SplitResult, urlsplit
 
@@ -29,7 +28,7 @@ class DummyProtocolHandler:
         relpath = Path(url.path).relative_to(rooturl.path)
         return str(Path(location).joinpath(relpath))
 
-    def project_metadata(self, url: Union[Url | ProjectMetadata]) -> ProjectMetadata:
+    def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Return project metadata"""
         uri = url.uri if isinstance(url, ProjectMetadata) else url.geturl()
         raise FileNotFoundError(uri)

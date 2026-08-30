@@ -5,7 +5,7 @@ import string
 import sys
 
 from pathlib import Path
-from typing import Annotated, Optional, Tuple
+from typing import Annotated, Optional
 
 from pydantic import (
     AfterValidator,
@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-def _validate_netinterface(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
+def _validate_netinterface(v: str | tuple[str, int]) -> str | tuple[str, int]:
     if isinstance(v, str):
         if not v.startswith("unix:"):
             raise ValueError("Invalid socket address")
@@ -44,7 +44,7 @@ def _validate_netinterface(v: str | Tuple[str, int]) -> str | Tuple[str, int]:
 
 
 NetInterface = Annotated[
-    str | Tuple[str, int],
+    str | tuple[str, int],
     AfterValidator(_validate_netinterface),
 ]
 

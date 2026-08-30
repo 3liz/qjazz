@@ -14,7 +14,6 @@ from typing import (
     Any,
     Generator,
     Optional,
-    TypeVar,
     overload,
 )
 
@@ -32,11 +31,9 @@ from qjazz_core.timer import Instant
 
 from ._grpc import qjazz_pb2, qjazz_pb2_grpc
 
-S = TypeVar("S")
-
 
 @contextmanager
-def channel(
+def channel[S](
     address: str,
     stub: type[S],
     ssl: Optional[TLSConfig] = None,

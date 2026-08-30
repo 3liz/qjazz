@@ -338,8 +338,7 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
         major = int(major)
         minor = int(ver[0]) if len(ver) > 0 else 0
         rev = int(ver[1]) if len(ver) > 1 else 0
-        if rev > 99:
-            rev = 99
+        rev = min(rev, 99)
         return int(f"{major:d}{minor:02d}{rev:02d}")
 
     version = to_int(Qgis.version().split("-")[0])

@@ -1,7 +1,7 @@
 #
 # Handle processing plugins
 #
-import sys
+import tomllib as toml
 import traceback
 
 from pathlib import Path
@@ -16,16 +16,10 @@ from typing import (
 
 from pydantic import BaseModel
 
-from ..condition import assert_not_none
-
-if sys.version_info < (3, 11):
-    import tomli as toml  # type: ignore
-else:
-    import tomllib as toml
-
 from qgis.core import QgsApplication, QgsProcessingProvider
 
 from .. import logger
+from ..condition import assert_not_none
 
 BuiltinProviderSet = Set[Literal["grass", "otb"]]
 
@@ -75,6 +69,7 @@ class ProcessesLoader:
                         p = OtbAlgorithmProvider()
                         reg.addProvider(p)
             except Exception:
+                # Do not fail
                 logger.error(traceback.format_exc())
 
             return p

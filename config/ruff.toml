@@ -23,6 +23,19 @@ ignore = [
     "COM812",
     "SIM108",  # Use ternary operator
     "SIM102",  # Use a single if
+    "UP035",   # `typing.Type` is deprecated, use `type` instead
+    "UP045",   # Non pep604 'Optional' annotation
+    "UP040",   # `TypeAlias` annotation instead of the `type` keyword
+    "UP006",   # Use `type` instead of `Type` for type annotation 
+               # Necessary because `type` does not allow for introspection while `Type` does.
+    "PIE790",  # Unnecessary `pass` statement
+    "N999",    # Invalid module name (not snake case)
+    "UP017",   # Use `datetime.UTC` alias
+    "UP007",   # Use `X | Y` for type annotations
+    "UP008",   # Use `super()` instead of `super(__class__, self)` 
+               # (false positive for class method ?)
+    "DTZ",
+    "BLE001",  # Do not catch blind exception: `Exception`
 ]
 
 [format]

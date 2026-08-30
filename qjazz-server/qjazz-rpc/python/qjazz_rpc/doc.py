@@ -1,10 +1,6 @@
-#
-#
-#
 from typing import (
     Annotated,
     Optional,
-    Union,
 )
 
 from pydantic import BeforeValidator, Field, FilePath, PositiveInt
@@ -14,7 +10,7 @@ from .config import QgisConfig
 
 
 # Parse list from string
-def _parse_list(value: Union[list[str], str]) -> list[str]:
+def _parse_list(value: list[str] | str) -> list[str]:
     if isinstance(value, str):
         # Parse comma separated list
         value = value.split(",") if value else []

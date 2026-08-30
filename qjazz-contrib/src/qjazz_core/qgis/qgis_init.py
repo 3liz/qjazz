@@ -45,7 +45,6 @@ def current_qgis_application() -> Optional["QgsApplication"]:
 
 
 def qgis_initialized():
-    global qgis_application
     return qgis_application is not None
 
 
@@ -328,7 +327,6 @@ def show_all_versions() -> Iterator[str]:
 
 
 def show_qgis_settings() -> str:
-    global qgis_application
     if qgis_application:
         return qgis_application.showSettings()
     return ""

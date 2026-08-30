@@ -87,7 +87,7 @@ class ComponentManager:
     def register_factory(self, contractID: str, factory: Callable[[], Any]) -> None:
         """Register a factory for the given contract ID"""
         if not callable(factory):
-            raise ValueError("factory must be a callable object")
+            raise TypeError("factory must be a callable object")
 
         if contractID in self._contractIDs:
             _warn(f"Overriding factory for '{contractID}'")

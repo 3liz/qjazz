@@ -178,7 +178,6 @@ def projects(cache_manager: CacheManager) -> Generator[ProjectsProto, None, None
 
 @pytest.fixture(scope="session")
 def plugins(qgis_session: ProcessingConfig) -> qgis.QgisPluginService:
-    """ """
     plugin_service = qgis.QgisPluginService(qgis_session.plugins)
     plugin_service.load_plugins(qgis.PluginType.PROCESSING, None)
     plugin_service.register_as_service()

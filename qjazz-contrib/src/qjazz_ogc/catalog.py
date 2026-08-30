@@ -137,6 +137,7 @@ class Catalog:
                         self._minimum_qgis_version,
                     )
                 except Exception:
+                    # Do not fail, but report error
                     logger.error(
                         "Error loading project snapshot %s\n%s",
                         md.uri,
@@ -239,6 +240,7 @@ class Catalog:
             self._catalog[ident] = item
             return item
         except Exception:
+            # Do not fail
             logger.error(
                 "Error loading project snapshot %s\n%s",
                 md.uri,

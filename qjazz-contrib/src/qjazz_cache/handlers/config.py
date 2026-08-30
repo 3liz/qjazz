@@ -52,7 +52,7 @@ class HandlerConfig(ConfigBase):
         klass = self.handler
 
         if not issubclass(klass, ProtocolHandler):
-            raise ValueError(f"{klass} does not suppport ProtocolHandler protocol")
+            raise TypeError(f"{klass} does not suppport ProtocolHandler protocol")
 
         self._handler_conf: BaseModel | None = None
         if hasattr(klass, "Config") and issubclass(klass.Config, BaseModel):

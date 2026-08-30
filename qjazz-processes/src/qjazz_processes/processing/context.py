@@ -1,6 +1,3 @@
-#
-#
-#
 
 from pathlib import Path
 from string import Template

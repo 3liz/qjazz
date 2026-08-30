@@ -8,7 +8,6 @@ from typing import (
     Awaitable,
     BinaryIO,
     Callable,
-    Dict,
     Optional,
     cast,
 )
@@ -112,15 +111,15 @@ def bucket_destination(
     prefix: Optional[str] = None,
     num_parallel_uploads: int = 3,
     part_size: int = DEFAULT_PART_SIZE,
-    metadata: Optional[Dict[str, str]] = None,
-) -> Callable[[Object, AsyncIterator[bytes], Optional[Dict[str, str]]], Awaitable[ObjectWriteResult]]:
+    metadata: Optional[dict[str, str]] = None,
+) -> Callable[[Object, AsyncIterator[bytes], Optional[dict[str, str]]], Awaitable[ObjectWriteResult]]:
     """Stream to s3 bucket"""
     part_size = max(MIN_PART_SIZE, part_size)
 
     async def _writer(
         obj: Object,
         stream: AsyncIterator[bytes],
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[dict[str, str]] = None,
     ) -> ObjectWriteResult:
         assert_precondition(obj.name, "Object must have a valid name")  # type: ignore [arg-type]
         object_name = str(PurePosixPath(prefix, obj.name)) if prefix else obj.name

@@ -33,7 +33,6 @@ class ConfigProto(Protocol):
 
 
 def load_config(path: Optional[Path | str], **kwds) -> WorkerConfig:
-    """ """
     from qjazz_core import config
 
     confservice = config.ConfBuilder()

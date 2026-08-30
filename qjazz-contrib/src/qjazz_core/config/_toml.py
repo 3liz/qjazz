@@ -189,13 +189,13 @@ def _dump_section(
             _print_field_doc(s, field)
             _print_field(s, name, field, default=field_default, comment=comment)
 
-    for model, name, field, as_list, default in deferred_:
+    for mdl, name, field, as_list, default in deferred_:
         print(file=s)
         _print_field_doc(s, field)
         print("#", file=s)
         _dump_section(
             s,
-            model,
+            mdl,
             field.default or default,
             name,
             comment=comment,

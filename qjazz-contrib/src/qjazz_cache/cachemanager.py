@@ -172,8 +172,8 @@ class CacheManager:
             result = route.resolve_path(path)
             if result:
                 return PurePosixPath(result[0])
-        else:
-            return None
+
+        return None
 
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
         """Resolve path according to location mapping
@@ -236,6 +236,7 @@ class CacheManager:
                 for md in handler.projects(url):
                     yield md, handler.public_path(md.uri, location, url), handler, loc
             except Exception:
+                # Never fail but report error
                 logger.error(traceback.format_exc())
 
     def collect_projects(
