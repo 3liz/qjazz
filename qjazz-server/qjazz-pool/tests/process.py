@@ -24,6 +24,8 @@ def echo(*args):
 
 PROJECTS: dict[m_.CacheInfo] = {}
 
+CONFIG: dict = {}
+
 last_modified = to_iso8601(datetime.fromtimestamp(time()))
 
 
@@ -67,8 +69,8 @@ def get_project(uri: str, pull: bool):
 
 def drop_project(uri: str):
     info = PROJECTS.get(uri)
-    if not info: 
-        info = new_project(uri)
+    if not info:
+        info = cache_info(uri, CheckoutStatus.NOTFOUND)
     else:
         info.status = CheckoutStatus.REMOVED.value
         del PROJECTS[uri]
@@ -227,7 +229,15 @@ def run(name: str, projects: list[str]) -> None:
                     case m_.DropProjectMsg():
                         m_.send_reply(conn, drop_project(msg.uri))
                     case m_.ClearCacheMsg():
+                        PROJECTS.clear()
                         m_.send_reply(conn, None)
+                    case m_.PutConfigMsg():
+                        CONFIG.clear()
+                        if isinstance(msg.config, dict):
+                            CONFIG.update(msg.config)
+                        m_.send_reply(conn, None)
+                    case m_.GetConfigMsg():
+                        m_.send_reply(conn, CONFIG)
                     case m_.CatalogMsg():
                         m_.stream_data(
                             conn,

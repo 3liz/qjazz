@@ -40,7 +40,7 @@ impl Pipe {
             buffer: vec![0; options.buffer_size],
             // Reusable output buffer
             // for serializing messages
-            buf: vec![0; 1024],
+            buf: Vec::with_capacity(1024),
         }
     }
 
