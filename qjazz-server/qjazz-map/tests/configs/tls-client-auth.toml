@@ -1,0 +1,7 @@
+# Server TLS with client certificate authentification.
+
+[server]
+enable_tls = true
+tls_cert_file = "$location/../certs/localhost.crt"
+tls_key_file = "$location/../certs/localhost.key"
+tls_client_ca_file = "$location/../certs/localhost.crt"

@@ -1,0 +1,7 @@
+# Server TLS, certificates are resolved relative to this file.
+
+[server]
+listen = "127.0.0.1:8443"
+enable_tls = true
+tls_cert_file = "$location/../certs/localhost.crt"
+tls_key_file = "$location/../certs/localhost.key"

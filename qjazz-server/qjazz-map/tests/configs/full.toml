@@ -1,0 +1,45 @@
+# Configuration exercising every settings key.
+
+[logging]
+level = "debug"
+
+[server]
+listen = "0.0.0.0:4000"
+num_workers = 4
+backend_request_timeout = 15
+shutdown_timeout = 60
+check_forwarded_headers = false
+
+[server.cors]
+allowed_methods = ["GET", "POST", "OPTIONS"]
+allowed_headers = ["x-custom-header"]
+allowed_origins = { hosts = ["https://foo.example.com", "https://bar.example.com"] }
+max_age = 3600
+
+[backends.first]
+title = "First backend"
+description = "The first test backend"
+route = "/first"
+host = "first.example.com"
+port = 23457
+allow_direct_resolution = true
+disable_root_catalog = true
+forward_headers = ["x-qgis-*", "*-suffix", "x-plain", "re:^x-re-.*$"]
+timeout = 5
+admin = { enabled = true, disclosed = true }
+
+[[backends.first.api]]
+endpoint = "features"
+name = "WFS3"
+description = "Features OGC Api"
+delegate = true
+
+[[backends.first.api]]
+endpoint = "lizmap"
+name = "Lizmap"
+
+[backends.second]
+title = "Second backend"
+description = "The second test backend"
+route = "/second"
+host = "second.example.com"

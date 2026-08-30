@@ -1,0 +1,6 @@
+# A single backend bound to the root route.
+
+[backends.only]
+title = "Single backend"
+route = "/"
+host = "localhost"

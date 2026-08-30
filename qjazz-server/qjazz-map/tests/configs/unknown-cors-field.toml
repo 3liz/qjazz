@@ -1,0 +1,4 @@
+# Invalid: unknown key in a 'deny_unknown_fields' section.
+
+[server.cors]
+allowed_verbs = ["GET"]

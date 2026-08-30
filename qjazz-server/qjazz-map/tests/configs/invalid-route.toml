@@ -1,0 +1,5 @@
+# Invalid: a route must start with a '/'.
+
+[backends.test]
+route = "test"
+host = "localhost"

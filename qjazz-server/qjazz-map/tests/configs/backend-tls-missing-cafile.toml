@@ -1,0 +1,7 @@
+# Invalid: the backend CA file does not exist.
+
+[backends.secured]
+route = "/secured"
+host = "localhost"
+enable_tls = true
+cafile = "$location/../certs/missing.crt"

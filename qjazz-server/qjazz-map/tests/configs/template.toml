@@ -1,0 +1,7 @@
+# '$location' is substituted with the directory holding this file.
+
+[backends.test]
+title = "Templated backend"
+route = "/test"
+host = "localhost"
+cafile = "$location/../certs/localhost.crt"

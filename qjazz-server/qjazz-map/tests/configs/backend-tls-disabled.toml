@@ -1,0 +1,7 @@
+# TLS files are not checked as long as TLS is disabled for the channel.
+
+[backends.plain]
+route = "/plain"
+host = "localhost"
+enable_tls = false
+cafile = "$location/../certs/missing.crt"

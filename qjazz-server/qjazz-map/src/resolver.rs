@@ -81,7 +81,7 @@ impl Serialize for HeaderFilter {
             Self::Plain(s) => s.serialize(serializer),
             Self::Prefix(s) => format!("{s}*").serialize(serializer),
             Self::Suffix(s) => format!("*{s}").serialize(serializer),
-            Self::Regex(r) => format!("{r}").serialize(serializer),
+            Self::Regex(r) => format!("re:{r}").serialize(serializer),
         }
     }
 }
@@ -226,12 +226,12 @@ impl Validator for ChannelConfig {
 
         if !self.route.starts_with("/") {
             return Err(ConfigError::Message(format!(
-                "Path {} must starts with a '/'",
+                "Path '{}' must starts with a '/'",
                 self.route,
             )));
         }
 
-        Ok(())
+        self.api.iter().try_for_each(|a| a.validate())
     }
 }
 
@@ -333,18 +333,15 @@ pub struct Channels(BTreeMap<String, ChannelConfig>);
 
 impl Validator for Channels {
     fn validate(&self) -> Result<(), ConfigError> {
-        if self.0.len() > 1 {
-            return self.0.iter().try_for_each(|(_, c)| {
-                if c.route == "/" {
-                    Err(ConfigError::Message(
-                        "Route '/' is not allowed with multiple backends".to_string(),
-                    ))
-                } else {
-                    Ok(())
-                }
-            });
-        }
-        Ok(())
+        let multi = self.0.len() > 1;
+        self.0.iter().try_for_each(|(_, c)| {
+            if multi && c.route == "/" {
+                return Err(ConfigError::Message(
+                    "Route '/' is not allowed with multiple backends".to_string(),
+                ))
+            }
+            c.validate()
+        })
     }
 }
 

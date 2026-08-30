@@ -1,0 +1,4 @@
+# Invalid: unknown log level filter.
+
+[logging]
+level = "verbose"

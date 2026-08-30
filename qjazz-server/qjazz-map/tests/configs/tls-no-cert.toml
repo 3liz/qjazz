@@ -1,0 +1,4 @@
+# Invalid: TLS enabled without any certificate.
+
+[server]
+enable_tls = true

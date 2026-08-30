@@ -1,0 +1,5 @@
+# Invalid: TLS enabled with a certificate but no key.
+
+[server]
+enable_tls = true
+tls_cert_file = "$location/../certs/localhost.crt"

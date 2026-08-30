@@ -1,0 +1,6 @@
+# Invalid: TLS enabled and the certificate file does not exist.
+
+[server]
+enable_tls = true
+tls_cert_file = "$location/../certs/missing.crt"
+tls_key_file = "$location/../certs/localhost.key"

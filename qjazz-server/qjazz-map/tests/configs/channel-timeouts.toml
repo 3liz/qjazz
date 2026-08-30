@@ -1,0 +1,14 @@
+# The server request timeout is propagated to the channels
+# that do not define their own.
+
+[server]
+backend_request_timeout = 17
+
+[backends.with_timeout]
+route = "/with"
+host = "localhost"
+timeout = 3
+
+[backends.without_timeout]
+route = "/without"
+host = "localhost"

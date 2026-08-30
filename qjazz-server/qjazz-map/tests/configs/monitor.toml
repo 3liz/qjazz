@@ -1,0 +1,10 @@
+# Optional monitor section (requires the 'monitor' feature).
+
+[backends.test]
+route = "/test"
+host = "localhost"
+
+[monitor]
+command = "python"
+args = ["monitor.py", "--verbose"]
+config = { key = "value" }

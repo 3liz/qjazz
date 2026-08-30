@@ -1,0 +1,10 @@
+# Backend channel secured with TLS and client authentification.
+
+[backends.secured]
+title = "Secured backend"
+route = "/secured"
+host = "localhost"
+enable_tls = true
+cafile = "$location/../certs/localhost.crt"
+client_cert_file = "$location/../certs/localhost.crt"
+client_key_file = "$location/../certs/localhost.key"

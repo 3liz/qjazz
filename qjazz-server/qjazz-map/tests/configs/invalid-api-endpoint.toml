@@ -1,0 +1,9 @@
+# Invalid: an api endpoint must not contain a path separator.
+
+[backends.test]
+route = "/test"
+host = "localhost"
+
+[[backends.test.api]]
+endpoint = "wfs3/collections"
+name = "WFS3"

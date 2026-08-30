@@ -1,0 +1,9 @@
+# Invalid: the root route may not be used when several backends are defined.
+
+[backends.first]
+route = "/"
+host = "first"
+
+[backends.second]
+route = "/second"
+host = "second"
