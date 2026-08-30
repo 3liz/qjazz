@@ -45,6 +45,8 @@ pub enum Error {
     InvalidConfigValue(String),
     #[error("Invalid HTTP method {0}")]
     InvalidHttpMethod(String),
+    #[error("Invalid configuration {0}")]
+    InvalidConfiguration(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

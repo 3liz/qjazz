@@ -44,7 +44,7 @@ impl Builder {
 
         if let Some(patch) = patch.get("worker") {
             let mut doc = serde_json::to_value(&self.opts)?;
-            json_merge(&mut doc, patch);
+            json_merge(&mut doc, patch)?;
             self.opts = serde_json::from_value(doc)?;
         }
 
