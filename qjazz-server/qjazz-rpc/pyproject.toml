@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
-    "qjazz-contrib==0.8.2",
+    "qjazz-contrib==0.9.0",
     "aiohttp",
     "grpcio",
     "grpcio-tools",
