@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [server] Bound restore states
+* [server] Improve worker management
+* [server] Improve worker restoration
+* [server] Fix multiple race condition
+* [server] Fix incomplete config validation
+* [server] Fix server silent bind failure
+* [server] Fix client responses
+* [server] Fix Python/Rust round-trip messaging
+* [server] Improve catalog handling
+* [server] qjazz-map: Add landing page for admin api
+* Fix qgis-plugin-manager dependencies
+
 ## 0.8.1
 
 * Remove unreliable load balanced channel support
