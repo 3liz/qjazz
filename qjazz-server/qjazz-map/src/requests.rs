@@ -39,7 +39,14 @@ pub mod request {
 
             format!("{proto}://{host}{prefix}{path}")
         } else {
-            format!("{}", req.uri())
+            // Build from the raw uri
+            let uri = req.uri();
+            if let (Some(scheme), Some(authority)) = (uri.scheme_str(), uri.authority()) {
+                format!("{}://{}{path}", scheme, authority.as_str())
+            } else {
+                // No scheme/authority, send as relative uri
+                path.into()
+            }
         }
     }
 
@@ -70,5 +77,91 @@ pub mod header {
     #[inline]
     pub fn request_id(headers: &HeaderMap) -> Option<&str> {
         get_as_str(headers, "x-request-id")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::request::*;
+    use actix_web::{test::TestRequest, web};
+
+    //
+    // Proxy headers allowed: the public url is built from the
+    // connection info and the 'x-forwarded-prefix' header.
+    //
+
+    #[test]
+    fn test_public_url_from_forwarded_headers() {
+        let req = TestRequest::default()
+            .app_data(web::ThinData(ProxyHeaders { allow: true }))
+            .insert_header(("forwarded", "proto=https;host=proxy.example.com"))
+            .to_http_request();
+
+        assert_eq!(
+            public_url(&req, "/collections"),
+            "https://proxy.example.com/collections"
+        );
+    }
+
+    #[test]
+    fn test_public_url_from_forwarded_prefix() {
+        let req = TestRequest::default()
+            .app_data(web::ThinData(ProxyHeaders { allow: true }))
+            .insert_header(("forwarded", "proto=https;host=proxy.example.com"))
+            .insert_header(("x-forwarded-prefix", "/qjazz/"))
+            .to_http_request();
+
+        // Trailing slashes are trimmed from both the prefix and the path
+        assert_eq!(
+            public_url(&req, "/collections/"),
+            "https://proxy.example.com/qjazz/collections"
+        );
+    }
+
+    //
+    // Proxy headers not allowed: the public url is built from the raw uri.
+    //
+
+    #[test]
+    fn test_public_url_from_absolute_uri() {
+        let req = TestRequest::default()
+            .uri("http://localhost:8080/collections")
+            .insert_header(("forwarded", "proto=https;host=proxy.example.com"))
+            .to_http_request();
+
+        // Forwarded headers are ignored
+        assert_eq!(public_url(&req, "/foo"), "http://localhost:8080/foo");
+    }
+
+    #[test]
+    fn test_public_url_from_absolute_uri_no_proxy_data() {
+        // No ProxyHeaders app data at all
+        let req = TestRequest::default()
+            .uri("https://map.example.com/foo")
+            .to_http_request();
+
+        assert_eq!(public_url(&req, "/bar"), "https://map.example.com/bar");
+    }
+
+    //
+    // Proxy headers not allowed and no scheme/authority in the raw uri:
+    // fallback to a relative url.
+    //
+
+    #[test]
+    fn test_public_url_relative() {
+        let req = TestRequest::default()
+            .app_data(web::ThinData(ProxyHeaders { allow: false }))
+            .uri("/collections")
+            .to_http_request();
+
+        assert_eq!(public_url(&req, "/collections"), "/collections");
+    }
+
+    #[test]
+    fn test_public_url_relative_empty_path() {
+        let req = TestRequest::default().uri("/collections").to_http_request();
+
+        assert_eq!(public_url(&req, ""), "");
     }
 }

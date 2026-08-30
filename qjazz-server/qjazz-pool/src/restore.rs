@@ -17,7 +17,6 @@ pub enum State {
     Update,
 }
 
-
 /// Store project states
 pub struct Restore {
     // Update count
@@ -33,9 +32,9 @@ impl Default for Restore {
     fn default() -> Self {
         Self {
             pulls: BTreeSet::new(),
-            update: 1,  // 1 is the first state after initial update
+            update: 1, // 1 is the first state after initial update
             states: VecDeque::new(),
-            initial_update: 0,  // Initial update
+            initial_update: 0, // Initial update
             config: (0, serde_json::Value::Null),
         }
     }

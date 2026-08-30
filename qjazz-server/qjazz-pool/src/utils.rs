@@ -17,7 +17,6 @@ pub fn json_merge(doc: &mut Value, patch: &Value) -> Result<()> {
 const MAX_DEPTH: usize = 32;
 
 fn json_merge_1(doc: &mut Value, patch: &Value, depth: usize) -> Result<()> {
-
     if depth > MAX_DEPTH {
         return Err(Error::InvalidConfigValue("Recursion limit reached".into()));
     }
@@ -35,7 +34,11 @@ fn json_merge_1(doc: &mut Value, patch: &Value, depth: usize) -> Result<()> {
         if value.is_null() {
             map.remove(key.as_str());
         } else {
-            json_merge_1(map.entry(key.as_str()).or_insert(Value::Null), value, depth + 1)?;
+            json_merge_1(
+                map.entry(key.as_str()).or_insert(Value::Null),
+                value,
+                depth + 1,
+            )?;
         }
     }
     Ok(())
