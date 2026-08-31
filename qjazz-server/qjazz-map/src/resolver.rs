@@ -338,7 +338,7 @@ impl Validator for Channels {
             if multi && c.route == "/" {
                 return Err(ConfigError::Message(
                     "Route '/' is not allowed with multiple backends".to_string(),
-                ))
+                ));
             }
             c.validate()
         })

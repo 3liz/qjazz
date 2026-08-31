@@ -203,7 +203,8 @@ impl WmsBuilder {
 
     fn layers(mut self, param: &Params) -> Result<Self> {
         if let Some(collections) = &param.collections {
-            write!(self.opts, "&layers={collections}").map_err(Self::write_error)?;
+            write!(self.opts, "&layers={}", percent_encode(collections))
+                .map_err(Self::write_error)?;
         }
         Ok(self)
     }
@@ -224,14 +225,14 @@ impl WmsBuilder {
             // In no crs is specified then we SHALL assume that bbox is
             // expressed in CRS84
             let crs = params.bbox_crs.as_deref().unwrap_or(CRS84);
-            write!(self.opts, "&crs={crs}").map_err(Self::write_error)?;
+            write!(self.opts, "&crs={}", percent_encode(crs)).map_err(Self::write_error)?;
         }
         Ok(self)
     }
 
     fn styles(mut self, params: &Params) -> Result<Self> {
         if let Some(styles) = &params.styles {
-            write!(self.opts, "&styles={styles}").map_err(Self::write_error)?;
+            write!(self.opts, "&styles={}", percent_encode(styles)).map_err(Self::write_error)?;
         }
         Ok(self)
     }
@@ -249,7 +250,7 @@ impl WmsBuilder {
     fn bgcolor(mut self, params: &Params) -> Result<Self> {
         // No validation
         if let Some(color) = &params.bgcolor {
-            write!(self.opts, "&bgcolor={color}").map_err(Self::write_error)?;
+            write!(self.opts, "&bgcolor={}", percent_encode(color)).map_err(Self::write_error)?;
         }
         Ok(self)
     }
@@ -260,7 +261,7 @@ impl WmsBuilder {
     }
 
     fn format(mut self, params: &Params, req: &HttpRequest) -> Result<Self> {
-        // Check format from params then from  acceptance header
+        // Check format from params then fromacceptance header
         if let Some(format) = params.format.as_deref().or_else(|| {
             header::Accept::parse(req).ok().and_then(|accept| {
                 accept
@@ -275,8 +276,270 @@ impl WmsBuilder {
                     })
             })
         }) {
-            write!(self.opts, "&format={format}").map_err(Self::write_error)?;
+            write!(self.opts, "&format={}", percent_encode(format)).map_err(Self::write_error)?;
         }
         Ok(self)
+    }
+}
+
+// Protect against query parameter injection through string parameters
+const PARAM_ENCODING_SET: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+    .add(b' ')
+    .add(b'&')
+    .add(b'=')
+    .add(b'?')
+    .add(b'"')
+    .add(b'`')
+    .add(b'>')
+    .add(b'<');
+
+#[inline(always)]
+fn percent_encode<'a>(input: &'a str) -> percent_encoding::PercentEncode<'a> {
+    percent_encoding::percent_encode(input.as_bytes(), PARAM_ENCODING_SET)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::http::StatusCode;
+    use actix_web::test::TestRequest;
+
+    const BASE: &str = "service=WMS&request=GetMap&version=1.3.0";
+    const CRS84_URL: &str = "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
+
+    fn params(query: &str) -> web::Query<Params> {
+        web::Query::<Params>::from_query(query)
+            .unwrap_or_else(|err| panic!("Failed to parse {query:?}: {err}"))
+    }
+
+    // Build options from a query string with no request headers
+    fn options(query: &str) -> String {
+        options_with(query, TestRequest::default())
+    }
+
+    // Build options from a query string and a request builder
+    fn options_with(query: &str, req: TestRequest) -> String {
+        WmsBuilder::build(&params(query), &req.to_http_request())
+            .expect("Expecting valid options")
+            .options()
+    }
+
+    fn build_error(query: &str) -> error::Error {
+        WmsBuilder::build(&params(query), &TestRequest::default().to_http_request())
+            .err()
+            .expect("Expecting build error")
+    }
+
+    #[test]
+    fn test_wms_defaults() {
+        // Empty parameters: only the constant part, the default display
+        // resolution and the default transparency are written.
+        assert_eq!(options(""), format!("{BASE}&dpi=90.7&transparent=true"),);
+    }
+
+    #[test]
+    fn test_wms_options_order() {
+        // All the options at once: check the layout of the option string
+        let opts = options_with(
+            "width=400&height=300&bbox=1,2,3,4&bbox-crs=EPSG:4326\
+             &mm-per-pixel=0.14&collections=layer1&bgcolor=0x112233\
+             &styles=style1&transparent=false&format=image/png",
+            TestRequest::default(),
+        );
+        assert_eq!(
+            opts,
+            format!(
+                "{BASE}&width=400&height=300&bbox=1,2,3,4&crs=EPSG:4326\
+                 &dpi=181.4&layers=layer1&bgcolor=0x112233\
+                 &styles=style1&transparent=false&format=image/png"
+            ),
+        );
+    }
+
+    //
+    // Scaling (conformance class A.5)
+    //
+
+    #[test]
+    fn test_wms_scaling() {
+        assert!(options("width=800&height=600").contains("&width=800&height=600"));
+    }
+
+    #[test]
+    fn test_wms_scaling_partial() {
+        // Width and height are independent options
+        let opts = options("height=600");
+        assert!(opts.contains("&height=600"));
+        assert!(!opts.contains("&width="));
+    }
+
+    //
+    // Display resolution (conformance class A.6)
+    //
+
+    #[test]
+    fn test_wms_display_resolution() {
+        // mm-per-pixel is converted to dpi for the QGIS WMS backend
+        assert!(options("mm-per-pixel=0.28").contains("&dpi=90.7"));
+        assert!(options("mm-per-pixel=0.14").contains("&dpi=181.4"));
+        // The snake_case spelling is accepted as well
+        assert!(options("mm_per_pixel=0.14").contains("&dpi=181.4"));
+    }
+
+    #[test]
+    fn test_wms_display_resolution_invalid() {
+        // A null or negative resolution is rejected
+        for query in ["mm-per-pixel=0", "mm-per-pixel=-1.0"] {
+            assert_eq!(
+                build_error(query).as_response_error().status_code(),
+                StatusCode::BAD_REQUEST,
+                "Expecting bad request for {query:?}",
+            );
+        }
+    }
+
+    //
+    // Spatial subsetting (conformance class A.7)
+    //
+
+    #[test]
+    fn test_wms_subsetting_default_crs() {
+        // With no bbox-crs, the bbox is assumed to be expressed in CRS84
+        assert!(
+            options("bbox=1.0,2.0,3.0,4.0").contains(&format!("&bbox=1,2,3,4&crs={CRS84_URL}"))
+        );
+    }
+
+    #[test]
+    fn test_wms_subsetting_explicit_crs() {
+        // CURIE form is allowed for WMS compatibility
+        assert!(options("bbox=1,2,3,4&bbox-crs=EPSG:3857").contains("&bbox=1,2,3,4&crs=EPSG:3857"));
+        assert!(options("bbox=1,2,3,4&bbox_crs=EPSG:3857").contains("&bbox=1,2,3,4&crs=EPSG:3857"));
+    }
+
+    #[test]
+    fn test_wms_subsetting_3d_bbox() {
+        assert!(options("bbox=1,2,3,4,5,6").contains("&bbox=1,2,3,4,5,6&crs="));
+    }
+
+    #[test]
+    fn test_wms_subsetting_no_crs_without_bbox() {
+        // A crs is written only along with a bbox
+        assert!(!options("bbox-crs=EPSG:3857").contains("&crs="));
+    }
+
+    //
+    // Collections selection (conformance class A.4)
+    //
+
+    #[test]
+    fn test_wms_layers() {
+        assert!(options("collections=layer1").contains("&layers=layer1"));
+    }
+
+    #[test]
+    fn test_wms_layers_encoded() {
+        // The collection separator and any special character are escaped
+        assert!(options("collections=layer 1,layer/2").contains("&layers=layer%201,layer/2"));
+    }
+
+    //
+    // Styles
+    //
+
+    #[test]
+    fn test_wms_styles() {
+        assert!(options("styles=style1").contains("&styles=style1"));
+        assert!(options("styles=my style,other").contains("&styles=my%20style,other"));
+    }
+
+    //
+    // Background (conformance class A.3)
+    //
+
+    #[test]
+    fn test_wms_bgcolor() {
+        assert!(options("bgcolor=0x112233").contains("&bgcolor=0x112233"));
+        // Values are not validated but they are escaped
+        assert!(options("bgcolor=#112233").contains("&bgcolor=#112233"));
+    }
+
+    #[test]
+    fn test_wms_transparent() {
+        assert!(options("transparent=false").contains("&transparent=false"));
+        assert!(options("transparent=true").contains("&transparent=true"));
+    }
+
+    //
+    // Format negotiation
+    //
+
+    #[test]
+    fn test_wms_format_from_params() {
+        assert!(options("format=image/jpeg").contains("&format=image/jpeg"));
+    }
+
+    #[test]
+    fn test_wms_format_from_accept_header() {
+        for (accept, expected) in [
+            ("image/jpeg", "&format=image/jpeg"),
+            ("image/webp", "&format=image/webp"),
+            ("application/dxf", "&format=application/dxf"),
+        ] {
+            let opts = options_with(
+                "",
+                TestRequest::default().insert_header((header::ACCEPT, accept)),
+            );
+            assert!(
+                opts.contains(expected),
+                "Expecting {expected:?} for accept header {accept:?}, got {opts:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn test_wms_format_accept_header_precedence() {
+        // The first supported media type of the header is selected
+        let opts = options_with(
+            "",
+            TestRequest::default()
+                .insert_header((header::ACCEPT, "text/html, image/webp, image/jpeg")),
+        );
+        assert!(opts.contains("&format=image/webp"));
+    }
+
+    #[test]
+    fn test_wms_format_params_override_accept_header() {
+        let opts = options_with(
+            "format=application/pdf",
+            TestRequest::default().insert_header((header::ACCEPT, "image/jpeg")),
+        );
+        assert!(opts.contains("&format=application/pdf"));
+        assert!(!opts.contains("image/jpeg"));
+    }
+
+    #[test]
+    fn test_wms_format_unsupported_accept_header() {
+        // Unhandled media types are left to the backend default
+        for accept in ["image/png", "*/*", "text/html"] {
+            let opts = options_with(
+                "",
+                TestRequest::default().insert_header((header::ACCEPT, accept)),
+            );
+            assert!(
+                !opts.contains("&format="),
+                "Expecting no format for accept header {accept:?}, got {opts:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn test_wms_format_invalid_accept_header() {
+        // An unparsable header must not fail the request
+        let opts = options_with(
+            "",
+            TestRequest::default().insert_header((header::ACCEPT, "not a media type")),
+        );
+        assert!(!opts.contains("&format="));
     }
 }
