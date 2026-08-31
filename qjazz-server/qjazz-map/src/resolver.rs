@@ -33,17 +33,29 @@ pub struct ChannelService {
 impl Validator for ChannelService {
     fn validate(&self) -> Result<(), ConfigError> {
         if self.enable_tls {
+            // Validate existence of CA file
             self.cafile
                 .as_deref()
                 .map_or(Ok(()), Self::validate_filepath)?;
-            self.client_key_file
-                .as_deref()
-                .map_or(Ok(()), Self::validate_filepath)?;
-            self.client_cert_file
-                .as_deref()
-                .map_or(Ok(()), Self::validate_filepath)?;
+
+            // Validate Client
+            match (&self.client_key_file, &self.client_cert_file) {
+                (Some(key), Some(cert)) => {
+                    Self::validate_filepath(key)?;
+                    Self::validate_filepath(cert)?;
+                    Ok(())
+                }
+                (None, Some(_)) => Err(ConfigError::Message(
+                    "Client TLS cert is given without key file".to_string(),
+                )),
+                (Some(_), None) => Err(ConfigError::Message(
+                    "Client TLS key is given without cert file".to_string(),
+                )),
+                (None, None) => Ok(()),
+            }
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 }
 
@@ -266,19 +278,12 @@ impl ChannelConfig {
             tls = tls.ca_certificate(Certificate::from_pem(fs::read_to_string(cafile)?));
         }
 
-        if self.service.client_cert_file.is_some() {
-            let cert = self
-                .service
-                .client_cert_file
-                .as_deref()
-                .map(fs::read_to_string)
-                .unwrap()?;
-            let key = self
-                .service
-                .client_key_file
-                .as_deref()
-                .map(fs::read_to_string)
-                .unwrap()?;
+        if let (Some(cert_file), Some(key_file)) = (
+            &self.service.client_cert_file,
+            &self.service.client_key_file,
+        ) {
+            let cert = fs::read_to_string(cert_file)?;
+            let key = fs::read_to_string(key_file)?;
 
             tls = tls.identity(Identity::from_pem(cert, key));
         }
