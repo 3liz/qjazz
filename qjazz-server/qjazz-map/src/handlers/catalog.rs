@@ -345,6 +345,9 @@ impl JsonPage {
     fn add_ogc_endpoints(&mut self, public_url: &str, endpoints: OgcEndpoints) -> Result<()> {
         let styled = self.has_styles();
         let mut links = self.links()?;
+        // NOTE: Only MAP is implemented
+        //
+        // Implementing FEATURE need to implement link to a WFS3/FEATURE api
         if endpoints.contains(OgcEndpoints::MAP) {
             links.reserve(2).add(
                 Link::new(format!("{public_url}/map").into(), rel::OGC_REL_MAP)
@@ -396,10 +399,17 @@ impl JsonPage {
     }
 
     fn links(&mut self) -> Result<Links<'_>> {
-        if let Some(serde_json::Value::Array(v)) = self.0.get_mut("links") {
+        static LINKS: &str = "links";
+        if !self.0.contains_key(LINKS) {
+            self.0
+                .insert(LINKS.into(), serde_json::Value::Array(Vec::new()));
+        }
+
+        // A `links` entry MUST be a array
+        if let Some(serde_json::Value::Array(v)) = self.0.get_mut(LINKS) {
             Ok(Links(v))
         } else {
-            log::error!("No 'links' array found in json object");
+            log::warn!("No 'links' array found in json object");
             Err(error::ErrorInternalServerError("Internal error"))
         }
     }

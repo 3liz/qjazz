@@ -105,7 +105,9 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
     let scope = channel
         .api_endpoints()
         .iter()
-        .fold(scope, |s, api| s.configure(api_scope(api.clone())))
+        .fold(scope, |s, api| {
+            s.configure(api_scope(web::Data::from(api.clone())))
+        })
         .app_data(channel);
 
     |cfg| {
@@ -126,7 +128,9 @@ fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Ser
     let scope = channel
         .api_endpoints()
         .iter()
-        .fold(scope, |s, api| s.configure(api_scope(api.clone())))
+        .fold(scope, |s, api| {
+            s.configure(api_scope(web::Data::from(api.clone())))
+        })
         .app_data(channel);
 
     |cfg| {

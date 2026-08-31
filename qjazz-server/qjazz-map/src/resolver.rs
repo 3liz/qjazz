@@ -215,6 +215,9 @@ pub struct ChannelConfig {
     /// - Suffix match if starting with '*'
     /// - Prefix match if ending with '*'
     /// - Regex match if prefixed with 're:'
+    ///
+    /// Note that a lone '*' is a catch-all by construct: *every* headers will be forwarded
+    /// to the backends.
     pub forward_headers: HeaderFilters,
     /// Allow sending direct project path to backend service.
     /// This requires that the backend service allow for direct resolution.

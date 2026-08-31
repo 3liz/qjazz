@@ -1,8 +1,6 @@
 //!
 //! Backend gRPC channel
 //!
-
-use actix_web::web;
 use tonic::transport;
 use tonic::{Code, Status};
 use tonic_health::pb::{
@@ -41,7 +39,7 @@ pub struct Channel {
     config: ChannelConfig,
     // Make endpoints directly usable as
     // App shared data
-    endpoints: Vec<web::Data<ApiEndPoint>>,
+    endpoints: Vec<Arc<ApiEndPoint>>,
     serving: Arc<AtomicBool>,
     //channel: LoadBalancedChannel,
     channel: transport::Channel,
@@ -61,7 +59,9 @@ impl Builder {
 
         Channel::connect(&self.config).await.map(|channel| Channel {
             name: self.name,
-            endpoints: self.config.api.drain(..).map(web::Data::new).collect(),
+            // Empty the config and store api as `Arc` pointer
+            // Use [Self::api_endpoints()] for getting the api list
+            endpoints: self.config.api.drain(..).map(Arc::new).collect(),
             config: self.config,
             serving: Arc::new(AtomicBool::new(false)),
             channel,
@@ -138,7 +138,7 @@ impl Channel {
         QgisAdminClient::new(self.channel.clone())
     }
 
-    pub fn api_endpoints(&self) -> &[web::Data<ApiEndPoint>] {
+    pub fn api_endpoints(&self) -> &[Arc<ApiEndPoint>] {
         self.endpoints.as_slice()
     }
 
