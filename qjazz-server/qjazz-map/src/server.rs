@@ -144,13 +144,13 @@ impl Backends {
             let channel = Channel::builder(name, cfg).connect().await?;
             Ok(Self::Single(web::Data::new(channel)))
         } else {
-            // Sort channels by inverse route order (longest first)
             let mut channels = try_join_all(
                 cfgs.into_iter()
-                    .rev()
                     .map(|(name, cfg)| Channel::builder(name, cfg).connect()),
             )
             .await?;
+            // Sort channels by inverse route order (longest first)
+            channels.sort_by_key(|a| std::cmp::Reverse(a.route().len()));
             Ok(Self::Multi(
                 channels.drain(..).map(web::Data::new).collect(),
             ))

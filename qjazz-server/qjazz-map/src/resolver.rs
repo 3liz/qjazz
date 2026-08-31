@@ -4,7 +4,7 @@
 use config::ConfigError;
 use regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
-use std::collections::{BTreeMap, btree_map};
+use std::collections::{HashMap, hash_map};
 use std::path::PathBuf;
 use std::time::Duration;
 use std::{fmt, fs, io};
@@ -324,12 +324,9 @@ impl Validator for ApiEndPoint {
     }
 }
 
-// Channel is B-tree map, this means that paths are
-// sorted to shortest to longest for paths with the
-// same prefix.
 #[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(default)]
-pub struct Channels(BTreeMap<String, ChannelConfig>);
+pub struct Channels(HashMap<String, ChannelConfig>);
 
 impl Validator for Channels {
     fn validate(&self) -> Result<(), ConfigError> {
@@ -348,7 +345,7 @@ impl Validator for Channels {
 impl Channels {
     // Check if we have a single backend  which route as "/"
     pub fn is_single_root_channel(&self) -> bool {
-        self.0.len() == 1 && self.0.first_key_value().unwrap().1.route == "/"
+        self.0.len() == 1 && self.0.iter().all(|c| c.1.route == "/")
     }
     // Set timeout if not already set on per config basis
     pub fn timeout(&mut self, timeout: u64) {
@@ -362,7 +359,7 @@ impl Channels {
 
 impl IntoIterator for Channels {
     type Item = (String, ChannelConfig);
-    type IntoIter = btree_map::IntoIter<String, ChannelConfig>;
+    type IntoIter = hash_map::IntoIter<String, ChannelConfig>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
