@@ -95,16 +95,22 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
 
 // Single channel config
 fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
+
+    let scope = web::scope("")
+        .wrap(middleware::from_fn(verify_channel_mw))
+        .wrap(middleware::NormalizePath::trim())
+        .service(web::scope("/").configure(ows_resource))
+        .configure(admin)
+        .configure(catalog);
+
+    let scope = channel
+        .api_endpoints()
+        .iter()
+        .fold(scope, |s, api| s.configure(api_scope(api.clone())))
+        .app_data(channel);
+
     |cfg| {
-        let cfg = cfg
-            .service(web::scope("/").configure(ows_resource))
-            .configure(admin)
-            .configure(catalog);
-        channel
-            .api_endpoints()
-            .iter()
-            .fold(cfg, |cfg, api| cfg.configure(api_scope(api.clone())))
-            .app_data(channel);
+        cfg.service(scope);
     }
 }
 

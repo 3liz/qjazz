@@ -19,7 +19,7 @@ pub fn admin(cfg: &mut web::ServiceConfig) {
                     .map(|channel| channel.admin())
                     .unwrap_or(false)
             }))
-            .default_service(web::get().to(api::landing_page))
+            .service(web::resource("").to(api::landing_page))
             .service(web::resource("/catalog").get(api::catalog))
             .service(web::resource("/catalog{Path:/.*}").get(api::catalog_with))
             .service(web::resource("/plugins").get(api::plugins))
