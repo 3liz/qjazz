@@ -298,8 +298,13 @@ pub fn from_rpc_status(status: &tonic::Status, request_id: Option<String>) -> Ht
         }
     };
 
-    // Send informative message
-    HttpResponseBuilder::new(code)
+    let mut builder = HttpResponseBuilder::new(code);
+
+    if let Some(id) = request_id {
+        builder.insert_header(("x-request-id", id));
+    }
+
+    builder
         .content_type("text/plain")
         .body(if code.is_server_error() {
             // Do not leak internal error messages

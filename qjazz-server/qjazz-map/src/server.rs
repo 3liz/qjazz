@@ -95,7 +95,6 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
 
 // Single channel config
 fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::ServiceConfig) {
-
     let scope = web::scope("")
         .wrap(middleware::from_fn(verify_channel_mw))
         .wrap(middleware::NormalizePath::trim())

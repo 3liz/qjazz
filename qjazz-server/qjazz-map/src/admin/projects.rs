@@ -77,15 +77,18 @@ pub async fn delete_project_with(
 
 #[derive(Debug, serde::Deserialize)]
 pub struct CheckoutParams {
-    uri: Option<String>,
+    uri: String,
 }
 
+/// Pull project
+///
+/// A bodyless POST update all projects
 pub async fn pull_projects(
     channel: web::Data<Channel>,
-    params: web::Json<CheckoutParams>,
+    params: Option<web::Json<CheckoutParams>>,
 ) -> Result<impl Responder> {
-    match params.into_inner().uri {
-        Some(uri) => checkout_project(channel, uri, true).await,
+    match params {
+        Some(p) => checkout_project(channel, p.into_inner().uri, true).await,
         None => update_projects(channel).await,
     }
 }
