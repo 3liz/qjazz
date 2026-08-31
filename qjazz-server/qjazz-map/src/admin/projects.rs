@@ -106,14 +106,18 @@ async fn checkout_project(
         pull: Some(pull),
     });
 
+    let undisclosed = channel.undisclosed();
+
     request.set_timeout(channel.timeout());
     match client.checkout_project(request).await {
         Ok(resp) => Ok(HttpResponse::Ok()
             .content_type(mime::APPLICATION_JSON)
             .json({
-                // NOTE: Do not leak internal uri
                 let mut item = resp.into_inner();
-                item.uri = uri;
+                if undisclosed {
+                    // Do not leak internal uri
+                    item.uri = uri;
+                }
                 item
             })),
         Err(status) => {
@@ -180,10 +184,10 @@ async fn drop_project(channel: web::Data<Channel>, uri: String) -> Result<HttpRe
         Ok(resp) => Ok(HttpResponse::Ok()
             .content_type(mime::APPLICATION_JSON)
             .json({
-                // NOTE: Do not leak internal uri
                 let mut item = resp.into_inner();
                 if undisclosed {
-                    item.uri = uri;
+                    // Do not leak internal uri
+                    item.uri = undisclosed_uri(&item.uri);
                 }
                 item
             })),
@@ -225,10 +229,10 @@ async fn project_infos(channel: web::Data<Channel>, uri: String) -> Result<HttpR
         Ok(resp) => Ok(HttpResponse::Ok()
             .content_type(mime::APPLICATION_JSON)
             .json({
-                // NOTE: Do not leak internal uri
                 let mut item = resp.into_inner();
                 if undisclosed {
-                    item.uri = uri;
+                    // Do not leak internal uri
+                    item.uri = undisclosed_uri(&item.uri);
                     item.filename = "<undisclosed>".to_string();
                     for layer in item.layers.iter_mut() {
                         layer.source = "<undisclosed>".to_string();

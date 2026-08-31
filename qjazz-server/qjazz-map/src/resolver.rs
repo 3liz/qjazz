@@ -172,11 +172,11 @@ pub struct AdminConfig {
 }
 
 impl AdminConfig {
-    #[inline]
+    #[inline(always)]
     pub fn enabled(&self) -> bool {
         self.enabled
     }
-    #[inline]
+    #[inline(always)]
     pub fn undisclosed(&self) -> bool {
         !self.disclosed
     }

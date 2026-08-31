@@ -41,6 +41,7 @@ actix-cors = "0.7"
 mime = "0.3"
 percent-encoding = "2"
 bitflags = "2"
+uuid = { version = "1",  features = ["v3"] }
 
 [features]
 monitor = ["qjazz-mon"]

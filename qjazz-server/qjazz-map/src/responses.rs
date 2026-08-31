@@ -7,12 +7,12 @@ use futures::stream::{self, Stream, StreamExt};
 
 use crate::channel::Channel;
 
-use std::hash::{DefaultHasher, Hash, Hasher};
-
 pub fn undisclosed_uri(s: &String) -> String {
-    let mut hasher = DefaultHasher::new();
-    s.hash(&mut hasher);
-    format!("undisclosed{:X}", hasher.finish())
+    //  Compute UUID based on MD5
+    format!(
+        "undisclosed:{}",
+        uuid::Uuid::new_v3(&uuid::Uuid::NAMESPACE_OID, s.as_bytes())
+    )
 }
 
 pub enum HttpStatusCode {
@@ -21,15 +21,6 @@ pub enum HttpStatusCode {
 }
 
 impl HttpStatusCode {
-    /*
-    pub fn code(&self) -> StatusCode {
-        match self {
-            Self::Rpc(code) => *code,
-            Self::User(code) => *code,
-        }
-    }
-    */
-
     fn from_rpc_status(status: &tonic::Status) -> Self {
         use HttpStatusCode::*;
 
