@@ -4,7 +4,7 @@
 use crate::channel::Channel;
 use crate::handlers::{api, catalog, conformance, landing_page, legend, map, ows};
 use crate::resolver::ApiEndPoint;
-use actix_web::{guard, web};
+use actix_web::{guard, http::header, web};
 
 #[cfg(feature = "monitor")]
 use actix_web::middleware;
@@ -82,21 +82,34 @@ pub fn catalog(cfg: &mut web::ServiceConfig) {
         );
 }
 
+// GET or FORM Resource build helper
+fn get_form_resource<F, Args>(path: &str, handler: F) -> actix_web::Resource
+where
+    F: actix_web::Handler<Args> + Clone,
+    F::Output: actix_web::Responder + 'static,
+    Args: actix_web::FromRequest + 'static,
+{
+    // Take care to check only Mime type essence
+    web::resource(path).get(handler.clone()).route(
+        web::post()
+            .guard(guard::fn_guard(|ctx| {
+                ctx.head()
+                    .headers()
+                    .get(header::CONTENT_TYPE)
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|v| v.parse::<mime::Mime>().ok())
+                    .is_some_and(|m| m.essence_str() == "application/x-www-form-urlencoded")
+            }))
+            .to(handler),
+    )
+}
+
 //
 // OGG api 'Map' services
 //
 //
 pub fn default_map(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::resource("/map").get(map::default_handler).route(
-            web::post()
-                .guard(guard::Header(
-                    "content-type",
-                    "application/x-www-form-urlencoded",
-                ))
-                .to(map::default_handler),
-        ),
-    );
+    cfg.service(get_form_resource("/map", map::default_handler));
 }
 
 pub fn maps(cfg: &mut web::ServiceConfig) {
@@ -112,31 +125,14 @@ pub fn maps(cfg: &mut web::ServiceConfig) {
 // /map for dataset child item (layer)
 //
 pub fn collection_map(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::resource("/map").get(map::child_handler).route(
-            web::post()
-                .guard(guard::Header(
-                    "content-type",
-                    "application/x-www-form-urlencoded",
-                ))
-                .to(map::child_handler),
-        ),
-    )
-    .route("/legend", web::get().to(legend::default_handler))
-    .route(
-        "/styles/{style}/legend",
-        web::get().to(legend::styled_handler),
-    )
-    .service(
-        web::resource("/styles/{style}/map")
-            .get(map::styled_child_handler)
-            .route(
-                web::post()
-                    .guard(guard::Header(
-                        "content-type",
-                        "application/x-www-form-urlencoded",
-                    ))
-                    .to(map::styled_child_handler),
-            ),
-    );
+    cfg.service(get_form_resource("/map", map::child_handler))
+        .route("/legend", web::get().to(legend::default_handler))
+        .route(
+            "/styles/{style}/legend",
+            web::get().to(legend::styled_handler),
+        )
+        .service(get_form_resource(
+            "/styles/{style}/map",
+            map::styled_child_handler,
+        ));
 }
