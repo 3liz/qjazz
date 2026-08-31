@@ -6,8 +6,9 @@ use crate::channel::{
     qjazz_service::{Empty, PluginInfo},
 };
 
-use crate::responses::{HttpStatusCode, json_collection_stream};
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Result, web};
+use crate::handlers::response;
+use crate::responses::json_collection_stream;
+use actix_web::{HttpResponse, Responder, Result, web};
 use futures::stream::StreamExt;
 
 pub async fn plugins(channel: web::Data<Channel>) -> Result<impl Responder> {
@@ -38,11 +39,7 @@ pub async fn plugins(channel: web::Data<Channel>) -> Result<impl Responder> {
             ))),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(
-                HttpResponseBuilder::new(HttpStatusCode::from(&status).code())
-                    .content_type(mime::TEXT_PLAIN)
-                    .body(status.message().to_string()),
-            )
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }

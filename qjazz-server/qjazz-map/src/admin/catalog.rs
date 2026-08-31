@@ -3,8 +3,9 @@
 //
 
 use crate::channel::{Channel, qjazz_service::CatalogRequest};
-use crate::responses::{HttpStatusCode, json_collection_stream, undisclosed_uri};
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Result, web};
+use crate::handlers::response;
+use crate::responses::{json_collection_stream, undisclosed_uri};
+use actix_web::{HttpResponse, Responder, Result, web};
 use futures::stream::StreamExt;
 
 #[inline]
@@ -45,7 +46,7 @@ async fn catalog_request(
             ))),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }

@@ -6,8 +6,9 @@ use crate::channel::{
     Channel, QjazzAdminClient,
     qjazz_service::{CheckoutRequest, DropRequest, Empty, ProjectRequest},
 };
-use crate::responses::{HttpStatusCode, json_collection_stream, undisclosed_uri};
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Result, error, web};
+use crate::handlers::response;
+use crate::responses::{json_collection_stream, undisclosed_uri};
+use actix_web::{HttpResponse, Responder, Result, error, web};
 use futures::stream::StreamExt;
 
 #[derive(serde::Deserialize)]
@@ -117,7 +118,7 @@ async fn checkout_project(
             })),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }
@@ -131,7 +132,7 @@ async fn update_projects(channel: web::Data<Channel>) -> Result<HttpResponse> {
         Ok(_) => list_projects(client, channel).await,
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }
@@ -159,7 +160,7 @@ async fn list_projects(
             ))),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }
@@ -188,7 +189,7 @@ async fn drop_project(channel: web::Data<Channel>, uri: String) -> Result<HttpRe
             })),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }
@@ -204,7 +205,7 @@ async fn clear_cache(channel: web::Data<Channel>) -> Result<HttpResponse> {
             .body("{}")),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }
@@ -237,7 +238,7 @@ async fn project_infos(channel: web::Data<Channel>, uri: String) -> Result<HttpR
             })),
         Err(status) => {
             log::error!("Backend error:\t{}\t{status}", channel.name());
-            Ok(HttpResponseBuilder::new(HttpStatusCode::from(&status).code()).finish())
+            Ok(response::from_rpc_status(&status, None))
         }
     }
 }

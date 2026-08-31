@@ -21,12 +21,14 @@ pub enum HttpStatusCode {
 }
 
 impl HttpStatusCode {
+    /*
     pub fn code(&self) -> StatusCode {
         match self {
             Self::Rpc(code) => *code,
             Self::User(code) => *code,
         }
     }
+    */
 
     fn from_rpc_status(status: &tonic::Status) -> Self {
         use HttpStatusCode::*;

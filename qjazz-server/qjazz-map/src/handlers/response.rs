@@ -161,34 +161,6 @@ impl RpcHttpResponseBuilder {
             status_code,
         }
     }
-
-    // Create http response builder
-    // from gRPC status
-    //
-    // See https://grpc.io/docs/guides/status-codes/
-    // for details about gRPC error codes.
-    pub fn from_rpc_status(status: &tonic::Status, request_id: Option<String>) -> HttpResponse {
-        let code = match HttpStatusCode::from(status) {
-            HttpStatusCode::Rpc(code) => code,
-            HttpStatusCode::User(code) => {
-                return Self::builder_from_metadata(code, status.metadata(), request_id)
-                    .content_type("text/plain")
-                    .body(status.message().to_string());
-            }
-        };
-
-        // Send informative message
-        HttpResponseBuilder::new(code)
-            .content_type("text/plain")
-            .body(if code.is_server_error() {
-                // Do not leak internal error messages
-                code.canonical_reason()
-                    .unwrap_or("Server error")
-                    .to_string()
-            } else {
-                status.message().to_string()
-            })
-    }
 }
 
 // Handle response from RPC stream
@@ -248,7 +220,7 @@ impl StreamedResponse {
         match response {
             Err(status) => {
                 log::error!("Backend error:\t{name}\t{status}");
-                StreamedResponse::Fail(RpcHttpResponseBuilder::from_rpc_status(&status, request_id))
+                StreamedResponse::Fail(from_rpc_status(&status, request_id))
             }
             Ok(resp) => StreamedResponse::Succ(
                 RpcHttpResponseBuilder::from_metadata(resp.metadata(), request_id),
@@ -305,6 +277,38 @@ fn prepare_request<T>(req: HttpRequest, message: T, channel: &Channel) -> tonic:
     });
 
     request
+}
+
+/// Create http response
+/// from gRPC status
+///
+/// See https://grpc.io/docs/guides/status-codes/
+/// for details about gRPC error codes.
+pub fn from_rpc_status(status: &tonic::Status, request_id: Option<String>) -> HttpResponse {
+    let code = match HttpStatusCode::from(status) {
+        HttpStatusCode::Rpc(code) => code,
+        HttpStatusCode::User(code) => {
+            return RpcHttpResponseBuilder::builder_from_metadata(
+                code,
+                status.metadata(),
+                request_id,
+            )
+            .content_type("text/plain")
+            .body(status.message().to_string());
+        }
+    };
+
+    // Send informative message
+    HttpResponseBuilder::new(code)
+        .content_type("text/plain")
+        .body(if code.is_server_error() {
+            // Do not leak internal error messages
+            code.canonical_reason()
+                .unwrap_or("Server error")
+                .to_string()
+        } else {
+            status.message().to_string()
+        })
 }
 
 //

@@ -10,7 +10,7 @@ use crate::channel::{
     Channel,
     qjazz_service::{CollectionsPage, CollectionsRequest, collections_page::CollectionsItem},
 };
-use crate::handlers::response::RpcHttpResponseBuilder;
+use crate::handlers::response;
 use crate::models::apis::OgcEndpoints;
 use crate::models::{Link, rel};
 use crate::requests::request;
@@ -292,7 +292,7 @@ async fn execute_collection_request(
         Ok(resp) => Either::Right(resp.into_inner()),
         Err(status) => {
             log::error!("Backend error:\t{}\t{}", channel.name(), status);
-            Either::Left(RpcHttpResponseBuilder::from_rpc_status(&status, None))
+            Either::Left(response::from_rpc_status(&status, None))
         }
     }
 }
