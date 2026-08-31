@@ -44,9 +44,9 @@ struct Catalogs<'a> {
     links: [Link<'a>; 1],
 }
 
-//
-// Catalogs handler
-//
+///
+/// Catalogs handler
+///
 pub async fn catalogs(req: HttpRequest, channels: web::Data<Channels>) -> impl Responder {
     let public_url = request::public_url(&req, "");
 

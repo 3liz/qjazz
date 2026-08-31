@@ -98,32 +98,32 @@ impl Channel {
         self.serving.load(Ordering::Relaxed)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn title(&self) -> &str {
         &self.config.title
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn description(&self) -> &str {
         &self.config.description
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn route(&self) -> &str {
         &self.config.route
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn allow_direct_resolution(&self) -> bool {
         self.config.allow_direct_resolution
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn disable_root_catalog(&self) -> bool {
         self.config.disable_root_catalog
     }
@@ -149,19 +149,19 @@ impl Channel {
 
     /// Request timeout
     /// See https://docs.rs/tonic/latest/tonic/struct.Request.html#method.set_timeout
-    #[inline]
+    #[inline(always)]
     pub fn timeout(&self) -> Duration {
         self.config.timeout()
     }
 
     /// Return admin api status
-    #[inline]
+    #[inline(always)]
     pub fn admin(&self) -> bool {
         self.config.admin.enabled()
     }
 
     /// Return disclosed/undisclosed admin api status
-    #[inline]
+    #[inline(always)]
     pub fn undisclosed(&self) -> bool {
         self.config.admin.undisclosed()
     }

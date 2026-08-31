@@ -119,7 +119,7 @@ async fn checkout_project(
                 let mut item = resp.into_inner();
                 if undisclosed {
                     // Do not leak internal uri
-                    item.uri = uri;
+                    item.uri = undisclosed_uri(&item.uri);
                 }
                 item
             })),

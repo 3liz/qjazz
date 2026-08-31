@@ -7,7 +7,7 @@ use futures::stream::{self, Stream, StreamExt};
 
 use crate::channel::Channel;
 
-pub fn undisclosed_uri(s: &String) -> String {
+pub fn undisclosed_uri(s: &str) -> String {
     //  Compute UUID based on MD5
     format!(
         "undisclosed:{}",
@@ -84,20 +84,27 @@ where
     T: serde::Serialize,
     S: Stream<Item = Result<T, tonic::Status>>,
 {
+    let mut bufsize = 1024;
     let mut comma = false;
     let mut buf: Vec<u8> = vec![];
 
     stream::once(async { Ok(web::Bytes::from("{ \"items\": [")) })
         .chain(stream.map(move |resp| match resp {
             Ok(item) => {
-                buf.clear();
+                buf.clear(); // Ensure length is 0
+                buf.reserve(bufsize);
                 if comma {
                     buf.push(b',')
                 } else {
                     comma = true
                 };
                 match serde_json::to_writer(&mut buf, &item) {
-                    Ok(()) => Ok(web::Bytes::from(buf.clone())),
+                    Ok(()) => {
+                        // Get the max len so we may preallocate the buffer
+                        // for the next items
+                        bufsize = std::cmp::max(bufsize, buf.len());
+                        Ok(web::Bytes::from(std::mem::take(&mut buf)))
+                    }
                     Err(err) => {
                         log::error!("{err}");
                         Err(error::ErrorInternalServerError("Internal server error"))

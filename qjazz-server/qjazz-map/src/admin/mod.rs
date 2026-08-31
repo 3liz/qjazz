@@ -58,28 +58,19 @@ mod api {
 
     // Admin entry points
     pub async fn landing_page(req: HttpRequest) -> impl Responder {
-        let public_url = request::public_url(&req, "");
+        let public_url = request::location(&req);
 
         HttpResponse::Ok().json(LandingPage {
             links: [
-                Link::application_json(format!("{public_url}{}", req.path()).into(), rel::SELF),
-                Link::application_json(
-                    format!("{public_url}{}/plugins", req.path()).into(),
-                    rel::CHILDREN,
-                )
-                .title("Installed Plugins"),
-                Link::application_json(
-                    format!("{public_url}{}/catalog", req.path()).into(),
-                    rel::CHILDREN,
-                )
-                .title("Project's catalog")
-                .description("List available projects"),
-                Link::application_json(
-                    format!("{public_url}{}/projects", req.path()).into(),
-                    rel::CHILDREN,
-                )
-                .title("Project's cache")
-                .description("List pinned projects in cache"),
+                Link::application_json(format!("{public_url}").into(), rel::SELF),
+                Link::application_json(format!("{public_url}/plugins").into(), rel::CHILDREN)
+                    .title("Installed Plugins"),
+                Link::application_json(format!("{public_url}/catalog").into(), rel::CHILDREN)
+                    .title("Project's catalog")
+                    .description("List available projects"),
+                Link::application_json(format!("{public_url}/projects").into(), rel::CHILDREN)
+                    .title("Project's cache")
+                    .description("List pinned projects in cache"),
             ],
         })
     }

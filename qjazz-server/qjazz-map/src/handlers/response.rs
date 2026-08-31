@@ -37,7 +37,8 @@ pub mod metadata {
                     if let Ok(s) = v.to_str()
                         && let Ok(vv) = MetadataValue::from_str(s)
                     {
-                        md.insert(k, vv);
+                        // Preserve repeated headers
+                        md.append(k, vv);
                     } else {
                         log::error!("Invalid medatata value {v:?}");
                     }

@@ -77,10 +77,7 @@ pub async fn serve(settings: Settings) -> anyhow::Result<()> {
     #[cfg(feature = "monitor")]
     if let Some(tok) = token {
         match tok.run_until_cancelled(serv).await {
-            None => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Monitor failure",
-            )),
+            None => Err(std::io::Error::other("Monitor failure")),
             Some(result) => result,
         }?;
     } else {

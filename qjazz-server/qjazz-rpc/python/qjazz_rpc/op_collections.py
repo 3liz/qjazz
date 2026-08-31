@@ -17,7 +17,7 @@ from . import messages as _m
 from .config import QgisConfig
 from .op_requests import get_project
 
-CatatalogA = TypeAdapter(CatalogBase)
+CatalogA = TypeAdapter(CatalogBase)
 
 #
 # Return project's catalog
@@ -60,7 +60,7 @@ def handle_catalog(
             for item in islice(catalog.iter(msg.location), msg.start, msg.end):
                 yield _m.CollectionsItem(
                     name=item.public_path,
-                    json=CatatalogA.dump_json(item.coll),
+                    json=CatalogA.dump_json(item.coll),
                     endpoints=OgcEndpoints.MAP.value,
                 )
 

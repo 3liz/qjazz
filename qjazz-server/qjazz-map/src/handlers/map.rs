@@ -6,7 +6,7 @@
 use actix_web::http::header::{self, Header};
 use actix_web::{HttpRequest, Responder, Result, error, web};
 use serde::Deserialize;
-use std::fmt::{self, Write};
+use std::fmt::Write;
 
 use crate::channel::Channel;
 use crate::channel::qjazz_service::OwsRequest;
@@ -178,63 +178,57 @@ impl WmsBuilder {
     // Build wms options out of
     // parameters
 
-    fn write_error(err: fmt::Error) -> error::Error {
-        log::error!("Format error: {err}");
-        error::ErrorInternalServerError("Internal error")
-    }
-
     fn build(params: &Params, req: &HttpRequest) -> Result<Self> {
-        Self {
+        Ok(Self {
             opts: "service=WMS&request=GetMap&version=1.3.0".to_string(),
         }
-        .scaling(params)?
-        .subsetting(params)?
+        .scaling(params)
+        .subsetting(params)
         .display(params)?
-        .layers(params)?
-        .bgcolor(params)?
-        .styles(params)?
-        .transparent(params)?
-        .format(params, req)
+        .layers(params)
+        .bgcolor(params)
+        .styles(params)
+        .transparent(params)
+        .format(params, req))
     }
 
     fn options(self) -> String {
         self.opts
     }
 
-    fn layers(mut self, param: &Params) -> Result<Self> {
+    fn layers(mut self, param: &Params) -> Self {
         if let Some(collections) = &param.collections {
-            write!(self.opts, "&layers={}", percent_encode(collections))
-                .map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&layers={}", percent_encode(collections));
         }
-        Ok(self)
+        self
     }
 
-    fn scaling(mut self, params: &Params) -> Result<Self> {
+    fn scaling(mut self, params: &Params) -> Self {
         if let Some(width) = &params.width {
-            write!(self.opts, "&width={width}").map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&width={width}");
         }
         if let Some(height) = &params.height {
-            write!(self.opts, "&height={height}").map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&height={height}");
         }
-        Ok(self)
+        self
     }
 
-    fn subsetting(mut self, params: &Params) -> Result<Self> {
+    fn subsetting(mut self, params: &Params) -> Self {
         if let Some(bbox) = &params.bbox {
-            write!(self.opts, "&bbox={bbox}").map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&bbox={bbox}");
             // In no crs is specified then we SHALL assume that bbox is
             // expressed in CRS84
             let crs = params.bbox_crs.as_deref().unwrap_or(CRS84);
-            write!(self.opts, "&crs={}", percent_encode(crs)).map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&crs={}", percent_encode(crs));
         }
-        Ok(self)
+        self
     }
 
-    fn styles(mut self, params: &Params) -> Result<Self> {
+    fn styles(mut self, params: &Params) -> Self {
         if let Some(styles) = &params.styles {
-            write!(self.opts, "&styles={}", percent_encode(styles)).map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&styles={}", percent_encode(styles));
         }
-        Ok(self)
+        self
     }
 
     fn display(mut self, params: &Params) -> Result<Self> {
@@ -243,24 +237,24 @@ impl WmsBuilder {
             return Err(error::ErrorBadRequest("Invalid mm-per-pixel parameter"));
         }
         // Transform this as dpi for QGIS WMS backend
-        write!(self.opts, "&dpi={:.1}", 25.4f64 / mm_per_pixel).map_err(Self::write_error)?;
+        let _ = write!(self.opts, "&dpi={:.1}", 25.4f64 / mm_per_pixel);
         Ok(self)
     }
 
-    fn bgcolor(mut self, params: &Params) -> Result<Self> {
+    fn bgcolor(mut self, params: &Params) -> Self {
         // No validation
         if let Some(color) = &params.bgcolor {
-            write!(self.opts, "&bgcolor={}", percent_encode(color)).map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&bgcolor={}", percent_encode(color));
         }
-        Ok(self)
+        self
     }
 
-    fn transparent(mut self, params: &Params) -> Result<Self> {
-        write!(self.opts, "&transparent={}", params.transparent).map_err(Self::write_error)?;
-        Ok(self)
+    fn transparent(mut self, params: &Params) -> Self {
+        let _ = write!(self.opts, "&transparent={}", params.transparent);
+        self
     }
 
-    fn format(mut self, params: &Params, req: &HttpRequest) -> Result<Self> {
+    fn format(mut self, params: &Params, req: &HttpRequest) -> Self {
         // Check format from params then fromacceptance header
         if let Some(format) = params.format.as_deref().or_else(|| {
             header::Accept::parse(req).ok().and_then(|accept| {
@@ -276,9 +270,9 @@ impl WmsBuilder {
                     })
             })
         }) {
-            write!(self.opts, "&format={}", percent_encode(format)).map_err(Self::write_error)?;
+            let _ = write!(self.opts, "&format={}", percent_encode(format));
         }
-        Ok(self)
+        self
     }
 }
 

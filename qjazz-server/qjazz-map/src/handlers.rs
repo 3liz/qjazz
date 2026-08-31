@@ -43,8 +43,6 @@ pub mod ows {
         let content_type =
             request::header_as_str(&req, http::header::CONTENT_TYPE).map(String::from);
 
-        let data = data.to_vec();
-
         let request = OwsRequest {
             service: args.service,
             request: args.request.unwrap_or_default(),
@@ -54,7 +52,7 @@ pub mod ows {
             direct: channel.allow_direct_resolution(),
             options: Some(req.query_string().to_string()),
             method: Some(req.method().as_str().to_string()),
-            body: (!data.is_empty()).then_some(data),
+            body: (!data.is_empty()).then(|| data.to_vec()),
             request_id: request_id.clone(),
             content_type,
         };
