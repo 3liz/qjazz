@@ -15,7 +15,7 @@ use crate::models::apis::OgcEndpoints;
 use crate::models::{Link, rel};
 use crate::requests::request;
 
-const MAX_PAGE_LIMIT: u16 = 50;
+const MAX_PAGE_LIMIT: u64 = 50;
 
 //
 // Handle page parameters
@@ -23,15 +23,15 @@ const MAX_PAGE_LIMIT: u16 = 50;
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Params {
-    page: u16,
-    limit: u16,
+    page: u64,
+    limit: u64,
     prefix: Option<String>,
 }
 
 impl Default for Params {
     fn default() -> Self {
         Self {
-            page: 0,
+            page: 1, // Pages start at 1
             limit: MAX_PAGE_LIMIT,
             prefix: None,
         }
@@ -39,37 +39,37 @@ impl Default for Params {
 }
 
 impl Params {
-    fn start(&self) -> u16 {
-        self.page * cmp::min(self.limit, MAX_PAGE_LIMIT)
+    fn limit(&self) -> u64 {
+        cmp::min(self.limit, MAX_PAGE_LIMIT)
     }
-    fn end(&self) -> u16 {
-        self.start() + cmp::min(self.limit, MAX_PAGE_LIMIT)
+    fn start(&self) -> u64 {
+        self.page.saturating_sub(1).saturating_mul(self.limit())
+    }
+    fn end(&self) -> u64 {
+        self.start().saturating_add(self.limit())
     }
     #[inline]
-    fn range(&self) -> std::ops::Range<u16> {
-        self.start()..self.end()
+    fn range(&self) -> std::ops::Range<i64> {
+        (self.start().clamp(0, u64::MAX >> 1) as i64)..(self.end().clamp(0, u64::MAX >> 1) as i64)
     }
     // Create navigation links
     fn links(&self, links: &mut Vec<Link>, public_url: &str, next: bool) {
+        let limit = self.limit();
+
         links.reserve(3);
         links.push(Link::application_json(
-            format!("{public_url}?page={}&limit={}", self.page, self.limit,).into(),
+            format!("{public_url}?page={}&limit={limit}", self.page).into(),
             rel::SELF,
         ));
         if next {
             links.push(Link::application_json(
-                format!("{public_url}?page={}&limit={}", self.page + 1, self.limit,).into(),
+                format!("{public_url}?page={}&limit={limit}", self.page + 1).into(),
                 rel::NEXT,
             ));
         }
-        if self.page > 0 {
+        if self.page > 1 {
             links.push(Link::application_json(
-                format!(
-                    "{public_url}?page={}&limit={}",
-                    if self.page > 0 { self.page - 1 } else { 0 },
-                    self.limit,
-                )
-                .into(),
+                format!("{public_url}?page={}&limit={limit}", self.page - 1).into(),
                 rel::PREV,
             ));
         }
@@ -277,12 +277,12 @@ async fn execute_collection_request(
     channel: &Channel,
     location: Option<String>,
     resource: Option<String>,
-    range: std::ops::Range<u16>,
+    range: std::ops::Range<i64>,
 ) -> Either<HttpResponse, CollectionsPage> {
     let mut client = channel.client();
     let mut request = tonic::Request::new(CollectionsRequest {
-        start: range.start as i64,
-        end: range.end as i64,
+        start: range.start,
+        end: range.end,
         location,
         resource,
     });
@@ -417,5 +417,27 @@ impl Links<'_> {
         self.0
             .push(serde_json::to_value(link).map_err(internal_error)?);
         Ok(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn params(query: &str) -> web::Query<Params> {
+        web::Query::<Params>::from_query(query).unwrap()
+    }
+
+    #[test]
+    fn test_pagination_overflow() {
+        // A page index large enough to overflow `page * limit` must saturate
+        // instead of panicking (debug) or wrapping around (release).
+        let p = params(&format!("page={}&limit={MAX_PAGE_LIMIT}", u64::MAX));
+        assert_eq!(p.range(), i64::MAX..i64::MAX);
+
+        // Same for `start + limit` when the start is already at the boundary.
+        let p = params(&format!("page=1&limit={}", u64::MAX));
+        assert_eq!(p.limit(), MAX_PAGE_LIMIT);
+        assert_eq!(p.range(), 0..(MAX_PAGE_LIMIT as i64));
     }
 }
