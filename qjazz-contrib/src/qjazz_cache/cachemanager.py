@@ -194,7 +194,7 @@ class CacheManager:
         path = PurePosixPath(path)
         # Find matching path
         for route in self.conf.search_paths.routes:
-            logger.debug("Resolving path for '%s' -> %s", path, route.cannonical[0]) 
+            logger.debug("Resolving path for '%s' -> %s", path, route.cannonical[0])
             result = route.resolve_path(path)
             if not result:
                 continue

@@ -34,7 +34,7 @@ packaging==26.3
 posix-ipc==1.3.2
 prompt-toolkit==3.0.53
 propcache==0.5.2
-protobuf==7.36.0
+protobuf==7.36.1
 pycparser==3.0 ; implementation_name != 'PyPy'
 pycryptodome==3.23.0
 pydantic==2.13.5
