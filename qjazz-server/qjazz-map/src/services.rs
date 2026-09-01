@@ -2,16 +2,16 @@
 // Services
 //
 use crate::channel::Channel;
+use crate::endpoint::EndPoint;
 use crate::handlers::{api, catalog, conformance, landing_page, legend, map, ows};
-use crate::resolver::ApiEndPoint;
 use actix_web::{guard, http::header, web};
 
 #[cfg(feature = "monitor")]
 use actix_web::middleware;
 
 // Configuration for api endpoint
-pub fn api_scope(api: web::Data<ApiEndPoint>) -> impl FnOnce(&mut web::ServiceConfig) {
-    let path = format!("/{}", api.endpoint);
+pub fn api_scope(api: web::ThinData<EndPoint>) -> impl FnOnce(&mut web::ServiceConfig) {
+    let path = format!("/{}", api.endpoint());
 
     let scope = web::scope(path.as_str())
         .app_data(api.clone())

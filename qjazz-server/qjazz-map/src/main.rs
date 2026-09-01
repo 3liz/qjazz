@@ -2,6 +2,7 @@ mod admin;
 mod channel;
 mod config;
 mod cors;
+mod endpoint;
 mod handlers;
 mod logger;
 mod models;

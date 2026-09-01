@@ -40,16 +40,16 @@ impl Default for ListenConfig {
 impl Validator for ListenConfig {
     fn validate(&self) -> Result<(), ConfigError> {
         if self.enable_tls {
-            let _ = self
+            self
                 .tls_cert_file
                 .as_deref()
                 .map(Self::validate_filepath)
-                .ok_or_else(|| ConfigError::Message("TLS: cert file required".to_string()))?;
-            let _ = self
+                .unwrap_or_else(|| Err(ConfigError::Message("TLS: cert file missing".to_string())))?;
+            self
                 .tls_key_file
                 .as_deref()
                 .map(Self::validate_filepath)
-                .ok_or_else(|| ConfigError::Message("TLS: key file required".to_string()))?;
+                .unwrap_or_else(|| Err(ConfigError::Message("TLS: key file missing".to_string())))?;
         }
         Ok(())
     }

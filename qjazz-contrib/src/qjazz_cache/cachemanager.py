@@ -194,20 +194,21 @@ class CacheManager:
         path = PurePosixPath(path)
         # Find matching path
         for route in self.conf.search_paths.routes:
+            logger.debug("Resolving path for '%s' -> %s", path, route.cannonical[0]) 
             result = route.resolve_path(path)
             if not result:
                 continue
 
             location, rooturl = result
-            path = path.relative_to(location)
+            relpath = path.relative_to(location)
 
             # Check for {path} template in rooturl
-            query = rooturl.query.format(path=path)
+            query = rooturl.query.format(path=relpath)
             if query != rooturl.query:
                 url = rooturl._replace(query=query)
             else:
                 # Simply append path to the rooturl path
-                url = rooturl._replace(path=str(PurePosixPath(rooturl.path, path)))
+                url = rooturl._replace(path=str(PurePosixPath(rooturl.path, relpath)))
 
             return url
 

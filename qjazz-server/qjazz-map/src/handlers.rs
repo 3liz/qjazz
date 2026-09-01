@@ -1,4 +1,4 @@
-use crate::channel::{ApiEndPoint, Channel};
+use crate::channel::Channel;
 use actix_web::{HttpRequest, HttpResponse, Responder, http, web};
 use serde::Deserialize;
 
@@ -10,6 +10,7 @@ pub mod map;
 pub mod response;
 
 use crate::channel::qjazz_service::{ApiRequest, OwsRequest};
+use crate::endpoint::EndPoint;
 use crate::requests::request;
 use response::{execute_api_request, execute_ows_request};
 
@@ -115,13 +116,15 @@ pub mod api {
         path: String,
         args: web::Query<Map>,
         data: web::Bytes,
-        endpoint: web::Data<ApiEndPoint>,
+        api: web::ThinData<EndPoint>,
     ) -> impl Responder {
         let request_id = request::request_id(&req).map(String::from);
         let content_type =
             request::header_as_str(&req, http::header::CONTENT_TYPE).map(String::from);
 
         // Build the URL as the base path
+        let url = request::public_url(&req, api.path());
+        /*
         let url = request::public_url(
             &req,
             req.path()
@@ -129,9 +132,10 @@ pub mod api {
                 .unwrap()
                 .trim_end_matches('/'),
         );
+        */
 
         let request = ApiRequest {
-            name: endpoint.name.clone(),
+            name: api.name().to_string(),
             path,
             target: args.into_inner().map,
             url: Some(url),
@@ -139,7 +143,7 @@ pub mod api {
             options: Some(req.query_string().to_string()),
             method: req.method().as_str().to_string(),
             data: (!data.is_empty()).then(|| data.to_vec()),
-            delegate: endpoint.delegate,
+            delegate: api.delegate(),
             request_id: request_id.clone(),
             content_type,
         };
@@ -157,7 +161,7 @@ pub mod api {
         path: web::Path<String>,
         map: web::Query<Map>,
         data: web::Bytes,
-        endpoint: web::Data<ApiEndPoint>,
+        endpoint: web::ThinData<EndPoint>,
     ) -> impl Responder {
         api_response(req, channel, path.into_inner(), map, data, endpoint).await
     }
@@ -168,7 +172,7 @@ pub mod api {
         channel: web::Data<Channel>,
         map: web::Query<Map>,
         data: web::Bytes,
-        endpoint: web::Data<ApiEndPoint>,
+        endpoint: web::ThinData<EndPoint>,
     ) -> impl Responder {
         api_response(req, channel, String::default(), map, data, endpoint).await
     }

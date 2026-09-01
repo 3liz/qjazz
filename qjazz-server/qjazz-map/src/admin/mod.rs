@@ -62,7 +62,7 @@ mod api {
 
         HttpResponse::Ok().json(LandingPage {
             links: [
-                Link::application_json(format!("{public_url}").into(), rel::SELF),
+                Link::application_json(public_url.to_string().into(), rel::SELF),
                 Link::application_json(format!("{public_url}/plugins").into(), rel::CHILDREN)
                     .title("Installed Plugins"),
                 Link::application_json(format!("{public_url}/catalog").into(), rel::CHILDREN)

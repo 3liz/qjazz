@@ -10,6 +10,7 @@ use futures::future::try_join_all;
 use crate::admin::admin;
 use crate::channel::{self, Channel};
 use crate::config::Settings;
+use crate::endpoint::EndPoint;
 use crate::requests::request;
 use crate::resolver::Channels;
 use crate::services::{api_scope, catalog, landing_page, ows_resource};
@@ -103,7 +104,10 @@ fn single_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Se
         .api_endpoints()
         .iter()
         .fold(scope, |s, api| {
-            s.configure(api_scope(web::Data::from(api.clone())))
+            s.configure(api_scope(EndPoint::new(
+                api.clone(),
+                format!("/{}", api.endpoint),
+            )))
         })
         .app_data(channel);
 
@@ -126,7 +130,10 @@ fn multi_channel_scope(channel: web::Data<Channel>) -> impl FnOnce(&mut web::Ser
         .api_endpoints()
         .iter()
         .fold(scope, |s, api| {
-            s.configure(api_scope(web::Data::from(api.clone())))
+            s.configure(api_scope(EndPoint::new(
+                api.clone(),
+                format!("{}/{}", channel.route(), api.endpoint),
+            )))
         })
         .app_data(channel);
 
