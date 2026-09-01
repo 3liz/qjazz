@@ -7,16 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
-* [server] Bound restore states
-* [server] Improve worker management
-* [server] Improve worker restoration
-* [server] Fix multiple race condition
-* [server] Fix incomplete config validation
-* [server] Fix server silent bind failure
-* [server] Fix client responses
-* [server] Fix Python/Rust round-trip messaging
-* [server] Improve catalog handling
-* [server] qjazz-map: Add landing page for admin api
+* [qjazz-map] Allow bodyless POST 'pull project' request
+* [qjazz-map] Apply middlewares to single-channel scope
+* [qjazz-map] Do no panic if client TLS key is missing  
+* [qjazz-map] Discard subtypes/charset for Form-POST guard
+* [qjazz-map] Fix channels route ordering
+* [qjazz-map] Protect against query param injection
+* [qjazz-map] Fix channel config validation
+* [qjazz-map] Fix public url when proxy headers are disabled
+* [qjazz-rpc] Bound restore states
+* [qjazz-rpc] Improve worker management
+* [qjazz-rpc] Improve worker restoration
+* [qjazz-rpc] Fix multiple race condition
+* [qjazz-rpc] Fix incomplete config validation
+* [qjazz-rpc] Fix server silent bind failure
+* [qjazz-rpc] Fix client responses
+* [qjazz-rpc] Fix Python/Rust round-trip messaging
+* [qjazz-rpc] Improve catalog handling
+* [qjazz-rpc] qjazz-map: Add landing page for admin api
 * Fix qgis-plugin-manager dependencies
 
 ## 0.8.1
