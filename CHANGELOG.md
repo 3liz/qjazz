@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## 0.9.0
+
 * [qjazz-map] Allow bodyless POST 'pull project' request
 * [qjazz-map] Apply middlewares to single-channel scope
 * [qjazz-map] Do no panic if client TLS key is missing  
