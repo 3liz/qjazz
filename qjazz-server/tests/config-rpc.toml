@@ -17,7 +17,6 @@ install = [
     "Lizmap server",
 ]
 install_mode = "auto"
-plugin_manager = "$location/qgis-plugin-manager"
 
 [worker.qgis.projects]
 trust_layer_metadata = true

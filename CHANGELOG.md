@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* Use yapt-mngr' as plugin manager
+
 ## 0.9.1
 
 * [qjazz-rpc] Fix buffer reset when sending QGIS response

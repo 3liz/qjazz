@@ -30,11 +30,16 @@ RUN --mount=type=bind,target=/src,rw \
         `ls -1 /src/dist/qjazz_contrib-*.whl` \
         `ls -1 /src/dist/qjazz_map-*.whl` \
         `ls -1 /src/dist/qjazz_rpc-*.whl` \
-        `ls -1 /src/dist/qjazz_processes-*.whl` \
-    && uv pip install --cache-dir=/.python-cache --compile-bytecode \
-        qgis-plugin-manager
+        `ls -1 /src/dist/qjazz_processes-*.whl`
 
-
+# Install yapt-manager
+RUN --mount=type=bind,target=/src,rw \
+    --mount=type=cache,target=/.python-cache \
+    uv pip install --extra-index-url=https://packages.3liz.org/pub/whl/ \
+     --python=/opt/local/qjazz/bin/python \
+     --link-mode=copy \
+     yapt-manager
+ 
 ARG LIZCLOUD=''
 
 # Install lizcloud support

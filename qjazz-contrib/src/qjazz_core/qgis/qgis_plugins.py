@@ -32,6 +32,7 @@ from typing import (
 
 from pydantic import (
     AfterValidator,
+    AnyHttpUrl,
     Field,
     JsonValue,
 )
@@ -113,6 +114,20 @@ class QgisPluginConfig(config.ConfigBase):
             "plugins."
         ),
     )
+    plugins_repository: AnyHttpUrl = Field(
+        default=AnyHttpUrl("https://qgis-plugins.3liz.org"),
+        title="Plugins repository",
+        description="Url plugin repository for downloading plugins",
+    )
+    plugins_repository_type: Literal["rest", "qgis-xml"] = Field(
+        default="rest",
+        title="Repository type",
+        description=(
+            "Type of repository api\n"
+            "- rest: use a yapt rest api\n"
+            "- qgis-xml: use a xml qgis-compatible index"
+        ),
+    )
     enable_scripts: bool = Field(
         default=True,
         title="Enable processing scripts",
@@ -122,14 +137,6 @@ class QgisPluginConfig(config.ConfigBase):
         default=set(),
         title="Extra builtins providers",
         description=("Load extra builtin processing providers\nsuch as 'grass' and 'otb'."),
-    )
-    plugin_manager: Path = Field(
-        default=Path("/usr/local/bin/qgis-plugin-manager"),
-        title="Path to plugin manager executable",
-        description=(
-            "The absolute path to the qgis-plugin_manager executable\n"
-            "that will be used for installing plugin in automatic mode."
-        ),
     )
 
 
@@ -350,31 +357,41 @@ def checkQgisVersion(minver: Optional[str], maxver: Optional[str]) -> bool:
 
 def _run_plugin_manager(
     conf: QgisPluginConfig,
+    cmd_path: Path,
     /,
     *args: str,
     install_path: Optional[Path] = None,
 ):
     import subprocess  # nosec
 
-    assert_precondition(conf.plugin_manager.is_absolute())
+    assert_precondition(cmd_path.is_absolute())
 
     install_path = install_path or conf.paths[0]
     res = subprocess.run(  # noqa S603
         # SECURITY: path is checked to be absolute
-        [conf.plugin_manager, *args],  # nosec
+        [cmd_path, "--no-progress", *args],  # nosec
         cwd=str(install_path),
     )
     if res.returncode > 0:
-        raise RuntimeError(f"'qgis-plugin-manager' failed with return code {res}")
+        raise RuntimeError(f"'Plugin manager failed with return code {res}")
 
 
 def install_plugins(conf: QgisPluginConfig):
     """Install required plugins from installation"""
+    import shutil
+
     plugins = conf.install
     if not plugins:
         # Nothing to install
         print("No plugins to install", file=sys.stderr)  # noqa T201
         return
+
+    # Find yapt-mngr executable
+    cmd_path = shutil.which("yapt-mngr")
+    if cmd_path is None:
+        raise RuntimeError("Cannot find 'yapt-mngr' executable in PATH")
+
+    print("Using plugin manager executable at", cmd_path, file=sys.stderr)  # noqa T201
 
     install_path = conf.paths[0]
     install_path.mkdir(mode=0o775, parents=True, exist_ok=True)
@@ -382,18 +399,24 @@ def install_plugins(conf: QgisPluginConfig):
     logger.info("Installing plugins in %s", install_path)
 
     def _run(*args):
-        _run_plugin_manager(conf, *args)
+        _run_plugin_manager(conf, Path(cmd_path), *args)
 
-    sources_list = Path(os.getenv("QGIS_PLUGIN_MANAGER_SOURCES_FILE", install_path / "sources.list"))
-
-    if not sources_list.exists():
-        _run("init")
+    config_path = Path(os.getenv("YAPT_CONF_DIR", Path(install_path, ".yapt")))
+    if not config_path.exists():
+        logger.info("Configuring plugin manager")
+        args = ["source", "add"]
+        if conf.plugins_repository_type == "rest":
+            args.append("--rest")
+        _run(*args, conf.plugins_repository.host, str(conf.plugins_repository))
 
     try:
-        _run("update")
+        _run("source", "update", "--refresh")
     except RuntimeError:
-        logger.error("Cannot update plugins index, cancelling installation...")
+        logger.error("Failed to update repository index, cancelling installation")
         return
 
     for plugin in plugins:
-        _run("install", plugin)
+        try:
+            _run("install", "--no-sync", "--upgrade", plugin)
+        except RuntimeError:
+            logger.error("Failed to install plugin %s", plugin)
