@@ -176,7 +176,7 @@ def qgis_server_run(
         try:
             rendez_vous.done()
             duration = None  # Prevent unbound value if recv() is interrupted
-            msg = None       # See above
+            msg = None  # See above
             msg = conn.recv()
             rendez_vous.busy()
             logger.debug("Received message: %s", msg.msg_id.name)

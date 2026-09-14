@@ -1,3 +1,5 @@
+import json
+
 from qjazz_cache.prelude import CacheManager
 from qjazz_rpc import messages, op_requests
 from qjazz_rpc.config import QgisConfig
@@ -130,7 +132,7 @@ def test_op_request_chunked_response(
             service="WFS",
             request="GetFeature",
             version="1.0.0",
-            options="SERVICE=WFS&REQUEST=GetFeature&TYPENAME=france_parts_bordure",
+            options="SERVICE=WFS&REQUEST=GetFeature&TYPENAME=france_parts_bordure&OUTPUTFORMAT=geojson",
             target="/france/france_parts",
             url="http://localhost:8080/test.3liz.com",
             request_id="test_op_request_chunked_response",
@@ -151,6 +153,18 @@ def test_op_request_chunked_response(
 
     print("> headers", resp.headers)
 
+    body = bytearray()
+    chunks = 0
+
     # Stream remaining bytes
     for chunk in conn.stream_bytes():
         assert len(chunk) > 0
+        chunks += 1
+        body.extend(chunk)
+
+    assert chunks > 0
+
+    print(">", body)
+
+    # Validate json
+    _ = json.loads(body.decode())

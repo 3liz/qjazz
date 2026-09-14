@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-rpc] Fix buffer reset when sending QGIS response
+
 ## 0.9.0
 
 * [qjazz-map] Allow bodyless POST 'pull project' request

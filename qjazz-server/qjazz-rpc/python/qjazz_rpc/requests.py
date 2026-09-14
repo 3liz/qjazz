@@ -147,9 +147,10 @@ class Response(QgsServerResponse):
 
         # Send data as chunks
         MAX_CHUNK_SIZE = self._chunk_size
-
-        while not self._buffer.atEnd():
-            chunk = self._buffer.read(MAX_CHUNK_SIZE)
+        # Note: QBytarray implement the Buffer protocol
+        data = memoryview(self._buffer.buffer())  # type: ignore [arg-type]
+        chunks = (data[i : i + MAX_CHUNK_SIZE] for i in range(0, bytes_avail, MAX_CHUNK_SIZE))
+        for chunk in chunks:
             logger.trace("Sending chunk of %s bytes", len(chunk))
             _m.send_chunk(self._conn, chunk)
 
@@ -159,6 +160,7 @@ class Response(QgsServerResponse):
             _m.send_chunk(self._conn, b"")
 
         self._buffer.buffer().clear()
+        self._buffer.reset()
 
     def header(self, key: str) -> str:  # type: ignore [override]
         return self._headers.get(key) or ""
