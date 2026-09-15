@@ -10,6 +10,7 @@
 
 import configparser
 import os
+import re
 import sys
 import traceback
 
@@ -166,6 +167,11 @@ class Plugin:
             return cast("JsonDict", metadata)
 
 
+
+# Pattern for splitting plugin name/version
+SPLIT_PLUGIN_VERSION_RE = re.compile("==|<=|>=|>|<")
+
+
 class QgisPluginService:
     """Manage qgis plugins"""
 
@@ -208,7 +214,10 @@ class QgisPluginService:
             if extras:
                 self._BUILTIN_PROVIDERS = processes.load_builtin_providers(extras)
 
-        white_list = self._config.install
+        # Get plugins names
+        white_list = {
+            SPLIT_PLUGIN_VERSION_RE.split(spec, maxsplit=1)[0] for spec in self._config.install
+        } if self._config.install is not None else None
 
         for plugin_path in self._config.paths:
             sys.path.append(str(plugin_path))

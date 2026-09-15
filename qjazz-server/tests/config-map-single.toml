@@ -28,6 +28,6 @@ name = "Features OGC Api (WFS3)"
 
 [[backends.test.api]]
 endpoint = "lizmap"
-name = "Lizmap API"
+name = "Lizmap"
 
 
