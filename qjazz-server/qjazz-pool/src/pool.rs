@@ -478,4 +478,26 @@ mod tests {
             assert_eq!(resp.status, 0); // UNCHANGED
         }
     }
+
+    #[tokio::test]
+    async fn test_patch_config() {
+        setup();
+
+        let num_processes = 3;
+        let mut pool = Pool::new(builder(num_processes));
+
+        pool.maintain_pool().await.unwrap();
+        assert_eq!(pool.num_workers(), num_processes);
+        assert_eq!(pool.stats_raw(), (0, num_processes));
+
+        pool.patch_config(&serde_json::json!({
+            "logging": { 
+                "level": "debug" 
+            },
+        })).await.unwrap();
+
+        assert_eq!(pool.num_workers(), num_processes);
+        assert_eq!(pool.stats_raw(), (0, num_processes));
+    }
+
 }
