@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "qjazz-contrib"
 description = "QJazz contrib utilities"
-version = "0.9.2"
+version = "0.9.3"
 requires-python = ">= 3.12"
 license = "Apache-2.0 OR MIT"
 classifiers = [
