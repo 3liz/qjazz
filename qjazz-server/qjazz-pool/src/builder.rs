@@ -52,11 +52,13 @@ impl Builder {
     }
 
     /// Return worker options
+    #[inline(always)]
     pub(crate) fn options(&self) -> &WorkerOptions {
         &self.opts
     }
 
     /// Return mutable worker options
+    #[inline(always)]
     pub(crate) fn options_mut(&mut self) -> &mut WorkerOptions {
         &mut self.opts
     }

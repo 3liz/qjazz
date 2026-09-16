@@ -175,7 +175,6 @@ impl WorkerQueue {
     #[inline(always)]
     pub fn drain<B, F: FnMut(Worker) -> B>(&self, f: F) -> Vec<B> {
         let v = self.q.drain_map(f);
-        self.num_workers.fetch_sub(v.len(), Ordering::Relaxed);
         v
     }
     #[inline(always)]
@@ -286,7 +285,7 @@ impl Pool {
 
     pub(crate) fn stats_raw(&self) -> (usize, usize) {
         let idle = self.queue.q.len();
-        let busy = self.num_workers() - idle;
+        let busy = self.num_workers().saturating_sub(idle);
         (busy, idle)
     }
 
@@ -393,7 +392,7 @@ impl Pool {
         // Drain all idle workers
         log::info!("Shutting down...");
         let num_workers = self.num_workers();
-        let remain = num_workers - self.queue.remove(self.num_processes).await;
+        let remain = num_workers.saturating_sub(self.queue.remove(self.num_processes).await);
         log::debug!("Pool terminated (rem:  {remain})");
     }
 }
