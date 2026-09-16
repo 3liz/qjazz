@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+## 0.9.2
+
+* [qjazz-rpc] Fix `num_workers` invalid value
 * Use yapt-mngr' as plugin manager
 
 ## 0.9.1
