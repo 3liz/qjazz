@@ -218,16 +218,14 @@ class ParameterCrs(InputParameter):
         match inp:
             case {"value": str(inp), "mediaType": Formats.WKT.media_type}:
                 pass
-
-        match self.validate(inp):
-            case str(value):
+            case {"value": str(inp), "mediaType": Formats.JSON.media_type}:
                 pass
-            case {"uri": url}:
-                value = str(url)
-            case {"json": data}:
-                value = TypeAdapter(JsonValue).dump_json(data).decode()
-            case _:
-                raise InputValueError("Invalide CRS definition")
+            case str(inp):
+                pass
+            case other:
+                raise InputValueError(f"Unsupported CRS definition: {other}")
+
+        value = str(self.validate(inp))
 
         crs = QgsCoordinateReferenceSystem()
         crs.createFromUserInput(value)

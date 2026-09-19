@@ -224,9 +224,6 @@ def test_parameter_crs(qgis_session):
     value = inp.value("urn:ogc:def:crs:OGC:1.3:CRS84")
     assert value.authid() == "OGC:CRS84"
 
-    value = inp.value({"uri": "urn:ogc:def:crs:OGC:1.3:CRS84"})
-    assert value.authid() == "OGC:CRS84"
-
     epsg3857 = QgsCoordinateReferenceSystem()
     epsg3857.createFromUserInput("EPSG:3857")
     assert epsg3857.isValid()

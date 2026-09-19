@@ -82,6 +82,7 @@ class ParameterEnum(InputParameter):
         multiple = param.allowMultiple()
 
         if multiple:
+            # Allow multiple selection
             _type = set[_type]  # type: ignore [misc]
 
         if not validation_only:

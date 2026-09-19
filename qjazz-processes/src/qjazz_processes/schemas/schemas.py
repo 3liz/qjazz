@@ -3,7 +3,7 @@ from typing import NamedTuple
 from pydantic import AnyUrl
 
 # See http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/
-OGC_FEATURES_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/features/part1/1.0/opengis/schemas"
+OGC_FEATURES_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas"
 
 
 class _GeoJSONSchemas(NamedTuple):

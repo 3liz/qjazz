@@ -11,27 +11,10 @@ from typing import (
 from pydantic import AnyUrl, WithJsonSchema
 
 from .formats import Formats
-from .models import JsonValue, MediaType, OneOf
+from .models import JsonValue, MediaType, OneOf, Field
 
 
-class UriCrsDefinition(TypedDict):
-    uri: AnyUrl
-
-
-class JsonCrsDefinition(TypedDict):
-    json: Annotated[
-        JsonValue,
-        WithJsonSchema(
-            {
-                "type": "object",
-                "description": "ProjJSON CRS definition",
-                "$ref": (
-                    "https://github.com/opengeospatial/ogcapi-processes/blob/master/openapi"
-                    "/schemas/common-geodata/projJSON.yaml"
-                ),
-            },
-        ),
-    ]
+UriCrsDefinition = Annotated[AnyUrl, Field(json_schema_extra={ "format": "uri" })]
 
 
 # NOTE: CRS schema is still an open question about WKT naming
@@ -42,12 +25,17 @@ class JsonCrsDefinition(TypedDict):
 #
 # As an alternative, we support WKT as string with content mediaType.
 #
+PROJJSON_SCHEMA_REF="https://proj.org/en/latest/schemas/v0.7/projjson.schema.json"
 
 CrsDefinition = OneOf[  # type: ignore [misc, valid-type]
     Union[
         str,
-        MediaType(str, Formats.WKT.media_type),
         UriCrsDefinition,
-        JsonCrsDefinition,
+        MediaType(str, Formats.WKT.media_type),
+        MediaType(
+            str, 
+            Formats.JSON.media_type, 
+            schema=f'{{ "$ref": "{PROJJSON_SCHEMA_REF}" }}',
+        ),
     ],
 ]
