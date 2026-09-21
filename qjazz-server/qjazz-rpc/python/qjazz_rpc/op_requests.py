@@ -45,7 +45,7 @@ def handle_ows_request(
 ):
     """Handle OWS request"""
 
-    logger.debug("Handling OWS request")
+    logger.debug("Handling OWS request [ID:%s]", msg.request_id or "none")
 
     target = msg.target
     if not target:
@@ -157,7 +157,8 @@ def handle_api_request(
     cache_id: str = "",
     feedback: QgsFeedback,
 ):
-    logger.debug("Handling API request")
+    logger.debug("Handling OWS request [ID:%s]", msg.request_id or "none")
+
     """Handle api request"""
     target = msg.target
     if not target:

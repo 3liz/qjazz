@@ -4,15 +4,13 @@
 
 from typing import (
     Annotated,
-    TypedDict,
     Union,
 )
 
-from pydantic import AnyUrl, WithJsonSchema
+from pydantic import AnyUrl
 
 from .formats import Formats
-from .models import JsonValue, MediaType, OneOf, Field
-
+from .models import Field, MediaType, OneOf
 
 UriCrsDefinition = Annotated[AnyUrl, Field(json_schema_extra={ "format": "uri" })]
 
@@ -33,8 +31,8 @@ CrsDefinition = OneOf[  # type: ignore [misc, valid-type]
         UriCrsDefinition,
         MediaType(str, Formats.WKT.media_type),
         MediaType(
-            str, 
-            Formats.JSON.media_type, 
+            str,
+            Formats.JSON.media_type,
             schema=f'{{ "$ref": "{PROJJSON_SCHEMA_REF}" }}',
         ),
     ],

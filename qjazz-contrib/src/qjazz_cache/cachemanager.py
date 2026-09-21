@@ -355,6 +355,7 @@ class CacheManager:
         s_time = time()
         s_mem = self._process.memory_info().rss if self._process else None
 
+        logger.info("Loading project: %s:", md.uri)
         project = handler.project(md, self.conf)
 
         # Prevent circular ownership
