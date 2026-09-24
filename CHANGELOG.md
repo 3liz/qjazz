@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## 0.9.3
 
+* [qjazz-rpc] Add project 'load' command in cli tool
+* [qjazz-rpc] Make `get_config` returns the complete qgis configuration
 * Improve logging project loading status
 
 ## 0.9.2

@@ -76,6 +76,10 @@ def load_project_from_uri(uri: str, config: ProjectLoaderConfig) -> QgsProject:
         logger.debug("Disabled layer's resolution for '%s'", uri)
         badlayerh = None
 
+    # Log loaded layers
+    if logger.is_enabled_for(logger.LogLevel.DEBUG):
+        log_layer_loaded(uri, project)
+
     if not project.read(uri, readflags):
         raise UnreadableResource(uri)
 
@@ -111,3 +115,16 @@ class BadLayerHandler(QgsProjectBadLayerHandler):
             restricteds = set(QgsServerProjectUtils.wmsRestrictedLayers(project))
             return self.badLayerNames.issubset(restricteds)
         return True
+
+
+def log_layer_loaded(uri: str, project: QgsProject):
+    # Log loaded layers
+    loaded: set[str] = set()
+    def layer_loaded(i: int, n: int):
+        for name, layer in project.mapLayers().items():
+            if name  in loaded:
+                continue
+            logger.debug("LAYER LOADED [%s/%s]: %s: %s: %s", i, n, uri, name, layer.publicSource())
+            loaded.add(name)
+
+    project.layerLoaded.connect(layer_loaded)
