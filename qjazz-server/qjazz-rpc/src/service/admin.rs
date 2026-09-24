@@ -349,9 +349,11 @@ impl QgisAdmin for QgisAdminServicer {
     }
 
     async fn get_config(&self, _: Request<Empty>) -> Result<Response<JsonConfig>, Status> {
+        let mut w = self.inner.get_worker().await?;
+        let config = w.get_config().await.map_err(to_grpc_status)?;
+
         Ok(Response::new(JsonConfig {
-            json: serde_json::to_string(self.pool.read().await.options())
-                .map_err(|err| Status::internal(format!("{err}")))?,
+            json: config.to_string(),
         }))
     }
 

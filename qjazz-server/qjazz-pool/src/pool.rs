@@ -174,8 +174,7 @@ impl WorkerQueue {
 
     #[inline(always)]
     pub fn drain<B, F: FnMut(Worker) -> B>(&self, f: F) -> Vec<B> {
-        let v = self.q.drain_map(f);
-        v
+        self.q.drain_map(f)
     }
     #[inline(always)]
     fn close(&self) {
@@ -491,13 +490,14 @@ mod tests {
         assert_eq!(pool.stats_raw(), (0, num_processes));
 
         pool.patch_config(&serde_json::json!({
-            "logging": { 
-                "level": "debug" 
+            "logging": {
+                "level": "debug"
             },
-        })).await.unwrap();
+        }))
+        .await
+        .unwrap();
 
         assert_eq!(pool.num_workers(), num_processes);
         assert_eq!(pool.stats_raw(), (0, num_processes));
     }
-
 }
