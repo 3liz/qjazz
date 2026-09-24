@@ -45,8 +45,6 @@ def handle_ows_request(
 ):
     """Handle OWS request"""
 
-    logger.debug("Handling OWS request [ID:%s]", msg.request_id or "none")
-
     target = msg.target
     if not target:
         target = os.getenv("QGIS_PROJECT_FILE", "")
@@ -56,6 +54,12 @@ def handle_ows_request(
             return
 
     log = Monitor(conn if msg.send_report else None)
+
+    logger.info(
+        "Seeking QGIS project\tMAP:%s\tREQ_ID:%s",
+        target,
+        msg.request_id or "none",
+    )
 
     entry, co_status = get_project(
         conn,
@@ -157,8 +161,6 @@ def handle_api_request(
     cache_id: str = "",
     feedback: QgsFeedback,
 ):
-    logger.debug("Handling OWS request [ID:%s]", msg.request_id or "none")
-
     """Handle api request"""
     target = msg.target
     if not target:
@@ -167,6 +169,11 @@ def handle_api_request(
     log = Monitor(conn if msg.send_report else None)
 
     if target:
+        logger.info(
+            "Seeking QGIS project\tMAP:%s\tREQ_ID:%s",
+            target,
+            msg.request_id or "none",
+        )
         entry, co_status = get_project(
             conn,
             cm,

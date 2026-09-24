@@ -355,12 +355,7 @@ class CacheManager:
         s_time = time()
         s_mem = self._process.memory_info().rss if self._process else None
 
-        logger.info("Loading project: %s:", md.uri)
         project = handler.project(md, self.conf)
-
-        # Prevent circular ownership
-        if isinstance(md, CacheEntry):
-            md = md.md
 
         #
         # This is a best effort to get meaningful information
@@ -373,13 +368,16 @@ class CacheManager:
         else:
             used_mem = None
 
+        load_time = int((time() - s_time) * 1000.0)
+        logger.debug("Project loaded: %s: MEM: %s, TIME: %s", md.uri, used_mem, load_time)
+
         return CacheEntry(
             md,
             project,
             timestamp=time(),
             debug_meta=DebugMetadata(
                 load_memory_bytes=used_mem,
-                load_time_ms=int((time() - s_time) * 1000.0),
+                load_time_ms=load_time,
             ),
         )
 
