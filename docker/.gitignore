@@ -1,3 +1,5 @@
 factory-*.manifest
 noqgis.manifest
 requirements.txt
+.ignored
+

@@ -105,8 +105,12 @@ ENTRYPOINT ["/usr/local/bin/qgis-docker-entrypoint.sh"]
 HEALTHCHECK --interval=30s --timeout=30s --start-interval=5s --start-period=30s \
     CMD /usr/local/bin/healthcheck.sh
 
-# Create qgis user
-RUN set -eux; useradd qgis --home-dir=/home/qgis;
+# Create qgis user with the default uid
+RUN set -eux; \
+    useradd qgis --home-dir=/home/qgis; \
+    useradd lizmap -u 1010 --home-dir=/home/qgis; \
+    useradd qjazz -u 2010 --home-dir=/home/qgis;
+
 
 USER qgis
 
