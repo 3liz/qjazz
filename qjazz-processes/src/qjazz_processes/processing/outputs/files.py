@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     Optional,
     Sequence,
-    cast,
 )
 
 from pydantic import ValidationError
@@ -31,6 +30,7 @@ from qjazz_processes.schemas import (
     Output,
     OutputFormat,
     OutputFormatDefinition,
+    OutputFormatDescription,
     ValuePassing,
 )
 
@@ -47,7 +47,6 @@ from .base import (
 # QgsProcessingOutputFile
 #
 
-
 class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
     _Model = Link
 
@@ -57,22 +56,17 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
     def json_schema(self) -> JsonDict:
         schema = super().json_schema()
 
-        formats = self.allowed_formats
-        if formats:
-            schema = cast(
-                "JsonDict",
-                {
-                    "$defs": {"Link": schema},
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/Link",
-                            "contentMediaType": fmt.media_type,
-                            "title": fmt.title,
-                        }
-                        for fmt in formats
-                    ],
-                },
-            )
+        if formats := self.allowed_formats:
+            # Add the list of allowed output formats
+            # This will enable the client to select the
+            # output format.
+            schema["outputFormats"] = [
+                OutputFormatDescription(
+                    title=fmt.title,
+                    media_type=fmt.media_type,
+                ).model_dump(mode="json")
+                for fmt in formats
+            ]
 
         return schema
 

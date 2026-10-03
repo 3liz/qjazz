@@ -218,10 +218,12 @@ class ParameterFeatureSource(ParameterMapLayer):
             ] = Field(
                 title="BoundingBox intersection",
                 description="BoundingBox for selecting intersecting features",
+                json_schema_extra={ "format": "ogc-bbox" },
             )
             expression: Option[str] = Field(
                 title="Qgis expression",
                 description="Qgis expression for selecting features",
+                json_schema_extra={ "format": "x-qgis-expression" },
             )
 
         return _type | _Model
@@ -656,6 +658,7 @@ class ParameterFieldMapping(InputParameter):
 
 class ParameterExpression(InputParameter):
     _ParameterType = str
+    _SchemaFormat = "x-qgis-expression"
 
     @classmethod
     def metadata(cls, param: QgsProcessingParameterExpression) -> list[Metadata]:

@@ -44,6 +44,7 @@ from .models import (  # noqa F401
     OneOf,
     OutputFormat,
     OutputFormatDefinition,
+    OutputFormatDescription,
     MediaType,
     Option,
     InputValueError,

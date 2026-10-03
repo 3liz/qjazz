@@ -221,13 +221,18 @@ def output_file_formats(param: QgsProcessingParameterFileDestination) -> Sequenc
     # Retrieve format list from file extensions
     #
     formats = []
-    ext_re = re.compile(r".*([.][a-z]+)")
+    ext_re = re.compile(r"(.*)\(\*([.][a-z]+)\)")
     for filter_ in param.fileFilter().split(";;"):
         m = ext_re.match(filter_)
         if m:
-            ext = m.group(1)
+            ext = m.group(2)
             mime = mimetypes.types_map.get(ext)
             if mime:
-                formats.append(Format(media_type=mime, suffix=ext))
+                title = m.group(1).strip()
+                formats.append(Format(
+                    media_type=mime,
+                    suffix=ext,
+                    title=title or mime,
+                ))
 
     return formats

@@ -64,7 +64,7 @@ class _Formats(NamedTuple):
     WMS130: Format = Format("application/x-ogc-wms+xml; version=1.3.0", ".xml", "WMS 1.3.0")
     WMTS: Format = Format("application/x-ogc-wmts+xml;", ".xml", "WMTS")
     WMTS100: Format = Format("application/x-ogc-wmts+xml; version=1.0.0", ".xml", "WMTS 1.0.0")
-    TEXT: Format = Format("text/plain", "txt", "Text")
+    TEXT: Format = Format("text/plain", ".txt", "Text")
     NETCDF: Format = Format("application/netcdf", ".nc", "NetCDF")
     DXF: Format = Format("application/x-dxf", ".dxf", "Autodesk DXF")
     GPKG: Format = Format("application/geopackage+sqlite3", ".gpkg", "GeoPackage")

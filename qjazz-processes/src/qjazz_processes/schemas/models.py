@@ -107,6 +107,13 @@ class QualifiedInputValue(OutputFormat):
     value: JsonValue
 
 
+# Output format with additional infos for passing
+# in Output pramaters
+class OutputFormatDescription(OutputFormat):
+    title: str
+    description: Optional[str] = None
+
+
 # Create a typeadapter for Reference/Qualified input
 
 
