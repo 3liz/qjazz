@@ -32,9 +32,9 @@ services:
     - redis
 
   rabbitmq:
-    image: rabbitmq:3-alpine
+    image: rabbitmq:4.2-alpine
   
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
 
 

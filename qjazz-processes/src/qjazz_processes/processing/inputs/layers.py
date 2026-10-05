@@ -213,8 +213,8 @@ class ParameterFeatureSource(ParameterMapLayer):
 
         class _Model(JsonModel):
             source: _type
-            intersect: Option[  # type: ignore [valid-type]
-                BoundingBox(crsdef),
+            intersect: Option[
+                BoundingBox(crsdef),  # type: ignore [valid-type]
             ] = Field(
                 title="BoundingBox intersection",
                 description="BoundingBox for selecting intersecting features",

@@ -9,28 +9,16 @@
 #
 
 services:
-  processes:
-    image: 3liz/qjazz:noqgis-eager
-    command: qjazz-processes serve
-    environment:
-      CONF_LOGGING__LEVEL: DEBUG
-      CONF_EXECUTOR__CELERY__BROKER_HOST: rabbitmq
-      CONF_EXECUTOR__CELERY__BACKEND_HOST: redis:6379/0
-    ports:
-    - 127.0.0.1:4000:9080
-    depends_on: [rabbitmq, redis]
-    profiles:
-    - server
-
   rabbitmq:
-    image: rabbitmq:3-alpine
+    # WARNINC: Celery is not compatible with rabbitmq 4.3+
+    image: rabbitmq:4.2-alpine
     ports:
     - 127.0.0.1:5671:5671
     - 127.0.0.1:5672:5672
     - 127.0.0.1:15672:15672
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     ports:
     - 127.0.0.1:6379:6379
 
