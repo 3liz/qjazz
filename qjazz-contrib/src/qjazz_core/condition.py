@@ -36,3 +36,8 @@ def assert_not_none[T](value: Optional[T], message: Optional[str] = None) -> T:
     if value is None:
         raise AssertionError(message or "Unexpected None value")
     return value
+
+
+unwrap = assert_not_none
+
+
