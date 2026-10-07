@@ -28,6 +28,12 @@ high_water_mark = 0.9
 # Interval in seconds between two check the out-of-memory
 # handler.
 oom_period = 5
+#
+# Interval in seconds for sending keepalive probes
+# (TCP keepalive and HTTP2 PING) to clients.
+# Connections from unresponsive clients are closed.
+# Set to 0 to disable keepalive.
+keepalive = 60
 
 #
 [rpc.listen]

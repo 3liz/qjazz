@@ -82,6 +82,15 @@ class Rpc(ConfigBase):
         5,
         description=("Interval in seconds between two check the out-of-memory\nhandler."),
     )
+    keepalive: int = Field(
+        60,
+        description=(
+            "Interval in seconds for sending keepalive probes\n"
+            "(TCP keepalive and HTTP2 PING) to clients.\n"
+            "Connections from unresponsive clients are closed.\n"
+            "Set to 0 to disable keepalive."
+        ),
+    )
 
 
 class Worker(ConfigBase):

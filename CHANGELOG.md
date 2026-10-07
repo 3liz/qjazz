@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-rpc] Enforce tcp/http2 connection keepalive 
 * [qjazz-rpc] Ensure `O_CLOEXEC` is called when opening rendez-vous pipe
 * [qjazz-processes] Simplify passing output formats from output schema
 

@@ -80,6 +80,11 @@ pub struct Rpc {
     /// Interval in seconds between two check the out-of-memory
     /// handler. The value must be greater than or equal to 3s.
     oom_period: u64,
+    /// Interval in seconds for sending keepalive probes
+    /// (TCP keepalive and HTTP2 PING) to clients.
+    /// Connections from unresponsive clients are closed.
+    /// Set to 0 to disable keepalive.
+    keepalive: u64,
 }
 
 impl Default for Rpc {
@@ -92,6 +97,7 @@ impl Default for Rpc {
             max_failure_pressure: 0.9,
             high_water_mark: 0.9,
             oom_period: 5,
+            keepalive: 60,
         }
     }
 }
@@ -157,6 +163,9 @@ impl Rpc {
     }
     pub fn oom_period(&self) -> Duration {
         Duration::from_secs(self.oom_period)
+    }
+    pub fn keepalive(&self) -> Option<Duration> {
+        (self.keepalive > 0).then(|| Duration::from_secs(self.keepalive))
     }
 }
 

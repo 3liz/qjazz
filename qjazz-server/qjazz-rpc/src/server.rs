@@ -9,7 +9,11 @@ use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
+use std::time::Duration;
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
+
+// Time to wait for a keepalive PING ack before closing the connection
+const KEEPALIVE_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Run gRPC server
 pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()> {
@@ -65,12 +69,19 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
 
     let grace_period = settings.rpc.shutdown_grace_period();
 
+    // Enable keepalive so that connections from dead or unreachable
+    // clients are detected and closed instead of leaking sockets.
+    let keepalive = settings.rpc.keepalive();
+    
     // NOTE Do not use serve_with_shutdown since
     // it waits forever for client to disconnect
     // Just launch the task and let tokio abort on exit.
     // Furthemore, graceful shutdown is handled by the worker
     // pool.
-    let mut builder = Server::builder();
+    let mut builder = Server::builder()
+        .tcp_keepalive(keepalive)
+        .http2_keepalive_interval(keepalive)
+        .http2_keepalive_timeout(keepalive.map(|_| KEEPALIVE_TIMEOUT));
 
     // Enable tls
     if settings.rpc.enable_tls() {

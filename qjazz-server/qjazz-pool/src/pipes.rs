@@ -69,9 +69,10 @@ impl Pipe {
             Ok(0) | Err(Errno::EWOULDBLOCK) => Ok(false),
             Ok(_) => {
                 let token = CancellationToken::new();
-                let rv = self.drain_blocking(fd, token.clone()).await; // Pull out remaining data
-                token.cancel();
-                rv
+                // Cancel the blocking task even if this future is dropped
+                // (i.e on timeout) so that it does not read from a closed fd.
+                let _guard = token.clone().drop_guard();
+                self.drain_blocking(fd, token).await // Pull out remaining data
             }
             Err(errno) => {
                 log::error!("Drain: I/O error: {errno:#?}");
