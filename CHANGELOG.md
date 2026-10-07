@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-rpc] Ensure `O_CLOEXEC` is called when opening rendez-vous pipe
+* [qjazz-processes] Simplify passing output formats from output schema
+
 ## 0.9.3
 
 * [qjazz-rpc] Add project 'load' command in cli tool

@@ -120,7 +120,7 @@ impl RendezVous {
         // so it will be closed on drop
         let fd = AsyncFd::new(fcntl::open(
             &self.path,
-            OFlag::O_RDONLY | OFlag::O_NONBLOCK,
+            OFlag::O_RDONLY | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
             stat::Mode::S_IRWXU,
         )?)?;
 
