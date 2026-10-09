@@ -54,4 +54,4 @@ route = "/worker"
 
 [monitor]
 command = "python"
-args = ["tests/monitor.py"]
+args = ["$location/monitor.py"]

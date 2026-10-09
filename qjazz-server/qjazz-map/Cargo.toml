@@ -44,6 +44,7 @@ bitflags = "2"
 uuid = { version = "1",  features = ["v3"] }
 
 [features]
+default = ["monitor"]
 monitor = ["qjazz-mon"]
 
 [build-dependencies]

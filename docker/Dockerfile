@@ -189,6 +189,7 @@ RUN --mount=type=bind,target=/src,rw \
     uv pip install --compile-bytecode --no-cache \
         -r /src/requirements.txt \
         -r /src/requirements/dev.txt \
-    && uv pip install --no-deps --compile-bytecode \
-        -e /src/qjazz-contrib \
-        -e /src/qjazz-processes 
+    && uv pip install --no-deps --no-cache --compile-bytecode \
+        `ls -1 /src/dist/qjazz_contrib-*.whl` \
+        `ls -1 /src/dist/qjazz_rpc-*.whl` \
+        `ls -1 /src/dist/qjazz_processes-*.whl`

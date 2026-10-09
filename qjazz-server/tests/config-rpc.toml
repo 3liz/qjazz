@@ -34,6 +34,6 @@ force_readonly_layers = true
 [worker.qgis.network]
 trace = true
 
-#[monitor]
-#command = "python"
-#args = ["$location/monitor.py"]
+[monitor]
+command = "python"
+args = ["$location/monitor.py"]
