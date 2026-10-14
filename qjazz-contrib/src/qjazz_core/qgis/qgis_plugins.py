@@ -16,6 +16,7 @@ import traceback
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -151,7 +152,7 @@ class Plugin:
     plugin_type: PluginType
     init: Any
 
-    @property
+    @cached_property
     def metadata(self) -> JsonDict:
         """Return plugin metadata"""
         # Read metadata

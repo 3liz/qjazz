@@ -82,6 +82,8 @@ class Processes(HandlerProto):
 
         def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
             if self._accesspolicy.execute_permission(request, service, td.id_):
+                # Dereference links first, links are copied multiple times !
+                links = td.links
                 td.links = [
                     make_link(
                         request,
@@ -89,7 +91,7 @@ class Processes(HandlerProto):
                         rel="http://www.opengis.net/def/rel/ogc/1.0/processes",
                         title="Process description",
                     ),
-                    *td.links,
+                    *links,
                 ]
                 return td
             return None
