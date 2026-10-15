@@ -149,6 +149,14 @@ paths:
             type: string
         description: Filter by process
       - in: query
+        name: tag
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+        description: Filter by tag
+      - in: query
         name: service
         required: false
         schema:

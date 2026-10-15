@@ -495,13 +495,14 @@ class Processes(ExecutorProtocol):
         meta = kwargs.get("__meta__", {})
 
         details: dict = {"tag": meta.get("tag")}
+        if finished:
+            end_at = DateTime.validate_python(finished).timestamp()
+            details.update(
+                expires_at=to_utc_datetime(meta["expires"] + end_at),
+            )
+
         if with_details:
             details.update(run_config=kwargs.get("request"))
-            if finished:
-                end_at = DateTime.validate_python(finished).timestamp()
-                details.update(
-                    expires_at=to_utc_datetime(meta["expires"] + end_at),
-                )
 
         return JobStatus(
             job_id=job_id,
@@ -561,6 +562,7 @@ class Processes(ExecutorProtocol):
         cursor: int = 0,
         limit: int = 100,
         with_details: bool = False,
+        with_filter: Optional[Callable[[JobStatus], bool]] = None,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
 
@@ -584,7 +586,10 @@ class Processes(ExecutorProtocol):
                 if st:
                     yield st
 
-        return list(itertools.islice(_pull(), cursor, cursor + limit))
+        # Apply filter
+        it = (st for st in _pull() if with_filter(st)) if with_filter else _pull()
+
+        return list(itertools.islice(it, cursor, cursor + limit))
 
     def _job_command(
         self,

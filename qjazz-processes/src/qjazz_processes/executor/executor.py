@@ -253,6 +253,8 @@ class AsyncExecutor(ExecutorBase):
         realm: Optional[str] = None,
         cursor: int = 0,
         limit: int = 100,
+        with_details: bool = False,
+        with_filter: Optional[Callable[[JobStatus], bool]] = None,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
         return await asyncio.to_thread(
@@ -262,6 +264,8 @@ class AsyncExecutor(ExecutorBase):
             realm=realm,
             cursor=cursor,
             limit=limit,
+            with_details=with_details,
+            with_filter=with_filter,
         )
 
     async def log_details(

@@ -167,6 +167,14 @@ class Jobs(HandlerProto):
                    type: string
               description: Filter by process
             - in: query
+              name: tag
+              required: false
+              schema:
+                type: array
+                items:
+                   type: string
+              description: Filter by tag
+            - in: query
               name: service
               required: false
               schema:
@@ -199,29 +207,31 @@ class Jobs(HandlerProto):
         # Filters
         process_ids = request.query.getall("processID", ())
         filtered_status = request.query.getall("status", ())
+        filtered_tags = request.query.getall("tag", ())
 
         # Require realm for job listing
         realm = self._jobrealm.job_realm(request)
+
+        if process_ids or filtered_status or filtered_tags:
+
+            def filtered_jobs(st: JobStatus) -> bool:
+                return (
+                    (not process_ids or st.process_id in process_ids)
+                    and (not filtered_status or st.status in filtered_status)
+                    and (not filtered_tags or st.tag in filtered_tags)
+                )
+
+            job_filter = filtered_jobs
+        else:
+            job_filter = None
 
         jobs = await self._executor.jobs(
             service,
             realm=realm,
             cursor=(page - 1) * limit,
             limit=limit,
+            with_filter=job_filter,
         )
-
-        if process_ids or filtered_status:
-
-            def filtered_jobs():
-                for st in jobs:
-                    if process_ids and st.process_id not in process_ids:
-                        continue
-                    if filtered_status and st.status not in filtered_status:
-                        continue
-
-                    yield st
-
-            jobs = list(filtered_jobs())
 
         for st in jobs:
             location = self.format_path(request, f"/jobs/{st.job_id}")

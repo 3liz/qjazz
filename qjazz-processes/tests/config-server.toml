@@ -9,7 +9,7 @@ backend_host = "localhost:6379/0"
 listen = ["127.0.0.1", 4000]
 
 [job_realm]
-enabled = true
+enabled = false
 admin_tokens = [
     "admin",
     "bigboss",

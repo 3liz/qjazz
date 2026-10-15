@@ -129,6 +129,7 @@ class BlockingExecutor(ExecutorBase):
         cursor: int = 0,
         limit: int = 100,
         with_details: bool = False,
+        with_filter: Optional[Callable[[JobStatus], bool]] = None,
     ) -> Sequence[JobStatus]:
         """Iterate over job statuses"""
         return self._jobs(
@@ -138,6 +139,7 @@ class BlockingExecutor(ExecutorBase):
             cursor=cursor,
             limit=limit,
             with_details=with_details,
+            with_filter=with_filter,
         )
 
     def log_details(
