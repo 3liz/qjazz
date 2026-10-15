@@ -69,7 +69,7 @@ class JobRealmConfig(ConfigBase):
         Return Unauthorized if job realm is requested
         """
         if self.enabled:
-            realm = request.get(JOB_REALM_HEADER)
+            realm = request.headers.get(JOB_REALM_HEADER)
             if not realm:
                 ErrorResponse.raises(web.HTTPUnauthorized, "Unauthorized")
             if realm in self.admin_tokens:

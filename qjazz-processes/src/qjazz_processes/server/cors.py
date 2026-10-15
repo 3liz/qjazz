@@ -16,20 +16,26 @@ HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 # CORS
 #
 
+# Non-safelisted response headers that cross-origin
+# clients are allowed to read
+EXPOSE_HEADERS = (
+    "Location, Content-Length, Last-Modified, "
+    "X-Job-Id, X-Job-Realm, X-Request-ID, QJazz-Store-Type"
+)
+
 
 def cors_handler(
     allow_methods: str,
     allow_headers: str = "*",
 ) -> Callable[[web.Request], Awaitable[web.Response]]:
     """Set correct headers for 'OPTIONS' method"""
-    headers = {}
 
     async def cors_handler_(request: web.Request) -> web.Response:
+        headers = {"Access-Control-Allow-Headers": allow_headers}
         if request.headers.get("Origin"):
             # Required in CORS context
             # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
             headers["Access-Control-Allow-Methods"] = allow_methods
-            headers["Access-Control-Allow-headers"] = allow_headers
 
         return web.Response(headers=headers)
 
@@ -58,6 +64,7 @@ def set_access_control_headers(
                     allow_origin = str(url)
 
             response.headers["Access-Control-Allow-Origin"] = allow_origin
+            response.headers["Access-Control-Expose-Headers"] = EXPOSE_HEADERS
 
     return set_access_control_headers_  # typing: ignore [return-value]
 

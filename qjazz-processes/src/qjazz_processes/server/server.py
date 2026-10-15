@@ -146,6 +146,7 @@ def load_configuration(
         cnf = {}
 
     confservice.validate(cnf)
+
     return cast("ConfigProto", confservice.conf)
 
 
@@ -290,12 +291,21 @@ def create_site(http: HttpConfig, runner: web.AppRunner) -> Site:
     return site
 
 
+def _output_server_infos(conf: ConfigProto):
+    """Output server infos"""
+    if conf.job_realm.enabled:
+        logger.info("Job realm enabled")
+
+
 def create_app(
     conf: ConfigProto,
     executor: Optional[Executor] = None,
     *,
     handler_overrides: Optional[type[object]] = None,
 ) -> web.Application:
+
+    _output_server_infos(conf)
+
     app = web.Application(
         middlewares=[
             unhandled_exceptions,
