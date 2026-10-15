@@ -59,7 +59,6 @@ SERVER_HEADER = f"Qjazz-Processes {__version__}"
 DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 
 
-
 class HttpConfig(ConfigBase):
     listen: NetInterface = Field(
         default=DEFAULT_INTERFACE,
@@ -184,7 +183,6 @@ class AccessLogger(AbstractAccessLogger):
             fmt += f"\t{REQ_ID_FORMAT.format(request_id=request_id)}"
 
         logger.log_req(fmt)
-
 
 
 #

@@ -1,4 +1,3 @@
-
 from typing import (
     Awaitable,
     Callable,
@@ -19,8 +18,7 @@ HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 # Non-safelisted response headers that cross-origin
 # clients are allowed to read
 EXPOSE_HEADERS = (
-    "Location, Content-Length, Last-Modified, "
-    "X-Job-Id, X-Job-Realm, X-Request-ID, QJazz-Store-Type"
+    "Location, Content-Length, Last-Modified, X-Job-Id, X-Job-Realm, X-Request-ID, QJazz-Store-Type"
 )
 
 
@@ -67,5 +65,3 @@ def set_access_control_headers(
             response.headers["Access-Control-Expose-Headers"] = EXPOSE_HEADERS
 
     return set_access_control_headers_  # typing: ignore [return-value]
-
-

@@ -83,7 +83,7 @@ def geometrytypes_to_model(
                 if allowMultipart:
                     yield geojson.MultiPolygon
             case Qgis.GeometryType.Unknown:
-                    yield geojson.Geometry
+                yield geojson.Geometry
 
 
 class ParameterGeometry(InputParameter):
@@ -116,10 +116,13 @@ class ParameterGeometry(InputParameter):
                 MediaType(str, Formats.WKT.media_type, title=Formats.WKT.title),
                 MediaType(str, Formats.GML.media_type, title=Formats.GML.title),
                 # Support passing geojson object directly
-                Annotated[geometry_type, Field(
-                    json_schema_extra={"format": "geojson-geometry"},
-                    title="GeoJson object",
-                )],
+                Annotated[
+                    geometry_type,
+                    Field(
+                        json_schema_extra={"format": "geojson-geometry"},
+                        title="GeoJson object",
+                    ),
+                ],
             ],
         ]
 
@@ -165,7 +168,6 @@ def geometry_from_json(json_str: str, named_crs: str | None) -> QgsGeometry | Qg
         raise InputValueError("Invalid geometry")
 
     return geom
-
 
 
 #

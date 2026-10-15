@@ -93,11 +93,14 @@ def MediaType(
     if schema:
         schema_extra.update(contentSchema=schema)
 
-    return Annotated[_type, Field(
-        title=title,
-        description=description,
-        json_schema_extra=schema_extra,
-    )]
+    return Annotated[
+        _type,
+        Field(
+            title=title,
+            description=description,
+            json_schema_extra=schema_extra,
+        ),
+    ]
 
 
 class OutputFormat(JsonModel):

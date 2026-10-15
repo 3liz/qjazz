@@ -47,6 +47,7 @@ from .base import (
 # QgsProcessingOutputFile
 #
 
+
 class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc]
     _Model = Link
 

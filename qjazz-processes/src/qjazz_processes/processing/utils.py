@@ -229,10 +229,12 @@ def output_file_formats(param: QgsProcessingParameterFileDestination) -> Sequenc
             mime = mimetypes.types_map.get(ext)
             if mime:
                 title = m.group(1).strip()
-                formats.append(Format(
-                    media_type=mime,
-                    suffix=ext,
-                    title=title or mime,
-                ))
+                formats.append(
+                    Format(
+                        media_type=mime,
+                        suffix=ext,
+                        title=title or mime,
+                    )
+                )
 
     return formats
