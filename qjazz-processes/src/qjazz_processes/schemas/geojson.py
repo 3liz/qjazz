@@ -1,7 +1,6 @@
 from typing import (
     Annotated,
     Literal,
-    Optional,
     Self,
     Sequence,
     Union,
@@ -9,7 +8,7 @@ from typing import (
 
 from pydantic import Field
 
-from .models import JsonModel, OneOf
+from .models import JsonModel, OneOf, Option
 from .ogc import WGS84
 
 POINT = "Point"
@@ -39,7 +38,7 @@ class NamedCrs(JsonModel):
 
 
 class Referenced(JsonModel):
-    crs: Optional[NamedCrs] = None
+    crs: Option[NamedCrs] = None
 
 
 # Point

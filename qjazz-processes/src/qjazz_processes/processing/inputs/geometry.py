@@ -16,7 +16,6 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from qjazz_core import logger
 
 from qgis.core import (
     Qgis,
@@ -83,11 +82,11 @@ def geometrytypes_to_model(
                 yield geojson.Polygon
                 if allowMultipart:
                     yield geojson.MultiPolygon
+            case Qgis.GeometryType.Unknown:
+                    yield geojson.Geometry
 
 
 class ParameterGeometry(InputParameter):
-    _SchemaFormat = "geojson-geometry"
-
     @classmethod
     def get_geometry_type(cls, param: "QgsProcessingParameterGeometry") -> TypeAlias:
         geomtypes = param.geometryTypes()
@@ -113,9 +112,14 @@ class ParameterGeometry(InputParameter):
 
         return OneOf[  # type: ignore [misc, valid-type]
             Union[
-                Annotated[geometry_type, Field(json_schema_extra={"format": "geojson-geometry"})],
-                MediaType(str, Formats.WKT.media_type),
-                MediaType(str, Formats.GML.media_type),
+                MediaType(str, Formats.GEOJSON.media_type, title=Formats.GEOJSON.title),
+                MediaType(str, Formats.WKT.media_type, title=Formats.WKT.title),
+                MediaType(str, Formats.GML.media_type, title=Formats.GML.title),
+                # Support passing geojson object directly
+                Annotated[geometry_type, Field(
+                    json_schema_extra={"format": "geojson-geometry"},
+                    title="GeoJson object",
+                )],
             ],
         ]
 
@@ -124,6 +128,9 @@ class ParameterGeometry(InputParameter):
         match inp:
             case {"value": str(value), "mediaType": media_type}:
                 match media_type:
+                    case Formats.GEOJSON.media_type:
+                        # TODO: Handle CRS
+                        geom = geometry_from_json(value, None)
                     case Formats.WKT.media_type:
                         geom = wkt_to_geometry(value)
                     case Formats.GML.media_type:
@@ -133,20 +140,32 @@ class ParameterGeometry(InputParameter):
             case _:
                 # GeoJson
                 _inp = self.validate(inp)
-                geom = ogr.CreateGeometryFromJson(_inp.model_dump_json())
-                if geom:
-                    # XXX There is no method for direct import
-                    # from json
-                    geom = QgsGeometry.fromWkt(geom.ExportToWkt())
-                    crs = QgsCoordinateReferenceSystem()
-                    if _inp.crs:
-                        crs.createFromUserInput(_inp.crs.name())
-                        if crs.isValid():
-                            geom = QgsReferencedGeometry(geom, crs)
-                        else:
-                            logger.error("Invalid CRS for geometry: %s", _inp.crs.name())
+                geom = geometry_from_json(
+                    _inp.model_dump_json(),
+                    _inp.crs.name() if _inp.crs else None,
+                )
 
         return geom
+
+
+def geometry_from_json(json_str: str, named_crs: str | None) -> QgsGeometry | QgsReferencedGeometry:
+    # XXX There is no method for direct import
+    # from json
+    geom = ogr.CreateGeometryFromJson(json_str)
+    if geom:
+        geom = QgsGeometry.fromWkt(geom.ExportToWkt())
+        if named_crs:
+            crs = QgsCoordinateReferenceSystem()
+            crs.createFromUserInput(named_crs)
+            if crs.isValid():
+                geom = QgsReferencedGeometry(geom, crs)
+            else:
+                raise InputValueError(f"Invalid CRS for geometry: {named_crs}")
+    else:
+        raise InputValueError("Invalid geometry")
+
+    return geom
+
 
 
 #

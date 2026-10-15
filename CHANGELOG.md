@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix InputGeometry schema
 * [qjazz-processes] Fix CORS handling
 * [qjazz-core] Cache plugin metadata
 * [qjazz-rpc] Enforce tcp/http2 connection keepalive 
