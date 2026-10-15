@@ -6,9 +6,6 @@ from importlib import resources
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import (
-    Awaitable,
-    Callable,
-    Literal,
     Optional,
     Protocol,
     TypeAlias,
@@ -19,7 +16,6 @@ from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 from aiohttp.web_middlewares import normalize_path_middleware
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
 )
 from qjazz_core import logger
@@ -39,6 +35,7 @@ from .accesspolicy import (
     create_access_policy,
 )
 from .cache import ServiceCache
+from .cors import HttpCORS, cors_handler, set_access_control_headers
 from .executor import Executor, ExecutorConfig
 from .forwarded import ForwardedConfig, forwarded
 from .handlers import API_VERSION, PACKAGE_NAME, Handler
@@ -61,7 +58,6 @@ SERVER_HEADER = f"Qjazz-Processes {__version__}"
 
 DEFAULT_INTERFACE = ("127.0.0.1", 9180)
 
-HttpCORS: TypeAlias = Literal["all", "same-origin"] | AnyHttpUrl
 
 
 class HttpConfig(ConfigBase):
@@ -188,54 +184,6 @@ class AccessLogger(AbstractAccessLogger):
 
         logger.log_req(fmt)
 
-
-#
-# CORS
-#
-
-
-async def cors_options_handler(
-    request: web.Request,
-    allow_methods: str,
-    allow_headers: str,
-) -> web.Response:
-    """Set correct headers for 'OPTIONS' method"""
-    headers = {
-        "Allow": allow_methods,
-        "Access-Control-Allow-Headers": allow_headers,
-    }
-    if request.headers.get("Origin"):
-        # Required in CORS context
-        # see https://developer.mozilla.org/fr/docs/Web/HTTP/M%C3%A9thode/OPTIONS
-        headers["Access-Control-Allow-Methods"] = allow_methods
-
-    return web.Response(headers=headers)
-
-
-def set_access_control_headers(
-    mode: HttpCORS,
-) -> Callable[[web.Request, web.StreamResponse], Awaitable[None]]:
-    """Build a response prepare callback"""
-
-    async def set_access_control_headers_(
-        request: web.Request,
-        response: web.StreamResponse,
-    ):
-        """Handle Access control and cross origin headers (CORS)"""
-        origin = request.headers.get("Origin")
-        if origin:
-            match mode:
-                case "all":
-                    allow_origin = "*"
-                case "same-origin":
-                    allow_origin = origin
-                    response.headers["Vary"] = "Origin"
-                case _ as url:
-                    allow_origin = str(url)
-
-            response.headers["Access-Control-Allow-Origin"] = allow_origin
-
-    return set_access_control_headers_  # typing: ignore [return-value]
 
 
 #
@@ -421,6 +369,7 @@ def create_app(
     async def swagger_ui(request: web.Request) -> web.StreamResponse:
         return web.FileResponse(path=swagger_index)
 
+    app.router.add_route("OPTIONS", "/{tail:.+}", cors_handler("*"))
     app.router.add_route("GET", "/api", service_desc)
     app.router.add_route("GET", "/api.html", swagger_ui)
 

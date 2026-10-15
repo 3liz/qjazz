@@ -63,6 +63,7 @@ class Handler(Services, Processes, Jobs, Storage, Store, LandingPage):
                 # Jobs
                 web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
                 web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
+                # Results
                 web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
                 # Log
                 web.get(f"{prefix}/jobs/{{JobId}}/log", self.job_log, allow_head=False),

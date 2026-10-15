@@ -84,6 +84,8 @@ def MediaType(
     *,
     encoding: Optional[str] = None,
     schema: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
 ) -> TypeAlias:
     schema_extra: dict = {"contentMediaType": media_type}
     if encoding:
@@ -91,7 +93,11 @@ def MediaType(
     if schema:
         schema_extra.update(contentSchema=schema)
 
-    return Annotated[_type, Field(json_schema_extra=schema_extra)]
+    return Annotated[_type, Field(
+        title=title,
+        description=description,
+        json_schema_extra=schema_extra,
+    )]
 
 
 class OutputFormat(JsonModel):
