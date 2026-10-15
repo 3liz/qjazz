@@ -66,7 +66,7 @@ def test_parameter_point_gml(qgis_session):
     data = QualifiedInputValue(
         media_type=Formats.GML.media_type,
         value=('<gml:Point srsName="EPSG:4326"><gml:coordinates>4,42</gml:coordinates></gml:Point>'),
-    ).model_dump(mode="json", by_alias=True)
+    ).model_dump(mode="json")
 
     value = inp.value(data)
 
@@ -93,7 +93,7 @@ def test_parameter_point_wkt(qgis_session):
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
         value="CRS=EPSG:4326;POINT(6 10)",
-    ).model_dump(mode="json", by_alias=True)
+    ).model_dump(mode="json")
 
     value = inp.value(data)
 
@@ -105,7 +105,7 @@ def test_parameter_point_wkt(qgis_session):
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
         value="SRID=3785;POINT(365340 3161978)",
-    ).model_dump(mode="json", by_alias=True)
+    ).model_dump(mode="json")
 
     value = inp.value(data)
 
@@ -117,7 +117,7 @@ def test_parameter_point_wkt(qgis_session):
     data = QualifiedInputValue(
         media_type=Formats.WKT.media_type,
         value="POINT(6 10)",
-    ).model_dump(mode="json", by_alias=True)
+    ).model_dump(mode="json")
 
     value = inp.value(data)
     assert isinstance(value, QgsPointXY)

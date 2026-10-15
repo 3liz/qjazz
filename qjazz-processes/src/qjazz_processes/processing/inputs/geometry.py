@@ -372,7 +372,7 @@ class ParameterExtent(InputParameter):
                                 ],
                             }
                         )
-                        .model_dump(mode="json", by_alias=True),
+                        .model_dump(mode="json"),
                     )
 
         return _type

@@ -11,7 +11,6 @@ from typing import (
     ClassVar,
     Sequence,
     TypeAlias,
-    cast,
 )
 from urllib.parse import quote, urlencode
 
@@ -32,6 +31,7 @@ from qjazz_processes.schemas import (
     Link,
     OutputFormat,
     OutputFormatDefinition,
+    OutputFormatDescription,
     ValuePassing,
     mimetypes,
 )
@@ -62,22 +62,17 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
     def json_schema(self) -> JsonDict:
         schema = super().json_schema()
 
-        formats = self.allowed_formats
-        if formats:
-            schema = cast(
-                "JsonDict",
-                {
-                    "$defs": {"Link": schema},
-                    "oneOf": [
-                        {
-                            "$ref": "#/$defs/Link",
-                            "contentMediaType": fmt.media_type,
-                            "title": fmt.title,
-                        }
-                        for fmt in formats
-                    ],
-                },
-            )
+        if formats := self.allowed_formats:
+            # Add the list of allowed output formats
+            # This will enable the client to select the
+            # output format.
+            schema["outputFormats"] = [
+                OutputFormatDescription(
+                    title=fmt.title,
+                    media_type=fmt.media_type,
+                ).model_dump(mode="json")
+                for fmt in formats
+            ]
 
         return schema
 
@@ -116,7 +111,7 @@ class OutputLayerBase(OutputParameter, OutputFormatDefinition):  # type: ignore 
             mime_type=media_type,
             title=self.title,
             description=self._out.description(),
-        ).model_dump(mode="json", by_alias=True, exclude_none=True)
+        ).model_dump(mode="json")
 
     def advertise_layer(self, layer: QgsMapLayer, name: str, context: ProcessingContext):
         """Advertised layer for server GetCapabilities requests"""

@@ -212,7 +212,7 @@ class ParameterFeatureSource(ParameterMapLayer):
                 crsdef = crs.toOgcUri()
 
         class _Model(JsonModel):
-            source: _type
+            source: _type = Field(title="Source", description="Feature source")
             intersect: Option[
                 BoundingBox(crsdef),  # type: ignore [valid-type]
             ] = Field(
@@ -226,13 +226,14 @@ class ParameterFeatureSource(ParameterMapLayer):
                 json_schema_extra={"format": "x-qgis-expression"},
             )
 
-        return _type | _Model
+        return _Model
 
     def value(
         self,
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> "QgsProcessingFeatureSourceDefinition":
+
         _inp = self.validate(inp)
 
         has_selection = False

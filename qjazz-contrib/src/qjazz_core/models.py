@@ -15,6 +15,7 @@ from pydantic import (
     alias_generators,
 )
 from pydantic.aliases import PydanticUndefined
+from pydantic.json_schema import SkipJsonSchema
 
 
 def Field(
@@ -38,7 +39,7 @@ model_json_properties = {
 JsonDict: TypeAlias = dict[str, JsonValue]
 
 
-# Ensure that union type use `OneOf` in schema
+# Ensure that union type use `oneOf` in schema
 # instead of `anyOf`
 
 # See https://github.com/pydantic/pydantic/issues/656#
@@ -86,39 +87,22 @@ def _pull_title(k: str, v: JsonDict):
         v.pop("title")
 
 
-#
-# Fix optional field in json_schema
-#
-# This will replace schema for Optional[T] as
-# { 'type': ..., ... } instead of
-# { 'anyof': [{ 'type': ..., ,,,}, { 'type': null }] }
-#
-def fix_optional_schema(s):
-    schema = s.pop("anyOf")[0]
-    s.pop("default", None)
-    s.update(schema)
-
-
 def fix_nullable_schema(s):
-    fix_optional_schema(s)
     s.update(nullable=True)
 
 
-Option = Annotated[T | None, Field(default=None, json_schema_extra=fix_optional_schema)]
+Option = Annotated[T | SkipJsonSchema[None], Field(default=None)]
 
 # nullable = true
-Nullable = Annotated[T | None, Field(json_schema_extra=fix_nullable_schema)]
+Nullable = Annotated[T | SkipJsonSchema[None], Field(json_schema_extra=fix_nullable_schema)]
 
 # Json base model
 
 
 class JsonModel(BaseModel, **model_json_properties):
-    @classmethod
-    def model_json_schema(cls, *args, **kwargs) -> JsonDict:
-        schema = super(JsonModel, cls).model_json_schema(*args, **kwargs)
-        remove_auto_title(schema)
-        return schema
-
     # Override: force by_alias=True
     def model_dump_json(self, *args, **kwargs) -> str:
         return super().model_dump_json(*args, by_alias=True, exclude_none=True, **kwargs)
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:
+        return super().model_dump(*args, by_alias=True, exclude_none=True, **kwargs)

@@ -100,7 +100,7 @@ class ProcessCache(mp.Process):
             else:
                 raise RuntimeError(f"Failed to get process description {ident} ({project})")
 
-        return description.model_dump(mode="json", exclude_none=True)
+        return description.model_dump(mode="json")
 
     def update(self) -> list[ProcessSummary]:
         """Update process summary list"""

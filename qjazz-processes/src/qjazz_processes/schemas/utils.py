@@ -8,7 +8,7 @@ from typing import (
 from pydantic import TypeAdapter
 from pydantic.config import JsonDict
 
-from .models import one_of, remove_auto_title
+from .models import one_of
 from .processes import (
     InputDescription,
     MetadataValue,
@@ -41,7 +41,6 @@ def input_model_description(
 
     schema.pop("title", None)
     one_of(schema)
-    remove_auto_title(schema)
 
     return InputDescription(
         title=title,

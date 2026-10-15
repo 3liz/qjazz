@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix ParameterFeatureSource schema definition
 * [qjazz-processes] Allow filtering jobs by tag
 * [qjazz-processes] Fix InputGeometry schema
 * [qjazz-processes] Fix CORS handling

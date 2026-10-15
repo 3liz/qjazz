@@ -21,7 +21,6 @@ from qjazz_processes.schemas import (
     Metadata,
     MetadataValue,
     ValuePassing,
-    remove_auto_title,
 )
 from qjazz_processes.schemas.models import one_of
 
@@ -153,7 +152,6 @@ class InputParameter[P: ParameterDefinition, T]:
         schema = self._model.json_schema()
         schema.pop("title", None)
         one_of(schema)
-        remove_auto_title(schema)
 
         schema_format = self.schema_format()
         if schema_format:

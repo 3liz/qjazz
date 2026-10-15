@@ -27,7 +27,6 @@ from qjazz_processes.schemas import (
     OutputDescription,
     OutputFormatDefinition,
     ValuePassing,
-    remove_auto_title,
 )
 from qjazz_processes.schemas.models import one_of
 
@@ -101,7 +100,6 @@ class OutputParameter[T]:
         schema = self._model.json_schema()
         schema.pop("title", None)
         one_of(schema)
-        remove_auto_title(schema)
         return schema
 
     @cached_property
