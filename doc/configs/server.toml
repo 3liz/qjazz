@@ -57,6 +57,7 @@ shutdown_timeout = 30
 # 
 check_forwarded_headers = true
 
+
 [backends.'key']
 #
 # Hostname
@@ -103,7 +104,7 @@ timeout = 20
 # Set the headers that will be forwarded to the Qgis server backend.
 # This may be useful if you have plugins that may deal with request headers.
 # 
-forward_headers = ["x-qgis-*","x-lizmap-*"]
+forward_headers = ["x-qgis-*", "x-lizmap-*"]
 #
 # Allow direct path resolution
 #
@@ -167,4 +168,3 @@ enabled = false
 # internal uris.
 # 
 disclosed = false
-

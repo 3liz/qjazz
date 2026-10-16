@@ -10,6 +10,16 @@ enabled = true
 handler = "qjazz_processes.callbacks.MailTo"
 
 #
+# Mail callback configuration
+#
+# Callback handler for sending mails,
+# The callback uri must conform to RFC 2368 (https://www.rfc-editor.org/rfc/rfc2368)
+# body and subject may contains template variables:
+#
+# $service: name of the service
+# $process: name of the process
+# $jobid: id of the job
+# $tag: Tag associated with the job
 [callbacks.mailto.config]
 #
 # SMTP host
@@ -82,6 +92,7 @@ The job $jobid ($process) has started.
 '''
 
 #
+# Access control configuration
 [callbacks.mailto.config.acl]
 #
 # Authorization order
@@ -116,4 +127,3 @@ allow = []
 #
 # List of forbidden hosts in the same format as for 'allow' list.
 deny = []
-

@@ -36,6 +36,7 @@ oom_period = 5
 keepalive = 60
 
 #
+# Socket configuration
 [rpc.listen]
 #
 # Socket address
@@ -174,7 +175,7 @@ use_default_server_handler = false
 #
 # Use aliases for QGIS server apis.
 # 
-api_aliases = {'WFS3'='OAPIF', 'LIZMAP'='Lizmap'}
+api_aliases = { WFS3 = "OGC WFS3 (Draft)", LIZMAP = "Lizmap" }
 
 #
 # Projects configuration
@@ -309,6 +310,18 @@ paths = []
 # plugins.
 install_mode = "external"
 #
+# Plugins repository
+#
+# Url plugin repository for downloading plugins
+plugins_repository = "https://qgis-plugins.3liz.org/"
+#
+# Repository type
+#
+# Type of repository api
+# - rest: use a yapt rest api
+# - qgis-xml: use a xml qgis-compatible index
+plugins_repository_type = "rest"
+#
 # Enable processing scripts
 #
 # Enable publication of processing scripts
@@ -319,12 +332,6 @@ enable_scripts = true
 # Load extra builtin processing providers
 # such as 'grass' and 'otb'.
 extra_builtin_providers = []
-#
-# Path to plugin manager executable
-#
-# The absolute path to the qgis-plugin_manager executable
-# that will be used for installing plugin in automatic mode.
-plugin_manager = "/usr/local/bin/qgis-plugin-manager"
 
 #
 # QGIS Network configuration
@@ -364,4 +371,3 @@ trace = false
 #
 # Transfer timeout in ms
 #transfer_timeout =   	# Optional
-
