@@ -400,7 +400,7 @@ def job_run_config(
     # Outputs
     return_annotation = s.return_annotation if s.return_annotation is not inspect.Signature.empty else None
 
-    outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue)
+    outputs: TypeAdapter = TypeAdapter(return_annotation or JsonValue) # type: ignore
     output_schema = outputs.json_schema()
 
     return (
