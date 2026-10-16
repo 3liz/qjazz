@@ -106,8 +106,7 @@ def list_processes(_state) -> list:
 )
 def describe_process(_state, ident: str, project_path: str | None) -> dict | None:
     """Return process description"""
-    p = Job.RUN_CONFIGS.get(ident)
-    if p:
+    if p := Job.RUN_CONFIGS.get(ident):
         return p.model_dump(mode="json", exclude_none=True, by_alias=True)
     return None
 

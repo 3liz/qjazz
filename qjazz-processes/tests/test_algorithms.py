@@ -151,7 +151,7 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
 
     request = JobExecute(
         inputs={
-            "INPUT": { "source": "france_parts" },
+            "INPUT": {"source": "france_parts"},
             "OUTPUT_VECTOR": "buffer",
             "DISTANCE": 0.05,
         },
@@ -217,7 +217,7 @@ def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
 
     request = JobExecute(
         inputs={
-            "INPUT": { "source": "france_parts" },
+            "INPUT": {"source": "france_parts"},
             "DISTANCE": 0.05,
         },
         outputs={

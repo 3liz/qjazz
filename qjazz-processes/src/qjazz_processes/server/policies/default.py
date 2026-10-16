@@ -76,7 +76,7 @@ class DefaultAccessPolicy(AccessPolicy):
 
     def get_project(self, request: web.Request) -> Optional[str]:
         """Return the project path (map)"""
-        return request.query.get("map") or request.query.get("MAP")
+        return request.query.get("project") or request.query.get("map") or request.query.get("MAP")
 
     def format_path(
         self,
@@ -91,7 +91,7 @@ class DefaultAccessPolicy(AccessPolicy):
         if service:
             service = f"service={service}"
         if project:
-            project = f"map={project}"
+            project = f"project={project}"
 
         query = "&".join(p for p in (query, service, project) if p)
         return f"{path}?{query}" if query else path

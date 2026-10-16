@@ -60,8 +60,10 @@ class Processes(HandlerProto):
               required: false
               description: |
                 The service requested.
-                If not set, the default behavior is to return
-                the first service in the configured service list.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
         tags:
             - processes
         responses:
@@ -126,6 +128,28 @@ class Processes(HandlerProto):
                 type: string
               required: true
               description: process identifier
+            - in: query
+              name: service
+              schema:
+                type: string
+              required: false
+              description: |
+                The service requested.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
+            - in: query
+              name: project
+              schema:
+                type: string
+              required: false
+              description: |
+                The project path
+                Note this is the default behavior for
+                targeting a project: the server may
+                defines its own policy for handling accesses
+                to projects.
         tags:
           - processes
         responses:
@@ -215,6 +239,28 @@ class Processes(HandlerProto):
                 maxLength: 36
               required: false
               description: job tag
+            - in: query
+              name: service
+              schema:
+                type: string
+              required: false
+              description: |
+                The service requested.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
+            - in: query
+              name: project
+              schema:
+                type: string
+              required: false
+              description: |
+                The project path
+                Note this is the default behavior for
+                targeting a project: the server may
+                defines its own policy for handling accesses
+                to projects.
         tags:
           - processes
         requestBody:

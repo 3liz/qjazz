@@ -1,10 +1,15 @@
 """Store handler
 
-Acces to storage linked to identity:
-    * Push and pull resources
-    * Enable encryption
+Access to external secure storage: allows upload and download resources
+to and from that storage.
 
-Workers will have access to this storage
+Some workers may be configured to access this storage, so it provides
+a way to pass (transient) data to the workers.
+
+Security features:
+
+* Identity required
+* Enable  encryption of resources.
 """
 
 import traceback
@@ -96,9 +101,11 @@ class Store(HandlerProto):
                 type: string
               required: false
               description: |
-                The service requested
-                If not set, the default behavior is to return
-                the first service in the configured service list
+                The service name.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
             - in query:
               name: prefix:
               schema:
@@ -181,14 +188,20 @@ class Store(HandlerProto):
               name: service
               schema:
                 type: string
-              required: true
-              description: service name
+              required: false
+              description: |
+                The service name.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
             - in: path
               name: Name
               schema:
                 type: string
               required: true
               description: Object path
+
         tags:
           - storage
         responses:
@@ -277,14 +290,20 @@ class Store(HandlerProto):
               name: service
               schema:
                 type: string
-              required: true
-              description: service name
+              required: false
+              description: |
+                The service name.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
             - in: query
               name: encrypt
               schema:
                 type: boolean
               required: false
-              description: encrypt data
+              description: encrypt data if supported
+              by the store backend.
         tags:
           - storage
         requestBody:
@@ -382,8 +401,13 @@ class Store(HandlerProto):
               name: service
               schema:
                 type: string
-              required: true
-              description: service name
+              required: false
+              description: |
+                The service name.
+                Note this is the default behavior for
+                targeting a service: the server may
+                defines its own policy for handling accesses
+                to services.
             - in: query
               name: version_id
               schema:

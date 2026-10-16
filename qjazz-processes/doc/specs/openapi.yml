@@ -36,8 +36,9 @@ paths:
         schema:
           type: string
         required: false
-        description: "The service requested.\nIf not set, the default behavior is
-          to return\nthe first service in the configured service list.\n"
+        description: "The service requested.\nNote this is the default behavior for\n\
+          targeting a service: the server may\ndefines its own policy for handling
+          accesses\nto services.\n"
       tags:
       - processes
       responses:
@@ -59,6 +60,22 @@ paths:
           type: string
         required: true
         description: process identifier
+      - in: query
+        name: service
+        schema:
+          type: string
+        required: false
+        description: "The service requested.\nNote this is the default behavior for\n\
+          targeting a service: the server may\ndefines its own policy for handling
+          accesses\nto services.\n"
+      - in: query
+        name: project
+        schema:
+          type: string
+        required: false
+        description: "The project path\nNote this is the default behavior for\ntargeting
+          a project: the server may\ndefines its own policy for handling accesses\n\
+          to projects.\n"
       tags:
       - processes
       responses:
@@ -86,6 +103,22 @@ paths:
           maxLength: 36
         required: false
         description: job tag
+      - in: query
+        name: service
+        schema:
+          type: string
+        required: false
+        description: "The service requested.\nNote this is the default behavior for\n\
+          targeting a service: the server may\ndefines its own policy for handling
+          accesses\nto services.\n"
+      - in: query
+        name: project
+        schema:
+          type: string
+        required: false
+        description: "The project path\nNote this is the default behavior for\ntargeting
+          a project: the server may\ndefines its own policy for handling accesses\n\
+          to projects.\n"
       tags:
       - processes
       requestBody:
@@ -393,6 +426,7 @@ definitions:
   ErrorResponse:
     properties:
       message:
+        title: Message
         type: string
       details:
         anyOf:
@@ -409,34 +443,52 @@ definitions:
         $ref: '#/definitions/OutputFormat'
     required:
     - format
+    title: Output
     type: object
   OutputFormat:
     properties:
       mediaType:
+        title: Mediatype
         type: string
       encoding:
+        default:
+        title: Encoding
         type: string
       schema:
-        format: uri
-        minLength: 1
-        type: string
+        anyOf:
+        - format: uri
+          minLength: 1
+          type: string
+        - additionalProperties:
+            $ref: '#/definitions/JsonValue'
+          type: object
+        default:
+        title: Schema
     required:
     - mediaType
+    title: OutputFormat
     type: object
   Subscriber:
     properties:
       successUri:
+        default:
         format: uri
         minLength: 1
+        title: Successuri
         type: string
       failedUri:
+        default:
         format: uri
         minLength: 1
+        title: Faileduri
         type: string
       inProgressUri:
+        default:
         format: uri
         minLength: 1
+        title: Inprogressuri
         type: string
+    title: Subscriber
     type: object
   JobExecute:
     properties:
@@ -444,55 +496,82 @@ definitions:
         additionalProperties:
           $ref: '#/definitions/JsonValue'
         default: {}
+        title: Inputs
         type: object
       outputs:
         additionalProperties:
           $ref: '#/definitions/Output'
         default: {}
+        title: Outputs
         type: object
       subscriber:
         $ref: '#/definitions/Subscriber'
+        default:
     title: JobExecute
     type: object
   JobException:
     properties:
       type:
+        title: Type
         type: string
       title:
+        default:
+        title: Title
         type: string
       status:
+        default:
+        title: Status
         type: integer
       detail:
+        default:
+        title: Detail
         type: string
       instance:
+        default:
+        title: Instance
         type: string
     required:
     - type
+    title: JobException
     type: object
   LinkHttp:
     properties:
       rel:
+        default:
+        title: Rel
         type: string
       mimeType:
+        default:
+        title: Mimetype
         type: string
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       length:
+        default:
+        title: Length
         type: integer
       templated:
         default: false
+        title: Templated
         type: boolean
       hreflang:
+        default:
+        title: Hreflang
         type: string
       href:
         format: uri
         minLength: 1
+        title: Href
         type: string
     required:
     - href
+    title: LinkHttp
     type: object
   JobStatus:
     description: "Conform to OGC api\n\nSee /openapi/schemas/processes-core/statusInfo.yaml"
@@ -501,6 +580,7 @@ definitions:
         title: Job ID
         type: string
       processId:
+        default:
         title: Process ID
         type: string
       type:
@@ -516,55 +596,81 @@ definitions:
         - successful
         - failed
         - dismissed
+        title: Status
         type: string
       message:
+        default:
+        title: Message
         type: string
       created:
         format: date-time
+        title: Created
         type: string
       started:
+        default:
         format: date-time
+        title: Started
         type: string
       finished:
+        default:
         format: date-time
+        title: Finished
         type: string
       updated:
+        default:
         format: date-time
+        title: Updated
         type: string
       progress:
-        maximum: 100
-        minimum: 0
+        default:
+        ge: 0
+        le: 100
+        title: Progress
         type: integer
       exception:
         $ref: '#/definitions/JobException'
+        default:
+        title: Exception
       links:
         default: []
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
       runConfig:
         $ref: '#/definitions/JsonValue'
+        default:
+        title: Runconfig
       expiresAt:
+        default:
         format: date-time
+        title: Expiresat
         type: string
       tag:
+        default:
+        title: Tag
         type: string
     required:
     - jobId
     - status
     - created
+    title: JobStatus
     type: object
   InputDescription:
     properties:
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       keywords:
         default: []
         items:
           type: string
+        title: Keywords
         type: array
       metadata:
         default: []
@@ -572,10 +678,12 @@ definitions:
           anyOf:
           - $ref: '#/definitions/MetadataLink'
           - $ref: '#/definitions/MetadataValue'
+        title: Metadata
         type: array
       schema:
         additionalProperties:
           $ref: '#/definitions/JsonValue'
+        title: Schema
         type: object
       valuePassing:
         default:
@@ -585,10 +693,12 @@ definitions:
           - byValue
           - byReference
           type: string
+        title: Valuepassing
         type: array
       minOccurs:
         default: 1
         minimum: 0
+        title: Minoccurs
         type: integer
       maxOccurs:
         anyOf:
@@ -597,42 +707,66 @@ definitions:
         - const: unbounded
           type: string
         default: 1
+        title: Maxoccurs
     required:
     - schema
+    title: InputDescription
     type: object
   MetadataLink:
     properties:
       rel:
+        default:
+        title: Rel
         type: string
       mimeType:
+        default:
+        title: Mimetype
         type: string
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       length:
+        default:
+        title: Length
         type: integer
       templated:
         default: false
+        title: Templated
         type: boolean
       hreflang:
+        default:
+        title: Hreflang
         type: string
       href:
         format: uri-reference
+        title: Href
         type: string
       role:
+        default:
+        title: Role
         type: string
     required:
     - href
+    title: MetadataLink
     type: object
   MetadataValue:
     properties:
       role:
+        default:
+        title: Role
         type: string
       title:
+        default:
+        title: Title
         type: string
       lang:
+        default:
+        title: Lang
         type: string
       value:
         anyOf:
@@ -640,18 +774,23 @@ definitions:
         - type: 'null'
     required:
     - value
+    title: MetadataValue
     type: object
   OutputDescription:
     properties:
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       keywords:
         default: []
         items:
           type: string
+        title: Keywords
         type: array
       metadata:
         default: []
@@ -659,10 +798,12 @@ definitions:
           anyOf:
           - $ref: '#/definitions/MetadataLink'
           - $ref: '#/definitions/MetadataValue'
+        title: Metadata
         type: array
       schema:
         additionalProperties:
           $ref: '#/definitions/JsonValue'
+        title: Schema
         type: object
       valuePassing:
         default:
@@ -672,21 +813,27 @@ definitions:
           - byValue
           - byReference
           type: string
+        title: Valuepassing
         type: array
     required:
     - schema
+    title: OutputDescription
     type: object
   ProcessDescription:
     properties:
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       keywords:
         default: []
         items:
           type: string
+        title: Keywords
         type: array
       metadata:
         default: []
@@ -694,12 +841,14 @@ definitions:
           anyOf:
           - $ref: '#/definitions/MetadataLink'
           - $ref: '#/definitions/MetadataValue'
+        title: Metadata
         type: array
       id:
         title: Process id
         type: string
       version:
         default: n/a
+        title: Version
         type: string
       jobControlOptions:
         default:
@@ -712,21 +861,25 @@ definitions:
           - async-execute
           - dismiss
           type: string
+        title: Jobcontroloptions
         type: array
       links:
         default: []
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
       inputs:
         additionalProperties:
           $ref: '#/definitions/InputDescription'
         default: {}
+        title: Inputs
         type: object
       outputs:
         additionalProperties:
           $ref: '#/definitions/OutputDescription'
         default: {}
+        title: Outputs
         type: object
     required:
     - id
@@ -741,10 +894,12 @@ definitions:
       jobs:
         items:
           $ref: '#/definitions/JobStatus'
+        title: Jobs
         type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - jobs
@@ -755,12 +910,15 @@ definitions:
     properties:
       timestamp:
         format: date-time
+        title: Timestamp
         type: string
       log:
+        title: Log
         type: string
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - timestamp
@@ -781,6 +939,7 @@ definitions:
         - http://www.opengis.net/spec/ogcapi-processes-1/1.0/req/callback
         items:
           type: string
+        title: Conformsto
         type: array
     title: Conformance
     type: object
@@ -789,6 +948,7 @@ definitions:
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - links
@@ -798,13 +958,17 @@ definitions:
     properties:
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       keywords:
         default: []
         items:
           type: string
+        title: Keywords
         type: array
       metadata:
         default: []
@@ -812,12 +976,14 @@ definitions:
           anyOf:
           - $ref: '#/definitions/MetadataLink'
           - $ref: '#/definitions/MetadataValue'
+        title: Metadata
         type: array
       id:
         title: Process id
         type: string
       version:
         default: n/a
+        title: Version
         type: string
       jobControlOptions:
         default:
@@ -830,24 +996,29 @@ definitions:
           - async-execute
           - dismiss
           type: string
+        title: Jobcontroloptions
         type: array
       links:
         default: []
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - id
+    title: ProcessSummary
     type: object
   ProcessList:
     properties:
       processes:
         items:
           $ref: '#/definitions/ProcessSummary'
+        title: Processes
         type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - processes
@@ -857,14 +1028,18 @@ definitions:
   ServiceItem:
     properties:
       name:
+        title: Name
         type: string
       title:
         default: ''
+        title: Title
         type: string
       description:
         default: ''
+        title: Description
         type: string
       qgisVersionInfo:
+        title: Qgisversioninfo
         type: integer
       versionDetails:
         anyOf:
@@ -872,13 +1047,16 @@ definitions:
         - items:
             type: string
           type: array
+        title: Versiondetails
       callbacks:
         items:
           type: string
+        title: Callbacks
         type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - name
@@ -886,12 +1064,14 @@ definitions:
     - versionDetails
     - callbacks
     - links
+    title: ServiceItem
     type: object
   ServicesResponse:
     properties:
       services:
         items:
           $ref: '#/definitions/ServiceItem'
+        title: Services
         type: array
     required:
     - services
@@ -900,39 +1080,56 @@ definitions:
   FileLink:
     properties:
       rel:
+        default:
+        title: Rel
         type: string
       mimeType:
+        default:
+        title: Mimetype
         type: string
       title:
         default: ''
+        title: Title
         type: string
       description:
+        default:
+        title: Description
         type: string
       length:
+        default:
+        title: Length
         type: integer
       templated:
         default: false
+        title: Templated
         type: boolean
       hreflang:
+        default:
+        title: Hreflang
         type: string
       href:
         format: uri-reference
+        title: Href
         type: string
       displaySize:
+        title: Displaysize
         type: string
     required:
     - href
     - displaySize
+    title: FileLink
     type: object
   FilesResponse:
     properties:
       files:
         items:
           $ref: '#/definitions/FileLink'
+        title: Files
         type: array
       links:
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - files
@@ -948,9 +1145,11 @@ definitions:
       isDir:
         const: true
         default: true
+        title: Isdir
         type: boolean
     required:
     - name
+    title: DirResource
     type: object
   FileResource:
     additionalProperties: true
@@ -968,27 +1167,33 @@ definitions:
         anyOf:
         - type: string
         - type: 'null'
+        title: Contenttype
       lastModified:
         anyOf:
         - format: date-time
           type: string
         - type: 'null'
+        title: Lastmodified
       encrypted:
+        title: Encrypted
         type: boolean
       version:
         anyOf:
         - type: string
         - type: 'null'
         default:
+        title: Version
       isDir:
         const: false
         default: false
+        title: Isdir
         type: boolean
     required:
     - name
     - contentType
     - lastModified
     - encrypted
+    title: FileResource
     type: object
   ResourceType:
     anyOf:
@@ -1001,11 +1206,13 @@ definitions:
           anyOf:
           - $ref: '#/definitions/DirResource'
           - $ref: '#/definitions/FileResource'
+        title: Resources
         type: array
       links:
         default: []
         items:
           $ref: '#/definitions/LinkHttp'
+        title: Links
         type: array
     required:
     - resources
@@ -1014,14 +1221,18 @@ definitions:
   DeleteResponse:
     properties:
       resource:
+        title: Resource
         type: string
       status:
         const: deleted
         default: deleted
+        title: Status
         type: string
       service:
+        title: Service
         type: string
       role:
+        title: Role
         type: string
     required:
     - resource
