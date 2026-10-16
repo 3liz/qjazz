@@ -104,7 +104,7 @@ class Store(HandlerProto):
                 The service name.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in query:
               name: prefix:
@@ -193,7 +193,7 @@ class Store(HandlerProto):
                 The service name.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in: path
               name: Name
@@ -295,7 +295,7 @@ class Store(HandlerProto):
                 The service name.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in: query
               name: encrypt
@@ -406,7 +406,7 @@ class Store(HandlerProto):
                 The service name.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in: query
               name: version_id

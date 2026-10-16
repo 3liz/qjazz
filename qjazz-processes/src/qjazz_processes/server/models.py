@@ -2,7 +2,6 @@ from typing import (
     Awaitable,
     Callable,
     NoReturn,
-    Optional,
     Type,
 )
 
@@ -11,6 +10,7 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
+from qjazz_core.models import Option
 
 from .swagger import JsonModel, model
 
@@ -18,14 +18,14 @@ from .swagger import JsonModel, model
 @model
 class ErrorResponse(JsonModel):
     message: str
-    details: Optional[JsonValue] = None
+    details: Option[JsonValue] = None
 
     @classmethod
     def raises(
         cls,
         error_type: Type[web.HTTPException],
         message: str,
-        details: Optional[JsonValue] = None,
+        details: Option[JsonValue] = None,
     ) -> NoReturn:
         raise error_type(
             content_type="application/json",
@@ -40,7 +40,7 @@ class ErrorResponse(JsonModel):
         cls,
         status: int,
         message: str,
-        details: Optional[JsonValue] = None,
+        details: Option[JsonValue] = None,
     ) -> web.Response:
         return web.Response(
             status=status,

@@ -4,6 +4,7 @@
 
 from datetime import datetime
 from typing import (
+    Annotated,
     ClassVar,
     Literal,
     TypeAlias,
@@ -74,7 +75,7 @@ class JobStatus(JsonModel):
     started: Option[datetime] = None
     finished: Option[datetime] = None
     updated: Option[datetime] = None
-    progress: Option[int] = Field(ge=0, le=100)
+    progress: Option[Annotated[int, Field(ge=0, le=100)]]
 
     exception: Option[JobException] = None
 

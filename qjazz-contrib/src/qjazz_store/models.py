@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import (
     Literal,
-    Optional,
     TypeAlias,
 )
 
 from pydantic import BaseModel, Field, TypeAdapter, alias_generators
+
+from qjazz_core.models import JsonDict, Option, cleanup_schema
 
 DateTime = TypeAdapter(datetime)
 
@@ -16,6 +17,12 @@ class BaseResource(
     populate_by_name=True,
     extra="allow",
 ):
+    @classmethod
+    def model_json_schema(cls, *args, **kwargs) -> JsonDict:
+        schema = super(BaseResource, cls).model_json_schema(*args, **kwargs)
+        cleanup_schema(schema)
+        return schema
+
     # Override: force by_alias=True
     def model_dump_json(self, *args, **kwargs) -> str:
         return super().model_dump_json(*args, by_alias=True, exclude_none=True, **kwargs)
@@ -28,11 +35,11 @@ class DirResource(BaseResource):
 
 
 class FileResource(BaseResource):
-    size: Optional[int] = Field(default=None, title="Size in bytes")
-    content_type: Optional[str]
-    last_modified: Optional[datetime]
+    size: Option[int] = Field(default=None, title="Size in bytes")
+    content_type: Option[str]
+    last_modified: Option[datetime]
     encrypted: bool
-    version: Optional[str] = None
+    version: Option[str] = None
     is_dir: Literal[False] = False
 
 

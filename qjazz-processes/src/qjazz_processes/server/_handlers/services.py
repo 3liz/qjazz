@@ -85,7 +85,7 @@ class Services(HandlerProto):
                 content:
                     application/json:
                         schema:
-                            $ref: '#definitions/ServicesResponse'
+                            $ref: '#/definitions/ServicesResponse'
         """
         return web.Response(
             content_type="application/json",

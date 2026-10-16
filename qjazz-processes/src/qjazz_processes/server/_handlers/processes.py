@@ -62,7 +62,7 @@ class Processes(HandlerProto):
                 The service requested.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
         tags:
             - processes
@@ -137,7 +137,7 @@ class Processes(HandlerProto):
                 The service requested.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in: query
               name: project
@@ -145,10 +145,10 @@ class Processes(HandlerProto):
                 type: string
               required: false
               description: |
-                The project path
+                The project path.
                 Note this is the default behavior for
                 targeting a project: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to projects.
         tags:
           - processes
@@ -248,7 +248,7 @@ class Processes(HandlerProto):
                 The service requested.
                 Note this is the default behavior for
                 targeting a service: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to services.
             - in: query
               name: project
@@ -256,10 +256,10 @@ class Processes(HandlerProto):
                 type: string
               required: false
               description: |
-                The project path
+                The project path.
                 Note this is the default behavior for
                 targeting a project: the server may
-                defines its own policy for handling accesses
+                define its own policy for handling accesses
                 to projects.
         tags:
           - processes

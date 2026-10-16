@@ -14,6 +14,7 @@ from pydantic import (
     TypeAdapter,
 )
 from qjazz_core.config import ConfigBase
+from qjazz_core.models import cleanup_schema
 
 from ..schemas import JsonModel
 
@@ -104,6 +105,7 @@ def schemas(ref_template: str = "#/definitions/{model}") -> dict[str, JsonValue]
         match model:
             case TypeAdapter():
                 schema = model.json_schema(ref_template=ref_template)
+                cleanup_schema(schema)
             case _:
                 schema = model.model_json_schema(ref_template=ref_template)
         # Extract subdefinitions

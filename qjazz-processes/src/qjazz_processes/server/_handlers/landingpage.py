@@ -48,7 +48,7 @@ class LandingPage(HandlerProto):
                 content:
                     application/json:
                         schema:
-                            $ref: '#definitions/Conformance'
+                            $ref: '#/definitions/Conformance'
         """
         return web.Response(
             content_type="application/json",
@@ -69,7 +69,7 @@ class LandingPage(HandlerProto):
                 content:
                     application/json:
                         schema:
-                            $ref: '#definitions/LandingPageModel'
+                            $ref: '#/definitions/LandingPageModel'
         """
         links = [
             make_link(

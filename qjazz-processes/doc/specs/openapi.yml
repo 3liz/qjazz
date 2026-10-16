@@ -12,7 +12,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#definitions/LandingPageModel'
+                $ref: '#/definitions/LandingPageModel'
   /conformance:
     get:
       summary: Conformances classes
@@ -25,7 +25,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#definitions/Conformance'
+                $ref: '#/definitions/Conformance'
   /processes/:
     get:
       summary: Get available processes
@@ -37,7 +37,7 @@ paths:
           type: string
         required: false
         description: "The service requested.\nNote this is the default behavior for\n\
-          targeting a service: the server may\ndefines its own policy for handling
+          targeting a service: the server may\ndefine its own policy for handling
           accesses\nto services.\n"
       tags:
       - processes
@@ -66,15 +66,15 @@ paths:
           type: string
         required: false
         description: "The service requested.\nNote this is the default behavior for\n\
-          targeting a service: the server may\ndefines its own policy for handling
+          targeting a service: the server may\ndefine its own policy for handling
           accesses\nto services.\n"
       - in: query
         name: project
         schema:
           type: string
         required: false
-        description: "The project path\nNote this is the default behavior for\ntargeting
-          a project: the server may\ndefines its own policy for handling accesses\n\
+        description: "The project path.\nNote this is the default behavior for\ntargeting
+          a project: the server may\ndefine its own policy for handling accesses\n\
           to projects.\n"
       tags:
       - processes
@@ -109,15 +109,15 @@ paths:
           type: string
         required: false
         description: "The service requested.\nNote this is the default behavior for\n\
-          targeting a service: the server may\ndefines its own policy for handling
+          targeting a service: the server may\ndefine its own policy for handling
           accesses\nto services.\n"
       - in: query
         name: project
         schema:
           type: string
         required: false
-        description: "The project path\nNote this is the default behavior for\ntargeting
-          a project: the server may\ndefines its own policy for handling accesses\n\
+        description: "The project path.\nNote this is the default behavior for\ntargeting
+          a project: the server may\ndefine its own policy for handling accesses\n\
           to projects.\n"
       tags:
       - processes
@@ -420,7 +420,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#definitions/ServicesResponse'
+                $ref: '#/definitions/ServicesResponse'
 definitions:
   JsonValue: {}
   ErrorResponse:
@@ -429,10 +429,8 @@ definitions:
         title: Message
         type: string
       details:
-        anyOf:
-        - $ref: '#/definitions/JsonValue'
-        - type: 'null'
-        default:
+        $ref: '#/definitions/JsonValue'
+        title: Details
     required:
     - message
     title: ErrorResponse
@@ -451,7 +449,6 @@ definitions:
         title: Mediatype
         type: string
       encoding:
-        default:
         title: Encoding
         type: string
       schema:
@@ -462,7 +459,6 @@ definitions:
         - additionalProperties:
             $ref: '#/definitions/JsonValue'
           type: object
-        default:
         title: Schema
     required:
     - mediaType
@@ -471,19 +467,16 @@ definitions:
   Subscriber:
     properties:
       successUri:
-        default:
         format: uri
         minLength: 1
         title: Successuri
         type: string
       failedUri:
-        default:
         format: uri
         minLength: 1
         title: Faileduri
         type: string
       inProgressUri:
-        default:
         format: uri
         minLength: 1
         title: Inprogressuri
@@ -506,7 +499,6 @@ definitions:
         type: object
       subscriber:
         $ref: '#/definitions/Subscriber'
-        default:
     title: JobExecute
     type: object
   JobException:
@@ -515,19 +507,15 @@ definitions:
         title: Type
         type: string
       title:
-        default:
         title: Title
         type: string
       status:
-        default:
         title: Status
         type: integer
       detail:
-        default:
         title: Detail
         type: string
       instance:
-        default:
         title: Instance
         type: string
     required:
@@ -537,11 +525,9 @@ definitions:
   LinkHttp:
     properties:
       rel:
-        default:
         title: Rel
         type: string
       mimeType:
-        default:
         title: Mimetype
         type: string
       title:
@@ -549,11 +535,9 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       length:
-        default:
         title: Length
         type: integer
       templated:
@@ -561,7 +545,6 @@ definitions:
         title: Templated
         type: boolean
       hreflang:
-        default:
         title: Hreflang
         type: string
       href:
@@ -580,7 +563,6 @@ definitions:
         title: Job ID
         type: string
       processId:
-        default:
         title: Process ID
         type: string
       type:
@@ -599,7 +581,6 @@ definitions:
         title: Status
         type: string
       message:
-        default:
         title: Message
         type: string
       created:
@@ -607,29 +588,24 @@ definitions:
         title: Created
         type: string
       started:
-        default:
         format: date-time
         title: Started
         type: string
       finished:
-        default:
         format: date-time
         title: Finished
         type: string
       updated:
-        default:
         format: date-time
         title: Updated
         type: string
       progress:
-        default:
-        ge: 0
-        le: 100
+        maximum: 100
+        minimum: 0
         title: Progress
         type: integer
       exception:
         $ref: '#/definitions/JobException'
-        default:
         title: Exception
       links:
         default: []
@@ -639,15 +615,12 @@ definitions:
         type: array
       runConfig:
         $ref: '#/definitions/JsonValue'
-        default:
         title: Runconfig
       expiresAt:
-        default:
         format: date-time
         title: Expiresat
         type: string
       tag:
-        default:
         title: Tag
         type: string
     required:
@@ -663,7 +636,6 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       keywords:
@@ -715,11 +687,9 @@ definitions:
   MetadataLink:
     properties:
       rel:
-        default:
         title: Rel
         type: string
       mimeType:
-        default:
         title: Mimetype
         type: string
       title:
@@ -727,11 +697,9 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       length:
-        default:
         title: Length
         type: integer
       templated:
@@ -739,7 +707,6 @@ definitions:
         title: Templated
         type: boolean
       hreflang:
-        default:
         title: Hreflang
         type: string
       href:
@@ -747,7 +714,6 @@ definitions:
         title: Href
         type: string
       role:
-        default:
         title: Role
         type: string
     required:
@@ -757,21 +723,16 @@ definitions:
   MetadataValue:
     properties:
       role:
-        default:
         title: Role
         type: string
       title:
-        default:
         title: Title
         type: string
       lang:
-        default:
         title: Lang
         type: string
       value:
-        anyOf:
-        - $ref: '#/definitions/JsonValue'
-        - type: 'null'
+        $ref: '#/definitions/JsonValue'
     required:
     - value
     title: MetadataValue
@@ -783,7 +744,6 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       keywords:
@@ -826,7 +786,6 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       keywords:
@@ -961,7 +920,6 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       keywords:
@@ -1080,11 +1038,9 @@ definitions:
   FileLink:
     properties:
       rel:
-        default:
         title: Rel
         type: string
       mimeType:
-        default:
         title: Mimetype
         type: string
       title:
@@ -1092,11 +1048,9 @@ definitions:
         title: Title
         type: string
       description:
-        default:
         title: Description
         type: string
       length:
-        default:
         title: Length
         type: integer
       templated:
@@ -1104,7 +1058,6 @@ definitions:
         title: Templated
         type: boolean
       hreflang:
-        default:
         title: Hreflang
         type: string
       href:
@@ -1158,31 +1111,21 @@ definitions:
         title: Resource name
         type: string
       size:
-        anyOf:
-        - type: integer
-        - type: 'null'
-        default:
         title: Size in bytes
+        type: integer
       contentType:
-        anyOf:
-        - type: string
-        - type: 'null'
         title: Contenttype
+        type: string
       lastModified:
-        anyOf:
-        - format: date-time
-          type: string
-        - type: 'null'
+        format: date-time
         title: Lastmodified
+        type: string
       encrypted:
         title: Encrypted
         type: boolean
       version:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default:
         title: Version
+        type: string
       isDir:
         const: false
         default: false
@@ -1190,8 +1133,6 @@ definitions:
         type: boolean
     required:
     - name
-    - contentType
-    - lastModified
     - encrypted
     title: FileResource
     type: object

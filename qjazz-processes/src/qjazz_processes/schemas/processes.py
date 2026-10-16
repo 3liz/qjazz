@@ -6,7 +6,6 @@
 from typing import (
     Annotated,
     Literal,
-    Optional,
     Sequence,
 )
 
@@ -32,7 +31,7 @@ class MetadataValue(JsonModel):
     role: Option[str] = None
     title: Option[str] = None
     lang: Option[str] = None
-    value: Optional[JsonValue]
+    value: JsonValue
 
 
 #
