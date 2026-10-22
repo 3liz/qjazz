@@ -343,10 +343,10 @@ small.</p>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gis-worker</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
-<span class="w">        </span><span class="no">{ &quot;/&quot;: &quot;/qgis-projects&quot; }</span>
+<span class="w">        </span><span class="no">{ "/": "/qgis-projects" }</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./projects:/qgis-projects:ro</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-rpc"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 </section>
@@ -367,11 +367,11 @@ small.</p>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">worker</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PLUGINS__PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
-<span class="w">        </span><span class="no">&quot;/plugins&quot;</span>
+<span class="w">        </span><span class="no">"/plugins"</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./projects:/qgis-projects:ro</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./plugins:/plugins:ro</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-rpc"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 </section>
@@ -382,25 +382,25 @@ small.</p>
 <span class="w">  </span><span class="nt">qgis-rpc</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr-eager</span>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">CONF_GRPC_USE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;yes&quot;</span>
+<span class="w">      </span><span class="nt">CONF_GRPC_USE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">"yes"</span>
 <span class="w">      </span><span class="nt">CONF_GRPC_TLS_KEYFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/rpc.key</span>
 <span class="w">      </span><span class="nt">CONF_GRPC_TLS_CERTFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/rpc.crt</span>
 <span class="w">      </span><span class="nt">CONF_GRPC_TLS_CAFILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/ca.crt</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./certs:/certs:ro</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-rpc"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 
 <span class="w">  </span><span class="nt">web</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-ltr-eager</span>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">CONF_SERVER__ENABLE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;yes&quot;</span>
+<span class="w">      </span><span class="nt">CONF_SERVER__ENABLE_TLS</span><span class="p">:</span><span class="w"> </span><span class="s">"yes"</span>
 <span class="w">      </span><span class="nt">CONF_SERVER__TLS_KEY_FILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/web.key</span>
 <span class="w">      </span><span class="nt">CONF_SERVER__TLS_CERT_FILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/certs/web.crt</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./certs:/certs:ro</span>
 <span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;443:9080&quot;</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-map&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"443:9080"</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-map"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 </section>
@@ -459,18 +459,18 @@ representation of the field.</p>
 <p>Environment variables:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CONF_LOGGING__LEVEL=trace
 CONF_WORKER__NAME=worker
-CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS=&#39;{ &quot;/&quot;: &quot;/qgis-projects/france_parts&quot; }&#39;
+CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS='{ "/": "/qgis-projects/france_parts" }'
 </pre></div>
 </div>
 <p>Which gives the toml equivalent:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[loggin]</span>
-<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span>
+<span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"debug"</span>
 
 <span class="k">[worker]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;worker&quot;</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"worker"</span>
 
 <span class="k">[worker.projects.search_paths]</span>
-<span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/qgis-projects/france_parts&quot;</span>
+<span class="s1">'/'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/qgis-projects/france_parts"</span>
 </pre></div>
 </div>
 </section>
@@ -531,7 +531,7 @@ CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS=&#39;{ &quot;/&quot;: &quot;/qgis-proj
 </div>
 </li>
 <li><p><strong>Test WMS Request</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span><span class="s2">&quot;http://localhost:9080/?MAP=/public/project.qgs&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span><span class="s2">"http://localhost:9080/?MAP=/public/project.qgs&amp;SERVICE=WMS&amp;REQUEST=GetCapabilities"</span>
 </pre></div>
 </div>
 </li>

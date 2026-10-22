@@ -173,20 +173,20 @@ docker deployment.</p>
 <span class="w">      </span><span class="nt">CONF_DISPLAY_XVFB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ON</span>
 <span class="w">      </span><span class="nt">CONF_LOGGING__LEVEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debug</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">basic_worker</span>
-<span class="w">      </span><span class="nt">CONF_WORKER__NUM_PROCESSES</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
+<span class="w">      </span><span class="nt">CONF_WORKER__NUM_PROCESSES</span><span class="p">:</span><span class="w"> </span><span class="s">"2"</span>
 <span class="w">      </span><span class="nt">CONF_WORKER__QGIS__PROJECTS__SEARCH_PATHS</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
 <span class="w">        </span><span class="no">{</span>
-<span class="w">          </span><span class="no">&quot;/&quot;:&quot;/qgis-projects&quot;</span>
+<span class="w">          </span><span class="no">"/":"/qgis-projects"</span>
 <span class="w">        </span><span class="no">}</span>
 <span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/qgis/projects/&quot;</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">bind</span><span class="p p-Indicator">,</span><span class="nt"> source</span><span class="p">:</span><span class="w"> </span><span class="s">"/path/to/qgis/projects/"</span><span class="p p-Indicator">,</span><span class="nt"> target</span><span class="p">:</span><span class="w"> </span><span class="nv">/qgis-projects</span><span class="w"> </span><span class="p p-Indicator">}</span>
 <span class="w">    </span><span class="c1">#</span>
 <span class="w">    </span><span class="c1"># Mount /tmp as tmpfs for removing Xvfb lock file when restarting</span>
 <span class="w">    </span><span class="c1"># container.</span>
 <span class="w">    </span><span class="c1">#</span>
 <span class="w">    </span><span class="nt">tmpfs</span><span class="p">:</span>
 <span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp:size=100m</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-rpc&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-rpc"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 <span class="w">  </span><span class="nt">web</span><span class="p">:</span>
 <span class="w">    </span><span class="c1">#</span>
 <span class="w">    </span><span class="c1"># The web service communicate to (multiple) backends and route</span>
@@ -195,12 +195,12 @@ docker deployment.</p>
 <span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3liz/qjazz:qgis-3.40</span>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">CONF_LOGGING__LEVEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debug</span>
-<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__TITLE</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;QGIS</span><span class="nv"> </span><span class="s">Services&quot;</span>
-<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__HOST</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qgis-rpc&quot;</span>
-<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__ROUTE</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/&quot;</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__TITLE</span><span class="p">:</span><span class="w"> </span><span class="s">"QGIS</span><span class="nv"> </span><span class="s">Services"</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__HOST</span><span class="p">:</span><span class="w"> </span><span class="s">"qgis-rpc"</span>
+<span class="w">      </span><span class="nt">CONF_BACKENDS__BASIC__ROUTE</span><span class="p">:</span><span class="w"> </span><span class="s">"/"</span>
 <span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:9080:9080</span>
-<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;qjazz-map&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;serve&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"qjazz-map"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"serve"</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 <p>Start the services:</p>

@@ -124,12 +124,19 @@
 <span class="c1"># Interval in seconds between two check the out-of-memory</span>
 <span class="c1"># handler.</span>
 <span class="n">oom_period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span>
+<span class="c1">#</span>
+<span class="c1"># Interval in seconds for sending keepalive probes</span>
+<span class="c1"># (TCP keepalive and HTTP2 PING) to clients.</span>
+<span class="c1"># Connections from unresponsive clients are closed.</span>
+<span class="c1"># Set to 0 to disable keepalive.</span>
+<span class="n">keepalive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span>
 
 <span class="c1">#</span>
+<span class="c1"># Socket configuration</span>
 <span class="k">[rpc.listen]</span>
 <span class="c1">#</span>
 <span class="c1"># Socket address</span>
-<span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;127.0.0.1:23456&quot;</span>
+<span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"127.0.0.1:23456"</span>
 <span class="c1">#</span>
 <span class="c1"># Enable TLS</span>
 <span class="c1">#</span>
@@ -149,7 +156,7 @@
 <span class="k">[worker]</span>
 <span class="c1">#</span>
 <span class="c1"># Name of the worker instance</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span>
 <span class="c1">#</span>
 <span class="c1"># Number of simultanous workers</span>
 <span class="n">num_processes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
@@ -197,9 +204,9 @@
 <span class="c1"># Load project in cache when requested</span>
 <span class="c1">#</span>
 <span class="c1"># Load project in cache at request.</span>
-<span class="c1"># If set to &#39;false&#39;, project not loaded in cache will</span>
+<span class="c1"># If set to 'false', project not loaded in cache will</span>
 <span class="c1"># return a 403 HTTP code when requested.</span>
-<span class="c1"># Thus, adding project&#39;s to cache will require a specific</span>
+<span class="c1"># Thus, adding project's to cache will require a specific</span>
 <span class="c1"># action from another service or admininstrative</span>
 <span class="c1"># management tools.</span>
 <span class="c1"># </span>
@@ -208,9 +215,9 @@
 <span class="c1"># Reload outdated project when requested</span>
 <span class="c1">#</span>
 <span class="c1"># Reload outdated project at request.</span>
-<span class="c1"># If set to &#39;false&#39;, outdated project in cache will</span>
+<span class="c1"># If set to 'false', outdated project in cache will</span>
 <span class="c1"># not be refreshed when requested.</span>
-<span class="c1"># Thus, refreshing project&#39;s to cache will require a specific</span>
+<span class="c1"># Thus, refreshing project's to cache will require a specific</span>
 <span class="c1"># action from another service or admininstrative</span>
 <span class="c1"># management tools.</span>
 <span class="c1"># </span>
@@ -235,7 +242,7 @@
 <span class="c1"># Qgis settings</span>
 <span class="c1">#</span>
 <span class="c1"># Qgis settings override.</span>
-<span class="c1"># Use the syntax &#39;&lt;section&gt;/&lt;path&gt;&#39; for keys.</span>
+<span class="c1"># Use the syntax '&lt;section&gt;/&lt;path&gt;' for keys.</span>
 <span class="c1"># Not that values defined here will override those</span>
 <span class="c1"># from QGIS3.ini file.</span>
 <span class="c1"># </span>
@@ -244,7 +251,7 @@
 <span class="c1"># Ignore INT signal in worker</span>
 <span class="c1">#</span>
 <span class="c1"># Ignore INT signal in workers.</span>
-<span class="c1"># This is useful when you don&#39;t want</span>
+<span class="c1"># This is useful when you don't want</span>
 <span class="c1"># propagating signal from parent process.</span>
 <span class="c1"># </span>
 <span class="n">ignore_interrupt_signal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
@@ -254,8 +261,8 @@
 <span class="c1"># Use the default QGIS server handler instead</span>
 <span class="c1"># tf the alternative QJazz optimized handler.</span>
 <span class="c1"># Note that the QJazz handler deactivate the</span>
-<span class="c1"># &#39;onSendResponse&#39; method. If your plugin&#39;s filters</span>
-<span class="c1"># require the &#39;onSendResponse&#39; method, then you</span>
+<span class="c1"># 'onSendResponse' method. If your plugin's filters</span>
+<span class="c1"># require the 'onSendResponse' method, then you</span>
 <span class="c1"># must set this option to true.</span>
 <span class="c1"># </span>
 <span class="n">use_default_server_handler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
@@ -264,7 +271,7 @@
 <span class="c1">#</span>
 <span class="c1"># Use aliases for QGIS server apis.</span>
 <span class="c1"># </span>
-<span class="n">api_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s1">&#39;WFS3&#39;</span><span class="p">=</span><span class="s1">&#39;OAPIF&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;LIZMAP&#39;</span><span class="p">=</span><span class="s1">&#39;Lizmap&#39;</span><span class="p">}</span>
+<span class="n">api_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">WFS3</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"OGC WFS3 (Draft)"</span><span class="p">,</span><span class="w"> </span><span class="n">LIZMAP</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"Lizmap"</span><span class="w"> </span><span class="p">}</span>
 
 <span class="c1">#</span>
 <span class="c1"># Projects configuration</span>
@@ -285,7 +292,7 @@
 <span class="c1">#</span>
 <span class="c1"># Disable GetPrint requests</span>
 <span class="c1">#</span>
-<span class="c1"># Don&#39;t load print layouts.</span>
+<span class="c1"># Don't load print layouts.</span>
 <span class="c1"># Improves project read time if layouts are not required,</span>
 <span class="c1"># and allows projects to be safely read in background threads</span>
 <span class="c1"># (since print layouts are not thread safe).</span>
@@ -294,7 +301,7 @@
 <span class="c1">#</span>
 <span class="c1"># Force read only mode</span>
 <span class="c1">#</span>
-<span class="c1"># Force layers to open in read only mode.&quot;</span>
+<span class="c1"># Force layers to open in read only mode."</span>
 <span class="c1"># This is the default, unless you have really good reason</span>
 <span class="c1"># to open layers in write mode.</span>
 <span class="c1"># Note that some handlers (like S3) do not support opening layers</span>
@@ -306,7 +313,7 @@
 <span class="c1">#</span>
 <span class="c1"># Allow projects to be loaded with event if it contains</span>
 <span class="c1"># layers that cannot be loaded.</span>
-<span class="c1"># Note that the &#39;dont_resolve_layers flag&#39; trigger automatically</span>
+<span class="c1"># Note that the 'dont_resolve_layers flag' trigger automatically</span>
 <span class="c1"># this option.</span>
 <span class="c1"># </span>
 <span class="n">ignore_bad_layers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
@@ -336,8 +343,8 @@
 <span class="c1">#</span>
 <span class="c1"># Allow direct path resolution if there is</span>
 <span class="c1"># no matching from the search paths.</span>
-<span class="c1"># Uri are directly interpreted as valid Qgis project&#39;s path.</span>
-<span class="c1"># WARNING: allowing this may be a security vulnerabilty.&quot;</span>
+<span class="c1"># Uri are directly interpreted as valid Qgis project's path.</span>
+<span class="c1"># WARNING: allowing this may be a security vulnerabilty."</span>
 <span class="c1"># </span>
 <span class="n">allow_direct_path_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 
@@ -345,24 +352,24 @@
 <span class="c1"># Project storage Handler configurations</span>
 <span class="c1">#</span>
 <span class="c1"># Configure storage handlers.</span>
-<span class="c1"># The name will be used as scheme for project&#39;s search path</span>
+<span class="c1"># The name will be used as scheme for project's search path</span>
 <span class="c1"># configuration.</span>
 <span class="c1"># </span>
 <span class="c1">#</span>
 <span class="c1"># Example:</span>
 <span class="c1">#</span>
 <span class="c1"># [projects.search_paths]</span>
-<span class="c1"># &quot;/public/location1/&quot; = &quot;postgres1://?dbname=mydatabase1&quot;</span>
-<span class="c1"># &quot;/public/location2/&quot; = &quot;postgres1://?dbname=mydatabase2&quot;</span>
+<span class="c1"># "/public/location1/" = "postgres1://?dbname=mydatabase1"</span>
+<span class="c1"># "/public/location2/" = "postgres1://?dbname=mydatabase2"</span>
 <span class="c1"># </span>
 <span class="c1"># [projects.handlers.postgres1]</span>
 <span class="c1"># handler_class = qjazz_cache.handlers.postgresql.PostgresHandler</span>
 <span class="c1"># </span>
 <span class="c1"># [projects.handlers.postgres1.config]</span>
-<span class="c1"># uri = &quot;postgresql://user@host/?schema=myschema&quot;</span>
+<span class="c1"># uri = "postgresql://user@host/?schema=myschema"</span>
 <span class="c1"># </span>
 <span class="c1">#</span>
-<span class="k">[worker.qgis.projects.handlers.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="k">[worker.qgis.projects.handlers.</span><span class="s1">'key'</span><span class="k">]</span>
 <span class="c1">#handler =   	# Required</span>
 <span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
 
@@ -375,8 +382,8 @@
 <span class="c1">#</span>
 <span class="c1"># The list of search paths for plugins.</span>
 <span class="c1"># Qgis plugins found will be loaded according to</span>
-<span class="c1"># the &#39;install&#39; list.</span>
-<span class="c1"># If the list is empty, the &#39;QGIS_PLUGINPATH&#39;</span>
+<span class="c1"># the 'install' list.</span>
+<span class="c1"># If the list is empty, the 'QGIS_PLUGINPATH'</span>
 <span class="c1"># variable will be checked.</span>
 <span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
 <span class="c1">#</span>
@@ -386,18 +393,30 @@
 <span class="c1"># Note: if the plugin directory contains other plugins</span>
 <span class="c1"># plugins not in the list will NOT be loaded !</span>
 <span class="c1"># The Plugins will be installed at startup</span>
-<span class="c1"># if the &#39;install_mode&#39; is set to &#39;auto&#39;.</span>
+<span class="c1"># if the 'install_mode' is set to 'auto'.</span>
 <span class="c1"># Note that an empty list means what it is:</span>
 <span class="c1"># i.e, *no* installed plugins.</span>
 <span class="c1">#install =   	# Optional</span>
 <span class="c1">#</span>
 <span class="c1"># Plugin installation mode</span>
 <span class="c1">#</span>
-<span class="c1"># If set to &#39;auto&#39;, plugins installation</span>
+<span class="c1"># If set to 'auto', plugins installation</span>
 <span class="c1"># will be checked at startup. Otherwise,</span>
 <span class="c1"># Installation will be done from already available</span>
 <span class="c1"># plugins.</span>
-<span class="n">install_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;external&quot;</span>
+<span class="n">install_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"external"</span>
+<span class="c1">#</span>
+<span class="c1"># Plugins repository</span>
+<span class="c1">#</span>
+<span class="c1"># Url plugin repository for downloading plugins</span>
+<span class="n">plugins_repository</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"https://qgis-plugins.3liz.org/"</span>
+<span class="c1">#</span>
+<span class="c1"># Repository type</span>
+<span class="c1">#</span>
+<span class="c1"># Type of repository api</span>
+<span class="c1"># - rest: use a yapt rest api</span>
+<span class="c1"># - qgis-xml: use a xml qgis-compatible index</span>
+<span class="n">plugins_repository_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"rest"</span>
 <span class="c1">#</span>
 <span class="c1"># Enable processing scripts</span>
 <span class="c1">#</span>
@@ -407,14 +426,8 @@
 <span class="c1"># Extra builtins providers</span>
 <span class="c1">#</span>
 <span class="c1"># Load extra builtin processing providers</span>
-<span class="c1"># such as &#39;grass&#39; and &#39;otb&#39;.</span>
+<span class="c1"># such as 'grass' and 'otb'.</span>
 <span class="n">extra_builtin_providers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
-<span class="c1">#</span>
-<span class="c1"># Path to plugin manager executable</span>
-<span class="c1">#</span>
-<span class="c1"># The absolute path to the qgis-plugin_manager executable</span>
-<span class="c1"># that will be used for installing plugin in automatic mode.</span>
-<span class="n">plugin_manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/usr/local/bin/qgis-plugin-manager&quot;</span>
 
 <span class="c1">#</span>
 <span class="c1"># QGIS Network configuration</span>
@@ -435,8 +448,8 @@
 <span class="c1">#</span>
 <span class="c1"># Global cache policy</span>
 <span class="c1">#</span>
-<span class="c1"># Set a global cache policy for all requests&quot;</span>
-<span class="c1"># If set, this will override requests cache policy&quot;.</span>
+<span class="c1"># Set a global cache policy for all requests"</span>
+<span class="c1"># If set, this will override requests cache policy".</span>
 <span class="c1"># </span>
 <span class="c1">#cache_policy =   	# Optional</span>
 
@@ -445,7 +458,7 @@
 <span class="c1">#</span>
 <span class="c1"># Set per domain policy</span>
 <span class="c1">#</span>
-<span class="k">[worker.qgis.network.domain_policy.</span><span class="s1">&#39;key&#39;</span><span class="k">]</span>
+<span class="k">[worker.qgis.network.domain_policy.</span><span class="s1">'key'</span><span class="k">]</span>
 <span class="c1">#</span>
 <span class="c1"># Cache load control</span>
 <span class="c1">#</span>
@@ -478,7 +491,7 @@ and define a setting a custom QJAZZ_CONFIG_EXEC executable.</div>
 <section id="hot-configuration">
 <h2>Hot Configuration<a class="headerlink" href="#hot-configuration" title="Link to this heading"></a></h2>
 <p>Configuration can be updated at runtime using the <a class="reference internal" href="rpc_cli.html#rpc-cli"><span class="std std-ref">RPC client CLI Reference</span></a>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="s1">&#39;{&quot;logging&quot;: {&quot;level&quot;: &quot;debug&quot;}}&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qjazz-rpc-client<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="s1">'{"logging": {"level": "debug"}}'</span>
 qjazz-rpc-client<span class="w">  </span>config<span class="w"> </span>log<span class="w"> </span>info
 </pre></div>
 </div>
@@ -503,9 +516,9 @@ storage backends implemented or added in Qgis with plugins is supported.</p>
 <p>Project’s access is <em>uniform</em>: Projects are accessed through configured search paths
 that act as  indirection to storage backends:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[worker.qgis.projects.search_paths]</span>
-<span class="s1">&#39;/public&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/path/to/projects/&quot;</span><span class="w">                        </span><span class="c1"># Path to files volume</span>
-<span class="s1">&#39;/db&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgres://?service=myproject&amp;schema=public&quot;</span><span class="w">   </span><span class="c1"># Projects stored in postgres</span>
-<span class="s1">&#39;/s3&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;s3://mybucket/projects/&quot;</span><span class="w">                       </span><span class="c1"># S3 storage</span>
+<span class="s1">'/public'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/path/to/projects/"</span><span class="w">                        </span><span class="c1"># Path to files volume</span>
+<span class="s1">'/db'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"postgres://?service=myproject&amp;schema=public"</span><span class="w">   </span><span class="c1"># Projects stored in postgres</span>
+<span class="s1">'/s3'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"s3://mybucket/projects/"</span><span class="w">                       </span><span class="c1"># S3 storage</span>
 </pre></div>
 </div>
 <p>Any following subpath to a search path is considered as the relative project’s path
@@ -527,11 +540,11 @@ project’s path or name:</p>
 <h3>Dynamic paths<a class="headerlink" href="#dynamic-paths" title="Link to this heading"></a></h3>
 <p>Dynamic paths allows to define templated path stems that will by be substituted in the
 final path resolution:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{theme}</span><span class="s2">&quot;</span> <span class="o">=</span> <span class="s2">&quot;/path/to/</span><span class="si">{user}</span><span class="s2">/projects/</span><span class="si">{theme}</span><span class="s2">&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{theme}</span><span class="s2">"</span> <span class="o">=</span> <span class="s2">"/path/to/</span><span class="si">{user}</span><span class="s2">/projects/</span><span class="si">{theme}</span><span class="s2">"</span>
 </pre></div>
 </div>
 <p>and <code class="docutils literal notranslate"><span class="pre">/alice/forests/coolmap.qgs</span></code> will be resolved to:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;/path/to/alice/projects/forests/coolmap.qgis&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"/path/to/alice/projects/forests/coolmap.qgis"</span>
 </pre></div>
 </div>
 <div class="admonition note">
