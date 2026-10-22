@@ -235,22 +235,23 @@ class QgisContext:
         url = cm.resolve_path(path)
         # Check status
         md, status = cm.checkout(url)
+
         match status:
             case Co.REMOVED:
                 cm.update(md, status)  # type: ignore [arg-type]
                 raise FileNotFoundError(f"Project {url} was removed")
             case Co.NOTFOUND:
                 raise FileNotFoundError(f"Project {url} does no exists")
-            case _:
-                if status == Co.NEW and len(cm) >= self._conf.max_cached_projects:
+            case Co.NEW:
+                if len(cm) >= self._conf.max_cached_projects:
                     # Evict project from cache
                     evicted = evict_by_popularity(cm)
                     if evicted:
                         logger.debug("Evicted project from cache: %s", evicted.md.uri)
-                entry, _ = cm.update(md, status)  # type: ignore [arg-type]
-                entry.hit_me()
-                project = entry.project
-        return project
+
+        entry, _ = cm.update(md, status)  # type: ignore [arg-type]
+        entry.hit_me()
+        return entry.project
 
     def publish_layers(self, project: QgsProject):
         """Publish layers"""

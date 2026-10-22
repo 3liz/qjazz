@@ -303,7 +303,7 @@ class CacheManager:
 
     def update(
         self,
-        md: ProjectMetadata,
+        md: ProjectMetadata | CacheEntry,
         status: CheckoutStatus,
         handler: Optional[ProtocolHandler] = None,
     ) -> tuple[CacheEntry, CheckoutStatus]:
@@ -320,6 +320,9 @@ class CacheManager:
         In all other cases the entry *must* exists in
         the cache or an exception is raised
         """
+        if isinstance(md, CacheEntry):
+            md = md.md
+
         match status:
             case CheckoutStatus.NEW:
                 logger.debug("CACHE UPDATE: Adding new entry '%s'", md.uri)
