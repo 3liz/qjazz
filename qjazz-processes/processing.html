@@ -132,9 +132,9 @@ and small payloads.</p>
 <p>Project’s access is <em>uniform</em>: the configuration settings define search paths which are indirection
 to the corresponding backends:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[prcessing.projects.search_paths]</span>
-<span class="s1">&#39;/a_path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/path/to/projects/&quot;</span><span class="w">                  </span><span class="c1"># Path to files volume</span>
-<span class="s1">&#39;/another/path&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;file:///other/projects/&quot;</span><span class="w">       </span><span class="c1"># With explicit scheme</span>
-<span class="s1">&#39;/path/to/postgres&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgres://?service=name&quot;</span><span class="w">  </span><span class="c1"># projects stored in postgres</span>
+<span class="s1">'/a_path'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/path/to/projects/"</span><span class="w">                  </span><span class="c1"># Path to files volume</span>
+<span class="s1">'/another/path'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"file:///other/projects/"</span><span class="w">       </span><span class="c1"># With explicit scheme</span>
+<span class="s1">'/path/to/postgres'</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"postgres://?service=name"</span><span class="w">  </span><span class="c1"># projects stored in postgres</span>
 </pre></div>
 </div>
 <p>Any following subpath to a search path is considered as the relative project’s path
@@ -224,16 +224,16 @@ using in Qgis Desktop.</div>
 in the folder given by the <code class="docutils literal notranslate"><span class="pre">processing.plugins.paths`</span></code> setting.</p>
 <p>If your configuration is</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[processing.plugins]</span>
-<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/path/to/plugin_dir&quot;</span><span class="p">]</span>
+<span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"/path/to/plugin_dir"</span><span class="p">]</span>
 <span class="p">...</span>
 </pre></div>
 </div>
 <p>Your processing module directory should be something like:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├── plugin_dir
 │   ├── models
-│   │    └── &lt;your &#39;.model3&#39; files here&gt;
+│   │    └── &lt;your '.model3' files here&gt;
 │   └── scripts
-│        └── &lt;your &#39;.py&#39; scripts here&gt;
+│        └── &lt;your '.py' scripts here&gt;
 </pre></div>
 </div>
 <p>Then simple drop your <code class="docutils literal notranslate"><span class="pre">.model3</span></code> in the <code class="docutils literal notranslate"><span class="pre">models/</span></code> folder and the  python scripts in the <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> folder.

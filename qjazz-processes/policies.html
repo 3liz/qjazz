@@ -112,11 +112,11 @@ server configuration:</p>
 <span class="c1"># The module implementing the access policy for</span>
 <span class="c1"># processes execution.</span>
 <span class="c1">#</span>
-<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mymodule.MyAccessPolicy&quot;</span>
+<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mymodule.MyAccessPolicy"</span>
 
 <span class="c1"># The configuration of the custom policies in TOML</span>
 <span class="c1"># format</span>
-<span class="k">[accesspolicy.config]</span>
+<span class="k">[access_policy.config]</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -178,7 +178,7 @@ Used to generate process links in API responses.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">MyPolicyConfig</span><span class="p">(</span><span class="n">ConfigBase</span><span class="p">):</span>
     <span class="n">allowed_services</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of allowed service names&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"List of allowed service names"</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 </div>
@@ -215,14 +215,14 @@ Used to generate process links in API responses.</p>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"service"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;map&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"map"</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;/custom&quot;</span>
+        <span class="k">return</span> <span class="s2">"/custom"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">format_path</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -234,16 +234,16 @@ Used to generate process links in API responses.</p>
         <span class="n">query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># Build URL with custom logic</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}{</span><span class="n">path</span><span class="si">}</span><span class="s2">?service=</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&amp;map=</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}{</span><span class="n">path</span><span class="si">}</span><span class="s2">?service=</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&amp;map=</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">"</span>
 </pre></div>
 </div>
 </li>
 <li><p>Configure the policy in your server settings:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[access_policy]</span>
-<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_policy.policy.MyAccessPolicy&quot;</span>
+<span class="n">policy_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_policy.policy.MyAccessPolicy"</span>
 
 <span class="k">[accesspolicy.config]</span>
-<span class="n">allowed_services</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;wfs&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;wms&quot;</span><span class="p">]</span>
+<span class="n">allowed_services</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"wfs"</span><span class="p">,</span><span class="w"> </span><span class="s2">"wms"</span><span class="p">]</span>
 </pre></div>
 </div>
 </li>

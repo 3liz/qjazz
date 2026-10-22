@@ -167,19 +167,19 @@ as server-side decision.</div>
 <p>Inputs and outputs may describe multiple media types an inputs and outputs in <a class="reference external" href="https://json-schema.org/understanding-json-schema/reference/combining#oneOf">oneOf</a> composite schema.</p>
 <p>Consider the following example for return a geometry:</p>
 <p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
-  <span class="s2">&quot;anyOf&quot;</span><span class="p">:</span> <span class="p">[</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"schema"</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s2">"anyOf"</span><span class="p">:</span> <span class="p">[</span>
     <span class="p">{</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;contentMediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
+      <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+      <span class="s2">"contentMediaType"</span><span class="p">:</span> <span class="s2">"application/wkt"</span>
     <span class="p">},</span>
     <span class="p">{</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;contentMediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/gml+xml&quot;</span>
+      <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+      <span class="s2">"contentMediaType"</span><span class="p">:</span> <span class="s2">"application/gml+xml"</span>
     <span class="p">},</span>
     <span class="p">{</span>
-      <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;geojson-geometry&quot;</span>
-      <span class="s2">&quot;$ref&quot;</span><span class="p">:</span> <span class="s2">&quot;http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/geometryGeoJSON.yaml&quot;</span>
+      <span class="s2">"format"</span><span class="p">:</span> <span class="s2">"geojson-geometry"</span>
+      <span class="s2">"$ref"</span><span class="p">:</span> <span class="s2">"http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/geometryGeoJSON.yaml"</span>
     <span class="p">},</span>
   <span class="p">]</span>
 <span class="p">}</span>
@@ -187,8 +187,8 @@ as server-side decision.</div>
 </div>
 <p>One possible response would be:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;.....&quot;</span>
-  <span class="s2">&quot;mediaType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/wkt&quot;</span>
+  <span class="s2">"value"</span><span class="p">:</span> <span class="s2">"....."</span>
+  <span class="s2">"mediaType"</span><span class="p">:</span> <span class="s2">"application/wkt"</span>
 <span class="p">}</span>
 </pre></div>
 </div>

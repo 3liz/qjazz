@@ -31,7 +31,7 @@ server configuration:
       
       # The configuration of the custom policies in TOML
       # format
-      [accesspolicy.config]
+      [access_policy.config]
 
 
 AccessPolicy Protocol
