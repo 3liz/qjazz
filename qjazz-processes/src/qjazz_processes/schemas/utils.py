@@ -8,7 +8,7 @@ from typing import (
 from pydantic import TypeAdapter
 from pydantic.config import JsonDict
 
-from .models import one_of
+from .models import cleanup_schema
 from .processes import (
     InputDescription,
     MetadataValue,
@@ -40,7 +40,7 @@ def input_model_description(
             schema_extra(schema)
 
     schema.pop("title", None)
-    one_of(schema)
+    cleanup_schema(schema)
 
     return InputDescription(
         title=title,

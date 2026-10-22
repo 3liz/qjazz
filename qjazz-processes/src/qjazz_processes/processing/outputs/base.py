@@ -28,7 +28,7 @@ from qjazz_processes.schemas import (
     OutputFormatDefinition,
     ValuePassing,
 )
-from qjazz_processes.schemas.models import one_of
+from qjazz_processes.schemas.models import cleanup_schema
 
 from ..context import ProcessingContext
 from ..inputs import InputParameterDef
@@ -99,7 +99,7 @@ class OutputParameter[T]:
     def json_schema(self) -> JsonDict:
         schema = self._model.json_schema()
         schema.pop("title", None)
-        one_of(schema)
+        cleanup_schema(schema)
         return schema
 
     @cached_property

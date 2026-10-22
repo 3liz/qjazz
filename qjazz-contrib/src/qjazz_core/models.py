@@ -21,9 +21,21 @@ from pydantic.json_schema import SkipJsonSchema
 def Field(
     default: Any = PydanticUndefined,
     *,
+    required: bool = False,
     description: str | None = None,
     **kwargs,
 ) -> Any:
+
+    # If a default is defined then pydantic mark the property
+    # as not required. Sometime we just want set a default value
+    # but validation *requires* the field.
+    if default not in (None, PydanticUndefined) and required:
+        if isinstance(default, BaseModel):
+            default = default.model_dump(mode="json")
+
+        kwargs["json_schema_extra"] = { "default": default }
+        default = PydanticUndefined
+
     return pydantic.Field(
         default,
         description=dedent(description.removeprefix("\n")) if description else None,

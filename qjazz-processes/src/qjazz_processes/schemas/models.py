@@ -25,6 +25,7 @@ from qjazz_core.models import (
     JsonModel,
     OneOf,  # noqa F401
     Option,
+    cleanup_schema,  # noqa F401
     one_of,  # noqa F401
 )
 

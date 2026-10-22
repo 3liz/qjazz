@@ -22,7 +22,7 @@ from qjazz_processes.schemas import (
     MetadataValue,
     ValuePassing,
 )
-from qjazz_processes.schemas.models import one_of
+from qjazz_processes.schemas.models import cleanup_schema
 
 from ..context import ProcessingContext
 
@@ -150,8 +150,11 @@ class InputParameter[P: ParameterDefinition, T]:
     def json_schema(self) -> JsonDict:
         """Create json schema"""
         schema = self._model.json_schema()
+        # Remove title since it is provided from
+        # input description
         schema.pop("title", None)
-        one_of(schema)
+        # Remove default=null leftover
+        cleanup_schema(schema)
 
         schema_format = self.schema_format()
         if schema_format:
