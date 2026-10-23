@@ -25,6 +25,7 @@ def input_model_description(
     optional: bool = False,
     value_passing: Optional[ValuePassing] = None,
     schema_extra: Optional[JsonDict | Callable[[JsonDict], None]] = None,
+    max_occurs: int | None = None,
 ) -> InputDescription:
     """Return model as InputDescription"""
     schema = TypeAdapter(annotated).json_schema(by_alias=True)
@@ -32,6 +33,8 @@ def input_model_description(
     kwargs: dict[str, Any] = {}
     if optional:
         kwargs.update(min_occurs=0)
+    if max_occurs:
+        kwargs.update(max_occurs=max_occurs)
 
     match schema_extra:
         case dict():

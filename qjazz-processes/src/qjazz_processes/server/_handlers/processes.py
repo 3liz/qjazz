@@ -81,6 +81,12 @@ class Processes(HandlerProto):
             processes = await self._executor.processes(service, timeout=self._timeout)
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
+        except ServiceNotAvailable:
+            ErrorResponse.raises(
+                web.HTTPForbidden,
+                "Service not available",
+                details={"service": service},
+            )
 
         def _process_filter(td: ProcessSummary) -> Optional[ProcessSummary]:
             if self._accesspolicy.execute_permission(request, service, td.id_):
@@ -307,6 +313,12 @@ class Processes(HandlerProto):
                 content_type="application/json",
                 text=err.json(include_context=False, include_url=False),
             ) from None
+        except ServiceNotAvailable:
+            ErrorResponse.raises(
+                web.HTTPForbidden,
+                "Service not available",
+                details={"service": service},
+            )
 
         # Get execute preferences
         prefer = ExecutePrefs(request)
