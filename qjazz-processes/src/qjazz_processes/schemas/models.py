@@ -1,3 +1,4 @@
+import json
 import mimetypes
 
 from typing import (
@@ -178,17 +179,35 @@ class InputValueError(Exception):
     def __init__(
         self,
         msg: str,
-        details: Optional[ValidationError] = None,
+        details: Optional[ValidationError | JsonValue] = None,
     ):
-        if details:
-            text = details.json(
-                include_url=False,
-                include_context=False,
-                include_input=False,
+        if isinstance(details, ValidationError):
+            details = json.loads(
+                details.json(
+                    include_url=False,
+                    include_context=False,
+                    include_input=False,
+                ),
             )
-            response = f'{{ "message": "{msg}", "details": {text} }}'
-        else:
-            response = msg
 
-        self.response = response
-        super().__init__(response)
+        self.message = msg
+        self.details = details
+
+        # Note: exception arguments must be json serializable since
+        # the exception is passed from the worker to the server
+        # (Celery recreate the exception from its arguments)
+        if details is None:
+            super().__init__(msg)
+        else:
+            super().__init__(msg, details)
+
+    @property
+    def response(self) -> str:
+        """Return the json response body"""
+        body: dict[str, JsonValue] = {"message": self.message}
+        if self.details is not None:
+            body["details"] = self.details
+        return json.dumps(body)
+
+    def __str__(self) -> str:
+        return self.message if self.details is None else self.response

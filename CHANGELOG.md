@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] QGIS parameter validation error now returns error 400
 * [qjazz-processes] Fix default value for color parameters
 * [qjazz-processes] Fix file/folder input/outputs
 * [qjazz-processes] Fix job's file path resolution; prevent root/workdir traversal

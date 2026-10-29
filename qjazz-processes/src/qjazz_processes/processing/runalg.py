@@ -28,7 +28,7 @@ from qgis.core import (  # type: ignore [attr-defined]
     QgsProject,
 )
 
-from qjazz_processes.schemas import RunProcessException
+from qjazz_processes.schemas import InputValueError, RunProcessException
 
 if TYPE_CHECKING:
     from qgis.core import QgsMapLayerStore
@@ -47,7 +47,7 @@ def validate_parameters(
         msg = f"Processing parameters error:\n{msg}"
         feedback.reportError(msg)
         if abort_on_error:
-            raise RunProcessException(msg)
+            raise InputValueError(msg)
         return False
 
     # Validate CRS
