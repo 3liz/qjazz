@@ -2,6 +2,8 @@
 # Register/Retrieve launched jobs
 # by id/service/realm/
 #
+import re
+
 from dataclasses import dataclass
 from typing import (
     Iterator,
@@ -14,6 +16,17 @@ import redis
 from qjazz_core.celery import Celery
 
 from ..schemas import JobStatus
+
+# Job ids are used for building redis key patterns:
+# restrict to characters that have no special meaning in glob patterns
+JOB_ID_PATTERN = r"[A-Za-z0-9_-]+"
+
+_JOB_ID_MATCH = re.compile(JOB_ID_PATTERN)
+
+
+def is_valid_job_id(job_id: str) -> bool:
+    """Check that job id is made of alphanumeric, dash or underscore chars"""
+    return _JOB_ID_MATCH.fullmatch(job_id) is not None
 
 
 @dataclass
@@ -37,6 +50,9 @@ def register(
     expires: int,
     pending_timeout: int,
 ):
+    if not is_valid_job_id(status.job_id):
+        raise ValueError(f"Invalid job id: {status.job_id!r}")
+
     key = f"qjazz::{status.job_id}::{service}::{realm}"
 
     created = int(status.created.timestamp())
@@ -82,6 +98,8 @@ def find_job(
     realm: Optional[str] = None,
 ) -> Optional[TaskInfo]:
     """Return single task info"""
+    if not is_valid_job_id(job_id):
+        return None
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
@@ -95,6 +113,8 @@ def find_key(
     *,
     realm: Optional[str] = None,
 ) -> Optional[tuple[str, str, str]]:
+    if not is_valid_job_id(job_id):
+        return None
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*::{realm or '*'}")
     if keys:
@@ -130,6 +150,8 @@ def iter_jobs(
 
 def dismiss(app: Celery, job_id: str, reset: bool = False) -> bool:
     """Set state to 'dismissed'"""
+    if not is_valid_job_id(job_id):
+        return False
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*")
     if keys:
@@ -140,6 +162,8 @@ def dismiss(app: Celery, job_id: str, reset: bool = False) -> bool:
 
 def delete(app: Celery, job_id: str) -> int:
     """Delete task info"""
+    if not is_valid_job_id(job_id):
+        return 0
     client = app.backend.client
     keys = client.keys(f"qjazz::{job_id}::*")
     if keys:
@@ -165,4 +189,6 @@ def lock(
 
 def exists(app: Celery, job_id: str, *, service: Optional[str] = None) -> bool:
     """Check if a job is registred"""
+    if not is_valid_job_id(job_id):
+        return False
     return bool(app.backend.client.keys(f"qjazz::{job_id}::{service or '*'}"))

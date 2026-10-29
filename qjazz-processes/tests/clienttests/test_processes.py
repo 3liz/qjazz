@@ -180,6 +180,29 @@ def test_executedelete(host, data):
     assert rv.status_code == 404
 
 
+def test_invalid_job_id(host, data):
+    """ Test that glob patterns are rejected as job id
+    """
+    status = _execute_process(host, respond_async=True, tag="test_invalid_job_id")
+
+    job_id = status['jobId']
+
+    # Invalid job ids do not match any route: note that the
+    # catch-all CORS 'OPTIONS' route turns 404 into 405
+    for bad_id in ("*", "%2A", "%3F*", "%5Ba-z%5D*"):
+        rv = requests.get(f"{host}/jobs/{bad_id}")
+        assert rv.status_code in (404, 405), bad_id
+        rv = requests.get(f"{host}/jobs/{bad_id}/log")
+        assert rv.status_code in (404, 405), bad_id
+        rv = requests.delete(f"{host}/jobs/{bad_id}")
+        assert rv.status_code in (404, 405), bad_id
+
+    # The job must still be there
+    rv = requests.get(f"{host}/jobs/{job_id}")
+    assert rv.status_code == 200
+    assert rv.json()['status'] != "dismissed"
+
+
 def test_handleprocesserror_sync(host, data):
     """  Test execute error """
     rv = requests.post(

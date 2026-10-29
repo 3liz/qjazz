@@ -4,6 +4,7 @@ from typing import Optional
 
 from aiohttp import web
 
+from ..worker.registry import JOB_ID_PATTERN
 from ._handlers import (
     Jobs,
     LandingPage,
@@ -20,6 +21,9 @@ from .store import StoreConfig
 
 API_VERSION = "v1"
 PACKAGE_NAME = "qjazz_processes"
+
+# Reject invalid job ids at routing level
+JOB_ID = f"{{JobId:{JOB_ID_PATTERN}}}"
 
 
 class Handler(Services, Processes, Jobs, Storage, Store, LandingPage):
@@ -61,15 +65,15 @@ class Handler(Services, Processes, Jobs, Storage, Store, LandingPage):
         _routes.extend(
             (
                 # Jobs
-                web.get(f"{prefix}/jobs/{{JobId}}", self.job_status, allow_head=False),
-                web.delete(f"{prefix}/jobs/{{JobId}}", self.dismiss_job),
+                web.get(f"{prefix}/jobs/{JOB_ID}", self.job_status, allow_head=False),
+                web.delete(f"{prefix}/jobs/{JOB_ID}", self.dismiss_job),
                 # Results
-                web.get(f"{prefix}/jobs/{{JobId}}/results", self.job_results, allow_head=False),
+                web.get(f"{prefix}/jobs/{JOB_ID}/results", self.job_results, allow_head=False),
                 # Log
-                web.get(f"{prefix}/jobs/{{JobId}}/log", self.job_log, allow_head=False),
+                web.get(f"{prefix}/jobs/{JOB_ID}/log", self.job_log, allow_head=False),
                 # Files
-                web.get(f"{prefix}/jobs/{{JobId}}/files/", self.job_files, allow_head=False),
-                web.get(f"{prefix}/jobs/{{JobId}}/files/{{Resource:.+}}", self.job_download),
+                web.get(f"{prefix}/jobs/{JOB_ID}/files/", self.job_files, allow_head=False),
+                web.get(f"{prefix}/jobs/{JOB_ID}/files/{{Resource:.+}}", self.job_download),
                 # Services
                 web.get(f"{prefix}/services/", self.list_services, allow_head=False),
             ),
