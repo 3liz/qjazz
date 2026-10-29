@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from qgis.core import (
     Qgis,
     QgsProcessingParameterBand,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterColor,
     QgsProcessingParameterDateTime,
     QgsProcessingParameterDistance,
@@ -19,10 +20,11 @@ from qgis.core import (
     QgsProcessingParameterString,
 )
 
+from qjazz_processes.processing.context import ProcessingConfig, ProcessingContext
 from qjazz_processes.processing.inputs import InputParameter
 from qjazz_processes.processing.inputs.datetime import DateTimeParameterDataType
 from qjazz_processes.processing.inputs.literal import NumberParameterType
-from qjazz_processes.schemas import ogc
+from qjazz_processes.schemas import InputValueError, JsonValue, ogc
 
 
 def meta(seq, s):
@@ -295,3 +297,40 @@ def test_parameter_color():
 
     value = inp.value("red")
     assert value == QColor(255, 0, 0)
+
+
+def test_parameters_optional(processing_config: ProcessingConfig):
+    """Omitted optional parameters are left to QGIS default value"""
+    context = ProcessingContext(processing_config)
+
+    inputs = (
+        InputParameter(QgsProcessingParameterString("s", optional=True), validation_only=True),
+        InputParameter(QgsProcessingParameterNumber("n", optional=True), validation_only=True),
+        InputParameter(QgsProcessingParameterString("r"), validation_only=True),
+    )
+
+    assert InputParameter.parameters(inputs, {"r": "foo"}, context) == {"r": "foo"}
+    # Explicit null is the same as omitted
+    assert InputParameter.parameters(inputs, {"r": "foo", "s": None}, context) == {"r": "foo"}
+    assert InputParameter.parameters(inputs, {"r": "foo", "s": "bar", "n": 1}, context) == {
+        "r": "foo",
+        "s": "bar",
+        "n": 1,
+    }
+
+    with pytest.raises(InputValueError, match="Missing parameter r"):
+        InputParameter.parameters(inputs, {"s": "bar"}, context)
+
+
+def test_parameters_falsy_values(processing_config: ProcessingConfig):
+    """Falsy values are not missing values"""
+    context = ProcessingContext(processing_config)
+
+    inputs = (
+        InputParameter(QgsProcessingParameterBoolean("b"), validation_only=True),
+        InputParameter(QgsProcessingParameterNumber("n"), validation_only=True),
+        InputParameter(QgsProcessingParameterString("s"), validation_only=True),
+    )
+
+    values: dict[str, JsonValue] = {"b": False, "n": 0, "s": ""}
+    assert InputParameter.parameters(inputs, values, context) == values

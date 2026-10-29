@@ -80,7 +80,7 @@ class ParameterFile(InputParameter):
             logger.warning("Folder behavior not allowed for %s", param.name())
             return _type
 
-        ext = param.extension()
+        ext = file_extension(param)
         media_type = mimetypes.types_map.get(ext, Formats.ANY.media_type)
 
         return OneOf[  # type: ignore [misc, valid-type]
@@ -117,7 +117,7 @@ class ParameterFile(InputParameter):
                 cast("str", _inp.get("href", "")),
                 context.workdir,
                 context.config.raw_destination_root_path,
-                param.extension(),
+                file_extension(param),
             )
             if p:
                 if not p.exists():
@@ -127,7 +127,7 @@ class ParameterFile(InputParameter):
         _inp = RefOrQualifiedInput.validate_python(inp)
 
         workdir = (context and context.workdir) or Path()
-        destination = workdir.joinpath(param.name()).with_suffix(param.extension())
+        destination = workdir.joinpath(param.name()).with_suffix(file_extension(param))
 
         try:
             value: Any  # Makes Mypy happy
@@ -203,6 +203,16 @@ class ParameterFolderDestination(InputParameter):
 #
 # Utils
 #
+
+
+def file_extension(param: "QgsProcessingParameterFile") -> str:
+    """Return the file parameter extension with a leading dot
+
+    QGIS expects the extension without leading dot (i.e 'csv')
+    but accept both forms.
+    """
+    ext = param.extension().strip()
+    return f".{ext}" if (ext and not ext.startswith(".")) else ext
 
 
 def resolve_path(self: InputParameter, inp: JsonValue, context: ProcessingContext) -> Path:

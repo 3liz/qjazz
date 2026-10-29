@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -126,7 +127,7 @@ def test_output_file_link(qgis_session: ProcessingConfig):
     assert isinstance(link, dict)
     assert link["description"] == "Output file"
     assert link["length"] == len('{"foo": "bar"}')
-    assert link["href"].endswith("output.json")
+    assert cast("str", link["href"]).endswith("output.json")
 
 
 def test_output_folder_link(qgis_session: ProcessingConfig):
@@ -164,7 +165,7 @@ def test_output_html_link(qgis_session: ProcessingConfig):
     assert link["type"] == "text/html"
     assert link["description"] == "Html report"
     assert link["length"] == len(content)
-    assert link["href"].endswith("report.html")
+    assert cast("str", link["href"]).endswith("report.html")
 
     # Html output must be a file
     context.workdir.joinpath("folder").mkdir(exist_ok=True)

@@ -224,16 +224,24 @@ class _InputParameter:
     ) -> dict[str, Any]:
         """Convert inputs to parameters"""
 
-        def _value(inp: InputParameterDef) -> Any:
-            v = params.get(inp.name)
-            if not (v or inp.optional):
-                raise InputValueError(f"Missing parameter {inp.name}")
+        def _value(inp: InputParameterDef, v: JsonValue) -> Any:
             try:
                 return inp.value(v, context)
             except ValidationError as e:
                 raise InputValueError(f"'{inp.name}' parameter error", e) from None
 
-        return {i.name: _value(i) for i in inputs}
+        parameters = {}
+        for inp in inputs:
+            v = params.get(inp.name)
+            if v is None:
+                if not inp.optional:
+                    raise InputValueError(f"Missing parameter {inp.name}")
+                # Omitted optional parameter: let QGIS
+                # use the parameter default value
+                continue
+            parameters[inp.name] = _value(inp, v)
+
+        return parameters
 
 
 InputParameter = _InputParameter()

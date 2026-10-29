@@ -308,3 +308,28 @@ def test_output_html(host):
     assert rv.status_code == 200
     assert "hello html" in rv.text
     assert len(rv.content) == link['length']
+
+
+def test_optional_parameter_omitted(host):
+    """ Test omitted optional parameter
+    """
+    rv = requests.post(
+        f"{host}/processes/processes_test:testoptionvalue/execution",
+        json={"inputs": {}},
+    )
+    print("\n::test_optional_parameter_omitted::", rv.text)
+    assert rv.status_code == 200
+    # QGIS default value is used
+    assert rv.json()['OUTPUT'] == "selection is 1"
+
+
+def test_falsy_parameter_values(host):
+    """ Test falsy values for required parameters
+    """
+    rv = requests.post(
+        f"{host}/processes/processes_test:testsimplevalue/execution",
+        json={"inputs": {"PARAM1": 0, "PARAM2": "x"}},
+    )
+    print("\n::test_falsy_parameter_values::", rv.text)
+    assert rv.status_code == 200
+    assert rv.json()['OUTPUT'] == "0 x"

@@ -1,3 +1,4 @@
+import json
 import random
 import string
 
@@ -175,3 +176,54 @@ def test_parameter_raw_filedestination(processing_raw_config: ProcessingConfig):
     for value in ("/../bar.txt", "../../bar.txt"):
         with pytest.raises(InputValueError):
             inp.value(value, context)
+
+
+@pytest.mark.parametrize(
+    "extension,suffix,media_type",
+    [
+        ("csv", ".csv", "text/csv"),
+        (".csv", ".csv", "text/csv"),
+        ("", "", "application/octet-stream"),
+    ],
+)
+def test_parameter_file_extension(
+    processing_config: ProcessingConfig,
+    extension: str,
+    suffix: str,
+    media_type: str,
+):
+    """QGIS file extension may be given with or without leading dot"""
+    context = ProcessingContext(processing_config)
+    context.job_id = "test_parameter_file_extension"
+    context.workdir.mkdir(exist_ok=True)
+
+    param = QgsProcessingParameterFile("test_parameter_file_extension", extension=extension)
+    inp = InputParameter(param)
+
+    schema = json.dumps(inp.json_schema())
+    print("\ntest_parameter_file_extension::schema", schema)
+    assert f'"contentMediaType": "{media_type}"' in schema
+
+    value = inp.value({"mediaType": media_type, "value": "a,b\n1,2"}, context)
+
+    expected = context.workdir.joinpath(param.name()).with_suffix(suffix)
+    assert value == str(expected)
+    assert expected.read_text() == "a,b\n1,2"
+
+
+def test_parameter_raw_file_extension(processing_raw_config: ProcessingConfig):
+    """Raw file reference without extension get the QGIS extension"""
+    context = ProcessingContext(processing_raw_config)
+    context.job_id = "test_parameter_raw_file_extension"
+
+    root_path = processing_raw_config.raw_destination_root_path
+    assert root_path is not None
+
+    input_file = root_path.joinpath("test_parameter_raw_file_extension.csv")
+    input_file.write_text("a,b\n1,2")
+
+    param = QgsProcessingParameterFile("test_parameter_raw_file_extension", extension="csv")
+    inp = InputParameter(param)
+
+    value = inp.value({"href": "file:///test_parameter_raw_file_extension"}, context)
+    assert value == str(input_file)

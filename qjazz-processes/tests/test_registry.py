@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
+
+from qjazz_core.celery import Celery
 
 from qjazz_processes.schemas import JobStatus
 from qjazz_processes.worker import registry
@@ -30,8 +33,9 @@ def client() -> FakeRedis:
 
 
 @pytest.fixture()
-def app(client: FakeRedis) -> SimpleNamespace:
-    return SimpleNamespace(backend=SimpleNamespace(client=client))
+def app(client: FakeRedis) -> Celery:
+    # Fake Celery app with a fake redis backend client
+    return cast("Celery", SimpleNamespace(backend=SimpleNamespace(client=client)))
 
 
 @pytest.mark.parametrize(
@@ -60,7 +64,7 @@ def test_registry_valid_job_id(job_id: str):
         "job id",
     ],
 )
-def test_registry_invalid_job_id(job_id: str, app: SimpleNamespace, client: FakeRedis):
+def test_registry_invalid_job_id(job_id: str, app: Celery, client: FakeRedis):
     assert not registry.is_valid_job_id(job_id)
 
     # Lookups must not reach redis with an invalid job id
@@ -73,14 +77,14 @@ def test_registry_invalid_job_id(job_id: str, app: SimpleNamespace, client: Fake
     assert client.patterns == []
 
 
-def test_registry_lookup_pattern(app: SimpleNamespace, client: FakeRedis):
+def test_registry_lookup_pattern(app: Celery, client: FakeRedis):
     job_id = "6f1d2b9e-3c1a-4d7e-9a0b-2f5c8e1d4a7b"
 
     registry.delete(app, job_id)
     assert client.patterns == [f"qjazz::{job_id}::*"]
 
 
-def test_registry_register_invalid_job_id(app: SimpleNamespace, client: FakeRedis):
+def test_registry_register_invalid_job_id(app: Celery, client: FakeRedis):
     status = JobStatus(
         job_id="*",
         process_id="test",
