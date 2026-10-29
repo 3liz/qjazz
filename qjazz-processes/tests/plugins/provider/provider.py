@@ -15,6 +15,7 @@ from .TestLongProcess import TestLongProcess
 from .TestMultiOptionValue import TestMultiOptionValue
 from .TestOptionValue import TestOptionValue
 from .TestOutputFile import TestOutputFile
+from .TestOutputHtml import TestOutputHtml
 from .TestOutputVectorLayer import TestOutputVectorLayer
 from .TestRaiseError import TestRaiseError
 from .TestSimpleBuffer import TestSimpleBuffer
@@ -48,6 +49,7 @@ class TestAlgorithmProvider(QgsProcessingProvider):
             TestInputFile,
             TestOutputVectorLayer,
             TestOutputFile,
+            TestOutputHtml,
             TestInputGeometry,
             TestUltimateQuestion,
         ]

@@ -286,3 +286,25 @@ def test_badparameter_async(host):
 
 
 
+
+
+def test_output_html(host):
+    """ Test html output
+    """
+    rv = requests.post(
+        f"{host}/processes/processes_test:testoutputhtml/execution",
+        json={"inputs": {}},
+    )
+    print("\n::test_output_html::", rv.text)
+    assert rv.status_code == 200
+
+    link = rv.json()['OUTPUT']
+    assert link['type'] == "text/html"
+    assert link['description'] == "HTML report"
+    assert link['href'].endswith("/report.html")
+
+    # Download the html file
+    rv = requests.get(link['href'])
+    assert rv.status_code == 200
+    assert "hello html" in rv.text
+    assert len(rv.content) == link['length']

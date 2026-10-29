@@ -114,9 +114,9 @@ class OutputFile(OutputParameter, OutputFormatDefinition):  # type: ignore [misc
             href=reference_url,
             mime_type=self.output_format.media_type,
             title=self.title,
-            description=self._out.description,
+            description=self._out.description(),
             length=path.stat().st_size,
-        ).model_dump(mode="json", by_alias=True, exclude_none=True)
+        ).model_dump(mode="json")
 
 
 #
@@ -142,8 +142,8 @@ class OutputFolder(OutputParameter):
         return Link(
             href=reference_url,
             title=self.title,
-            description=self._out.description,
-        ).model_dump(mode="json", by_alias=True, exclude_none=True)
+            description=self._out.description(),
+        ).model_dump(mode="json")
 
 
 #
@@ -174,20 +174,7 @@ class OutputHtml(OutputFile):
     ) -> Sequence[Format]:
         return (cls._OutputFormat,)
 
-    def output(self, value: str, context: Optional[ProcessingContext] = None) -> JsonValue:
-        context = context or ProcessingContext()
-
-        path = resolve_path(value, context)
-        if not path.is_dir():
-            raise ValueError(f"'{path}' is not a directory")
-
-        reference_url = context.file_reference(path)
-
-        return Link(
-            href=reference_url,
-            title=self.title,
-            description=self._out.description,
-        ).model_dump(mode="json", by_alias=True, exclude_none=True)
+    # Note: 'output' is inherited from OutputFile: html output is a file
 
 
 #

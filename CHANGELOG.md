@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix file/folder outputs
 * [qjazz-processes] Fix job's file path resolution; prevent root/workdir traversal
 * [qjazz-processes] Callbacks ACL: require all resolved addresses to be allowed, deny unresolvable hosts
 * [qjazz-processes] Require job realm for dismissing jobs, protect job realm against glob injection

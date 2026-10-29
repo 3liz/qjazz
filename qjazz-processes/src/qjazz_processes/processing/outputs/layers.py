@@ -256,7 +256,7 @@ class OutputMultipleLayers(OutputLayerBase):
             mime_type=media_type,
             title=self.title,
             description=self._out.description(),
-        ).model_dump(mode="json", by_alias=True, exclude_none=True)
+        ).model_dump(mode="json")
 
 
 #
