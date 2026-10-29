@@ -5,6 +5,7 @@
 import socket
 
 from ipaddress import ip_address
+from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -16,6 +17,7 @@ from qjazz_processes.callbacks.handlers.http import (
     HttpCallbackConfig,
 )
 from qjazz_processes.callbacks.handlers.mailto import get_recipients
+from qjazz_processes.worker.mixins.callbacks import on_task_postrun
 
 
 def test_callback_acl_allow():
@@ -202,3 +204,45 @@ def test_callback_http_request(httpserver):
 
     resp = handler.send_request(urlsplit(url), job_id, data=results)
     assert resp.status_code == 200
+
+
+class RecordCallbacks:
+    def __init__(self):
+        self.calls: list[tuple] = []
+
+    def on_success(self, url, job_id, meta, results):
+        self.calls.append(("success", url, job_id))
+
+    def on_failure(self, url, job_id, meta):
+        self.calls.append(("failure", url, job_id))
+
+
+def _postrun(kwargs: dict, state: str) -> list[tuple]:
+    callbacks = RecordCallbacks()
+    task = SimpleNamespace(app=SimpleNamespace(processes_callbacks=callbacks))
+    on_task_postrun(
+        sender=None,
+        task_id="job_01",
+        task=task,  # type: ignore [arg-type]
+        args=(),
+        kwargs=kwargs,
+        retval={},
+        state=state,
+    )
+    return callbacks.calls
+
+
+def test_callback_postrun_without_request():
+    """Task failed before starting (i.e dismissed task): no request, no callback"""
+    kwargs = {"__meta__": {}, "__run_config__": {}}
+    assert _postrun(kwargs, "FAILURE") == []
+
+
+def test_callback_postrun_failure():
+    request = {"subscriber": {"failedUri": "https://foo.com/failed"}}
+    calls = _postrun({"__meta__": {}, "request": request}, "FAILURE")
+    assert calls == [("failure", "https://foo.com/failed", "job_01")]
+
+
+def test_callback_postrun_no_subscriber():
+    assert _postrun({"__meta__": {}, "request": {}}, "SUCCESS") == []

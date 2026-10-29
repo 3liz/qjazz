@@ -247,8 +247,9 @@ class GenericJob(Job):
             kwargs["__run_config__"] = request["inputs"]
             super().before_start(task_id, args, kwargs)
         finally:
-            # Keep subscriber for postrun
-            kwargs["request"] = {"subscriber": request["subscriber"]}
+            # Keep the request for postrun callbacks and job details
+            # Note: always overwrite since 'request' may be an input name
+            kwargs["request"] = request
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         # Job is done: keep the job registered as long as its results

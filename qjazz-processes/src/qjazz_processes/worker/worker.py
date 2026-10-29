@@ -398,7 +398,16 @@ class QgisProcessJob(QgisJob):
             task_id,
             (self.app.conf.task_time_limit or 0) + self.app.conf.result_expires,
         )
-        super().before_start(task_id, args, kwargs)
+
+        # Keep the request (and its subscriber) for postrun callbacks
+        # if 'before_start' fails: the run configuration is removed from
+        # the arguments (see GenericJob)
+        request = kwargs.get("__run_config__", {}).get("request")
+        try:
+            super().before_start(task_id, args, kwargs)
+        finally:
+            if request is not None:
+                kwargs.setdefault("request", request)
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         # Job is done: keep the job registered as long as its results

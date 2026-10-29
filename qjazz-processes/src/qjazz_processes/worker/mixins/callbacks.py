@@ -65,7 +65,13 @@ def on_task_postrun(
     state: str,
     **_,
 ):
-    subscriber = MaybeSubscriber.validate_python(kwargs["request"].get("subscriber"))
+    # The request may be missing if the task failed before
+    # starting (i.e dismissed task)
+    request = kwargs.get("request")
+    if not request:
+        return
+
+    subscriber = MaybeSubscriber.validate_python(request.get("subscriber"))
     if not subscriber:
         return
 
