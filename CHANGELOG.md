@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Callbacks ACL: require all resolved addresses to be allowed, deny unresolvable hosts
+* [qjazz-processes] Require job realm for dismissing jobs, protect job realm against glob injection
+* [qjazz-processes] Handle IPv6 addresses in callbacks ACL
+* [qjazz-processes] Prevent glob injection with job identifier
+* [docker] Add qjazz-printserver to docker image
+* [qjazz-processes] Handle 'ServiceNotAvailable' exception
+* [qjazz-core] Allow required fields with default value in schema models
+* [qjazz-cache] Allow passing `CacheEntry` in `CacheManager.update`
+* [qjazz-processes] Fix missing default value for job status `progress`
+* [qjazz-processes] Fix models and schema generation
+* [qjazz-core] Rewrite the toml config generator engine
+* [qjazz-processes] Update OpenAPI specs
 * [qjazz-processes] Fix ParameterFeatureSource schema definition
 * [qjazz-processes] Allow filtering jobs by tag
 * [qjazz-processes] Fix InputGeometry schema
