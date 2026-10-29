@@ -8,7 +8,7 @@ from ipaddress import (
     IPv6Address,
     IPv6Network,
 )
-from socket import getaddrinfo
+from socket import gaierror, getaddrinfo
 from typing import (
     Annotated,
     Literal,
@@ -23,6 +23,7 @@ from pydantic import (
     IPvAnyNetwork,
     TypeAdapter,
 )
+from qjazz_core import logger
 from qjazz_core.config import ConfigBase
 from qjazz_core.models import Field
 
@@ -97,9 +98,16 @@ class AccessControlConfig(ConfigBase):
         host = HostValidator.validate_python(hostname)
         match host:
             case str():
-                for _, _, _, _, addr in getaddrinfo(host, "http"):
-                    if self.check_ip(IPValidator.validate_python(addr[0]), hostname):
-                        return True
+                try:
+                    addresses = {addr[0] for _, _, _, _, addr in getaddrinfo(host, "http")}
+                except gaierror as err:
+                    logger.error("Access control: cannot resolve host '%s': %s", host, err)
+                    return False
+                # All resolved addresses must be allowed since we cannot
+                # tell which one will be used for the connection
+                return bool(addresses) and all(
+                    self.check_ip(IPValidator.validate_python(ip), hostname) for ip in addresses
+                )
             case IPv4Address() | IPv6Address():
                 return self.check_ip(host)
             case unreachable:

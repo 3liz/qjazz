@@ -2,14 +2,20 @@
 # Test callback handlers
 #
 
-from ipaddress import ip_address
-from urllib.parse import urlsplit
+import socket
 
+from ipaddress import ip_address
+from urllib.parse import parse_qs, urlsplit
+
+import pytest
+
+from qjazz_processes.callbacks import accesscontrol
 from qjazz_processes.callbacks.accesscontrol import AccessControlConfig
 from qjazz_processes.callbacks.handlers.http import (
     HttpCallback,
     HttpCallbackConfig,
 )
+from qjazz_processes.callbacks.handlers.mailto import get_recipients
 
 
 def test_callback_acl_allow():
@@ -95,6 +101,82 @@ def test_callback_acl_ipv6_deny():
 
     assert conf.check_hostname(urlsplit("http://[2001:db8::1]/callback").hostname)
     assert not conf.check_hostname(urlsplit("http://[::1]/callback").hostname)
+
+
+# Fake DNS resolution
+HOSTS = {
+    "public.foo.com": ("212.180.10.1",),
+    "mixed.foo.com": ("212.180.10.1", "127.0.0.1"),
+    "mixed6.foo.com": ("212.180.10.1", "::1"),
+    "local.bar.com": ("127.0.0.1",),
+}
+
+
+def _getaddrinfo(host, port, *args, **kwargs):
+    if host not in HOSTS:
+        raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+    return [
+        (
+            socket.AF_INET6 if ":" in ip else socket.AF_INET,
+            socket.SOCK_STREAM,
+            6,
+            "",
+            (ip, 80),
+        )
+        for ip in HOSTS[host]
+    ]
+
+
+@pytest.fixture()
+def fake_dns(monkeypatch):
+    monkeypatch.setattr(accesscontrol, "getaddrinfo", _getaddrinfo)
+
+
+def test_callback_acl_hostname_all_addresses(fake_dns):
+    """All resolved addresses must be allowed"""
+    conf = AccessControlConfig(
+        deny=(
+            "127.0.0.0/8",
+            "::1",
+        ),
+        order="Allow",
+    )
+
+    assert conf.check_hostname("public.foo.com")
+    assert not conf.check_hostname("local.bar.com")
+    # One denied address is enough to reject the host
+    assert not conf.check_hostname("mixed.foo.com")
+    assert not conf.check_hostname("mixed6.foo.com")
+
+
+def test_callback_acl_hostname_filter(fake_dns):
+    """Hostname filters apply to all resolved addresses"""
+    conf = AccessControlConfig(
+        allow=(".foo.com",),
+        order="Deny",
+    )
+
+    assert conf.check_hostname("mixed.foo.com")
+    assert not conf.check_hostname("local.bar.com")
+
+
+def test_callback_acl_unresolved_hostname(fake_dns):
+    """Unresolved hosts are not allowed"""
+    conf = AccessControlConfig(order="Allow")
+
+    assert conf.check_hostname("public.foo.com")
+    assert not conf.check_hostname("unknown.foo.com")
+
+
+def test_callback_mailto_recipients_acl(fake_dns):
+    """Unauthorized or unresolved recipients are skipped"""
+    conf = AccessControlConfig(deny=("127.0.0.0/8",), order="Allow")
+
+    url = urlsplit("mailto:john@public.foo.com?cc=jane@local.bar.com&cc=bob@unknown.foo.com")
+    params = parse_qs(url.query)
+
+    assert list(get_recipients("to", url, params, conf)) == ["john@public.foo.com"]
+    assert list(get_recipients("cc", url, params, conf)) == []
 
 
 def test_callback_http_request(httpserver):
