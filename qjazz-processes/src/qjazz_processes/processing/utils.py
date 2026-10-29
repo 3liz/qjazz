@@ -1,3 +1,4 @@
+import os
 import re
 
 from collections.abc import Container
@@ -27,6 +28,7 @@ from qgis.core import (
 
 from qjazz_processes.schemas import (
     Format,
+    InputValueError,
     mimetypes,
 )
 
@@ -139,8 +141,16 @@ def get_valid_filename(s: str) -> str:
     return re.sub(r"(?u)[^-\w.]", "_", s)
 
 
+def normalize_path(p: Path) -> Path:
+    """Normalize path by collapsing '.' and '..' segments
+
+    Note: symbolic links are not resolved
+    """
+    return Path(os.path.normpath(p))
+
+
 def resolve_raw_path(
-    p: str,
+    path: str,
     workdir: Path,
     root_path: Optional[Path],
     extension: str,
@@ -148,14 +158,19 @@ def resolve_raw_path(
     #
     # Resolve raw path
     #
-    p = Path(p)
+    p = Path(path)
     # Absolute path are stored in root folder
+    # or in the job folder if there is no root folder
     if p.is_absolute():
+        base = normalize_path(root_path or workdir)
         p = p.relative_to("/")
-        if root_path:
-            p = root_path.joinpath(p)
     else:
-        p = workdir.joinpath(p)
+        base = normalize_path(workdir)
+
+    # Prevent escaping from base folder with '..'
+    p = normalize_path(base.joinpath(p))
+    if not p.is_relative_to(base):
+        raise InputValueError(f"Invalid path '{path}'")
 
     # Check for extension:
     if extension and not p.suffix:

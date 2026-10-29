@@ -36,7 +36,9 @@ from qjazz_processes.schemas import (
 
 from ..config import ProcessingConfig
 from ..utils import (
+    normalize_path,
     output_file_formats,
+    resolve_raw_path,
     resolve_raw_reference,
 )
 from .base import (
@@ -95,7 +97,14 @@ class ParameterFile(InputParameter):
             # XXX Passing a folder is not really relevant for processes API
             # except if we allow raw input value
             if context and context.config.raw_destination_input_sink:
-                return cast("str", inp)
+                return str(
+                    resolve_raw_path(
+                        cast("str", inp),
+                        context.workdir,
+                        context.config.raw_destination_root_path,
+                        "",
+                    ),
+                )
             logger.warning("Folder behavior not allowed for %s", param.name())
             return ""
 
@@ -200,15 +209,19 @@ def resolve_path(self: InputParameter, inp: JsonValue, context: ProcessingContex
     _inp = self.validate(inp)
 
     if context.config.raw_destination_input_sink:
-        value = _inp
+        value = resolve_raw_path(
+            _inp,
+            context.workdir,
+            context.config.raw_destination_root_path,
+            "",
+        )
     else:
         # Normalize path
-        value = context.workdir.joinpath(_inp.removeprefix("/")).resolve()
-        if not value.is_relative_to(context.workdir):
-            # Truncate the path to to its single name
-            value = Path(value.name)
-
-        if str(value) != _inp:
+        workdir = normalize_path(context.workdir)
+        value = normalize_path(workdir.joinpath(_inp.removeprefix("/")))
+        if not value.is_relative_to(workdir):
+            # Truncate the path to its single name
+            value = workdir.joinpath(value.name)
             logger.warning(
                 "Value for '%s' has been truncated to '%s'",
                 self._param.name(),

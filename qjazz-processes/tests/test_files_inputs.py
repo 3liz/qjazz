@@ -1,6 +1,8 @@
 import random
 import string
 
+import pytest
+
 from qgis.core import (
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
@@ -15,6 +17,7 @@ from qjazz_processes.processing.inputs import (
     ParameterFile,
     ParameterFileDestination,
 )
+from qjazz_processes.schemas import InputValueError
 
 # TODO: Test Qualified input value
 # TODO: Test Reference input value
@@ -114,3 +117,61 @@ def test_parameter_filedestination(qgis_session: ProcessingConfig):
     value = inp.value(param.name(), context)
 
     assert str(expected) == value
+
+
+def test_parameter_raw_file_traversal(processing_raw_config: ProcessingConfig):
+    """Raw file references cannot escape the root folder"""
+    context = ProcessingContext(processing_raw_config)
+    context.job_id = "test_parameter_raw_file_traversal"
+
+    param = QgsProcessingParameterFile("test_parameter_raw_file_traversal", extension=".txt")
+    inp = InputParameter(param)
+
+    # Root folder is the tests '__workdir__' folder: use an existing file
+    # outside the root folder
+    root_path = processing_raw_config.raw_destination_root_path
+    assert root_path is not None
+    assert root_path.parent.joinpath("conftest.py").exists()
+
+    for href in ("file:///../conftest.py", "file:///foo/../../conftest.py"):
+        with pytest.raises(InputValueError, match="Invalid path"):
+            inp.value({"href": href}, context)
+
+
+def test_parameter_filedestination_traversal(processing_config: ProcessingConfig):
+    """Destination paths escaping the job folder are truncated"""
+    context = ProcessingContext(processing_config)
+    context.job_id = "test_parameter_filedestination_traversal"
+
+    param = QgsProcessingParameterFileDestination("test_parameter_filedestination_traversal")
+    param.setFileFilter("Text files (*.txt)")
+
+    inp = InputParameter(param)
+
+    workdir = context.workdir
+
+    assert inp.value("foo/bar.txt", context) == str(workdir.joinpath("foo", "bar.txt"))
+    assert inp.value("foo/../bar.txt", context) == str(workdir.joinpath("bar.txt"))
+    # Truncated to file name in job folder
+    assert inp.value("../../x/bar.txt", context) == str(workdir.joinpath("bar.txt"))
+
+
+def test_parameter_raw_filedestination(processing_raw_config: ProcessingConfig):
+    """Raw destination paths are resolved against the root folder"""
+    context = ProcessingContext(processing_raw_config)
+    context.job_id = "test_parameter_raw_filedestination"
+
+    root_path = processing_raw_config.raw_destination_root_path
+    assert root_path is not None
+
+    param = QgsProcessingParameterFileDestination("test_parameter_raw_filedestination")
+    param.setFileFilter("Text files (*.txt)")
+
+    inp = InputParameter(param)
+
+    assert inp.value("/foo/bar.txt", context) == str(root_path.joinpath("foo", "bar.txt"))
+    assert inp.value("bar.txt", context) == str(context.workdir.joinpath("bar.txt"))
+
+    for value in ("/../bar.txt", "../../bar.txt"):
+        with pytest.raises(InputValueError):
+            inp.value(value, context)

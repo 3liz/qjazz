@@ -34,7 +34,7 @@ from qjazz_processes.schemas import (
     ValuePassing,
 )
 
-from ..utils import output_file_formats
+from ..utils import normalize_path, output_file_formats
 from .base import (
     InputParameterDef,
     JsonValue,
@@ -194,20 +194,24 @@ class OutputHtml(OutputFile):
 # Utils
 #
 def resolve_path(value: str, context: Optional[ProcessingContext]) -> Path:
-    """Return either a relative workdir path or an absolute raw path"""
-    workdir = (context and context.workdir) or Path()
+    """Return the normalized output path
 
-    p = Path(value)
+    Relative paths are resolved against the job folder.
+    The path must be located in the job folder or in the raw
+    destination root folder.
+    """
+    workdir = normalize_path((context and context.workdir) or Path())
+
+    allowed = [workdir]
     if context and context.config.raw_destination_input_sink:
-        raw_destination_root_path = context.config.raw_destination_root_path or workdir
-        assert_postcondition(
-            p.is_relative_to(raw_destination_root_path),
-            f"Invalid path: {p}",
-        )
-    else:
-        assert_postcondition(
-            p.is_relative_to(workdir),
-            f"Invalid path: {p}",
-        )
+        root_path = context.config.raw_destination_root_path
+        if root_path:
+            allowed.append(normalize_path(root_path))
+
+    p = normalize_path(workdir.joinpath(value))
+    assert_postcondition(
+        any(p.is_relative_to(base) for base in allowed),
+        f"Invalid path: {value}",
+    )
 
     return p

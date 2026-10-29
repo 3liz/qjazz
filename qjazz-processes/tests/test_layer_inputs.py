@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from qgis.core import (
     Qgis,
     QgsProcessingOutputLayerDefinition,
@@ -33,6 +35,7 @@ from qjazz_processes.processing.inputs.layers import (
     ParameterVectorDestination,
     ParameterVectorLayer,
 )
+from qjazz_processes.schemas import InputValueError
 
 
 def meta(seq, s):
@@ -139,13 +142,20 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
         ),
     )
 
+    # No root path: absolute paths are stored in the job folder
     value = inp.value("/foobar.csv", context)
     assert value.destinationName == "foobar"
-    assert value.sink.staticValue() == "foobar.csv"
+    assert value.sink.staticValue() == str(context.workdir.joinpath("foobar.csv"))
 
     value = inp.value("/foobar", context)
     assert value.destinationName == "foobar"
-    assert value.sink.staticValue() == "foobar.fgb"
+    assert value.sink.staticValue() == str(context.workdir.joinpath("foobar.fgb"))
+
+    # Escaping the job folder is not allowed
+    with pytest.raises(InputValueError):
+        inp.value("/../../foobar.csv", context)
+    with pytest.raises(InputValueError):
+        inp.value("../foobar.csv", context)
 
     context = ProcessingContext(
         config.model_copy(
@@ -159,6 +169,16 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     value = inp.value("file:/path/to/foobar.csv|layername=foobaz", context)
     assert value.destinationName == "foobaz"
     assert value.sink.staticValue() == "/unsafe/path/to/foobar.csv"
+
+    # '..' segments are normalized
+    value = inp.value("/path/../foobar.csv", context)
+    assert value.sink.staticValue() == "/unsafe/foobar.csv"
+
+    # Escaping the root folder is not allowed
+    with pytest.raises(InputValueError):
+        inp.value("/../etc/foobar.csv", context)
+    with pytest.raises(InputValueError):
+        inp.value("file:/path/../../../etc/foobar.csv", context)
 
     # Use postgres uri as sink
     value = inp.value("postgres://service=foobar|layername=foobaz", context)

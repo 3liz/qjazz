@@ -1,4 +1,8 @@
+from pathlib import Path
+
 import pytest
+
+from qjazz_core.condition import PostconditionError
 
 from qgis.core import (
     QgsProcessingOutputFile,
@@ -6,12 +10,14 @@ from qgis.core import (
 
 from qjazz_processes.processing.context import (
     ProcessingConfig,
+    ProcessingContext,
 )
 from qjazz_processes.processing.inputs import InputParameter
 from qjazz_processes.processing.outputs import (
     OutputFile,
     OutputParameter,
 )
+from qjazz_processes.processing.outputs.files import resolve_path
 from qjazz_processes.schemas import (
     InputValueError,
     Output,
@@ -61,3 +67,39 @@ def test_output_file(qgis_session: ProcessingConfig):
     )
     assert output.output_extension == ".json"
     assert param.output_extension == ".json"
+
+
+def test_output_resolve_path(processing_config: ProcessingConfig):
+    """Output paths must be located in the job folder"""
+    context = ProcessingContext(processing_config)
+    context.job_id = "test_output_resolve_path"
+
+    workdir = context.workdir
+
+    # Relative paths are resolved against the job folder
+    assert resolve_path("output.json", context) == workdir.joinpath("output.json")
+    assert resolve_path("foo/../output.json", context) == workdir.joinpath("output.json")
+    assert resolve_path(str(workdir.joinpath("output.json")), context) == workdir.joinpath("output.json")
+
+    for value in ("../output.json", str(workdir.joinpath("..", "output.json")), "/etc/passwd"):
+        with pytest.raises(PostconditionError):
+            resolve_path(value, context)
+
+
+def test_output_resolve_raw_path(processing_config: ProcessingConfig, tmp_path: Path):
+    """Raw output paths may be located in the raw destination root folder"""
+    context = ProcessingContext(
+        processing_config.model_copy(
+            update={
+                "raw_destination_input_sink": True,
+                "raw_destination_root_path": tmp_path,
+            },
+        ),
+    )
+    context.job_id = "test_output_resolve_raw_path"
+
+    assert resolve_path("output.json", context) == context.workdir.joinpath("output.json")
+    assert resolve_path(str(tmp_path / "output.json"), context) == tmp_path / "output.json"
+
+    with pytest.raises(PostconditionError):
+        resolve_path(str(tmp_path / ".." / "output.json"), context)
