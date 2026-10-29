@@ -32,6 +32,7 @@ from qjazz_store.models import ResourceType
 
 from ...schemas import JsonModel
 from ..models import BoolParam
+from ..store import StoreConfig
 from .protos import (
     ErrorResponse,
     HandlerProto,
@@ -497,10 +498,7 @@ class Store(HandlerProto):
         return obj, stream
 
     async def store_creds(self) -> store.StoreCreds:
-        if not self._store:
-            ErrorResponse.raises(web.HTTPConflict, "Store not configured on server")
-
-        conf = self._store
+        conf = self.store_config
         return store.StoreCreds(
             endpoint=conf.endpoint,
             access_key=conf.access_key.get_secret_value(),
@@ -509,3 +507,10 @@ class Store(HandlerProto):
             cert_check=conf.check_certificat,
             region=conf.region,
         )
+
+    @property
+    def store_config(self) -> StoreConfig:
+        if not self._store:
+            ErrorResponse.raises(web.HTTPConflict, "Store not configured on server")
+        return self._store
+

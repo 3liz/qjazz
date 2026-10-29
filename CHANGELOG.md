@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix error 500 with RequireStore processes
 * [qjazz-processes] Fix race condition between Celery and task registration
 * [qjazz-processes] QGIS parameter validation error now returns error 400
 * [qjazz-processes] Fix default value for color parameters

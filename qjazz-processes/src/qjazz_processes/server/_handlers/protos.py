@@ -71,6 +71,9 @@ class HandlerProto(Protocol):
 
     async def store_creds(self) -> StoreCreds: ...
 
+    @property
+    def store_config(self) -> StoreConfig: ...
+
 
 def validate_param[T](adapter: TypeAdapter[T], request: web.Request, name: str, default: T) -> T:
     """Validate query param"""

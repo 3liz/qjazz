@@ -520,8 +520,7 @@ class Processes(HandlerProto):
                 service,
                 self.get_identity(request),
                 creds,
-                # Getting creds ensure that store is configured
-                ttl=self._store.acces_ttl,  # type: ignore [union-attr]
+                ttl=self.store_config.access_ttl,
             )
 
         return context
