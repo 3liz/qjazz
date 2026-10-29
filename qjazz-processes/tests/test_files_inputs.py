@@ -4,9 +4,12 @@ import string
 
 import pytest
 
+from pydantic import ValidationError
+
 from qgis.core import (
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
+    QgsProcessingParameterFolderDestination,
 )
 
 from qjazz_processes.processing.context import (
@@ -17,6 +20,7 @@ from qjazz_processes.processing.inputs import (
     InputParameter,
     ParameterFile,
     ParameterFileDestination,
+    ParameterFolderDestination,
 )
 from qjazz_processes.schemas import InputValueError
 
@@ -227,3 +231,52 @@ def test_parameter_raw_file_extension(processing_raw_config: ProcessingConfig):
 
     value = inp.value({"href": "file:///test_parameter_raw_file_extension"}, context)
     assert value == str(input_file)
+
+
+def test_parameter_folderdestination(processing_config: ProcessingConfig):
+    """Folder destinations are located in the job folder"""
+    context = ProcessingContext(processing_config)
+    context.job_id = "test_parameter_folderdestination"
+
+    param = QgsProcessingParameterFolderDestination("OUTPUT", defaultValue="results")
+
+    inp = InputParameter(param)
+    assert isinstance(inp, ParameterFolderDestination)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_folderdestination::schema", schema)
+    assert schema["type"] == "string"
+    assert schema["default"] == "results"
+
+    workdir = context.workdir
+
+    assert inp.value("out", context) == str(workdir.joinpath("out"))
+    assert inp.value("a/../b", context) == str(workdir.joinpath("b"))
+    # Truncated to its name in the job folder
+    assert inp.value("../../x", context) == str(workdir.joinpath("x"))
+
+    with pytest.raises(ValidationError):
+        inp.value(1, context)
+
+    # Execution path
+    inp = InputParameter(param, validation_only=True)
+    parameters = InputParameter.parameters([inp], {"OUTPUT": "out"}, context)
+    assert parameters == {"OUTPUT": str(workdir.joinpath("out"))}
+
+
+def test_parameter_raw_folderdestination(processing_raw_config: ProcessingConfig):
+    """Raw folder destinations are confined to the root folder"""
+    context = ProcessingContext(processing_raw_config)
+    context.job_id = "test_parameter_raw_folderdestination"
+
+    root_path = processing_raw_config.raw_destination_root_path
+    assert root_path is not None
+
+    inp = InputParameter(QgsProcessingParameterFolderDestination("OUTPUT"))
+
+    assert inp.value("/foo/out", context) == str(root_path.joinpath("foo", "out"))
+    assert inp.value("out", context) == str(context.workdir.joinpath("out"))
+
+    for value in ("/../out", "../../out"):
+        with pytest.raises(InputValueError):
+            inp.value(value, context)

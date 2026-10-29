@@ -196,9 +196,10 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
 
 
 class ParameterFolderDestination(InputParameter):
+    _ParameterType = str
+
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         return str(resolve_path(self, inp, context or ProcessingContext()))
-
 
 #
 # Utils

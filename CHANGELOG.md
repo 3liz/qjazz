@@ -7,14 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
-
-* [qjazz-processes] Fix file/folder outputs
+* [qjazz-processes] Fix default value for color parameters
+* [qjazz-processes] Fix file/folder input/outputs
 * [qjazz-processes] Fix job's file path resolution; prevent root/workdir traversal
 * [qjazz-processes] Callbacks ACL: require all resolved addresses to be allowed, deny unresolvable hosts
 * [qjazz-processes] Require job realm for dismissing jobs, protect job realm against glob injection
 * [qjazz-processes] Handle IPv6 addresses in callbacks ACL
 * [qjazz-processes] Prevent glob injection with job identifier
-* [docker] Add qjazz-printserver to docker image
 * [qjazz-processes] Handle 'ServiceNotAvailable' exception
 * [qjazz-core] Allow required fields with default value in schema models
 * [qjazz-cache] Allow passing `CacheEntry` in `CacheManager.update`
@@ -30,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 * [qjazz-rpc] Enforce tcp/http2 connection keepalive 
 * [qjazz-rpc] Ensure `O_CLOEXEC` is called when opening rendez-vous pipe
 * [qjazz-processes] Simplify passing output formats from output schema
+* [docker] Add qjazz-printserver to docker image
 
 ## 0.9.3
 
