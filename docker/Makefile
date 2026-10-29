@@ -49,6 +49,8 @@ build:: manifest
 	docker buildx build --rm $(BUILD_OPTS) $(DOCKER_BUILDER_OPTS) $(BUILD_ARGS) --target $(BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=${FLAVOR} \
 		--build-arg LIZCLOUD=${LIZCLOUD} \
+		--build-arg PRINTSERVER=${PRINTSERVER} \
+		--build-arg PACKAGES_URL=$(PACKAGES_3LIZ) \
 		--label org.opencontainers.image.version=$$version \
 		-t $(BUILDIMAGE) -t 3liz/$(NAME):qgis-$(FLAVOR)-unstable  -f Dockerfile  ..;\
 	}

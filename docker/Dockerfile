@@ -32,26 +32,41 @@ RUN --mount=type=bind,target=/src,rw \
         `ls -1 /src/dist/qjazz_rpc-*.whl` \
         `ls -1 /src/dist/qjazz_processes-*.whl`
 
+ARG PACKAGES_URL=''
+
 # Install yapt-manager
 RUN --mount=type=bind,target=/src,rw \
     --mount=type=cache,target=/.python-cache \
-    uv pip install --extra-index-url=https://packages.3liz.org/pub/whl/ \
+    uv pip install --extra-index-url=${PACKAGES_URL}/pub/whl/ \
      --python=/opt/local/qjazz/bin/python \
      --link-mode=copy \
      yapt-manager
  
 ARG LIZCLOUD=''
+ARG PRINTSERVER=''
 
 # Install lizcloud support
 RUN --mount=type=bind,target=/src,rw \
     --mount=type=cache,target=/.python-cache \
     if [ "$LIZCLOUD" = "yes" ]; then \
-        uv pip install --extra-index-url=https://packages.3liz.org/pub/whl/ \
+        uv pip install --extra-index-url=${PACKAGES_URL}/pub/whl/ \
         --python=/opt/local/qjazz/bin/python \
         --cache-dir=/.python-cache --compile-bytecode \
         --link-mode=copy \
         qjazz-lizcloud; \
     fi
+
+# Install printserver
+RUN --mount=type=bind,target=/src,rw \
+    --mount=type=cache,target=/.python-cache \
+    if [ "$PRINTSERVER" = "yes" ]; then \
+        uv pip install --extra-index-url=${PACKAGES_URL}/pub/whl/ \
+        --python=/opt/local/qjazz/bin/python \
+        --cache-dir=/.python-cache --compile-bytecode \
+        --link-mode=copy \
+        qjazz-printserver; \
+    fi
+
 
 # ==============
 # QJazz platform
