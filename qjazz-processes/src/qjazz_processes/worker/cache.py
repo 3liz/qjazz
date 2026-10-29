@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import threading
 import traceback
 
 from abc import abstractmethod
@@ -8,6 +9,7 @@ from typing import (
     Protocol,
     cast,
 )
+from uuid import uuid1
 
 from qjazz_core import logger
 
@@ -69,6 +71,20 @@ class ProcessCache(mp.Process):
         self._processing_config = config
 
         self._sender, self._conn = mp.Pipe(duplex=True)
+        # Serialize request/response exchanges with the cache process:
+        # the cache is used from multiple threads (consumer, periodic reload)
+        self._lock = threading.Lock()
+
+    def __getstate__(self) -> dict:
+        # Locks cannot be pickled: required when the process is
+        # started with the 'spawn' or 'forkserver' start method.
+        state = self.__dict__.copy()
+        del state["_lock"]
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        self.__dict__.update(state)
+        self._lock = threading.Lock()
 
     @property
     def processing_config(self) -> ProcessingConfig:
@@ -92,13 +108,20 @@ class ProcessCache(mp.Process):
         description = self._descriptions.get(key)
         if not description:
             logger.info("Getting process description for %s, project=%s", ident, project)
-
-            self._sender.send((MsgType.DESCRIBE, ident, project))
-            if self._sender.poll(POLL_TIMEOUT):
-                description = cast("ProcessDescription", self._sender.recv())
-                self._descriptions[key] = description
-            else:
-                raise RuntimeError(f"Failed to get process description {ident} ({project})")
+            with self._lock:
+                correlation_id = self._send(MsgType.DESCRIBE, ident, project)
+                # Drop previous response from a timeout-failed request
+                # And keep retry to two attempts (more than two successive failures
+                # may indicate bigger problem)
+                for _ in range(2):
+                    if self._sender.poll(POLL_TIMEOUT):
+                        cid, body = self._sender.recv()
+                        if correlation_id == cid:
+                            description = cast("ProcessDescription", body)
+                            self._descriptions[key] = description
+                            break
+                else:
+                    raise RuntimeError(f"Failed to get process description {ident} ({project})")
 
         return description.model_dump(mode="json")
 
@@ -109,31 +132,50 @@ class ProcessCache(mp.Process):
 
         logger.info("Updating processes cache")
 
-        self._sender.send((MsgType.UPDATE,))
-        if self._sender.poll(POLL_TIMEOUT):
-            self._processes = cast("list[ProcessSummary]", self._sender.recv())
-        else:
-            raise RuntimeError("Failed to update process descriptions")
+        with self._lock:
+            correlation_id = self._send(MsgType.UPDATE)
+            # See comment above
+            for _ in range(2):
+                if self._sender.poll(POLL_TIMEOUT):
+                    cid, body = self._sender.recv()
+                    if correlation_id == cid:
+                        self._processes = cast("list[ProcessSummary]", body)
+                        break
+            else:
+                raise RuntimeError("Failed to update process descriptions")
 
-        self._descriptions.clear()
-        self._known_processes = {p.id_ for p in self._processes}
+            self._descriptions.clear()
+            self._known_processes = {p.id_ for p in self._processes}
 
         return self._processes
+
+    def _send(self, msg_type: MsgType, *args) -> bytes:
+        """Send a request with a correlation id
+
+        Must be called with the lock held, so that the
+        request and its response are not interleaved with
+        another request.
+        """
+        corr_id = uuid1().bytes
+        self._sender.send((msg_type, corr_id, *args))
+        return corr_id
 
     def start(self) -> None:
         super().start()
         # Wait for the process to be ready
-        self._sender.send((MsgType.READY,))
-        if self._sender.poll(10.0):
-            self._sender.recv()
-        else:
-            raise RuntimeError("Failed to start process cache")
+        with self._lock:
+            self._send(MsgType.READY)
+            if self._sender.poll(10.0):
+                self._sender.recv()
+            else:
+                raise RuntimeError("Failed to start process cache")
 
     def stop(self) -> None:
         if not self.is_alive():
             logger.info("Cache process alreay stopped")
             return
-        self._sender.send((MsgType.QUIT,))
+        with self._lock:
+            self._send(MsgType.QUIT)
         self.join(5.0)
         if self.exitcode is None:
             logger.error("Failed to terminate cache process")
@@ -144,18 +186,18 @@ class ProcessCache(mp.Process):
         self.initialize()
         try:
             while True:
-                msg_id, *data = self._conn.recv()
+                msg_id, corr_id, *data = self._conn.recv()
                 try:
                     match msg_id:
                         case MsgType.QUIT:
                             break
                         case MsgType.UPDATE:
-                            self._conn.send(self._update())
+                            self._conn.send((corr_id, self._update()))
                         case MsgType.DESCRIBE:
-                            self._conn.send(self._describe(*data))
+                            self._conn.send((corr_id, self._describe(*data)))
                         case MsgType.READY:
                             logger.info("Process cache ready")
-                            self._conn.send(True)
+                            self._conn.send((corr_id, True))
                 except Exception as e:
                     logger.error("%s\nCache error: %s", traceback.format_exc(), e)
         except (KeyboardInterrupt, SystemExit):
