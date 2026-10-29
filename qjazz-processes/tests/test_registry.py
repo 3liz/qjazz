@@ -15,16 +15,22 @@ class FakeRedis:
 
     def __init__(self):
         self.patterns: list[str] = []
+        # Keys returned by 'keys()'
+        self.existing: list[bytes] = []
+        self.expires: dict[bytes, int] = {}
 
     def keys(self, pattern: str) -> list[bytes]:
         self.patterns.append(pattern)
-        return []
+        return self.existing
 
     def hset(self, key, *args, **kwargs):
         self.patterns.append(key)
 
     def expireat(self, key, ts):
         pass
+
+    def expire(self, key: bytes, timeout: int):
+        self.expires[key] = timeout
 
 
 @pytest.fixture()
@@ -94,4 +100,24 @@ def test_registry_register_invalid_job_id(app: Celery, client: FakeRedis):
     with pytest.raises(ValueError):
         registry.register(app, "test", None, status, expires=10, pending_timeout=10)
 
+    assert client.patterns == []
+
+
+def test_registry_set_expiration(app: Celery, client: FakeRedis):
+    job_id = "6f1d2b9e-3c1a-4d7e-9a0b-2f5c8e1d4a7b"
+
+    # Job not registered
+    assert registry.set_expiration(app, job_id, 900) is False
+    assert client.patterns == [f"qjazz::{job_id}::*"]
+    assert client.expires == {}
+
+    # Registered job
+    key = f"qjazz::{job_id}::test::None".encode()
+    client.existing = [key]
+    assert registry.set_expiration(app, job_id, 900) is True
+    assert client.expires == {key: 900}
+
+
+def test_registry_set_expiration_invalid_job_id(app: Celery, client: FakeRedis):
+    assert registry.set_expiration(app, "*", 900) is False
     assert client.patterns == []

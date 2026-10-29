@@ -390,4 +390,17 @@ class QgisProcessJob(QgisJob):
         logger.debug("Job task info %s", ti)
         if not ti or ti.dismissed:
             raise DismissedTaskError(task_id)
+
+        # The job may run up to the task time limit: keep the job registered
+        # until its results expire.
+        registry.set_expiration(
+            self.app,
+            task_id,
+            (self.app.conf.task_time_limit or 0) + self.app.conf.result_expires,
+        )
         super().before_start(task_id, args, kwargs)
+
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        # Job is done: keep the job registered as long as its results
+        registry.set_expiration(self.app, task_id, self.app.conf.result_expires)
+        super().after_return(status, retval, task_id, args, kwargs, einfo)

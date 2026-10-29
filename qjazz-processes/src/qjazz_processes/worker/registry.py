@@ -73,8 +73,24 @@ def register(
         },
     )
     expiration_ts = created + expires + pending_timeout
-    # Set expiration upper bound
+    # Set expiration upper bound for pending job:
+    # expiration is updated when the job starts and when it finishes
+    # (see 'set_expiration')
     client.expireat(key, expiration_ts)
+
+
+def set_expiration(app: Celery, job_id: str, timeout: int) -> bool:
+    """Set the job entry to expire in `timeout` seconds from now
+
+    Returns False if the job is not registered (i.e dismissed or expired)
+    """
+    if not is_valid_job_id(job_id):
+        return False
+    client = app.backend.client
+    keys = client.keys(f"qjazz::{job_id}::*")
+    for key in keys:
+        client.expire(key, timeout)
+    return bool(keys)
 
 
 def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:

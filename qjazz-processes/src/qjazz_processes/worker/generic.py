@@ -231,6 +231,14 @@ class GenericJob(Job):
         if not ti or ti.dismissed:
             raise DismissedTaskError(task_id)
 
+        # The job may run up to the task time limit: keep the job registered
+        # until its results expire.
+        registry.set_expiration(
+            self.app,
+            task_id,
+            (self.app.conf.task_time_limit or 0) + self.app.conf.result_expires,
+        )
+
         # We receive argument as job processes request
         # in order to match the task signature, replace
         # the __run_config__ with the request 'inputs'
@@ -241,3 +249,8 @@ class GenericJob(Job):
         finally:
             # Keep subscriber for postrun
             kwargs["request"] = {"subscriber": request["subscriber"]}
+
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        # Job is done: keep the job registered as long as its results
+        registry.set_expiration(self.app, task_id, self.app.conf.result_expires)
+        super().after_return(status, retval, task_id, args, kwargs, einfo)

@@ -7,9 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix job's expiration time"
 * [qjazz-processes] Fix race conditions in worker process cache
 * [qjazz-processes] Fix storage 'Content-Type' header
-* [qjazzz-processes] Fix GeoJSON schema
+* [qjazz-processes] Fix GeoJSON schema
 * [qjazz-processes] Fix error 500 with RequireStore processes
 * [qjazz-processes] Fix race condition between Celery and task registration
 * [qjazz-processes] QGIS parameter validation error now returns error 400
