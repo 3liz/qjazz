@@ -13,6 +13,7 @@ from typing import (
 )
 
 from pydantic import (
+    AliasChoices,
     AnyHttpUrl,
     AnyUrl,
     JsonValue,
@@ -35,7 +36,13 @@ class _LinkBase(JsonModel):
     # The type or semantics of the relation.
     rel: Option[str] = None
     # Mime type of the data returne by the link
-    mime_type: Option[str] = Field(serialization_alias="type")
+    # Note: always serialized as 'type' (OGC link), so 'type' must be
+    # accepted as input for links passed between workers and server.
+    # 'mimeType' is kept for compatibility.
+    mime_type: Option[str] = Field(
+        validation_alias=AliasChoices("type", "mimeType"),
+        serialization_alias="type",
+    )
     # human-readable identifier for the link
     title: str = ""
     # A long description for the link

@@ -88,7 +88,7 @@ class Handler(Services, Processes, Jobs, Storage, Store, LandingPage):
                     web.get(f"{prefix}/store/{{Name:.+}}", self.get_store),
                     web.get(f"{prefix}/store/", self.list_store, allow_head=False),
                     web.post(f"{prefix}/store/{{Name:.+}}", self.put_store),
-                    web.delete(f"/{prefix}/store/{{Name:.+}}", self.delete_store),
+                    web.delete(f"{prefix}/store/{{Name:.+}}", self.delete_store),
                 ]
             )
 

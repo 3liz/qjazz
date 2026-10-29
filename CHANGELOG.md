@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix storage 'Content-Type' header
 * [qjazzz-processes] Fix GeoJSON schema
 * [qjazz-processes] Fix error 500 with RequireStore processes
 * [qjazz-processes] Fix race condition between Celery and task registration

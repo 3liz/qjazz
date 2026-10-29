@@ -176,6 +176,8 @@ class Storage(HandlerProto):
             return web.Response(content_type=link.mime_type, headers=headers)
 
         response = web.StreamResponse(headers=headers)
+        if link.mime_type:
+            response.content_type = link.mime_type
 
         url = AnyUrl(link.href)
 
