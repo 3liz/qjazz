@@ -10,6 +10,7 @@ from typing import (
     Sequence,
     assert_never,
 )
+from uuid import uuid4
 
 from celery.result import AsyncResult
 from pydantic import JsonValue
@@ -92,6 +93,7 @@ class Processes(ExecutorProtocol):
         context: Optional[JsonDict] = None,
         priority: int = 0,
         countdown: Optional[int] = None,
+        task_id: Optional[str] = None,
     ) -> AsyncResult:
         # Execute process (blocking)
 
@@ -99,6 +101,7 @@ class Processes(ExecutorProtocol):
 
         return self._celery.send_task(
             f"{service}.{task}",
+            task_id=task_id,
             priority=priority,
             queue=f"qjazz.{service}",
             expires=pending_timeout,
@@ -213,23 +216,33 @@ class Processes(ExecutorProtocol):
             countdown=countdown,
         )
 
-        result = self._execute_task(
-            service,
-            builder.entrypoint,
-            run_config={
-                "ident": ident,
-                "request": request.model_dump(mode="json"),
-                "project_path": project,
-            },
-            meta=builder.meta,
-            pending_timeout=builder.pending_timeout,
-            context=context,
-            countdown=countdown,
-        )
-
-        job_id = result.id
+        # Register the job *before* sending the task: otherwise the worker
+        # may receive the task before the job is registered and reject it
+        # as a dismissed task.
+        job_id = str(uuid4())
 
         status = builder.register(self, job_id)
+
+        try:
+            result = self._execute_task(
+                service,
+                builder.entrypoint,
+                run_config={
+                    "ident": ident,
+                    "request": request.model_dump(mode="json"),
+                    "project_path": project,
+                },
+                meta=builder.meta,
+                pending_timeout=builder.pending_timeout,
+                context=context,
+                priority=priority,
+                countdown=countdown,
+                task_id=job_id,
+            )
+        except Exception:
+            # The task has not been sent: unregister the job
+            registry.delete(self._celery, job_id)
+            raise
 
         def _get_status() -> JobStatus:
             return self._job_status(job_id, self.destinations(service)) or status
