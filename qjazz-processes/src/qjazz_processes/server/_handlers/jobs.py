@@ -369,8 +369,11 @@ class Jobs(HandlerProto):
         """
         job_id = request.match_info["JobId"]
 
-        # Do not ask realm
-        st = await self._executor.dismiss(job_id)
+        # Require realm for dismissing job
+        st = await self._executor.dismiss(
+            job_id,
+            realm=self._jobrealm.job_realm(request),
+        )
         if not st:
             return ErrorResponse.response(404, "Job not found", details={"jobId": job_id})
 

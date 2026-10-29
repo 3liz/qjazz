@@ -74,6 +74,9 @@ class JobRealmConfig(ConfigBase):
                 ErrorResponse.raises(web.HTTPUnauthorized, "Unauthorized")
             if realm in self.admin_tokens:
                 realm = None
+            else:
+                # Realm is used in job registry key patterns
+                realm = self.validate_realm(realm)
         else:
             realm = None
         return realm
