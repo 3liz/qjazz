@@ -335,36 +335,37 @@ class Processes(ExecutorProtocol):
             ACTIVE = 2
             DONE = 3
 
-        state = self._celery.backend.get_task_meta(job_id)
-        match state["status"]:
-            case Celery.STATE_PENDING:
-                # Retrieve scheduled jobs
-                st, request = self._query_task(job_id, destinations)
-                if not request:
-                    now_ts = time()
-                    # Check if job has expired
-                    status = _S.PENDING if now_ts < ti.created + ti.pending_timeout else _S.DONE
-                else:
-                    match st:
-                        case "active" | "scheduled" | "reserved":
-                            # Task has been received by the worker
-                            status = _S.ACTIVE
-                        case "revoked":
-                            status = _S.DONE
-                        case _:
-                            logger.warning("Unhandled job status %s", st)
-                            status = _S.PENDING
-            case Celery.STATE_UPDATED | Celery.STATE_STARTED:
-                status = _S.ACTIVE
-            case Celery.STATE_FAILURE | Celery.STATE_SUCCESS | Celery.STATE_REVOKED:
-                status = _S.DONE
-            case _ as unknown_state:
-                # Unhandled state
-                raise RuntimeError(f"Unhandled celery task state: {unknown_state}")
-
-        logger.info("%s: dismissing job with status %s", job_id, status)
-
+        # Any failure after this point must reset the dismissed state
         try:
+            state = self._celery.backend.get_task_meta(job_id)
+            match state["status"]:
+                case Celery.STATE_PENDING:
+                    # Retrieve scheduled jobs
+                    st, request = self._query_task(job_id, destinations)
+                    if not request:
+                        now_ts = time()
+                        # Check if job has expired
+                        status = _S.PENDING if now_ts < ti.created + ti.pending_timeout else _S.DONE
+                    else:
+                        match st:
+                            case "active" | "scheduled" | "reserved":
+                                # Task has been received by the worker
+                                status = _S.ACTIVE
+                            case "revoked":
+                                status = _S.DONE
+                            case _:
+                                logger.warning("Unhandled job status %s", st)
+                                status = _S.PENDING
+                case Celery.STATE_UPDATED | Celery.STATE_STARTED:
+                    status = _S.ACTIVE
+                case Celery.STATE_FAILURE | Celery.STATE_SUCCESS | Celery.STATE_REVOKED:
+                    status = _S.DONE
+                case _ as unknown_state:
+                    # Unhandled state
+                    raise RuntimeError(f"Unhandled celery task state: {unknown_state}")
+
+            logger.info("%s: dismissing job with status %s", job_id, status)
+
             match status:
                 case _S.ACTIVE:
                     # Job is revokable
@@ -654,6 +655,8 @@ class Processes(ExecutorProtocol):
         match response:
             case {"error": msg}:
                 raise RuntimeError(f"Command 'process_log' failed with msg: {msg}")
+            case None:
+                return None
             case _:
                 return ProcessLog.model_validate(response)
 
@@ -680,6 +683,8 @@ class Processes(ExecutorProtocol):
         match response:
             case {"error": msg}:
                 raise RuntimeError(f"Command 'job_files' failed with msg: {msg}")
+            case None:
+                return None
             case _:
                 return ProcessFiles.model_validate(response)
 
