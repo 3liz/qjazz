@@ -215,6 +215,12 @@ class Celery(celery.Celery):
         # before beeing consumed by a worker
         self.conf.task_send_sent_event = True
 
+        # Declare queues as priority queues (x-max-priority), otherwise
+        # RabbitMQ ignores task priorities (0-9).
+        # Note: RabbitMQ refuses to redeclare an existing queue with
+        # different arguments: existing queues must be deleted (or migrated)
+        self.conf.task_queue_max_priority = 10
+
         # Worker configuration
 
         if conf.concurrency:
