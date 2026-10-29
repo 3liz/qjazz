@@ -621,7 +621,7 @@ def list_jobs(
                         echo(style(f"       \u2b11 {p.tag}", italic=True))
             else:
                 for p in filtered_jobs:
-                    for k, v in p.model_dump(mode="json", by_alias=True).items():
+                    for k, v in p.model_dump(mode="json").items():
                         if k == "links":
                             continue
                         echo(f"{style(k, fg='blue'):<25}{style(v, fg='green')}")
@@ -654,7 +654,7 @@ def jobs_status(ctx: click.Context, job_id: str, json_format: bool):
     else:
         echo("\n")
         echo(style(f"Job {job_id}", bold=True))
-        for name, output in job.model_dump(mode="json", by_alias=True, exclude_none=True).items():
+        for name, output in job.model_dump(mode="json").items():
             echo(click.style(f"  {name:<15}", bold=True), nl=False)
             match output:
                 case list():

@@ -63,7 +63,7 @@ class MultiPoint(Referenced):
 # LineString
 
 
-LineStringItem = Annotated[Sequence[PointItem], Field(min_length=2, max_length=2)]
+LineStringItem = Annotated[Sequence[PointItem], Field(min_length=2)]
 
 
 class LineString(Referenced):
