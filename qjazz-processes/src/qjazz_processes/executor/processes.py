@@ -151,6 +151,8 @@ class Processes(ExecutorProtocol):
             self.meta = meta
             self.expires = expires
             self.pending_timeout = pending_timeout
+            # If entrypoint is not defined then take ident
+            # as the task name
             self.entrypoint = service_details.entrypoint or ident
 
         def register(self, this: "Processes", job_id: str) -> JobStatus:

@@ -313,12 +313,6 @@ class Processes(HandlerProto):
                 content_type="application/json",
                 text=err.json(include_context=False, include_url=False),
             ) from None
-        except ServiceNotAvailable:
-            ErrorResponse.raises(
-                web.HTTPForbidden,
-                "Service not available",
-                details={"service": service},
-            )
 
         # Get execute preferences
         prefer = ExecutePrefs(request)
@@ -332,8 +326,16 @@ class Processes(HandlerProto):
         else:
             priority = 0
 
-        # Check process
-        process = await self._executor.get_process_summary(service, process_id)
+        try:
+            # Check process
+            process = await self._executor.get_process_summary(service, process_id)
+        except ServiceNotAvailable:
+            ErrorResponse.raises(
+                web.HTTPForbidden,
+                "Service not available",
+                details={"service": service},
+            )
+
         if not process:
             return ErrorResponse.response(
                 404,
