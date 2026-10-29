@@ -336,6 +336,9 @@ class ParameterColor(InputParameter):
                     default = QgsSymbolLayerUtils.parseColor(default)
                 case QColor():
                     pass
+                case None:
+                    # No default value
+                    pass
                 case _:
                     raise InputValueError(f"Invalid default value for color: {default}")
 

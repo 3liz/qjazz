@@ -299,6 +299,32 @@ def test_parameter_color():
     assert value == QColor(255, 0, 0)
 
 
+def test_parameter_color_no_default():
+    from qgis.PyQt.QtGui import QColor
+
+    param = QgsProcessingParameterColor("Color")
+
+    inp = InputParameter(param)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_color_no_default::", schema)
+    assert schema["format"] == "color"
+    assert "default" not in schema
+
+    value = inp.value("#00ff00")
+    assert value == QColor(0, 255, 0)
+
+
+def test_parameter_color_string_default():
+    param = QgsProcessingParameterColor("Color", defaultValue="#ff0000")
+
+    inp = InputParameter(param)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_color_string_default::", schema)
+    assert schema["default"] == "red"
+
+
 def test_parameters_optional(processing_config: ProcessingConfig):
     """Omitted optional parameters are left to QGIS default value"""
     context = ProcessingContext(processing_config)
