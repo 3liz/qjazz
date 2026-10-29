@@ -56,6 +56,47 @@ def test_callback_acl_deny():
     assert not conf.check_hostname("projects.3liz.org")
 
 
+def test_callback_acl_ipv6_allow():
+    """IPv6 addresses and networks with 'Allow' order"""
+    conf = AccessControlConfig(
+        allow=("fd00::8",),
+        deny=(
+            "::1",
+            "fd00::/64",
+        ),
+        order="Allow",
+    )
+
+    assert not conf.check_ip(ip_address("::1"))
+    assert not conf.check_ip(ip_address("fd00::2"))
+    assert conf.check_ip(ip_address("fd00::8"))
+    assert conf.check_ip(ip_address("2001:db8::1"))
+
+    # Host from callback url
+    assert not conf.check_hostname(urlsplit("http://[::1]:8080/callback").hostname)
+    assert conf.check_hostname(urlsplit("http://[fd00::8]/callback").hostname)
+
+
+def test_callback_acl_ipv6_deny():
+    """IPv6 addresses and networks with 'Deny' order"""
+    conf = AccessControlConfig(
+        allow=(
+            "2001:db8::1",
+            "fd00::/64",
+        ),
+        deny=("fd00::8",),
+        order="Deny",
+    )
+
+    assert conf.check_ip(ip_address("2001:db8::1"))
+    assert conf.check_ip(ip_address("fd00::2"))
+    assert not conf.check_ip(ip_address("fd00::8"))
+    assert not conf.check_ip(ip_address("2001:db8::2"))
+
+    assert conf.check_hostname(urlsplit("http://[2001:db8::1]/callback").hostname)
+    assert not conf.check_hostname(urlsplit("http://[::1]/callback").hostname)
+
+
 def test_callback_http_request(httpserver):
     handler = HttpCallback(("http",), HttpCallbackConfig())
 

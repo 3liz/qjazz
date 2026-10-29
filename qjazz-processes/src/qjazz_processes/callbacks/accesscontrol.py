@@ -117,7 +117,7 @@ def match_ip(
     hostname: Optional[str],
 ) -> bool:
     match test_ip:
-        case IPv4Address() | IPv4Address():
+        case IPv4Address() | IPv6Address():
             return ip == test_ip
         case IPv4Network() | IPv6Network():
             return ip in test_ip
