@@ -92,7 +92,7 @@ def handle_store_error(err: store.StoreError, request: web.Request) -> web.Respo
 class Store(HandlerProto):
     async def list_store(self, request: web.Request) -> web.Response:
         """
-        summary: List stored objects"
+        summary: List stored objects
         description: |
             Returns the list of stored objects
             for service and identity
@@ -108,25 +108,27 @@ class Store(HandlerProto):
                 targeting a service: the server may
                 define its own policy for handling accesses
                 to services.
-            - in query:
-              name: prefix:
+            - in: query
+              name: prefix
               schema:
                 type: string
               description: Start prefix for object's name
               required: false
-            - in query:
+            - in: query
               name: recurse
               schema:
-                type boolean
+                type: boolean
               description: List recursively
-        tags: store
+              required: false
+        tags:
+          - storage
         responses:
             "200":
-               description: The resource list
-               content:
-                 application/json:
-                    schema:
-                        $ref: "#definitions/ResourceList
+                description: The resource list
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ResourceList'
         """
         service = self.get_service(request)
         identity = self.get_identity(request)
@@ -315,8 +317,9 @@ class Store(HandlerProto):
               schema:
                 type: boolean
               required: false
-              description: encrypt data if supported
-              by the store backend.
+              description: >
+                Encrypt data if supported
+                by the store backend.
         tags:
           - storage
         requestBody:

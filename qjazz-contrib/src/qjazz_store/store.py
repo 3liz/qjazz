@@ -177,6 +177,8 @@ def put_store(
         # Metadata should contains the real object size in
         # case of data would be encrypted
         content_size = metadata.get("content-size", obj.size) if metadata else obj.size
+        # Same flag as read back by 'to_resource()'
+        encrypted = metadata.get("encrypted") == "yes" if metadata else False
 
         return FileResource(
             name=obj.name,
@@ -184,6 +186,7 @@ def put_store(
             content_type=obj.content_type,
             last_modified=result.last_modified,
             version=result.version_id,
+            encrypted=encrypted,
         )
 
     with store_error():
