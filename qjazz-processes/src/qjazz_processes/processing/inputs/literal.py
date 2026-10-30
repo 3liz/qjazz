@@ -1,3 +1,4 @@
+import math
 import sys
 
 from typing import (
@@ -291,24 +292,45 @@ class ParameterRange(InputParameter):
         match param.dataType():
             case NumberParameterType.Integer:
                 _type = int
-            case NumberParameterType.Double:
+            case _:
                 _type = float
 
         field.update(min_length=2, max_length=2)
 
-        if not validation_only:
-            if default is not None:
-                match default:
-                    case [float(), float()] | [int(), int()]:
-                        pass
-                    case str():
-                        left, right = default.split(":")
-                        field.update(default=[_type(left), _type(right)])
-                    case _:
-                        InputValueError(f"Invalid default value for parameter Range: {default}")
+        if not validation_only and default is not None:
+            field.update(default=cls.range_default(default, _type))
 
         _type = Sequence[_type]  # type: ignore [valid-type]
         return _type
+
+    @classmethod
+    def range_default(cls, default: Any, _type: type) -> list[int] | list[float]:
+        """Parse a range default value
+
+        QGIS defines range values either as a 'min,max'
+        string or as a list of two numbers
+        """
+        match default:
+            case str():
+                values = default.split(",")
+            case list():
+                values = default
+            case _:
+                values = []
+
+        try:
+            if len(values) != 2:
+                raise ValueError()
+            numbers = [float(v) for v in values]
+            if not all(math.isfinite(n) for n in numbers):
+                raise ValueError()
+            if _type is int:
+                if not all(n.is_integer() for n in numbers):
+                    raise ValueError()
+                return [int(n) for n in numbers]
+            return numbers
+        except (TypeError, ValueError):
+            raise InputValueError(f"Invalid default value for parameter Range: {default}") from None
 
 
 #

@@ -223,6 +223,46 @@ def test_parameter_range():
     assert schema["minItems"] == 2
 
 
+@pytest.mark.parametrize(
+    "data_type,default,expected",
+    [
+        (NumberParameterType.Integer, "1,2", [1, 2]),
+        (NumberParameterType.Integer, " 1 , 2 ", [1, 2]),
+        (NumberParameterType.Integer, [1, 2], [1, 2]),
+        (NumberParameterType.Integer, "1.0,2.0", [1, 2]),
+        (NumberParameterType.Double, "1.5,2.5", [1.5, 2.5]),
+        (NumberParameterType.Double, [0, 1.5], [0.0, 1.5]),
+    ],
+)
+def test_parameter_range_default(data_type, default, expected):
+    param = QgsProcessingParameterRange("Range", type=data_type, defaultValue=default)
+
+    schema = InputParameter(param).json_schema()
+    print("\ntest_parameter_range_default::", schema)
+    assert schema["default"] == expected
+    assert all(type(v) is type(e) for v, e in zip(schema["default"], expected, strict=True))
+
+
+@pytest.mark.parametrize(
+    "data_type,default",
+    [
+        (NumberParameterType.Integer, "1:2"),
+        (NumberParameterType.Integer, "1"),
+        (NumberParameterType.Integer, "1,2,3"),
+        (NumberParameterType.Integer, "a,b"),
+        (NumberParameterType.Integer, "1.5,2"),
+        (NumberParameterType.Double, "None,2"),
+        (NumberParameterType.Double, "nan,2"),
+        (NumberParameterType.Double, [1]),
+    ],
+)
+def test_parameter_range_invalid_default(data_type, default):
+    param = QgsProcessingParameterRange("Range", type=data_type, defaultValue=default)
+
+    with pytest.raises(InputValueError, match="Invalid default value for parameter Range"):
+        InputParameter(param)
+
+
 def test_parameter_datetime():
     from qgis.PyQt.QtCore import QDateTime
 
