@@ -21,6 +21,7 @@ from typing import (
     Literal,
     Optional,
 )
+from urllib.parse import urlencode
 
 import qjazz_store as store
 
@@ -146,6 +147,13 @@ class Store(HandlerProto):
         except store.StoreError as err:
             return handle_store_error(err, request)
 
+        # Keep listing parameters in 'self' link
+        query: dict[str, str] = {}
+        if prefix:
+            query["prefix"] = prefix
+        if recurse:
+            query["recurse"] = "true"
+
         for res in resources:
             res.links = [  # type: ignore [union-attr]
                 make_link(
@@ -153,7 +161,7 @@ class Store(HandlerProto):
                     rel="resource",
                     path=self.format_path(
                         request,
-                        f"/store/{identity}/{res.name}",
+                        f"/store/{res.name}",
                         service,
                     ),
                     title="Get resource",
@@ -169,8 +177,9 @@ class Store(HandlerProto):
                         request,
                         path=self.format_path(
                             request,
-                            f"/store/{identity}/",
+                            "/store/",
                             service,
+                            query=urlencode(query) if query else None,
                         ),
                         rel="self",
                         title="Resource list",
@@ -227,12 +236,15 @@ class Store(HandlerProto):
 
         client = store.store_client(await self.store_creds())
 
-        res = await store.stat_store(
-            client,
-            name,
-            service=service,
-            identity=identity,
-        )
+        try:
+            res = await store.stat_store(
+                client,
+                name,
+                service=service,
+                identity=identity,
+            )
+        except store.StoreError as err:
+            return handle_store_error(err, request)
 
         headers = {}
         if res.content_type:
@@ -362,7 +374,7 @@ class Store(HandlerProto):
                 request,
                 path=self.format_path(
                     request,
-                    f"/store/{identity}/{res.name}",
+                    f"/store/{res.name}",
                     service,
                 ),
                 rel="resource",
