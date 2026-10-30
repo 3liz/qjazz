@@ -186,6 +186,50 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     assert value.sink.staticValue() == "postgres://service=foobar"
 
 
+def _output_definition(sink: str, name: str = "") -> QgsProcessingOutputLayerDefinition:
+    defval = QgsProcessingOutputLayerDefinition(sink)
+    defval.destinationName = name
+    return defval
+
+
+@pytest.mark.parametrize(
+    "defval,expected_default,expected_ext",
+    [
+        # Non-file sinks
+        (_output_definition("memory:"), None, None),
+        (_output_definition("memory:", "mylayer"), "mylayer", None),
+        (_output_definition("ogr:dbname='/data/out.gpkg' table=\"out\""), None, None),
+        # File sink
+        (_output_definition("/data/out.csv"), "out", ".csv"),
+        (_output_definition("/data/out.csv|layername=foo", "foo"), "foo", ".csv"),
+        # Layer name
+        ("mylayer", "mylayer", None),
+    ],
+)
+def test_parameter_layer_destination_defaults(
+    qgis_session: ProcessingConfig,
+    defval: str | QgsProcessingOutputLayerDefinition,
+    expected_default: str | None,
+    expected_ext: str | None,
+):
+    param = QgsProcessingParameterVectorDestination("VectorDestination", defaultValue=defval)
+
+    inp = InputParameter(param)
+    assert isinstance(inp, ParameterVectorDestination)
+
+    assert inp.json_schema().get("default") == expected_default
+    assert inp.output_extension == (expected_ext or f".{param.defaultFileExtension()}")
+
+    # Non-file default sinks are ignored: the output
+    # is always a file in the job folder
+    context = ProcessingContext(qgis_session)
+    value = inp.value("bar", context)
+    assert value.destinationName == "bar"
+    assert value.sink.staticValue() == str(
+        context.workdir.joinpath(f"VectorDestination{inp.output_extension}"),
+    )
+
+
 def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
     param = QgsProcessingParameterRasterDestination("RasterDestination")
     config = qgis_session

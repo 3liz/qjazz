@@ -444,6 +444,11 @@ class ParameterLayerDestination[P: "QgsProcessingDestinationParameter"](
         ext = f".{param.defaultFileExtension()}"
 
         if isinstance(defval, QgsProcessingOutputLayerDefinition):
+            # Non-file default sinks (i.e 'memory:', 'ogr:...') are ignored:
+            # outputs are always written as files in the job folder because
+            # we need persistence (see 'value()'), only the destination name
+            # is kept.
+            dest = defval.destinationName or ""
             sink = defval.sink and defval.sink.staticValue()
             if sink:
                 # Remove extra open options
@@ -452,8 +457,6 @@ class ParameterLayerDestination[P: "QgsProcessingDestinationParameter"](
                     p = Path(url.path)
                     ext = p.suffix or ext
                     dest = defval.destinationName or p.stem
-            else:
-                dest = defval.destinationName or ""
         else:
             dest = defval
 
