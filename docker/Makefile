@@ -120,6 +120,7 @@ noqgis-build: noqgis-manifest
 	source $(NOQGIS_MANIFEST); \
 	docker buildx build --rm $(BUILD_CACHE) $(BUILD_ARGS) --target $(NOQGIS_BUILD_TARGET) \
 		--build-arg QGIS_FLAVOR=$(FLAVOR) \
+		--build-arg PACKAGES_URL=$(PACKAGES_3LIZ) \
 		--label org.opencontainers.image.version=$$version \
 		-t $(BUILDNOQGISIMAGE) -t 3liz/$(NAME):noqgis-unstable -f Dockerfile  ..;\
 	}

@@ -11,12 +11,12 @@ from pydantic import (
     ByteSize,
 )
 from qjazz_core import logger
-from qjazz_core.condition import assert_precondition
 
 from ...schemas import Link as LinkAny
 from ..utils import public_url, stream_from
 from .protos import (
     ErrorResponse,
+    ExceptionType,
     HandlerProto,
     Link,
     ProcessFiles,
@@ -98,7 +98,12 @@ class Storage(HandlerProto):
         )
 
         if not files:
-            return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
+            return ErrorResponse.response(
+                404,
+                "Job not found",
+                {"jobId": job_id},
+                exception=ExceptionType.NoSuchJob,
+            )
 
         location = self.format_path(request, f"/jobs/{job_id}/files")
 
@@ -188,10 +193,16 @@ class Storage(HandlerProto):
 
                 # Local file storage
                 path = Path(str(url.path))
-                assert_precondition(path.is_file())
+                if not path.is_file():
+                     return ErrorResponse.response(
+                        404,
+                        "Resource not found",
+                        {"jobId": job_id, "resource": resource},
+                    )
+
                 try:
                     await response.prepare(request)
-                    async with aiofiles.open(path, mode="+rb") as fh:
+                    async with aiofiles.open(path, mode="rb") as fh:
                         chunk = await fh.read(self._storage.chunksize)
                         while chunk:
                             await response.write(chunk)
@@ -202,7 +213,7 @@ class Storage(HandlerProto):
                     raise
             case "http":
                 if not self._storage.allow_insecure_connection:
-                    logger.error("Storage service '%s' returned unauthorized insecure protocol")
+                    logger.error("Storage service returned unauthorized insecure protocol for '%s'", url.host)
                     raise web.HTTPForbidden()
                 await stream_from(link.href, request, response, self._storage.chunksize)
             case "https":

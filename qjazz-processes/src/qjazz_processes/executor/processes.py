@@ -557,6 +557,10 @@ class Processes(ExecutorProtocol):
                 raise ValueError(f"Invalid format for query task infos: {result}")
         return result
 
+    def _job_exists(self, job_id: str) -> bool:
+        # Check if job is registered (blocking)
+        return registry.exists(self._celery, job_id)
+
     def _job_results(self, job_id: str, *, realm: Optional[str] = None) -> Optional[JobResults]:
         #
         # Return job results (blocking)

@@ -17,6 +17,7 @@ from .protos import (
     JOB_ID_HEADER,
     JOB_REALM_HEADER,
     ErrorResponse,
+    ExceptionType,
     HandlerProto,
     InputValueError,
     JobExecute,
@@ -74,6 +75,12 @@ class Processes(HandlerProto):
                     application/json:
                         schema:
                             $ref: '#/definitions/ProcessList'
+            "404":
+                description: Service not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
         """
         # Get service processes from cache
         service = self.get_service(request)
@@ -83,8 +90,8 @@ class Processes(HandlerProto):
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
         except ServiceNotAvailable:
             ErrorResponse.raises(
-                web.HTTPForbidden,
-                "Service not available",
+                web.HTTPNotFound,
+                "Service not found",
                 details={"service": service},
             )
 
@@ -166,6 +173,12 @@ class Processes(HandlerProto):
                     application/json:
                         schema:
                             $ref: '#/definitions/ProcessDescription'
+            "404":
+                description: Service or process not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
         """
         service = self.get_service(request)
         project = self.get_project(request)
@@ -185,13 +198,18 @@ class Processes(HandlerProto):
             ErrorResponse.raises(web.HTTPServiceUnavailable, f"Service {service} is not available")
         except ServiceNotAvailable:
             ErrorResponse.raises(
-                web.HTTPForbidden,
-                "Service not available",
+                web.HTTPNotFound,
+                "Service not found",
                 details={"service": service},
             )
 
         if not td:
-            ErrorResponse.raises(web.HTTPForbidden, f"{process_id} not available")
+            ErrorResponse.raises(
+                web.HTTPNotFound,
+                "Process not found",
+                details={"processId": process_id},
+                exception=ExceptionType.NoSuchProcess,
+            )
 
         return web.Response(
             content_type="application/json",
@@ -295,6 +313,12 @@ class Processes(HandlerProto):
                     application/json:
                         schema:
                             $ref: '#/definitions/JobStatus'
+            "404":
+                description: Service or process not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/definitions/ErrorResponse'
         """
         tag = validate_param(TagParam, request, "tag", None)
 
@@ -331,8 +355,8 @@ class Processes(HandlerProto):
             process = await self._executor.get_process_summary(service, process_id)
         except ServiceNotAvailable:
             ErrorResponse.raises(
-                web.HTTPForbidden,
-                "Service not available",
+                web.HTTPNotFound,
+                "Service not found",
                 details={"service": service},
             )
 
@@ -341,6 +365,7 @@ class Processes(HandlerProto):
                 404,
                 "Process not found",
                 details={"processId": process_id},
+                exception=ExceptionType.NoSuchProcess,
             )
 
         execute_sync = prefer.execute_sync() and "sync-execute" in process.job_control_options
@@ -419,6 +444,7 @@ class Processes(HandlerProto):
                     web.HTTPNotFound,
                     f"{process_id} not found",
                     details={"jobId": result.job_id},
+                    exception=ExceptionType.NoSuchProcess,
                 )
             #
             # Project is required

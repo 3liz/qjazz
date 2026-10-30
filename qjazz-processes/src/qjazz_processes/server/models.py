@@ -1,7 +1,9 @@
+from enum import StrEnum
 from typing import (
     Awaitable,
     Callable,
     NoReturn,
+    Optional,
     Type,
 )
 
@@ -10,13 +12,39 @@ from pydantic import (
     JsonValue,
     TypeAdapter,
 )
-from qjazz_core.models import Option
+from qjazz_core.models import Field, Option
 
 from .swagger import JsonModel, model
+
+OGC_EXCEPTION_URI = "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0"
+
+
+class ExceptionType(StrEnum):
+    """OGC API - Processes exception types"""
+
+    NoSuchProcess = f"{OGC_EXCEPTION_URI}/no-such-process"
+    NoSuchJob = f"{OGC_EXCEPTION_URI}/no-such-job"
+    ResultNotReady = f"{OGC_EXCEPTION_URI}/result-not-ready"
+
+
+# Default type for exceptions with no specific
+# type (see RFC 7807)
+DEFAULT_EXCEPTION_TYPE = "about:blank"
 
 
 @model
 class ErrorResponse(JsonModel):
+    """Error response
+
+    Compatible with the OGC API exception schema (RFC 7807)
+    """
+
+    type_: str = Field(
+        default=DEFAULT_EXCEPTION_TYPE,
+        alias="type",
+        title="Exception type",
+    )
+    status: Option[int] = None
     message: str
     details: Option[JsonValue] = None
 
@@ -26,10 +54,14 @@ class ErrorResponse(JsonModel):
         error_type: Type[web.HTTPException],
         message: str,
         details: Option[JsonValue] = None,
+        *,
+        exception: Optional[ExceptionType] = None,
     ) -> NoReturn:
         raise error_type(
             content_type="application/json",
             text=cls(
+                type_=exception or DEFAULT_EXCEPTION_TYPE,
+                status=error_type.status_code,
                 message=message,
                 details=details,
             ).model_dump_json(),
@@ -41,11 +73,15 @@ class ErrorResponse(JsonModel):
         status: int,
         message: str,
         details: Option[JsonValue] = None,
+        *,
+        exception: Optional[ExceptionType] = None,
     ) -> web.Response:
         return web.Response(
             status=status,
             content_type="application/json",
-            text=ErrorResponse(
+            text=cls(
+                type_=exception or DEFAULT_EXCEPTION_TYPE,
+                status=status,
                 message=message,
                 details=details,
             ).model_dump_json(),

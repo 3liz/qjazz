@@ -237,6 +237,10 @@ class AsyncExecutor(ExecutorBase):
             with_details,
         )
 
+    async def job_exists(self, job_id: str) -> bool:
+        """Check if a job is registered"""
+        return await asyncio.to_thread(self._job_exists, job_id)
+
     async def job_results(
         self,
         job_id: str,

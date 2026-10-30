@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Support OGC exception types
 * [qjazz-processes] Handle post-run 'request' when job validation fail
 * [qjazz-processes] Fix job's expiration time"
 * [qjazz-processes] Fix race conditions in worker process cache

@@ -244,7 +244,9 @@ async def unhandled_exceptions(
     try:
         return await handler(request)
     except web.HTTPException as e:
-        if e.status == 404:
+        # Convert plain 404 responses (i.e from routing) to json
+        # but keep error responses returned by handlers
+        if e.status == 404 and e.content_type != "application/json":
             ErrorResponse.raises(web.HTTPNotFound, e.reason)
         else:
             raise
@@ -253,6 +255,7 @@ async def unhandled_exceptions(
         raise web.HTTPInternalServerError(
             content_type="application/json",
             text=ErrorResponse(
+                status=500,
                 message="Internal server error",
             ).model_dump_json(),
         ) from None

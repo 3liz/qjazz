@@ -12,6 +12,7 @@ from pydantic import Field, TypeAdapter
 from .protos import (
     BoolParam,
     ErrorResponse,
+    ExceptionType,
     HandlerProto,
     JobResultsAdapter,
     JobStatus,
@@ -41,7 +42,7 @@ class LogResponse(swagger.JsonModel):
         return cls(timestamp=details.timestamp, log=details.log, links=links)
 
 
-LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, lt=1000)])
+LimitParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1, le=1000)])
 PageParam: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1)])
 
 
@@ -90,14 +91,21 @@ class Jobs(HandlerProto):
         )
 
         if not job_status:
-            return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
+            return ErrorResponse.response(
+                404,
+                "Job not found",
+                {"jobId": job_id},
+                exception=ExceptionType.NoSuchJob,
+            )
 
+        # Note: format the full path, since the access policy
+        # may append query parameters
         location = self.format_path(request, f"/jobs/{job_id}")
         if job_status.status == job_status.SUCCESS:
             job_status.links.append(
                 make_link(
                     request,
-                    path=f"{location}/results",
+                    path=self.format_path(request, f"/jobs/{job_id}/results"),
                     rel="http://www.opengis.net/def/rel/ogc/1.0/results",
                     title="Job results",
                 ),
@@ -107,13 +115,13 @@ class Jobs(HandlerProto):
             (
                 make_link(
                     request,
-                    path=f"{location}/log",
+                    path=self.format_path(request, f"/jobs/{job_id}/log"),
                     rel="related",
                     title="Job execution logs",
                 ),
                 make_link(
                     request,
-                    path=f"{location}/files",
+                    path=self.format_path(request, f"/jobs/{job_id}/files/"),
                     rel="related",
                     title="Job files",
                 ),
@@ -146,8 +154,8 @@ class Jobs(HandlerProto):
               name: page
               schema:
                  type: integer
-                 minimum: 0
-                 default: 0
+                 minimum: 1
+                 default: 1
               required: false
               description: Start page index
             - in: query
@@ -248,7 +256,7 @@ class Jobs(HandlerProto):
                 st.links.append(
                     make_link(
                         request,
-                        path=f"{location}/results",
+                        path=location,
                         rel="http://www.opengis.net/def/rel/ogc/1.0/results",
                         title="Job results",
                     ),
@@ -257,6 +265,7 @@ class Jobs(HandlerProto):
         params = {
             "processID": process_ids,
             "status": filtered_status,
+            "tag": filtered_tags,
             "limit": limit,
             "service": service or (),
             "page": page or (),
@@ -332,7 +341,20 @@ class Jobs(HandlerProto):
         # Do not ask realm
         results = await self._executor.job_results(job_id)
         if not results:
-            return ErrorResponse.response(404, "No results", details={"jobId": job_id})
+            # Distinguish unknown job from job not completed
+            if not await self._executor.job_exists(job_id):
+                return ErrorResponse.response(
+                    404,
+                    "Job not found",
+                    details={"jobId": job_id},
+                    exception=ExceptionType.NoSuchJob,
+                )
+            return ErrorResponse.response(
+                404,
+                "No results",
+                details={"jobId": job_id},
+                exception=ExceptionType.ResultNotReady,
+            )
         return web.Response(
             content_type="application/json",
             body=JobResultsAdapter.dump_json(results, by_alias=True, exclude_none=True),
@@ -375,7 +397,12 @@ class Jobs(HandlerProto):
             realm=self._jobrealm.job_realm(request),
         )
         if not st:
-            return ErrorResponse.response(404, "Job not found", details={"jobId": job_id})
+            return ErrorResponse.response(
+                404,
+                "Job not found",
+                details={"jobId": job_id},
+                exception=ExceptionType.NoSuchJob,
+            )
 
         return web.Response(
             content_type="application/json",
@@ -421,7 +448,12 @@ class Jobs(HandlerProto):
         )
 
         if not log_d:
-            return ErrorResponse.response(404, "Job not found", {"jobId": job_id})
+            return ErrorResponse.response(
+                404,
+                "Job not found",
+                {"jobId": job_id},
+                exception=ExceptionType.NoSuchJob,
+            )
 
         location = self.format_path(request, f"/jobs/{job_id}/log")
 

@@ -10,6 +10,9 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 
+OGC_EXCEPTION_URI = "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0"
+
+
 def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = None):
     """ Execute a process and return its status json
     """
@@ -122,6 +125,38 @@ def test_unknownprocess(host):
     )
 
     assert rv.status_code == 404
+    assert rv.json()['type'] == f"{OGC_EXCEPTION_URI}/no-such-process"
+
+
+def test_describe_unknownprocess(host):
+    """ Test unknown process description """
+    rv = requests.get(f"{host}/processes/processes_test:idonotexists")
+    assert rv.status_code == 404
+    data = rv.json()
+    assert data['details'] == {"processId": "processes_test:idonotexists"}
+    assert data['type'] == f"{OGC_EXCEPTION_URI}/no-such-process"
+    assert data['status'] == 404
+
+
+def test_unknownservice(host):
+    """ Test unknown service error """
+    params = {"service": "idonotexists"}
+
+    rv = requests.get(f"{host}/processes/", params=params)
+    assert rv.status_code == 404
+    assert rv.json()['details'] == params
+    # No specific OGC exception type for unknown service
+    assert rv.json()['type'] == "about:blank"
+
+    rv = requests.get(f"{host}/processes/processes_test:testcopylayer", params=params)
+    assert rv.status_code == 404
+
+    rv = requests.post(
+        f"{host}/processes/processes_test:testcopylayer/execution",
+        params=params,
+        json={"inputs": {}},
+    )
+    assert rv.status_code == 404
 
 
 @pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")
@@ -178,6 +213,115 @@ def test_executedelete(host, data):
     rv = requests.get(f"{host}/jobs/{job_id}")
     print("\n",rv.text)
     assert rv.status_code == 404
+
+
+def test_job_list_tag_links(host, data):
+    """ Test that tag filter is kept in job list links
+    """
+    tag = f"test_tag_links_{os.getpid()}"
+    for _ in range(2):
+        _execute_process(host, respond_async=True, tag=tag)
+
+    def _links(rv) -> dict:
+        assert rv.status_code == 200
+        return {link['rel']: urlparse(link['href']) for link in rv.json()['links']}
+
+    rv = requests.get(f"{host}/jobs/", params={"tag": tag, "limit": 1})
+    assert len(rv.json()['jobs']) == 1
+    links = _links(rv)
+    assert "next" in links
+    for rel in ("self", "next"):
+        assert parse_qs(links[rel].query)['tag'] == [tag], rel
+
+    # Follow 'next' link
+    rv = requests.get(links['next'].geturl())
+    jobs = rv.json()['jobs']
+    assert len(jobs) == 1
+    assert jobs[0]['tag'] == tag
+    links = _links(rv)
+    assert "prev" in links
+    for rel in ("self", "prev"):
+        assert parse_qs(links[rel].query)['tag'] == [tag], rel
+
+    # No tag filter: no 'tag' parameter in links
+    rv = requests.get(f"{host}/jobs/", params={"limit": 1})
+    links = _links(rv)
+    assert "next" in links
+    for rel in ("self", "next"):
+        assert "tag" not in parse_qs(links[rel].query), rel
+
+
+def test_job_list_results_link(host, data):
+    """ Test results link of successful jobs in job list
+    """
+    tag = f"test_results_link_{os.getpid()}"
+    status = _execute_process(host, respond_async=False, tag=tag)
+    job_id = status['jobId']
+
+    rv = requests.get(f"{host}/jobs/", params={"tag": tag})
+    assert rv.status_code == 200
+    jobs = [job for job in rv.json()['jobs'] if job['jobId'] == job_id]
+    assert len(jobs) == 1
+    assert jobs[0]['status'] == "successful"
+
+    hrefs = [
+        link['href'] for link in jobs[0]['links']
+        if link['rel'] == "http://www.opengis.net/def/rel/ogc/1.0/results"
+    ]
+    assert len(hrefs) == 1
+    assert urlparse(hrefs[0]).path.endswith(f"/jobs/{job_id}/results")
+
+    rv = requests.get(hrefs[0])
+    assert rv.status_code == 200
+
+
+def test_job_status_links(host, data):
+    """ Test links of a successful job status
+    """
+    status = _execute_process(host, respond_async=False)
+    job_id = status['jobId']
+
+    rv = requests.get(f"{host}/jobs/{job_id}")
+    assert rv.status_code == 200
+    assert rv.json()['status'] == "successful"
+
+    paths = {urlparse(link['href']).path: link['href'] for link in rv.json()['links']}
+    for suffix in ("", "/results", "/log", "/files/"):
+        path = f"/jobs/{job_id}{suffix}"
+        assert path in paths, path
+        rv = requests.get(paths[path])
+        assert rv.status_code == 200, path
+
+
+def test_job_exceptions(host, data):
+    """ Test OGC exceptions for jobs
+    """
+    unknown_job = "00000000-0000-0000-0000-000000000000"
+    for path in ("", "/results", "/log", "/files/"):
+        rv = requests.get(f"{host}/jobs/{unknown_job}{path}")
+        assert rv.status_code == 404, path
+        data = rv.json()
+        assert data['type'] == f"{OGC_EXCEPTION_URI}/no-such-job", path
+        assert data['status'] == 404, path
+
+    rv = requests.delete(f"{host}/jobs/{unknown_job}")
+    assert rv.status_code == 404
+    assert rv.json()['type'] == f"{OGC_EXCEPTION_URI}/no-such-job"
+
+    # Results of a running job
+    rv = requests.post(
+        f"{host}/processes/processes_test:testlongprocess/execution",
+        json={"inputs": {"DELAY": 30}},
+        headers={"Prefer": "respond-async"},
+    )
+    assert rv.status_code == 202
+    job_id = rv.json()['jobId']
+    try:
+        rv = requests.get(f"{host}/jobs/{job_id}/results")
+        assert rv.status_code == 404
+        assert rv.json()['type'] == f"{OGC_EXCEPTION_URI}/result-not-ready"
+    finally:
+        requests.delete(f"{host}/jobs/{job_id}")
 
 
 def test_invalid_job_id(host, data):
