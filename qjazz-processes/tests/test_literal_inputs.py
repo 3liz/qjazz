@@ -305,6 +305,52 @@ def test_parameter_datetime():
     assert schema["format"] == "time"
 
 
+def _qt_defaults():
+    from qgis.PyQt.QtCore import QDate, QDateTime, QTime
+
+    return QDateTime(2024, 1, 2, 3, 4, 5), QDate(2024, 1, 2), QTime(3, 4, 5)
+
+
+@pytest.mark.parametrize(
+    "data_type,index,expected",
+    [
+        # Index in _qt_defaults() or an ISO string
+        (DateTimeParameterDataType.Date, 0, "2024-01-02"),
+        (DateTimeParameterDataType.Date, 1, "2024-01-02"),
+        (DateTimeParameterDataType.Date, "2024-01-02T03:04:05", "2024-01-02"),
+        (DateTimeParameterDataType.Time, 2, "03:04:05"),
+        (DateTimeParameterDataType.Time, 0, "03:04:05"),
+        (DateTimeParameterDataType.Time, "03:04:05", "03:04:05"),
+        (DateTimeParameterDataType.DateTime, 0, "2024-01-02T03:04:05"),
+        (DateTimeParameterDataType.DateTime, 1, "2024-01-02T00:00:00"),
+        (DateTimeParameterDataType.DateTime, "2024-01-02", "2024-01-02T00:00:00"),
+    ],
+)
+def test_parameter_datetime_default(data_type, index, expected):
+    default = _qt_defaults()[index] if isinstance(index, int) else index
+    param = QgsProcessingParameterDateTime("DateTime", type=data_type, defaultValue=default)
+
+    schema = InputParameter(param).json_schema()
+    print("\ntest_parameter_datetime_default::", schema)
+    assert schema["default"] == expected
+
+
+@pytest.mark.parametrize(
+    "data_type,index",
+    [
+        (DateTimeParameterDataType.Date, 2),
+        (DateTimeParameterDataType.Time, 1),
+        (DateTimeParameterDataType.DateTime, "foo"),
+    ],
+)
+def test_parameter_datetime_invalid_default(data_type, index):
+    default = _qt_defaults()[index] if isinstance(index, int) else index
+    param = QgsProcessingParameterDateTime("DateTime", type=data_type, defaultValue=default)
+
+    with pytest.raises(InputValueError, match="Invalid default value for parameter DateTime"):
+        InputParameter(param)
+
+
 def test_parameter_band():
     param = QgsProcessingParameterBand("Band")
 

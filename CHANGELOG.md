@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix ParameterDateTime default
 * [qjazz-processes] Fix literal ParameterRange validation
 * [qjazz-processes] Fix store links and return 404 on missing object
 * [qjazz-processes] Support OGC exception types

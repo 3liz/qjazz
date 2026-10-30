@@ -1,6 +1,7 @@
 import datetime
 
 from typing import (
+    Callable,
     Optional,
     cast,
 )
@@ -9,11 +10,14 @@ from pydantic import JsonValue
 
 from qgis.core import (
     Qgis,
+    QgsProcessingContext,
     QgsProcessingParameterDateTime,
+    QgsProcessingParameters,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QDate, QDateTime, QTime
 
+from ...schemas import InputValueError
 from .base import (
     InputParameter,
     ProcessingContext,
@@ -45,20 +49,37 @@ class ParameterDateTime(InputParameter):
         maximum = to_py(param.maximum())
         minimum = to_py(param.minimum())
 
+        # Convert QGIS default to python
+        default_to_py: Callable[..., datetime.date | datetime.time]
+
         match param.dataType():
             case DateTimeParameterDataType.Date:
                 _type = datetime.date
                 minimum = minimum and minimum.date()
                 maximum = maximum and maximum.date()
-                default = default and default.toPyDate()
+                convert = QgsProcessingParameters.parameterAsDate
+                default_to_py = QDate.toPyDate
             case DateTimeParameterDataType.Time:
                 minimum = minimum and minimum.time()
                 maximum = maximum and maximum.time()
-                default = default and default.toPyTime()
                 _type = datetime.time
+                convert = QgsProcessingParameters.parameterAsTime
+                default_to_py = QTime.toPyTime
             case _:  # DateTime
                 _type = datetime.datetime
-                default = default and default.toPyDateTime()
+                convert = QgsProcessingParameters.parameterAsDateTime
+                default_to_py = QDateTime.toPyDateTime
+
+        if default is not None:
+            # Default may be a QDate, QTime, QDateTime or an ISO string
+            # not matching the parameter data type: let QGIS convert it
+            # as it does when running the algorithm
+            qdefault = convert(param, {}, QgsProcessingContext())
+            if not qdefault.isValid():
+                raise InputValueError(
+                    f"Invalid default value for parameter {param.name()}: {default}",
+                )
+            default = default_to_py(qdefault)
 
         if maximum:
             field.update(le=maximum)
@@ -73,7 +94,7 @@ class ParameterDateTime(InputParameter):
                 schema_extra["formatMinimum"] = minimum.isoformat()
             field.update(json_schema_extra=schema_extra)
 
-            if default:
+            if default is not None:
                 field.update(default=default)
 
         return _type
