@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Iterable,
     Literal,
     Optional,
@@ -9,7 +10,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, Field, JsonValue, TypeAdapter
+from pydantic import BaseModel, Field, JsonValue, NonNegativeInt, TypeAdapter
 
 from qgis.core import (
     QgsMeshDatasetGroupMetadata,
@@ -54,15 +55,17 @@ class ParameterMeshLayer(ParameterMapLayer):
 #
 
 
+MESH_DATASET_DATA_TYPES = {
+    "DataOnFaces": QgsMeshDatasetGroupMetadata.DataType.DataOnFaces,
+    "DataOnVertices": QgsMeshDatasetGroupMetadata.DataType.DataOnVertices,
+    "DataOnVolumes": QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes,
+    "DataOnEdges": QgsMeshDatasetGroupMetadata.DataType.DataOnEdges,
+}
+
+
 class ParameterMeshDatasetGroups(InputParameter):
-    _ParameterType = set[
-        Literal[  # type: ignore [valid-type]
-            QgsMeshDatasetGroupMetadata.DataType.DataOnFaces,
-            QgsMeshDatasetGroupMetadata.DataType.DataOnVertices,
-            QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes,
-            QgsMeshDatasetGroupMetadata.DataType.DataOnEdges,
-        ],
-    ]
+    # Indexes of the dataset groups in the mesh layer
+    _ParameterType = Annotated[list[NonNegativeInt], Field(min_length=1)]
 
     @classmethod
     def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
@@ -77,6 +80,18 @@ class ParameterMeshDatasetGroups(InputParameter):
                     value=mesh_layer_param,
                 ),
             )
+
+        # Data types of the dataset groups accepted
+        md.append(
+            MetadataValue(
+                role="supportedDataTypes",
+                value=[
+                    name
+                    for name, data_type in MESH_DATASET_DATA_TYPES.items()
+                    if tparam.isDataTypeSupported(data_type)
+                ],
+            ),
+        )
 
         return md
 
