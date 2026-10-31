@@ -8,6 +8,7 @@ from typing import (
     Sequence,
     TypeAlias,
     Union,
+    cast,
 )
 
 from osgeo import ogr
@@ -141,8 +142,13 @@ class ParameterGeometry(InputParameter):
                     case invalid:
                         raise InputValueError(f"Invalid geometry format: {invalid}")
             case _:
-                # GeoJson
-                _inp = self.validate(inp)
+                # GeoJson object: bare strings must be passed as qualified
+                # input with a media type, so validate against the
+                # GeoJson model only
+                geometry_type = self.get_geometry_type(
+                    cast("QgsProcessingParameterGeometry", self._param),
+                )
+                _inp = TypeAdapter(geometry_type).validate_python(inp)
                 geom = geometry_from_json(
                     _inp.model_dump_json(),
                     _inp.crs.name() if _inp.crs else None,

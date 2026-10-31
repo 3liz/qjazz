@@ -182,6 +182,26 @@ def test_parameter_geometry_with_types():
     assert value.wkbType() == QgsWkbTypes.MultiPoint
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "POINT(1 2)",
+        '{"type": "Point", "coordinates": [1, 2]}',
+    ],
+)
+def test_parameter_geometry_bare_string(value):
+    """Bare strings must be passed as qualified input"""
+    param = QgsProcessingParameterGeometry("Geometry")
+    inp = InputParameter(param)
+
+    with pytest.raises(ValidationError):
+        inp.value(value)
+
+    media_type = Formats.WKT.media_type if value.startswith("POINT") else Formats.GEOJSON.media_type
+    geom = inp.value({"value": value, "mediaType": media_type})
+    assert geom.asWkt() == "Point (1 2)"
+
+
 def test_parameter_geometry_polygon():
     """Test geometry with parameter types"""
     # Single geometry type
