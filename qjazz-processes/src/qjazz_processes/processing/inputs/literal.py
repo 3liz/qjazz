@@ -90,26 +90,49 @@ class ParameterEnum(InputParameter):
             default = field.get("default")
 
             if default is not None:
-                match default:
-                    case str() if multiple:
-                        default = set(default.split(","))
-                    case [str(), *_]:
-                        default = set(default) if multiple else default[0]
-                    case [int(), *_]:
-                        if multiple:
-                            default = {opts[k] for k in default}
-                        else:
-                            default = opts[default[0]]
-                    case int():
-                        default = opts[default]
-                    case str():
-                        pass
-                    case _:
-                        raise InputValueError(f"Invalid default Enum value: {default}")
-
-                field.update(default=default)
+                field.update(default=cls.enum_default(param, default, opts, multiple))
 
         return _type
+
+    @classmethod
+    def enum_default(
+        cls,
+        param: QgsProcessingParameterEnum,
+        default: Any,
+        opts: Sequence[str],
+        multiple: bool,
+    ) -> str | set[str]:
+        """Convert a default value to option(s)
+
+        Without static strings, QGIS enum values are option indexes:
+        a string default is a comma separated list of indexes.
+        With static strings, values are the options themselves.
+        """
+
+        def option(index: int) -> str:
+            if not 0 <= index < len(opts):
+                raise IndexError(index)
+            return opts[index]
+
+        try:
+            match default:
+                case str() if not param.usesStaticStrings():
+                    options = [option(int(i)) for i in default.split(",")]
+                    return set(options) if multiple else options[0]
+                case str() if multiple:
+                    return set(default.split(","))
+                case str():
+                    return default
+                case [str(), *_]:
+                    return set(default) if multiple else default[0]
+                case [int(), *_]:
+                    return {option(k) for k in default} if multiple else option(default[0])
+                case int():
+                    return option(default)
+        except (ValueError, IndexError):
+            pass
+
+        raise InputValueError(f"Invalid default Enum value: {default}")
 
     def value(
         self,

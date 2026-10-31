@@ -119,6 +119,49 @@ def test_parameter_enum_multiple():
     assert param.checkValueIsAcceptable(value)
 
 
+@pytest.mark.parametrize(
+    "default,multiple,static,expected",
+    [
+        # Option indexes
+        ("0,1", True, False, ["a", "b"]),
+        ("1", False, False, "b"),
+        ([0, 2], True, False, ["a", "c"]),
+        (2, False, False, "c"),
+        # Static strings: options
+        ("a,b", True, True, ["a", "b"]),
+        ("b", False, True, "b"),
+        (["a", "c"], True, True, ["a", "c"]),
+    ],
+)
+def test_parameter_enum_default(default, multiple, static, expected):
+    param = QgsProcessingParameterEnum(
+        "Enum",
+        options=["a", "b", "c"],
+        allowMultiple=multiple,
+        usesStaticStrings=static,
+        defaultValue=default,
+    )
+
+    schema_default = InputParameter(param).json_schema()["default"]
+    if multiple:
+        schema_default = sorted(schema_default)
+    assert schema_default == expected
+
+
+@pytest.mark.parametrize("default", ["3", "-1", "a", "0,x", [5], -1])
+def test_parameter_enum_invalid_default(default):
+    """Invalid option indexes"""
+    param = QgsProcessingParameterEnum(
+        "Enum",
+        options=["a", "b", "c"],
+        allowMultiple=isinstance(default, list),
+        defaultValue=default,
+    )
+
+    with pytest.raises(InputValueError, match="Invalid default Enum value"):
+        InputParameter(param)
+
+
 def test_parameter_number():
     param = QgsProcessingParameterNumber(
         "Number",
