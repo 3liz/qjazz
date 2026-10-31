@@ -56,7 +56,9 @@ def register(
     if not is_valid_job_id(status.job_id):
         raise ValueError(f"Invalid job id: {status.job_id!r}")
 
-    key = f"qjazz::{status.job_id}::{service}::{realm}"
+    # Jobs without realm have an empty realm segment: it cannot
+    # match a realm token, and is matched by the '*' wildcard
+    key = f"qjazz::{status.job_id}::{service}::{realm or ''}"
 
     created = int(status.created.timestamp())
 
@@ -212,4 +214,4 @@ def exists(app: Celery, job_id: str, *, service: Optional[str] = None) -> bool:
     """Check if a job is registred"""
     if not is_valid_job_id(job_id):
         return False
-    return bool(app.backend.client.keys(f"qjazz::{job_id}::{service or '*'}"))
+    return bool(app.backend.client.keys(f"qjazz::{job_id}::{service or '*'}::*"))
