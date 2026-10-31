@@ -20,7 +20,7 @@ class ProcessingContext(QgsProcessingContext):
     def __init__(self, config: Optional[ProcessingConfig] = None):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
-        self._config = config or ProcessingConfig(workdir=Path())
+        self._config = config or ProcessingConfig(workdir=Path().absolute())
 
         self.public_url = ""
         self.files: set[str] = set()
