@@ -79,7 +79,7 @@ class ParameterDateTime(InputParameter):
                 raise InputValueError(
                     f"Invalid default value for parameter {param.name()}: {default}",
                 )
-            default = default_to_py(qdefault)
+            default = default_to_py(qdefault)  # type: ignore[arg-type]
 
         if maximum:
             field.update(le=maximum)
