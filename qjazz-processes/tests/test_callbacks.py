@@ -6,18 +6,23 @@ import socket
 
 from ipaddress import ip_address
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
 from qjazz_processes.callbacks import accesscontrol
 from qjazz_processes.callbacks.accesscontrol import AccessControlConfig
+from qjazz_processes.callbacks.callbacks import Callbacks, HandlerConfig
 from qjazz_processes.callbacks.handlers.http import (
     HttpCallback,
     HttpCallbackConfig,
 )
 from qjazz_processes.callbacks.handlers.mailto import get_recipients
 from qjazz_processes.worker.mixins.callbacks import on_task_postrun
+
+if TYPE_CHECKING:
+    from qjazz_processes.worker.models import JobMeta
 
 
 def test_callback_acl_allow():
@@ -246,3 +251,32 @@ def test_callback_postrun_failure():
 
 def test_callback_postrun_no_subscriber():
     assert _postrun({"__meta__": {}, "request": {}}, "SUCCESS") == []
+
+
+def test_callback_test_handler(monkeypatch):
+    """The test handler accepts the arguments passed by 'Callbacks'"""
+    from qjazz_processes.callbacks import callbacks
+
+    errors: list = []
+    monkeypatch.setattr(callbacks.logger, "error", lambda *args: errors.append(args))
+
+    cb = Callbacks({"test": HandlerConfig(handler="qjazz_processes.callbacks.Test")})
+
+    meta = cast(
+        "JobMeta",
+        {
+            "created": "2026-10-31T00:00:00Z",
+            "realm": None,
+            "service": "test",
+            "process_id": "processes_test:testsimplevalue",
+            "expires": 900,
+            "tag": None,
+        },
+    )
+
+    cb.on_success("test://ok", "job_01", meta, {"OUTPUT": "1 x"})
+    cb.on_failure("test://failed", "job_01", meta)
+    cb.in_progress("test://progress", "job_01", meta)
+
+    # Handler errors are swallowed and logged by 'Callbacks'
+    assert errors == []
