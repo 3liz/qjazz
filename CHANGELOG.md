@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Convert intersect rect into project's crs in 
+  ParameterFeatureSource
 * [qjazz-processes] Fix ParameterMeshDatasetGroups schema
 * [qjazz-processes] Fix ParameterDateTime default
 * [qjazz-processes] Fix literal ParameterRange validation

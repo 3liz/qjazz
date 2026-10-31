@@ -17,6 +17,8 @@ from qjazz_core import logger
 
 from qgis.core import (
     Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsMapLayer,
     QgsProcessingFeatureSourceDefinition,
     QgsProcessingOutputLayerDefinition,
@@ -253,15 +255,14 @@ class ParameterFeatureSource(ParameterMapLayer):
                     raise InputValueError(f"No layer '{_inp.source}' found")
 
                 if not isinstance(layer, QgsVectorLayer):
-                    raise InputValueError("'{_inp.source}' is not a vector layer")
+                    raise InputValueError(f"'{_inp.source}' is not a vector layer")
 
                 behavior = Qgis.SelectBehavior.SetSelection
 
                 # Apply filter rect first
                 if _inp.intersect:
                     logger.debug("Applying feature source intersect: %s", _inp.intersect)
-                    bbox = _inp.intersect
-                    rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+                    rect = self.intersect_rect(_inp.intersect, layer, context)
                     layer.selectByRect(rect, behavior=behavior)
                     behavior = Qgis.SelectBehavior.IntersectSelection
 
@@ -271,6 +272,37 @@ class ParameterFeatureSource(ParameterMapLayer):
                     layer.selectByExpression(_inp.expression, behavior=behavior)
 
         return QgsProcessingFeatureSourceDefinition(source, selectedFeaturesOnly=has_selection)
+
+    @staticmethod
+    def intersect_rect(
+        intersect: Any,
+        layer: QgsVectorLayer,
+        context: ProcessingContext,
+    ) -> QgsRectangle:
+        """Return the intersect bounding box in the layer crs"""
+        coords = intersect.bbox
+        if len(coords) == 6:
+            # 3D extent: [xmin, ymin, zmin, xmax, ymax, zmax]
+            xmin, ymin, _, xmax, ymax, _ = coords
+        else:
+            xmin, ymin, xmax, ymax = coords
+
+        rect = QgsRectangle(xmin, ymin, xmax, ymax)
+
+        crs = QgsCoordinateReferenceSystem()
+        crs.createFromUserInput(intersect.crs)
+        if not crs.isValid():
+            raise InputValueError(f"Invalid intersect crs: {intersect.crs}")
+
+        if crs != layer.crs():
+            # 'selectByRect' expects a rectangle in the layer crs
+            transform = QgsCoordinateTransform(crs, layer.crs(), context.transformContext())
+            try:
+                rect = transform.transformBoundingBox(rect)
+            except Exception as err:  # QgsCsException (not in qgis stubs)
+                raise InputValueError(f"Cannot transform intersect to layer crs: {err}") from None
+
+        return rect
 
 
 #

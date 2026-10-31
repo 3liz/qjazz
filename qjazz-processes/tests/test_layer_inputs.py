@@ -4,6 +4,9 @@ import pytest
 
 from qgis.core import (
     Qgis,
+    QgsFeature,
+    QgsGeometry,
+    QgsPointXY,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterFeatureSource,
@@ -17,6 +20,7 @@ from qgis.core import (
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
     QgsProcessingUtils,
+    QgsVectorLayer,
 )
 
 from qjazz_processes.processing.config import ProcessingConfig
@@ -94,6 +98,60 @@ def test_parameter_layer_featuresource(qgis_session):
     print("\ntest_parameter_layer_featuresource::", schema)
 
     assert schema.get("format") == "x-feature-source"
+
+
+@pytest.fixture()
+def points_3857() -> QgsVectorLayer:
+    """Memory layer in EPSG:3857 with a point at Paris (fid 1) and at (0, 0) (fid 2)"""
+    layer = QgsVectorLayer("Point?crs=EPSG:3857", "points", "memory")
+    for x, y in ((261845.7, 6250566.7), (0.0, 0.0)):
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        layer.dataProvider().addFeature(feature)
+    return layer
+
+
+@pytest.mark.parametrize(
+    "intersect,expected",
+    [
+        # CRS84 (default crs without project), reprojected to the layer crs
+        ({"bbox": [2, 48, 3, 49]}, [1]),
+        # 3D extent
+        ({"bbox": [2, 48, 0, 3, 49, 100]}, [1]),
+        # Layer crs
+        ({"bbox": [-10, -10, 10, 10], "crs": "EPSG:3857"}, [2]),
+        ({"bbox": [-10, -10, 10, 10], "crs": "http://www.opengis.net/def/crs/EPSG/0/3857"}, [2]),
+    ],
+)
+def test_parameter_layer_featuresource_intersect(
+    qgis_session: ProcessingConfig,
+    points_3857: QgsVectorLayer,
+    intersect: dict,
+    expected: list[int],
+):
+    context = ProcessingContext(qgis_session)
+    context.temporaryLayerStore().addMapLayer(points_3857)
+
+    inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
+    value = inp.value({"source": points_3857.id(), "intersect": intersect}, context)
+
+    assert value.selectedFeaturesOnly
+    assert sorted(points_3857.selectedFeatureIds()) == expected
+
+
+def test_parameter_layer_featuresource_intersect_invalid_crs(
+    qgis_session: ProcessingConfig,
+    points_3857: QgsVectorLayer,
+):
+    context = ProcessingContext(qgis_session)
+    context.temporaryLayerStore().addMapLayer(points_3857)
+
+    inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
+    with pytest.raises(InputValueError, match="Invalid intersect crs"):
+        inp.value(
+            {"source": points_3857.id(), "intersect": {"bbox": [0, 0, 1, 1], "crs": "foo"}},
+            context,
+        )
 
 
 def test_parameter_layer_multilayers(projects):
