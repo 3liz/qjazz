@@ -40,6 +40,8 @@ class TaskInfo:
     pending_timeout: int
     expires: int
     tag: Optional[str]
+    # Timestamp at which a delayed job is scheduled to start
+    eta: Optional[int] = None
 
 
 def register(
@@ -49,6 +51,7 @@ def register(
     status: JobStatus,
     expires: int,
     pending_timeout: int,
+    eta: Optional[int] = None,
 ):
     if not is_valid_job_id(status.job_id):
         raise ValueError(f"Invalid job id: {status.job_id!r}")
@@ -70,6 +73,7 @@ def register(
             "pending_timeout": pending_timeout,
             "expires": expires,
             "tag": status.tag or "",
+            "eta": eta or "",
         },
     )
     expiration_ts = created + expires + pending_timeout
@@ -104,6 +108,7 @@ def _decode(m: Mapping[bytes, bytes]) -> TaskInfo:
         pending_timeout=int(m[b"pending_timeout"]),
         expires=int(m[b"expires"]),
         tag=m[b"tag"].decode(),
+        eta=int(m[b"eta"]) if m[b"eta"] else None,
     )
 
 

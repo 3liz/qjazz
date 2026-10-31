@@ -374,7 +374,7 @@ class Processes(HandlerProto):
 
         context = await self.create_run_context(service, process, request)
 
-        result = self._executor.execute(
+        result = await self._executor.execute(
             service,
             process_id,
             request=execute_request,

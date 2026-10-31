@@ -169,7 +169,7 @@ class AsyncExecutor(ExecutorBase):
             timeout,
         )
 
-    def execute(
+    async def execute(
         self,
         service: str,
         ident: str,
@@ -186,7 +186,10 @@ class AsyncExecutor(ExecutorBase):
         """Send an execute request
         Returns an asynchronous  'Result' object
         """
-        job_id, _get_result, _get_status = self._execute(
+        # Registering the job and sending the task are blocking
+        # calls to the backend and the broker
+        job_id, _get_result, _get_status = await asyncio.to_thread(
+            self._execute,
             service,
             ident,
             request,

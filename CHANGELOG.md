@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix query of scheduled (delayed) tasks
 * [qjazz-processes] Fix geometry validation against GeoJson model
 * [qjazz-processes] Convert intersect rect into project's crs in 
   ParameterFeatureSource

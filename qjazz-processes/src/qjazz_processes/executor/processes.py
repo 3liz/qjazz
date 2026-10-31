@@ -44,6 +44,10 @@ from ..worker.models import (
 )
 from .protocols import ExecutorProtocol, ServiceDict
 
+# Delay after the ETA of a delayed job during which the job may
+# still be held in the worker's timer (i.e clock skew between hosts)
+ETA_GRACE_PERIOD = 10
+
 #
 #  Processes
 #
@@ -152,6 +156,8 @@ class Processes(ExecutorProtocol):
 
             self.created = created
             self.meta = meta
+            # Timestamp at which a delayed job is scheduled to start
+            self.eta = int(created.timestamp()) + countdown if countdown else None
             self.expires = expires
             self.pending_timeout = pending_timeout
             # If entrypoint is not defined then take ident
@@ -178,6 +184,7 @@ class Processes(ExecutorProtocol):
                 status,
                 self.expires,
                 self.pending_timeout,
+                eta=self.eta,
             )
 
             return status
@@ -245,7 +252,7 @@ class Processes(ExecutorProtocol):
             raise
 
         def _get_status() -> JobStatus:
-            return self._job_status(job_id, self.destinations(service)) or status
+            return self._job_status(job_id, self.destinations(service), eta=builder.eta) or status
 
         def _get_result(timeout: Optional[int] = None) -> JobResults:
             return result.get(timeout=timeout)
@@ -341,7 +348,14 @@ class Processes(ExecutorProtocol):
             match state["status"]:
                 case Celery.STATE_PENDING:
                     # Retrieve scheduled jobs
-                    st, request = self._query_task(job_id, destinations)
+                    #
+                    # NOTE: a delayed job (i.e 'ti.eta' set) could be revoked
+                    # immediately without querying the workers: Celery's revoke
+                    # also applies to tasks not yet received by a worker (they
+                    # are discarded on reception), and the registry deletion
+                    # below still makes 'before_start' reject the task if a
+                    # worker restarted and lost the revoke.
+                    st, request = self._query_task(job_id, destinations, eta=ti.eta)
                     if not request:
                         now_ts = time()
                         # Check if job has expired
@@ -422,7 +436,7 @@ class Processes(ExecutorProtocol):
             return None
 
         destinations = self.get_destinations(ti.service, services)
-        st = self._job_status(job_id, destinations, with_details)
+        st = self._job_status(job_id, destinations, with_details, eta=ti.eta)
         return st or self._job_status_pending(ti)
 
     def _job_status(
@@ -430,6 +444,8 @@ class Processes(ExecutorProtocol):
         job_id: str,
         destinations: Optional[Sequence[str]] = None,
         with_details: bool = False,
+        *,
+        eta: Optional[int] = None,
     ) -> Optional[JobStatus]:
         # Return job status (blocking)
         #
@@ -446,7 +462,7 @@ class Processes(ExecutorProtocol):
         match state["status"]:
             case Celery.STATE_PENDING:
                 # Retrieve scheduled jobs
-                status, request = self._query_task(job_id, destinations)
+                status, request = self._query_task(job_id, destinations, eta=eta)
                 logger.trace("=Job pending request (%s)  %s", status, request)
                 if not request:
                     return None  # No job
@@ -454,6 +470,9 @@ class Processes(ExecutorProtocol):
                     case "active":
                         status = JobStatus.RUNNING
                         message = f"Task {status}"
+                    case "scheduled" if eta:
+                        status = JobStatus.ACCEPTED
+                        message = f"Task scheduled at {to_utc_datetime(eta).isoformat()}"
                     case "scheduled" | "reserved":
                         status = JobStatus.ACCEPTED
                         message = f"Task {status}"
@@ -537,25 +556,55 @@ class Processes(ExecutorProtocol):
         self,
         job_id: str,
         destinations: Optional[Sequence[str]] = None,
+        *,
+        eta: Optional[int] = None,
     ) -> tuple[Optional[str], Optional[dict]]:
-        #
-        # schema is: { <destination>: { <job_id>: [state, <info>]}}}
-        # state may be 'reserved', 'active', 'scheduled', 'revoked'
-        #
-        # See https://docs.celeryq.dev/en/stable/reference/celery.app.control.html#celery.app.control.Inspect.query_task
+        """Query the task from the workers
 
-        result = self._celery.control.inspect(destinations).query_task(job_id)
-        logger.trace("=query_task: %s", result)
-        result = result and next(iter(result.values()))
-        result = result and result.get(job_id)
-        match result:
-            case [status, infos]:
-                result = (status, infos)
-            case _ if not result:
-                result = (None, None)
-            case _ if result:
-                raise ValueError(f"Invalid format for query task infos: {result}")
-        return result
+        A delayed job is held in the worker's timer until its ETA: it is
+        reported by 'scheduled' but not by 'query_task'. The registered
+        ETA of the job tells which one to use.
+        """
+        now = time()
+        # Before the ETA, the task is in the worker's timer
+        in_timer = eta is not None and now < eta + ETA_GRACE_PERIOD
+        # After the ETA (or for a job without ETA), the task is reserved or active
+        in_requests = eta is None or now >= eta
+
+        inspect = self._celery.control.inspect(destinations)
+
+        if in_requests:
+            #
+            # schema is: { <destination>: { <job_id>: [state, <info>]}}}
+            # state may be 'reserved', 'active'
+            #
+            # See https://docs.celeryq.dev/en/stable/reference/celery.app.control.html#celery.app.control.Inspect.query_task
+            replies = inspect.query_task(job_id)
+            logger.trace("=query_task: %s", replies)
+            # All destinations reply but only the worker holding
+            # the task returns infos about it: the others return
+            # an empty response
+            for reply in (replies or {}).values():
+                infos = reply.get(job_id)
+                if not infos:
+                    continue
+                match infos:
+                    case [status, task_infos]:
+                        return (status, task_infos)
+                    case _:
+                        raise ValueError(f"Invalid format for query task infos: {infos}")
+
+        if in_timer:
+            # schema is: { <destination>: [{"eta": ..., "priority": ..., "request": <info>}]}
+            scheduled = inspect.scheduled()
+            logger.trace("=scheduled: %s", scheduled)
+            for entries in (scheduled or {}).values():
+                for entry in entries:
+                    request = entry.get("request") or {}
+                    if request.get("id") == job_id:
+                        return ("scheduled", request)
+
+        return (None, None)
 
     def _job_exists(self, job_id: str) -> bool:
         # Check if job is registered (blocking)
@@ -600,7 +649,7 @@ class Processes(ExecutorProtocol):
                 if not service:
                     destinations = self.get_destinations(ti.service, services)
 
-                st = self._job_status(ti.job_id, destinations, with_details=with_details)
+                st = self._job_status(ti.job_id, destinations, with_details=with_details, eta=ti.eta)
                 if not st:
                     st = self._job_status_pending(ti)
                 if st:
