@@ -63,7 +63,7 @@ app = QgisProcessingWorker()
 #
 
 
-@app.job(name="process_validate", base=QgisJob)
+@app.job(name="process_validate", bind=True, run_context=True, base=QgisJob)
 def validate_process_inputs(
     self: Job,
     ctx: JobContext,
@@ -76,7 +76,7 @@ def validate_process_inputs(
     ctx.qgis_context.validate(
         ident,
         request,
-        feedback=Feedback(self.setprogress),
+        feedback=Feedback(self.set_progress),
         project_path=project_path,
     )
 
