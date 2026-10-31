@@ -272,7 +272,7 @@ def download_ref(ref: LinkReference, config: Optional[ProcessingConfig], writer:
 
     resp = requests.request(method, href, headers=headers, stream=True, timeout=timeout, **kwargs)
     if resp.status_code not in (200, 206):
-        raise InputValueError("Reference request error: ({resp.status_code}) {resp.text}")
+        raise InputValueError(f"Reference request error: ({resp.status_code}) {resp.text}")
 
     part_size = 1024 * 64
 

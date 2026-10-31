@@ -9,6 +9,7 @@ from ...worker.exceptions import (
     ProcessNotFound,
     ProjectRequired,
     ServiceNotAvailable,
+    UnreachableDestination,
 )
 from .. import swagger
 from ..accesspolicy import AccessPolicy

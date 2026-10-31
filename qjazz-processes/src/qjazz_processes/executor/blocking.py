@@ -47,7 +47,7 @@ class BlockingExecutor(ExecutorBase):
         ident: str,
         *,
         project: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: int = 20,
     ) -> Optional[ProcessDescription]:
         """Return process description"""
         return self._describe(
@@ -57,7 +57,7 @@ class BlockingExecutor(ExecutorBase):
             timeout=timeout,
         )
 
-    def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
+    def processes(self, service: str, timeout: float = 20) -> Sequence[ProcessSummary]:
         """Return process description summary"""
         return self._processes(self.ensure_destinations(service), timeout)
 

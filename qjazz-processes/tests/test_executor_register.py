@@ -1,6 +1,8 @@
 #
 # Test job registration on execution
 #
+import inspect
+
 from contextlib import nullcontext
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
@@ -13,7 +15,8 @@ import pytest
 
 from qjazz_core.utils import to_utc_datetime
 
-from qjazz_processes.executor.executor import ExecutorBase
+from qjazz_processes.executor.blocking import BlockingExecutor
+from qjazz_processes.executor.executor import AsyncExecutor, ExecutorBase
 from qjazz_processes.executor.processes import Processes
 from qjazz_processes.schemas import JobExecute, JobStatus
 from qjazz_processes.worker import registry
@@ -398,3 +401,39 @@ def test_registry_no_eta():
     ti = registry.find_job(cast("Celery", celery), job_id)
     assert ti is not None
     assert ti.eta is None
+
+
+#
+# Worker command timeouts
+#
+
+
+def test_executor_worker_commands_default_timeout():
+    """Process commands sent to workers have a default timeout"""
+    executor = _executor(FakeCelery())
+
+    calls = []
+
+    def command(name, **kwargs):
+        calls.append((name, kwargs["timeout"]))
+        return []
+
+    executor.command = command  # type: ignore [method-assign]
+
+    executor._processes(("test@worker",))
+    executor._describe(("test@worker",), "processes_test:testsimplevalue")
+
+    assert calls == [("list_processes", 20), ("describe_process", 20)]
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        BlockingExecutor.describe,
+        BlockingExecutor.processes,
+        AsyncExecutor.describe,
+        AsyncExecutor.processes,
+    ],
+)
+def test_executor_default_timeout(method):
+    assert inspect.signature(method).parameters["timeout"].default == 20

@@ -60,7 +60,7 @@ class Processes(ExecutorProtocol):
         ident: str,
         *,
         project: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: int = 20,
     ) -> Optional[ProcessDescription]:
         # Retrieve process description (blocking version)
         res = self.command(
@@ -75,7 +75,7 @@ class Processes(ExecutorProtocol):
     def _processes(
         self,
         destinations: Sequence[str],
-        timeout: Optional[float] = None,
+        timeout: float = 20,
     ) -> Sequence[ProcessSummary]:
         # List processes for service (blocking version)
         res = self.command(

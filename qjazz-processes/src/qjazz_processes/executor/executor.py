@@ -150,7 +150,7 @@ class AsyncExecutor(ExecutorBase):
         ident: str,
         *,
         project: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: int = 20,
     ) -> Optional[ProcessDescription]:
         """Return process description"""
         return await asyncio.to_thread(
@@ -161,7 +161,7 @@ class AsyncExecutor(ExecutorBase):
             timeout=timeout,
         )
 
-    async def processes(self, service: str, timeout: Optional[float] = None) -> Sequence[ProcessSummary]:
+    async def processes(self, service: str, timeout: float = 20) -> Sequence[ProcessSummary]:
         """Return process description summary"""
         return await asyncio.to_thread(
             self._processes,

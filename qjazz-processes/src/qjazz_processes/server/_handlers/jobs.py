@@ -18,6 +18,8 @@ from .protos import (
     JobStatus,
     Link,
     ProcessLog,
+    ServiceNotAvailable,
+    UnreachableDestination,
     href,
     make_link,
     swagger,
@@ -441,11 +443,19 @@ class Jobs(HandlerProto):
         job_id = request.match_info["JobId"]
 
         # Require realm for job logs
-        log_d = await self._executor.log_details(
-            job_id,
-            realm=self._jobrealm.job_realm(request),
-            timeout=self._timeout,
-        )
+        try:
+            log_d = await self._executor.log_details(
+                job_id,
+                realm=self._jobrealm.job_realm(request),
+                timeout=self._timeout,
+            )
+        except (UnreachableDestination, ServiceNotAvailable):
+            # No worker replied, or no worker online for the job's service
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                "Service is not available",
+                details={"jobId": job_id},
+            )
 
         if not log_d:
             return ErrorResponse.response(

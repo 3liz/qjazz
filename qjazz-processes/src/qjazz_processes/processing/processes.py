@@ -176,7 +176,7 @@ class ProcessAlgorithm:
         project = context.project()
 
         if self.require_project and not project:
-            raise InputValueError("Algorithm {self.ident} require project")
+            raise InputValueError(f"Algorithm {self.ident} require project")
 
         inputs = {i.name: i for i in self.inputs(project, validation_only=True)}
 

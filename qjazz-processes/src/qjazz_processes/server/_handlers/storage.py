@@ -20,6 +20,8 @@ from .protos import (
     HandlerProto,
     Link,
     ProcessFiles,
+    ServiceNotAvailable,
+    UnreachableDestination,
     make_link,
     swagger,
 )
@@ -90,12 +92,20 @@ class Storage(HandlerProto):
         job_id = request.match_info["JobId"]
 
         # Require realm for file listing
-        files = await self._executor.files(
-            job_id,
-            realm=self._jobrealm.job_realm(request),
-            public_url=public_url(request, ""),
-            timeout=self._timeout,
-        )
+        try:
+            files = await self._executor.files(
+                job_id,
+                realm=self._jobrealm.job_realm(request),
+                public_url=public_url(request, ""),
+                timeout=self._timeout,
+            )
+        except (UnreachableDestination, ServiceNotAvailable):
+            # No worker replied, or no worker online for the job's service
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                "Service is not available",
+                details={"jobId": job_id},
+            )
 
         if not files:
             return ErrorResponse.response(
@@ -161,12 +171,20 @@ class Storage(HandlerProto):
         resource = request.match_info["Resource"]
 
         # Do not require realm
-        link = await self._executor.download_url(
-            job_id,
-            resource=resource,
-            timeout=self._timeout,
-            expiration=self._storage.download_url_expiration,
-        )
+        try:
+            link = await self._executor.download_url(
+                job_id,
+                resource=resource,
+                timeout=self._timeout,
+                expiration=self._storage.download_url_expiration,
+            )
+        except (UnreachableDestination, ServiceNotAvailable):
+            # No worker replied, or no worker online for the job's service
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                "Service is not available",
+                details={"jobId": job_id, "resource": resource},
+            )
 
         if not link:
             return ErrorResponse.response(

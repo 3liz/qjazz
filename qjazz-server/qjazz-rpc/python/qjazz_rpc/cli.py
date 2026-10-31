@@ -157,7 +157,7 @@ def load_project(project: str, verbose: bool, configpath: Optional[Path]):
     if status == Co.NEW:
         cm.update(cast("ProjectMetadata", md), status)
     else:
-        click.echo("The project '{url}' does not exists", err=True)
+        click.echo(f"The project '{url}' does not exists", err=True)
         sys.exit(1)
 
 

@@ -30,6 +30,7 @@ from .protos import (
     ProjectRequired,
     RunProcessException,
     ServiceNotAvailable,
+    UnreachableDestination,
     href,
     make_link,
     public_url,
@@ -88,6 +89,13 @@ class Processes(HandlerProto):
             processes = await self._executor.processes(service, timeout=self._timeout)
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, "Service is not available")
+        except UnreachableDestination:
+            # No worker replied
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                "Service is not available",
+                details={"service": service},
+            )
         except ServiceNotAvailable:
             ErrorResponse.raises(
                 web.HTTPNotFound,
@@ -196,6 +204,13 @@ class Processes(HandlerProto):
             )
         except celery.exceptions.TimeoutError:
             ErrorResponse.raises(web.HTTPServiceUnavailable, f"Service {service} is not available")
+        except UnreachableDestination:
+            # No worker replied
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                f"Service {service} is not available",
+                details={"service": service},
+            )
         except ServiceNotAvailable:
             ErrorResponse.raises(
                 web.HTTPNotFound,
@@ -353,6 +368,13 @@ class Processes(HandlerProto):
         try:
             # Check process
             process = await self._executor.get_process_summary(service, process_id)
+        except UnreachableDestination:
+            # No worker replied
+            ErrorResponse.raises(
+                web.HTTPServiceUnavailable,
+                f"Service {service} is not available",
+                details={"service": service},
+            )
         except ServiceNotAvailable:
             ErrorResponse.raises(
                 web.HTTPNotFound,
