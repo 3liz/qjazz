@@ -28,10 +28,11 @@ def _validate_qgis_setting(value: str | bool | float) -> str:
     match value:
         case str():
             return value
-        case float() | int():
-            return str(value)
+        # Must come before 'int()': bool is a subclass of int
         case bool():
             return "true" if value else "false"
+        case float() | int():
+            return str(value)
         case _:
             raise ValueError(f"Unsupported type for '{value}' (found '{type(value)}')")
 
