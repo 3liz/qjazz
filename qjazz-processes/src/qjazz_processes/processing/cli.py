@@ -356,9 +356,7 @@ def execute_processes(
     elif inputs.startswith("@"):
         # File inputs
         try:
-            with Path(inputs[1:]).open() as f:
-                inputs = f.read()
-                request = JobExecute.model_validate_json(f.read())
+            inputs = Path(inputs[1:]).read_text()
         except FileNotFoundError as err:
             abort_with_error(ctx, f"{err}")
     elif inputs == "-":
