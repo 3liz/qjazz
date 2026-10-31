@@ -56,4 +56,7 @@ class PeriodicTasks:
     def shutdown(self):
         self._shutdown_event.set()
         for task in self._periodic_tasks:
-            task.join(timeout=5.0)
+            # Tasks are not started if the worker is stopped before being
+            # ready, and joining a thread that is not started raises an error
+            if task.is_alive():
+                task.join(timeout=5.0)
