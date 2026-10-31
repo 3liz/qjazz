@@ -21,6 +21,15 @@ from qjazz_processes.processing.prelude import (
 from .utils import Feedback
 
 
+def test_algorithms_reprojectlayer_description(plugins):
+    """Algorithms with a coordinate operation parameter can be described"""
+    pa = ProcessAlgorithm.find_algorithm("native:reprojectlayer")
+    assert pa is not None
+
+    description = pa.description()
+    assert "OPERATION" in description.inputs
+
+
 def test_algorithms_simple(feedback, context, plugins):
     """Execute a simple algorithm"""
     pa = ProcessAlgorithm.find_algorithm("processes_test:testsimplevalue")

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Fix static crs in ParameterCoordinateOperation
 * [qjazz-processes] Handle command exceptions and timeout
 * [qjazz-processes] Fix query of scheduled (delayed) tasks
 * [qjazz-processes] Fix geometry validation against GeoJson model

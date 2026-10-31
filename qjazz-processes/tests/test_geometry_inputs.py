@@ -6,6 +6,7 @@ from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
     QgsPointXY,
+    QgsProcessingParameterCoordinateOperation,
     QgsProcessingParameterCrs,
     QgsProcessingParameterExtent,
     QgsProcessingParameterGeometry,
@@ -269,6 +270,69 @@ def test_parameter_crs(qgis_session):
         _ = inp.value("Foobar")
 
 
+@pytest.mark.parametrize(
+    "source,destination",
+    [
+        ("SOURCE_CRS", "DESTINATION_CRS"),
+        ("SOURCE_CRS", ""),
+        ("", "DESTINATION_CRS"),
+        ("", ""),
+    ],
+)
+def test_parameter_coordinate_operation_metadata(source, destination):
+    """Crs parameter names are published as metadata"""
+    param = QgsProcessingParameterCoordinateOperation(
+        "Operation",
+        sourceCrsParameterName=source,
+        destinationCrsParameterName=destination,
+    )
+
+    metadata = {
+        md.role: md.value
+        for md in InputParameter(param).description().metadata
+        if md.role in ("sourceCrsParameterName", "destinationCrsParameterName")
+    }
+
+    expected = {}
+    if source:
+        expected["sourceCrsParameterName"] = source
+    if destination:
+        expected["destinationCrsParameterName"] = destination
+
+    assert metadata == expected
+
+
+@pytest.mark.parametrize(
+    "static_crs,expected",
+    [
+        # No static crs
+        ({}, {}),
+        (
+            {
+                "staticSourceCrs": QgsCoordinateReferenceSystem("EPSG:4326"),
+                "staticDestinationCrs": QgsCoordinateReferenceSystem("EPSG:3857"),
+            },
+            {
+                "staticSourceCrs": "urn:ogc:def:crs:EPSG::4326",
+                "staticDestinationCrs": "urn:ogc:def:crs:EPSG::3857",
+            },
+        ),
+        # Static crs given as string
+        ({"staticDestinationCrs": "EPSG:3857"}, {"staticDestinationCrs": "EPSG:3857"}),
+    ],
+)
+def test_parameter_coordinate_operation_static_crs(qgis_session, static_crs, expected):
+    """Static crs are published as metadata"""
+    param = QgsProcessingParameterCoordinateOperation("Operation", **static_crs)
+
+    metadata = {
+        md.role: md.value
+        for md in InputParameter(param).description().metadata
+        if md.role in ("staticSourceCrs", "staticDestinationCrs")
+    }
+    assert metadata == expected
+
+
 def test_parameter_extent(qgis_session):
     param = QgsProcessingParameterExtent("Extent")
 
@@ -278,6 +342,23 @@ def test_parameter_extent(qgis_session):
     print("\ntest_parameter_crs::", schema)
 
     assert schema["format"] == "ogc-bbox"
+
+
+@pytest.mark.parametrize(
+    "default",
+    [
+        # Null rectangle (inverted infinite bounds)
+        QgsRectangle(),
+        # Empty rectangle
+        QgsRectangle(1, 1, 1, 1),
+    ],
+)
+def test_parameter_extent_without_valid_default(qgis_session, default):
+    """No schema default for a null or empty default extent"""
+    param = QgsProcessingParameterExtent("Extent", defaultValue=default)
+
+    schema = InputParameter(param).json_schema()
+    assert "default" not in schema
 
 
 def test_parameter_extent_with_default(qgis_session):

@@ -3,6 +3,7 @@ import re
 from typing import (
     TYPE_CHECKING,
     Annotated,
+    Any,
     Iterator,
     Optional,
     Sequence,
@@ -31,7 +32,6 @@ from qgis.core import (
     QgsReferencedPointXY,
     QgsReferencedRectangle,
 )
-from qgis.PyQt.QtCore import QVariant
 
 from qjazz_processes.schemas import (
     WGS84,
@@ -285,7 +285,7 @@ class ParameterCoordinateOperation(InputParameter):
             )
 
         destination_crs_param = param.destinationCrsParameterName()
-        if source_crs_param:
+        if destination_crs_param:
             md.append(
                 MetadataValue(
                     role="destinationCrsParameterName",
@@ -293,14 +293,16 @@ class ParameterCoordinateOperation(InputParameter):
                 ),
             )
 
-        def to_string(v: QVariant) -> str | None:
-            if v.isValid():
-                match v.value():
-                    case QgsCoordinateReferenceSystem() as crs:
-                        return crs_to_ogc_urn(crs) if crs.isValid() else None
-                    case other:
-                        return str(other)
-            return None
+        # Note: PyQt converts QVariant return values to python
+        # objects: static crs are either None or a crs definition
+        def to_string(v: Any) -> str | None:
+            match v:
+                case QgsCoordinateReferenceSystem() as crs:
+                    return crs_to_ogc_urn(crs) if crs.isValid() else None
+                case None | "":
+                    return None
+                case other:
+                    return str(other)
 
         dst_crs = to_string(param.destinationCrs())
         if dst_crs:
@@ -365,7 +367,7 @@ class ParameterExtent(InputParameter):
 
                 _type = BoundingBox(default_crs)
 
-                if not rect.isEmpty() or rect.isNull():
+                if not (rect.isEmpty() or rect.isNull()):
                     field.update(
                         default=TypeAdapter(_type)
                         .validate_python(
