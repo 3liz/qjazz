@@ -16,7 +16,7 @@ from pydantic import (
     HttpUrl,
 )
 
-OGC_OPENGIS_URL = AnyUrl("https://www.opengis.net")
+OGC_OPENGIS_URL = "https://www.opengis.net"
 
 OGCAPI_PROCESSES_CONFORMANCE_URI = AnyUrl(f"{OGC_OPENGIS_URL}/spec/ogcapi-processes-1/1.0")
 
@@ -35,12 +35,12 @@ OgcDataType = MappingProxyType(
         "signedByte": f"{OGC_DATATYPE_URL}/0/signedByte",
         "signedInt": f"{OGC_DATATYPE_URL}/0/signedInt",
         "signedLong": f"{OGC_DATATYPE_URL}/0/signedLong",
-        "signedShort": f"{OGC_DATATYPE_URL}/0/unsignedShort",
+        "signedShort": f"{OGC_DATATYPE_URL}/0/signedShort",
         "unsignedByte": f"{OGC_DATATYPE_URL}/0/unsignedByte",
         "unsignedInt": f"{OGC_DATATYPE_URL}/0/unsignedInt",
         "unsignedLong": f"{OGC_DATATYPE_URL}/0/unsignedLong",
         "unsignedShort": f"{OGC_DATATYPE_URL}/0/unsignedShort",
-        "strinfg-utf8": f"{OGC_DATATYPE_URL}/0/string-utf8",
+        "string-utf8": f"{OGC_DATATYPE_URL}/0/string-utf8",
         # 1.1
         "angle": f"{OGC_DATATYPE_URL}/1.1/angle",
         "angleList": f"{OGC_DATATYPE_URL}/1.1/angleList",
@@ -81,7 +81,7 @@ OGC_UOM_URN = "urn:ogc:def:uom"
 
 UCUM = f"{OGC_UOM_URN}:UCUM"
 OGC_UOM = f"{OGC_UOM_URN}:OGC:1.0"
-EPSG_UOM = f"{OGC_UOM_URN}:ESPG:0:"
+EPSG_UOM = f"{OGC_UOM_URN}:EPSG:0"
 
 UOM = MappingProxyType(
     {

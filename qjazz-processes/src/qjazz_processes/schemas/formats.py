@@ -37,7 +37,7 @@ class Format:
     @staticmethod
     def version(media_type: str) -> Optional[str]:
         """Extract ows  service version from media_type"""
-        m = VERSION_MATCH.match(media_type)
+        m = VERSION_MATCH.search(media_type)
         return m.group(1) if m else None
 
 

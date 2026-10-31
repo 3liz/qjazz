@@ -10,7 +10,7 @@ from typing import (
 from pydantic import AnyUrl
 
 from .formats import Formats
-from .models import Field, MediaType, OneOf
+from .models import Field, MediaType
 
 UriCrsDefinition = Annotated[AnyUrl, Field(json_schema_extra={"format": "uri"})]
 
@@ -25,15 +25,13 @@ UriCrsDefinition = Annotated[AnyUrl, Field(json_schema_extra={"format": "uri"})]
 #
 PROJJSON_SCHEMA_REF = "https://proj.org/en/latest/schemas/v0.7/projjson.schema.json"
 
-CrsDefinition = OneOf[  # type: ignore [misc, valid-type]
-    Union[
+CrsDefinition = Union[
+    str,
+    UriCrsDefinition,
+    MediaType(str, Formats.WKT.media_type),
+    MediaType(
         str,
-        UriCrsDefinition,
-        MediaType(str, Formats.WKT.media_type),
-        MediaType(
-            str,
-            Formats.JSON.media_type,
-            schema=f'{{ "$ref": "{PROJJSON_SCHEMA_REF}" }}',
-        ),
-    ],
+        Formats.JSON.media_type,
+        schema={"$ref": PROJJSON_SCHEMA_REF},
+    ),
 ]

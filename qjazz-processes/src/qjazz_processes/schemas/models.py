@@ -91,7 +91,7 @@ def MediaType(
     media_type: str,
     *,
     encoding: Optional[str] = None,
-    schema: Optional[str] = None,
+    schema: Optional[dict] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> TypeAlias:
@@ -157,7 +157,7 @@ class OutputFormatDefinition:
     def output_format(self, value: OutputFormat):
         self._output_format = value
         if value.media_type == AnyFormat.media_type:
-            self.extension = ""
+            self._output_ext = ""
         else:
             self._output_ext = mimetypes.guess_extension(value.media_type) or ""
 

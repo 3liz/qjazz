@@ -235,8 +235,14 @@ def test_parameter_crs(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_crs::schema", schema)
 
-    assert "oneOf" in schema
+    assert "anyOf" in schema
     assert schema["format"] == "x-ogc-crs"
+
+    # contentSchema must be a schema object
+    content_schemas = [s["contentSchema"] for s in schema["anyOf"] if "contentSchema" in s]
+    assert content_schemas == [
+        {"$ref": "https://proj.org/en/latest/schemas/v0.7/projjson.schema.json"},
+    ]
 
     value = inp.value("EPSG:3857")
     assert value.authid() == "EPSG:3857"
