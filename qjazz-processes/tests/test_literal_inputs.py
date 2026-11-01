@@ -220,6 +220,35 @@ def test_parameter_distance():
     assert metadata["uom"].href == ogc.uom_ref("m")
 
 
+@pytest.mark.parametrize(
+    "data_type,minimum,maximum,expected_min,expected_max",
+    [
+        # Non integer bounds of integer parameters
+        (NumberParameterType.Integer, 1e-05, 5.5, 1, 5),
+        (NumberParameterType.Integer, -0.5, 10.0, 0, 10),
+        # Double parameters keep their bounds
+        (NumberParameterType.Double, 1e-05, 5.5, 1e-05, 5.5),
+    ],
+)
+def test_parameter_number_bounds(data_type, minimum, maximum, expected_min, expected_max):
+    param = QgsProcessingParameterNumber(
+        "Number",
+        type=data_type,
+        minValue=minimum,
+        maxValue=maximum,
+        defaultValue=expected_max,
+    )
+
+    inp = InputParameter(param)
+    schema = inp.json_schema()
+    assert schema["minimum"] == expected_min
+    assert schema["maximum"] == expected_max
+
+    assert inp.value(expected_min) == expected_min
+    with pytest.raises(ValidationError):
+        inp.value(expected_max + 1)
+
+
 def test_parameter_area():
     param = QgsProcessingParameterArea("Area", parentParameterName="INPUT")
     param.setDefaultUnit(Qgis.AreaUnit.SquareMeters)

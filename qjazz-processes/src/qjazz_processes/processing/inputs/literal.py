@@ -160,7 +160,7 @@ class ParameterEnum(InputParameter):
 #
 
 
-def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
+def set_number_minmax(param: QgsProcessingParameterNumber, field: dict, integer: bool = False):
     minimum = param.minimum()
     maximum = param.maximum()
 
@@ -168,9 +168,12 @@ def set_number_minmax(param: QgsProcessingParameterNumber, field: dict):
     # natively
     float_max = sys.float_info.max
     if minimum > -float_max:
-        field.update(ge=minimum)
+        # Integer parameters may have non integer bounds
+        # (i.e 'native:createrandomnegativebinomialrasterlayer'):
+        # use the integer bounds within the range
+        field.update(ge=math.ceil(minimum) if integer else minimum)
     if maximum < float_max:
-        field.update(le=maximum)
+        field.update(le=math.floor(maximum) if integer else maximum)
 
 
 class ParameterNumber(InputParameter):
@@ -184,8 +187,6 @@ class ParameterNumber(InputParameter):
     ) -> TypeAlias:
         _type: type[float | int]
 
-        set_number_minmax(param, field)
-
         match param.dataType():
             case Qgis.ProcessingNumberParameterType.Double:
                 _type = float
@@ -193,6 +194,8 @@ class ParameterNumber(InputParameter):
                 _type = int
             case invalid:
                 raise InputValueError(f"Invalid type for number: {invalid}")
+
+        set_number_minmax(param, field, integer=_type is int)
 
         return _type
 

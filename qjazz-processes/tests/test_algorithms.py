@@ -30,6 +30,15 @@ def test_algorithms_reprojectlayer_description(plugins):
     assert "OPERATION" in description.inputs
 
 
+def test_algorithms_integer_with_float_bounds_description(plugins):
+    """Integer parameter with a non integer minimum (K_PARAMETER: 1e-05)"""
+    pa = ProcessAlgorithm.find_algorithm("native:createrandomnegativebinomialrasterlayer")
+    assert pa is not None
+
+    description = pa.description()
+    assert description.inputs["K_PARAMETER"].schema_["minimum"] == 1
+
+
 def test_algorithms_simple(feedback, context, plugins):
     """Execute a simple algorithm"""
     pa = ProcessAlgorithm.find_algorithm("processes_test:testsimplevalue")
