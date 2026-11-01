@@ -54,8 +54,9 @@ async def test_server_processes(workdir: Path, http_client: TestClient):
                 "native:centroids_1:OUTPUT": "output_layer",
             },
         },
+        headers={"Prefer": "respond-async"},
     )
-    assert resp.status == 201
+    assert resp.status == 202
 
     data = await resp.text()
     print("test_server_execution::", data)
