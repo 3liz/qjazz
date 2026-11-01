@@ -20,6 +20,3 @@ include $(topsrcdir)/config/rules.mk
 
 doc:: 
 	$(MAKE) -C doc
-
-typing::
-	$(MYPY) -p $(EXAMPLES)
