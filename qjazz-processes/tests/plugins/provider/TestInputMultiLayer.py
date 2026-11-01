@@ -39,3 +39,5 @@ class TestInputMultiLayer(QgsProcessingAlgorithm):
         """
 
         # layer = self.parameterAsRasterLayer(parameters, self.INPUT, context)
+
+        return {}

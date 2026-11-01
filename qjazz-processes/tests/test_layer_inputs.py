@@ -1,6 +1,9 @@
 from pathlib import Path
+from typing import Iterator
 
 import pytest
+
+from pydantic import ValidationError
 
 from qgis.core import (
     Qgis,
@@ -9,6 +12,7 @@ from qgis.core import (
     QgsPointXY,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterAlignRasterLayers,
+    QgsProcessingParameterDxfLayers,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
     QgsProcessingParameterFieldMapping,
@@ -16,10 +20,12 @@ from qgis.core import (
     QgsProcessingParameterMultipleLayers,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
+    QgsProcessingParameters,
     QgsProcessingParameterTinInputLayers,
     QgsProcessingParameterVectorDestination,
     QgsProcessingParameterVectorLayer,
     QgsProcessingUtils,
+    QgsProject,
     QgsVectorLayer,
 )
 
@@ -137,6 +143,26 @@ def test_parameter_layer_featuresource_intersect(
 
     assert value.selectedFeaturesOnly
     assert sorted(points_3857.selectedFeatureIds()) == expected
+
+
+def test_parameter_layer_featuresource_input_forms(
+    qgis_session: ProcessingConfig,
+    points_3857: QgsVectorLayer,
+):
+    """Feature sources are passed as objects"""
+    context = ProcessingContext(qgis_session)
+    context.temporaryLayerStore().addMapLayer(points_3857)
+
+    inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
+
+    # No selection
+    value = inp.value({"source": points_3857.id()}, context)
+    assert value.source.staticValue() == points_3857.id()
+    assert not value.selectedFeaturesOnly
+
+    # Bare layer names are not accepted
+    with pytest.raises(ValidationError):
+        inp.value(points_3857.id(), context)
 
 
 def test_parameter_layer_featuresource_intersect_invalid_crs(
@@ -380,3 +406,73 @@ def test_parameter_alignrasterlayers(projects):
     print("\ntest_parameter_alignrasterlayers::value", value)
 
     assert param.checkValueIsAcceptable(value)
+
+
+#
+# Multiple layers values
+#
+
+
+@pytest.fixture()
+def project_ab() -> Iterator[QgsProject]:
+    """Project with two vector layers 'a' and 'b'"""
+    # Use the global project instance: a project created from python
+    # may be destroyed after QGIS exits (i.e held by a test traceback)
+    project = QgsProject.instance()
+    project.addMapLayers(
+        [
+            QgsVectorLayer("Point?crs=EPSG:4326", "a", "memory"),
+            QgsVectorLayer("Point?crs=EPSG:4326", "b", "memory"),
+        ],
+    )
+    yield project
+    project.removeAllMapLayers()
+
+
+def _context(config: ProcessingConfig, project: QgsProject) -> ProcessingContext:
+    context = ProcessingContext(config)
+    context.setProject(project)
+    return context
+
+
+def test_parameter_multiplelayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+    """Multiple layers are passed to QGIS as a list"""
+    param = QgsProcessingParameterMultipleLayers(
+        "Layers",
+        layerType=Qgis.ProcessingSourceType.VectorAnyGeometry,
+    )
+    context = _context(qgis_session, project_ab)
+
+    value = InputParameter(param, project_ab).value(["a", "b"], context)
+    assert isinstance(value, list)
+    assert sorted(value) == ["a", "b"]
+
+    assert param.checkValueIsAcceptable(value, context)
+    layers = QgsProcessingParameters.parameterAsLayerList(param, {"Layers": value}, context)
+    assert sorted(layer.name() for layer in layers) == ["a", "b"]
+
+
+def test_parameter_dxflayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+    """Dxf layers are passed to QGIS as a list"""
+    param = QgsProcessingParameterDxfLayers("Layers")
+    context = _context(qgis_session, project_ab)
+
+    value = InputParameter(param, project_ab).value(["a", "b"], context)
+    assert isinstance(value, list)
+    assert sorted(value) == ["a", "b"]
+
+    assert param.checkValueIsAcceptable(value, context)
+
+
+def test_parameter_tininputlayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+    """Each Tin input has a single layer source"""
+    param = QgsProcessingParameterTinInputLayers("Layers")
+    context = _context(qgis_session, project_ab)
+
+    value = InputParameter(param, project_ab).value(
+        [{"source": "a", "type": "0", "attributeIndex": "-1"}],
+        context,
+    )
+    assert value == [{"source": "a", "type": "0", "attributeIndex": "-1"}]
+
+    assert param.checkValueIsAcceptable(value, context)

@@ -38,3 +38,5 @@ class TestInputRasterLayer(QgsProcessingAlgorithm):
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         _layer = self.parameterAsRasterLayer(parameters, self.INPUT, context)
+
+        return {}

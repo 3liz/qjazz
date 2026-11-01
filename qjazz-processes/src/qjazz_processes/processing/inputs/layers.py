@@ -122,6 +122,12 @@ class ParameterMapLayer(InputParameter):
 
         return _type
 
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> Any:
+        _value = self.validate(inp)
+        # Multiple layers are validated as a set (unique items from the
+        # selectable layers) but QGIS expects a list
+        return list(_value) if self._multiple else _value
+
 
 #
 # QgsProcessingParameterMultipleLayers
@@ -240,36 +246,33 @@ class ParameterFeatureSource(ParameterMapLayer):
 
         has_selection = False
 
-        if isinstance(_inp, str):
-            source = _inp
-        else:
-            source = _inp.source
-            if context and (_inp.intersect or _inp.expression):
-                #
-                # Support feature selection
-                #
-                has_selection = True
+        source = _inp.source
+        if context and (_inp.intersect or _inp.expression):
+            #
+            # Support feature selection
+            #
+            has_selection = True
 
-                layer = context.getMapLayer(_inp.source)
-                if not layer:
-                    raise InputValueError(f"No layer '{_inp.source}' found")
+            layer = context.getMapLayer(_inp.source)
+            if not layer:
+                raise InputValueError(f"No layer '{_inp.source}' found")
 
-                if not isinstance(layer, QgsVectorLayer):
-                    raise InputValueError(f"'{_inp.source}' is not a vector layer")
+            if not isinstance(layer, QgsVectorLayer):
+                raise InputValueError(f"'{_inp.source}' is not a vector layer")
 
-                behavior = Qgis.SelectBehavior.SetSelection
+            behavior = Qgis.SelectBehavior.SetSelection
 
-                # Apply filter rect first
-                if _inp.intersect:
-                    logger.debug("Applying feature source intersect: %s", _inp.intersect)
-                    rect = self.intersect_rect(_inp.intersect, layer, context)
-                    layer.selectByRect(rect, behavior=behavior)
-                    behavior = Qgis.SelectBehavior.IntersectSelection
+            # Apply filter rect first
+            if _inp.intersect:
+                logger.debug("Applying feature source intersect: %s", _inp.intersect)
+                rect = self.intersect_rect(_inp.intersect, layer, context)
+                layer.selectByRect(rect, behavior=behavior)
+                behavior = Qgis.SelectBehavior.IntersectSelection
 
-                # Selection by expression
-                if _inp.expression:
-                    logger.debug("Applying feature source expression: %s", _inp.expression)
-                    layer.selectByExpression(_inp.expression, behavior=behavior)
+            # Selection by expression
+            if _inp.expression:
+                logger.debug("Applying feature source expression: %s", _inp.expression)
+                layer.selectByExpression(_inp.expression, behavior=behavior)
 
         return QgsProcessingFeatureSourceDefinition(source, selectedFeaturesOnly=has_selection)
 
@@ -407,7 +410,8 @@ class ParameterAnnotationLayer(ParameterMapLayer):
 
 
 class ParameterTinInputLayers(ParameterMapLayer):
-    _multiple = True
+    # Note: the value is a list of Tin inputs, each one
+    # with a single layer source (see 'create_model')
 
     @classmethod
     def compatible_layers(
