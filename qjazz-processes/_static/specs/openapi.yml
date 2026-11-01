@@ -527,8 +527,8 @@ definitions:
       rel:
         title: Rel
         type: string
-      mimeType:
-        title: Mimetype
+      type:
+        title: Type
         type: string
       title:
         default: ''
@@ -689,8 +689,8 @@ definitions:
       rel:
         title: Rel
         type: string
-      mimeType:
-        title: Mimetype
+      type:
+        title: Type
         type: string
       title:
         default: ''
@@ -1040,8 +1040,8 @@ definitions:
       rel:
         title: Rel
         type: string
-      mimeType:
-        title: Mimetype
+      type:
+        title: Type
         type: string
       title:
         default: ''
