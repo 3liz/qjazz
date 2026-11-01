@@ -349,22 +349,32 @@ def describe_process(
             if p.description:
                 echo(style(indent(p.description, "    "), italic=True))
 
-            def get_type(schema):  # -> Optional[str]:
-                return schema.get("format") or schema.get("contentMediaType") or schema.get("type")
+            def get_type(schema: dict) -> str:
+                ref = schema.get("$ref")
+                return (
+                    schema.get("format")
+                    or schema.get("contentMediaType")
+                    or schema.get("type")
+                    # Use the definition name for references
+                    or (ref and ref.rsplit("/", 1)[-1])
+                    or "..."
+                )
 
-            def format_type(schema):  # -> str:
-                if schema.get("oneOf"):
-                    one_of = schema["oneOf"]
-                    fmt = "|".join(get_type(t) for t in one_of if t)  # type: ignore [misc]
+            def format_type(schema: dict) -> str:
+                alternatives = schema.get("oneOf") or schema.get("anyOf")
+                if alternatives:
+                    fmt = "|".join(get_type(t) for t in alternatives if t)
                     fmt = f"({fmt})"
                 elif schema.get("type"):
                     match schema["type"]:
                         case "array":
-                            fmt = f"[{schema['items'].get('type') or '...'}]"
+                            items = schema.get("items")
+                            item_type = isinstance(items, dict) and items.get("type")
+                            fmt = f"[{item_type or '...'}]"
                         case other:
                             fmt = other
                 else:
-                    fmt = "..."
+                    fmt = get_type(schema)
                 return fmt
 
             def format_description(name: str, inp: InputDescription):
@@ -601,7 +611,7 @@ def list_jobs(
                         col = "red"
                     case "successful":
                         col = "green"
-                    case "started":
+                    case "running":
                         col = "yellow"
                     case _:
                         col = None
@@ -628,11 +638,13 @@ def list_jobs(
                     echo("-----------------------------------------------")
 
         if has_next:
-            try:
-                input("Press Enter to continue...")
-                index += limit
-            except EOFError:
-                break
+            if not json_format:
+                # Do not mix the prompt with json output
+                try:
+                    input("Press Enter to continue...")
+                except EOFError:
+                    break
+            index += limit
 
 
 @jobs.command("status")
@@ -712,4 +724,5 @@ def dump_json(v):
     return indent(v, "    ").lstrip()
 
 
-main()
+if __name__ == "__main__":
+    main()
