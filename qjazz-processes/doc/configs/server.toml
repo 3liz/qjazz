@@ -288,8 +288,10 @@ download_url_expiration = 3600
 #
 # Access TTL
 #
-# Lifetime given to a job store access since the job was scheduled
-# for execution; the access credentials will no be
+# Lifetime in seconds given to a job store access since the job
+# was scheduled for execution; the access credentials will no be
 # longer valid after this time.
+# The minimum lifetime is 900s, and the store backend may cap
+# the lifetime (e.g. 12h for RustFS and AWS).
 # 
-#access_ttl = 86400
+#access_ttl = 43200

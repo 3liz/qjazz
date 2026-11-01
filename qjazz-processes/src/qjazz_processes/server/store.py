@@ -24,12 +24,14 @@ class StoreConfig(config.ConfigBase):
     region: Option[str] = None
 
     access_ttl: PositiveInt = Field(
-        default=86400,
+        default=43200,
         title="Access TTL",
         description="""
-        Lifetime given to a job store access since the job was scheduled
-        for execution; the access credentials will no be
+        Lifetime in seconds given to a job store access since the job
+        was scheduled for execution; the access credentials will no be
         longer valid after this time.
+        The minimum lifetime is 900s, and the store backend may cap
+        the lifetime (e.g. 12h for RustFS and AWS).
         """,
     )
 

@@ -52,6 +52,8 @@ class StoreCreds:
     region: Optional[str] = None
     secure: bool = True
     cert_check: bool = True
+    # Set for temporary credentials
+    session_token: Optional[str] = None
 
 
 StoreClient: TypeAlias = Minio
@@ -63,6 +65,7 @@ def store_client(creds: StoreCreds) -> StoreClient:
         creds.endpoint,
         access_key=creds.access_key,
         secret_key=creds.secret_key,
+        session_token=creds.session_token,
         region=creds.region,
         secure=creds.secure,
         cert_check=creds.cert_check,

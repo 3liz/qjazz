@@ -30,6 +30,9 @@ def get_client(ctx: JobContext) -> StoreClient:
             access_key=creds["access_key"],
             secret_key=creds["secret_key"],
             secure=TypeAdapter(bool).validate_python(creds["secure"]),
+            cert_check=TypeAdapter(bool).validate_python(creds.get("cert_check", True)),
+            region=creds.get("region"),
+            session_token=creds.get("session_token"),
         ),
     )
 

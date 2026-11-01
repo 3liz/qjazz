@@ -1,41 +1,31 @@
 import asyncio
+import dataclasses
+import json
 import os
-import secrets
-import traceback
 
-from contextlib import contextmanager
-from datetime import datetime
 from importlib import resources
-from pathlib import Path
 from string import Template
-from tempfile import NamedTemporaryFile, gettempdir
-from time import time
-from typing import Generator, Optional, TypeAlias
+from typing import Optional
 
-from minio import Minio, MinioAdmin, credentials
+import certifi
+import urllib3
 
-from qjazz_core import logger
-from qjazz_core.utils import to_iso8601
+from minio.credentials import AssumeRoleProvider
 
 from .store import (
     StoreCreds,
+    StoreError,
     _create_store,
+    store_client,
+    store_error,
 )
 
-StoreClient: TypeAlias = Minio
+# Minimum duration of STS credentials
+MIN_ACCESS_TTL = 900
 
 
-def _passgen(nchars: int) -> str:
-    return secrets.token_hex(nchars // 2)
-
-
-STORE_TMPDIR_VAR = "QJAZZ_STORE_TMPDIR"
-
-
-@contextmanager
-def _read_policy(service: str, identity: str) -> Generator[Path, None, None]:
+def _read_policy(service: str, identity: str) -> str:
     """Read policy template for identity"""
-    tmpdir = Path(os.getenv(STORE_TMPDIR_VAR, gettempdir()))
     template_file = resources.files("qjazz_store").joinpath(  # type: ignore [call-arg]
         "templates",
         "store-policy.json",
@@ -45,15 +35,18 @@ def _read_policy(service: str, identity: str) -> Generator[Path, None, None]:
         template = f.read()
 
     content = Template(template).substitute(service=service, identity=identity)
-    # XXX with 3.12+ use delete_on_close=True
-    with NamedTemporaryFile(mode="w", suffix=".json", dir=tmpdir, delete=False) as dest:
-        dest.write(content)
-        dest.close()
-        path = Path(dest.name)
-        try:
-            yield path
-        finally:
-            path.unlink()
+    # Compact the policy: it is sent as a query parameter
+    return json.dumps(json.loads(content), separators=(",", ":"))
+
+
+def _http_client(creds: StoreCreds) -> urllib3.PoolManager:
+    # Same TLS settings as the Minio client
+    if creds.cert_check:
+        return urllib3.PoolManager(
+            cert_reqs="CERT_REQUIRED",
+            ca_certs=os.environ.get("SSL_CERT_FILE") or certifi.where(),
+        )
+    return urllib3.PoolManager(cert_reqs="CERT_NONE")
 
 
 def _setup_store(
@@ -63,88 +56,43 @@ def _setup_store(
     identity: str,
     ttl: int,
     location: Optional[str] = None,
-) -> tuple[str, str, str]:
-    """Setup a minio store for identity
+) -> StoreCreds:
+    """Setup a store for identity
 
-    Create a bucket 'service/'
+    Create a bucket 'service/' and return temporary
+    credentials restricted to the 'service/identity/' prefix.
     """
     # Do not forget to define SSL_CERT_FILE environment variable to point
     # to the CA file
-    m: Minio | MinioAdmin
-    m = Minio(
-        creds.endpoint,
+    with store_error():
+        _create_store(store_client(creds), service=service, location=location)
+
+    # Request temporary credentials with an inline session policy
+    # (STS AssumeRole): the effective permissions are the intersection
+    # of the policy and the permissions of the admin credentials.
+    # Note: the backend may cap the duration (e.g. 12h for RustFS and AWS)
+    scheme = "https" if creds.secure else "http"
+    provider = AssumeRoleProvider(
+        f"{scheme}://{creds.endpoint}",
         access_key=creds.access_key,
         secret_key=creds.secret_key,
-        secure=creds.secure,
-        cert_check=creds.cert_check,
-    )
-    # Create the bucket for the service
-    _create_store(m, service=service, location=location)
-
-    # Create the service account: (threaded)
-    # Read policy template
-    with _read_policy(service, identity) as policy:
-        m = MinioAdmin(
-            creds.endpoint,
-            credentials=credentials.StaticProvider(
-                access_key=creds.access_key,
-                secret_key=creds.secret_key,
-            ),
-            secure=creds.secure,
-            cert_check=creds.cert_check,
-        )
-        # Minio access_key length must be < 20
-        accnt_access_key = _passgen(20)
-        accnt_secret_key = _passgen(40)
-
-        # Minio require 15mn minimum expiration ttl
-        # XXX: Minio server return 500 if given an invalid date
-        expiration = to_iso8601(datetime.fromtimestamp(time() + max(ttl, 960)), timespec="seconds")
-
-        # Create service account
-        m.add_service_account(
-            access_key=accnt_access_key,
-            secret_key=accnt_secret_key,
-            # XXX Rule for service account name format is somewhat obscure....
-            # name=identity,
-            description=f"Store account for {service}/{identity}",
-            expiration=expiration,
-            policy_file=str(policy),
-        )
-        return (accnt_access_key, accnt_secret_key, expiration)
-
-
-def _delete_store_access(
-    creds: StoreCreds,
-    *,
-    account: str,
-):
-    m = MinioAdmin(
-        creds.endpoint,
-        credentials=credentials.StaticProvider(
-            access_key=creds.access_key,
-            secret_key=creds.secret_key,
-        ),
-        secure=creds.secure,
-        cert_check=creds.cert_check,
+        duration_seconds=max(ttl, MIN_ACCESS_TTL),
+        policy=_read_policy(service, identity),
+        region=creds.region,
+        http_client=_http_client(creds),
     )
     try:
-        m.delete_service_account(account)
-    except Exception:
-        logger.error(
-            "Delete store acces error for %s:\n%s",
-            creds.access_key,
-            traceback.format_exc(),
-        )
+        temp = provider.retrieve()
+    except ValueError as err:
+        # Raised by minio on HTTP error
+        raise StoreError(status=502, message=f"Failed to create store access: {err}") from None
 
-
-async def delete_store_access(
-    creds: StoreCreds,
-    *,
-    account: str,
-    endpoint: str,
-):
-    await asyncio.to_thread(_delete_store_access, creds, account=account)
+    return dataclasses.replace(
+        creds,
+        access_key=temp.access_key,
+        secret_key=temp.secret_key,
+        session_token=temp.session_token,
+    )
 
 
 async def create_store_access(
@@ -153,11 +101,12 @@ async def create_store_access(
     service: str,
     identity: str,
     ttl: int,
-) -> tuple[str, str, str]:
-    """Create a store access key
+) -> StoreCreds:
+    """Create a store access
 
-    Returns a wrapped data token with 'access_key' and 'secret_key'
-    valid for the 'ttl' duration is seconds
+    Returns temporary credentials restricted to the identity
+    prefix in the service bucket and valid for the 'ttl' duration
+    in seconds (minimum 900s).
     """
     return await asyncio.to_thread(
         _setup_store,

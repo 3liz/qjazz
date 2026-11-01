@@ -15,19 +15,11 @@ async def update_store_context(
     creds: StoreCreds,
     ttl: int,
 ):
-    (access_key, secret_key, _) = await create_store_access(
+    access_creds = await create_store_access(
         creds,
         service=service,
         identity=identity,
         ttl=ttl,
     )
 
-    context.update(
-        store_creds=dataclasses.asdict(
-            dataclasses.replace(
-                creds,
-                access_key=access_key,
-                secret_key=secret_key,
-            ),
-        ),
-    )
+    context.update(store_creds=dataclasses.asdict(access_creds))
