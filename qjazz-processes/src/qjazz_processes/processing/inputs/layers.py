@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -12,7 +13,7 @@ from typing import (
 )
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Extra, JsonValue
+from pydantic import BaseModel, JsonValue
 from qjazz_core import logger
 
 from qgis.core import (
@@ -63,7 +64,6 @@ from .base import (
 if TYPE_CHECKING:
     from qgis.core import (
         QgsProcessingDestinationParameter,
-        QgsProcessingParameterAggregate,
         QgsProcessingParameterMultipleLayers,
         QgsProcessingParameterVectorDestination,
     )
@@ -758,11 +758,30 @@ class ParameterBand(InputParameter):
 
 
 # See analyzing/processing/qgsalgorithmaggregate.cpp
+# Output field types of aggregates and their QVariant type and subtype
+# (see QgsFieldMappingModel.supportedDataTypes())
+AggregateFieldTypes = MappingProxyType(
+    {
+        "integer": (2, 0),
+        "int8": (4, 0),
+        "double precision": (6, 0),
+        "text": (10, 0),
+        "date": (14, 0),
+        "time": (15, 0),
+        "datetime": (16, 0),
+        "boolean": (1, 0),
+        "binary": (12, 0),
+        "stringlist": (11, 10),
+        "integerlist": (9, 2),
+        "doublelist": (9, 6),
+        "integer64list": (9, 4),
+    },
+)
+
+
 class AggregateItem(BaseModel, extra="allow"):
     name: str
-    type_: str = Field(alias="type")
-    type_name: Option[str] = None
-    sub_type: Option[int] = None
+    type_: Literal[tuple(AggregateFieldTypes)] = Field(alias="type")  # type: ignore [valid-type]
     input_: str = Field(alias="input")
     aggregate: str
     length: Option[int] = None
@@ -774,9 +793,12 @@ class ParameterAggregate(InputParameter):
     _ParameterType = Sequence[AggregateItem]
 
     @classmethod
-    def metadata(cls, param: "QgsProcessingParameterAggregate") -> list[Metadata]:
+    def metadata(cls, param: ParameterDefinition) -> list[Metadata]:
         md = super(ParameterAggregate, cls).metadata(param)
-        parent_layer_param = param.parentLayerParameterName()
+        # Note: the python bindings expose the parameter as a generic
+        # 'QgsProcessingParameterDefinition': read the parent layer
+        # from its definition
+        parent_layer_param = param.toVariantMap().get("parent_layer")
         if parent_layer_param:
             md.append(
                 MetadataValue(
@@ -784,12 +806,17 @@ class ParameterAggregate(InputParameter):
                     value=parent_layer_param,
                 ),
             )
-
         return md
 
-    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> dict:
+    def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> list[dict]:
         _inp = self.validate(inp)
-        return self._model.dump_python(_inp, mode="json", by_alias=True, exclude_none=True)
+        items = self._model.dump_python(_inp, mode="json", by_alias=True, exclude_none=True)
+        for item in items:
+            # QGIS expects the QVariant type and subtype of the output field
+            type_name = item["type"]
+            item["type"], item["sub_type"] = AggregateFieldTypes[type_name]
+            item["type_name"] = type_name
+        return items
 
 
 #

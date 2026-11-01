@@ -7,9 +7,12 @@ from pydantic import ValidationError
 
 from qgis.core import (
     Qgis,
+    QgsApplication,
     QgsFeature,
     QgsGeometry,
     QgsPointXY,
+    QgsProcessingContext,
+    QgsProcessingFeedback,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterDxfLayers,
@@ -476,3 +479,111 @@ def test_parameter_tininputlayers_value(qgis_session: ProcessingConfig, project_
     assert value == [{"source": "a", "type": "0", "attributeIndex": "-1"}]
 
     assert param.checkValueIsAcceptable(value, context)
+
+
+#
+# Aggregates
+#
+
+
+def _aggregates_param():
+    alg = QgsApplication.processingRegistry().algorithmById("native:aggregate")
+    assert alg is not None
+    return alg.parameterDefinition("AGGREGATES")
+
+
+def test_parameter_aggregate_metadata(qgis_session: ProcessingConfig):
+    """The parent layer is published although the parameter is a generic definition"""
+    inp = InputParameter(_aggregates_param())
+
+    metadata = {md.role: md.value for md in inp.description().metadata}
+    assert metadata["parentLayerParameterName"] == "INPUT"
+
+
+@pytest.mark.parametrize(
+    "type_name,type_,sub_type",
+    [
+        # From QgsFieldMappingModel.supportedDataTypes()
+        ("integer", 2, 0),
+        ("int8", 4, 0),
+        ("double precision", 6, 0),
+        ("text", 10, 0),
+        ("date", 14, 0),
+        ("time", 15, 0),
+        ("datetime", 16, 0),
+        ("boolean", 1, 0),
+        ("binary", 12, 0),
+        ("stringlist", 11, 10),
+        ("integerlist", 9, 2),
+        ("doublelist", 9, 6),
+        ("integer64list", 9, 4),
+    ],
+)
+def test_parameter_aggregate_types(
+    qgis_session: ProcessingConfig,
+    type_name: str,
+    type_: int,
+    sub_type: int,
+):
+    """Field type names are translated to QVariant types"""
+    param = _aggregates_param()
+    value = InputParameter(param).value(
+        [{"name": "out", "type": type_name, "input": '"f"', "aggregate": "first_value"}],
+    )
+    assert value == [
+        {
+            "name": "out",
+            "type": type_,
+            "sub_type": sub_type,
+            "type_name": type_name,
+            "input": '"f"',
+            "aggregate": "first_value",
+        },
+    ]
+    assert param.checkValueIsAcceptable(value)
+
+
+@pytest.mark.parametrize("type_", [6, "6", "double"])
+def test_parameter_aggregate_invalid_type(qgis_session: ProcessingConfig, type_: int | str):
+    with pytest.raises(ValidationError):
+        InputParameter(_aggregates_param()).value(
+            [{"name": "out", "type": type_, "input": '"f"', "aggregate": "sum"}],
+        )
+
+
+def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
+    """Run the aggregate algorithm with the converted definitions"""
+    layer = QgsVectorLayer("Polygon?crs=EPSG:3857&field=label:string", "polygons", "memory")
+    for label, wkt in (
+        ("a", "POLYGON((0 0,10 0,10 10,0 10,0 0))"),
+        ("b", "POLYGON((20 0,30 0,30 10,20 10,20 0))"),
+    ):
+        feature = QgsFeature(layer.fields())
+        feature.setAttribute("label", label)
+        feature.setGeometry(QgsGeometry.fromWkt(wkt))
+        layer.dataProvider().addFeature(feature)
+
+    aggregates = InputParameter(_aggregates_param()).value(
+        [
+            {"name": "total_area", "type": "double precision", "input": "$area", "aggregate": "sum"},
+            {"name": "labels", "type": "text", "input": '"label"', "aggregate": "concatenate"},
+            {"name": "count", "type": "integer", "input": '"label"', "aggregate": "count"},
+        ],
+    )
+
+    context = QgsProcessingContext()
+    alg = QgsApplication.processingRegistry().algorithmById("native:aggregate")
+    results, ok = alg.run(
+        {"INPUT": layer, "GROUP_BY": "NULL", "AGGREGATES": aggregates, "OUTPUT": "memory:"},
+        context,
+        QgsProcessingFeedback(),
+    )
+    assert ok
+
+    output = context.getMapLayer(results["OUTPUT"])
+    fields = {f.name(): f.type() for f in output.fields()}
+    assert fields == {"total_area": 6, "labels": 10, "count": 2}
+
+    feature = next(output.getFeatures())
+    assert feature["total_area"] == 200.0
+    assert feature["count"] == 2
