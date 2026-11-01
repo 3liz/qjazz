@@ -22,6 +22,7 @@ from qgis.core import (
     QgsProcessingParameterFieldMapping,
     QgsProcessingParameterMapLayer,
     QgsProcessingParameterMultipleLayers,
+    QgsProcessingParameterPointCloudAttribute,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameters,
@@ -43,6 +44,7 @@ from qjazz_processes.processing.inputs.layers import (
     ParameterFieldMapping,
     ParameterMapLayer,
     ParameterMultipleLayers,
+    ParameterPointCloudAttribute,
     ParameterRasterDestination,
     ParameterRasterLayer,
     ParameterTinInputLayers,
@@ -369,6 +371,67 @@ def test_parameter_field():
     print("\ntest_parameter_field::multiple", schema)
     assert schema["type"] == "array"
     assert schema["minItems"] == 1
+
+
+def test_parameter_pointcloud_attribute():
+    param = QgsProcessingParameterPointCloudAttribute(
+        "Attribute",
+        defaultValue="Z",
+        parentLayerParameterName="ParentLayer",
+    )
+
+    inp = InputParameter(param)
+    assert isinstance(inp, ParameterPointCloudAttribute)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_pointcloud_attribute::", schema)
+    assert schema["type"] == "string"
+    assert schema["default"] == "Z"
+
+    md = inp.metadata(param)
+    print("test_parameter_pointcloud_attribute::metadata", md)
+    assert meta(md, "typeName") == "attribute"
+    assert meta(md, "parentLayerParameterName") == "ParentLayer"
+    assert meta(md, "defaultToAllAttributes") is False
+
+    value = inp.value("Intensity")
+    assert value == "Intensity"
+    assert param.checkValueIsAcceptable(value)
+
+    with pytest.raises(ValidationError):
+        inp.value(["X", "Y"])
+
+
+def test_parameter_pointcloud_attribute_multiple():
+    param = QgsProcessingParameterPointCloudAttribute(
+        "Attribute",
+        defaultValue="X;Y",
+        parentLayerParameterName="ParentLayer",
+        allowMultiple=True,
+        defaultToAllAttributes=True,
+    )
+
+    inp = InputParameter(param)
+    schema = inp.json_schema()
+    print("\ntest_parameter_pointcloud_attribute_multiple::", schema)
+    assert schema["type"] == "array"
+    assert schema["minItems"] == 1
+    # The ';' delimited default is published as a list
+    assert schema["default"] == ["X", "Y"]
+
+    md = inp.metadata(param)
+    assert meta(md, "defaultToAllAttributes") is True
+
+    value = inp.value(["X", "Intensity"])
+    assert param.checkValueIsAcceptable(value)
+    assert QgsProcessingParameters.parameterAsStrings(
+        param,
+        {"Attribute": value},
+        QgsProcessingContext(),
+    ) == ["X", "Intensity"]
+
+    with pytest.raises(ValidationError):
+        inp.value([])
 
 
 def test_parameter_fieldmapping():

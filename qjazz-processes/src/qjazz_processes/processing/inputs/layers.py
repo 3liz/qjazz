@@ -28,6 +28,7 @@ from qgis.core import (
     QgsProcessingParameterField,
     QgsProcessingParameterFieldMapping,
     QgsProcessingParameterLimitedDataTypes,
+    QgsProcessingParameterPointCloudAttribute,
     QgsProject,
     QgsRectangle,
     QgsVectorLayer,
@@ -638,6 +639,57 @@ class ParameterField(InputParameter):
     def create_model(
         cls,
         param: QgsProcessingParameterField,
+        field: dict,
+        project: Optional[QgsProject] = None,
+        validation_only: bool = False,
+    ) -> TypeAlias:
+        _type: Any = str
+
+        if param.allowMultiple():
+            _type = Annotated[list[_type], Field(min_length=1)]  # type: ignore [misc]
+
+        return _type
+
+
+#
+# QgsProcessingParameterPointCloudAttribute
+#
+
+
+class ParameterPointCloudAttribute(InputParameter):
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterPointCloudAttribute) -> list[Metadata]:
+        md = super(ParameterPointCloudAttribute, cls).metadata(param)
+        md.append(
+            MetadataValue(
+                role="defaultToAllAttributes",
+                value=param.defaultToAllAttributes(),
+            ),
+        )
+
+        parent_layer_param = param.parentLayerParameterName()
+        if parent_layer_param:
+            md.append(
+                MetadataValue(
+                    role="parentLayerParameterName",
+                    value=parent_layer_param,
+                ),
+            )
+
+        return md
+
+    @classmethod
+    def default_value(cls, param: QgsProcessingParameterPointCloudAttribute) -> Optional[str | list[str]]:
+        default = super(ParameterPointCloudAttribute, cls).default_value(param)
+        # Multiple attributes default is a ';' delimited list
+        if default and param.allowMultiple() and isinstance(default, str):
+            default = default.split(";")
+        return default
+
+    @classmethod
+    def create_model(
+        cls,
+        param: QgsProcessingParameterPointCloudAttribute,
         field: dict,
         project: Optional[QgsProject] = None,
         validation_only: bool = False,

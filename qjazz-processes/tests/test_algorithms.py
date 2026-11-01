@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from qjazz_core.qgis import QgisPluginService
+
 from qgis.core import (
     Qgis,
     QgsProcessingOutputLayerDefinition,
@@ -37,6 +39,29 @@ def test_algorithms_integer_with_float_bounds_description(plugins):
 
     description = pa.description()
     assert description.inputs["K_PARAMETER"].schema_["minimum"] == 1
+
+
+@pytest.mark.parametrize(
+    "ident,expected",
+    [
+        ("pdal:exportraster", {"type": "string", "default": "Z"}),
+        # Optional, multiple attributes
+        ("pdal:exportvector", {"type": "array", "items": {"type": "string"}, "minItems": 1}),
+    ],
+)
+def test_algorithms_pointcloud_attribute_description(
+    plugins: QgisPluginService,
+    ident: str,
+    expected: dict,
+):
+    """Algorithms with a point cloud attribute parameter"""
+    pa = ProcessAlgorithm.find_algorithm(ident)
+    if pa is None:
+        # The PDAL provider may not be available
+        pytest.skip(f"{ident} not available")
+
+    description = pa.description()
+    assert description.inputs["ATTRIBUTE"].schema_ == expected
 
 
 def test_algorithms_simple(feedback, context, plugins):

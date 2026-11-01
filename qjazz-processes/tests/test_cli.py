@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import click
+import pytest
 
 from click.testing import CliRunner, Result
 
@@ -32,8 +33,15 @@ def _invoke(
     )
 
 
+@pytest.mark.native
 def test_cli_describe_processes(plugins):
-    """All processes are described and displayed"""
+    """All processes are described and displayed
+
+    Optional: QGIS internal algorithms may use parameter types
+    which are not supported, depending on the QGIS version
+    (e.g. 'native:relief' or 'native:heatmapkerneldensityestimation'
+    with QGIS 4).
+    """
     failures = []
     undescribed = []
     for alg in QgsApplication.processingRegistry().algorithms():

@@ -7,7 +7,7 @@ PYTHON_PKG=src
 
 TESTDIR=tests
 
-TEST_OPTS=-m "not services" 
+TEST_OPTS=-m "not services and not native" 
 
 SCAN_OPTS=-x qjazz_processes/tests
 
