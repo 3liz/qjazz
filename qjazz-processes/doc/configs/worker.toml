@@ -225,12 +225,18 @@ config = {}
 # 
 #workdir =   	# Required
 #
-# Internal qgis providers exposed
+# Exposed internal providers
 #
-# List of exposed QGIS processing internal providers.
-# NOTE: It is not recommended exposing all providers like
-# `qgis` or `native`, instead provide your own wrapping
-# algorithm, script or model.
+# List of exposed QGIS internal processing providers.
+# Providers registered by plugins are always exposed; this
+# list sets which QGIS internal providers are exposed in
+# addition, if they are loaded.
+# The 'grass' and 'otb' providers loaded with the plugins
+# 'extra_builtin_providers' option must be listed here
+# for being exposed.
+# NOTE: It is not recommended exposing the 'native' provider,
+# instead provide your own wrapping algorithm, script or model.
+# The 'qgis' provider is not supported.
 # 
 exposed_providers = ["script", "model"]
 #
@@ -476,11 +482,6 @@ plugins_repository = "https://qgis-plugins.3liz.org/"
 # - rest: use a yapt rest api
 # - qgis-xml: use a xml qgis-compatible index
 plugins_repository_type = "rest"
-#
-# Enable processing scripts
-#
-# Enable publication of processing scripts
-enable_scripts = true
 #
 # Extra builtins providers
 #

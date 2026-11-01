@@ -57,7 +57,10 @@ class QgisProcessingContext(QgisContext):
     def processes(self) -> list[ProcessSummary]:
         """List proceses"""
         include_deprecated = self.processing_config.expose_deprecated_algorithms
-        algs = ProcessAlgorithm.algorithms(include_deprecated=include_deprecated)
+        algs = ProcessAlgorithm.algorithms(
+            include_deprecated=include_deprecated,
+            exposed_providers=self.processing_config.exposed_providers,
+        )
         return [alg.summary() for alg in algs]
 
     def describe(self, ident: str, project_path: Optional[str]) -> ProcessDescription | None:

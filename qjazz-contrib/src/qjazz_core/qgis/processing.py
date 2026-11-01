@@ -31,7 +31,7 @@ class ProcessesConfig(BaseModel):
 
 
 class ProcessesLoader:
-    def __init__(self, providers: list[str], allow_scripts: bool = True):
+    def __init__(self, providers: list[str]):
         self._discard: set[str] = set()
         self._providers = providers
         self._register = False
@@ -39,10 +39,8 @@ class ProcessesLoader:
         reg = assert_not_none(QgsApplication.processingRegistry())
         reg.providerAdded.connect(self._registerProvider)
 
-        # Support models and script
-        for ident in ("model", "script") if allow_scripts else ("model",):
-            if reg.providerById(ident):
-                self._providers.append(ident)
+        # Note: the 'model' and 'script' providers are registered when initializing
+        # QGIS processing; they are not published here (see the processing configuration)
 
     def load_builtin_providers(self, extras: BuiltinProviderSet) -> Sequence[QgsProcessingProvider]:
         #

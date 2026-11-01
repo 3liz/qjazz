@@ -1,4 +1,5 @@
 from functools import cached_property
+from itertools import chain
 from typing import (
     Any,
     Iterator,
@@ -16,6 +17,7 @@ from qgis.core import (
     QgsApplication,
     QgsProcessingAlgorithm,
     QgsProcessingFeedback,
+    QgsProcessingProvider,
     QgsProject,
 )
 
@@ -43,14 +45,34 @@ class ProcessAlgorithm:
         cls,
         include_deprecated: bool = False,
         providers: Sequence[str] = (),
+        exposed_providers: Sequence[str] = (),
     ) -> Iterator[Self]:
-        """Iterate over all published algorithms"""
-        for provider in QgisPluginService.get_service().providers:
+        """Iterate over all published algorithms
+
+        Published algorithms are those of the providers registered
+        by plugins and of the exposed QGIS internal providers.
+        """
+        for provider in cls.published_providers(exposed_providers):
             if providers and provider.id() not in providers:
                 continue
             for alg in provider.algorithms():
                 if not cls.hidden(alg) and (include_deprecated or not cls._deprecated(alg)):
                     yield cls(alg)
+
+    @staticmethod
+    def published_providers(exposed_providers: Sequence[str] = ()) -> Iterator[QgsProcessingProvider]:
+        """Providers registered by plugins and exposed QGIS internal providers"""
+        reg = assert_not_none(QgsApplication.processingRegistry())
+        exposed = (p for ident in exposed_providers if (p := reg.providerById(ident)) is not None)
+
+        # Deduplicate: a provider registered by a plugin may also be listed in the
+        # exposed providers, or a provider may be listed more than once; otherwise
+        # its algorithms would be published twice.
+        published: set[str] = set()
+        for provider in chain(QgisPluginService.get_service().providers, exposed):
+            if provider.id() not in published:
+                published.add(provider.id())
+                yield provider
 
     @classmethod
     def find_algorithm(cls, ident: str) -> Optional[Self]:

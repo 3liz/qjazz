@@ -322,11 +322,6 @@ plugins_repository = "https://qgis-plugins.3liz.org/"
 # - qgis-xml: use a xml qgis-compatible index
 plugins_repository_type = "rest"
 #
-# Enable processing scripts
-#
-# Enable publication of processing scripts
-enable_scripts = true
-#
 # Extra builtins providers
 #
 # Load extra builtin processing providers

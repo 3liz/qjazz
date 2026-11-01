@@ -61,12 +61,18 @@ class ProcessingConfig(ConfigBase):
     )
     exposed_providers: list[str] = Field(
         default=["script", "model"],
-        title="Internal qgis providers exposed",
+        title="Exposed internal providers",
         description="""
-        List of exposed QGIS processing internal providers.
-        NOTE: It is not recommended exposing all providers like
-        `qgis` or `native`, instead provide your own wrapping
-        algorithm, script or model.
+        List of exposed QGIS internal processing providers.
+        Providers registered by plugins are always exposed; this
+        list sets which QGIS internal providers are exposed in
+        addition, if they are loaded.
+        The 'grass' and 'otb' providers loaded with the plugins
+        'extra_builtin_providers' option must be listed here
+        for being exposed.
+        NOTE: It is not recommended exposing the 'native' provider,
+        instead provide your own wrapping algorithm, script or model.
+        The 'qgis' provider is not supported.
         """,
     )
     expose_deprecated_algorithms: bool = Field(

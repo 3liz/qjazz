@@ -14,6 +14,6 @@ def test_processing_plugin(plugindir):
     s = QgisPluginService(config)
     s.load_plugins(PluginType.PROCESSING, None)
 
-    providers = list(s.providers)
-    assert len(providers) == 3
-    assert "processing_test" in {p.id() for p in providers}
+    # Only providers registered by plugins: QGIS internal
+    # providers ('model', 'script', ...) are not published here
+    assert [p.id() for p in s.providers] == ["processing_test"]

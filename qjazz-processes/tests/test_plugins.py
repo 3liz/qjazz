@@ -5,6 +5,7 @@ from qgis.core import (
 )
 
 from qjazz_processes.processing.config import ProcessingConfig
+from qjazz_processes.processing.prelude import ProcessAlgorithm
 
 
 def test_plugins_provider(
@@ -41,6 +42,7 @@ def test_plugins_provider(
 
     print("test_plugins_provider:provider", [a.id() for a in provider.algorithms()])
 
-    # Check that models and scripts are published:
-    assert "model" in plugins._providers
-    assert "script" in plugins._providers
+    # Check that models and scripts are published with the
+    # default 'exposed_providers' configuration
+    published = ProcessAlgorithm.published_providers(qgis_session.exposed_providers)
+    assert {p.id() for p in published} == {"processes_test", "model", "script"}

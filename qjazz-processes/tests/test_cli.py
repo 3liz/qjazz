@@ -33,15 +33,18 @@ def _invoke(
 
 
 def test_cli_describe_processes(plugins):
-    """All processes that can be described are displayed"""
+    """All processes are described and displayed"""
     failures = []
     undescribed = []
     for alg in QgsApplication.processingRegistry().algorithms():
+        if alg.provider().id() == "qgis":
+            # The 'qgis' provider (python processing plugin) is internal to QGIS
+            # and not supported: some of its algorithms use custom parameter types
+            continue
         try:
             description = ProcessAlgorithm(alg).description()
-        except Exception:
-            # Not supported by processing inputs (see N9 in ANALYSE_PROCESSES.md)
-            undescribed.append(alg.id())
+        except Exception as err:
+            undescribed.append(f"{alg.id()}: {err!r}")
             continue
 
         executor = SimpleNamespace(
@@ -52,9 +55,8 @@ def test_cli_describe_processes(plugins):
         if result.exit_code != 0:
             failures.append(f"{alg.id()}: {result.exception!r}")
 
+    assert undescribed == []
     assert failures == []
-    # The CLI is not the reason why processes cannot be described
-    assert len(undescribed) < 10, undescribed
 
 
 def _jobs(count: int, status: str = "successful") -> list[JobStatus]:

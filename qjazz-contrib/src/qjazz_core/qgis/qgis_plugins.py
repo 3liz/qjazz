@@ -130,11 +130,6 @@ class QgisPluginConfig(config.ConfigBase):
             "- qgis-xml: use a xml qgis-compatible index"
         ),
     )
-    enable_scripts: bool = Field(
-        default=True,
-        title="Enable processing scripts",
-        description="Enable publication of processing scripts",
-    )
     extra_builtin_providers: BuiltinProviderSet = Field(
         default=set(),
         title="Extra builtins providers",
@@ -209,7 +204,7 @@ class QgisPluginService:
         if plugin_type == PluginType.PROCESSING:
             from .processing import ProcessesLoader
 
-            processes = ProcessesLoader(self._providers, allow_scripts=self._config.enable_scripts)
+            processes = ProcessesLoader(self._providers)
             # Load extra builtins
             extras = self._config.extra_builtin_providers
             if extras:

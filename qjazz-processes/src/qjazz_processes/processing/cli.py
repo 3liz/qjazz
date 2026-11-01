@@ -265,6 +265,7 @@ def list_processes(
     algs = ProcessAlgorithm.algorithms(
         include_deprecated=deprecated,
         providers=(provider,) if provider else (),
+        exposed_providers=conf.processing.exposed_providers,
     )
 
     if json_format:
