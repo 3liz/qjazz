@@ -184,6 +184,21 @@ UOM = MappingProxyType(
         "milliseconds": (UCUM, "ms"),
         "decades": (UCUM, "10.a"),
         "centuries": (UCUM, "100.a"),
+        # Area units
+        "square meters": (UCUM, "m2"),
+        "square kilometers": (UCUM, "km2"),
+        "square centimeters": (UCUM, "cm2"),
+        "square millimeters": (UCUM, "mm2"),
+        "hectares": (UCUM, "har"),
+        "square feet": (UCUM, "[sft_i]"),
+        "square yards": (UCUM, "[syd_i]"),
+        "square inches": (UCUM, "[sin_i]"),
+        # International mile, as in QGIS ('[smi_us]' is the US survey mile)
+        "square miles": (UCUM, "[mi_i]2"),
+        # International acre, as in QGIS ('[acr_us]' and '[acr_br]' differ slightly)
+        "acres": (UCUM, "4840.[syd_i]"),
+        "square nautical miles": (UCUM, "[nmi_i]2"),
+        "square degrees": (UCUM, "deg2"),
     }
 )
 

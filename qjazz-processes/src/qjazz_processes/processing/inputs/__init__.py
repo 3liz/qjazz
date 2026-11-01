@@ -13,6 +13,7 @@ from qgis.core import (
     QgsProcessingParameterAggregate,
     QgsProcessingParameterAlignRasterLayers,
     QgsProcessingParameterAnnotationLayer,
+    QgsProcessingParameterArea,
     QgsProcessingParameterAuthConfig,
     QgsProcessingParameterBand,
     QgsProcessingParameterBoolean,
@@ -107,6 +108,7 @@ from .layers import (
     ParameterVectorTileWriterLayers,
 )
 from .literal import (
+    ParameterArea,
     ParameterAuthConfig,
     ParameterBool,
     ParameterColor,
@@ -137,6 +139,7 @@ InputTypes = MappingProxyType(
     {
         QgsProcessingParameterAggregate.typeName(): ParameterAggregate,
         QgsProcessingParameterAlignRasterLayers.typeName(): ParameterAlignRasterLayers,
+        QgsProcessingParameterArea.typeName(): ParameterArea,
         QgsProcessingParameterAnnotationLayer.typeName(): ParameterAnnotationLayer,
         QgsProcessingParameterAuthConfig.typeName(): ParameterAuthConfig,
         QgsProcessingParameterBand.typeName(): ParameterBand,

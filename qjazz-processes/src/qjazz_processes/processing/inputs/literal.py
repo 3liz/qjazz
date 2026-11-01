@@ -14,6 +14,7 @@ from pydantic_extra_types.color import Color
 
 from qgis.core import (
     Qgis,
+    QgsProcessingParameterArea,
     QgsProcessingParameterColor,
     QgsProcessingParameterDatabaseSchema,
     QgsProcessingParameterDatabaseTable,
@@ -194,6 +195,52 @@ class ParameterNumber(InputParameter):
                 raise InputValueError(f"Invalid type for number: {invalid}")
 
         return _type
+
+
+#
+# QgsProcessingParameterArea
+#
+
+
+class ParameterArea(ParameterNumber):
+    @classmethod
+    def metadata(cls, param: QgsProcessingParameterArea) -> list[Metadata]:
+        md = super(ParameterArea, cls).metadata(param)
+        # Note: there is no OGC data type for area
+        md.append(MetadataLink(role="ogcType", href=OgcDataType["measure"], title="measure"))
+
+        unit = param.defaultUnit()
+        if unit != Qgis.AreaUnit.Unknown:
+            uom = QgsUnitTypes.toString(unit)
+            ref = ogc.uom_ref(uom)
+            if ref:
+                md.append(
+                    MetadataLink(
+                        role="uom",
+                        href=ref,
+                        title=uom,
+                    ),
+                )
+            else:
+                # No standard reference found
+                md.append(
+                    MetadataValue(
+                        role="uom",
+                        title=uom,
+                        value=QgsUnitTypes.toAbbreviatedString(unit),
+                    ),
+                )
+
+        parent_param = param.parentParameterName()
+        if parent_param:
+            md.append(
+                MetadataValue(
+                    role="parentParameterName",
+                    value=parent_param,
+                ),
+            )
+
+        return md
 
 
 #

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+* [qjazz-processes] Add support for QgsProcessingParamaterArea
 * [qjazz-processes] Fix ParameterEnum default value(s)"
 * [qjazz-processes] Fix static crs in ParameterCoordinateOperation
 * [qjazz-processes] Handle command exceptions and timeout

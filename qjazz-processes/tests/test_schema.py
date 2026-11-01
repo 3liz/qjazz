@@ -7,6 +7,14 @@ from qgis.core import Qgis, QgsUnitTypes
 from qjazz_processes.schemas import input_model_description, ogc
 
 
+def test_uom_area_schema():
+    # Test area UOM schema
+    for u in Qgis.AreaUnit:
+        if u == Qgis.AreaUnit.Unknown:
+            continue
+        assert ogc.UOM.get(QgsUnitTypes.toString(u)) is not None, u
+
+
 def test_uom_distance_schema():
     # Test distance UOM schema
     for u in Qgis.DistanceUnit:

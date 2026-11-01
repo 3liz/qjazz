@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from qgis.core import (
     Qgis,
+    QgsProcessingParameterArea,
     QgsProcessingParameterBand,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterColor,
@@ -217,6 +218,27 @@ def test_parameter_distance():
 
     assert metadata["ogcType"].href == ogc.OgcDataType["length"]
     assert metadata["uom"].href == ogc.uom_ref("m")
+
+
+def test_parameter_area():
+    param = QgsProcessingParameterArea("Area", parentParameterName="INPUT")
+    param.setDefaultUnit(Qgis.AreaUnit.SquareMeters)
+
+    inp = InputParameter(param)
+
+    schema = inp.json_schema()
+    print("\ntest_parameter_area::", schema)
+    assert schema["type"] == "number"
+
+    metadata = {m.role: m for m in inp.metadata(param)}
+    assert metadata["ogcType"].href == ogc.OgcDataType["measure"]
+    assert metadata["uom"].href == "urn:ogc:def:uom:UCUM:m2"
+    assert metadata["parentParameterName"].value == "INPUT"
+
+    # Unknown unit: no unit of measure
+    param.setDefaultUnit(Qgis.AreaUnit.Unknown)
+    metadata = {m.role: m for m in InputParameter(param).metadata(param)}
+    assert "uom" not in metadata
 
 
 def test_parameter_scale():
