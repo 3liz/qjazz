@@ -31,6 +31,10 @@ from qjazz_core.models import (
     one_of,  # noqa F401
 )
 
+# Service name: force service name to be compliant
+# with AWS bucket name.
+ServiceName = Annotated[str, Field(pattern=r"^[a-z0-9]+$")]
+
 
 class _LinkBase(JsonModel):
     # The type or semantics of the relation.

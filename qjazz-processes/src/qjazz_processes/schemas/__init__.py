@@ -50,6 +50,7 @@ from .models import (  # noqa F401
     InputValueError,
     QualifiedInputValue,
     RefOrQualifiedInput,
+    ServiceName,
 )
 
 from .utils import (  # noqa F401

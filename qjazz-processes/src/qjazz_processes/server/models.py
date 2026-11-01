@@ -11,9 +11,11 @@ from aiohttp import web
 from pydantic import (
     JsonValue,
     TypeAdapter,
+    ValidationError,
 )
 from qjazz_core.models import Field, Option
 
+from ..schemas import ServiceName
 from .swagger import JsonModel, model
 
 OGC_EXCEPTION_URI = "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0"
@@ -92,3 +94,19 @@ RequestHandler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
 # Validators
 BoolParam: TypeAdapter[bool] = TypeAdapter(bool)
+ServiceNameParam: TypeAdapter[str] = TypeAdapter(ServiceName)
+
+
+def validate_service_name(service: str) -> str:
+    """Validate a service name from request parameters
+
+    The service name is used in registry key patterns
+    """
+    try:
+        return ServiceNameParam.validate_python(service)
+    except ValidationError:
+        ErrorResponse.raises(
+            web.HTTPBadRequest,
+            "Invalid service name",
+            details={"service": service},
+        )

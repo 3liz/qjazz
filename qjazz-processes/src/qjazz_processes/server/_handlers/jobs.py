@@ -24,6 +24,7 @@ from .protos import (
     make_link,
     swagger,
     validate_param,
+    validate_service_name,
 )
 
 
@@ -210,6 +211,8 @@ class Jobs(HandlerProto):
         # Allow passing service as query parameter
         # Otherwise returns all jobs for all services
         service = request.query.get("service")
+        if service:
+            service = validate_service_name(service)
 
         limit = validate_param(LimitParam, request, "limit", 10)
         page = validate_param(PageParam, request, "page", 1)

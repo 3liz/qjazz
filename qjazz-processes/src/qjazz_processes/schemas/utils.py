@@ -46,7 +46,7 @@ def input_model_description(
     cleanup_schema(schema)
 
     return InputDescription(
-        title=title,
+        title=title or "",
         description=description,
         schema=schema,
         value_passing=value_passing or ("byValue",),

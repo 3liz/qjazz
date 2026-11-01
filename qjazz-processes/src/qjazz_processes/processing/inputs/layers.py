@@ -362,7 +362,7 @@ class ParameterVectorTileWriterLayers(ParameterMapLayer):
         # Inputs are List of dict
         # Build intermediate representation for
         # enforcing constraints
-        class TileWriter(BaseModel, extra=Extra.allow):
+        class TileWriter(BaseModel, extra='allow'):
             layer: _type
 
         return Sequence[TileWriter]

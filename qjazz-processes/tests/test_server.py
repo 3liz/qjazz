@@ -33,7 +33,7 @@ async def test_server_processes(workdir: Path, http_client: TestClient):
     #
 
     resp = await http_client.get(
-        "/processes/model:centroides?service=Test&map=/france/france_parts",
+        "/processes/model:centroides?service=test&map=/france/france_parts",
     )
     assert resp.status == 200
 
@@ -47,7 +47,7 @@ async def test_server_processes(workdir: Path, http_client: TestClient):
     #
 
     resp = await http_client.post(
-        "/processes/model:centroides/execution?service=Test&map=/france/france_parts",
+        "/processes/model:centroides/execution?service=test&map=/france/france_parts",
         json={
             "inputs": {
                 "input": "france_parts",

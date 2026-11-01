@@ -324,6 +324,18 @@ def test_job_exceptions(host, data):
         requests.delete(f"{host}/jobs/{job_id}")
 
 
+def test_job_list_invalid_service(host):
+    """ Test that service names are validated in job listing
+    """
+    rv = requests.get(f"{host}/jobs/", params={"service": "test"})
+    assert rv.status_code == 200
+
+    for service in ("*", "[a-z]*", "t?st", "Test"):
+        rv = requests.get(f"{host}/jobs/", params={"service": service})
+        assert rv.status_code == 400, service
+        assert rv.json()["details"] == {"service": service}
+
+
 def test_invalid_job_id(host, data):
     """ Test that glob patterns are rejected as job id
     """

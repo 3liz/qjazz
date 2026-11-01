@@ -8,7 +8,7 @@ from qjazz_core.config import ConfigBase
 from qjazz_core.models import Field
 
 from ..accesspolicy import AccessPolicy
-from ..models import ErrorResponse
+from ..models import ErrorResponse, validate_service_name
 
 
 #
@@ -57,7 +57,9 @@ class DefaultAccessPolicy(AccessPolicy):
     def get_service(self, request: web.Request) -> str:
         """Return the defined service for the request"""
         service = request.query.get("service")
-        if not service:
+        if service:
+            service = validate_service_name(service)
+        else:
             for service in self._service_order:
                 if self.executor.known_service(service):
                     break

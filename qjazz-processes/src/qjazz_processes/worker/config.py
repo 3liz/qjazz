@@ -6,7 +6,6 @@ import sys
 
 from pathlib import Path
 from typing import (
-    Annotated,
     Optional,
     Protocol,
     Sequence,
@@ -20,7 +19,7 @@ from qjazz_core.condition import (
 )
 from qjazz_core.models import Field
 
-from qjazz_processes.schemas import LinkHttp
+from qjazz_processes.schemas import LinkHttp, ServiceName
 
 from ..callbacks import CallbacksConfig
 from .storage import StorageConfig
@@ -55,9 +54,6 @@ def lookup_config_path() -> Optional[Path]:
 #
 # Worker configuration
 #
-
-# Force service name to be compliant with AWS bucket name.
-ServiceName = Annotated[str, Field(pattern=r"^[a-z0-9]+$")]
 
 
 class WorkerConfig(CeleryConfig):
