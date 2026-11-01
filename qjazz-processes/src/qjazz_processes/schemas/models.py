@@ -3,6 +3,7 @@ import mimetypes
 
 from typing import (
     Annotated,
+    Any,
     Literal,
     Optional,
     Protocol,
@@ -90,6 +91,31 @@ class MediaTypeProtocol(Protocol):
     def media_type(self) -> str: ...
 
 
+def MediaTypeField(
+    media_type: str,
+    *,
+    encoding: Optional[str] = None,
+    schema: Optional[dict] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Any:
+    """Media type field for use in 'Annotated' metadata
+
+    Unlike 'MediaType', may be used in static type aliases.
+    """
+    schema_extra: dict = {"contentMediaType": media_type}
+    if encoding:
+        schema_extra.update(contentEncoding=encoding)
+    if schema:
+        schema_extra.update(contentSchema=schema)
+
+    return Field(
+        title=title,
+        description=description,
+        json_schema_extra=schema_extra,
+    )
+
+
 def MediaType(
     _type: Type,
     media_type: str,
@@ -99,18 +125,14 @@ def MediaType(
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> TypeAlias:
-    schema_extra: dict = {"contentMediaType": media_type}
-    if encoding:
-        schema_extra.update(contentEncoding=encoding)
-    if schema:
-        schema_extra.update(contentSchema=schema)
-
     return Annotated[
         _type,
-        Field(
+        MediaTypeField(
+            media_type,
+            encoding=encoding,
+            schema=schema,
             title=title,
             description=description,
-            json_schema_extra=schema_extra,
         ),
     ]
 

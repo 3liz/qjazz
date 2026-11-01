@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, cast
 
 import pytest
 
 from pydantic import ValidationError
+from qjazz_core.condition import unwrap
 
 from qgis.core import (
     Qgis,
@@ -116,7 +117,7 @@ def points_3857() -> QgsVectorLayer:
     for x, y in ((261845.7, 6250566.7), (0.0, 0.0)):
         feature = QgsFeature()
         feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
-        layer.dataProvider().addFeature(feature)
+        unwrap(layer.dataProvider()).addFeature(feature)
     return layer
 
 
@@ -139,7 +140,7 @@ def test_parameter_layer_featuresource_intersect(
     expected: list[int],
 ):
     context = ProcessingContext(qgis_session)
-    context.temporaryLayerStore().addMapLayer(points_3857)
+    unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
     value = inp.value({"source": points_3857.id(), "intersect": intersect}, context)
@@ -154,7 +155,7 @@ def test_parameter_layer_featuresource_input_forms(
 ):
     """Feature sources are passed as objects"""
     context = ProcessingContext(qgis_session)
-    context.temporaryLayerStore().addMapLayer(points_3857)
+    unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
 
@@ -173,7 +174,7 @@ def test_parameter_layer_featuresource_intersect_invalid_crs(
     points_3857: QgsVectorLayer,
 ):
     context = ProcessingContext(qgis_session)
-    context.temporaryLayerStore().addMapLayer(points_3857)
+    unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
     with pytest.raises(InputValueError, match="Invalid intersect crs"):
@@ -421,7 +422,7 @@ def project_ab() -> Iterator[QgsProject]:
     """Project with two vector layers 'a' and 'b'"""
     # Use the global project instance: a project created from python
     # may be destroyed after QGIS exits (i.e held by a test traceback)
-    project = QgsProject.instance()
+    project = unwrap(QgsProject.instance())
     project.addMapLayers(
         [
             QgsVectorLayer("Point?crs=EPSG:4326", "a", "memory"),
@@ -496,7 +497,7 @@ def test_parameter_aggregate_metadata(qgis_session: ProcessingConfig):
     """The parent layer is published although the parameter is a generic definition"""
     inp = InputParameter(_aggregates_param())
 
-    metadata = {md.role: md.value for md in inp.description().metadata}
+    metadata = {md.role: md.value for md in inp.description().metadata}  # type: ignore[union-attr]
     assert metadata["parentLayerParameterName"] == "INPUT"
 
 
@@ -561,7 +562,7 @@ def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
         feature = QgsFeature(layer.fields())
         feature.setAttribute("label", label)
         feature.setGeometry(QgsGeometry.fromWkt(wkt))
-        layer.dataProvider().addFeature(feature)
+        unwrap(layer.dataProvider()).addFeature(feature)
 
     aggregates = InputParameter(_aggregates_param()).value(
         [
@@ -572,7 +573,8 @@ def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
     )
 
     context = QgsProcessingContext()
-    alg = QgsApplication.processingRegistry().algorithmById("native:aggregate")
+    alg = unwrap(QgsApplication.processingRegistry()).algorithmById("native:aggregate")
+    assert alg is not None
     results, ok = alg.run(
         {"INPUT": layer, "GROUP_BY": "NULL", "AGGREGATES": aggregates, "OUTPUT": "memory:"},
         context,
@@ -580,8 +582,9 @@ def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
     )
     assert ok
 
-    output = context.getMapLayer(results["OUTPUT"])
-    fields = {f.name(): f.type() for f in output.fields()}
+    output = cast("QgsVectorLayer",context.getMapLayer(results["OUTPUT"]))
+    assert output is not None
+    fields = {f.name(): f.type() for f in output.fields()}  # type: ignore[attr-defined]
     assert fields == {"total_area": 6, "labels": 10, "count": 2}
 
     feature = next(output.getFeatures())

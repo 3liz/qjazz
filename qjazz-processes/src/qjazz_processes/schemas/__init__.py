@@ -46,6 +46,7 @@ from .models import (  # noqa F401
     OutputFormatDefinition,
     OutputFormatDescription,
     MediaType,
+    MediaTypeField,
     Option,
     InputValueError,
     QualifiedInputValue,

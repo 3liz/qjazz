@@ -18,7 +18,7 @@ from qjazz_processes.server.policies.default import (
 
 @pytest.fixture()
 def policy() -> DefaultAccessPolicy:
-    policy = DefaultAccessPolicy(DefaultAccessPolicyConfig())
+    policy = DefaultAccessPolicy(DefaultAccessPolicyConfig())  # type: ignore
     # Single available service
     policy.executor = SimpleNamespace(  # type: ignore [assignment]
         known_service=lambda service: service == "test",
