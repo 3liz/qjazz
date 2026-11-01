@@ -22,7 +22,7 @@ tokio-util = { workspace = true }
 tempfile = "3"
 futures = "0.3"
 bitflags = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 
 [dependencies.tokio]
 workspace = true
