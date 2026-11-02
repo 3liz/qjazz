@@ -36,7 +36,8 @@ from qgis.core import (
 
 from qjazz_processes.schemas import (
     WGS84,
-    BoundingBox,
+    BBox,
+    DefaultCrs,
     Field,
     InputValueError,
     JsonModel,
@@ -223,7 +224,7 @@ class ParameterFeatureSource(ParameterMapLayer):
         class _Model(JsonModel):
             source: _type = Field(title="Source", description="Feature source")
             intersect: Option[
-                BoundingBox(crsdef),  # type: ignore [valid-type]
+                Annotated[BBox, DefaultCrs(crsdef)],
             ] = Field(
                 title="BoundingBox intersection",
                 description="BoundingBox for selecting intersecting features",
