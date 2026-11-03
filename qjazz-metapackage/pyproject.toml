@@ -3,7 +3,8 @@ name = "qjazz"
 description = "QJazz server suite"
 version = "0.10.1"
 requires-python = ">= 3.12"
-license = "Apache-2.0 OR MIT" 
+license = "Apache-2.0 OR MIT"
+license-files = ["LICENSE*"]
 
 dependencies = [
     "qjazz-map==0.10.1",

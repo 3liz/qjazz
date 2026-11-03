@@ -9,7 +9,8 @@ authors = [
     { name = "David Marteau", email = "dmarteau@3liz.org" },
 ]
 requires-python = ">= 3.12"
-licence = "Apache-2.0 OR MIT"
+license = "Apache-2.0 OR MIT"
+license-files = ["LICENSE*"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3.12",

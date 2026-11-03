@@ -8,6 +8,7 @@ description = "QJazz contrib utilities"
 version = "0.10.1"
 requires-python = ">= 3.12"
 license = "Apache-2.0 OR MIT"
+license-files = ["LICENSE*"]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",

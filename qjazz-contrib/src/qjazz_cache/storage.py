@@ -1,6 +1,3 @@
-#
-# Copyright 2023 3liz
-# all rights reserved
 """Handle Qgis storage metadata"""
 
 from typing import Protocol

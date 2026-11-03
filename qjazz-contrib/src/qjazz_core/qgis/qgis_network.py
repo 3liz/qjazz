@@ -1,6 +1,3 @@
-#
-# Copyright 2025 3liz
-#
 """Utilities for qgis network inspection and
 settings
 """

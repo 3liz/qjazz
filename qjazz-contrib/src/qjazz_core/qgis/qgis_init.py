@@ -1,7 +1,3 @@
-#
-# Copyright 2018-2023 3liz
-#
-
 """Start qgis application"""
 
 import os
