@@ -344,7 +344,7 @@ class S3ProtocolHandler(ProtocolHandler):
     #
 
     def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
-        """Return a resource download url for the given uri"""
+        """Return a resource reader url for the given uri"""
 
         bucket_name = uri.hostname
         object_name = uri.path

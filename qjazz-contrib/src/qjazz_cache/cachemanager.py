@@ -167,56 +167,19 @@ class CacheManager:
 
     def find_location(self, path: str) -> Optional[PurePosixPath]:
         """Return the location for the given resource path"""
-        path = PurePosixPath(path)
-        for route in self.conf.search_paths.routes:
-            result = route.resolve_path(path)
-            if result:
-                return PurePosixPath(result[0])
-
-        return None
+        return self.conf.search_paths.find_location(path)
 
     def resolve_path(self, path: str, allow_direct: bool = False) -> Url:
-        """Resolve path according to location mapping
+        """Resolve path according to location mapping"""
+        url = self.conf.search_paths.resolve_path(
+            path,
+            allow_direct or self.conf.allow_direct_path_resolution,
+        )
 
-        `path` is translated to an url corresponding to
-        a potential storage backend (i.e `file`, `postgresql` ...)
+        if url is None:
+            raise ResourceNotAllowed(str(path))
 
-        if `allow_direct_path_resolution` configuration is set to true,
-        unresolved path are passed 'as is' and will
-        be directly interpreted by the protocol handler
-        corresponding to the url's scheme.
-
-        If the root url have '{path}' template pattern in the query
-        the it will be replaced by the relative path from the input.
-
-        Otherwise it will simply be appended to the root url path.
-        """
-        path = PurePosixPath(path)
-        # Find matching path
-        for route in self.conf.search_paths.routes:
-            logger.debug("Resolving path for '%s' -> %s", path, route.cannonical[0])
-            result = route.resolve_path(path)
-            if not result:
-                continue
-
-            location, rooturl = result
-            relpath = path.relative_to(location)
-
-            # Check for {path} template in rooturl
-            query = rooturl.query.format(path=relpath)
-            if query != rooturl.query:
-                url = rooturl._replace(query=query)
-            else:
-                # Simply append path to the rooturl path
-                url = rooturl._replace(path=str(PurePosixPath(rooturl.path, relpath)))
-
-            return url
-
-        if allow_direct or self.conf.allow_direct_path_resolution:
-            # Use direct resolution based on scheme
-            return validate_url(str(path))
-
-        raise ResourceNotAllowed(str(path))
+        return url
 
     def locations(self, search_location: Optional[str] = None) -> Iterable[tuple[str, Url]]:
         """List compatible search paths"""

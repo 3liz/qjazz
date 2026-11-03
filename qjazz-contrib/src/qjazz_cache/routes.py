@@ -19,6 +19,7 @@ from typing import (
 )
 from urllib.parse import SplitResult, urlsplit
 
+from qjazz_core import logger
 from qjazz_core.condition import assert_postcondition
 
 Url = SplitResult
@@ -92,6 +93,59 @@ class Routes:
             )
 
         return urls
+
+    def find_location(self, path: str) -> PurePosixPath | None:
+        """Return the location for the given resource path"""
+        path = PurePosixPath(path)
+        for route in self.routes:
+            result = route.resolve_path(path)
+            if result:
+                return PurePosixPath(result[0])
+
+        return None
+
+    def resolve_path(self, path: str, allow_direct: bool = False) -> Url | None:
+        """Resolve path according to location mapping
+
+        `path` is translated to an url corresponding to
+        a potential storage backend (i.e `file`, `postgresql` ...)
+
+        if `allow_direct_path_resolution` configuration is set to true,
+        unresolved path are passed 'as is' and will
+        be directly interpreted by the protocol handler
+        corresponding to the url's scheme.
+
+        If the root url have '{path}' template pattern in the query
+        the it will be replaced by the relative path from the input.
+
+        Otherwise it will simply be appended to the root url path.
+        """
+        path = PurePosixPath(path)
+        # Find matching path
+        for route in self.routes:
+            logger.debug("Resolving path for '%s' -> %s", path, route.cannonical[0])
+            result = route.resolve_path(path)
+            if not result:
+                continue
+
+            location, rooturl = result
+            relpath = path.relative_to(location)
+
+            # Check for {path} template in rooturl
+            query = rooturl.query.format(path=relpath)
+            if query != rooturl.query:
+                url = rooturl._replace(query=query)
+            else:
+                # Simply append path to the rooturl path
+                url = rooturl._replace(path=str(PurePosixPath(rooturl.path, relpath)))
+
+            return url
+
+        if allow_direct:
+            # Use direct resolution based on scheme
+            return validate_url(str(path))
+
+        return None
 
 
 def validate_url(urlstr: str) -> Url:

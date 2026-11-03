@@ -1,3 +1,11 @@
+"""Resources handler protocol
+
+   A resource handler allow to list and fetch resources
+   of any kind from a project's search path
+
+   It may be used in QJazz processes for retrieving
+   specifice job external resources.
+"""
 import urllib.parse
 
 from dataclasses import dataclass
@@ -35,7 +43,7 @@ class ResourceObject:
 @runtime_checkable
 class ResourceStore(Protocol):
     def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
-        """Return a resource download url for the given uri"""
+        """Return a resource readerfor the given uri"""
         ...
 
     def list_resources(self, uri: Url, prefix: Optional[str] = None) -> Iterator[ResourceObject]:
