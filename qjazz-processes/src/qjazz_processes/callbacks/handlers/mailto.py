@@ -9,7 +9,6 @@ from email.mime.text import MIMEText
 from string import Template
 from textwrap import dedent
 from typing import (
-    Annotated,
     Iterator,
     Literal,
     Optional,
@@ -21,15 +20,12 @@ from urllib.parse import parse_qs
 
 from pydantic import (
     EmailStr,
-    PlainSerializer,
-    PlainValidator,
     PositiveInt,
     SecretStr,
     TypeAdapter,
-    WithJsonSchema,
 )
 from qjazz_core import logger
-from qjazz_core.config import ConfigBase
+from qjazz_core.config import ConfigBase, TemplateStr
 from qjazz_core.models import Field, Option
 
 from ..accesscontrol import AccessControlConfig
@@ -52,14 +48,6 @@ def _validate_template(v: str) -> Template:
     if not t.is_valid():
         raise ValueError("Invalid template")
     return t
-
-
-TemplateStr = Annotated[
-    Template,
-    PlainValidator(_validate_template),
-    PlainSerializer(lambda t: t.safe_substitute(), return_type=str),
-    WithJsonSchema({"type": "string"}),
-]
 
 
 class MailContent(ConfigBase):

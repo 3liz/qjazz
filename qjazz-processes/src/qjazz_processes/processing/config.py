@@ -9,7 +9,6 @@ from pydantic import (
 from qjazz_core import logger
 from qjazz_core.config import (
     AbsoluteDirectoryPath,
-    ConfigBase,
     Template,
     TemplateStr,
     TLSConfig,
@@ -21,7 +20,9 @@ from qjazz_core.qgis import (
 )
 
 from qjazz_cache.prelude import ProjectsConfig
-from qjazz_processes.schemas import WGS84
+
+from ..schemas import WGS84
+from ..worker.jobs import JobConfig
 
 
 def _validate_qgis_setting(value: str | bool | float) -> str:
@@ -41,7 +42,7 @@ QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
 
 
 # Processing job config section
-class ProcessingConfig(ConfigBase):
+class ProcessingConfig(JobConfig):
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
         title="Projects configuration",
@@ -50,14 +51,6 @@ class ProcessingConfig(ConfigBase):
     plugins: QgisPluginConfig = Field(
         default=QgisPluginConfig(),
         title="Plugin configuration",
-    )
-    workdir: AbsoluteDirectoryPath = Field(
-        title="Working directory",
-        description="""
-        Parent working directory where processes are executed.
-        Each processes will create a working directory for storing
-        result files and logs.
-        """,
     )
     exposed_providers: list[str] = Field(
         default=["script", "model"],
@@ -124,18 +117,6 @@ class ProcessingConfig(ConfigBase):
         validate_default=True,
         title="Advertised services urls",
         description="Url template used for OGC services references.",
-    )
-    store_url: TemplateStr = Field(
-        default=Template("${public_url}/jobs/$jobId/files/$resource"),
-        validate_default=True,
-        title="Public download url",
-        description="""
-        Url template for downloading resources.
-        This is the public base url that will be seen in
-        referenced responses.
-        This url will need to be translated by the front end
-        executor to an effective download url.
-        """,
     )
     raw_destination_input_sink: bool = Field(
         default=False,

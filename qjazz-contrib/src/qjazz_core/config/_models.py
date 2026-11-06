@@ -2,7 +2,6 @@
 
 import ssl
 import string
-import sys
 
 from pathlib import Path
 from typing import Annotated, Optional
@@ -104,8 +103,8 @@ class Template(string.Template):
 
 
 def _validate_template(s: str | Template) -> Template:
-    t = Template(s) if not isinstance(s, Template) else s
-    if sys.version_info >= (3, 11) and not t.is_valid():
+    t = Template(s) if not isinstance(s, string.Template) else s
+    if not t.is_valid():
         raise ValueError(f"Invalid template: {s}")
     return t
 
@@ -114,7 +113,7 @@ TemplateStr = Annotated[
     Template,
     PlainValidator(_validate_template),
     PlainSerializer(lambda t: t.template, return_type=str),
-    WithJsonSchema({"type": "str"}),
+    WithJsonSchema({"type": "string"}),
 ]
 
 #

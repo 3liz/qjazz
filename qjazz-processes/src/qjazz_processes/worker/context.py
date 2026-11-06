@@ -5,8 +5,6 @@ import os
 
 from contextlib import chdir, contextmanager  # noqa F401
 from functools import cached_property
-from pathlib import Path
-from string import Template
 from typing import (
     Callable,
     Iterator,
@@ -37,21 +35,10 @@ from ..processing.prelude import (
 )
 from .contextutils import execute_context
 from .exceptions import ProjectRequired
-
-
-def store_reference_url(
-    store_url: Template,
-    job_id: str,
-    resource: str,
-    public_url: Optional[str],
-) -> str:
-    """Return a proper reference url for the resource"""
-    return store_url.substitute(
-        resource=resource,
-        jobId=job_id,
-        public_url=public_url or "",
-    )
-
+from .mixins.storage import (
+    StorageContext,
+    store_reference_url,  # noqa F401
+)
 
 ProgressFun = Callable[[Optional[float], Optional[str]], None]
 
@@ -100,11 +87,8 @@ Job = Callable[
 ]
 
 
-class QgisContext:
+class QgisContext(StorageContext):
     """Qgis context initializer"""
-
-    PUBLISHED_FILES = ".files"
-    EXPIRE_FILE = ".job-expire"
 
     @classmethod
     def setup(cls, conf: ProcessingConfig):
@@ -135,18 +119,6 @@ class QgisContext:
         cm = CacheManager(conf.projects)
         cm.register_as_service()
 
-    @classmethod
-    def published_files(cls, jobdir: Path) -> Iterator[Path]:
-        published = jobdir.joinpath(QgisContext.PUBLISHED_FILES)
-        if published.exists():
-            with published.open() as f:
-                files = (n for n in (name.strip() for name in f.readlines()) if n)
-                for file in files:
-                    p = jobdir.joinpath(file)
-                    if not p.is_file():
-                        continue
-                    yield p
-
     def __init__(
         self,
         conf: ProcessingConfig,
@@ -155,10 +127,10 @@ class QgisContext:
         with_expiration: bool = True,
     ):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")
+
+        super().__init__(conf, service_name, with_expiration)
         self._conf = conf
-        self._with_expiration = with_expiration
-        if service_name:
-            self.EXPIRE_FILE = f"{self.EXPIRE_FILE}-{service_name}"
+
 
     def job_execute(
         self,
@@ -218,9 +190,6 @@ class QgisContext:
     @property
     def processing_config(self) -> ProcessingConfig:
         return self._conf
-
-    def store_reference_url(self, job_id: str, resource: str, public_url: Optional[str]) -> str:
-        return store_reference_url(self._conf.store_url, job_id, resource, public_url)
 
     @cached_property
     def cache_manager(self) -> CacheManager:

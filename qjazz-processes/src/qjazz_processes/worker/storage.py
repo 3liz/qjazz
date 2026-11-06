@@ -17,7 +17,9 @@ from pydantic import (
     model_validator,
 )
 from qjazz_core import logger
-from qjazz_core.config import ConfigBase
+from qjazz_core.config import (
+    ConfigBase,
+)
 from qjazz_core.models import Field
 
 from .models import Link
@@ -64,7 +66,8 @@ class Storage(Protocol):
 
 
 class StorageConfig(ConfigBase):
-    """Configure storage for processing data"""
+    """Configure storage for jobs data"""
+
 
     storage_class: Annotated[
         ImportString,

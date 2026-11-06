@@ -19,9 +19,8 @@ from qjazz_core.condition import (
 )
 from qjazz_core.models import Field
 
-from qjazz_processes.schemas import LinkHttp, ServiceName
-
 from ..callbacks import CallbacksConfig
+from ..schemas import LinkHttp, ServiceName
 from .storage import StorageConfig
 
 CONFIG_ENV_PATH = "QJAZZ_PROCESSES_CONFIG"
@@ -124,7 +123,6 @@ class ConfigProto(Protocol):
     callbacks: CallbacksConfig
 
     def model_dump_json(*args, **kwargs) -> str: ...
-
 
 #
 # Add config sections
