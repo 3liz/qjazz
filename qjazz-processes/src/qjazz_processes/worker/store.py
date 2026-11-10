@@ -6,7 +6,6 @@ from typing import (
 )
 
 from pydantic import TypeAdapter
-from qjazz_core.celery import JobContext
 from qjazz_store import (
     FileResource,
     Object,
@@ -18,6 +17,8 @@ from qjazz_store import (
     stat_store,
     store_client,
 )
+
+from .celery import JobContext
 
 
 def get_client(ctx: JobContext) -> StoreClient:

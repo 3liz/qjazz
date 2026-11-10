@@ -1,9 +1,13 @@
+#
+# Celery worker which implement OGC processes descriptions
+# for its inputs/outputs.
+#
+
 import asyncio
 import inspect
 import types
 
 from functools import cached_property
-from textwrap import dedent
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,12 +22,8 @@ from typing import (
 
 import celery
 
-from celery.worker.control import (
-    inspect_command,
-)
 from pydantic import (
     BaseModel,
-    Field,
     JsonValue,
     TypeAdapter,
     ValidationError,
@@ -32,9 +32,15 @@ from pydantic import (
 
 # from as_core.storage import StorageClient, StorageCreds, storage_client
 from qjazz_core import logger
+from qjazz_core.celery import Celery, CeleryConfig
 from qjazz_core.utils import to_iso8601, utc_now
 
-from ._celery import Celery, CeleryConfig
+from ..schemas.processes import (
+    InputDescription,
+    Metadata,
+    OutputDescription,
+    ProcessDescription,
+)
 
 #
 #  Worker
@@ -159,35 +165,8 @@ class _Dict(dict):
 #
 
 
-class Metadata(BaseModel):
-    role: str
-    title: Optional[str] = None
-    value: Optional[JsonValue]
-
-
-class InputDescription(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    schema_: JsonValue = Field(alias="schema")
-
-
-class OutputDescription(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    schema_: JsonValue = Field(alias="schema")
-
-
-class RunConfigSchema(BaseModel):
-    id_: str = Field(alias="id")
-    title: str
-    description: Optional[str] = None
-    metadata: Sequence[Metadata] = ()
-    inputs: dict[str, InputDescription]
-    outputs: dict[str, OutputDescription]
-
-
 class Job(celery.Task):
-    RUN_CONFIGS: ClassVar[dict[str, RunConfigSchema]] = {}
+    RUN_CONFIGS: ClassVar[dict[str, ProcessDescription]] = {}
 
     _worker_job_context: ClassVar[dict] = {}
     _metadata: ClassVar[Sequence[Metadata]] = ()
@@ -208,7 +187,7 @@ class Job(celery.Task):
 
         model, schema = job_run_config(jobname, self.__wrapped__, self._metadata)
 
-        if inspect.iscoroutine(self.__wrapped__):
+        if inspect.iscoroutinefunction(self.__wrapped__):
             logger.trace("=%s: Registered coroutine methode", self.name)
 
         self.__config__ = model
@@ -317,14 +296,6 @@ class Job(celery.Task):
         )
 
 
-# Add our broadcast inspect command
-# for returning run configs in a format nicer
-# than the 'registered' inspect command
-@inspect_command()
-def run_configs(_) -> dict[str, JsonValue]:
-    return {k: v.model_dump(by_alias=True, mode="json") for k, v in Job.RUN_CONFIGS.items()}
-
-
 #
 # Run configs
 #
@@ -333,7 +304,7 @@ def run_configs(_) -> dict[str, JsonValue]:
 def _format_doc(wrapped: Callable) -> tuple[str, str]:
     # Get title and description from docstring
     if wrapped.__doc__:
-        doc = dedent(wrapped.__doc__)
+        doc = inspect.cleandoc(wrapped.__doc__)
         title, *rest = doc.strip("\n ").split("\n", maxsplit=1)
         description = rest[0].strip("\n") if rest else ""
     else:
@@ -347,7 +318,7 @@ def job_run_config(
     jobname: str,
     wrapped: Callable,
     metadata: Sequence[Metadata],
-) -> tuple[tuple[type[RunConfig], TypeAdapter], RunConfigSchema]:
+) -> tuple[tuple[type[RunConfig], TypeAdapter], ProcessDescription]:
     """Build a RunConfig from fonction signature"""
     s = inspect.signature(wrapped)
     qualname = wrapped.__qualname__
@@ -405,7 +376,7 @@ def job_run_config(
 
     return (
         (inputs, outputs),
-        RunConfigSchema(
+        ProcessDescription(
             id=jobname,
             title=title,
             description=description,
@@ -415,6 +386,7 @@ def job_run_config(
                 "output": OutputDescription(
                     title=output_schema.pop("title", ""),
                     description=output_schema.pop("description", None),
+                    value_passing=output_schema.pop("valuePassing", ("byValue",)),
                     schema=output_schema,
                 ),
             }

@@ -1,5 +1,5 @@
 #
-# Processing worker
+# Service worker/job
 #
 
 from contextlib import contextmanager
@@ -19,9 +19,9 @@ from celery.worker.control import (
     inspect_command,
 )
 from qjazz_core import logger
-from qjazz_core.celery import Job, Worker
 
 from . import registry
+from .celery import Job, Worker
 from .config import (
     CONFIG_ENV_PATH,  # noqa F401
     ConfigProto,
@@ -57,7 +57,7 @@ def on_worker_shutdown(sender, *args, **kwargs):
 )
 def job_files(state, job_id, public_url):
     """Returns job execution files"""
-    app = cast("WorkerBase", state.consumer.app)
+    app = cast("Service", state.consumer.app)
     return app.job_files(job_id, public_url).model_dump()
 
 
@@ -66,7 +66,7 @@ def job_files(state, job_id, public_url):
 #
 
 
-class WorkerBase(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
+class Service(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
 
     def __init__(self, conf: ConfigProto, **kwargs) -> None:
         if logger.is_enabled_for(logger.LogLevel.DEBUG):
@@ -157,7 +157,7 @@ class WorkerBase(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
 #
 
 
-class ProcessJob(Job):
+class ServiceJob(Job):
 
     @contextmanager
     def prepare_request(self, task_id, args, kwargs):

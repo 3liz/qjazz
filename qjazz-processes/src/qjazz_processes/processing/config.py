@@ -22,7 +22,7 @@ from qjazz_core.qgis import (
 from qjazz_cache.prelude import ProjectsConfig
 
 from ..schemas import WGS84
-from ..worker.jobs import JobConfig
+from ..worker.config import JobConfig
 
 
 def _validate_qgis_setting(value: str | bool | float) -> str:

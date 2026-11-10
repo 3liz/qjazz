@@ -4,12 +4,12 @@ from typing import (
 )
 
 from qjazz_contrib.core import logger
-from qjazz_contrib.core.celery import JobContext
 from qjazz_processes.schemas import (
     Field,
     JsonModel,
     Option,
 )
+from qjazz_processes.worker.celery import JobContext
 from qjazz_processes.worker.generic import (
     GenericJob,
     GenericWorker,

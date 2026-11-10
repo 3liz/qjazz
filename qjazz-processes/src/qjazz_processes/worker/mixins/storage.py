@@ -25,7 +25,7 @@ from qjazz_core import logger
 from qjazz_core.condition import assert_precondition
 
 from .. import registry
-from ..jobs import JobConfig
+from ..config import JobConfig
 from ..models import (
     Link,
     ProcessFilesVersion,
@@ -34,7 +34,7 @@ from ..storage import Storage
 
 # Type only imports
 if TYPE_CHECKING:
-    from qjazz_core.celery import Worker
+    from ..celery import Worker
 
 class BackendProto(Protocol):
     client: redis.Redis

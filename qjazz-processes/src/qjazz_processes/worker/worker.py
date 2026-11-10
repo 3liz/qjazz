@@ -21,11 +21,10 @@ from celery.worker.control import (
     control_command,
     inspect_command,
 )
-from qjazz_core.celery import Job
 
 from ..processing.config import ProcessingConfig
-from .base import ProcessJob, WorkerBase
 from .cache import ProcessCacheProtocol
+from .celery import Job
 from .config import (
     CONFIG_ENV_PATH,  # noqa F401
     confservice,
@@ -41,6 +40,7 @@ from .mixins.storage import StorageMixin
 from .models import (
     WorkerPresenceVersion,
 )
+from .service import Service, ServiceJob
 
 PROCESS_ENTRYPOINT = "process_execute"
 
@@ -140,7 +140,7 @@ def presence(_state) -> dict:
 #
 
 
-class QgisWorker(WorkerBase, CallbacksMixin, StorageMixin, JoblogMixin):
+class QgisWorker(Service, CallbacksMixin, StorageMixin, JoblogMixin):
 
     @staticmethod
     def load_configuration() -> ConfigProto:
@@ -153,7 +153,6 @@ class QgisWorker(WorkerBase, CallbacksMixin, StorageMixin, JoblogMixin):
         super().__init__(conf, **kwargs)
 
         self.processes_cache = None
-
 
     def start_worker(self, **kwargs):
         self.processes_cache = self.create_processes_cache()
@@ -207,7 +206,7 @@ class QgisJob(Job):
         context.update(qgis_context=self.app.create_context())
 
 
-class QgisProcessJob(ProcessJob):
+class QgisProcessJob(ServiceJob):
     def update_run_context(self, task_id: str, context: dict[str, Any]):
         # Add qgis context in job context
         context.update(qgis_context=self.app.create_context())

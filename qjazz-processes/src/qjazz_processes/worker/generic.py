@@ -17,21 +17,20 @@ from celery.signals import (
 from celery.worker.control import (
     inspect_command,
 )
-from qjazz_core.celery import Job
 
 from ..schemas import (
     JsonValue,
-    MetadataValue,
     ProcessSummary,
     ProcessSummaryList,
 )
-from .base import ProcessJob, WorkerBase
+from .celery import Job
 from .mixins.callbacks import CallbacksMixin
 from .mixins.joblog import JoblogMixin
 from .mixins.storage import StorageMixin
 from .models import (
     WorkerPresenceVersion,
 )
+from .service import Service, ServiceJob
 
 #
 #  Signals
@@ -56,20 +55,14 @@ def list_processes(_state) -> list:
             ProcessSummary(
                 id=ident,
                 title=p.title,
-                metadata=[
-                    MetadataValue(
-                        role=md.role,
-                        title=md.title,
-                        value=md.value,
-                    )
-                    for md in p.metadata
-                ],
+                metadata=p.metadata,
                 description=p.description,
             )
             for ident, p in Job.RUN_CONFIGS.items()
         ],
         mode="json",
         exclude_none=True,
+        by_alias=True,
     )
 
 
@@ -79,7 +72,7 @@ def list_processes(_state) -> list:
 def describe_process(_state, ident: str, project_path: str | None) -> dict | None:
     """Return process description"""
     if p := Job.RUN_CONFIGS.get(ident):
-        return p.model_dump(mode="json", exclude_none=True, by_alias=True)
+        return p.model_dump(mode="json")
     return None
 
 
@@ -91,7 +84,7 @@ def presence(_state) -> dict:
 
 
 
-class GenericWorker(WorkerBase, CallbacksMixin, StorageMixin, JoblogMixin):
+class GenericWorker(Service, CallbacksMixin, StorageMixin, JoblogMixin):
     _class_id: Optional[UUID] = None
 
     def presence(self) -> WorkerPresenceVersion:
@@ -113,7 +106,7 @@ class GenericWorker(WorkerBase, CallbacksMixin, StorageMixin, JoblogMixin):
 #
 
 
-class GenericJob(ProcessJob):
+class GenericJob(ServiceJob):
     def __call__(self, *arg, **kwargs) -> JsonValue:
         # Output must be wrapped in a dictionnary in order
         # to conform to the run_config schema
@@ -129,6 +122,8 @@ class GenericJob(ProcessJob):
         try:
             kwargs["__run_config__"] = request["inputs"]
             yield
+            # Add the 'project_path' to the context
+            kwargs["meta"].context.update(project_path=request.get("project_path"))
         finally:
             # Keep the request for postrun callbacks and job details
             # Note: always overwrite since 'request' may be an input name

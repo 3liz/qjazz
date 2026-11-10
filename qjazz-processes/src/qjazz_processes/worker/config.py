@@ -5,6 +5,7 @@ import os
 import sys
 
 from pathlib import Path
+from string import Template
 from typing import (
     Optional,
     Protocol,
@@ -12,10 +13,17 @@ from typing import (
     cast,
 )
 
-from qjazz_core import config, logger
+from qjazz_core import logger
 from qjazz_core.celery import CeleryConfig
 from qjazz_core.condition import (
     assert_precondition,
+)
+from qjazz_core.config import (
+    AbsoluteDirectoryPath,
+    ConfBuilder,
+    ConfigBase,
+    TemplateStr,
+    read_config_toml,
 )
 from qjazz_core.models import Field
 
@@ -112,7 +120,7 @@ class WorkerConfig(CeleryConfig):
     )
 
 
-confservice = config.ConfBuilder()
+confservice = ConfBuilder()
 
 
 # Allow type validation
@@ -140,7 +148,7 @@ def load_configuration() -> ConfigProto:
     if configpath:
         print("=Reading configuration from:", configpath, file=sys.stderr, flush=True)  # noqa T201
 
-        cnf = config.read_config_toml(configpath)
+        cnf = read_config_toml(configpath)
     else:
         cnf = {}
 
@@ -161,3 +169,33 @@ def dump_worker_config() -> None:
 
     confservice.add_section("processing", ProcessingConfig, field=...)
     confservice.dump_toml_schema(sys.stdout)
+
+
+#
+# Process Job config
+#
+
+class JobConfig(ConfigBase):
+
+    store_url: TemplateStr = Field(
+        default=Template("${public_url}/jobs/$jobId/files/$resource"),
+        validate_default=True,
+        title="Public download url",
+        description="""
+        Url template for downloading resources.
+        This is the public base url that will be seen in
+        referenced responses.
+        This url will need to be translated by the front end
+        executor to an effective download url.
+        """,
+    )
+
+    workdir: AbsoluteDirectoryPath = Field(
+        title="Working directory",
+        description="""
+        Parent working directory where processes are executed.
+        Each job will create a working directory for storing
+        result files and logs.
+        """,
+    )
+
