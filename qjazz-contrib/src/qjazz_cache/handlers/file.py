@@ -1,10 +1,8 @@
 """File protocol handler"""
 
-from datetime import datetime
 from itertools import chain
 from pathlib import Path
 from typing import Iterator, Optional
-from urllib.parse import urlsplit, urlunsplit
 
 from qgis.core import QgsProject
 
@@ -12,11 +10,12 @@ from qjazz_core import componentmanager, logger
 
 from ..common import ProjectLoader, ProjectMetadata, ProtocolHandler, Url
 from ..errors import InvalidCacheRootUrl, ResourceNotAllowed
+from ..loader import ProjectLoaderConfig
 from ..resources import (
     ResourceObject,
     ResourceReader,
 )
-from ..storage import ProjectLoaderConfig
+from ..storages.file import FileStorageHandler
 
 # Allowed files suffix for projects
 PROJECT_SFX = (".qgs", ".qgz")
@@ -38,7 +37,7 @@ class FileProtocolHandler(ProtocolHandler):
     """Handle file protocol"""
 
     def __init__(self):
-        pass
+        self._storage = FileStorageHandler()
 
     def _check_filepath(self, path: Path) -> Path:
         """Validate Qgis project file path, add ncis"""
@@ -64,14 +63,11 @@ class FileProtocolHandler(ProtocolHandler):
 
     def resolve_uri(self, uri: Url) -> str:
         """Override"""
-        return uri.path
+        return self._storage.resolve_uri(uri)
 
     def public_path(self, url: str | Url, location: str, rooturl: Url) -> str:
         """Override"""
-        if isinstance(url, str):
-            url = urlsplit(url)
-        relpath = Path(url.path).relative_to(rooturl.path)
-        return str(Path(location).joinpath(relpath))
+        return self._storage.public_path(url, location, rooturl)
 
     def project_metadata(self, url: Url | ProjectMetadata) -> ProjectMetadata:
         """Override"""
@@ -104,41 +100,7 @@ class FileProtocolHandler(ProtocolHandler):
     #
 
     def get_resource(self, uri: Url, name: Optional[str] = None) -> Optional[ResourceReader]:
-        """Return a resource reader for the given uri"""
-
-        path = Path(uri.path)
-        if name:
-            path = path.joinpath(name)
-
-        try:
-            stat = path.stat()
-        except FileNotFoundError:
-            return None
-
-        fp = path.open("rb")
-        return ResourceReader(
-            read=fp.read,
-            close=fp.close,
-            size=stat.st_size,
-            content_type=None,
-            uri=urlunsplit(uri),
-        )
+        return self._storage.get_resource(uri, name)
 
     def list_resources(self, uri: Url, subpath: Optional[str] = None) -> Iterator[ResourceObject]:
-        """List resources"""
-
-        root = Path(uri.path)
-        path = root.joinpath(subpath) if subpath else root
-
-        if not path.is_dir():
-            return
-
-        for res in path.iterdir():
-            st = res.stat()
-            yield ResourceObject(
-                name=str(res.relative_to(root)),
-                size=st.st_size,
-                content_type=None,
-                last_modified=datetime.fromtimestamp(st.st_mtime),
-                is_dir=res.is_dir(),
-            )
+        return self._storage.list_resources(uri, subpath)

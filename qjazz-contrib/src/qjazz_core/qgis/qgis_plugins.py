@@ -117,9 +117,7 @@ class QgisPluginConfig(config.ConfigBase):
         default="rest",
         title="Repository type",
         description=(
-            "Type of repository api\n"
-            "- rest: use a yapt rest api\n"
-            "- qgis-xml: use a xml qgis-compatible index"
+            "Type of repository api\n- rest: use a yapt rest api\n- qgis-xml: use a xml qgis-compatible index"
         ),
     )
     extra_builtin_providers: BuiltinProviderSet = Field(
@@ -153,7 +151,6 @@ class Plugin:
             metadata = {s: dict(p.items()) for s, p in cp.items()}
             metadata.pop("DEFAULT", None)
             return cast("JsonDict", metadata)
-
 
 
 # Pattern for splitting plugin name/version
@@ -203,9 +200,11 @@ class QgisPluginService:
                 self._BUILTIN_PROVIDERS = processes.load_builtin_providers(extras)
 
         # Get plugins names
-        white_list = {
-            SPLIT_PLUGIN_VERSION_RE.split(spec, maxsplit=1)[0] for spec in self._config.install
-        } if self._config.install is not None else None
+        white_list = (
+            {SPLIT_PLUGIN_VERSION_RE.split(spec, maxsplit=1)[0] for spec in self._config.install}
+            if self._config.install is not None
+            else None
+        )
 
         for plugin_path in self._config.paths:
             sys.path.append(str(plugin_path))

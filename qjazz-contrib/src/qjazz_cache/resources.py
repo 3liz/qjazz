@@ -1,11 +1,12 @@
 """Resources handler protocol
 
-   A resource handler allow to list and fetch resources
-   of any kind from a project's search path
+A resource handler allow to list and fetch resources
+of any kind from a project's search path
 
-   It may be used in QJazz processes for retrieving
-   specifice job external resources.
+It may be used in QJazz processes for retrieving
+specifice job external resources.
 """
+
 import urllib.parse
 
 from dataclasses import dataclass

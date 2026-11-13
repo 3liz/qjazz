@@ -33,7 +33,7 @@ def Field(
         if isinstance(default, BaseModel):
             default = default.model_dump(mode="json")
 
-        kwargs["json_schema_extra"] = { "default": default }
+        kwargs["json_schema_extra"] = {"default": default}
         default = PydanticUndefined
 
     return pydantic.Field(

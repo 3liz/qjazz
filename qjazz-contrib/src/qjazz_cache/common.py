@@ -13,7 +13,7 @@ from typing import (
 
 from qgis.core import QgsProject
 
-from .storage import ProjectLoaderConfig, load_project_from_uri
+from .loader import ProjectLoaderConfig, load_project_from_uri
 
 Url = urllib.parse.SplitResult
 

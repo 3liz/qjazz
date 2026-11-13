@@ -7,7 +7,7 @@ from urllib.parse import SplitResult, urlsplit
 from qgis.core import QgsProject
 
 from ..common import ProjectMetadata
-from ..storage import ProjectLoaderConfig, UnreadableResource
+from ..loader import ProjectLoaderConfig, UnreadableResource
 
 Url = SplitResult
 

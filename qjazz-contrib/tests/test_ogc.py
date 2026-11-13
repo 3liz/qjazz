@@ -3,7 +3,7 @@ from pathlib import Path
 
 from qgis.core import QgsProject
 
-from qjazz_cache.storage import load_project_from_uri
+from qjazz_cache.loader import load_project_from_uri
 from qjazz_ogc import Collection
 from qjazz_ogc.crs import CrsRef
 from qjazz_ogc.layers import LayerAccessor

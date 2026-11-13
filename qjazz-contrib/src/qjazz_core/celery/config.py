@@ -1,5 +1,5 @@
-""" Celery configuration
-"""
+"""Celery configuration"""
+
 from pathlib import Path
 from typing import (
     Optional,
@@ -166,5 +166,3 @@ class CeleryConfig(ConfigBase):
         if self.backend_password:
             return f"{scheme}://:{self.backend_password}@{self.backend_host}"
         return f"{scheme}://{self.backend_host}"
-
-

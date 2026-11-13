@@ -243,6 +243,10 @@ class StorageContext:
        if service_name:
             self.EXPIRE_FILE = f"{self.EXPIRE_FILE}-{service_name}"
 
+    @property
+    def with_expiration(self) -> bool:
+        return self._with_expiration
+
     @classmethod
     def published_files(cls, jobdir: Path) -> Iterator[Path]:
         published = jobdir.joinpath(StorageContext.PUBLISHED_FILES)

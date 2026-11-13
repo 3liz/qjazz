@@ -1,49 +1,23 @@
 import os
 
 from textwrap import dedent
-from typing import Annotated, cast
 
 from pydantic import (
-    PlainSerializer,
-    PlainValidator,
     PrivateAttr,
     TypeAdapter,
-    WithJsonSchema,
 )
 
 from qjazz_core import config
 from qjazz_core.models import Field
 
+from .configs.routes import RoutesDef
 from .handlers import HandlerConfig
-from .routes import Routes
 
 Bool = TypeAdapter(bool)
 
 
 def _getenv_bool(varname: str, default: bool) -> bool:
     return Bool.validate_python(os.getenv(varname, default))
-
-
-def validate_routes(v: str | dict[str, str]) -> Routes:
-    match v:
-        case str():
-            v = TypeAdapter(dict[str, str]).validate_json(v)
-        case dict():
-            pass
-        case _:
-            raise ValueError("Mapping or json string expected")
-    return Routes(cast("dict", v))
-
-
-RoutesDef = Annotated[
-    Routes,
-    PlainValidator(validate_routes),
-    PlainSerializer(
-        lambda routes: {k: v.geturl() for k, v in routes.cannonical},
-        return_type=dict[str, str],
-    ),
-    WithJsonSchema(TypeAdapter(dict[str, str]).json_schema()),
-]
 
 
 class ProjectsConfig(config.ConfigBase):

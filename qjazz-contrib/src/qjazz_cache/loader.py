@@ -1,4 +1,4 @@
-"""Handle Qgis storage metadata"""
+"""QGIS project's loader"""
 
 from typing import Protocol
 
@@ -117,9 +117,10 @@ class BadLayerHandler(QgsProjectBadLayerHandler):
 def log_layer_loaded(uri: str, project: QgsProject):
     # Log loaded layers
     loaded: set[str] = set()
+
     def layer_loaded(i: int, n: int):
         for name, layer in project.mapLayers().items():
-            if name  in loaded:
+            if name in loaded:
                 continue
             logger.debug("LAYER LOADED [%s/%s]: %s: %s: %s", i, n, uri, name, layer.publicSource())
             loaded.add(name)

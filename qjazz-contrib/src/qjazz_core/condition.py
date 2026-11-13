@@ -39,5 +39,3 @@ def assert_not_none[T](value: Optional[T], message: Optional[str] = None) -> T:
 
 
 unwrap = assert_not_none
-
-
