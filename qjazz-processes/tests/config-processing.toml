@@ -17,11 +17,10 @@ broker_host = "localhost"
 backend_host = "localhost:6379/0"
 #hide_presence_versions = true
 
+workdir = "$location/__workdir__"
+
 [worker.scheduler]
 #enabled = true
-
-[processing]
-workdir = "$location/__workdir__"
 
 [processing.plugins]
 paths = ["$location/plugins"]

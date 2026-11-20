@@ -5,14 +5,19 @@ import asyncio
 import time
 
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, Callable, cast
 
 from qjazz_processes.executor.executor import AsyncExecutor
 from qjazz_processes.schemas import JobExecute
 
 
-async def test_executor_execute_does_not_block_event_loop():
-    def _execute(service, ident, request, **kwargs):
+async def test_executor_execute_does_not_block_event_loop() -> None:
+    def _execute(
+        service: str,
+        ident: str,
+        request: JobExecute,
+        **kwargs: Any,
+    ) -> tuple[str, Callable[[float], dict], Callable[[], None]]:
         # Blocking calls to the backend and the broker
         time.sleep(0.3)
         return "job_01", lambda timeout: {}, lambda: None
@@ -21,7 +26,7 @@ async def test_executor_execute_does_not_block_event_loop():
 
     ticks = 0
 
-    async def ticker():
+    async def ticker() -> None:
         nonlocal ticks
         while True:
             await asyncio.sleep(0.01)

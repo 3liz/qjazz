@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from qjazz_core.condition import unwrap
+from qjazz_core.qgis import QgisPluginService
+
 from qgis.core import (
     QgsApplication,
     QgsProcessingOutputLayerDefinition,
@@ -8,16 +11,22 @@ from qgis.core import (
 from qjazz_processes.processing.prelude import (
     InputParameter,
     OutputParameter,
+    ProcessingConfig,
     ProcessingContext,
     runalg,
 )
 
-from .utils import Feedback
+from .utils import Feedback, Projects
 
 
-def test_model_algorithms(qgis_session, plugins, projects):
+def test_model_algorithms(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Execute algorithm from a model"""
-    registry = QgsApplication.processingRegistry()
+    registry = unwrap(QgsApplication.processingRegistry())
 
     alg = registry.algorithmById("model:centroides")
     assert alg is not None
@@ -30,7 +39,7 @@ def test_model_algorithms(qgis_session, plugins, projects):
     print("\ntest_model_algorithms:inputs\n", {i.name: i.json_schema() for i in inputs})
     print("\ntest_model_algorithms:outputs\n", {o.name: o.json_schema() for o in outputs})
 
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setProject(project)
     context.job_id = "test_model_algorithms"
 
@@ -65,7 +74,7 @@ def test_model_algorithms(qgis_session, plugins, projects):
     context.destination_project = destination_project
 
     feedback = Feedback()
-    context.feedback = feedback
+    context.setFeedback(feedback)
 
     # Run algorithm
     results = runalg.execute(alg, parameters, feedback, context)

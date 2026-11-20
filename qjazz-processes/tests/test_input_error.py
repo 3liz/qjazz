@@ -14,7 +14,7 @@ def _validation_error() -> ValidationError:
     return exc_info.value
 
 
-def test_input_error_message():
+def test_input_error_message() -> None:
     """Plain message produces a valid json body"""
     msg = 'Processing parameters error:\nIncorrect "value" for PARAM'
     err = InputValueError(msg)
@@ -23,7 +23,7 @@ def test_input_error_message():
     assert str(err) == msg
 
 
-def test_input_error_details():
+def test_input_error_details() -> None:
     """Validation details are included in the json body"""
     err = InputValueError("'PARAM' parameter error", _validation_error())
 
@@ -36,7 +36,7 @@ def test_input_error_details():
 
 
 @pytest.mark.parametrize("with_details", [False, True])
-def test_input_error_celery_roundtrip(with_details: bool):
+def test_input_error_celery_roundtrip(with_details: bool) -> None:
     """Exception is recreated identically from Celery result backend"""
     details = _validation_error() if with_details else None
     err = InputValueError('Invalid "value"\nfor PARAM', details)

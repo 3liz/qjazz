@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 
 from pydantic import ValidationError
@@ -15,19 +17,21 @@ from qgis.core import (
     QgsReferencedGeometry,
     QgsReferencedPointXY,
     QgsReferencedRectangle,
-    QgsWkbTypes,
 )
 
+from qjazz_processes.processing.config import ProcessingConfig
 from qjazz_processes.processing.inputs import InputParameter
 from qjazz_processes.processing.inputs.geometry import geojson, qgsgeometry_to_json
 from qjazz_processes.schemas import (
     Formats,
     InputValueError,
+    JsonDict,
+    MetadataValue,
     QualifiedInputValue,
 )
 
 
-def test_parameter_point_json(qgis_session):
+def test_parameter_point_json(qgis_session: ProcessingConfig) -> None:
     param = QgsProcessingParameterPoint("Point")
 
     inp = InputParameter(param)
@@ -35,7 +39,7 @@ def test_parameter_point_json(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_point_json::", schema)
 
-    data = {"coordinates": [4.0, 42.0], "type": "Point"}
+    data: JsonDict = {"coordinates": [4.0, 42.0], "type": "Point"}
 
     value = inp.value(data)
 
@@ -56,7 +60,7 @@ def test_parameter_point_json(qgis_session):
     assert value.crs().authid() == "EPSG:3857"
 
 
-def test_parameter_point_gml(qgis_session):
+def test_parameter_point_gml(qgis_session: ProcessingConfig) -> None:
     param = QgsProcessingParameterPoint("Point")
 
     inp = InputParameter(param)
@@ -78,11 +82,12 @@ def test_parameter_point_gml(qgis_session):
 
     # Check back to json
     jsonvalue = qgsgeometry_to_json(geojson.Point, value)
+    assert jsonvalue is not None
     assert jsonvalue.type == "Point"
     assert jsonvalue.crs is not None
 
 
-def test_parameter_point_wkt(qgis_session):
+def test_parameter_point_wkt(qgis_session: ProcessingConfig) -> None:
     """Test input point from wkt"""
     param = QgsProcessingParameterPoint("POINT")
 
@@ -125,7 +130,7 @@ def test_parameter_point_wkt(qgis_session):
     assert value.asWkt() == "POINT(6 10)"
 
 
-def test_parameter_referenced_geometry(qgis_session):
+def test_parameter_referenced_geometry(qgis_session: ProcessingConfig) -> None:
     """Test passing crs from json"""
     param = QgsProcessingParameterGeometry("Geometry")
 
@@ -134,7 +139,7 @@ def test_parameter_referenced_geometry(qgis_session):
     schema = inp.json_schema()
     print("\ntest_parameter_geometry_json::", schema)
 
-    data = {
+    data: JsonDict = {
         "type": "Point",
         "coordinates": [445277.96, 5160979.44],
         "crs": {
@@ -147,10 +152,10 @@ def test_parameter_referenced_geometry(qgis_session):
 
     assert isinstance(value, QgsReferencedGeometry)
     assert value.crs().authid() == "EPSG:3857"
-    assert value.wkbType() == QgsWkbTypes.Point
+    assert value.wkbType() == Qgis.WkbType.Point
 
 
-def test_parameter_geometry_with_types():
+def test_parameter_geometry_with_types() -> None:
     """Test geometry with parameter types"""
     # Single geometry type
     param = QgsProcessingParameterGeometry("Geometry", geometryTypes=[Qgis.GeometryType.Line])
@@ -160,7 +165,7 @@ def test_parameter_geometry_with_types():
     schema = inp.json_schema()
     print("\ntest_parameter_geometry_with_types::", schema)
 
-    multipoint = {
+    multipoint: JsonDict = {
         "coordinates": [[10, 40], [40, 30], [20, 20], [30, 10]],
         "type": "MultiPoint",
     }
@@ -180,7 +185,7 @@ def test_parameter_geometry_with_types():
     print("\ntest_parameter_geometry_with_types::", schema)
 
     value = inp.value(multipoint)
-    assert value.wkbType() == QgsWkbTypes.MultiPoint
+    assert value.wkbType() == Qgis.WkbType.MultiPoint
 
 
 @pytest.mark.parametrize(
@@ -190,7 +195,7 @@ def test_parameter_geometry_with_types():
         '{"type": "Point", "coordinates": [1, 2]}',
     ],
 )
-def test_parameter_geometry_bare_string(value):
+def test_parameter_geometry_bare_string(value: str) -> None:
     """Bare strings must be passed as qualified input"""
     param = QgsProcessingParameterGeometry("Geometry")
     inp = InputParameter(param)
@@ -203,7 +208,7 @@ def test_parameter_geometry_bare_string(value):
     assert geom.asWkt() == "Point (1 2)"
 
 
-def test_parameter_geometry_polygon():
+def test_parameter_geometry_polygon() -> None:
     """Test geometry with parameter types"""
     # Single geometry type
     param = QgsProcessingParameterGeometry("Geometry", geometryTypes=[Qgis.GeometryType.Polygon])
@@ -213,21 +218,22 @@ def test_parameter_geometry_polygon():
     schema = inp.json_schema()
     print("\ntest_parameter_geometry_polygon::", schema)
 
-    polygon = {
+    polygon: JsonDict = {
         "coordinates": [[[10, 40], [40, 30], [20, 20], [30, 10], [10, 40]]],
         "type": "Polygon",
     }
 
     value = inp.value(polygon)
-    assert value.wkbType() == QgsWkbTypes.Polygon
+    assert value.wkbType() == Qgis.WkbType.Polygon
 
     # Check back to json
     jsonvalue = qgsgeometry_to_json(geojson.Polygon, value)
+    assert jsonvalue is not None
     assert jsonvalue.type == "Polygon"
     assert jsonvalue.crs is None
 
 
-def test_parameter_crs(qgis_session):
+def test_parameter_crs(qgis_session: ProcessingConfig) -> None:
     """Test CRS input"""
     param = QgsProcessingParameterCrs("Crs", defaultValue="EPSG:2154")
 
@@ -240,7 +246,8 @@ def test_parameter_crs(qgis_session):
     assert schema["format"] == "x-ogc-crs"
 
     # contentSchema must be a schema object
-    content_schemas = [s["contentSchema"] for s in schema["anyOf"] if "contentSchema" in s]
+    any_of = cast("list[dict]", schema["anyOf"])
+    content_schemas = [s["contentSchema"] for s in any_of if "contentSchema" in s]
     assert content_schemas == [
         {"$ref": "https://proj.org/en/latest/schemas/v0.7/projjson.schema.json"},
     ]
@@ -279,7 +286,7 @@ def test_parameter_crs(qgis_session):
         ("", ""),
     ],
 )
-def test_parameter_coordinate_operation_metadata(source, destination):
+def test_parameter_coordinate_operation_metadata(source: str, destination: str) -> None:
     """Crs parameter names are published as metadata"""
     param = QgsProcessingParameterCoordinateOperation(
         "Operation",
@@ -290,7 +297,8 @@ def test_parameter_coordinate_operation_metadata(source, destination):
     metadata = {
         md.role: md.value
         for md in InputParameter(param).description().metadata
-        if md.role in ("sourceCrsParameterName", "destinationCrsParameterName")
+        if isinstance(md, MetadataValue)
+        and md.role in ("sourceCrsParameterName", "destinationCrsParameterName")
     }
 
     expected = {}
@@ -321,19 +329,23 @@ def test_parameter_coordinate_operation_metadata(source, destination):
         ({"staticDestinationCrs": "EPSG:3857"}, {"staticDestinationCrs": "EPSG:3857"}),
     ],
 )
-def test_parameter_coordinate_operation_static_crs(qgis_session, static_crs, expected):
+def test_parameter_coordinate_operation_static_crs(
+    qgis_session: ProcessingConfig,
+    static_crs: dict[str, Any],
+    expected: dict[str, str],
+) -> None:
     """Static crs are published as metadata"""
     param = QgsProcessingParameterCoordinateOperation("Operation", **static_crs)
 
     metadata = {
         md.role: md.value
         for md in InputParameter(param).description().metadata
-        if md.role in ("staticSourceCrs", "staticDestinationCrs")
+        if isinstance(md, MetadataValue) and md.role in ("staticSourceCrs", "staticDestinationCrs")
     }
     assert metadata == expected
 
 
-def test_parameter_extent(qgis_session):
+def test_parameter_extent(qgis_session: ProcessingConfig) -> None:
     param = QgsProcessingParameterExtent("Extent")
 
     inp = InputParameter(param)
@@ -353,7 +365,10 @@ def test_parameter_extent(qgis_session):
         QgsRectangle(1, 1, 1, 1),
     ],
 )
-def test_parameter_extent_without_valid_default(qgis_session, default):
+def test_parameter_extent_without_valid_default(
+    qgis_session: ProcessingConfig,
+    default: QgsRectangle,
+) -> None:
     """No schema default for a null or empty default extent"""
     param = QgsProcessingParameterExtent("Extent", defaultValue=default)
 
@@ -361,7 +376,7 @@ def test_parameter_extent_without_valid_default(qgis_session, default):
     assert "default" not in schema
 
 
-def test_parameter_extent_with_default(qgis_session):
+def test_parameter_extent_with_default(qgis_session: ProcessingConfig) -> None:
     param = QgsProcessingParameterExtent(
         "Extent",
         defaultValue=QgsRectangle(15, 50, 16, 51),

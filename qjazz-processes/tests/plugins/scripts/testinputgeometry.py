@@ -1,4 +1,6 @@
-from qgis.core import QgsWkbTypes
+from typing import Any
+
+from qgis.core import QgsProcessingAlgorithm, QgsProcessingContext, QgsProcessingFeedback, QgsWkbTypes
 from qgis.processing import alg
 
 
@@ -8,12 +10,18 @@ from qgis.processing import alg
     type=alg.GEOMETRY,
     name="INPUT",
     label="Vector point",
-    # NOTE: Not correctly typed 
+    # NOTE: Not correctly typed
     geometryTypes=[QgsWkbTypes.GeometryType.Point],  # type: ignore [attr-defined]
     help="multipoint",
     allowMultipart=True,
 )
-def testgeom(instance, parameters, context, feedback, inputs):
+def testgeom(
+    instance: QgsProcessingAlgorithm,
+    parameters: dict[str, Any],
+    context: QgsProcessingContext,
+    feedback: QgsProcessingFeedback,
+    inputs: dict[str, Any],
+) -> dict[str, Any]:
     """
     This is a test function that does stuff
     """

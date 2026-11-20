@@ -16,17 +16,17 @@ def conf() -> JobRealmConfig:
     return JobRealmConfig(enabled=True, admin_tokens=("admin",))
 
 
-def test_jobrealm_disabled():
+def test_jobrealm_disabled() -> None:
     conf = JobRealmConfig(enabled=False)
     assert conf.job_realm(_request()) is None
     assert conf.job_realm(_request("*")) is None
 
 
-def test_jobrealm_valid(conf: JobRealmConfig):
+def test_jobrealm_valid(conf: JobRealmConfig) -> None:
     assert conf.job_realm(_request("realm_owner-01")) == "realm_owner-01"
 
 
-def test_jobrealm_admin(conf: JobRealmConfig):
+def test_jobrealm_admin(conf: JobRealmConfig) -> None:
     # Admin tokens are catch all
     assert conf.job_realm(_request("admin")) is None
 
@@ -42,7 +42,7 @@ def test_jobrealm_admin(conf: JobRealmConfig):
         "short",
     ],
 )
-def test_jobrealm_invalid(conf: JobRealmConfig, realm: str):
+def test_jobrealm_invalid(conf: JobRealmConfig, realm: str) -> None:
     # Invalid realms must not be used as registry key patterns
     with pytest.raises(web.HTTPUnauthorized):
         conf.job_realm(_request(realm))

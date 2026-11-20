@@ -7,31 +7,31 @@ from qgis.core import Qgis, QgsUnitTypes
 from qjazz_processes.schemas import input_model_description, ogc
 
 
-def test_uom_area_schema():
+def test_uom_area_schema() -> None:
     # Test area UOM schema
-    for u in Qgis.AreaUnit:
+    for u in Qgis.AreaUnit:  # type: ignore [attr-defined]
         if u == Qgis.AreaUnit.Unknown:
             continue
         assert ogc.UOM.get(QgsUnitTypes.toString(u)) is not None, u
 
 
-def test_uom_distance_schema():
+def test_uom_distance_schema() -> None:
     # Test distance UOM schema
-    for u in Qgis.DistanceUnit:
+    for u in Qgis.DistanceUnit:  # type: ignore [attr-defined]
         if u == Qgis.DistanceUnit.Unknown:
             continue
         assert ogc.UOM.get(QgsUnitTypes.toString(u)) is not None
 
 
-def test_uom_temporal_schema():
+def test_uom_temporal_schema() -> None:
     # Test distance UOM schema
-    for u in Qgis.TemporalUnit:
+    for u in Qgis.TemporalUnit:  # type: ignore [attr-defined]
         if u in (Qgis.TemporalUnit.Unknown, Qgis.TemporalUnit.IrregularStep):
             continue
         assert ogc.UOM.get(QgsUnitTypes.toString(u)) is not None
 
 
-def test_input_model_description():
+def test_input_model_description() -> None:
     """Input description from a model"""
     # No title
     desc = input_model_description(int, title=None, description=None)

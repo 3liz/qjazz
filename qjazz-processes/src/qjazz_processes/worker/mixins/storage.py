@@ -25,7 +25,6 @@ from qjazz_core import logger
 from qjazz_core.condition import assert_precondition
 
 from .. import registry
-from ..config import JobConfig
 from ..models import (
     Link,
     ProcessFilesVersion,
@@ -98,6 +97,14 @@ class StorageMixin(StorageProto):
 
         assert_precondition(not hasattr(StorageMixin, "_storage"))
         StorageMixin._storage = storage
+
+    @property
+    def workdir(self) -> Path:
+        return self._workdir
+
+    @property
+    def store_url(self) -> Template:
+        return self._store_url
 
     def download_url(self, job_id: str, resource: str, expiration: int) -> Link:
         """Returns a temporary download url"""
@@ -236,12 +243,27 @@ class StorageContext:
     PUBLISHED_FILES = ".files"
     EXPIRE_FILE = ".job-expire"
 
-    def __init__(self, conf: JobConfig, service_name: Optional[str] = None, with_expiration: bool = True):
+    def __init__(
+        self,
+        *,
+        workdir: Path,
+        store_url: Template,
+        service_name: Optional[str] = None,
+        with_expiration: bool = True,
+    ):
        self._with_expiration = with_expiration
-       self._store_url = conf.store_url
-       self._workdir = conf.workdir
+       self._store_url = store_url
+       self._workdir = workdir
        if service_name:
             self.EXPIRE_FILE = f"{self.EXPIRE_FILE}-{service_name}"
+
+    @property
+    def workdir(self) -> Path:
+        return self._workdir
+
+    @property
+    def store_url(self) -> Template:
+        return self._store_url
 
     @property
     def with_expiration(self) -> bool:

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import pytest
 
 from pydantic import ValidationError
@@ -8,13 +10,14 @@ from qjazz_processes.processing.inputs import (
     InputParameter,
     ParameterMatrix,
 )
+from qjazz_processes.schemas import JsonValue, Metadata, MetadataValue
 
 
-def meta(seq, s):
-    return next(filter(lambda m: m.role == s, seq)).value
+def meta(seq: Iterable[Metadata], s: str) -> JsonValue:
+    return next(m.value for m in seq if isinstance(m, MetadataValue) and m.role == s)
 
 
-def test_parameter_matrix():
+def test_parameter_matrix() -> None:
     headers = ["A", "B", "C"]
     param = QgsProcessingParameterMatrix("Matrix", headers=headers)
 
@@ -39,7 +42,7 @@ def test_parameter_matrix():
         _ = inp.value([[1.0, 2.0, 3.0], [4.0]])
 
 
-def test_parameter_matrix_fixed_rows():
+def test_parameter_matrix_fixed_rows() -> None:
     param = QgsProcessingParameterMatrix(
         "Matrix",
         headers=["A", "B", "C"],
@@ -70,7 +73,7 @@ def test_parameter_matrix_fixed_rows():
         _ = inp.value([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
 
-def test_parameter_matrix_no_headers():
+def test_parameter_matrix_no_headers() -> None:
     param = QgsProcessingParameterMatrix(
         "Matrix",
         headers=["A", "B"],
@@ -93,7 +96,7 @@ def test_parameter_matrix_no_headers():
         _ = inp.value([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
 
-def test_parameter_matrix_default_value():
+def test_parameter_matrix_default_value() -> None:
     default_value = [1.0, 2.0, 4.0, 5.0, 6.0, 7.0]
 
     param = QgsProcessingParameterMatrix(

@@ -29,5 +29,5 @@ def _published(exposed_providers: tuple[str, ...]) -> set[str]:
 )
 def test_published_providers(
     plugins: QgisPluginService, exposed_providers: tuple[str, ...], expected: set[str]
-):
+) -> None:
     assert _published(exposed_providers) == expected

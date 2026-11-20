@@ -325,6 +325,14 @@ def describe_processes(
 @click.option("--inputs", help="Job request")
 @click.option("--jobid", help="Pass an explicit Job id")
 @click.option("--project", "project_path", help="Path to project")
+@click.option(
+    "--workdir",
+    "-w",
+    type=click.Path(file_okay=False, writable=True, path_type=Path),
+    default=Path.cwd,
+    show_default="current directory",
+    help="Parent working directory where job directory is created",
+)
 @click.option("--dry-run", is_flag=True, help="Dry run")
 @click.pass_context
 def execute_processes(
@@ -333,6 +341,7 @@ def execute_processes(
     inputs: str,
     jobid: str,
     project_path: str,
+    workdir: Path,
     dry_run: bool,
 ):
     """Execute process IDENT"""
@@ -411,7 +420,7 @@ def execute_processes(
     project = get_project(project_path) if project_path else None
 
     feedback = Feedback()
-    context = ProcessingContext(conf.processing)
+    context = ProcessingContext(workdir.absolute(), conf.processing)
     context.setFeedback(feedback)
 
     context.job_id = jobid

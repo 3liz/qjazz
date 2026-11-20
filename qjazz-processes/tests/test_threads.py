@@ -6,7 +6,7 @@ import time
 from qjazz_processes.worker.threads import PeriodicTasks
 
 
-def test_periodic_tasks_shutdown_not_started():
+def test_periodic_tasks_shutdown_not_started() -> None:
     """Shutdown before start (i.e worker stopped before being ready)"""
     tasks = PeriodicTasks()
     tasks.add("task1", lambda: None, 0.01)
@@ -15,11 +15,11 @@ def test_periodic_tasks_shutdown_not_started():
     tasks.shutdown()
 
 
-def test_periodic_tasks_shutdown_started():
+def test_periodic_tasks_shutdown_started() -> None:
     """Started tasks are stopped and joined"""
     calls = 0
 
-    def target():
+    def target() -> None:
         nonlocal calls
         calls += 1
 

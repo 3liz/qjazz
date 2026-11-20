@@ -525,10 +525,11 @@ class ParameterLayerDestination[P: "QgsProcessingDestinationParameter"](
         inp: JsonValue,
         context: Optional[ProcessingContext] = None,
     ) -> "QgsProcessingOutputLayerDefinition":
-        context = context or ProcessingContext()
 
         destination = self.validate(inp)
         extension = self.output_extension
+
+        context = context or ProcessingContext.default()
 
         if context.config.raw_destination_input_sink:
             sink, destination = raw_destination_sink(

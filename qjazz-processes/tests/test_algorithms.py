@@ -1,40 +1,45 @@
 import mimetypes
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 
+from qjazz_core.condition import unwrap
 from qjazz_core.qgis import QgisPluginService
 
 from qgis.core import (
     Qgis,
+    QgsProcessingFeedback,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingUtils,
+    QgsVectorLayer,
 )
 
 from qjazz_processes.processing.prelude import (
     InputValueError,
     JobExecute,
     ProcessAlgorithm,
+    ProcessingConfig,
     ProcessingContext,
     runalg,
 )
 
-from .utils import Feedback
+from .utils import Feedback, Projects
 
 
-def test_algorithms_reprojectlayer_description(plugins):
+def test_algorithms_reprojectlayer_description(plugins: QgisPluginService) -> None:
     """Algorithms with a coordinate operation parameter can be described"""
-    pa = ProcessAlgorithm.find_algorithm("native:reprojectlayer")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("native:reprojectlayer"))
     assert pa is not None
 
     description = pa.description()
     assert "OPERATION" in description.inputs
 
 
-def test_algorithms_integer_with_float_bounds_description(plugins):
+def test_algorithms_integer_with_float_bounds_description(plugins: QgisPluginService) -> None:
     """Integer parameter with a non integer minimum (K_PARAMETER: 1e-05)"""
-    pa = ProcessAlgorithm.find_algorithm("native:createrandomnegativebinomialrasterlayer")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("native:createrandomnegativebinomialrasterlayer"))
     assert pa is not None
 
     description = pa.description()
@@ -53,7 +58,7 @@ def test_algorithms_pointcloud_attribute_description(
     plugins: QgisPluginService,
     ident: str,
     expected: dict,
-):
+) -> None:
     """Algorithms with a point cloud attribute parameter"""
     pa = ProcessAlgorithm.find_algorithm(ident)
     if pa is None:
@@ -64,9 +69,13 @@ def test_algorithms_pointcloud_attribute_description(
     assert description.inputs["ATTRIBUTE"].schema_ == expected
 
 
-def test_algorithms_simple(feedback, context, plugins):
+def test_algorithms_simple(
+    feedback: QgsProcessingFeedback,
+    context: ProcessingContext,
+    plugins: QgisPluginService,
+) -> None:
     """Execute a simple algorithm"""
-    pa = ProcessAlgorithm.find_algorithm("processes_test:testsimplevalue")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:testsimplevalue"))
 
     print("\ntest_algorithms_simple:description", pa.description().model_dump_json(indent=True))
 
@@ -83,9 +92,13 @@ def test_algorithms_simple(feedback, context, plugins):
     assert results["OUTPUT"] == "1 stuff"
 
 
-def test_algorithms_option(feedback, context, plugins):
+def test_algorithms_option(
+    feedback: QgsProcessingFeedback,
+    context: ProcessingContext,
+    plugins: QgisPluginService,
+) -> None:
     """Execute a simple choice algorithm"""
-    pa = ProcessAlgorithm.find_algorithm("processes_test:testoptionvalue")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:testoptionvalue"))
 
     print("\ntest_algorithms_option:description", pa.description().model_dump_json(indent=True))
 
@@ -99,9 +112,13 @@ def test_algorithms_option(feedback, context, plugins):
     assert results["OUTPUT"] == "selection is 0"
 
 
-def test_algorithms_multioption(feedback, context, plugins):
+def test_algorithms_multioption(
+    feedback: QgsProcessingFeedback,
+    context: ProcessingContext,
+    plugins: QgisPluginService,
+) -> None:
     """Execute a multiple choice algorithm"""
-    pa = ProcessAlgorithm.find_algorithm("processes_test:testmultioptionvalue")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:testmultioptionvalue"))
 
     print("\ntest_algorithms_multioption::description", pa.description().model_dump_json(indent=True))
 
@@ -115,18 +132,23 @@ def test_algorithms_multioption(feedback, context, plugins):
     assert results["OUTPUT"] == "selection is 0,2"
 
 
-def test_algorithms_layerdestination(qgis_session, plugins, projects):
+def test_algorithms_layerdestination(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Test layer copy: input one layer, output one layer.
     Test layer destination
     """
     feedback = Feedback()
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     context.job_id = "test_algorithms_layerdestination"
     context.workdir.mkdir(exist_ok=True)
 
-    pa = ProcessAlgorithm.find_algorithm("processes_test:testcopylayer")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:testcopylayer"))
 
     print("\ntest_algorithms_copylayer::description", pa.description().model_dump_json(indent=True))
 
@@ -154,14 +176,14 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     results = pa.execute(request, feedback, context)
     print("\ntest_algorithm_copylayer::results", results)
 
-    assert context.destination_project.count() == 1
+    assert unwrap(context.destination_project).count() == 1
 
-    layers = context.destination_project.mapLayersByName("france_parts_2")
+    layers = unwrap(context.destination_project).mapLayersByName("france_parts_2")
     assert len(layers) == 1
 
     layer = layers[0]
     if Qgis.versionInt() >= 33800:
-        print("\ntest_algorithms_copylayer::dataUrl", layer.serverProperties().dataUrl())
+        print("\ntest_algorithms_copylayer::dataUrl", unwrap(layer.serverProperties()).dataUrl())
     else:
         print("\ntest_algorithms_copylayer::dataUrl", layer.dataUrl())
 
@@ -170,7 +192,7 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     assert source.stem == "OUTPUT"
 
     # Check output
-    out = results["OUTPUT"]
+    out = cast("dict", results["OUTPUT"])
     assert out["type"] == "application/x-ogc-wms+xml"
     assert out["href"] == context.ows_reference(
         service="WMS",
@@ -179,16 +201,21 @@ def test_algorithms_layerdestination(qgis_session, plugins, projects):
     )
 
 
-def test_algorithms_nativewrapper(qgis_session, plugins, projects):
+def test_algorithms_nativewrapper(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Test wrapping a native algorithm."""
     feedback = Feedback()
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     context.job_id = "test_algorithms_nativewrapper"
     context.workdir.mkdir(exist_ok=True)
 
-    pa = ProcessAlgorithm.find_algorithm("processes_test:simplebuffer")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:simplebuffer"))
 
     print("\ntest_algorithms_nativewrapper::description", pa.description().model_dump_json(indent=True))
 
@@ -208,17 +235,17 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     # out = results.get('OUTPUT_VECTOR')
 
     # Get the layer
-    srclayer = QgsProcessingUtils.mapLayerFromString("france_parts", context)
+    srclayer = cast("QgsVectorLayer", QgsProcessingUtils.mapLayerFromString("france_parts", context))
     assert srclayer is not None
 
-    layers = context.destination_project.mapLayersByName("buffer")
+    layers = unwrap(context.destination_project).mapLayersByName("buffer")
     assert len(layers) == 1
 
-    output_layer = layers[0]
+    output_layer = cast("QgsVectorLayer", layers[0])
     assert output_layer.featureCount() == srclayer.featureCount()
 
     if Qgis.versionInt() >= 33800:
-        server_properties = output_layer.serverProperties()
+        server_properties = unwrap(output_layer.serverProperties())
         print(
             "\ntest_algorithms_nativewrapper::dataUrl",
             server_properties.dataUrl(),
@@ -234,7 +261,7 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     default_ext = QgsProcessingUtils.defaultVectorExtension()
 
     if Qgis.versionInt() >= 33800:
-        url_format = output_layer.serverProperties().dataUrlFormat()
+        url_format = unwrap(output_layer.serverProperties()).dataUrlFormat()
     else:
         url_format = output_layer.dataUrlFormat()
 
@@ -245,16 +272,21 @@ def test_algorithms_nativewrapper(qgis_session, plugins, projects):
     assert source.stem == "OUTPUT_VECTOR"
 
 
-def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
+def test_algorithms_vectorlayeroutput(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Test layer output"""
     feedback = Feedback()
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     context.job_id = "test_algorithms_layeroutput"
     context.workdir.mkdir(exist_ok=True)
 
-    pa = ProcessAlgorithm.find_algorithm("processes_test:vectoroutput")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:vectoroutput"))
 
     print("\ntest_algorithms_vectorlayeroutput::description", pa.description().model_dump_json(indent=True))
 
@@ -273,22 +305,27 @@ def test_algorithms_vectorlayeroutput(qgis_session, plugins, projects):
     results = pa.execute(request, feedback, context)
     print("\ntest_algorithms_vectorlayeroutput::results", results)
 
-    assert context.destination_project.count() == 1
+    assert unwrap(context.destination_project).count() == 1
 
-    out = results.get("OUTPUT")
+    out = cast("dict", results.get("OUTPUT"))
     assert out["type"] == "application/x-ogc-wfs+xml"
 
 
-def test_algorithms_selectfeatures(qgis_session, plugins, projects):
+def test_algorithms_selectfeatures(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Test layer output"""
     feedback = Feedback()
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     context.job_id = "test_algorithms_selectfeatures"
     context.workdir.mkdir(exist_ok=True)
 
-    pa = ProcessAlgorithm.find_algorithm("processes_test:simplebuffer")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:simplebuffer"))
 
     request = JobExecute(
         inputs={
@@ -306,23 +343,28 @@ def test_algorithms_selectfeatures(qgis_session, plugins, projects):
     results = pa.execute(request, feedback, context)
     print("\ntest_algorithms_selectfeatures::results", results)
 
-    layers = context.destination_project.mapLayersByName("buffer")
+    layers = unwrap(context.destination_project).mapLayersByName("buffer")
     assert len(layers) == 1
 
-    output_layer = layers[0]
+    output_layer = cast("QgsVectorLayer", layers[0])
     assert output_layer.featureCount() == 2
 
 
-def test_algorithms_exception(qgis_session, plugins, projects):
+def test_algorithms_exception(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    plugins: QgisPluginService,
+    projects: Projects,
+) -> None:
     """Test Error in algorithm"""
     feedback = Feedback()
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     context.job_id = "test_algorithms_selectfeatures"
     context.workdir.mkdir(exist_ok=True)
 
-    pa = ProcessAlgorithm.find_algorithm("processes_test:testraiseerror")
+    pa = unwrap(ProcessAlgorithm.find_algorithm("processes_test:testraiseerror"))
 
     request = JobExecute(inputs={"PARAM1": 20})
 

@@ -11,7 +11,7 @@ from qjazz_processes.processing.prelude import ProcessAlgorithm
 def test_plugins_provider(
     qgis_session: ProcessingConfig,
     plugins: QgisPluginService,
-):
+) -> None:
     registry = QgsApplication.processingRegistry()
     assert registry is not None
 

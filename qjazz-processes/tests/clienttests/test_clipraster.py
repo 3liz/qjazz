@@ -2,11 +2,11 @@
     Test Processing executor
 """
 
+
 import requests
-import json
 
 
-def test_execute_clipbyextent(host):
+def test_execute_clipbyextent(host: str) -> None:
     """  Test execute process """
 
     ident = "processes_test:testcliprasterlayer"

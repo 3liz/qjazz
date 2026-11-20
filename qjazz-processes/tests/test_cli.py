@@ -10,6 +10,8 @@ import click
 import pytest
 
 from click.testing import CliRunner, Result
+from qjazz_core.condition import assert_not_none
+from qjazz_core.qgis import QgisPluginService
 
 from qgis.core import QgsApplication
 
@@ -34,7 +36,7 @@ def _invoke(
 
 
 @pytest.mark.native
-def test_cli_describe_processes(plugins):
+def test_cli_describe_processes(plugins: QgisPluginService) -> None:
     """All processes are described and displayed
 
     Optional: QGIS internal algorithms may use parameter types
@@ -44,8 +46,8 @@ def test_cli_describe_processes(plugins):
     """
     failures = []
     undescribed = []
-    for alg in QgsApplication.processingRegistry().algorithms():
-        if alg.provider().id() == "qgis":
+    for alg in assert_not_none(QgsApplication.processingRegistry()).algorithms():
+        if assert_not_none(alg.provider()).id() == "qgis":
             # The 'qgis' provider (python processing plugin) is internal to QGIS
             # and not supported: some of its algorithms use custom parameter types
             continue
@@ -88,7 +90,7 @@ def _jobs_executor(jobs: list[JobStatus]) -> SimpleNamespace:
     )
 
 
-def test_cli_jobs_ls_json_pages():
+def test_cli_jobs_ls_json_pages() -> None:
     """Json output spans pages without prompt"""
     jobs = _jobs(5)
     result = _invoke(list_jobs, ["--json", "--limit", "2"], _jobs_executor(jobs))
@@ -107,7 +109,7 @@ def test_cli_jobs_ls_json_pages():
     assert job_ids == [job.job_id for job in jobs]
 
 
-def test_cli_jobs_ls_running_color():
+def test_cli_jobs_ls_running_color() -> None:
     """Running jobs are displayed in yellow"""
     result = _invoke(
         list_jobs,

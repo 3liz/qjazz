@@ -1,28 +1,35 @@
 """Test just returning simple value"""
 
-from qgis.core import QgsProcessingAlgorithm, QgsProcessingParameterMultipleLayers
+from typing import Any, Optional
+
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsProcessingFeedback,
+    QgsProcessingParameterMultipleLayers,
+)
 
 
 class TestInputMultiLayer(QgsProcessingAlgorithm):
     INPUT = "INPUT"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def name(self):
+    def name(self) -> str:
         return "testinputmultilayer"
 
-    def displayName(self):
+    def displayName(self) -> str:
         return "Test Input Multi Layer"
 
-    def createInstance(self, config={}):
+    def createInstance(self, config: Optional[dict[str, Any]] = None) -> QgsProcessingAlgorithm:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self, config: Optional[dict[str, Any]] = None) -> None:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
@@ -32,7 +39,12 @@ class TestInputMultiLayer(QgsProcessingAlgorithm):
 
         self.addParameter(param)
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(
+        self,
+        parameters: dict[str, Any],
+        context: QgsProcessingContext,
+        feedback: Optional[QgsProcessingFeedback],
+    ) -> dict[str, Any]:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html

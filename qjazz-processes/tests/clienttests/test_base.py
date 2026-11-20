@@ -3,7 +3,8 @@
 """
 import requests
 
-def test_landing_page(host):
+
+def test_landing_page(host: str) -> None:
     """ Test landing page
     """
     rv = requests.get(host + "/")
@@ -17,7 +18,7 @@ def test_landing_page(host):
     assert "http://www.opengis.net/def/rel/ogc/1.0/job-list" in rels
 
 
-def test_api_specs(host):
+def test_api_specs(host: str) -> None:
     """ Test response from api path
         
         Shourd be open api specs

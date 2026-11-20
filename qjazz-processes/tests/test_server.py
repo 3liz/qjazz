@@ -15,7 +15,7 @@ from qjazz_processes.server._handlers import (
 
 
 @pytest.mark.services
-async def test_server_processes(workdir: Path, http_client: TestClient):
+async def test_server_processes(workdir: Path, http_client: TestClient) -> None:
     # Test process list
 
     resp = await http_client.get("/processes/")

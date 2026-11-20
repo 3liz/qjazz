@@ -130,9 +130,7 @@ class OutputFolder(OutputParameter):
     def value_passing(self) -> ValuePassing:
         return ("byReference",)
 
-    def output(self, value: str, context: Optional[ProcessingContext] = None) -> JsonValue:
-        context = context or ProcessingContext()
-
+    def output(self, value: str, context: ProcessingContext) -> JsonValue:
         path = resolve_path(value, context)
         if not path.is_dir():
             raise ValueError(f"'{path}' is not a directory")

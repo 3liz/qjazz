@@ -1,3 +1,6 @@
+from typing import Any
+
+from qgis.core import QgsProcessingAlgorithm, QgsProcessingContext, QgsProcessingFeedback
 from qgis.processing import alg
 
 
@@ -7,7 +10,13 @@ from qgis.processing import alg
 @alg.input(type=str, name="IN3", label="In string 2")
 @alg.input(type=alg.SINK, name="SINK", label="Sink it!")
 @alg.output(type=str, name="OUT", label="WAT")
-def testalg(instance, parms, context, feedback, inputs):
+def testalg(
+    instance: QgsProcessingAlgorithm,
+    parms: dict[str, Any],
+    context: QgsProcessingContext,
+    feedback: QgsProcessingFeedback,
+    inputs: dict[str, Any],
+) -> dict[str, Any]:
     """
     This is a test function that does stuff
     """

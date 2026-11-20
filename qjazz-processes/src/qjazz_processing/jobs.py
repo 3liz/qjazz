@@ -48,10 +48,15 @@ def init_qgis(*args, **kwargs):
 
 class QgisProcessingWorker(QgisWorker):
     def create_context(self) -> QgisProcessingContext:
-        return QgisProcessingContext(self.processing_config, service_name=self.service_name)
+        return QgisProcessingContext(
+            self.processing_config,
+            workdir = self.workdir,
+            store_url = self.store_url,
+            service_name=self.service_name,
+        )
 
     def create_processes_cache(self) -> Optional[ProcessCacheProtocol]:
-        processes_cache = ProcessingCache(self.processing_config)
+        processes_cache = ProcessingCache(self.workdir, self.store_url, self.processing_config)
         processes_cache.start()
         return processes_cache
 

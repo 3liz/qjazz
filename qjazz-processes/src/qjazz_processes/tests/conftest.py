@@ -67,11 +67,10 @@ def pytest_sessionstart(session: pytest.Session):
 
 
 @pytest.fixture(scope="session")
-def processing_config(rootdir: Path, workdir: Path, cache_config: ProjectsConfig) -> ProcessingConfig:
+def processing_config(rootdir: Path, cache_config: ProjectsConfig) -> ProcessingConfig:
     from qjazz_processes.processing.config import QgisPluginConfig
 
     return ProcessingConfig(
-        workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
             paths=[rootdir.joinpath("plugins")],
@@ -88,7 +87,6 @@ def processing_raw_config(
     from qjazz_processes.processing.config import QgisPluginConfig
 
     return ProcessingConfig(
-        workdir=workdir,
         projects=cache_config,
         plugins=QgisPluginConfig(
             paths=[rootdir.joinpath("plugins")],
@@ -118,8 +116,12 @@ def feedback() -> QgsProcessingFeedback:
 
 
 @pytest.fixture(scope="function")
-def context(qgis_session: ProcessingConfig, feedback: QgsProcessingFeedback) -> ProcessingContext:
-    context = ProcessingContext(qgis_session)
+def context(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    feedback: QgsProcessingFeedback,
+) -> ProcessingContext:
+    context = ProcessingContext(workdir, qgis_session)
     context.setFeedback(feedback)
 
     # Create the default workdir

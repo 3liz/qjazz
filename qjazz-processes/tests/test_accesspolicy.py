@@ -28,7 +28,7 @@ def policy() -> DefaultAccessPolicy:
     return policy
 
 
-def test_accesspolicy_service(policy: DefaultAccessPolicy):
+def test_accesspolicy_service(policy: DefaultAccessPolicy) -> None:
     assert policy.get_service(make_mocked_request("GET", "/jobs/?service=test")) == "test"
     # Default to the available service
     assert policy.get_service(make_mocked_request("GET", "/jobs/")) == "test"
@@ -45,7 +45,7 @@ def test_accesspolicy_service(policy: DefaultAccessPolicy):
         "my-service",
     ],
 )
-def test_accesspolicy_invalid_service(policy: DefaultAccessPolicy, service: str):
+def test_accesspolicy_invalid_service(policy: DefaultAccessPolicy, service: str) -> None:
     """Service names are validated before being used in registry key patterns"""
     request = make_mocked_request("GET", "/jobs/", headers={}).clone(
         rel_url=f"/jobs/?service={service.replace('?', '%3F')}",

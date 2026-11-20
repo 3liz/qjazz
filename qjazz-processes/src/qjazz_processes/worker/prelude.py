@@ -1,3 +1,4 @@
+from .celery import JobContext  # noqa F401
 from .config import CONFIG_ENV_PATH  # noqa F401
 from .context import QgisContext, Feedback  # noqa F401
 from .exceptions import (  # noqa F401

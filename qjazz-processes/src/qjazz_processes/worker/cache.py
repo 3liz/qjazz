@@ -13,7 +13,6 @@ from uuid import uuid1
 
 from qjazz_core import logger
 
-from ..processing.config import ProcessingConfig
 from ..schemas import (
     JsonDict,
     JsonValue,
@@ -63,12 +62,11 @@ ProcessCacheProto = ProcessCacheProtocol
 
 
 class ProcessCache(mp.Process):
-    def __init__(self, config: ProcessingConfig) -> None:
+    def __init__(self) -> None:
         super().__init__(name="process_cache", daemon=True)
         self._descriptions: dict[str, ProcessDescription] = {}
         self._processes: list[ProcessSummary] = []
         self._known_processes: set[str] = set()
-        self._processing_config = config
 
         self._sender, self._conn = mp.Pipe(duplex=True)
         # Serialize request/response exchanges with the cache process:
@@ -86,9 +84,9 @@ class ProcessCache(mp.Process):
         self.__dict__.update(state)
         self._lock = threading.Lock()
 
-    @property
-    def processing_config(self) -> ProcessingConfig:
-        return self._processing_config
+    #
+    #def processing_config(self) -> ProcessingConfig:
+    #    return self._processing_config
 
     @property
     def processes(self) -> list[JsonValue]:

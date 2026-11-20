@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
 from types import SimpleNamespace
-from typing import Iterator, cast
+from typing import Any, Iterator, Optional, cast
 
 import pytest
 
@@ -14,7 +14,7 @@ from qjazz_processes.worker import registry
 class FakeRedis:
     """Record the key patterns sent to redis"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.patterns: list[str] = []
         # Keys returned by 'keys()'
         self.existing: list[bytes] = []
@@ -24,13 +24,13 @@ class FakeRedis:
         self.patterns.append(pattern)
         return self.existing
 
-    def hset(self, key, *args, **kwargs):
+    def hset(self, key: str, *args: Any, **kwargs: Any) -> None:
         self.patterns.append(key)
 
-    def expireat(self, key, ts):
+    def expireat(self, key: str, ts: int) -> None:
         pass
 
-    def expire(self, key: bytes, timeout: int):
+    def expire(self, key: bytes, timeout: int) -> None:
         self.expires[key] = timeout
 
 
@@ -53,7 +53,7 @@ def app(client: FakeRedis) -> Celery:
         "ABC-def_123",
     ],
 )
-def test_registry_valid_job_id(job_id: str):
+def test_registry_valid_job_id(job_id: str) -> None:
     assert registry.is_valid_job_id(job_id)
 
 
@@ -71,7 +71,7 @@ def test_registry_valid_job_id(job_id: str):
         "job id",
     ],
 )
-def test_registry_invalid_job_id(job_id: str, app: Celery, client: FakeRedis):
+def test_registry_invalid_job_id(job_id: str, app: Celery, client: FakeRedis) -> None:
     assert not registry.is_valid_job_id(job_id)
 
     # Lookups must not reach redis with an invalid job id
@@ -84,14 +84,14 @@ def test_registry_invalid_job_id(job_id: str, app: Celery, client: FakeRedis):
     assert client.patterns == []
 
 
-def test_registry_lookup_pattern(app: Celery, client: FakeRedis):
+def test_registry_lookup_pattern(app: Celery, client: FakeRedis) -> None:
     job_id = "6f1d2b9e-3c1a-4d7e-9a0b-2f5c8e1d4a7b"
 
     registry.delete(app, job_id)
     assert client.patterns == [f"qjazz::{job_id}::*"]
 
 
-def test_registry_register_invalid_job_id(app: Celery, client: FakeRedis):
+def test_registry_register_invalid_job_id(app: Celery, client: FakeRedis) -> None:
     status = JobStatus(
         job_id="*",
         process_id="test",
@@ -104,7 +104,7 @@ def test_registry_register_invalid_job_id(app: Celery, client: FakeRedis):
     assert client.patterns == []
 
 
-def test_registry_set_expiration(app: Celery, client: FakeRedis):
+def test_registry_set_expiration(app: Celery, client: FakeRedis) -> None:
     job_id = "6f1d2b9e-3c1a-4d7e-9a0b-2f5c8e1d4a7b"
 
     # Job not registered
@@ -119,7 +119,7 @@ def test_registry_set_expiration(app: Celery, client: FakeRedis):
     assert client.expires == {key: 900}
 
 
-def test_registry_set_expiration_invalid_job_id(app: Celery, client: FakeRedis):
+def test_registry_set_expiration_invalid_job_id(app: Celery, client: FakeRedis) -> None:
     assert registry.set_expiration(app, "*", 900) is False
     assert client.patterns == []
 
@@ -127,13 +127,13 @@ def test_registry_set_expiration_invalid_job_id(app: Celery, client: FakeRedis):
 class StoreRedis:
     """In-memory registry store with redis glob matching"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.store: dict[str, dict] = {}
 
-    def hset(self, key, mapping=None, **kwargs):
+    def hset(self, key: str, mapping: Optional[dict] = None, **kwargs: Any) -> None:
         self.store.setdefault(key, {}).update(mapping or {})
 
-    def expireat(self, key, ts):
+    def expireat(self, key: str, ts: int) -> None:
         pass
 
     def hgetall(self, key: str | bytes) -> dict[bytes, bytes]:
@@ -147,7 +147,7 @@ class StoreRedis:
         return iter(self.keys(match))
 
 
-def _register(app: Celery, job_id: str, realm: str | None):
+def _register(app: Celery, job_id: str, realm: str | None) -> None:
     status = JobStatus(
         job_id=job_id,
         process_id="test",
@@ -157,7 +157,7 @@ def _register(app: Celery, job_id: str, realm: str | None):
     registry.register(app, "test", realm, status, expires=10, pending_timeout=10)
 
 
-def test_registry_job_without_realm():
+def test_registry_job_without_realm() -> None:
     """Jobs without realm have an empty realm segment"""
     client = StoreRedis()
     app = cast("Celery", SimpleNamespace(backend=SimpleNamespace(client=client)))

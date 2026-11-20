@@ -6,10 +6,13 @@ import socket
 
 from ipaddress import ip_address
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
+
+from pytest_httpserver import HTTPServer
+from qjazz_core.condition import assert_not_none
 
 from qjazz_processes.callbacks import accesscontrol
 from qjazz_processes.callbacks.accesscontrol import AccessControlConfig
@@ -19,13 +22,18 @@ from qjazz_processes.callbacks.handlers.http import (
     HttpCallbackConfig,
 )
 from qjazz_processes.callbacks.handlers.mailto import get_recipients
+from qjazz_processes.schemas import JobResults, JsonValue
 from qjazz_processes.worker.mixins.callbacks import on_task_postrun
 
 if TYPE_CHECKING:
     from qjazz_processes.worker.models import JobMeta
 
 
-def test_callback_acl_allow():
+def _hostname(url: str) -> str:
+    return assert_not_none(urlsplit(url).hostname)
+
+
+def test_callback_acl_allow() -> None:
     """Allow by default"""
     conf = AccessControlConfig(
         allow=(
@@ -48,7 +56,7 @@ def test_callback_acl_allow():
     assert conf.check_hostname("projects.3liz.org")
 
 
-def test_callback_acl_deny():
+def test_callback_acl_deny() -> None:
     """Deny by default"""
     conf = AccessControlConfig(
         allow=(
@@ -69,7 +77,7 @@ def test_callback_acl_deny():
     assert not conf.check_hostname("projects.3liz.org")
 
 
-def test_callback_acl_ipv6_allow():
+def test_callback_acl_ipv6_allow() -> None:
     """IPv6 addresses and networks with 'Allow' order"""
     conf = AccessControlConfig(
         allow=("fd00::8",),
@@ -86,11 +94,11 @@ def test_callback_acl_ipv6_allow():
     assert conf.check_ip(ip_address("2001:db8::1"))
 
     # Host from callback url
-    assert not conf.check_hostname(urlsplit("http://[::1]:8080/callback").hostname)
-    assert conf.check_hostname(urlsplit("http://[fd00::8]/callback").hostname)
+    assert not conf.check_hostname(_hostname("http://[::1]:8080/callback"))
+    assert conf.check_hostname(_hostname("http://[fd00::8]/callback"))
 
 
-def test_callback_acl_ipv6_deny():
+def test_callback_acl_ipv6_deny() -> None:
     """IPv6 addresses and networks with 'Deny' order"""
     conf = AccessControlConfig(
         allow=(
@@ -106,8 +114,8 @@ def test_callback_acl_ipv6_deny():
     assert not conf.check_ip(ip_address("fd00::8"))
     assert not conf.check_ip(ip_address("2001:db8::2"))
 
-    assert conf.check_hostname(urlsplit("http://[2001:db8::1]/callback").hostname)
-    assert not conf.check_hostname(urlsplit("http://[::1]/callback").hostname)
+    assert conf.check_hostname(_hostname("http://[2001:db8::1]/callback"))
+    assert not conf.check_hostname(_hostname("http://[::1]/callback"))
 
 
 # Fake DNS resolution
@@ -119,7 +127,12 @@ HOSTS = {
 }
 
 
-def _getaddrinfo(host, port, *args, **kwargs):
+def _getaddrinfo(
+    host: str,
+    port: int | str | None,
+    *args: Any,
+    **kwargs: Any,
+) -> list[tuple[socket.AddressFamily, socket.SocketKind, int, str, tuple[str, int]]]:
     if host not in HOSTS:
         raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
     return [
@@ -135,11 +148,11 @@ def _getaddrinfo(host, port, *args, **kwargs):
 
 
 @pytest.fixture()
-def fake_dns(monkeypatch):
+def fake_dns(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(accesscontrol, "getaddrinfo", _getaddrinfo)
 
 
-def test_callback_acl_hostname_all_addresses(fake_dns):
+def test_callback_acl_hostname_all_addresses(fake_dns: None) -> None:
     """All resolved addresses must be allowed"""
     conf = AccessControlConfig(
         deny=(
@@ -156,7 +169,7 @@ def test_callback_acl_hostname_all_addresses(fake_dns):
     assert not conf.check_hostname("mixed6.foo.com")
 
 
-def test_callback_acl_hostname_filter(fake_dns):
+def test_callback_acl_hostname_filter(fake_dns: None) -> None:
     """Hostname filters apply to all resolved addresses"""
     conf = AccessControlConfig(
         allow=(".foo.com",),
@@ -167,7 +180,7 @@ def test_callback_acl_hostname_filter(fake_dns):
     assert not conf.check_hostname("local.bar.com")
 
 
-def test_callback_acl_unresolved_hostname(fake_dns):
+def test_callback_acl_unresolved_hostname(fake_dns: None) -> None:
     """Unresolved hosts are not allowed"""
     conf = AccessControlConfig(order="Allow")
 
@@ -175,7 +188,7 @@ def test_callback_acl_unresolved_hostname(fake_dns):
     assert not conf.check_hostname("unknown.foo.com")
 
 
-def test_callback_mailto_recipients_acl(fake_dns):
+def test_callback_mailto_recipients_acl(fake_dns: None) -> None:
     """Unauthorized or unresolved recipients are skipped"""
     conf = AccessControlConfig(deny=("127.0.0.0/8",), order="Allow")
 
@@ -186,10 +199,10 @@ def test_callback_mailto_recipients_acl(fake_dns):
     assert list(get_recipients("cc", url, params, conf)) == []
 
 
-def test_callback_http_request(httpserver):
+def test_callback_http_request(httpserver: HTTPServer) -> None:
     handler = HttpCallback(("http",), HttpCallbackConfig())
 
-    results = {
+    results: dict[str, JsonValue] = {
         "foo": "bar",
         "baz": 1,
     }
@@ -212,13 +225,13 @@ def test_callback_http_request(httpserver):
 
 
 class RecordCallbacks:
-    def __init__(self):
+    def __init__(self) -> None:
         self.calls: list[tuple] = []
 
-    def on_success(self, url, job_id, meta, results):
+    def on_success(self, url: str, job_id: str, meta: "JobMeta", results: JobResults) -> None:
         self.calls.append(("success", url, job_id))
 
-    def on_failure(self, url, job_id, meta):
+    def on_failure(self, url: str, job_id: str, meta: "JobMeta") -> None:
         self.calls.append(("failure", url, job_id))
 
 
@@ -237,23 +250,23 @@ def _postrun(kwargs: dict, state: str) -> list[tuple]:
     return callbacks.calls
 
 
-def test_callback_postrun_without_request():
+def test_callback_postrun_without_request() -> None:
     """Task failed before starting (i.e dismissed task): no request, no callback"""
-    kwargs = {"__meta__": {}, "__run_config__": {}}
+    kwargs: dict = {"__meta__": {}, "__run_config__": {}}
     assert _postrun(kwargs, "FAILURE") == []
 
 
-def test_callback_postrun_failure():
+def test_callback_postrun_failure() -> None:
     request = {"subscriber": {"failedUri": "https://foo.com/failed"}}
     calls = _postrun({"__meta__": {}, "request": request}, "FAILURE")
     assert calls == [("failure", "https://foo.com/failed", "job_01")]
 
 
-def test_callback_postrun_no_subscriber():
+def test_callback_postrun_no_subscriber() -> None:
     assert _postrun({"__meta__": {}, "request": {}}, "SUCCESS") == []
 
 
-def test_callback_test_handler(monkeypatch):
+def test_callback_test_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     """The test handler accepts the arguments passed by 'Callbacks'"""
     from qjazz_processes.callbacks import callbacks
 

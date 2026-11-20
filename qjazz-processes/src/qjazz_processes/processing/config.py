@@ -9,6 +9,7 @@ from pydantic import (
 from qjazz_core import logger
 from qjazz_core.config import (
     AbsoluteDirectoryPath,
+    ConfigBase,
     Template,
     TemplateStr,
     TLSConfig,
@@ -22,7 +23,6 @@ from qjazz_core.qgis import (
 from qjazz_cache.prelude import ProjectsConfig
 
 from ..schemas import WGS84
-from ..worker.config import JobConfig
 
 
 def _validate_qgis_setting(value: str | bool | float) -> str:
@@ -42,7 +42,7 @@ QgisSettingValue = Annotated[str, BeforeValidator(_validate_qgis_setting)]
 
 
 # Processing job config section
-class ProcessingConfig(JobConfig):
+class ProcessingConfig(ConfigBase):
     projects: ProjectsConfig = Field(
         default=ProjectsConfig(),
         title="Projects configuration",

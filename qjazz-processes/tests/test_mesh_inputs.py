@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 
 import pytest
 
@@ -11,14 +12,16 @@ from qgis.core import (
     QgsProcessingParameterMeshLayer,
 )
 
+from qjazz_processes.processing.context import ProcessingContext
 from qjazz_processes.processing.inputs import (
     InputParameter,
     ParameterMeshDatasetGroups,
     ParameterMeshDatasetTime,
 )
+from qjazz_processes.schemas import JsonValue, MetadataValue
 
 
-def test_parameter_meshlayer():
+def test_parameter_meshlayer() -> None:
     param = QgsProcessingParameterMeshLayer("Mesh")
 
     inp = InputParameter(param)
@@ -27,7 +30,7 @@ def test_parameter_meshlayer():
     print("\ntest_parameter_layer_mesh::", schema)
 
 
-def test_parameter_meshdatasetgroups():
+def test_parameter_meshdatasetgroups(context: ProcessingContext) -> None:
     param = QgsProcessingParameterMeshDatasetGroups(
         "MeshDatasetGroups",
         meshLayerParameterName="Mesh",
@@ -48,21 +51,24 @@ def test_parameter_meshdatasetgroups():
     assert schema["minItems"] == 1
 
     # Values are dataset group indexes
-    value = inp.value([0, 5, 7])
+    value = inp.value([0, 5, 7], context)
     assert value == [0, 5, 7]
     assert param.checkValueIsAcceptable(value)
     assert QgsProcessingParameterMeshDatasetGroups.valueAsDatasetGroup(value) == [0, 5, 7]
 
-    for invalid in ([], [-1], ["a"]):
+    invalids: tuple[JsonValue, ...] = ([], [-1], ["a"])
+    for invalid in invalids:
         with pytest.raises(ValidationError):
-            inp.value(invalid)
+            inp.value(invalid, context)
 
-    metadata = {md.role: md.value for md in inp.description().metadata}
+    metadata = {
+        md.role: md.value for md in inp.description().metadata if isinstance(md, MetadataValue)
+    }
     assert metadata["meshLayerParameterName"] == "Mesh"
-    assert sorted(metadata["supportedDataTypes"]) == ["DataOnFaces", "DataOnVertices"]
+    assert sorted(cast("list", metadata["supportedDataTypes"])) == ["DataOnFaces", "DataOnVertices"]
 
 
-def test_parameter_meshdatasettime():
+def test_parameter_meshdatasettime() -> None:
     param = QgsProcessingParameterMeshDatasetTime("MeshDatasetTime")
 
     inp = InputParameter(param)
@@ -72,5 +78,6 @@ def test_parameter_meshdatasettime():
     schema = inp.json_schema()
     print("\ntest_parameter_layer_meshdatasetdatetime::", schema)
 
-    value = inp.value({"type": "defined-date-time", "value": datetime.now()})
+    # Datetime object are accepted as input value
+    value = inp.value({"type": "defined-date-time", "value": datetime.now()})  # type: ignore [dict-item]
     assert param.checkValueIsAcceptable(value)

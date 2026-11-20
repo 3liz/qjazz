@@ -1,6 +1,6 @@
 from pathlib import Path
 from string import Template
-from typing import Optional, cast
+from typing import Optional, Self, cast
 
 from qjazz_core import logger
 from qjazz_core.condition import assert_precondition
@@ -12,22 +12,34 @@ from qgis.core import (
     QgsProject,
 )
 
+from ..worker.storage import DEFAULT_STORE_URL
 from .config import ProcessingConfig
 from .utils import get_valid_filename
 
 
 class ProcessingContext(QgsProcessingContext):
-    def __init__(self, config: Optional[ProcessingConfig] = None):
+    def __init__(
+        self,
+        workdir: Path,
+        config: ProcessingConfig,
+        *,
+        store_url: Optional[Template] = None,
+    ):
         super().__init__()
         self._destination_project: Optional[QgsProject] = None
-        self._config = config or ProcessingConfig(workdir=Path().absolute())
+        self._config = config
 
         self.public_url = ""
         self.files: set[str] = set()
 
+        self._parent_workdir = workdir
         self.job_id = "00000000-0000-0000-0000-000000000000"
-        self.store_url(self._config.store_url)
+        self.store_url(store_url or DEFAULT_STORE_URL)
         self.advertised_services_url(self._config.advertised_services_url)
+
+    @classmethod
+    def default(cls) -> Self:
+        return cls(Path().absolute(), ProcessingConfig())
 
     @property
     def job_id(self) -> str:
@@ -36,7 +48,7 @@ class ProcessingContext(QgsProcessingContext):
     @job_id.setter
     def job_id(self, ident: str):
         self._job_id = ident
-        self._workdir = self._config.workdir.joinpath(ident)
+        self._workdir = self._parent_workdir.joinpath(ident)
         # Initialize temporaryFolder with workdir
         self.setTemporaryFolder(str(self._workdir))
 

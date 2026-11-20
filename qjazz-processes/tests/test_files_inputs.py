@@ -2,6 +2,8 @@ import json
 import random
 import string
 
+from pathlib import Path
+
 import pytest
 
 from pydantic import ValidationError
@@ -28,8 +30,8 @@ from qjazz_processes.schemas import InputValueError
 # TODO: Test Reference input value
 
 
-def test_parameter_file(processing_config: ProcessingConfig):
-    context = ProcessingContext(processing_config)
+def test_parameter_file(processing_config: ProcessingConfig, workdir: Path) -> None:
+    context = ProcessingContext(workdir, processing_config)
     context.job_id = "test_parameter_file"
 
     context.workdir.mkdir(exist_ok=True)
@@ -68,10 +70,10 @@ def test_parameter_file(processing_config: ProcessingConfig):
         assert f.read() == ascii_content
 
 
-def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
+def test_parameter_raw_file(processing_raw_config: ProcessingConfig, workdir: Path) -> None:
     """Test input ref from local file system"""
 
-    context = ProcessingContext(processing_raw_config)
+    context = ProcessingContext(workdir, processing_raw_config)
     context.job_id = "test_parameter_raw_file"
 
     raw_destination_path = processing_raw_config.raw_destination_root_path
@@ -95,8 +97,8 @@ def test_parameter_raw_file(processing_raw_config: ProcessingConfig):
     assert str(input_file) == value
 
 
-def test_parameter_filedestination(qgis_session: ProcessingConfig):
-    context = ProcessingContext(qgis_session)
+def test_parameter_filedestination(qgis_session: ProcessingConfig, workdir: Path) -> None:
+    context = ProcessingContext(workdir, qgis_session)
 
     param = QgsProcessingParameterFileDestination("test_parameter_filedestination")
 
@@ -124,9 +126,9 @@ def test_parameter_filedestination(qgis_session: ProcessingConfig):
     assert str(expected) == value
 
 
-def test_parameter_raw_file_traversal(processing_raw_config: ProcessingConfig):
+def test_parameter_raw_file_traversal(processing_raw_config: ProcessingConfig, workdir: Path) -> None:
     """Raw file references cannot escape the root folder"""
-    context = ProcessingContext(processing_raw_config)
+    context = ProcessingContext(workdir, processing_raw_config)
     context.job_id = "test_parameter_raw_file_traversal"
 
     param = QgsProcessingParameterFile("test_parameter_raw_file_traversal", extension=".txt")
@@ -143,9 +145,9 @@ def test_parameter_raw_file_traversal(processing_raw_config: ProcessingConfig):
             inp.value({"href": href}, context)
 
 
-def test_parameter_filedestination_traversal(processing_config: ProcessingConfig):
+def test_parameter_filedestination_traversal(processing_config: ProcessingConfig, workdir: Path) -> None:
     """Destination paths escaping the job folder are truncated"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
     context.job_id = "test_parameter_filedestination_traversal"
 
     param = QgsProcessingParameterFileDestination("test_parameter_filedestination_traversal")
@@ -153,17 +155,17 @@ def test_parameter_filedestination_traversal(processing_config: ProcessingConfig
 
     inp = InputParameter(param)
 
-    workdir = context.workdir
+    jobdir = context.workdir
 
-    assert inp.value("foo/bar.txt", context) == str(workdir.joinpath("foo", "bar.txt"))
-    assert inp.value("foo/../bar.txt", context) == str(workdir.joinpath("bar.txt"))
+    assert inp.value("foo/bar.txt", context) == str(jobdir.joinpath("foo", "bar.txt"))
+    assert inp.value("foo/../bar.txt", context) == str(jobdir.joinpath("bar.txt"))
     # Truncated to file name in job folder
-    assert inp.value("../../x/bar.txt", context) == str(workdir.joinpath("bar.txt"))
+    assert inp.value("../../x/bar.txt", context) == str(jobdir.joinpath("bar.txt"))
 
 
-def test_parameter_raw_filedestination(processing_raw_config: ProcessingConfig):
+def test_parameter_raw_filedestination(processing_raw_config: ProcessingConfig, workdir: Path) -> None:
     """Raw destination paths are resolved against the root folder"""
-    context = ProcessingContext(processing_raw_config)
+    context = ProcessingContext(workdir, processing_raw_config)
     context.job_id = "test_parameter_raw_filedestination"
 
     root_path = processing_raw_config.raw_destination_root_path
@@ -192,12 +194,13 @@ def test_parameter_raw_filedestination(processing_raw_config: ProcessingConfig):
 )
 def test_parameter_file_extension(
     processing_config: ProcessingConfig,
+    workdir: Path,
     extension: str,
     suffix: str,
     media_type: str,
-):
+) -> None:
     """QGIS file extension may be given with or without leading dot"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
     context.job_id = "test_parameter_file_extension"
     context.workdir.mkdir(exist_ok=True)
 
@@ -215,9 +218,9 @@ def test_parameter_file_extension(
     assert expected.read_text() == "a,b\n1,2"
 
 
-def test_parameter_raw_file_extension(processing_raw_config: ProcessingConfig):
+def test_parameter_raw_file_extension(processing_raw_config: ProcessingConfig, workdir: Path) -> None:
     """Raw file reference without extension get the QGIS extension"""
-    context = ProcessingContext(processing_raw_config)
+    context = ProcessingContext(workdir, processing_raw_config)
     context.job_id = "test_parameter_raw_file_extension"
 
     root_path = processing_raw_config.raw_destination_root_path
@@ -233,9 +236,9 @@ def test_parameter_raw_file_extension(processing_raw_config: ProcessingConfig):
     assert value == str(input_file)
 
 
-def test_parameter_folderdestination(processing_config: ProcessingConfig):
+def test_parameter_folderdestination(processing_config: ProcessingConfig, workdir: Path) -> None:
     """Folder destinations are located in the job folder"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
     context.job_id = "test_parameter_folderdestination"
 
     param = QgsProcessingParameterFolderDestination("OUTPUT", defaultValue="results")
@@ -248,12 +251,12 @@ def test_parameter_folderdestination(processing_config: ProcessingConfig):
     assert schema["type"] == "string"
     assert schema["default"] == "results"
 
-    workdir = context.workdir
+    jobdir = context.workdir
 
-    assert inp.value("out", context) == str(workdir.joinpath("out"))
-    assert inp.value("a/../b", context) == str(workdir.joinpath("b"))
+    assert inp.value("out", context) == str(jobdir.joinpath("out"))
+    assert inp.value("a/../b", context) == str(jobdir.joinpath("b"))
     # Truncated to its name in the job folder
-    assert inp.value("../../x", context) == str(workdir.joinpath("x"))
+    assert inp.value("../../x", context) == str(jobdir.joinpath("x"))
 
     with pytest.raises(ValidationError):
         inp.value(1, context)
@@ -261,12 +264,12 @@ def test_parameter_folderdestination(processing_config: ProcessingConfig):
     # Execution path
     inp = InputParameter(param, validation_only=True)
     parameters = InputParameter.parameters([inp], {"OUTPUT": "out"}, context)
-    assert parameters == {"OUTPUT": str(workdir.joinpath("out"))}
+    assert parameters == {"OUTPUT": str(jobdir.joinpath("out"))}
 
 
-def test_parameter_raw_folderdestination(processing_raw_config: ProcessingConfig):
+def test_parameter_raw_folderdestination(processing_raw_config: ProcessingConfig, workdir: Path) -> None:
     """Raw folder destinations are confined to the root folder"""
-    context = ProcessingContext(processing_raw_config)
+    context = ProcessingContext(workdir, processing_raw_config)
     context.job_id = "test_parameter_raw_folderdestination"
 
     root_path = processing_raw_config.raw_destination_root_path

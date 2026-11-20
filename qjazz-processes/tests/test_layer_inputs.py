@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Iterator, cast
+from typing import Iterable, Iterator, cast
 
 import pytest
 
 from pydantic import ValidationError
-from qjazz_core.condition import unwrap
+from qjazz_core.condition import assert_not_none, unwrap
 
 from qgis.core import (
     Qgis,
@@ -16,6 +16,7 @@ from qgis.core import (
     QgsProcessingFeedback,
     QgsProcessingOutputLayerDefinition,
     QgsProcessingParameterAlignRasterLayers,
+    QgsProcessingParameterDefinition,
     QgsProcessingParameterDxfLayers,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
@@ -51,14 +52,16 @@ from qjazz_processes.processing.inputs.layers import (
     ParameterVectorDestination,
     ParameterVectorLayer,
 )
-from qjazz_processes.schemas import InputValueError
+from qjazz_processes.schemas import InputValueError, JsonValue, Metadata, MetadataValue
+
+from .utils import Projects
 
 
-def meta(seq, s):
-    return next(filter(lambda m: m.role == s, seq)).value
+def meta(seq: Iterable[Metadata], s: str) -> JsonValue:
+    return next(m.value for m in seq if isinstance(m, MetadataValue) and m.role == s)
 
 
-def test_parameter_layer_maplayer():
+def test_parameter_layer_maplayer() -> None:
     param = QgsProcessingParameterMapLayer("MapLayer")
 
     inp = InputParameter(param)
@@ -68,7 +71,7 @@ def test_parameter_layer_maplayer():
     print("\ntest_parameter_layer_maplayer::", schema)
 
 
-def test_parameter_layer_vectorlayer(projects):
+def test_parameter_layer_vectorlayer(projects: Projects) -> None:
     project = projects.get("/france/france_parts")
 
     param = QgsProcessingParameterVectorLayer("VectorLayer")
@@ -80,10 +83,10 @@ def test_parameter_layer_vectorlayer(projects):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_vectorlayer::", schema)
 
-    assert "france_parts" in schema["enum"]
+    assert "france_parts" in cast("list", schema["enum"])
 
 
-def test_parameter_layer_rasterlayer(projects):
+def test_parameter_layer_rasterlayer(projects: Projects) -> None:
     project = projects.get("/samples/raster_layer")
 
     param = QgsProcessingParameterRasterLayer("RasterLayer")
@@ -100,7 +103,7 @@ def test_parameter_layer_rasterlayer(projects):
     assert schema["const"] == "raster_layer"
 
 
-def test_parameter_layer_featuresource(qgis_session):
+def test_parameter_layer_featuresource(qgis_session: ProcessingConfig) -> None:
     param = QgsProcessingParameterFeatureSource("FeatureSource")
 
     inp = InputParameter(param)
@@ -137,11 +140,12 @@ def points_3857() -> QgsVectorLayer:
 )
 def test_parameter_layer_featuresource_intersect(
     qgis_session: ProcessingConfig,
+    workdir: Path,
     points_3857: QgsVectorLayer,
     intersect: dict,
     expected: list[int],
-):
-    context = ProcessingContext(qgis_session)
+) -> None:
+    context = ProcessingContext(workdir, qgis_session)
     unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
@@ -153,10 +157,11 @@ def test_parameter_layer_featuresource_intersect(
 
 def test_parameter_layer_featuresource_input_forms(
     qgis_session: ProcessingConfig,
+    workdir: Path,
     points_3857: QgsVectorLayer,
-):
+) -> None:
     """Feature sources are passed as objects"""
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
@@ -173,9 +178,10 @@ def test_parameter_layer_featuresource_input_forms(
 
 def test_parameter_layer_featuresource_intersect_invalid_crs(
     qgis_session: ProcessingConfig,
+    workdir: Path,
     points_3857: QgsVectorLayer,
-):
-    context = ProcessingContext(qgis_session)
+) -> None:
+    context = ProcessingContext(workdir, qgis_session)
     unwrap(context.temporaryLayerStore()).addMapLayer(points_3857)
 
     inp = InputParameter(QgsProcessingParameterFeatureSource("FeatureSource"))
@@ -186,7 +192,7 @@ def test_parameter_layer_featuresource_intersect_invalid_crs(
         )
 
 
-def test_parameter_layer_multilayers(projects):
+def test_parameter_layer_multilayers(projects: Projects) -> None:
     project = projects.get("/france/france_parts")
 
     param = QgsProcessingParameterMultipleLayers("MultipleLayers")
@@ -197,10 +203,10 @@ def test_parameter_layer_multilayers(projects):
     schema = inp.json_schema()
     print("\ntest_parameter_layer_multiplelayers::", schema)
 
-    assert "france_parts" in schema["items"]["enum"]
+    assert "france_parts" in cast("dict", schema["items"])["enum"]
 
 
-def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
+def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig, workdir: Path) -> None:
     param = QgsProcessingParameterVectorDestination("VectorDestination")
 
     assert QgsProcessingUtils.defaultVectorExtension() == qgis_session.default_vector_file_ext
@@ -208,10 +214,10 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
 
     config = qgis_session
 
-    context = ProcessingContext(config)
+    context = ProcessingContext(workdir, config)
     assert context.destination_project is None
 
-    workdir = context.workdir
+    jobdir = context.workdir
 
     inp = InputParameter(param)
     assert isinstance(inp, ParameterVectorDestination)
@@ -224,9 +230,10 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
     value = inp.value("bar", context)
     assert isinstance(value, QgsProcessingOutputLayerDefinition)
     assert value.destinationName == "bar"
-    assert value.sink.staticValue() == str(workdir.joinpath("VectorDestination.fgb"))
+    assert value.sink.staticValue() == str(jobdir.joinpath("VectorDestination.fgb"))
 
     context = ProcessingContext(
+        workdir,
         config.model_copy(
             update={"raw_destination_input_sink": True},
         ),
@@ -248,6 +255,7 @@ def test_parameter_layer_vectordestination(qgis_session: ProcessingConfig):
         inp.value("../foobar.csv", context)
 
     context = ProcessingContext(
+        workdir,
         config.model_copy(
             update={
                 "raw_destination_input_sink": True,
@@ -298,10 +306,11 @@ def _output_definition(sink: str, name: str = "") -> QgsProcessingOutputLayerDef
 )
 def test_parameter_layer_destination_defaults(
     qgis_session: ProcessingConfig,
+    workdir: Path,
     defval: str | QgsProcessingOutputLayerDefinition,
     expected_default: str | None,
     expected_ext: str | None,
-):
+) -> None:
     param = QgsProcessingParameterVectorDestination("VectorDestination", defaultValue=defval)
 
     inp = InputParameter(param)
@@ -312,7 +321,7 @@ def test_parameter_layer_destination_defaults(
 
     # Non-file default sinks are ignored: the output
     # is always a file in the job folder
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     value = inp.value("bar", context)
     assert value.destinationName == "bar"
     assert value.sink.staticValue() == str(
@@ -320,11 +329,11 @@ def test_parameter_layer_destination_defaults(
     )
 
 
-def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
+def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig, workdir: Path) -> None:
     param = QgsProcessingParameterRasterDestination("RasterDestination")
     config = qgis_session
 
-    context = ProcessingContext(config)
+    context = ProcessingContext(workdir, config)
     context.destination_project = None
 
     inp = InputParameter(param)
@@ -334,7 +343,7 @@ def test_parameter_layer_rasterdestination(qgis_session: ProcessingConfig):
     print("\ntest_parameter_layer_rasterdestination::schema", schema)
 
 
-def test_parameter_tininputlayers():
+def test_parameter_tininputlayers() -> None:
     param = QgsProcessingParameterTinInputLayers("TinInputLayers")
 
     inp = InputParameter(param)
@@ -345,7 +354,7 @@ def test_parameter_tininputlayers():
     print("\ntest_parameter_tininputlayer::", schema)
 
 
-def test_parameter_field():
+def test_parameter_field() -> None:
     param = QgsProcessingParameterField(
         "Field",
         parentLayerParameterName="ParentLayer",
@@ -373,7 +382,7 @@ def test_parameter_field():
     assert schema["minItems"] == 1
 
 
-def test_parameter_pointcloud_attribute():
+def test_parameter_pointcloud_attribute(context: ProcessingContext) -> None:
     param = QgsProcessingParameterPointCloudAttribute(
         "Attribute",
         defaultValue="Z",
@@ -394,15 +403,15 @@ def test_parameter_pointcloud_attribute():
     assert meta(md, "parentLayerParameterName") == "ParentLayer"
     assert meta(md, "defaultToAllAttributes") is False
 
-    value = inp.value("Intensity")
+    value = inp.value("Intensity", context)
     assert value == "Intensity"
     assert param.checkValueIsAcceptable(value)
 
     with pytest.raises(ValidationError):
-        inp.value(["X", "Y"])
+        inp.value(["X", "Y"], context)
 
 
-def test_parameter_pointcloud_attribute_multiple():
+def test_parameter_pointcloud_attribute_multiple(context: ProcessingContext) -> None:
     param = QgsProcessingParameterPointCloudAttribute(
         "Attribute",
         defaultValue="X;Y",
@@ -422,7 +431,7 @@ def test_parameter_pointcloud_attribute_multiple():
     md = inp.metadata(param)
     assert meta(md, "defaultToAllAttributes") is True
 
-    value = inp.value(["X", "Intensity"])
+    value = inp.value(["X", "Intensity"], context)
     assert param.checkValueIsAcceptable(value)
     assert QgsProcessingParameters.parameterAsStrings(
         param,
@@ -431,10 +440,10 @@ def test_parameter_pointcloud_attribute_multiple():
     ) == ["X", "Intensity"]
 
     with pytest.raises(ValidationError):
-        inp.value([])
+        inp.value([], context)
 
 
-def test_parameter_fieldmapping():
+def test_parameter_fieldmapping() -> None:
     param = QgsProcessingParameterFieldMapping(
         "FieldMapping",
         parentLayerParameterName="ParentLayer",
@@ -448,7 +457,7 @@ def test_parameter_fieldmapping():
     print("\ntest_parameter_fieldmapping::", schema)
 
 
-def test_parameter_alignrasterlayers(projects):
+def test_parameter_alignrasterlayers(projects: Projects) -> None:
     project = projects.get("/samples/raster_layer")
 
     param = QgsProcessingParameterAlignRasterLayers("AlignRasterLayers")
@@ -496,19 +505,23 @@ def project_ab() -> Iterator[QgsProject]:
     project.removeAllMapLayers()
 
 
-def _context(config: ProcessingConfig, project: QgsProject) -> ProcessingContext:
-    context = ProcessingContext(config)
+def _context(config: ProcessingConfig, workdir: Path, project: QgsProject) -> ProcessingContext:
+    context = ProcessingContext(workdir, config)
     context.setProject(project)
     return context
 
 
-def test_parameter_multiplelayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+def test_parameter_multiplelayers_value(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    project_ab: QgsProject,
+) -> None:
     """Multiple layers are passed to QGIS as a list"""
     param = QgsProcessingParameterMultipleLayers(
         "Layers",
         layerType=Qgis.ProcessingSourceType.VectorAnyGeometry,
     )
-    context = _context(qgis_session, project_ab)
+    context = _context(qgis_session, workdir, project_ab)
 
     value = InputParameter(param, project_ab).value(["a", "b"], context)
     assert isinstance(value, list)
@@ -519,10 +532,14 @@ def test_parameter_multiplelayers_value(qgis_session: ProcessingConfig, project_
     assert sorted(layer.name() for layer in layers) == ["a", "b"]
 
 
-def test_parameter_dxflayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+def test_parameter_dxflayers_value(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    project_ab: QgsProject,
+) -> None:
     """Dxf layers are passed to QGIS as a list"""
     param = QgsProcessingParameterDxfLayers("Layers")
-    context = _context(qgis_session, project_ab)
+    context = _context(qgis_session, workdir, project_ab)
 
     value = InputParameter(param, project_ab).value(["a", "b"], context)
     assert isinstance(value, list)
@@ -531,10 +548,14 @@ def test_parameter_dxflayers_value(qgis_session: ProcessingConfig, project_ab: Q
     assert param.checkValueIsAcceptable(value, context)
 
 
-def test_parameter_tininputlayers_value(qgis_session: ProcessingConfig, project_ab: QgsProject):
+def test_parameter_tininputlayers_value(
+    qgis_session: ProcessingConfig,
+    workdir: Path,
+    project_ab: QgsProject,
+) -> None:
     """Each Tin input has a single layer source"""
     param = QgsProcessingParameterTinInputLayers("Layers")
-    context = _context(qgis_session, project_ab)
+    context = _context(qgis_session, workdir, project_ab)
 
     value = InputParameter(param, project_ab).value(
         [{"source": "a", "type": "0", "attributeIndex": "-1"}],
@@ -550,13 +571,13 @@ def test_parameter_tininputlayers_value(qgis_session: ProcessingConfig, project_
 #
 
 
-def _aggregates_param():
-    alg = QgsApplication.processingRegistry().algorithmById("native:aggregate")
+def _aggregates_param() -> QgsProcessingParameterDefinition:
+    alg = assert_not_none(QgsApplication.processingRegistry()).algorithmById("native:aggregate")
     assert alg is not None
-    return alg.parameterDefinition("AGGREGATES")
+    return assert_not_none(alg.parameterDefinition("AGGREGATES"))
 
 
-def test_parameter_aggregate_metadata(qgis_session: ProcessingConfig):
+def test_parameter_aggregate_metadata(qgis_session: ProcessingConfig) -> None:
     """The parent layer is published although the parameter is a generic definition"""
     inp = InputParameter(_aggregates_param())
 
@@ -584,15 +605,16 @@ def test_parameter_aggregate_metadata(qgis_session: ProcessingConfig):
     ],
 )
 def test_parameter_aggregate_types(
-    qgis_session: ProcessingConfig,
+    context: ProcessingContext,
     type_name: str,
     type_: int,
     sub_type: int,
-):
+) -> None:
     """Field type names are translated to QVariant types"""
     param = _aggregates_param()
     value = InputParameter(param).value(
         [{"name": "out", "type": type_name, "input": '"f"', "aggregate": "first_value"}],
+        context,
     )
     assert value == [
         {
@@ -608,14 +630,15 @@ def test_parameter_aggregate_types(
 
 
 @pytest.mark.parametrize("type_", [6, "6", "double"])
-def test_parameter_aggregate_invalid_type(qgis_session: ProcessingConfig, type_: int | str):
+def test_parameter_aggregate_invalid_type(context: ProcessingContext, type_: int | str) -> None:
     with pytest.raises(ValidationError):
         InputParameter(_aggregates_param()).value(
             [{"name": "out", "type": type_, "input": '"f"', "aggregate": "sum"}],
+            context,
         )
 
 
-def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
+def test_parameter_aggregate_run(context: ProcessingContext) -> None:
     """Run the aggregate algorithm with the converted definitions"""
     layer = QgsVectorLayer("Polygon?crs=EPSG:3857&field=label:string", "polygons", "memory")
     for label, wkt in (
@@ -633,19 +656,20 @@ def test_parameter_aggregate_run(qgis_session: ProcessingConfig):
             {"name": "labels", "type": "text", "input": '"label"', "aggregate": "concatenate"},
             {"name": "count", "type": "integer", "input": '"label"', "aggregate": "count"},
         ],
+        context,
     )
 
-    context = QgsProcessingContext()
+    qgs_context = QgsProcessingContext()
     alg = unwrap(QgsApplication.processingRegistry()).algorithmById("native:aggregate")
     assert alg is not None
     results, ok = alg.run(
         {"INPUT": layer, "GROUP_BY": "NULL", "AGGREGATES": aggregates, "OUTPUT": "memory:"},
-        context,
+        qgs_context,
         QgsProcessingFeedback(),
     )
     assert ok
 
-    output = cast("QgsVectorLayer",context.getMapLayer(results["OUTPUT"]))
+    output = cast("QgsVectorLayer", qgs_context.getMapLayer(results["OUTPUT"]))
     assert output is not None
     fields = {f.name(): f.type() for f in output.fields()}  # type: ignore[attr-defined]
     assert fields == {"total_area": 6, "labels": 10, "count": 2}

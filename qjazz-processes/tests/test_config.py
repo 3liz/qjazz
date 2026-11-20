@@ -22,14 +22,14 @@ from qjazz_processes.processing.config import ProcessingConfig
         (2.5, "2.5"),
     ],
 )
-def test_config_qgis_settings_values(tmp_path, value, expected):
+def test_config_qgis_settings_values(value: str | bool | float, expected: str) -> None:
     """QGIS settings values are converted to strings"""
-    conf = ProcessingConfig(workdir=tmp_path, qgis_settings={"section/key": value})
+    conf = ProcessingConfig(qgis_settings={"section/key": value})
 
     assert conf.qgis_settings == {"section/key": expected}
     assert conf.settings()["section/key"] == expected
 
 
-def test_config_qgis_settings_invalid_value(tmp_path):
+def test_config_qgis_settings_invalid_value() -> None:
     with pytest.raises(ValidationError, match="Unsupported type"):
-        ProcessingConfig(workdir=tmp_path, qgis_settings={"section/key": [1, 2]})
+        ProcessingConfig(qgis_settings={"section/key": [1, 2]})

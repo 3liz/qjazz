@@ -1,5 +1,8 @@
+from typing import Any
+
 import processing
 
+from qgis.core import QgsProcessingAlgorithm, QgsProcessingContext, QgsProcessingFeedback
 from qgis.processing import alg
 
 
@@ -7,7 +10,13 @@ from qgis.processing import alg
 @alg.input(type=alg.RASTER_LAYER, name="INPUT", label="Raster Layer")
 @alg.input(type=alg.EXTENT, name="EXTENT", label="Clip Extent")
 @alg.input(type=alg.RASTER_LAYER_DEST, name="OUTPUT", label="Clipped Layer")
-def testcliprasterlayer(instance, parameters, context, feedback, inputs):
+def testcliprasterlayer(
+    instance: QgsProcessingAlgorithm,
+    parameters: dict[str, Any],
+    context: QgsProcessingContext,
+    feedback: QgsProcessingFeedback,
+    inputs: dict[str, Any],
+) -> dict[str, Any]:
     """
     This is a test function for clip raster layer
     """

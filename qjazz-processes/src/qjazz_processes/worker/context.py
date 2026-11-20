@@ -5,6 +5,8 @@ import os
 
 from contextlib import chdir, contextmanager  # noqa F401
 from functools import cached_property
+from pathlib import Path
+from string import Template
 from typing import (
     Callable,
     Iterator,
@@ -123,12 +125,18 @@ class QgisContext(StorageContext):
         self,
         conf: ProcessingConfig,
         *,
+        workdir: Path,
+        store_url: Template,
         service_name: Optional[str] = None,
         with_expiration: bool = True,
     ):
         assert_precondition(qgis_initialized(), "Qgis context must be intialized")
 
-        super().__init__(conf, service_name, with_expiration)
+        super().__init__(
+            workdir = workdir,
+            store_url = store_url,
+            service_name = service_name,
+            with_expiration = with_expiration)
         self._conf = conf
 
 
@@ -150,7 +158,11 @@ class QgisContext(StorageContext):
         if not project and require_project:
             raise ProjectRequired(f"Algorithm {ident} require project")
 
-        context = ProcessingContext(self.processing_config)
+        context = ProcessingContext(
+            self.workdir,
+            self.processing_config,
+            store_url = self.store_url,
+        )
         context.setFeedback(feedback)
         context.job_id = task_id
 

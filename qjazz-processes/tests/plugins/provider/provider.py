@@ -24,16 +24,16 @@ from .TestUltimateQuestion import TestUltimateQuestion
 
 
 class TestAlgorithmProvider(QgsProcessingProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def id(self):
+    def id(self) -> str:
         return "processes_test"
 
-    def name(self):
+    def name(self) -> str:
         return "Proceses Test"
 
-    def loadAlgorithms(self):
+    def loadAlgorithms(self) -> None:
         algs = [
             TestSimpleValue,
             TestOptionValue,
@@ -63,14 +63,14 @@ class TestAlgorithmProvider(QgsProcessingProvider):
 
 
 class DummyAlgorithmProvider(QgsProcessingProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def id(self):
+    def id(self) -> str:
         return "proceses_dummy_test"
 
-    def name(self):
+    def name(self) -> str:
         return "Processes Dummy Test"
 
-    def loadAlgorithms(self):
+    def loadAlgorithms(self) -> None:
         pass

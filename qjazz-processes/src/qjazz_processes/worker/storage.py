@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
+from string import Template
 from typing import (
     Annotated,
     Any,
@@ -19,6 +20,7 @@ from pydantic import (
 from qjazz_core import logger
 from qjazz_core.config import (
     ConfigBase,
+    TemplateStr,
 )
 from qjazz_core.models import Field
 
@@ -65,9 +67,24 @@ class Storage(Protocol):
         pass
 
 
+DEFAULT_STORE_URL = Template("${public_url}/jobs/$jobId/files/$resource")
+
+
 class StorageConfig(ConfigBase):
     """Configure storage for jobs data"""
 
+    store_url: TemplateStr = Field(
+        default=DEFAULT_STORE_URL,
+        validate_default=True,
+        title="Public download url",
+        description="""
+        Url template for downloading resources.
+        This is the public base url that will be seen in
+        referenced responses.
+        This url will need to be translated by the front end
+        executor to an effective download url.
+        """,
+    )
 
     storage_class: Annotated[
         ImportString,

@@ -1,30 +1,36 @@
 """Test html output"""
 
 from pathlib import Path
+from typing import Any, Optional
 
-from qgis.core import QgsProcessingAlgorithm, QgsProcessingOutputHtml
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsProcessingFeedback,
+    QgsProcessingOutputHtml,
+)
 
 
 class TestOutputHtml(QgsProcessingAlgorithm):
     OUTPUT = "OUTPUT"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def name(self):
+    def name(self) -> str:
         return "testoutputhtml"
 
-    def displayName(self):
+    def displayName(self) -> str:
         return "Test output html"
 
-    def createInstance(self, config=None):
+    def createInstance(self, config: Optional[dict[str, Any]] = None) -> QgsProcessingAlgorithm:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self, config: Optional[dict[str, Any]] = None) -> None:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
@@ -36,7 +42,12 @@ class TestOutputHtml(QgsProcessingAlgorithm):
             )
         )
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(
+        self,
+        parameters: dict[str, Any],
+        context: QgsProcessingContext,
+        feedback: Optional[QgsProcessingFeedback],
+    ) -> dict[str, Any]:
         value = "report.html"
 
         # Create the output file

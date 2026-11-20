@@ -3,6 +3,8 @@
 #
 
 from functools import cached_property
+from pathlib import Path
+from string import Template
 from typing import Optional
 
 from qjazz_core import logger
@@ -88,7 +90,7 @@ class QgisProcessingContext(QgisContext):
         if not project and alg.require_project:
             raise ProjectRequired(f"Algorithm {ident} require project")
 
-        context = ProcessingContext(self.processing_config)
+        context = ProcessingContext(self.workdir, self.processing_config, store_url = self.store_url)
         context.setFeedback(feedback)
 
         if project:
@@ -130,12 +132,22 @@ class QgisProcessingContext(QgisContext):
 
 class ProcessingCache(ProcessCache):
     def initialize(self):
-        self.processing_config.projects._dont_resolve_layers = True
-        QgisProcessingContext.setup_processing(self.processing_config)
+        self._processing_config.projects._dont_resolve_layers = True
+        QgisProcessingContext.setup_processing(self._processing_config)
+
+    def __init__(self, workdir: Path, store_url: Template, conf: ProcessingConfig):
+        super().__init__()
+        self._workdir = workdir
+        self._store_url = store_url
+        self._processing_config = conf
 
     @cached_property
     def context(self) -> QgisProcessingContext:
-        return QgisProcessingContext(self.processing_config)
+        return QgisProcessingContext(
+            self._processing_config,
+            workdir = self._workdir,
+            store_url = self._store_url,
+        )
 
     def _describe(self, ident: str, project: Optional[str]) -> ProcessDescription:
         description = self.context.describe(ident, project)

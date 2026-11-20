@@ -9,7 +9,6 @@ from typing import Any, Iterator, Optional, cast
 
 import pytest
 
-from qjazz_processes.processing.config import ProcessingConfig
 from qjazz_processes.schemas import ProcessDescription, ProcessSummary
 from qjazz_processes.worker import cache
 from qjazz_processes.worker.cache import ProcessCache
@@ -22,7 +21,7 @@ SLOW_DELAY = 1.0
 class FakeCache(ProcessCache):
     """Process cache without QGIS"""
 
-    def initialize(self):
+    def initialize(self) -> None:
         pass
 
     def _update(self) -> list[ProcessSummary]:
@@ -43,15 +42,15 @@ class FakeCache(ProcessCache):
 
 
 @pytest.fixture()
-def process_cache(processing_config: ProcessingConfig) -> Iterator[FakeCache]:
-    proc = FakeCache(processing_config)
+def process_cache() -> Iterator[FakeCache]:
+    proc = FakeCache()
     proc.start()
     proc.update()
     yield proc
     proc.stop()
 
 
-def test_process_cache_late_response(process_cache: FakeCache, monkeypatch: pytest.MonkeyPatch):
+def test_process_cache_late_response(process_cache: FakeCache, monkeypatch: pytest.MonkeyPatch) -> None:
     """A late response is not taken as the response of the next request"""
     monkeypatch.setattr(cache, "POLL_TIMEOUT", 0.2)
 
@@ -69,7 +68,7 @@ def test_process_cache_late_response(process_cache: FakeCache, monkeypatch: pyte
     assert description["title"] == "alg@fast"
 
 
-def test_process_cache_concurrent_requests(process_cache: FakeCache):
+def test_process_cache_concurrent_requests(process_cache: FakeCache) -> None:
     """Requests from multiple threads get their own response
 
     Without serialized exchanges, two threads may wait on the pipe
@@ -106,10 +105,9 @@ def test_process_cache_concurrent_requests(process_cache: FakeCache):
 
 @pytest.mark.parametrize("start_method", ["fork", "forkserver", "spawn"])
 def test_process_cache_start_method(
-    processing_config: ProcessingConfig,
     start_method: str,
     monkeypatch: pytest.MonkeyPatch,
-):
+) -> None:
     """The process cache can be started with any start method
 
     'spawn' and 'forkserver' require the process object to be picklable.
@@ -118,7 +116,7 @@ def test_process_cache_start_method(
     context = cast("Any", mp.get_context(start_method))
     monkeypatch.setattr(FakeCache, "_Popen", staticmethod(context.Process._Popen))
 
-    proc = FakeCache(processing_config)
+    proc = FakeCache()
     proc.start()
     try:
         assert [p.id_ for p in proc.update()] == ["alg"]

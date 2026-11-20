@@ -4,8 +4,6 @@
 import functools
 
 from contextlib import contextmanager
-from pathlib import Path
-from string import Template
 from typing import (
     Any,
     Optional,
@@ -162,14 +160,6 @@ class QgisWorker(Service, CallbacksMixin, StorageMixin, JoblogMixin):
     def processing_config(self) -> ProcessingConfig:
         return self._processing_config
 
-    @property
-    def workdir(self) -> Path:
-        return self._processing_config.workdir
-
-    @property
-    def store_url(self) -> Template:
-        return self._processing_config.store_url
-
     def reload_processes(self) -> None:
         """Reload processes"""
         if self.processes_cache:
@@ -190,7 +180,12 @@ class QgisWorker(Service, CallbacksMixin, StorageMixin, JoblogMixin):
         super().on_worker_shutdown()
 
     def create_context(self) -> QgisContext:
-        return QgisContext(self.processing_config, service_name=self.service_name)
+        return QgisContext(
+            self.processing_config,
+            workdir = self.workdir,
+            store_url = self.store_url,
+            service_name=self.service_name,
+    )
 
     def create_processes_cache(self) -> Optional[ProcessCacheProtocol]:
         return None

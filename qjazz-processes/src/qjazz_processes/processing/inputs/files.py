@@ -93,6 +93,8 @@ class ParameterFile(InputParameter):
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
         param = self._param
 
+        context = context or ProcessingContext.default()
+
         if param.behavior() == Qgis.ProcessingFileParameterBehavior.Folder:
             # XXX Passing a folder is not really relevant for processes API
             # except if we allow raw input value
@@ -126,7 +128,7 @@ class ParameterFile(InputParameter):
 
         _inp = RefOrQualifiedInput.validate_python(inp)
 
-        workdir = (context and context.workdir) or Path()
+        workdir = context.workdir
         destination = workdir.joinpath(param.name()).with_suffix(file_extension(param))
 
         try:
@@ -182,7 +184,7 @@ class ParameterFileDestination(InputParameter, OutputFormatDefinition):
         return md
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
-        path = resolve_path(self, inp, context or ProcessingContext())
+        path = resolve_path(self, inp, context or ProcessingContext.default())
 
         ext = self.output_extension
         if ext:
@@ -199,7 +201,7 @@ class ParameterFolderDestination(InputParameter):
     _ParameterType = str
 
     def value(self, inp: JsonValue, context: Optional[ProcessingContext] = None) -> str:
-        return str(resolve_path(self, inp, context or ProcessingContext()))
+        return str(resolve_path(self, inp, context or ProcessingContext.default()))
 
 #
 # Utils

@@ -3,11 +3,15 @@
 import traceback
 
 from pathlib import Path
+from typing import Any, Optional
 
 import processing
 
 from qgis.core import (
+    Qgis,
     QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsProcessingFeedback,
     QgsProcessingOutputVectorLayer,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterNumber,
@@ -19,23 +23,23 @@ class TestOutputVectorLayer(QgsProcessingAlgorithm):
     DISTANCE = "DISTANCE"
     OUTPUT = "OUTPUT"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def name(self):
+    def name(self) -> str:
         return "vectoroutput"
 
-    def displayName(self):
+    def displayName(self) -> str:
         return "Vector output test"
 
-    def createInstance(self, config={}):
+    def createInstance(self, config: Optional[dict[str, Any]] = None) -> QgsProcessingAlgorithm:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
         """
         return self.__class__()
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self, config: Optional[dict[str, Any]] = None) -> None:
         """Virtual override
 
         see https://qgis.org/api/classQgsProcessingAlgorithm.html
@@ -49,13 +53,18 @@ class TestOutputVectorLayer(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.DISTANCE, "Distance", type=QgsProcessingParameterNumber.Double, defaultValue=1000
+                self.DISTANCE, "Distance", type=Qgis.ProcessingNumberParameterType.Double, defaultValue=1000
             )
         )
 
         self.addOutput(QgsProcessingOutputVectorLayer(self.OUTPUT, "Output"))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(
+        self,
+        parameters: dict[str, Any],
+        context: QgsProcessingContext,
+        feedback: Optional[QgsProcessingFeedback],
+    ) -> dict[str, Any]:
         try:
             output = str(Path(context.temporaryFolder()).joinpath("my_output_vector.fgb"))
 
@@ -80,3 +89,4 @@ class TestOutputVectorLayer(QgsProcessingAlgorithm):
 
         except Exception:
             traceback.print_exc()
+            raise

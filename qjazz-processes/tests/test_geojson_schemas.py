@@ -14,7 +14,7 @@ from qjazz_processes.schemas.geojson import (
 )
 
 
-def test_geojson_point():
+def test_geojson_point() -> None:
     ta = TypeAdapter(Point)
 
     # schema = ta.json_schema()
@@ -33,7 +33,7 @@ def test_geojson_point():
     assert len(p.coordinates) == 2
 
 
-def test_geojson_invalid_type():
+def test_geojson_invalid_type() -> None:
     ta = TypeAdapter(Point)
 
     with pytest.raises(ValidationError):
@@ -46,7 +46,7 @@ def test_geojson_invalid_type():
         )
 
 
-def test_geojson_multipoint():
+def test_geojson_multipoint() -> None:
     ta = TypeAdapter(MultiPoint)
 
     # schema = ta.json_schema()
@@ -66,7 +66,7 @@ def test_geojson_multipoint():
     assert len(mp.coordinates) == 3
 
 
-def test_geojson_linestring():
+def test_geojson_linestring() -> None:
     ta = TypeAdapter(LineString)
 
     # schema = ta.json_schema()
@@ -85,7 +85,7 @@ def test_geojson_linestring():
     assert len(ls.coordinates) == 2
 
 
-def test_geojson_multilinestring():
+def test_geojson_multilinestring() -> None:
     ta = TypeAdapter(MultiLineString)
 
     # schema = ta.json_schema()
@@ -107,7 +107,7 @@ def test_geojson_multilinestring():
     assert len(ml.coordinates) == 2
 
 
-def test_geojson_polygon():
+def test_geojson_polygon() -> None:
     ta = TypeAdapter(Polygon)
 
     # schema = ta.json_schema()
@@ -145,7 +145,7 @@ def test_geojson_polygon():
         )
 
 
-def test_geojson_multipolygon():
+def test_geojson_multipolygon() -> None:
     ta = TypeAdapter(MultiPolygon)
 
     # schema = ta.json_schema()
@@ -176,7 +176,7 @@ def test_geojson_multipolygon():
     assert len(pl.coordinates) == 2
 
 
-def test_geojson_geometry():
+def test_geojson_geometry() -> None:
     """Test Union geometry alias"""
     ta = TypeAdapter(Geometry)
 

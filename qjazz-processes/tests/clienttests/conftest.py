@@ -1,10 +1,10 @@
 
 from pathlib import Path
-from string import Template
+from typing import Optional
 
 import pytest
 
-_baseurl = None
+_baseurl: Optional[str] = None
 
 
 @pytest.fixture(scope='session')
@@ -18,14 +18,14 @@ def data(rootdir: Path) -> Path:
 
 
 @pytest.fixture()
-def host(request):
+def host(request: pytest.FixtureRequest) -> Optional[str]:
     return _baseurl
 
 
-def pytest_addoption(parser):
-    parser.addoption("--host", metavar="HOST", default="http://localhost:9180")
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--host", metavar="HOST", default="http://localhost:4000")
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     global _baseurl
     _baseurl = config.getoption('host')

@@ -3,12 +3,12 @@
 #
 import inspect
 
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
 from time import time
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, Callable, Never, Optional, cast
 from uuid import uuid4
 
 import pytest
@@ -18,7 +18,7 @@ from qjazz_core.utils import to_utc_datetime
 from qjazz_processes.executor.blocking import BlockingExecutor
 from qjazz_processes.executor.executor import AsyncExecutor, ExecutorBase
 from qjazz_processes.executor.processes import Processes
-from qjazz_processes.schemas import JobExecute, JobStatus
+from qjazz_processes.schemas import JobExecute, JobStatus, JsonValue
 from qjazz_processes.worker import registry
 
 if TYPE_CHECKING:
@@ -30,20 +30,26 @@ if TYPE_CHECKING:
 class FakeRedis:
     """Minimal in-memory redis registry"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.store: dict[str, dict] = {}
 
-    def hset(self, key, field=None, value=None, mapping=None):
+    def hset(
+        self,
+        key: str | bytes,
+        field: Optional[str] = None,
+        value: Any = None,
+        mapping: Optional[dict] = None,
+    ) -> None:
         key = key.decode() if isinstance(key, bytes) else key
         item = self.store.setdefault(key, {})
         if field is not None:
             item[field] = value
         item.update(mapping or {})
 
-    def lock(self, name, **kwargs):
+    def lock(self, name: str, **kwargs: Any) -> AbstractContextManager:
         return nullcontext()
 
-    def expireat(self, key, ts):
+    def expireat(self, key: str | bytes, ts: int) -> None:
         pass
 
     def hgetall(self, key: str | bytes) -> dict[bytes, bytes]:
@@ -53,7 +59,7 @@ class FakeRedis:
     def keys(self, pattern: str) -> list[bytes]:
         return [k.encode() for k in self.store if fnmatchcase(k, pattern)]
 
-    def delete(self, *keys):
+    def delete(self, *keys: str | bytes) -> None:
         for k in keys:
             self.store.pop(k.decode() if isinstance(k, bytes) else k, None)
 
@@ -61,12 +67,12 @@ class FakeRedis:
 class FakeCelery:
     """Record the registry state when the task is sent"""
 
-    def __init__(self, fail: bool = False):
+    def __init__(self, fail: bool = False) -> None:
         self.backend = SimpleNamespace(client=FakeRedis())
         self.fail = fail
         self.sent: list[dict] = []
 
-    def send_task(self, name, task_id=None, **kwargs):
+    def send_task(self, name: str, task_id: Optional[str] = None, **kwargs: Any) -> SimpleNamespace:
         # Like Celery, generate a task id if none is given
         task_id = task_id or str(uuid4())
         registered = registry.find_job(cast("Celery", self), task_id) is not None
@@ -97,7 +103,7 @@ def _executor(celery: FakeCelery, destinations: tuple[str, ...] = ()) -> Process
     return executor
 
 
-def test_executor_register_before_send():
+def test_executor_register_before_send() -> None:
     """Job is registered before the task is sent"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -114,7 +120,7 @@ def test_executor_register_before_send():
     assert registry.find_job(cast("Celery", celery), job_id) is not None
 
 
-def test_executor_register_send_failure():
+def test_executor_register_send_failure() -> None:
     """Job is unregistered if the task cannot be sent"""
     celery = FakeCelery(fail=True)
     executor = _executor(celery)
@@ -128,7 +134,7 @@ def test_executor_register_send_failure():
     assert celery.backend.client.store == {}
 
 
-def test_executor_priority():
+def test_executor_priority() -> None:
     """Job priority is passed to the task"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -146,7 +152,7 @@ def test_executor_priority():
     assert celery.sent[1]["priority"] == 0
 
 
-def test_executor_unknown_job():
+def test_executor_unknown_job() -> None:
     """Unknown job returns None (i.e 404) for job commands"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -167,14 +173,14 @@ def test_executor_unknown_job():
     )
 
 
-def test_executor_dismiss_failure_resets_state():
+def test_executor_dismiss_failure_resets_state() -> None:
     """A failure while dismissing a job resets its dismissed state"""
     celery = FakeCelery()
     executor = _executor(celery, destinations=("test@worker",))
 
     job_id, _, _ = executor._execute("test", "processes_test:testsimplevalue", JobExecute(inputs={}))
 
-    def get_task_meta(task_id):
+    def get_task_meta(task_id: str) -> Never:
         raise ConnectionError("Result backend unavailable")
 
     celery.backend.get_task_meta = get_task_meta
@@ -199,17 +205,17 @@ def _query_task_replies(
     celery: FakeCelery,
     replies: dict | None,
     scheduled: dict | None = None,
-):
+) -> None:
     # 'inspect().query_task()' and 'inspect().scheduled()' replies, keyed by worker
     celery.revoked = []  # type: ignore [attr-defined]
     # Record the inspect commands sent
     celery.inspected = []  # type: ignore [attr-defined]
 
-    def _query_task(*ids):
+    def _query_task(*ids: str) -> dict | None:
         celery.inspected.append("query_task")  # type: ignore [attr-defined]
         return replies
 
-    def _scheduled():
+    def _scheduled() -> dict | None:
         celery.inspected.append("scheduled")  # type: ignore [attr-defined]
         return scheduled
 
@@ -243,7 +249,7 @@ def _task_infos() -> dict:
         ("test@node-b",),
     ],
 )
-def test_executor_query_task_multiple_workers(workers):
+def test_executor_query_task_multiple_workers(workers: tuple[str, ...]) -> None:
     """Infos are returned from the worker holding the task"""
     celery = FakeCelery()
     executor = _executor(celery, destinations=workers)
@@ -258,7 +264,7 @@ def test_executor_query_task_multiple_workers(workers):
 
 
 @pytest.mark.parametrize("replies", [None, {}, {"test@node-a": {}, "test@node-b": {}}])
-def test_executor_query_task_not_found(replies):
+def test_executor_query_task_not_found(replies: dict | None) -> None:
     """No worker holds the task"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -268,7 +274,7 @@ def test_executor_query_task_not_found(replies):
     assert executor._query_task(JOB_ID) == (None, None)
 
 
-def test_executor_query_task_invalid_format():
+def test_executor_query_task_invalid_format() -> None:
     celery = FakeCelery()
     executor = _executor(celery)
 
@@ -278,7 +284,7 @@ def test_executor_query_task_invalid_format():
         executor._query_task(JOB_ID)
 
 
-def test_executor_job_status_reserved_on_other_worker():
+def test_executor_job_status_reserved_on_other_worker() -> None:
     """A job reserved by a worker that does not reply first is 'accepted'"""
     celery = FakeCelery()
     workers = ("test@node-a", "test@node-b")
@@ -305,7 +311,7 @@ def _scheduled_replies(infos: dict) -> dict:
     }
 
 
-def test_executor_query_task_scheduled():
+def test_executor_query_task_scheduled() -> None:
     """Delayed jobs are found in the scheduled tasks"""
     celery = FakeCelery()
     workers = ("test@node-a", "test@node-b")
@@ -321,7 +327,7 @@ def test_executor_query_task_scheduled():
     assert celery.inspected == ["scheduled"]  # type: ignore [attr-defined]
 
 
-def test_executor_job_status_scheduled():
+def test_executor_job_status_scheduled() -> None:
     """A delayed job is 'accepted'"""
     celery = FakeCelery()
     workers = ("test@node-a", "test@node-b")
@@ -337,7 +343,7 @@ def test_executor_job_status_scheduled():
     assert status.message == f"Task scheduled at {to_utc_datetime(eta).isoformat()}"
 
 
-def test_executor_dismiss_scheduled_job():
+def test_executor_dismiss_scheduled_job() -> None:
     """Dismissing a delayed job revokes it"""
     celery = FakeCelery()
     workers = ("test@node-a", "test@node-b")
@@ -380,7 +386,7 @@ def test_executor_dismiss_scheduled_job():
         (-60, ["query_task"]),
     ],
 )
-def test_executor_query_task_inspect_commands(eta_offset, expected):
+def test_executor_query_task_inspect_commands(eta_offset: Optional[int], expected: list[str]) -> None:
     """The registered ETA selects the inspect commands"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -392,7 +398,7 @@ def test_executor_query_task_inspect_commands(eta_offset, expected):
     assert celery.inspected == expected  # type: ignore [attr-defined]
 
 
-def test_registry_no_eta():
+def test_registry_no_eta() -> None:
     """Jobs without delay are registered without ETA"""
     celery = FakeCelery()
     executor = _executor(celery)
@@ -408,13 +414,13 @@ def test_registry_no_eta():
 #
 
 
-def test_executor_worker_commands_default_timeout():
+def test_executor_worker_commands_default_timeout() -> None:
     """Process commands sent to workers have a default timeout"""
     executor = _executor(FakeCelery())
 
     calls = []
 
-    def command(name, **kwargs):
+    def command(name: str, **kwargs: Any) -> JsonValue:
         calls.append((name, kwargs["timeout"]))
         return []
 
@@ -435,5 +441,5 @@ def test_executor_worker_commands_default_timeout():
         AsyncExecutor.processes,
     ],
 )
-def test_executor_default_timeout(method):
+def test_executor_default_timeout(method: Callable) -> None:
     assert inspect.signature(method).parameters["timeout"].default == 20

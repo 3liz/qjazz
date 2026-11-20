@@ -3,8 +3,6 @@
 #
 
 from contextlib import contextmanager
-from pathlib import Path
-from string import Template
 from time import time
 from typing import (
     Callable,
@@ -98,8 +96,8 @@ class Service(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
 
         # Initializing storage configuration
         self.init_storage(
-            self.workdir,
-            self.store_url,
+            conf.worker.workdir,
+            conf.storage.store_url,
             conf.storage.create_instance(),
         )
 
@@ -115,14 +113,6 @@ class Service(Worker, CallbacksMixin, StorageMixin, JoblogMixin):
         self.add_periodic_task("cleanup", self.cleanup_expired_jobs, conf.worker.cleanup_interval)
 
         self._reload_monitor = conf.worker.reload_monitor
-
-    @property
-    def workdir(self) -> Path:
-        raise NotImplementedError()
-
-    @property
-    def store_url(self) -> Template:
-        raise NotImplementedError()
 
     def start_worker(self, **kwargs):
         if self._reload_monitor:

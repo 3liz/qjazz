@@ -1,6 +1,6 @@
 """Test process descriptions generated from generic jobs"""
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 import pytest
 
@@ -78,14 +78,14 @@ def app() -> Worker:
         self: GenericJob,
         name: UserName,
         complex_arg: ComplexArg,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> ComplexReturnValue:
         """Complex task"""
         return ComplexReturnValue(num=3, val="three")
 
     @app.job(name="gen_nodoc", base=GenericJob)
-    def nodoc(*, value: int):
+    def nodoc(*, value: int) -> None:
         pass
 
     # Instanciate tasks: this will build the processes descriptions
@@ -98,7 +98,7 @@ def app() -> Worker:
 #
 
 
-def test_generic_jobs_registered(app: Worker):
+def test_generic_jobs_registered(app: Worker) -> None:
     for ident in ("gen_simple", "gen_complex", "gen_nodoc"):
         assert ident in Job.RUN_CONFIGS
         assert isinstance(Job.RUN_CONFIGS[ident], ProcessDescription)
@@ -107,7 +107,7 @@ def test_generic_jobs_registered(app: Worker):
         assert f"test_generic.{ident}" not in Job.RUN_CONFIGS
 
 
-def test_generic_job_title_and_description(app: Worker):
+def test_generic_job_title_and_description(app: Worker) -> None:
     p = Job.RUN_CONFIGS["gen_simple"]
     assert p.id_ == "gen_simple"
     assert p.title == "Simple task"
@@ -115,14 +115,14 @@ def test_generic_job_title_and_description(app: Worker):
     assert p.metadata == ()
 
 
-def test_generic_job_no_docstring(app: Worker):
+def test_generic_job_no_docstring(app: Worker) -> None:
     p = Job.RUN_CONFIGS["gen_nodoc"]
     # Title defaults to the function qualified name
     assert p.title.endswith("nodoc")
     assert p.description == ""
 
 
-def test_generic_job_inputs(app: Worker):
+def test_generic_job_inputs(app: Worker) -> None:
     inputs = Job.RUN_CONFIGS["gen_simple"].inputs
 
     # Positional only arguments ('self', 'ctx') are not inputs
@@ -144,12 +144,12 @@ def test_generic_job_inputs(app: Worker):
     assert count.schema_ == {"type": "integer", "default": 3}
 
 
-def test_generic_job_var_args_excluded(app: Worker):
+def test_generic_job_var_args_excluded(app: Worker) -> None:
     inputs = Job.RUN_CONFIGS["gen_complex"].inputs
     assert list(inputs) == ["name", "complex_arg"]
 
 
-def test_generic_job_complex_input(app: Worker):
+def test_generic_job_complex_input(app: Worker) -> None:
     complex_arg = Job.RUN_CONFIGS["gen_complex"].inputs["complex_arg"]
     assert complex_arg.title == "ComplexArg"
     assert complex_arg.description == "A complex argument\n\nThis is a more complex argument"
@@ -171,7 +171,7 @@ def test_generic_job_complex_input(app: Worker):
     assert "InnerArg" in defs
 
 
-def test_generic_job_simple_output(app: Worker):
+def test_generic_job_simple_output(app: Worker) -> None:
     outputs = Job.RUN_CONFIGS["gen_simple"].outputs
     assert list(outputs) == ["output"]
 
@@ -181,7 +181,7 @@ def test_generic_job_simple_output(app: Worker):
     assert output.schema_ == {"type": "string"}
 
 
-def test_generic_job_complex_output(app: Worker):
+def test_generic_job_complex_output(app: Worker) -> None:
     output = Job.RUN_CONFIGS["gen_complex"].outputs["output"]
     assert output.title == "ComplexReturnValue"
     assert output.description == "A complex return value"
@@ -192,11 +192,11 @@ def test_generic_job_complex_output(app: Worker):
     assert output.schema_["required"] == ["num", "val"]
 
 
-def test_generic_job_no_return_annotation(app: Worker):
+def test_generic_job_no_return_annotation(app: Worker) -> None:
     assert Job.RUN_CONFIGS["gen_nodoc"].outputs == {}
 
 
-def test_generic_job_metadata(app: Worker):
+def test_generic_job_metadata(app: Worker) -> None:
     metadata = Job.RUN_CONFIGS["gen_complex"].metadata
     assert len(metadata) == 1
     assert isinstance(metadata[0], MetadataValue)
@@ -205,11 +205,11 @@ def test_generic_job_metadata(app: Worker):
     assert metadata[0].value == "foobar"
 
 
-def test_generic_job_missing_annotation():
+def test_generic_job_missing_annotation() -> None:
     app = Worker("test_generic_bad", CeleryConfig())
 
     @app.job(name="gen_bad", base=GenericJob)
-    def bad(value):
+    def bad(value) -> None:  # type: ignore [no-untyped-def]  # noqa: ANN001 (tested)
         pass
 
     with pytest.raises(TypeError, match="Missing annotation for argument value"):
@@ -223,7 +223,7 @@ def test_generic_job_missing_annotation():
 #
 
 
-def test_generic_list_processes(app: Worker):
+def test_generic_list_processes(app: Worker) -> None:
     processes = {p["id"]: p for p in list_processes(None)}
     assert {"gen_simple", "gen_complex", "gen_nodoc"} <= set(processes)
 
@@ -235,7 +235,7 @@ def test_generic_list_processes(app: Worker):
     assert "outputs" not in p
 
 
-def test_generic_describe_process(app: Worker):
+def test_generic_describe_process(app: Worker) -> None:
     p = describe_process(None, "gen_simple", None)
     assert p is not None
     assert p["id"] == "gen_simple"
@@ -249,5 +249,5 @@ def test_generic_describe_process(app: Worker):
     ProcessDescription.model_validate(p)
 
 
-def test_generic_describe_unknown_process(app: Worker):
+def test_generic_describe_unknown_process(app: Worker) -> None:
     assert describe_process(None, "gen_unknown", None) is None

@@ -1,5 +1,7 @@
 from collections import Counter
 from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Iterable, Optional, cast
 
 import pytest
 
@@ -20,19 +22,20 @@ from qgis.core import (
     QgsProcessingParameterScale,
     QgsProcessingParameterString,
 )
+from qgis.PyQt.QtCore import QDate, QDateTime, QTime
 
 from qjazz_processes.processing.context import ProcessingConfig, ProcessingContext
 from qjazz_processes.processing.inputs import InputParameter
 from qjazz_processes.processing.inputs.datetime import DateTimeParameterDataType
 from qjazz_processes.processing.inputs.literal import NumberParameterType
-from qjazz_processes.schemas import InputValueError, JsonValue, ogc
+from qjazz_processes.schemas import InputValueError, JsonValue, Metadata, MetadataValue, ogc
 
 
-def meta(seq, s):
-    return next(filter(lambda m: m.role == s, seq)).value
+def meta(seq: Iterable[Metadata], s: str) -> JsonValue:
+    return next(m.value for m in seq if isinstance(m, MetadataValue) and m.role == s)
 
 
-def test_parameter_description():
+def test_parameter_description() -> None:
     param = QgsProcessingParameterString(
         "String",
         description="String description",
@@ -46,7 +49,7 @@ def test_parameter_description():
     assert descr.description == "String help"
 
 
-def test_parameter_string():
+def test_parameter_string(context: ProcessingContext) -> None:
     param = QgsProcessingParameterString("String")
 
     inp = InputParameter(param)
@@ -58,13 +61,13 @@ def test_parameter_string():
     assert schema["type"] == "string"
 
     with pytest.raises(ValidationError):
-        value = inp.value(1)
+        value = inp.value(1, context)
 
-    value = inp.value("foo")
+    value = inp.value("foo", context)
     assert param.checkValueIsAcceptable(value)
 
 
-def test_parameter_enum():
+def test_parameter_enum() -> None:
     param = QgsProcessingParameterEnum(
         "Enum",
         options=["foo", "bar", "baz"],
@@ -90,7 +93,7 @@ def test_parameter_enum():
     assert param.checkValueIsAcceptable(value)
 
 
-def test_parameter_enum_multiple():
+def test_parameter_enum_multiple() -> None:
     param = QgsProcessingParameterEnum(
         "Enum",
         options=["foo", "bar", "baz"],
@@ -134,7 +137,12 @@ def test_parameter_enum_multiple():
         (["a", "c"], True, True, ["a", "c"]),
     ],
 )
-def test_parameter_enum_default(default, multiple, static, expected):
+def test_parameter_enum_default(
+    default: str | int | list[int] | list[str],
+    multiple: bool,
+    static: bool,
+    expected: str | list[str],
+) -> None:
     param = QgsProcessingParameterEnum(
         "Enum",
         options=["a", "b", "c"],
@@ -145,12 +153,12 @@ def test_parameter_enum_default(default, multiple, static, expected):
 
     schema_default = InputParameter(param).json_schema()["default"]
     if multiple:
-        schema_default = sorted(schema_default)
+        schema_default = sorted(cast("list", schema_default))
     assert schema_default == expected
 
 
 @pytest.mark.parametrize("default", ["3", "-1", "a", "0,x", [5], -1])
-def test_parameter_enum_invalid_default(default):
+def test_parameter_enum_invalid_default(default: str | int | list[int]) -> None:
     """Invalid option indexes"""
     param = QgsProcessingParameterEnum(
         "Enum",
@@ -163,7 +171,7 @@ def test_parameter_enum_invalid_default(default):
         InputParameter(param)
 
 
-def test_parameter_number():
+def test_parameter_number(context: ProcessingContext) -> None:
     param = QgsProcessingParameterNumber(
         "Number",
         type=NumberParameterType.Integer,
@@ -178,9 +186,9 @@ def test_parameter_number():
     assert schema["type"] == "integer"
 
     with pytest.raises(ValidationError):
-        value = inp.value("bar")
+        value = inp.value("bar", context)
 
-    value = inp.value(1.0)
+    value = inp.value(1.0, context)
     print("test_parameter_number::integer value::", value)
     assert param.checkValueIsAcceptable(value)
 
@@ -202,7 +210,7 @@ def test_parameter_number():
     assert schema["minimum"] == 0.0
 
 
-def test_parameter_distance():
+def test_parameter_distance() -> None:
     param = QgsProcessingParameterDistance("Distance")
     param.setDefaultUnit(Qgis.DistanceUnit.Meters)
 
@@ -213,7 +221,7 @@ def test_parameter_distance():
     print("\ntest_parameter_distance::", schema)
     assert schema["type"] == "number"
 
-    metadata = {m.role: m for m in inp.metadata(param)}
+    metadata: dict[Optional[str], Any] = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_scale::metadata", metadata)
 
     assert metadata["ogcType"].href == ogc.OgcDataType["length"]
@@ -230,7 +238,14 @@ def test_parameter_distance():
         (NumberParameterType.Double, 1e-05, 5.5, 1e-05, 5.5),
     ],
 )
-def test_parameter_number_bounds(data_type, minimum, maximum, expected_min, expected_max):
+def test_parameter_number_bounds(
+    context: ProcessingContext,
+    data_type: NumberParameterType,
+    minimum: float,
+    maximum: float,
+    expected_min: float,
+    expected_max: float,
+) -> None:
     param = QgsProcessingParameterNumber(
         "Number",
         type=data_type,
@@ -244,12 +259,12 @@ def test_parameter_number_bounds(data_type, minimum, maximum, expected_min, expe
     assert schema["minimum"] == expected_min
     assert schema["maximum"] == expected_max
 
-    assert inp.value(expected_min) == expected_min
+    assert inp.value(expected_min, context) == expected_min
     with pytest.raises(ValidationError):
-        inp.value(expected_max + 1)
+        inp.value(expected_max + 1, context)
 
 
-def test_parameter_area():
+def test_parameter_area() -> None:
     param = QgsProcessingParameterArea("Area", parentParameterName="INPUT")
     param.setDefaultUnit(Qgis.AreaUnit.SquareMeters)
 
@@ -259,7 +274,7 @@ def test_parameter_area():
     print("\ntest_parameter_area::", schema)
     assert schema["type"] == "number"
 
-    metadata = {m.role: m for m in inp.metadata(param)}
+    metadata: dict[Optional[str], Any] = {m.role: m for m in inp.metadata(param)}
     assert metadata["ogcType"].href == ogc.OgcDataType["measure"]
     assert metadata["uom"].href == "urn:ogc:def:uom:UCUM:m2"
     assert metadata["parentParameterName"].value == "INPUT"
@@ -270,7 +285,7 @@ def test_parameter_area():
     assert "uom" not in metadata
 
 
-def test_parameter_scale():
+def test_parameter_scale() -> None:
     param = QgsProcessingParameterScale("Scale")
 
     inp = InputParameter(param)
@@ -280,13 +295,13 @@ def test_parameter_scale():
 
     assert schema["type"] == "number"
 
-    metadata = {m.role: m for m in inp.metadata(param)}
+    metadata: dict[Optional[str], Any] = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_scale::metadata", metadata)
 
     assert metadata["ogcType"].href == ogc.OgcDataType["scale"]
 
 
-def test_parameter_duration():
+def test_parameter_duration() -> None:
     param = QgsProcessingParameterDuration("Duration")
 
     inp = InputParameter(param)
@@ -295,13 +310,13 @@ def test_parameter_duration():
     print("\ntest_parameter_duration::", schema)
     assert schema["type"] == "number"
 
-    metadata = {m.role: m for m in inp.metadata(param)}
+    metadata: dict[Optional[str], Any] = {m.role: m for m in inp.metadata(param)}
     print("\ntest_parameter_duration::metadata", metadata)
 
     assert metadata["ogcType"].href == ogc.OgcDataType["time"]
 
 
-def test_parameter_range():
+def test_parameter_range() -> None:
     param = QgsProcessingParameterRange("Range")
 
     assert param.dataType() == NumberParameterType.Integer
@@ -312,7 +327,7 @@ def test_parameter_range():
     print("\ntest_parameter_range::", schema)
     assert schema["type"] == "array"
     assert schema["format"] == "x-range"
-    assert schema["items"]["type"] == "integer"
+    assert cast("dict", schema["items"])["type"] == "integer"
     assert schema["maxItems"] == 2
     assert schema["minItems"] == 2
 
@@ -328,7 +343,11 @@ def test_parameter_range():
         (NumberParameterType.Double, [0, 1.5], [0.0, 1.5]),
     ],
 )
-def test_parameter_range_default(data_type, default, expected):
+def test_parameter_range_default(
+    data_type: NumberParameterType,
+    default: str | list[float],
+    expected: list[float],
+) -> None:
     param = QgsProcessingParameterRange("Range", type=data_type, defaultValue=default)
 
     schema = InputParameter(param).json_schema()
@@ -350,14 +369,17 @@ def test_parameter_range_default(data_type, default, expected):
         (NumberParameterType.Double, [1]),
     ],
 )
-def test_parameter_range_invalid_default(data_type, default):
+def test_parameter_range_invalid_default(
+    data_type: NumberParameterType,
+    default: str | list[int],
+) -> None:
     param = QgsProcessingParameterRange("Range", type=data_type, defaultValue=default)
 
     with pytest.raises(InputValueError, match="Invalid default value for parameter Range"):
         InputParameter(param)
 
 
-def test_parameter_datetime():
+def test_parameter_datetime() -> None:
     from qgis.PyQt.QtCore import QDateTime
 
     qdt = QDateTime.currentDateTime()
@@ -399,9 +421,7 @@ def test_parameter_datetime():
     assert schema["format"] == "time"
 
 
-def _qt_defaults():
-    from qgis.PyQt.QtCore import QDate, QDateTime, QTime
-
+def _qt_defaults() -> tuple[QDateTime, QDate, QTime]:
     return QDateTime(2024, 1, 2, 3, 4, 5), QDate(2024, 1, 2), QTime(3, 4, 5)
 
 
@@ -420,7 +440,11 @@ def _qt_defaults():
         (DateTimeParameterDataType.DateTime, "2024-01-02", "2024-01-02T00:00:00"),
     ],
 )
-def test_parameter_datetime_default(data_type, index, expected):
+def test_parameter_datetime_default(
+    data_type: DateTimeParameterDataType,
+    index: int | str,
+    expected: str,
+) -> None:
     default = _qt_defaults()[index] if isinstance(index, int) else index
     param = QgsProcessingParameterDateTime("DateTime", type=data_type, defaultValue=default)
 
@@ -437,7 +461,10 @@ def test_parameter_datetime_default(data_type, index, expected):
         (DateTimeParameterDataType.DateTime, "foo"),
     ],
 )
-def test_parameter_datetime_invalid_default(data_type, index):
+def test_parameter_datetime_invalid_default(
+    data_type: DateTimeParameterDataType,
+    index: int | str,
+) -> None:
     default = _qt_defaults()[index] if isinstance(index, int) else index
     param = QgsProcessingParameterDateTime("DateTime", type=data_type, defaultValue=default)
 
@@ -445,7 +472,7 @@ def test_parameter_datetime_invalid_default(data_type, index):
         InputParameter(param)
 
 
-def test_parameter_band():
+def test_parameter_band() -> None:
     param = QgsProcessingParameterBand("Band")
 
     inp = InputParameter(param)
@@ -462,7 +489,7 @@ def test_parameter_band():
     assert schema["type"] == "array"
 
 
-def test_parameter_color():
+def test_parameter_color() -> None:
     from qgis.PyQt.QtGui import QColor
 
     param = QgsProcessingParameterColor("Color", defaultValue=QColor(0, 0, 255, 128))
@@ -479,7 +506,7 @@ def test_parameter_color():
     assert value == QColor(255, 0, 0)
 
 
-def test_parameter_color_no_default():
+def test_parameter_color_no_default() -> None:
     from qgis.PyQt.QtGui import QColor
 
     param = QgsProcessingParameterColor("Color")
@@ -495,7 +522,7 @@ def test_parameter_color_no_default():
     assert value == QColor(0, 255, 0)
 
 
-def test_parameter_color_string_default():
+def test_parameter_color_string_default() -> None:
     param = QgsProcessingParameterColor("Color", defaultValue="#ff0000")
 
     inp = InputParameter(param)
@@ -505,9 +532,9 @@ def test_parameter_color_string_default():
     assert schema["default"] == "red"
 
 
-def test_parameters_optional(processing_config: ProcessingConfig):
+def test_parameters_optional(processing_config: ProcessingConfig, workdir: Path) -> None:
     """Omitted optional parameters are left to QGIS default value"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
 
     inputs = (
         InputParameter(QgsProcessingParameterString("s", optional=True), validation_only=True),
@@ -528,9 +555,9 @@ def test_parameters_optional(processing_config: ProcessingConfig):
         InputParameter.parameters(inputs, {"s": "bar"}, context)
 
 
-def test_parameters_falsy_values(processing_config: ProcessingConfig):
+def test_parameters_falsy_values(processing_config: ProcessingConfig, workdir: Path) -> None:
     """Falsy values are not missing values"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
 
     inputs = (
         InputParameter(QgsProcessingParameterBoolean("b"), validation_only=True),

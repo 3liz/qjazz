@@ -1,19 +1,19 @@
 """ Test Processes service
 """
 import os
-import pytest
 
+from pathlib import Path
 from time import sleep
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
+import pytest
 import requests
-
 
 OGC_EXCEPTION_URI = "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0"
 
 
-def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = None):
+def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = None) -> dict:
     """ Execute a process and return its status json
     """
     headers: dict = {}
@@ -48,13 +48,13 @@ def _execute_process(host: str, *, respond_async: bool, tag: Optional[str] = Non
     return data
 
 
-def test_describeprocess(host):
+def test_describeprocess(host: str) -> None:
     """ Test describe process """
     rv = requests.get(f"{host}/processes/processes_test:testcopylayer")
     assert rv.status_code == 200
 
 
-def test_executeprocess_async(host):
+def test_executeprocess_async(host: str) -> None:
     """  Test execute process """
     rv = requests.post(
         (
@@ -74,7 +74,7 @@ def test_executeprocess_async(host):
     assert rv.status_code == 202
 
 
-def test_executeprocess_with_delay(host):
+def test_executeprocess_with_delay(host: str) -> None:
     """  Test execute process """
     rv = requests.post(
         (
@@ -94,7 +94,7 @@ def test_executeprocess_with_delay(host):
     assert rv.status_code == 202
 
 
-def test_executeprocess_sync(host):
+def test_executeprocess_sync(host: str) -> None:
     """  Test execute process """
 
     result = _execute_process(host, respond_async=False, tag="test_executeprocess_sync")
@@ -114,7 +114,7 @@ def test_executeprocess_sync(host):
     assert len(rv.json()['files']) > 0
 
 
-def test_unknownprocess(host):
+def test_unknownprocess(host: str) -> None:
     """ Test unknown process error """
     rv = requests.post(
         (
@@ -128,7 +128,7 @@ def test_unknownprocess(host):
     assert rv.json()['type'] == f"{OGC_EXCEPTION_URI}/no-such-process"
 
 
-def test_describe_unknownprocess(host):
+def test_describe_unknownprocess(host: str) -> None:
     """ Test unknown process description """
     rv = requests.get(f"{host}/processes/processes_test:idonotexists")
     assert rv.status_code == 404
@@ -138,7 +138,7 @@ def test_describe_unknownprocess(host):
     assert data['status'] == 404
 
 
-def test_unknownservice(host):
+def test_unknownservice(host: str) -> None:
     """ Test unknown service error """
     params = {"service": "idonotexists"}
 
@@ -160,7 +160,7 @@ def test_unknownservice(host):
 
 
 @pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")
-def test_multiple_processes(host, data):
+def test_multiple_processes(host: str, data: Path) -> None:
     """  Test execute timeout """
     # Run multiple request to test message queuing and concurreny
     print("\n")
@@ -180,7 +180,7 @@ def test_multiple_processes(host, data):
 
 
 @pytest.mark.skipif(os.getenv('TEST_RUN_MODE') != 'all', reason="Takes time")
-def test_verylongprocess(host, data):
+def test_verylongprocess(host: str, data: Path) -> None:
     """  Test execute a very long process (30s) """
     rv = requests.post(
         (
@@ -195,7 +195,7 @@ def test_verylongprocess(host, data):
     assert rv.status_code == 202
 
 
-def test_executedelete(host, data):
+def test_executedelete(host: str, data: Path) -> None:
     """ Test delete process
     """
     # Execute a process
@@ -215,18 +215,19 @@ def test_executedelete(host, data):
     assert rv.status_code == 404
 
 
-def test_job_list_tag_links(host, data):
+def test_job_list_tag_links(host: str, data: Path) -> None:
     """ Test that tag filter is kept in job list links
     """
     tag = f"test_tag_links_{os.getpid()}"
     for _ in range(2):
         _execute_process(host, respond_async=True, tag=tag)
 
-    def _links(rv) -> dict:
+    def _links(rv: requests.Response) -> dict:
         assert rv.status_code == 200
         return {link['rel']: urlparse(link['href']) for link in rv.json()['links']}
 
-    rv = requests.get(f"{host}/jobs/", params={"tag": tag, "limit": 1})
+    params: dict[str, str | int] = {"tag": tag, "limit": 1}
+    rv = requests.get(f"{host}/jobs/", params=params)
     assert len(rv.json()['jobs']) == 1
     links = _links(rv)
     assert "next" in links
@@ -251,7 +252,7 @@ def test_job_list_tag_links(host, data):
         assert "tag" not in parse_qs(links[rel].query), rel
 
 
-def test_job_list_results_link(host, data):
+def test_job_list_results_link(host: str, data: Path) -> None:
     """ Test results link of successful jobs in job list
     """
     tag = f"test_results_link_{os.getpid()}"
@@ -275,7 +276,7 @@ def test_job_list_results_link(host, data):
     assert rv.status_code == 200
 
 
-def test_job_status_links(host, data):
+def test_job_status_links(host: str, data: Path) -> None:
     """ Test links of a successful job status
     """
     status = _execute_process(host, respond_async=False)
@@ -293,7 +294,7 @@ def test_job_status_links(host, data):
         assert rv.status_code == 200, path
 
 
-def test_job_exceptions(host, data):
+def test_job_exceptions(host: str, data: Path) -> None:
     """ Test OGC exceptions for jobs
     """
     unknown_job = "00000000-0000-0000-0000-000000000000"
@@ -324,7 +325,7 @@ def test_job_exceptions(host, data):
         requests.delete(f"{host}/jobs/{job_id}")
 
 
-def test_job_list_invalid_service(host):
+def test_job_list_invalid_service(host: str) -> None:
     """ Test that service names are validated in job listing
     """
     rv = requests.get(f"{host}/jobs/", params={"service": "test"})
@@ -336,7 +337,7 @@ def test_job_list_invalid_service(host):
         assert rv.json()["details"] == {"service": service}
 
 
-def test_invalid_job_id(host, data):
+def test_invalid_job_id(host: str, data: Path) -> None:
     """ Test that glob patterns are rejected as job id
     """
     status = _execute_process(host, respond_async=True, tag="test_invalid_job_id")
@@ -359,7 +360,7 @@ def test_invalid_job_id(host, data):
     assert rv.json()['status'] != "dismissed"
 
 
-def test_handleprocesserror_sync(host, data):
+def test_handleprocesserror_sync(host: str, data: Path) -> None:
     """  Test execute error """
     rv = requests.post(
         f"{host}/processes/processes_test:testraiseerror/execution",
@@ -373,7 +374,7 @@ def test_handleprocesserror_sync(host, data):
     assert "jobId" in rv.json()['details']
 
 
-def test_handleprocesserror_async(host, data):
+def test_handleprocesserror_async(host: str, data: Path) -> None:
     """  Test execute error """
     rv = requests.post(
         (
@@ -397,7 +398,7 @@ def test_handleprocesserror_async(host, data):
     assert rv.json()['status'] == "failed"
 
 
-def test_enum_parameters(host):
+def test_enum_parameters(host: str) -> None:
     """ Test parameter enums
     """
     rv = requests.post(
@@ -411,7 +412,7 @@ def test_enum_parameters(host):
     resp = rv.json()
     assert resp['OUTPUT'] == 'selection is 1'
 
-def test_badparameter_sync(host):
+def test_badparameter_sync(host: str) -> None:
     """ Test parameter enums
     """
     rv = requests.post(
@@ -425,7 +426,7 @@ def test_badparameter_sync(host):
     print(rv.text)
     assert rv.status_code == 400
 
-def test_badparameter_async(host):
+def test_badparameter_async(host: str) -> None:
     """ Test parameter enums
     """
     rv = requests.post(
@@ -444,7 +445,7 @@ def test_badparameter_async(host):
 
 
 
-def test_output_html(host):
+def test_output_html(host: str) -> None:
     """ Test html output
     """
     rv = requests.post(
@@ -466,7 +467,7 @@ def test_output_html(host):
     assert len(rv.content) == link['length']
 
 
-def test_optional_parameter_omitted(host):
+def test_optional_parameter_omitted(host: str) -> None:
     """ Test omitted optional parameter
     """
     rv = requests.post(
@@ -479,7 +480,7 @@ def test_optional_parameter_omitted(host):
     assert rv.json()['OUTPUT'] == "selection is 1"
 
 
-def test_falsy_parameter_values(host):
+def test_falsy_parameter_values(host: str) -> None:
     """ Test falsy values for required parameters
     """
     rv = requests.post(

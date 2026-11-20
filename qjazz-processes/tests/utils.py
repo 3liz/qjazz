@@ -10,16 +10,16 @@ class Projects(Protocol):
 
 
 class Feedback(QgsProcessingFeedback):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(False)
 
-    def pushFormattedMessage(self, html: str | None, text: str | None):
+    def pushFormattedMessage(self, html: str | None, text: str | None) -> None:
         logger.info(str(text))
 
-    def setProgressText(self, message: str | None):
+    def setProgressText(self, message: str | None) -> None:
         logger.info("Progress: %s", str(message))
 
-    def reportError(self, error: str | None, fatalError: bool = False):
+    def reportError(self, error: str | None, fatalError: bool = False) -> None:
         (logger.critical if fatalError else logger.error)(str(error))
 
     def pushInfo(self, info: str | None) -> None:

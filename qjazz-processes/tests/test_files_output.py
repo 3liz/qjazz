@@ -30,7 +30,7 @@ from qjazz_processes.schemas import (
 )
 
 
-def test_output_file(qgis_session: ProcessingConfig):
+def test_output_file(qgis_session: ProcessingConfig) -> None:
     # Must be imported once qgis processing is initialized
     # (via qgis_session fixture)
     from .plugins.provider.provider import TestFileDestination
@@ -74,26 +74,27 @@ def test_output_file(qgis_session: ProcessingConfig):
     assert param.output_extension == ".json"
 
 
-def test_output_resolve_path(processing_config: ProcessingConfig):
+def test_output_resolve_path(processing_config: ProcessingConfig, workdir: Path) -> None:
     """Output paths must be located in the job folder"""
-    context = ProcessingContext(processing_config)
+    context = ProcessingContext(workdir, processing_config)
     context.job_id = "test_output_resolve_path"
 
-    workdir = context.workdir
+    jobdir = context.workdir
 
     # Relative paths are resolved against the job folder
-    assert resolve_path("output.json", context) == workdir.joinpath("output.json")
-    assert resolve_path("foo/../output.json", context) == workdir.joinpath("output.json")
-    assert resolve_path(str(workdir.joinpath("output.json")), context) == workdir.joinpath("output.json")
+    assert resolve_path("output.json", context) == jobdir.joinpath("output.json")
+    assert resolve_path("foo/../output.json", context) == jobdir.joinpath("output.json")
+    assert resolve_path(str(jobdir.joinpath("output.json")), context) == jobdir.joinpath("output.json")
 
-    for value in ("../output.json", str(workdir.joinpath("..", "output.json")), "/etc/passwd"):
+    for value in ("../output.json", str(jobdir.joinpath("..", "output.json")), "/etc/passwd"):
         with pytest.raises(PostconditionError):
             resolve_path(value, context)
 
 
-def test_output_resolve_raw_path(processing_config: ProcessingConfig, tmp_path: Path):
+def test_output_resolve_raw_path(processing_config: ProcessingConfig, workdir: Path, tmp_path: Path) -> None:
     """Raw output paths may be located in the raw destination root folder"""
     context = ProcessingContext(
+        workdir,
         processing_config.model_copy(
             update={
                 "raw_destination_input_sink": True,
@@ -110,9 +111,9 @@ def test_output_resolve_raw_path(processing_config: ProcessingConfig, tmp_path: 
         resolve_path(str(tmp_path / ".." / "output.json"), context)
 
 
-def test_output_file_link(qgis_session: ProcessingConfig):
+def test_output_file_link(qgis_session: ProcessingConfig, workdir: Path) -> None:
     """Output file returns a link with the output description"""
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.job_id = "test_output_file_link"
     context.workdir.mkdir(parents=True, exist_ok=True)
 
@@ -130,9 +131,9 @@ def test_output_file_link(qgis_session: ProcessingConfig):
     assert cast("str", link["href"]).endswith("output.json")
 
 
-def test_output_folder_link(qgis_session: ProcessingConfig):
+def test_output_folder_link(qgis_session: ProcessingConfig, workdir: Path) -> None:
     """Output folder returns a link with the output description"""
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.job_id = "test_output_folder_link"
     context.workdir.joinpath("folder").mkdir(parents=True, exist_ok=True)
 
@@ -146,9 +147,9 @@ def test_output_folder_link(qgis_session: ProcessingConfig):
     assert link["description"] == "Output folder"
 
 
-def test_output_html_link(qgis_session: ProcessingConfig):
+def test_output_html_link(qgis_session: ProcessingConfig, workdir: Path) -> None:
     """Output html returns a link to the html file"""
-    context = ProcessingContext(qgis_session)
+    context = ProcessingContext(workdir, qgis_session)
     context.job_id = "test_output_html_link"
     context.workdir.mkdir(parents=True, exist_ok=True)
 
