@@ -21,4 +21,6 @@ PYTHON_PKG=qjazz_rpc
 
 TESTDIR=tests
 
+MYPY_EXCLUDE=tests/plugins
+
 include $(topsrcdir)/config/rules.mk

@@ -16,6 +16,8 @@ EXAMPLES=examples
 dist::
 	uv build  --wheel --out-dir=$(DIST)
 
+MYPY_EXCLUDE=tests/plugins/
+
 include $(topsrcdir)/config/rules.mk
 
 doc:: 

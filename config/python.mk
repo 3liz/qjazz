@@ -19,8 +19,11 @@ format-diff::
 format::
 	@$(RUFF) format $(PYTHON_PKG) $(TESTDIR) $(EXAMPLES)
 
+# Set MYPY_EXCLUDE in sub Makefile to exclude directories (or files)
+# from the type check; each entry is passed as a mypy '--exclude' regex,
+# i.e: MYPY_EXCLUDE=src/foo/ tests/bar/
 typecheck:: $(PYTHON_PKG)
-	@$(MYPY) $(PYTHON_PKG) $(TESTDIR)
+	@$(MYPY) $(addprefix --exclude=,$(MYPY_EXCLUDE)) $(PYTHON_PKG) $(TESTDIR)
 
 scan::
 	$(BANDIT) -r $(PYTHON_PKG) $(SCAN_OPTS)
