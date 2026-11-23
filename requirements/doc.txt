@@ -2,8 +2,8 @@
 #    uv export --format requirements.txt --no-annotate --no-editable --no-hashes --only-group doc -o requirements/doc.txt
 alabaster==1.0.0
 babel==2.18.0
-certifi==2026.10.23
-charset-normalizer==3.5.2
+certifi==2026.11.20
+charset-normalizer==3.5.3
 colorama==0.4.6 ; sys_platform == 'win32'
 docutils==0.22.4
 idna==3.20
@@ -12,7 +12,7 @@ jinja2==3.1.6
 markupsafe==3.0.4
 packaging==26.3
 pygments==2.21.0
-pyyaml==6.0.3
+pyyaml==6.0.4
 requests==2.34.2
 roman-numerals==4.1.0
 snowballstemmer==3.1.1
