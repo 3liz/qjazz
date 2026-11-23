@@ -88,6 +88,12 @@ def app() -> Worker:
     def nodoc(*, value: int) -> None:
         pass
 
+    @app.job(name="gen_model_default", base=GenericJob)
+    def model_default(
+        arg: ComplexArg = ComplexArg(inner=InnerArg(x=1)),  # noqa: B008
+    ) -> None:
+        pass
+
     # Instanciate tasks: this will build the processes descriptions
     app.finalize()
     return app
@@ -251,3 +257,11 @@ def test_generic_describe_process(app: Worker) -> None:
 
 def test_generic_describe_unknown_process(app: Worker) -> None:
     assert describe_process(None, "gen_unknown", None) is None
+
+
+def test_generic_job_complex_default(app: Worker) -> None:
+    """Test that a model default is serialized as json in the input schema"""
+    arg = Job.RUN_CONFIGS["gen_model_default"].inputs["arg"]
+    assert arg.schema_["default"] == {"flag": "One", "inner": {"x": 1}}
+    # Having a default does not make the input optional
+    assert arg.min_occurs == 1

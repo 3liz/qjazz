@@ -118,12 +118,16 @@ class GenericJob(ServiceJob):
         # We receive argument as job processes request
         # in order to match the task signature, replace
         # the __run_config__ with the request 'inputs'
-        request = kwargs["__run_config__"]["request"]
+        run_config = kwargs["__run_config__"]
+        request = run_config["request"]
         try:
             kwargs["__run_config__"] = request["inputs"]
+            # Add the 'project_path' to the job context
+            context = kwargs.get("__context__")
+            if context is None:
+                context = kwargs["__context__"] = {}
+            context.update(project_path=run_config.get("project_path"))
             yield
-            # Add the 'project_path' to the context
-            kwargs["meta"].context.update(project_path=request.get("project_path"))
         finally:
             # Keep the request for postrun callbacks and job details
             # Note: always overwrite since 'request' may be an input name

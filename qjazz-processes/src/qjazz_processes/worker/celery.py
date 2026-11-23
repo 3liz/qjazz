@@ -35,6 +35,7 @@ from qjazz_core import logger
 from qjazz_core.celery import Celery, CeleryConfig
 from qjazz_core.utils import to_iso8601, utc_now
 
+from ..schemas import InputValueError
 from ..schemas.processes import (
     InputDescription,
     Metadata,
@@ -270,8 +271,9 @@ class Job(celery.Task):
             )
             meta.update(errors=errors)
             logger.error("Invalid arguments for %s: %s:", task_id, errors)
-            # XXX Return specific error
-            raise ValueError("Invalid arguments") from None
+            # Raise an input error so that it is returned
+            # as a bad request (400) by the server
+            raise InputValueError("Invalid arguments") from None
         finally:
             kwargs.update(__meta__=meta)
 
@@ -356,9 +358,11 @@ def job_run_config(
     # Build schema for each properties
     def input_schemas():
         for name, (anno, default) in inputs_.items():
-            s = TypeAdapter(anno).json_schema()
-            if default != ...:
-                s["default"] = default
+            adapter = TypeAdapter(anno)
+            s = adapter.json_schema()
+            if default is not ...:
+                # Default must be a json value
+                s["default"] = adapter.dump_python(default, mode="json", by_alias=True)
             yield (
                 name,
                 InputDescription(
