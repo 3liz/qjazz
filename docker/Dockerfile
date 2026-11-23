@@ -19,6 +19,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && mkdir -p /opt/local
 
 # Install qjazz in virtualenv
+# Install pip for installing derived services
 RUN --mount=type=bind,target=/src,rw \
     --mount=type=cache,target=/.python-cache \
     export UV_PROJECT_ENVIRONMENT=/opt/local/qjazz UV_LINK_MODE=copy \
@@ -26,6 +27,8 @@ RUN --mount=type=bind,target=/src,rw \
     && export UV_PYTHON=$UV_PROJECT_ENVIRONMENT/bin/python \
     && uv pip install --compile-bytecode --cache-dir=/.python-cache \
         -r /src/requirements.txt \
+    && uv pip install --compile-bytecode --cache-dir=/.python-cache \
+        pip \
     && uv pip install --no-deps --cache-dir=/.python-cache --compile-bytecode \
         `ls -1 /src/dist/qjazz_contrib-*.whl` \
         `ls -1 /src/dist/qjazz_map-*.whl` \
@@ -43,7 +46,6 @@ RUN --mount=type=bind,target=/src,rw \
      yapt-manager
  
 ARG LIZCLOUD=''
-ARG PRINTSERVER=''
 
 # Install lizcloud support
 RUN --mount=type=bind,target=/src,rw \
@@ -54,17 +56,6 @@ RUN --mount=type=bind,target=/src,rw \
         --cache-dir=/.python-cache --compile-bytecode \
         --link-mode=copy \
         qjazz-lizcloud; \
-    fi
-
-# Install printserver
-RUN --mount=type=bind,target=/src,rw \
-    --mount=type=cache,target=/.python-cache \
-    if [ "$PRINTSERVER" = "yes" ]; then \
-        uv pip install --extra-index-url=${PACKAGES_URL}/pub/whl/ \
-        --python=/opt/local/qjazz/bin/python \
-        --cache-dir=/.python-cache --compile-bytecode \
-        --link-mode=copy \
-        qjazz-printserver; \
     fi
 
 

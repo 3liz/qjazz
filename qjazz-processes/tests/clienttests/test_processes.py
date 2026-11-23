@@ -138,6 +138,18 @@ def test_describe_unknownprocess(host: str) -> None:
     assert data['status'] == 404
 
 
+def test_describe_unknownproject(host: str) -> None:
+    """ Test process description with unknown project """
+    rv = requests.get(
+        f"{host}/processes/processes_test:testcopylayer",
+        params={"map": "idonotexists/project"},
+    )
+    print("\n::test_describe_unknownproject::", rv.text)
+    assert rv.status_code == 404
+    data = rv.json()
+    assert data['status'] == 404
+
+
 def test_unknownservice(host: str) -> None:
     """ Test unknown service error """
     params = {"service": "idonotexists"}

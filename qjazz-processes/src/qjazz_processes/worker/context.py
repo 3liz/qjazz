@@ -26,11 +26,13 @@ from qjazz_core.qgis import (
 from qgis.core import Qgis, QgsProcessingFeedback, QgsProject
 from qgis.server import QgsServer
 
+from qjazz_cache.errors import ResourceNotAllowed
 from qjazz_cache.extras import evict_by_popularity
 from qjazz_cache.prelude import CacheManager
 
 from ..processing.config import ProcessingConfig
 from ..processing.prelude import (
+    InputValueError,
     JobExecute,
     JobResults,
     ProcessingContext,
@@ -154,7 +156,15 @@ class QgisContext(StorageContext):
     ) -> tuple[JobResults, Optional[QgsProject]]:
         """Execute process"""
 
-        project = self.project(project_path) if project_path else None
+        try:
+            project = self.project(project_path) if project_path else None
+        except ResourceNotAllowed as err:
+            logger.error("%s", err)
+            raise InputValueError(f"Invalid project path: {project_path}") from None
+        except FileNotFoundError as err:
+            logger.error("%s", err)
+            raise InputValueError(f"Project not found: {project_path}") from None
+
         if not project and require_project:
             raise ProjectRequired(f"Algorithm {ident} require project")
 
@@ -214,6 +224,7 @@ class QgisContext(StorageContext):
 
         # Resolve location
         url = cm.resolve_path(path)
+
         # Check status
         md, status = cm.checkout(url)
 

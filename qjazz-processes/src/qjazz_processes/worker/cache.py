@@ -13,6 +13,8 @@ from uuid import uuid1
 
 from qjazz_core import logger
 
+from qjazz_cache.errors import ResourceNotAllowed
+
 from ..schemas import (
     JsonDict,
     JsonValue,
@@ -115,6 +117,8 @@ class ProcessCache(mp.Process):
                     if self._sender.poll(POLL_TIMEOUT):
                         cid, body = self._sender.recv()
                         if correlation_id == cid:
+                            if body is None:
+                                return None
                             description = cast("ProcessDescription", body)
                             self._descriptions[key] = description
                             break
@@ -192,7 +196,11 @@ class ProcessCache(mp.Process):
                         case MsgType.UPDATE:
                             self._conn.send((corr_id, self._update()))
                         case MsgType.DESCRIBE:
-                            self._conn.send((corr_id, self._describe(*data)))
+                            try:
+                                self._conn.send((corr_id, self._describe(*data)))
+                            except (ResourceNotAllowed, FileNotFoundError) as err:
+                                logger.error("%s", err)
+                                self._conn.send((corr_id, None))
                         case MsgType.READY:
                             logger.info("Process cache ready")
                             self._conn.send((corr_id, True))

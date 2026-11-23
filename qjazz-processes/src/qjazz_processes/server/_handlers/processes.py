@@ -219,6 +219,8 @@ class Processes(HandlerProto):
             )
 
         if not td:
+            # NOTE: This is the same error returned in case
+            # of invalid project
             ErrorResponse.raises(
                 web.HTTPNotFound,
                 "Process not found",
