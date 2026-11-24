@@ -22,6 +22,8 @@ pub(crate) struct WorkerQueue {
     // The actual number of living workers
     num_workers: AtomicUsize,
     max_waiters: AtomicUsize,
+    // Maximum life cycles of a worker (0: unlimited)
+    max_life_cycles: AtomicUsize,
     // Waiters slots
     waiters: Semaphore,
     generation: AtomicUsize,
@@ -60,6 +62,17 @@ impl WorkerQueue {
         }
         self.max_waiters
             .store(max_waiting_requests, Ordering::Relaxed);
+    }
+
+    fn set_max_life_cycles(&self, value: usize) {
+        self.max_life_cycles.store(value, Ordering::Relaxed);
+    }
+
+    // Returns true if the worker has reached its maximum
+    // number of life cycles
+    fn life_cycles_exhausted(&self, worker: &Worker) -> bool {
+        let max_life_cycles = self.max_life_cycles.load(Ordering::Relaxed);
+        max_life_cycles > 0 && worker.life_cycles() >= max_life_cycles
     }
 
     pub fn generation(&self) -> usize {
@@ -150,6 +163,12 @@ impl WorkerQueue {
             return self.terminate(worker).await;
         }
 
+        // Check if worker has reached its maximum life cycles
+        if self.life_cycles_exhausted(&worker) {
+            log::info!("Worker [{pid}] reached EOL");
+            return self.terminate(worker).await;
+        }
+
         // Try graceful cancel
         let rv = match worker.cancel_timeout(done_hint).await {
             Ok(_) => {
@@ -206,11 +225,13 @@ impl Pool {
         let opts = builder.options_mut();
         let num_processes = opts.num_processes();
         let max_waiting_requests = opts.max_waiting_requests();
+        let max_life_cycles = opts.max_life_cycles;
         Self {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(num_processes),
                 num_workers: AtomicUsize::new(0),
                 max_waiters: AtomicUsize::new(max_waiting_requests),
+                max_life_cycles: AtomicUsize::new(max_life_cycles),
                 waiters: Semaphore::new(max_waiting_requests),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
@@ -240,6 +261,8 @@ impl Pool {
         self.builder.patch(patch)?;
         self.queue
             .set_max_waiters(self.builder.options().max_waiting_requests());
+        self.queue
+            .set_max_life_cycles(self.builder.options().max_life_cycles);
         self.num_processes = self.builder.options().num_processes();
         self.maintain_pool().await
     }
@@ -444,6 +467,43 @@ mod tests {
 
         let _ = worker.recycle().unwrap().await.unwrap();
         assert_eq!(pool.stats_raw(), (0, num_processes));
+    }
+
+    #[tokio::test]
+    async fn test_max_life_cycles() {
+        setup();
+
+        let mut builder = builder(1);
+        builder.max_life_cycles(2);
+        let mut pool = Pool::new(builder);
+
+        pool.maintain_pool().await.unwrap();
+        assert_eq!(pool.num_workers(), 1);
+
+        let queue = Receiver::new(&pool);
+
+        // Below the limit: worker is sent back to the queue
+        let mut worker = queue.get().await.unwrap();
+        assert_eq!(worker.incr_life_cycles(), 1);
+        worker.done();
+        worker.recycle().unwrap().await.unwrap().unwrap();
+        assert_eq!(pool.num_workers(), 1);
+        assert_eq!(pool.stats_raw(), (0, 1));
+
+        // Limit reached: worker is terminated on recycling
+        let mut worker = queue.get().await.unwrap();
+        assert_eq!(worker.life_cycles(), 1);
+        assert_eq!(worker.incr_life_cycles(), 2);
+        worker.done();
+        worker.recycle().unwrap().await.unwrap().unwrap();
+        assert_eq!(pool.num_workers(), 0);
+        assert_eq!(pool.failures(), 0);
+
+        // Pool is restored with a fresh worker
+        pool.maintain_pool().await.unwrap();
+        assert_eq!(pool.num_workers(), 1);
+        let worker = queue.get().await.unwrap();
+        assert_eq!(worker.life_cycles(), 0);
     }
 
     use crate::restore;

@@ -157,6 +157,7 @@ impl WorkerLauncher {
             uptime: Instant::now(),
             last_update: 0,
             generation: 1,
+            life_cycles: 0,
         })
     }
 }
@@ -177,6 +178,7 @@ pub struct Worker {
     uptime: Instant,
     pub(crate) generation: usize,
     pub(crate) last_update: u64,
+    life_cycles: usize,
 }
 
 impl Worker {
@@ -331,6 +333,21 @@ impl Worker {
     /// Returns the uptime for this worker
     pub fn uptime(&self) -> Duration {
         self.uptime.elapsed()
+    }
+
+    /// Increment the life cycle counter
+    ///
+    /// Returns the new value of the counter.
+    /// When the counter reaches the configured `max_life_cycles`
+    /// the worker will be terminated when recycled.
+    pub fn incr_life_cycles(&mut self) -> usize {
+        self.life_cycles += 1;
+        self.life_cycles
+    }
+
+    /// Returns the current value of the life cycle counter
+    pub fn life_cycles(&self) -> usize {
+        self.life_cycles
     }
 
     /// Return true if the worker is alive
@@ -593,7 +610,7 @@ mod tests {
         setup();
 
         let mut w1 = build_worker().await.unwrap();
-        let mut w2 = build_worker().await.unwrap();
+        let w2 = build_worker().await.unwrap();
 
         let tmp1 = w1.tmp_dir().to_path_buf();
         let tmp2 = w2.tmp_dir().to_path_buf();

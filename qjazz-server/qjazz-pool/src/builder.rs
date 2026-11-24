@@ -75,6 +75,10 @@ impl Builder {
         self.opts.qgis = value;
         self
     }
+    pub fn max_life_cycles(&mut self, value: usize) -> &mut Self {
+        self.opts.max_life_cycles = value;
+        self
+    }
     pub fn num_processes(&mut self, value: usize) -> Result<&mut Self> {
         self.opts.num_processes = value.try_into()?;
         Ok(self)

@@ -3,7 +3,7 @@ from typing import (
     Optional,
 )
 
-from pydantic import BeforeValidator, Field, FilePath, PositiveInt
+from pydantic import BeforeValidator, Field, FilePath, NonNegativeInt, PositiveInt
 from qjazz_core.config import ConfBuilder, ConfigBase
 
 from .config import QgisConfig
@@ -125,6 +125,16 @@ class Worker(ConfigBase):
             "queued. If the number of waiting requests reach the limit,\n"
             "the subsequent requests will be returned with a `service unavailable`\n"
             "error."
+        ),
+    )
+    max_life_cycles: NonNegativeInt = Field(
+        default=0,
+        title="Maximum worker life cycles",
+        description=(
+            "The maximum number of life cycles of a worker.\n"
+            "When a worker reaches this number of life cycles, it is\n"
+            "terminated at recycling time and replaced by a new one.\n"
+            "Set to 0 to disable the limit."
         ),
     )
     max_chunk_size: PositiveInt = Field(

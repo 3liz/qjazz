@@ -177,6 +177,7 @@ impl QgisServer for QgisServerServicer {
 
         // Remember pid
         w.remember().await;
+        w.incr_life_cycles();
 
         let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();
@@ -225,6 +226,7 @@ impl QgisServer for QgisServerServicer {
 
         // Remember pid
         w.remember().await;
+        w.incr_life_cycles();
 
         let headers = metadata_to_headers(request.metadata());
         let req = request.get_ref();

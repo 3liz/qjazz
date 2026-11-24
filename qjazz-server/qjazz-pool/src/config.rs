@@ -112,6 +112,13 @@ pub struct WorkerOptions {
     pub(crate) max_chunk_size: BoundedUsize<1024>,
     /// Projects to restore at startup
     pub restore_projects: Vec<String>,
+    /// The maximum number of life cycles of a worker.
+    /// Life cycles will be incremented on each QGIS
+    /// request; when the count reaches
+    /// this value, the worker is terminated and replaced
+    /// by a fresh one.
+    /// A value of 0 disables the limit
+    pub max_life_cycles: usize,
 }
 
 impl Default for WorkerOptions {
@@ -125,6 +132,7 @@ impl Default for WorkerOptions {
             max_waiting_requests: BoundedUsize(DEFAULT_MAX_REQUESTS),
             max_chunk_size: BoundedUsize(DEFAULT_MAX_CHUNK_SIZE),
             restore_projects: Default::default(),
+            max_life_cycles: 0,
         }
     }
 }

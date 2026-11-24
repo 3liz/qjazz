@@ -85,6 +85,14 @@ cancel_timeout = 3
 # error.
 max_waiting_requests = 50
 #
+# Maximum worker life cycles
+#
+# The maximum number of life cycles of a worker.
+# When a worker reaches this number of life cycles, it is
+# terminated at recycling time and replaced by a new one.
+# Set to 0 to disable the limit.
+max_life_cycles = 0
+#
 # Max chunk size
 max_chunk_size = 1048576
 #
