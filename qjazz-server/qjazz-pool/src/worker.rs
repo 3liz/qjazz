@@ -8,13 +8,19 @@ use crate::stream::{ByteStream, ObjectStream};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
 use std::fmt;
+use std::path::Path;
 use std::process::Stdio;
 use std::time::{Duration, Instant};
+use tempfile::TempDir;
 use tokio::process::{Child, Command};
 use tokio::time::timeout;
 
 // TODO: Make timeouts configurable
 const TERM_TIMEOUT_SEC: u64 = 5;
+
+// Parent directory for worker's temporary directories
+const WORKER_TMPDIR_ROOT: &str = "/tmp";
+const WORKER_TMPDIR_PREFIX: &str = "qjazz_worker_";
 
 // Child helper
 
@@ -82,6 +88,16 @@ impl WorkerLauncher {
         // Start rendez-vous
         rendez_vous.start()?;
 
+        // Create a unique temporary directory for the worker process.
+        // It is set as TMPDIR so that any temporary files created by
+        // QGIS or the python worker end up there and are removed
+        // with the worker.
+        let tmp_dir = tempfile::Builder::new()
+            .prefix(WORKER_TMPDIR_PREFIX)
+            .tempdir_in(WORKER_TMPDIR_ROOT)?;
+
+        log::debug!("Worker temporary directory: {}", tmp_dir.path().display());
+
         let mut child = Command::new(python_executable())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -93,6 +109,7 @@ impl WorkerLauncher {
             // Override any option set in 'qgis_options'
             .env("CONF_WORKER__QGIS__MAX_CHUNK_SIZE", buffer_size.to_string())
             .env("RENDEZ_VOUS", rendez_vous.path())
+            .env("TMPDIR", tmp_dir.path())
             .spawn()?;
 
         let result;
@@ -136,6 +153,7 @@ impl WorkerLauncher {
             cancel_timeout,
             ready_timeout: Duration::from_secs(1),
             process,
+            tmp_dir,
             uptime: Instant::now(),
             last_update: 0,
             generation: 1,
@@ -152,6 +170,10 @@ pub struct Worker {
     cancel_timeout: Duration,
     ready_timeout: Duration,
     process: _Child,
+    // Temporary directory used as TMPDIR by the child process.
+    // Removed when the worker is dropped: keep it declared after
+    // `process` so that it is dropped after the child process.
+    tmp_dir: TempDir,
     uptime: Instant,
     pub(crate) generation: usize,
     pub(crate) last_update: u64,
@@ -187,9 +209,25 @@ impl Worker {
                 self.process.child.start_kill().inspect_err(|err| {
                     log::error!("Failed to  kill worker [{:?}] {:?}", self.id(), err);
                 })?;
+                // Wait for the process to exit so that it does not write
+                // into the temporary directory while removing it.
+                if timeout(
+                    Duration::from_secs(TERM_TIMEOUT_SEC),
+                    self.process.child.wait(),
+                )
+                .await
+                .is_err()
+                {
+                    log::error!("Worker {} (pid: {:?}) not killed", self.name, self.id());
+                }
             }
         }
         Ok(())
+    }
+
+    /// Return the path of the worker's temporary directory
+    pub fn tmp_dir(&self) -> &Path {
+        self.tmp_dir.path()
     }
 
     /// Check if the worker is ready to process messages
@@ -548,5 +586,42 @@ mod tests {
 
         let resp = w.ping("hello").await.unwrap();
         assert_eq!(resp, "hello");
+    }
+
+    #[tokio::test]
+    async fn test_worker_tmpdir() {
+        setup();
+
+        let mut w1 = build_worker().await.unwrap();
+        let mut w2 = build_worker().await.unwrap();
+
+        let tmp1 = w1.tmp_dir().to_path_buf();
+        let tmp2 = w2.tmp_dir().to_path_buf();
+
+        // Unique directories located in /tmp
+        assert_ne!(tmp1, tmp2);
+        for tmp in [&tmp1, &tmp2] {
+            assert!(tmp.is_dir());
+            assert_eq!(tmp.parent(), Some(Path::new(WORKER_TMPDIR_ROOT)));
+        }
+
+        // TMPDIR is passed to the child process
+        let env = w1.get_env().await.unwrap();
+        assert_eq!(
+            env["environment"]["TMPDIR"].as_str(),
+            Some(tmp1.to_str().unwrap())
+        );
+
+        // Files created by the process are removed with the directory
+        std::fs::write(tmp1.join("file.txt"), b"data").unwrap();
+
+        // Directory is removed when a terminated worker is dropped
+        w1.terminate().await.unwrap();
+        drop(w1);
+        assert!(!tmp1.exists());
+
+        // Directory is removed when a worker is dropped
+        drop(w2);
+        assert!(!tmp2.exists());
     }
 }
