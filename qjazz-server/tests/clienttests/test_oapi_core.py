@@ -1,12 +1,11 @@
 import requests
 
-from typing import Optional, Sequence
-
-from qjazz_map.api import (
-    LandinPage,
-    Catalogs,
+from qjazz_map.models import (
     CatalogEndpoint,
+    Catalogs,
+    LandinPage,
 )
+
 
 def test_oapi_core_landing_page(host):
     """ Retrieve catalog
@@ -51,4 +50,4 @@ def test_oapi_core_catalog(host):
     data = resp.json()
     print("\n::test_oapi_core_catalog::data\n", data)
 
-    CatalogEndpoint.model_validate(data)    
+    CatalogEndpoint.model_validate(data)

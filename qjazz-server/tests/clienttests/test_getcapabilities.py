@@ -1,10 +1,11 @@
 """
     Test server disponibility
 """
-import requests
-import lxml.etree as etree
-
 from urllib.parse import urlparse
+
+import requests
+
+from lxml import etree
 
 ns = { "wms": "http://www.opengis.net/wms" }
 
@@ -39,7 +40,7 @@ def test_lower_case_query_params(host):
     """
     urlref = f"http://{host}/test/?map=france/france_parts.qgs&SERVICE=WMS&request=GetCapabilities"
     rv = requests.get(urlref)
-    assert rv.status_code == 200   
+    assert rv.status_code == 200
 
 
 def test_wfs_getcaps_xml(host):
@@ -59,4 +60,4 @@ def test_wfs_getcaps_xml(host):
     )
     print("\ntest_getcaps_wfs_xml::status::", rv.status_code)
     print("\ntest_getcaps_wfs_xml::\n", rv.text)
-    assert rv.status_code == 200   
+    assert rv.status_code == 200

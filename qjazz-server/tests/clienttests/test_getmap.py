@@ -29,7 +29,7 @@ def test_getmap_request(host):
 def test_getmap_post_request(host):
     """ Test response from root path
     """
-    arguments = { 
+    arguments = {
       'bbox':'-621646.696284,5795001.359349,205707.697759,6354520.406319',
       'crs':'EPSG:3857',
       'dpi':'96',
@@ -43,7 +43,7 @@ def test_getmap_post_request(host):
       'styles':'default',
       'transparent':'TRUE',
       'version':'1.3.0',
-      'width':'1353' 
+      'width':'1353'
     }
 
     rv = requests.post(f"http://{host}/test/",
