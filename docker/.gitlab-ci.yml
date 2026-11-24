@@ -190,3 +190,42 @@ push:noqgis:
     FACTORY_MANIFEST: "docker/factory-noqgis.manifest"
   dependencies:
     - build-docker:noqgis
+
+# ---------------------
+# Notify release
+# ---------------------
+
+.notify-release:
+  rules:
+    - !reference [.release_rules]
+  image: ${REGISTRY_URL}/factory-ci-runner:factory-ci
+  tags:
+    - factory-plain
+  stage: post-release
+  variables:
+    FACTORY_MANIFEST: "docker/factory-${QGIS_FLAVOR}.manifest"
+    ISSUE_LABELS: "release,qjazz"
+  script:
+    - release-ticket
+  allow_failure: true
+
+notify-release:release:
+  extends: .notify-release
+  variables:
+    QGIS_FLAVOR: release
+  dependencies:
+    - build-docker:release
+
+notify-release:ltr:
+  extends: .notify-release
+  variables:
+    QGIS_FLAVOR: ltr
+  dependencies:
+    - build-docker:ltr
+
+notify-release:3.40:
+  extends: .notify-release
+  variables:
+    QGIS_FLAVOR: "3.40"
+  dependencies:
+    - build-docker:3.40

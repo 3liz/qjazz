@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## Unreleased
 
+
+* [qjazz-server] Use per worker flushable TMPDIR
+
+## 0.10.0
+
 * [qjazz-processes] Add support for QgsProcessingParamaterArea
 * [qjazz-processes] Fix ParameterEnum default value(s)"
 * [qjazz-processes] Fix static crs in ParameterCoordinateOperation
