@@ -10,6 +10,7 @@ use crate::channel::Channel;
 mod catalog;
 mod plugins;
 mod projects;
+mod stats;
 
 pub fn admin(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -23,6 +24,7 @@ pub fn admin(cfg: &mut web::ServiceConfig) {
             .service(web::resource("/catalog").get(api::catalog))
             .service(web::resource("/catalog{Path:/.*}").get(api::catalog_with))
             .service(web::resource("/plugins").get(api::plugins))
+            .service(web::resource("/stats").get(api::stats))
             .service(
                 web::resource("/projects")
                     .post(api::pull_projects)
@@ -40,6 +42,7 @@ pub fn admin(cfg: &mut web::ServiceConfig) {
 mod api {
     pub use super::catalog::{catalog, catalog_with};
     pub use super::plugins::plugins;
+    pub use super::stats::stats;
     pub use super::projects::{
         delete_project_with, delete_projects, get_project_with, get_projects, pull_projects,
     };
@@ -53,7 +56,7 @@ mod api {
     #[derive(Debug, Serialize)]
     #[serde(rename_all = "camelCase")]
     struct LandingPage<'a> {
-        links: [Link<'a>; 4],
+        links: [Link<'a>; 5],
     }
 
     // Admin entry points
@@ -71,6 +74,9 @@ mod api {
                 Link::application_json(format!("{public_url}/projects").into(), rel::CHILDREN)
                     .title("Project's cache")
                     .description("List pinned projects in cache"),
+                Link::application_json(format!("{public_url}/stats").into(), rel::CHILDREN)
+                    .title("Backend stats")
+                    .description("Return backend metrics"),
             ],
         })
     }

@@ -59,11 +59,17 @@ enum ServingStatus {
 
 
 message StatsReply {
+    // Number of workers currently processing a request
     uint64 active_workers = 1;
+    // Number of workers available in the queue
     uint64 idle_workers = 2;
+    // Worker activity as `active / (active + idle)`, 0 if there are no workers
     double activity = 3;
+    // Ratio of failed workers over the maximum number of workers
     double failure_pressure = 4;
+    // Ratio of waiting requests over the maximum number of waiting requests
     double request_pressure = 5;
+    // Server uptime in seconds
     uint64 uptime = 6;
     // Number of requests waiting for a worker
     uint64 waiting_requests = 7;

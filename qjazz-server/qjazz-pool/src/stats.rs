@@ -139,8 +139,8 @@ impl Stats {
     }
 
     /// Return the failure pressure as the ratio
-    /// of number of failed processes over the number
-    /// number of started processes.
+    /// of number of failed processes over the maximum
+    /// number of processes.
     pub fn failure_pressure(&self) -> f64 {
         self.failure_pressure
     }

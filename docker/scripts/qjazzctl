@@ -1,0 +1,5 @@
+#!/opt/local/qjazz/bin/python 
+
+from qjazz_rpc.client import cli
+
+cli()

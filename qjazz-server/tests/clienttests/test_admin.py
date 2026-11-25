@@ -4,6 +4,7 @@
     Admin api is enabled for the 'test' backend
     with undisclosed project's uris.
 """
+import pytest
 import requests
 
 PROJECT = "/france/france_parts"
@@ -22,6 +23,7 @@ def test_admin_landing_page(backend: str) -> None:
     print("\ntest_admin_landing_page::hrefs", hrefs)
     assert f"{backend}/admin/plugins" in hrefs
     assert f"{backend}/admin/catalog" in hrefs
+    assert f"{backend}/admin/stats" in hrefs
 
 
 def test_admin_catalog(backend: str) -> None:
@@ -114,3 +116,35 @@ def test_admin_project_not_found(backend: str) -> None:
 def test_admin_pull_invalid_uri(backend: str) -> None:
     rv = requests.post(f"{backend}/admin/projects", json={'uri': ''})
     assert rv.status_code == 400
+
+
+def test_admin_stats(backend: str) -> None:
+    """Test backend stats"""
+    rv = requests.get(f"{backend}/admin/stats")
+    assert rv.status_code == 200
+
+    data = rv.json()
+    print("\ntest_admin_stats::stats", data)
+
+    active = data['activeWorkers']
+    idle = data['idleWorkers']
+    assert active >= 0
+    assert idle >= 0
+    assert data['numProcesses'] >= 1
+
+    # Ratios
+    for key in ('activity', 'failurePressure', 'requestPressure'):
+        assert 0.0 <= data[key] <= 1.0, key
+    if active + idle > 0:
+        assert data['activity'] == pytest.approx(active / (active + idle))
+
+    assert data['waitingRequests'] >= 0
+    assert data['waitTimeMaxUs'] <= data['waitTimeTotalUs']
+
+    # Cumulative counters must not decrease between two samples
+    rv = requests.get(f"{backend}/admin/stats")
+    assert rv.status_code == 200
+    data2 = rv.json()
+    for key in ('uptime', 'waitCount', 'waitTimeTotalUs', 'waitTimeMaxUs'):
+        assert data2[key] >= data[key], key
+
