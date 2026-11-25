@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore};
+use tokio::sync::RwLock;
 
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
@@ -24,8 +24,8 @@ pub(crate) struct WorkerQueue {
     max_waiters: AtomicUsize,
     // Maximum life cycles of a worker (0: unlimited)
     max_life_cycles: AtomicUsize,
-    // Waiters slots
-    waiters: Semaphore,
+    // Number of requests waiting for a worker
+    waiters: AtomicUsize,
     generation: AtomicUsize,
     // Count worker's failure
     // A failure is when a worker cannot be properly
@@ -45,21 +45,10 @@ impl WorkerQueue {
     }
 
     pub fn num_waiters(&self) -> usize {
-        self.max_waiters()
-            .saturating_sub(self.waiters.available_permits())
+        self.waiters.load(Ordering::Relaxed)
     }
 
     fn set_max_waiters(&self, max_waiting_requests: usize) {
-        let current = self.max_waiters();
-        match current.cmp(&max_waiting_requests) {
-            cmp::Ordering::Less => {
-                self.waiters.add_permits(max_waiting_requests - current);
-            }
-            cmp::Ordering::Greater => {
-                self.waiters.forget_permits(current - max_waiting_requests);
-            }
-            cmp::Ordering::Equal => return,
-        }
         self.max_waiters
             .store(max_waiting_requests, Ordering::Relaxed);
     }
@@ -96,10 +85,10 @@ impl WorkerQueue {
     }
 
     pub async fn recv(&self) -> Result<Worker> {
-        let _ = self
-            .waiters
-            .try_acquire()
-            .map_err(|_| Error::MaxRequestsExceeded)?;
+        // The guard must be held while waiting for a worker
+        // so that the waiter is accounted until `recv` returns
+        // (or the future is dropped).
+        let _waiter = WaiterGuard::acquire(&self.waiters, self.max_waiters())?;
         self.q.recv().await
     }
 
@@ -205,6 +194,26 @@ impl WorkerQueue {
     }
 }
 
+// RAII guard counting a waiter
+struct WaiterGuard<'a>(&'a AtomicUsize);
+
+impl<'a> WaiterGuard<'a> {
+    fn acquire(waiters: &'a AtomicUsize, max_waiters: usize) -> Result<Self> {
+        if waiters.fetch_add(1, Ordering::AcqRel) >= max_waiters {
+            waiters.fetch_sub(1, Ordering::AcqRel);
+            Err(Error::MaxRequestsExceeded)
+        } else {
+            Ok(Self(waiters))
+        }
+    }
+}
+
+impl Drop for WaiterGuard<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
 //
 // Pool
 //
@@ -232,7 +241,7 @@ impl Pool {
                 num_workers: AtomicUsize::new(0),
                 max_waiters: AtomicUsize::new(max_waiting_requests),
                 max_life_cycles: AtomicUsize::new(max_life_cycles),
-                waiters: Semaphore::new(max_waiting_requests),
+                waiters: AtomicUsize::new(0),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
                 failures: AtomicUsize::new(0),
@@ -504,6 +513,53 @@ mod tests {
         assert_eq!(pool.num_workers(), 1);
         let worker = queue.get().await.unwrap();
         assert_eq!(worker.life_cycles(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_max_waiters() {
+        setup();
+
+        let mut builder = builder(1);
+        builder.options_mut().max_waiting_requests = 2.try_into().unwrap();
+        let mut pool = Pool::new(builder);
+        pool.maintain_pool().await.unwrap();
+
+        let queue = Receiver::new(&pool);
+
+        // Take the only worker: no waiters
+        let worker = queue.get().await.unwrap();
+        assert_eq!(pool.num_waiters(), 0);
+
+        // Two requests wait for a worker
+        let w1 = tokio::spawn({
+            let queue = queue.clone();
+            async move { queue.get().await.map(|_| ()) }
+        });
+        let w2 = tokio::spawn({
+            let queue = queue.clone();
+            async move { queue.get().await.map(|_| ()) }
+        });
+        while pool.num_waiters() < 2 {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(pool.num_waiters(), 2);
+
+        // Max waiters reached
+        assert!(matches!(
+            queue.get().await,
+            Err(Error::MaxRequestsExceeded)
+        ));
+        assert_eq!(pool.num_waiters(), 2);
+
+        // Cancelled waiters are released
+        w2.abort();
+        let _ = w2.await;
+        assert_eq!(pool.num_waiters(), 1);
+
+        // Released worker is handed over to the waiter
+        drop(worker);
+        w1.await.unwrap().unwrap();
+        assert_eq!(pool.num_waiters(), 0);
     }
 
     use crate::restore;
