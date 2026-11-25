@@ -10,12 +10,15 @@
 # Note: for reading swagger doc one must use http server:
 # ex  'python -m http.server -d doc/build/html'
 
+from pathlib import Path
+
 import sphinx_rtd_theme
 
 project = 'qjazz-processes'
 copyright = '2024, David Marteau - 3liz'
 author = 'David Marteau'
-release = '${PIN_VERSION}'
+# The version is defined in the VERSION file at the root of the repository
+release = (Path(__file__).resolve().parents[2] / "VERSION").read_text().strip()
 
 
 # -- General configuration ---------------------------------------------------

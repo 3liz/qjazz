@@ -61,3 +61,21 @@ and build Python distribution packages and copy them in the `dist/release`
 folder at the root of the repository.
 
 
+
+Version number
+--------------
+
+The version number is defined once in the `VERSION` file at the root of the repository.
+It is propagated to the package manifests that require a literal version (the Rust
+workspace `qjazz-server/Cargo.toml`, the Python `pyproject.toml` files and the exact pins
+between workspace packages):
+
+```sh
+make version                 # Print the version
+make set-version V=0.11.0    # Set the version, update manifests and lock files
+make sync-version            # Update manifests after editing VERSION by hand
+make check-version           # Check that manifests are in sync (run by 'make lint')
+```
+
+In CI, `make check-version` also checks that a release tag `release-X.Y.Z`
+matches the `VERSION` file.

@@ -5,7 +5,7 @@ DEPTH=..
 
 include $(DEPTH)/config/config.mk
 
-VERSION=$(shell uv version --short --directory $(DEPTH)/qjazz-metapackage)
+VERSION=$(shell cat $(DEPTH)/VERSION)
 
 ifndef BUILD_RELEASE
 QJAZZ_DEV_TAG=-dev0

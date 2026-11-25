@@ -2381,7 +2381,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/26/30/5b1a619941bb458d1
 
 [[package]]
 name = "qjazz"
-version = "0.10.1"
+version = "0.11.0"
 source = { virtual = "qjazz-metapackage" }
 dependencies = [
     { name = "qjazz-map" },
@@ -2398,7 +2398,7 @@ requires-dist = [
 
 [[package]]
 name = "qjazz-contrib"
-version = "0.10.1"
+version = "0.11.0"
 source = { editable = "qjazz-contrib" }
 dependencies = [
     { name = "posix-ipc" },
@@ -2440,7 +2440,7 @@ requires-dist = [{ name = "qjazz-contrib", editable = "qjazz-contrib" }]
 
 [[package]]
 name = "qjazz-processes"
-version = "0.10.1"
+version = "0.11.0"
 source = { editable = "qjazz-processes" }
 dependencies = [
     { name = "aiofiles" },
