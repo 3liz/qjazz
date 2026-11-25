@@ -6,6 +6,7 @@ use crate::utils::json_merge;
 use crate::worker::{Worker, WorkerLauncher};
 
 /// Builder
+#[derive(Clone)]
 pub struct Builder {
     pub(crate) args: String,
     pub(crate) opts: WorkerOptions,

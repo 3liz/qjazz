@@ -328,6 +328,11 @@ impl QgisAdmin for QgisAdminServicer {
         // Sync state
         let patch = serde_json::from_str::<serde_json::Value>(&request.into_inner().json)
             .map_err(|err| Status::invalid_argument(format!("{err:?}")))?;
+        if !patch.is_object() {
+            return Err(Status::invalid_argument(
+                "Invalid configuration: expecting a JSON object",
+            ));
+        }
 
         if log::log_enabled!(log::Level::Debug) {
             log::debug!("Updating configuration: {patch}");
@@ -335,7 +340,28 @@ impl QgisAdmin for QgisAdminServicer {
             log::info!("Updating configuration");
         }
 
-        // Patch configuration
+        // Validate the configuration before applying it: an invalid
+        // configuration would be rejected by every worker at recycling
+        // time, which would terminate all of them.
+        //
+        // 1. Check pool options
+        self.pool
+            .check_config(&patch)
+            .map_err(Status::invalid_argument)?;
+
+        // 2. Check worker configuration on one worker: workers validate
+        //    the configuration before applying it, so an invalid
+        //    configuration leaves the worker unchanged.
+        {
+            let mut w = self.inner.get_worker().await?;
+            w.put_config(&patch).await.map_err(|err| {
+                log::error!("Configuration rejected by worker: {err}");
+                to_grpc_status(err)
+            })?;
+            w.done();
+        }
+
+        // 3. Apply configuration
         self.pool
             .patch_config(&patch)
             .await

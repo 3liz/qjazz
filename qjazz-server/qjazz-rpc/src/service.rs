@@ -60,6 +60,7 @@ fn to_grpc_status(err: qjazz_pool::Error) -> Status {
             403 => Status::permission_denied(msg.to_string()),
             500 => Status::internal(msg.to_string()),
             401 => Status::unauthenticated(msg.to_string()),
+            400 | 422 => Status::invalid_argument(msg.to_string()),
             _ => {
                 let mut status = Status::unknown(msg.to_string());
                 status

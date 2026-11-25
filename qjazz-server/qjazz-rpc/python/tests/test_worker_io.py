@@ -317,3 +317,28 @@ async def test_ogc_catalog_prefix(worker: Worker):
     for item in resp.items:
         print("\n::test_ogc_api::catalog_prefix::item", item)
         assert PurePosixPath(item.name).is_relative_to(prefix)
+
+
+async def test_worker_io_put_invalid_config(worker: Worker):
+    """Invalid configuration is rejected and leaves the configuration unchanged"""
+    status, before = await worker.io.send_message(messages.GetConfigMsg())
+    assert status == 200
+
+    status, resp = await worker.io.send_message(
+        messages.PutConfigMsg(config={"logging": {"level": "foobar"}}),
+    )
+    assert status == 422
+    assert resp.startswith("Invalid configuration")
+
+    # Not an object
+    status, _ = await worker.io.send_message(messages.PutConfigMsg(config="[1]"))
+    assert status == 422
+
+    status, after = await worker.io.send_message(messages.GetConfigMsg())
+    assert status == 200
+    assert after == before
+
+    # Worker is still operational
+    status, resp = await worker.io.send_message(messages.PingMsg(echo="alive"))
+    assert status == 200
+    assert resp == "alive"

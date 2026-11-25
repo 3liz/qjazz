@@ -334,6 +334,15 @@ impl Pool {
         self.builder.read().options().clone()
     }
 
+    /// Check a configuration patch without applying it
+    ///
+    /// Note that this checks only the pool options: the configuration
+    /// of the worker processes is validated by the workers themselves.
+    pub fn check_config(&self, patch: &serde_json::Value) -> Result<()> {
+        let mut builder = self.builder.read().clone();
+        builder.patch(patch)
+    }
+
     /// Patch configuration
     ///
     /// If the patch sets `num_processes`, the nominal number of workers

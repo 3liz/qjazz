@@ -9,7 +9,7 @@ pub enum Error {
     RmpEncodeError(#[from] rmp_serde::encode::Error),
     #[error("MsgPack Decode error")]
     RmpDecodeError(#[from] rmp_serde::decode::Error),
-    #[error("Json error")]
+    #[error("Json error: {0}")]
     JsonError(#[from] serde_json::Error),
     #[error("Response error {0}: {1}")]
     ResponseError(i64, serde_json::Value),

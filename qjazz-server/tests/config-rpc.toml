@@ -10,6 +10,7 @@ tls_cert_file = "$location/certs/localhost.crt"
 name = "Test"
 num_processes = 2
 process_start_timeout = 10
+tmpdir_root = "$location/__tmpdir__"
 
 [worker.qgis.plugins]
 paths = ['$location/plugins']
@@ -34,6 +35,6 @@ force_readonly_layers = true
 [worker.qgis.network]
 trace = true
 
-[monitor]
-command = "python"
-args = ["$location/monitor.py"]
+#[monitor]
+#command = "python"
+#args = ["$location/monitor.py"]

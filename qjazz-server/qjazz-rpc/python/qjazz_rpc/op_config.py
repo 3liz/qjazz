@@ -4,7 +4,7 @@
 import json
 
 from qjazz_core import logger
-from qjazz_core.config import ConfigProxy
+from qjazz_core.config import ConfigError, ConfigProxy
 
 from . import messages as _m
 from .config import QgisConfig
@@ -18,8 +18,18 @@ def put_config(
     if isinstance(conf, ConfigProxy):
         logger.notice("Updating configuration")
         config_data = json.loads(msg.config) if isinstance(msg.config, str) else msg.config
+        if not isinstance(config_data, dict):
+            _m.send_reply(conn, "Invalid configuration: expecting an object", 422)
+            return
         confservice = conf.service
-        confservice.update_config(config_data)
+        try:
+            # NOTE: the configuration is validated before being
+            # applied: on error, the configuration is left unchanged.
+            confservice.update_config(config_data)
+        except ConfigError as err:
+            logger.error("Invalid configuration: %s", err)
+            _m.send_reply(conn, f"Invalid configuration: {err}", 422)
+            return
         # Update log level
         logger.set_log_level(confservice.conf.logging.level)
         _m.send_reply(conn, None)
