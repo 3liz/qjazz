@@ -152,6 +152,14 @@ max_waiting_requests = 50
 # Set to 0 to disable the limit.
 max_life_cycles = 0
 #
+# Workers temporary directories root
+#
+# Parent directory of the workers temporary directories.
+# Each worker gets a unique temporary directory, set as `TMPDIR`
+# for the worker process, which is removed with the worker.
+# Must be an absolute path to an existing directory.
+tmpdir_root = "/tmp"
+#
 # Max chunk size
 max_chunk_size = 1048576
 #

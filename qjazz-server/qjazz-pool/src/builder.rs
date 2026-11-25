@@ -77,6 +77,10 @@ impl Builder {
         self.opts.qgis = value;
         self
     }
+    pub fn tmpdir_root(&mut self, value: impl Into<std::path::PathBuf>) -> &mut Self {
+        self.opts.tmpdir_root = value.into();
+        self
+    }
     pub fn max_life_cycles(&mut self, value: usize) -> &mut Self {
         self.opts.max_life_cycles = value;
         self

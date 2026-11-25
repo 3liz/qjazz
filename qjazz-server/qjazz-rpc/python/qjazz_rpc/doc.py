@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import (
     Annotated,
     Optional,
@@ -203,6 +204,16 @@ class Worker(ConfigBase):
             "When a worker reaches this number of life cycles, it is\n"
             "terminated at recycling time and replaced by a new one.\n"
             "Set to 0 to disable the limit."
+        ),
+    )
+    tmpdir_root: Path = Field(
+        default=Path("/tmp"),  # noqa: S108 (documented default)
+        title="Workers temporary directories root",
+        description=(
+            "Parent directory of the workers temporary directories.\n"
+            "Each worker gets a unique temporary directory, set as `TMPDIR`\n"
+            "for the worker process, which is removed with the worker.\n"
+            "Must be an absolute path to an existing directory."
         ),
     )
     max_chunk_size: PositiveInt = Field(

@@ -85,6 +85,7 @@ const DEFAULT_START_TIMEOUT_SEC: u64 = 5;
 const DEFAULT_CANCEL_TIMEOUT_SEC: u64 = 3;
 const DEFAULT_MAX_REQUESTS: usize = 50;
 const DEFAULT_MAX_CHUNK_SIZE: usize = 1024 * 1024; // 1Mo
+const DEFAULT_TMPDIR_ROOT: &str = "/tmp";
 
 /// Worker configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,6 +132,11 @@ pub struct WorkerOptions {
     /// by a fresh one.
     /// A value of 0 disables the limit
     pub max_life_cycles: usize,
+    /// Parent directory of the workers temporary directories.
+    /// Each worker gets a unique temporary directory, set as `TMPDIR`
+    /// for the worker process, which is removed with the worker.
+    /// Must be an absolute path to an existing directory.
+    pub tmpdir_root: PathBuf,
 }
 
 impl Default for WorkerOptions {
@@ -147,6 +153,7 @@ impl Default for WorkerOptions {
             max_chunk_size: BoundedUsize(DEFAULT_MAX_CHUNK_SIZE),
             restore_projects: Default::default(),
             max_life_cycles: 0,
+            tmpdir_root: PathBuf::from(DEFAULT_TMPDIR_ROOT),
         }
     }
 }
@@ -180,8 +187,21 @@ impl WorkerOptions {
 
     /// Validate options consistency
     ///
-    /// Requires `min_processes <= num_processes <= max_processes`.
+    /// Requires `min_processes <= num_processes <= max_processes`
+    /// and `tmpdir_root` to be an absolute path to an existing directory.
     pub fn validate(&self) -> Result<(), Error> {
+        if !self.tmpdir_root.is_absolute() {
+            return Err(Error::InvalidConfiguration(format!(
+                "tmpdir_root ({}) must be an absolute path",
+                self.tmpdir_root.display()
+            )));
+        }
+        if !self.tmpdir_root.is_dir() {
+            return Err(Error::InvalidConfiguration(format!(
+                "tmpdir_root ({}) is not an existing directory",
+                self.tmpdir_root.display()
+            )));
+        }
         let (min, num, max) = (
             self.min_processes(),
             self.num_processes(),
@@ -207,6 +227,7 @@ impl WorkerOptions {
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::path::Path;
 
     fn options(value: serde_json::Value) -> WorkerOptions {
         serde_json::from_value(value).unwrap()
@@ -230,6 +251,15 @@ mod tests {
 
         let opts = options(json!({ "num_processes": 2, "max_processes": 1 }));
         assert!(opts.validate().is_err());
+
+        // tmpdir_root
+        assert_eq!(options(json!({})).tmpdir_root, Path::new("/tmp"));
+        assert!(options(json!({ "tmpdir_root": "tmp" })).validate().is_err());
+        assert!(
+            options(json!({ "tmpdir_root": "/nonexistent_qjazz_dir" }))
+                .validate()
+                .is_err()
+        );
 
         // Unset bounds are not serialized
         let doc = serde_json::to_value(options(json!({}))).unwrap();

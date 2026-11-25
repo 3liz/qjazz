@@ -8,7 +8,7 @@ use crate::stream::{ByteStream, ObjectStream};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
@@ -18,8 +18,7 @@ use tokio::time::timeout;
 // TODO: Make timeouts configurable
 const TERM_TIMEOUT_SEC: u64 = 5;
 
-// Parent directory for worker's temporary directories
-const WORKER_TMPDIR_ROOT: &str = "/tmp";
+// Prefix of worker's temporary directories
 const WORKER_TMPDIR_PREFIX: &str = "qjazz_worker_";
 
 // Child helper
@@ -61,6 +60,7 @@ pub struct WorkerLauncher {
     buffer_size: usize,
     qgis_options: String,
     log_level: &'static str,
+    tmpdir_root: PathBuf,
 }
 
 impl WorkerLauncher {
@@ -73,6 +73,7 @@ impl WorkerLauncher {
             buffer_size: opts.max_chunk_size(),
             qgis_options: opts.qgis.to_string(),
             log_level,
+            tmpdir_root: opts.tmpdir_root.clone(),
         }
     }
 
@@ -94,7 +95,13 @@ impl WorkerLauncher {
         // with the worker.
         let tmp_dir = tempfile::Builder::new()
             .prefix(WORKER_TMPDIR_PREFIX)
-            .tempdir_in(WORKER_TMPDIR_ROOT)?;
+            .tempdir_in(&self.tmpdir_root)
+            .inspect_err(|err| {
+                log::error!(
+                    "Failed to create worker temporary directory in {}: {err}",
+                    self.tmpdir_root.display()
+                );
+            })?;
 
         log::debug!("Worker temporary directory: {}", tmp_dir.path().display());
 
@@ -615,11 +622,11 @@ mod tests {
         let tmp1 = w1.tmp_dir().to_path_buf();
         let tmp2 = w2.tmp_dir().to_path_buf();
 
-        // Unique directories located in /tmp
+        // Unique directories located in /tmp (default)
         assert_ne!(tmp1, tmp2);
         for tmp in [&tmp1, &tmp2] {
             assert!(tmp.is_dir());
-            assert_eq!(tmp.parent(), Some(Path::new(WORKER_TMPDIR_ROOT)));
+            assert_eq!(tmp.parent(), Some(Path::new("/tmp")));
         }
 
         // TMPDIR is passed to the child process
@@ -640,5 +647,42 @@ mod tests {
         // Directory is removed when a worker is dropped
         drop(w2);
         assert!(!tmp2.exists());
+    }
+
+    #[tokio::test]
+    async fn test_worker_tmpdir_root() {
+        setup();
+
+        let root = tempfile::tempdir().unwrap();
+
+        let mut w = Builder::new(crate::rootdir!("process.py"))
+            .name("test")
+            .process_start_timeout(5)
+            .tmpdir_root(root.path())
+            .start()
+            .await
+            .unwrap();
+
+        let tmp = w.tmp_dir().to_path_buf();
+        assert_eq!(tmp.parent(), Some(root.path()));
+
+        let env = w.get_env().await.unwrap();
+        assert_eq!(
+            env["environment"]["TMPDIR"].as_str(),
+            Some(tmp.to_str().unwrap())
+        );
+
+        drop(w);
+        assert!(!tmp.exists());
+
+        // Spawning fails if the root directory does not exist
+        let missing = root.path().join("missing");
+        assert!(
+            Builder::new(crate::rootdir!("process.py"))
+                .tmpdir_root(&missing)
+                .start()
+                .await
+                .is_err()
+        );
     }
 }
