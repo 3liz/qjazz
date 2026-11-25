@@ -51,6 +51,79 @@ impl ListenConfig {
     }
 }
 
+/// Adaptive scaling configuration
+///
+/// The number of workers is adjusted between `worker.min_processes`
+/// and `worker.max_processes`; scaling is inactive when both
+/// are equal (the default).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Scaling {
+    /// Interval in seconds between two samplings of the
+    /// workers activity.
+    interval: u64,
+    /// Target fraction of busy workers.
+    /// Workers are added when the smoothed demand (busy workers and
+    /// waiting requests) exceeds this fraction of the workers, and
+    /// removed when it stays below it for `scale_down_cooldown`.
+    target_utilization: f64,
+    /// Time in seconds the demand must stay low before removing a
+    /// worker; workers are removed one at a time, at most once per
+    /// cooldown period.
+    scale_down_cooldown: u64,
+    /// Mean time in milliseconds requests may wait for a worker over
+    /// a sampling interval before a worker is added regardless of
+    /// the utilization. Set to 0 to disable.
+    wait_time_threshold: u64,
+    /// System memory usage, as fraction of total memory, above which
+    /// no worker is added.
+    memory_threshold: f64,
+}
+
+impl Default for Scaling {
+    fn default() -> Self {
+        Self {
+            interval: 3,
+            target_utilization: 0.7,
+            scale_down_cooldown: 300,
+            wait_time_threshold: 500,
+            memory_threshold: 0.8,
+        }
+    }
+}
+
+impl Scaling {
+    pub fn validate(&mut self) -> Result<(), ConfigError> {
+        if self.interval < 1 {
+            return Err(ConfigError::Message(
+                "'scaling.interval' must be at least 1s".to_string(),
+            ));
+        }
+        if !(self.target_utilization > 0. && self.target_utilization <= 1.) {
+            return Err(ConfigError::Message(
+                "'scaling.target_utilization' must be in ]0, 1]".to_string(),
+            ));
+        }
+        self.memory_threshold = self.memory_threshold.clamp(0., 1.);
+        Ok(())
+    }
+    pub fn interval(&self) -> Duration {
+        Duration::from_secs(self.interval)
+    }
+    pub fn target_utilization(&self) -> f64 {
+        self.target_utilization
+    }
+    pub fn scale_down_cooldown(&self) -> Duration {
+        Duration::from_secs(self.scale_down_cooldown)
+    }
+    pub fn wait_time_threshold(&self) -> Option<Duration> {
+        (self.wait_time_threshold > 0).then(|| Duration::from_millis(self.wait_time_threshold))
+    }
+    pub fn memory_threshold(&self) -> f64 {
+        self.memory_threshold
+    }
+}
+
 /// RPC Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -85,6 +158,8 @@ pub struct Rpc {
     /// Connections from unresponsive clients are closed.
     /// Set to 0 to disable keepalive.
     keepalive: u64,
+    /// Adaptive scaling of the number of workers
+    scaling: Scaling,
 }
 
 impl Default for Rpc {
@@ -98,6 +173,7 @@ impl Default for Rpc {
             high_water_mark: 0.9,
             oom_period: 5,
             keepalive: 60,
+            scaling: Default::default(),
         }
     }
 }
@@ -105,13 +181,18 @@ impl Default for Rpc {
 impl Rpc {
     pub fn validate(&mut self) -> Result<(), ConfigError> {
         self.high_water_mark = self.high_water_mark.clamp(0., 1.);
-        self.max_failure_pressure = self.high_water_mark.clamp(0., 1.);
+        self.max_failure_pressure = self.max_failure_pressure.clamp(0., 1.);
         if self.oom_period < 3 {
             return Err(ConfigError::Message(
                 "'oom_period' must be higher than or equal to 3s".to_string(),
             ));
         }
+        self.scaling.validate()?;
         self.listen.validate()
+    }
+    #[inline(always)]
+    pub fn scaling(&self) -> &Scaling {
+        &self.scaling
     }
     #[inline(always)]
     pub fn listen(&self) -> &ListenConfig {

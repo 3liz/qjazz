@@ -43,6 +43,50 @@ class Listen(ConfigBase):
     )
 
 
+class Scaling(ConfigBase):
+    interval: int = Field(
+        3,
+        title="Sampling interval",
+        description="Interval in seconds between two samplings of the\nworkers activity.",
+    )
+    target_utilization: float = Field(
+        0.7,
+        title="Target utilization",
+        description=(
+            "Target fraction of busy workers.\n"
+            "Workers are added when the smoothed demand (busy workers and\n"
+            "waiting requests) exceeds this fraction of the workers, and\n"
+            "removed when it stays below it for `scale_down_cooldown`."
+        ),
+    )
+    scale_down_cooldown: int = Field(
+        300,
+        title="Scale down cooldown",
+        description=(
+            "Time in seconds the demand must stay low before removing a\n"
+            "worker; workers are removed one at a time, at most once per\n"
+            "cooldown period."
+        ),
+    )
+    wait_time_threshold: int = Field(
+        500,
+        title="Wait time threshold",
+        description=(
+            "Mean time in milliseconds requests may wait for a worker over\n"
+            "a sampling interval before a worker is added regardless of\n"
+            "the utilization. Set to 0 to disable."
+        ),
+    )
+    memory_threshold: float = Field(
+        0.8,
+        title="Memory threshold",
+        description=(
+            "System memory usage, as fraction of total memory, above which\n"
+            "no worker is added."
+        ),
+    )
+
+
 class Rpc(ConfigBase):
     listen: Listen = Field(Listen())
     enable_admin_services: bool = Field(
@@ -89,6 +133,15 @@ class Rpc(ConfigBase):
             "(TCP keepalive and HTTP2 PING) to clients.\n"
             "Connections from unresponsive clients are closed.\n"
             "Set to 0 to disable keepalive."
+        ),
+    )
+    scaling: Scaling = Field(
+        Scaling(),
+        title="Adaptive scaling",
+        description=(
+            "The number of workers is adjusted between `worker.min_processes`\n"
+            "and `worker.max_processes`; scaling is inactive when both\n"
+            "are equal (the default)."
         ),
     )
 

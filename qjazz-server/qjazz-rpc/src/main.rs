@@ -2,6 +2,7 @@ mod config;
 mod logger;
 mod monitor;
 mod oom;
+mod scaling;
 mod server;
 mod service;
 mod signals;

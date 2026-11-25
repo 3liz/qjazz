@@ -74,6 +74,8 @@ message StatsReply {
     uint64 wait_time_total_us = 9;
     // Longest wait time since server start
     uint64 wait_time_max_us = 10;
+    // Nominal number of workers (adjusted by adaptive scaling)
+    uint64 num_processes = 11;
 }
 
 

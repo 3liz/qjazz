@@ -37,7 +37,7 @@ class SleepRequest(_message.Message):
     def __init__(self, delay: _Optional[int] = ...) -> None: ...
 
 class StatsReply(_message.Message):
-    __slots__ = ("active_workers", "idle_workers", "activity", "failure_pressure", "request_pressure", "uptime", "waiting_requests", "wait_count", "wait_time_total_us", "wait_time_max_us")
+    __slots__ = ("active_workers", "idle_workers", "activity", "failure_pressure", "request_pressure", "uptime", "waiting_requests", "wait_count", "wait_time_total_us", "wait_time_max_us", "num_processes")
     ACTIVE_WORKERS_FIELD_NUMBER: _ClassVar[int]
     IDLE_WORKERS_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_FIELD_NUMBER: _ClassVar[int]
@@ -48,6 +48,7 @@ class StatsReply(_message.Message):
     WAIT_COUNT_FIELD_NUMBER: _ClassVar[int]
     WAIT_TIME_TOTAL_US_FIELD_NUMBER: _ClassVar[int]
     WAIT_TIME_MAX_US_FIELD_NUMBER: _ClassVar[int]
+    NUM_PROCESSES_FIELD_NUMBER: _ClassVar[int]
     active_workers: int
     idle_workers: int
     activity: float
@@ -58,7 +59,8 @@ class StatsReply(_message.Message):
     wait_count: int
     wait_time_total_us: int
     wait_time_max_us: int
-    def __init__(self, active_workers: _Optional[int] = ..., idle_workers: _Optional[int] = ..., activity: _Optional[float] = ..., failure_pressure: _Optional[float] = ..., request_pressure: _Optional[float] = ..., uptime: _Optional[int] = ..., waiting_requests: _Optional[int] = ..., wait_count: _Optional[int] = ..., wait_time_total_us: _Optional[int] = ..., wait_time_max_us: _Optional[int] = ...) -> None: ...
+    num_processes: int
+    def __init__(self, active_workers: _Optional[int] = ..., idle_workers: _Optional[int] = ..., activity: _Optional[float] = ..., failure_pressure: _Optional[float] = ..., request_pressure: _Optional[float] = ..., uptime: _Optional[int] = ..., waiting_requests: _Optional[int] = ..., wait_count: _Optional[int] = ..., wait_time_total_us: _Optional[int] = ..., wait_time_max_us: _Optional[int] = ..., num_processes: _Optional[int] = ...) -> None: ...
 
 class ServerStatus(_message.Message):
     __slots__ = ("status",)

@@ -486,6 +486,7 @@ impl QgisAdmin for QgisAdminServicer {
             wait_count: st.wait_stats().count,
             wait_time_total_us: duration_as_us(st.wait_stats().total),
             wait_time_max_us: duration_as_us(st.wait_stats().max),
+            num_processes: self.pool.num_processes() as u64,
         }))
     }
     // Sleep

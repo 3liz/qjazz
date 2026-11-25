@@ -56,6 +56,49 @@ enable_tls = false
 # Path ho TLS client CA file
 #tls_client_cafile =   	# Optional
 
+#
+# Adaptive scaling
+#
+# The number of workers is adjusted between `worker.min_processes`
+# and `worker.max_processes`; scaling is inactive when both
+# are equal (the default).
+#
+[rpc.scaling]
+#
+# Sampling interval
+#
+# Interval in seconds between two samplings of the
+# workers activity.
+interval = 3
+#
+# Target utilization
+#
+# Target fraction of busy workers.
+# Workers are added when the smoothed demand (busy workers and
+# waiting requests) exceeds this fraction of the workers, and
+# removed when it stays below it for `scale_down_cooldown`.
+target_utilization = 0.7
+#
+# Scale down cooldown
+#
+# Time in seconds the demand must stay low before removing a
+# worker; workers are removed one at a time, at most once per
+# cooldown period.
+scale_down_cooldown = 300
+#
+# Wait time threshold
+#
+# Mean time in milliseconds requests may wait for a worker over
+# a sampling interval before a worker is added regardless of
+# the utilization. Set to 0 to disable.
+wait_time_threshold = 500
+#
+# Memory threshold
+#
+# System memory usage, as fraction of total memory, above which
+# no worker is added.
+memory_threshold = 0.8
+
 
 [worker]
 #

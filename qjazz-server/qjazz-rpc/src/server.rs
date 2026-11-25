@@ -68,6 +68,12 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
         settings.rpc.oom_period(),
     )?;
 
+    let scaling = crate::scaling::handle_scaling(
+        pool.clone(),
+        token.clone(),
+        settings.rpc.scaling().clone(),
+    );
+
     let grace_period = settings.rpc.shutdown_grace_period();
 
     // Enable keepalive so that connections from dead or unreachable
@@ -129,6 +135,10 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
     // Wait for oom killer termination
     oom_killer.abort();
     let _ = oom_killer.await;
+
+    // Wait for scaling handler termination
+    scaling.abort();
+    let _ = scaling.await;
 
     log::debug!("Closing signal handle");
     signal_handle.close();
