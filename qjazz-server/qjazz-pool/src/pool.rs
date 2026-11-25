@@ -8,6 +8,7 @@ use crate::config::WorkerOptions;
 use crate::errors::{Error, Result};
 use crate::queue::Queue;
 use crate::restore::Restore;
+use crate::stats::{WaitStats, WaitTimeRecorder};
 use crate::worker::{Worker, WorkerId};
 use futures::future::try_join_all;
 use std::cmp;
@@ -26,6 +27,8 @@ pub(crate) struct WorkerQueue {
     max_life_cycles: AtomicUsize,
     // Number of requests waiting for a worker
     waiters: AtomicUsize,
+    // Time spent by requests waiting for a worker
+    wait_time: WaitTimeRecorder,
     generation: AtomicUsize,
     // Count worker's failure
     // A failure is when a worker cannot be properly
@@ -89,7 +92,10 @@ impl WorkerQueue {
         // so that the waiter is accounted until `recv` returns
         // (or the future is dropped).
         let _waiter = WaiterGuard::acquire(&self.waiters, self.max_waiters())?;
-        self.q.recv().await
+        let start = Instant::now();
+        let worker = self.q.recv().await?;
+        self.wait_time.record(start.elapsed());
+        Ok(worker)
     }
 
     // Return the restore lock
@@ -242,6 +248,7 @@ impl Pool {
                 max_waiters: AtomicUsize::new(max_waiting_requests),
                 max_life_cycles: AtomicUsize::new(max_life_cycles),
                 waiters: AtomicUsize::new(0),
+                wait_time: WaitTimeRecorder::default(),
                 restore: RwLock::new(Restore::with_projects(opts.restore_projects.drain(..))),
                 generation: AtomicUsize::new(1),
                 failures: AtomicUsize::new(0),
@@ -290,6 +297,12 @@ impl Pool {
     #[inline(always)]
     pub fn num_waiters(&self) -> usize {
         self.queue.num_waiters()
+    }
+
+    /// Returns the cumulative time spent by requests
+    /// waiting for a worker
+    pub fn wait_stats(&self) -> WaitStats {
+        self.queue.wait_time.snapshot()
     }
 
     /// Returns the number of live  workers
@@ -529,6 +542,8 @@ mod tests {
         // Take the only worker: no waiters
         let worker = queue.get().await.unwrap();
         assert_eq!(pool.num_waiters(), 0);
+        let prev = pool.wait_stats();
+        assert_eq!(prev.count, 1);
 
         // Two requests wait for a worker
         let w1 = tokio::spawn({
@@ -557,9 +572,17 @@ mod tests {
         assert_eq!(pool.num_waiters(), 1);
 
         // Released worker is handed over to the waiter
+        let delay = Duration::from_millis(100);
+        tokio::time::sleep(delay).await;
         drop(worker);
         w1.await.unwrap().unwrap();
         assert_eq!(pool.num_waiters(), 0);
+
+        // Only the request that obtained a worker is accounted
+        let stats = pool.wait_stats();
+        assert_eq!(stats.count, 2);
+        assert!(stats.mean_since(&prev).unwrap() >= delay);
+        assert!(stats.max >= delay);
     }
 
     use crate::restore;

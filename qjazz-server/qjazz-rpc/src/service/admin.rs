@@ -485,6 +485,10 @@ impl QgisAdmin for QgisAdminServicer {
             failure_pressure: st.failure_pressure(),
             request_pressure: st.request_pressure(),
             uptime: self.uptime.elapsed().as_secs(),
+            waiting_requests: st.num_waiters() as u64,
+            wait_count: st.wait_stats().count,
+            wait_time_total_us: duration_as_us(st.wait_stats().total),
+            wait_time_max_us: duration_as_us(st.wait_stats().max),
         }))
     }
     // Sleep
@@ -550,4 +554,8 @@ impl From<qjazz_pool::messages::CatalogItem> for CatalogItem {
             public_uri: msg.public_uri,
         }
     }
+}
+
+fn duration_as_us(d: std::time::Duration) -> u64 {
+    u64::try_from(d.as_micros()).unwrap_or(u64::MAX)
 }
