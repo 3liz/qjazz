@@ -4,7 +4,6 @@
 use nix::{sys::signal, unistd::Pid};
 use procfs::{Current, Meminfo, ProcResult, process::Process};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time;
 use tokio_util::sync::CancellationToken;
@@ -12,7 +11,7 @@ use tokio_util::sync::CancellationToken;
 use qjazz_pool::Pool;
 
 pub(crate) fn handle_oom(
-    pool: Arc<RwLock<Pool>>,
+    pool: Arc<Pool>,
     token: CancellationToken,
     high_water_mark: f64,
     throttle_duration: time::Duration,
@@ -32,7 +31,7 @@ pub(crate) fn handle_oom(
             }
 
             // Drop guard before spawning kill task
-            let pids = { pool.read().await.inspect_pids().await };
+            let pids = { pool.inspect_pids().await };
 
             log::trace!("Running oom handler on pids {pids:?}");
             let _ = tokio::task::spawn_blocking(move || {

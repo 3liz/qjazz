@@ -104,7 +104,7 @@ impl Stats {
             idle,
             failure_pressure: pool.failure_pressure(),
             request_pressure: pool.num_waiters() as f64
-                / pool.options().max_waiting_requests() as f64,
+                / pool.max_waiting_requests() as f64,
             num_workers: pool.num_workers(),
             num_waiters: pool.num_waiters(),
             wait_stats: pool.wait_stats(),

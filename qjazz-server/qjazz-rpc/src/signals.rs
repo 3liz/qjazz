@@ -6,7 +6,6 @@ use signal_hook::consts::signal::{SIGCHLD, SIGINT, SIGTERM};
 use signal_hook::iterator::{Signals, backend::Handle};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::sync::RwLock;
 use tokio::time;
 use tokio_util::sync::CancellationToken;
 
@@ -15,7 +14,7 @@ use qjazz_pool::Pool;
 // Run signal handling in its own thread
 
 pub(crate) fn handle_signals(
-    pool: Arc<RwLock<Pool>>,
+    pool: Arc<Pool>,
     token: CancellationToken,
     max_failure_pressure: f64,
 ) -> anyhow::Result<Handle> {
@@ -53,15 +52,15 @@ pub(crate) fn handle_signals(
                             // Release barrier
                             state.store(false, Ordering::Relaxed);
                             // Check failure pressure
-                            let failure_pressure = pool.read().await.failure_pressure();
+                            let failure_pressure = pool.failure_pressure();
                             log::debug!("Failure pressure: {failure_pressure}");
                             if failure_pressure >= max_failure_pressure {
                                 log::error!("Max failure pressure exceeded, terminating server");
-                                pool.write().await.set_error();
+                                pool.set_error();
                                 token.cancel();
-                            } else if let Err(err) = pool.write().await.maintain_pool().await {
+                            } else if let Err(err) = pool.maintain_pool().await {
                                 log::error!("Pool scaling failed: {err:?}, terminating server");
-                                pool.write().await.set_error();
+                                pool.set_error();
                                 token.cancel();
                             }
                         });

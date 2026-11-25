@@ -2,7 +2,6 @@
 // The QGIS Admin servicer
 //
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tonic_health::server::HealthReporter;
 
 use super::*;
@@ -20,7 +19,7 @@ pub use qjazz_service::qgis_admin_server::QgisAdminServer;
 
 pub struct QgisAdminServicer {
     inner: Inner,
-    pool: Arc<RwLock<qjazz_pool::Pool>>,
+    pool: Arc<qjazz_pool::Pool>,
     health_reporter: HealthReporter,
     uptime: Instant,
 }
@@ -28,7 +27,7 @@ pub struct QgisAdminServicer {
 impl QgisAdminServicer {
     pub(crate) fn new(
         queue: qjazz_pool::Receiver,
-        pool: Arc<RwLock<qjazz_pool::Pool>>,
+        pool: Arc<qjazz_pool::Pool>,
         health_reporter: HealthReporter,
     ) -> Self {
         Self {
@@ -196,7 +195,7 @@ impl QgisAdmin for QgisAdminServicer {
         _: Request<Empty>,
     ) -> Result<Response<Self::DumpCacheStream>, Status> {
         // Get the number of workers created so far
-        let num_workers = self.pool.read().await.num_workers();
+        let num_workers = self.pool.num_workers();
 
         // Drain all workers
         // NOTE: This is a kind of 'stop the world' method since it waits
@@ -338,8 +337,6 @@ impl QgisAdmin for QgisAdminServicer {
 
         // Patch configuration
         self.pool
-            .write()
-            .await
             .patch_config(&patch)
             .await
             .map_err(Status::invalid_argument)?;
@@ -477,7 +474,7 @@ impl QgisAdmin for QgisAdminServicer {
     }
     // Stats
     async fn stats(&self, _: Request<Empty>) -> Result<Response<StatsReply>, Status> {
-        let st = qjazz_pool::stats::Stats::new(self.pool.read().await);
+        let st = qjazz_pool::stats::Stats::new(self.pool.as_ref());
         Ok(Response::new(StatsReply {
             active_workers: st.active_workers() as u64,
             idle_workers: st.idle_workers() as u64,

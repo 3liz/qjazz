@@ -7,7 +7,6 @@ use crate::service::{QgisServerServer, QgisServerServicer};
 use qjazz_pool::Pool;
 use std::error::Error;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 use std::time::Duration;
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
@@ -22,7 +21,10 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
     // see https://github.com/hyperium/tonic/blob/master/examples/src/health/server.rs
     let (health_reporter, health_service) = tonic_health::server::health_reporter();
 
-    let mut pool = Pool::new(qjazz_pool::Builder::from_options(args, settings.worker));
+    let pool = Arc::new(Pool::new(qjazz_pool::Builder::from_options(
+        args,
+        settings.worker,
+    )));
     pool.maintain_pool().await?;
 
     health_reporter
@@ -50,18 +52,17 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
     let qgis_servicer = QgisServerServicer::new(receiver.clone(), reporter);
 
     // Create admin servicer
-    let pool_owned = Arc::new(RwLock::new(pool));
     let admin_servicer =
-        QgisAdminServicer::new(receiver, pool_owned.clone(), health_reporter.clone());
+        QgisAdminServicer::new(receiver, pool.clone(), health_reporter.clone());
 
     let signal_handle = crate::signals::handle_signals(
-        pool_owned.clone(),
+        pool.clone(),
         token.clone(),
         settings.rpc.max_failure_pressure(),
     )?;
 
     let oom_killer = crate::oom::handle_oom(
-        pool_owned.clone(),
+        pool.clone(),
         token.clone(),
         settings.rpc.high_water_mark(),
         settings.rpc.oom_period(),
@@ -133,7 +134,7 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
     signal_handle.close();
 
     // Close queue
-    pool_owned.write().await.close(grace_period).await;
+    pool.close(grace_period).await;
 
     // Notify that we are not serving anymore.
     health_reporter
@@ -141,7 +142,7 @@ pub(crate) async fn serve(args: String, settings: Settings) -> anyhow::Result<()
         .await;
 
     log::info!("Server shutdown");
-    if pool_owned.write().await.has_error() {
+    if pool.has_error() {
         Err(anyhow::anyhow!("Server terminated because of errors"))
     } else {
         Ok(())

@@ -14,9 +14,9 @@ use futures::future::try_join_all;
 use std::cmp;
 use std::collections::HashSet;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
@@ -227,13 +227,23 @@ impl Drop for WaiterGuard<'_> {
 /// A pool of Worker
 ///
 /// Manage multiple worker with the same configuration.
+///
+/// All methods take `&self`, so the pool can be shared with
+/// `Arc<Pool>` without an external lock: operations that change the
+/// number of workers are serialized internally, and starting new
+/// workers does not block other accesses to the pool
+/// (stats, configuration...).
 pub struct Pool {
     queue: Arc<WorkerQueue>,
-    builder: Builder,
-    error: bool,
+    // Held only for short synchronous sections:
+    // never held across an await point.
+    builder: parking_lot::RwLock<Builder>,
+    error: AtomicBool,
     // Nominal number of workers, bounded
     // by `min_processes..=max_processes`
-    num_processes: usize,
+    num_processes: AtomicUsize,
+    // Serialize operations that change the number of workers
+    scaling: Mutex<()>,
 }
 
 impl Pool {
@@ -256,22 +266,24 @@ impl Pool {
                 failures: AtomicUsize::new(0),
                 pids: RwLock::new(HashSet::new()),
             }),
-            builder,
-            error: false,
-            num_processes,
+            builder: parking_lot::RwLock::new(builder),
+            error: AtomicBool::new(false),
+            num_processes: AtomicUsize::new(num_processes),
+            scaling: Mutex::new(()),
         }
     }
 
-    pub fn set_error(&mut self) {
-        self.error = true
+    pub fn set_error(&self) {
+        self.error.store(true, Ordering::Relaxed)
     }
 
     pub fn has_error(&self) -> bool {
-        self.error
+        self.error.load(Ordering::Relaxed)
     }
 
-    pub fn options(&self) -> &WorkerOptions {
-        self.builder.options()
+    /// Returns a copy of the worker options
+    pub fn options(&self) -> WorkerOptions {
+        self.builder.read().options().clone()
     }
 
     /// Patch configuration
@@ -280,37 +292,47 @@ impl Pool {
     /// is reset to that value; otherwise the current nominal number
     /// is kept, bounded by the (possibly updated) `min_processes`
     /// and `max_processes`.
-    pub async fn patch_config(&mut self, patch: &serde_json::Value) -> Result<()> {
-        self.builder.patch(patch)?;
-        let opts = self.builder.options();
-        self.queue.set_max_waiters(opts.max_waiting_requests());
-        self.queue.set_max_life_cycles(opts.max_life_cycles);
-        let num_processes = if patch
-            .get("worker")
-            .and_then(|w| w.get("num_processes"))
-            .is_some()
+    pub async fn patch_config(&self, patch: &serde_json::Value) -> Result<()> {
+        let _scaling = self.scaling.lock().await;
         {
-            opts.num_processes()
-        } else {
+            let mut builder = self.builder.write();
+            builder.patch(patch)?;
+            let opts = builder.options();
+            self.queue.set_max_waiters(opts.max_waiting_requests());
+            self.queue.set_max_life_cycles(opts.max_life_cycles);
+            let num_processes = if patch
+                .get("worker")
+                .and_then(|w| w.get("num_processes"))
+                .is_some()
+            {
+                opts.num_processes()
+            } else {
+                self.num_processes()
+            };
             self.num_processes
-        };
-        self.num_processes = clamp_processes(opts, num_processes);
-        self.maintain_pool().await
+                .store(clamp_processes(opts, num_processes), Ordering::Relaxed);
+        }
+        self.scale().await
     }
 
     /// Returns the nominal number of workers
     pub fn num_processes(&self) -> usize {
-        self.num_processes
+        self.num_processes.load(Ordering::Relaxed)
     }
 
     /// Returns the lower bound of the number of workers
     pub fn min_processes(&self) -> usize {
-        self.options().min_processes()
+        self.builder.read().options().min_processes()
     }
 
     /// Returns the upper bound of the number of workers
     pub fn max_processes(&self) -> usize {
-        self.options().max_processes()
+        self.builder.read().options().max_processes()
+    }
+
+    /// Returns the maximum number of requests waiting for a worker
+    pub fn max_waiting_requests(&self) -> usize {
+        self.queue.max_waiters()
     }
 
     /// Set the nominal number of workers and scale the pool accordingly
@@ -320,13 +342,14 @@ impl Pool {
     ///
     /// Note that scaling down only terminates idle workers: busy
     /// workers are removed on later calls to `maintain_pool`.
-    pub async fn set_num_processes(&mut self, n: usize) -> Result<usize> {
-        let n = clamp_processes(self.options(), n);
-        if n != self.num_processes {
-            log::info!("Setting number of workers: {} -> {n}", self.num_processes);
-            self.num_processes = n;
+    pub async fn set_num_processes(&self, n: usize) -> Result<usize> {
+        let _scaling = self.scaling.lock().await;
+        let n = clamp_processes(self.builder.read().options(), n);
+        let current = self.num_processes.swap(n, Ordering::Relaxed);
+        if n != current {
+            log::info!("Setting number of workers: {current} -> {n}");
         }
-        self.maintain_pool().await.map(|_| n)
+        self.scale().await.map(|_| n)
     }
 
     pub(crate) fn clone_queue(&self) -> Arc<WorkerQueue> {
@@ -401,9 +424,16 @@ impl Pool {
     }
 
     /// Maintain the pool at nominal number of live workers
-    pub async fn maintain_pool(&mut self) -> Result<()> {
+    pub async fn maintain_pool(&self) -> Result<()> {
+        let _scaling = self.scaling.lock().await;
+        self.scale().await
+    }
+
+    // Bring the number of live workers to the nominal number.
+    // Must be called with the `scaling` lock held.
+    async fn scale(&self) -> Result<()> {
         self.cleanup_dead_workers();
-        let nominal = self.num_processes;
+        let nominal = self.num_processes();
         let failures = self.failures();
         let current = self.num_workers();
 
@@ -419,14 +449,15 @@ impl Pool {
     }
 
     /// Add workers to the pool
-    async fn grow(&mut self, n: usize) -> Result<()> {
+    async fn grow(&self, n: usize) -> Result<()> {
         if self.queue.is_closed() {
             return Err(Error::QueueIsClosed);
         }
 
         let ts = Instant::now();
 
-        let launcher = self.builder.launcher();
+        // Release the builder lock before spawning
+        let launcher = self.builder.read().launcher();
 
         log::debug!("Launching {n} workers");
         let futures: Vec<_> = (0..n).map(|_| launcher.clone().spawn()).collect();
@@ -451,7 +482,7 @@ impl Pool {
     }
 
     /// Remove workers from the pool
-    async fn shrink(&mut self, n: usize) -> Result<()> {
+    async fn shrink(&self, n: usize) -> Result<()> {
         if self.queue.is_closed() {
             return Err(Error::QueueIsClosed);
         }
@@ -461,7 +492,7 @@ impl Pool {
     }
 
     /// Close the pool and shutdown all workers with a grace period
-    pub async fn close(&mut self, grace_period: Duration) {
+    pub async fn close(&self, grace_period: Duration) {
         // Close the queue: no workers will be available anymore
         log::info!("Closing worker queue");
         self.queue.close();
@@ -482,6 +513,9 @@ impl Pool {
             }
         })
         .await;
+        // Wait for any scaling in progress, so that workers
+        // being started are queued before draining the queue.
+        let _scaling = self.scaling.lock().await;
         // Drain all idle workers
         log::info!("Shutting down...");
         let num_workers = self.num_workers();
@@ -521,7 +555,7 @@ mod tests {
         setup();
 
         let mut num_processes = 3;
-        let mut pool = Pool::new(builder(num_processes));
+        let pool = Pool::new(builder(num_processes));
 
         pool.maintain_pool().await.unwrap();
         assert_eq!(pool.num_workers(), num_processes);
@@ -552,7 +586,7 @@ mod tests {
 
         let mut builder = builder(1);
         builder.max_life_cycles(2);
-        let mut pool = Pool::new(builder);
+        let pool = Pool::new(builder);
 
         pool.maintain_pool().await.unwrap();
         assert_eq!(pool.num_workers(), 1);
@@ -589,7 +623,7 @@ mod tests {
 
         let mut builder = builder(1);
         builder.options_mut().max_waiting_requests = 2.try_into().unwrap();
-        let mut pool = Pool::new(builder);
+        let pool = Pool::new(builder);
         pool.maintain_pool().await.unwrap();
 
         let queue = Receiver::new(&pool);
@@ -646,7 +680,7 @@ mod tests {
 
         let mut builder = builder(2);
         builder.processes_bounds(1, 3).unwrap();
-        let mut pool = Pool::new(builder);
+        let pool = Pool::new(builder);
 
         pool.maintain_pool().await.unwrap();
         assert_eq!(pool.num_processes(), 2);
@@ -708,13 +742,51 @@ mod tests {
         assert_eq!(pool.num_processes(), 3);
     }
 
+    #[tokio::test]
+    async fn test_concurrent_scaling() {
+        setup();
+
+        let mut builder = builder(1);
+        builder.processes_bounds(1, 4).unwrap();
+        let pool = Arc::new(Pool::new(builder));
+        pool.maintain_pool().await.unwrap();
+
+        // Concurrent scaling operations must not overshoot
+        let scaling = tokio::spawn({
+            let pool = pool.clone();
+            async move { pool.set_num_processes(3).await }
+        });
+        let (r1, r2) = tokio::join!(pool.maintain_pool(), pool.maintain_pool());
+        r1.unwrap();
+        r2.unwrap();
+        assert_eq!(scaling.await.unwrap().unwrap(), 3);
+        pool.maintain_pool().await.unwrap();
+        assert_eq!(pool.num_workers(), 3);
+        assert_eq!(pool.stats_raw(), (0, 3));
+
+        // Pool remains accessible while workers are starting
+        let scaling = tokio::spawn({
+            let pool = pool.clone();
+            async move { pool.set_num_processes(4).await }
+        });
+        tokio::task::yield_now().await;
+        let _ = crate::stats::Stats::new(pool.as_ref());
+        assert_eq!(pool.max_processes(), 4);
+        scaling.await.unwrap().unwrap();
+        assert_eq!(pool.num_workers(), 4);
+
+        // Close waits for workers and terminates them
+        pool.close(Duration::from_secs(1)).await;
+        assert_eq!(pool.num_workers(), 0);
+    }
+
     use crate::restore;
 
     #[tokio::test]
     async fn test_restore() {
         setup();
 
-        let mut pool = Pool::new(builder(1));
+        let pool = Pool::new(builder(1));
         {
             let mut restore = pool.queue.restore().write().await;
             restore.update_cache(restore::State::Pull("project_1".into()));
@@ -745,7 +817,7 @@ mod tests {
         setup();
 
         let num_processes = 3;
-        let mut pool = Pool::new(builder(num_processes));
+        let pool = Pool::new(builder(num_processes));
 
         pool.maintain_pool().await.unwrap();
         assert_eq!(pool.num_workers(), num_processes);
