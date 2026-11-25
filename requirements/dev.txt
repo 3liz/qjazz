@@ -9,8 +9,8 @@ bandit==1.9.4
 colorama==0.4.6 ; sys_platform == 'win32'
 coverage==7.17.5
 frozenlist==1.8.0
-grpcio==1.85.3
-grpcio-tools==1.85.3
+grpcio==1.85.4
+grpcio-tools==1.85.4
 idna==3.20
 iniconfig==2.3.1
 librt==0.17.0 ; platform_python_implementation != 'PyPy'
@@ -21,7 +21,7 @@ mdurl==0.1.2
 multidict==7.2.1
 mypy==2.4.1
 mypy-extensions==1.2.0
-packaging==26.3
+packaging==26.4
 pathspec==1.1.1
 pluggy==1.7.0
 propcache==0.5.4

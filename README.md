@@ -30,6 +30,7 @@ QGIS Server features and options.
 - Managed project's cache synchronized between workers
 - S3 storage supports for projects
 - Full TLS support for server and client authentification on all components
+- Adaptative control of number of QGIS instances
 
 ### Organize and distribute your QGIS servers
 
