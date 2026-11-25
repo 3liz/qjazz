@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## Unreleased
 
 
+* [qjazz-rpc] Implement adaptative control of the number of workers
 * [qjazz-rpc] Add a max life cycle counter to workers
 * [qjazz-server] Use per worker flushable TMPDIR
 

@@ -22,6 +22,9 @@ pub(crate) struct WorkerQueue {
     q: Queue<Worker>,
     // The actual number of living workers
     num_workers: AtomicUsize,
+    // Nominal number of workers, bounded
+    // by `min_processes..=max_processes`
+    nominal: AtomicUsize,
     max_waiters: AtomicUsize,
     // Maximum life cycles of a worker (0: unlimited)
     max_life_cycles: AtomicUsize,
@@ -120,6 +123,46 @@ impl WorkerQueue {
         self.terminate(w).await
     }
 
+    pub fn nominal(&self) -> usize {
+        self.nominal.load(Ordering::Relaxed)
+    }
+
+    // Reserve the removal of a surplus worker
+    //
+    // Atomically decrement the number of live workers if it is
+    // above the nominal number; returns false otherwise.
+    // This guarantees that concurrent removals never bring the
+    // number of workers below the nominal number.
+    fn reserve_surplus(&self) -> bool {
+        let nominal = self.nominal();
+        self.num_workers
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+                (n > nominal).then(|| n - 1)
+            })
+            .is_ok()
+    }
+
+    // Remove up to n surplus idle workers from queue
+    // Returns the number of workers removed
+    async fn remove_surplus(&self, n: usize) -> usize {
+        let mut count = 0;
+        while count < n && self.reserve_surplus() {
+            match self.q.drain(1).pop() {
+                Some(mut w) => {
+                    let _ = w.terminate().await;
+                    count += 1;
+                }
+                None => {
+                    // No idle worker: release the reservation,
+                    // busy workers are retired when recycled.
+                    self.num_workers.fetch_add(1, Ordering::AcqRel);
+                    break;
+                }
+            }
+        }
+        count
+    }
+
     // Remove n workers from queue
     async fn remove(&self, n: usize) -> usize {
         let mut removed = self.q.drain(n);
@@ -162,6 +205,14 @@ impl WorkerQueue {
         if self.life_cycles_exhausted(&worker) {
             log::info!("Worker [{pid}] reached EOL");
             return self.terminate(worker).await;
+        }
+
+        // Retire the worker if there is more live workers than
+        // the nominal number (i.e the pool has been scaled down
+        // while all workers were busy).
+        if self.reserve_surplus() {
+            log::info!("Retiring surplus worker [{pid}]");
+            return worker.terminate().await;
         }
 
         // Try graceful cancel
@@ -239,9 +290,6 @@ pub struct Pool {
     // never held across an await point.
     builder: parking_lot::RwLock<Builder>,
     error: AtomicBool,
-    // Nominal number of workers, bounded
-    // by `min_processes..=max_processes`
-    num_processes: AtomicUsize,
     // Serialize operations that change the number of workers
     scaling: Mutex<()>,
 }
@@ -257,6 +305,7 @@ impl Pool {
             queue: Arc::new(WorkerQueue {
                 q: Queue::with_capacity(num_processes),
                 num_workers: AtomicUsize::new(0),
+                nominal: AtomicUsize::new(num_processes),
                 max_waiters: AtomicUsize::new(max_waiting_requests),
                 max_life_cycles: AtomicUsize::new(max_life_cycles),
                 waiters: AtomicUsize::new(0),
@@ -268,7 +317,6 @@ impl Pool {
             }),
             builder: parking_lot::RwLock::new(builder),
             error: AtomicBool::new(false),
-            num_processes: AtomicUsize::new(num_processes),
             scaling: Mutex::new(()),
         }
     }
@@ -309,7 +357,8 @@ impl Pool {
             } else {
                 self.num_processes()
             };
-            self.num_processes
+            self.queue
+                .nominal
                 .store(clamp_processes(opts, num_processes), Ordering::Relaxed);
         }
         self.scale().await
@@ -317,7 +366,7 @@ impl Pool {
 
     /// Returns the nominal number of workers
     pub fn num_processes(&self) -> usize {
-        self.num_processes.load(Ordering::Relaxed)
+        self.queue.nominal()
     }
 
     /// Returns the lower bound of the number of workers
@@ -340,12 +389,13 @@ impl Pool {
     /// The value is bounded by `min_processes..=max_processes`.
     /// Returns the effective nominal number of workers.
     ///
-    /// Note that scaling down only terminates idle workers: busy
-    /// workers are removed on later calls to `maintain_pool`.
+    /// When scaling down, idle workers are terminated immediately;
+    /// if not enough workers are idle, busy workers are retired
+    /// when they are recycled.
     pub async fn set_num_processes(&self, n: usize) -> Result<usize> {
         let _scaling = self.scaling.lock().await;
         let n = clamp_processes(self.builder.read().options(), n);
-        let current = self.num_processes.swap(n, Ordering::Relaxed);
+        let current = self.queue.nominal.swap(n, Ordering::Relaxed);
         if n != current {
             log::info!("Setting number of workers: {current} -> {n}");
         }
@@ -487,7 +537,13 @@ impl Pool {
             return Err(Error::QueueIsClosed);
         }
         log::debug!("Pool: Shrinking by {n} workers");
-        let _ = self.queue.remove(n).await;
+        let removed = self.queue.remove_surplus(n).await;
+        if removed < n {
+            log::debug!(
+                "Pool: {} busy workers will be retired when recycled",
+                n - removed
+            );
+        }
         Ok(())
     }
 
@@ -555,15 +611,17 @@ mod tests {
         setup();
 
         let mut num_processes = 3;
-        let pool = Pool::new(builder(num_processes));
+        let mut builder = builder(num_processes);
+        builder.processes_bounds(1, num_processes).unwrap();
+        let pool = Pool::new(builder);
 
         pool.maintain_pool().await.unwrap();
         assert_eq!(pool.num_workers(), num_processes);
         assert_eq!(pool.stats_raw(), (0, num_processes));
 
         // Shrink the number of workers
-        pool.shrink(1).await.unwrap();
         num_processes -= 1;
+        pool.set_num_processes(num_processes).await.unwrap();
         assert_eq!(pool.num_workers(), num_processes);
         assert_eq!(pool.stats_raw(), (0, num_processes));
 
@@ -778,6 +836,64 @@ mod tests {
         // Close waits for workers and terminates them
         pool.close(Duration::from_secs(1)).await;
         assert_eq!(pool.num_workers(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_retire_busy_workers() {
+        setup();
+
+        let mut builder = builder(3);
+        builder.processes_bounds(1, 3).unwrap();
+        let pool = Pool::new(builder);
+        pool.maintain_pool().await.unwrap();
+
+        let queue = Receiver::new(&pool);
+
+        // All workers busy
+        let mut w1 = queue.get().await.unwrap();
+        let mut w2 = queue.get().await.unwrap();
+        let mut w3 = queue.get().await.unwrap();
+        assert_eq!(pool.stats_raw(), (3, 0));
+
+        // Scale down: no idle worker can be removed
+        assert_eq!(pool.set_num_processes(1).await.unwrap(), 1);
+        assert_eq!(pool.num_workers(), 3);
+
+        // Busy workers are retired when recycled
+        w1.done();
+        w1.recycle().unwrap().await.unwrap().unwrap();
+        assert_eq!(pool.num_workers(), 2);
+        assert_eq!(pool.stats_raw(), (2, 0));
+
+        // Concurrent recycling never goes below the nominal number
+        w2.done();
+        w3.done();
+        let (r2, r3) = tokio::join!(w2.recycle().unwrap(), w3.recycle().unwrap());
+        r2.unwrap().unwrap();
+        r3.unwrap().unwrap();
+        assert_eq!(pool.num_workers(), 1);
+        assert_eq!(pool.stats_raw(), (0, 1));
+        // Retiring is not a failure
+        assert_eq!(pool.failures(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_shrink_keeps_nominal() {
+        setup();
+
+        let mut builder = builder(3);
+        builder.processes_bounds(1, 3).unwrap();
+        let pool = Pool::new(builder);
+        pool.maintain_pool().await.unwrap();
+
+        // Shrinking more than the surplus never goes below nominal
+        pool.shrink(3).await.unwrap();
+        assert_eq!(pool.num_workers(), 3);
+
+        pool.queue.nominal.store(2, Ordering::Relaxed);
+        pool.shrink(3).await.unwrap();
+        assert_eq!(pool.num_workers(), 2);
+        assert_eq!(pool.stats_raw(), (0, 2));
     }
 
     use crate::restore;
