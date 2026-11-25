@@ -45,7 +45,9 @@ impl Builder {
         if let Some(patch) = patch.get("worker") {
             let mut doc = serde_json::to_value(&self.opts)?;
             json_merge(&mut doc, patch)?;
-            self.opts = serde_json::from_value(doc)?;
+            let opts: WorkerOptions = serde_json::from_value(doc)?;
+            opts.validate()?;
+            self.opts = opts;
         }
 
         Ok(())
@@ -81,6 +83,11 @@ impl Builder {
     }
     pub fn num_processes(&mut self, value: usize) -> Result<&mut Self> {
         self.opts.num_processes = value.try_into()?;
+        Ok(self)
+    }
+    pub fn processes_bounds(&mut self, min: usize, max: usize) -> Result<&mut Self> {
+        self.opts.min_processes = Some(min.try_into()?);
+        self.opts.max_processes = Some(max.try_into()?);
         Ok(self)
     }
 }
@@ -120,5 +127,13 @@ mod tests {
                 "max_projects": 25
             })
         );
+
+        // Invalid bounds are rejected and options are left unchanged
+        assert!(
+            builder
+                .patch(&json!({ "worker": { "max_processes": 2 } }))
+                .is_err()
+        );
+        assert_eq!(builder.opts.max_processes(), 3);
     }
 }

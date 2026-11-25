@@ -63,7 +63,23 @@ enable_tls = false
 name = ""
 #
 # Number of simultanous workers
+#
+# This is the initial number of workers when the number
+# of workers is adjusted dynamically between `min_processes`
+# and `max_processes`.
 num_processes = 1
+#
+# Minimum number of workers
+#
+# Lower bound of the number of workers.
+# Defaults to `num_processes`.
+#min_processes =   	# Optional
+#
+# Maximum number of workers
+#
+# Upper bound of the number of workers.
+# Defaults to `num_processes`.
+#max_processes =   	# Optional
 #
 # Timeout for starting child process
 process_start_timeout = 5

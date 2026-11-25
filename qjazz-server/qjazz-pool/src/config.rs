@@ -93,7 +93,19 @@ pub struct WorkerOptions {
     /// Name of the worker instance
     pub name: String,
     /// Number of simultanous workers
+    ///
+    /// This is the initial number of workers when the number
+    /// of workers is adjusted dynamically between `min_processes`
+    /// and `max_processes`.
     pub(crate) num_processes: BoundedUsize<1>,
+    /// Lower bound of the number of workers.
+    /// Defaults to `num_processes`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) min_processes: Option<BoundedUsize<1>>,
+    /// Upper bound of the number of workers.
+    /// Defaults to `num_processes`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) max_processes: Option<BoundedUsize<1>>,
     /// Timeout for starting child process
     pub process_start_timeout: u64,
     /// Qgis configuration (see python implementation for details)
@@ -126,6 +138,8 @@ impl Default for WorkerOptions {
         Self {
             name: "".to_string(),
             num_processes: BoundedUsize(1),
+            min_processes: None,
+            max_processes: None,
             process_start_timeout: DEFAULT_START_TIMEOUT_SEC,
             cancel_timeout: DEFAULT_CANCEL_TIMEOUT_SEC,
             qgis: serde_json::json!({}),
@@ -148,5 +162,78 @@ impl WorkerOptions {
 
     pub fn num_processes(&self) -> usize {
         self.num_processes.as_usize()
+    }
+
+    /// Lower bound of the number of workers
+    pub fn min_processes(&self) -> usize {
+        self.min_processes
+            .map(|v| v.as_usize())
+            .unwrap_or_else(|| self.num_processes())
+    }
+
+    /// Upper bound of the number of workers
+    pub fn max_processes(&self) -> usize {
+        self.max_processes
+            .map(|v| v.as_usize())
+            .unwrap_or_else(|| self.num_processes())
+    }
+
+    /// Validate options consistency
+    ///
+    /// Requires `min_processes <= num_processes <= max_processes`.
+    pub fn validate(&self) -> Result<(), Error> {
+        let (min, num, max) = (
+            self.min_processes(),
+            self.num_processes(),
+            self.max_processes(),
+        );
+        // Unset bounds default to `num_processes`, so a failure
+        // always involves an explicitly set bound.
+        if num < min {
+            Err(Error::InvalidConfiguration(format!(
+                "num_processes ({num}) is lower than min_processes ({min})"
+            )))
+        } else if num > max {
+            Err(Error::InvalidConfiguration(format!(
+                "num_processes ({num}) is greater than max_processes ({max})"
+            )))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn options(value: serde_json::Value) -> WorkerOptions {
+        serde_json::from_value(value).unwrap()
+    }
+
+    #[test]
+    fn test_processes_bounds() {
+        // Bounds default to num_processes (fixed size pool)
+        let opts = options(json!({ "num_processes": 3 }));
+        assert_eq!(opts.min_processes(), 3);
+        assert_eq!(opts.max_processes(), 3);
+        assert!(opts.validate().is_ok());
+
+        let opts = options(json!({ "num_processes": 2, "max_processes": 4 }));
+        assert_eq!(opts.min_processes(), 2);
+        assert_eq!(opts.max_processes(), 4);
+        assert!(opts.validate().is_ok());
+
+        let opts = options(json!({ "num_processes": 2, "min_processes": 3 }));
+        assert!(opts.validate().is_err());
+
+        let opts = options(json!({ "num_processes": 2, "max_processes": 1 }));
+        assert!(opts.validate().is_err());
+
+        // Unset bounds are not serialized
+        let doc = serde_json::to_value(options(json!({}))).unwrap();
+        assert!(doc.get("min_processes").is_none());
+        assert!(doc.get("max_processes").is_none());
     }
 }

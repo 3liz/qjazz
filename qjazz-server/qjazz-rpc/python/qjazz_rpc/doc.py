@@ -95,9 +95,24 @@ class Rpc(ConfigBase):
 
 class Worker(ConfigBase):
     name: str = Field("", title="Name of the worker instance")
-    num_processes: int = Field(
+    num_processes: PositiveInt = Field(
         default=1,
         title="Number of simultanous workers",
+        description=(
+            "This is the initial number of workers when the number\n"
+            "of workers is adjusted dynamically between `min_processes`\n"
+            "and `max_processes`."
+        ),
+    )
+    min_processes: Optional[PositiveInt] = Field(
+        default=None,
+        title="Minimum number of workers",
+        description="Lower bound of the number of workers.\nDefaults to `num_processes`.",
+    )
+    max_processes: Optional[PositiveInt] = Field(
+        default=None,
+        title="Maximum number of workers",
+        description="Upper bound of the number of workers.\nDefaults to `num_processes`.",
     )
     qgis: QgisConfig = Field(
         QgisConfig(),

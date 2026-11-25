@@ -191,6 +191,7 @@ pub struct Settings {
 impl Settings {
     fn validate(mut self) -> Result<Self, ConfigError> {
         self.rpc.validate()?;
+        self.worker.validate().map_err(Self::error)?;
         Ok(self)
     }
 

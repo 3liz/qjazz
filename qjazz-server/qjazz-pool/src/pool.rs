@@ -231,6 +231,8 @@ pub struct Pool {
     queue: Arc<WorkerQueue>,
     builder: Builder,
     error: bool,
+    // Nominal number of workers, bounded
+    // by `min_processes..=max_processes`
     num_processes: usize,
 }
 
@@ -238,7 +240,7 @@ impl Pool {
     /// Create a new pool instance from a Worker builder
     pub fn new(mut builder: Builder) -> Self {
         let opts = builder.options_mut();
-        let num_processes = opts.num_processes();
+        let num_processes = clamp_processes(opts, opts.num_processes());
         let max_waiting_requests = opts.max_waiting_requests();
         let max_life_cycles = opts.max_life_cycles;
         Self {
@@ -273,14 +275,58 @@ impl Pool {
     }
 
     /// Patch configuration
+    ///
+    /// If the patch sets `num_processes`, the nominal number of workers
+    /// is reset to that value; otherwise the current nominal number
+    /// is kept, bounded by the (possibly updated) `min_processes`
+    /// and `max_processes`.
     pub async fn patch_config(&mut self, patch: &serde_json::Value) -> Result<()> {
         self.builder.patch(patch)?;
-        self.queue
-            .set_max_waiters(self.builder.options().max_waiting_requests());
-        self.queue
-            .set_max_life_cycles(self.builder.options().max_life_cycles);
-        self.num_processes = self.builder.options().num_processes();
+        let opts = self.builder.options();
+        self.queue.set_max_waiters(opts.max_waiting_requests());
+        self.queue.set_max_life_cycles(opts.max_life_cycles);
+        let num_processes = if patch
+            .get("worker")
+            .and_then(|w| w.get("num_processes"))
+            .is_some()
+        {
+            opts.num_processes()
+        } else {
+            self.num_processes
+        };
+        self.num_processes = clamp_processes(opts, num_processes);
         self.maintain_pool().await
+    }
+
+    /// Returns the nominal number of workers
+    pub fn num_processes(&self) -> usize {
+        self.num_processes
+    }
+
+    /// Returns the lower bound of the number of workers
+    pub fn min_processes(&self) -> usize {
+        self.options().min_processes()
+    }
+
+    /// Returns the upper bound of the number of workers
+    pub fn max_processes(&self) -> usize {
+        self.options().max_processes()
+    }
+
+    /// Set the nominal number of workers and scale the pool accordingly
+    ///
+    /// The value is bounded by `min_processes..=max_processes`.
+    /// Returns the effective nominal number of workers.
+    ///
+    /// Note that scaling down only terminates idle workers: busy
+    /// workers are removed on later calls to `maintain_pool`.
+    pub async fn set_num_processes(&mut self, n: usize) -> Result<usize> {
+        let n = clamp_processes(self.options(), n);
+        if n != self.num_processes {
+            log::info!("Setting number of workers: {} -> {n}", self.num_processes);
+            self.num_processes = n;
+        }
+        self.maintain_pool().await.map(|_| n)
     }
 
     pub(crate) fn clone_queue(&self) -> Arc<WorkerQueue> {
@@ -311,9 +357,12 @@ impl Pool {
     }
 
     /// Returns the ratio of failures against
-    /// the nominal number of workers
+    /// the maximum number of workers
+    ///
+    /// The maximum number of workers is used as reference so that
+    /// the ratio does not depend on the actual nominal number of workers.
     pub fn failure_pressure(&self) -> f64 {
-        self.failures() as f64 / self.num_processes as f64
+        self.failures() as f64 / self.max_processes() as f64
     }
 
     /// Return memoized pids
@@ -436,9 +485,15 @@ impl Pool {
         // Drain all idle workers
         log::info!("Shutting down...");
         let num_workers = self.num_workers();
-        let remain = num_workers.saturating_sub(self.queue.remove(self.num_processes).await);
+        let remain = num_workers.saturating_sub(self.queue.remove(num_workers).await);
         log::debug!("Pool terminated (rem:  {remain})");
     }
+}
+
+// Bound the number of workers to `min_processes..=max_processes`
+fn clamp_processes(opts: &WorkerOptions, n: usize) -> usize {
+    // Do not use `usize::clamp` which panics if min > max
+    n.max(opts.min_processes()).min(opts.max_processes())
 }
 
 // =======================
@@ -583,6 +638,74 @@ mod tests {
         assert_eq!(stats.count, 2);
         assert!(stats.mean_since(&prev).unwrap() >= delay);
         assert!(stats.max >= delay);
+    }
+
+    #[tokio::test]
+    async fn test_set_num_processes() {
+        setup();
+
+        let mut builder = builder(2);
+        builder.processes_bounds(1, 3).unwrap();
+        let mut pool = Pool::new(builder);
+
+        pool.maintain_pool().await.unwrap();
+        assert_eq!(pool.num_processes(), 2);
+        assert_eq!(pool.num_workers(), 2);
+
+        // Grow
+        assert_eq!(pool.set_num_processes(3).await.unwrap(), 3);
+        assert_eq!(pool.num_workers(), 3);
+
+        // Bounded by max_processes
+        assert_eq!(pool.set_num_processes(5).await.unwrap(), 3);
+        assert_eq!(pool.num_workers(), 3);
+
+        // Shrink, bounded by min_processes
+        assert_eq!(pool.set_num_processes(0).await.unwrap(), 1);
+        assert_eq!(pool.num_workers(), 1);
+        assert_eq!(pool.stats_raw(), (0, 1));
+
+        // Failure pressure is relative to max_processes
+        pool.queue.failures.store(3, Ordering::Relaxed);
+        assert_eq!(pool.failure_pressure(), 1.0);
+        pool.queue.failures.store(0, Ordering::Relaxed);
+
+        // Patching without `num_processes` keeps the nominal value
+        pool.patch_config(&serde_json::json!({
+            "worker": { "max_processes": 4 }
+        }))
+        .await
+        .unwrap();
+        assert_eq!(pool.num_processes(), 1);
+        assert_eq!(pool.max_processes(), 4);
+
+        // ...but bounds it to the new limits
+        pool.patch_config(&serde_json::json!({
+            "worker": { "min_processes": 2 }
+        }))
+        .await
+        .unwrap();
+        assert_eq!(pool.num_processes(), 2);
+        assert_eq!(pool.num_workers(), 2);
+
+        // Patching `num_processes` resets the nominal value
+        pool.patch_config(&serde_json::json!({
+            "worker": { "num_processes": 3 }
+        }))
+        .await
+        .unwrap();
+        assert_eq!(pool.num_processes(), 3);
+        assert_eq!(pool.num_workers(), 3);
+
+        // Inconsistent configuration is rejected
+        assert!(
+            pool.patch_config(&serde_json::json!({
+                "worker": { "num_processes": 5 }
+            }))
+            .await
+            .is_err()
+        );
+        assert_eq!(pool.num_processes(), 3);
     }
 
     use crate::restore;
